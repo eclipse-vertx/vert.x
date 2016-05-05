@@ -24,8 +24,6 @@ import io.vertx.core.streams.WriteStream;
 /**
  * A {@link io.vertx.core.streams.WriteStream} for sending packets to a {@link io.vertx.core.net.SocketAddress}.
  * The stream {@link WriteStream#exceptionHandler} is called when the write fails.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public interface PacketWritestream extends WriteStream<Buffer> {

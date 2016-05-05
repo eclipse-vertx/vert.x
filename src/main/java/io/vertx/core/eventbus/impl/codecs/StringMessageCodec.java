@@ -21,7 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class StringMessageCodec implements MessageCodec<String, String> {
 

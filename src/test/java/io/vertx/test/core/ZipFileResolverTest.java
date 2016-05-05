@@ -17,7 +17,7 @@
 package io.vertx.test.core;
 
 /**
- * @author <a href="http://www.ernestojpg.com">Ernesto J. Perez</a>
+ *
  */
 public class ZipFileResolverTest extends FileResolverTestBase {
 

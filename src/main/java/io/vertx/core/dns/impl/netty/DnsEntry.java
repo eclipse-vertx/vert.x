@@ -361,7 +361,7 @@ public class DnsEntry {
   @Override
   public String toString() {
     return new StringBuilder().append(getClass().getSimpleName()).append("(domain name: ").append(name)
-      .append(", type: ").append(type).append(", class: ").append(dnsClass).append(')').toString();
+        .append(", type: ").append(type).append(", class: ").append(dnsClass).append(')').toString();
   }
 
   @Override

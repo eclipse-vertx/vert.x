@@ -27,7 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.logging.LogRecord;
 
 /**
- * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
+ *
  */
 public class VertxLoggerFormatter extends java.util.logging.Formatter {
 

@@ -20,8 +20,6 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
 /**
  * Factory to create the {@code run} command.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class RunCommandFactory extends DefaultCommandFactory<RunCommand> {
 

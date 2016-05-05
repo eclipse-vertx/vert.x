@@ -20,8 +20,6 @@ import io.vertx.core.VertxException;
 
 /**
  * Exception thrown by the FileSystem class
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystemException extends VertxException {
 

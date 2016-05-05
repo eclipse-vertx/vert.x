@@ -24,8 +24,6 @@ import java.lang.annotation.Target;
 
 /**
  * Annotates {@link Option @Option} setters to indicate how the value is converted to the argument type.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})

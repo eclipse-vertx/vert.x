@@ -17,24 +17,23 @@
 package io.vertx.core.net;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.net.NetClientOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.NetClientOptions} original class using Vert.x codegen.
  */
 public class NetClientOptionsConverter {
 
   public static void fromJson(JsonObject json, NetClientOptions obj) {
     if (json.getValue("hostnameVerificationAlgorithm") instanceof String) {
-      obj.setHostnameVerificationAlgorithm((String)json.getValue("hostnameVerificationAlgorithm"));
+      obj.setHostnameVerificationAlgorithm((String) json.getValue("hostnameVerificationAlgorithm"));
     }
     if (json.getValue("reconnectAttempts") instanceof Number) {
-      obj.setReconnectAttempts(((Number)json.getValue("reconnectAttempts")).intValue());
+      obj.setReconnectAttempts(((Number) json.getValue("reconnectAttempts")).intValue());
     }
     if (json.getValue("reconnectInterval") instanceof Number) {
-      obj.setReconnectInterval(((Number)json.getValue("reconnectInterval")).longValue());
+      obj.setReconnectInterval(((Number) json.getValue("reconnectInterval")).longValue());
     }
   }
 

@@ -38,8 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static io.vertx.test.core.TestUtils.*;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
+ *
  */
 public class DatagramTest extends VertxTestBase {
 
@@ -70,26 +70,39 @@ public class DatagramTest extends VertxTestBase {
   public void testDatagramSocket() throws Exception {
     peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
 
-    assertNullPointerException(() -> peer1.send((Buffer) null, 1, "127.0.0.1", ar -> {}));
-    assertIllegalArgumentException(() -> peer1.send(Buffer.buffer(), -1, "127.0.0.1", ar -> {}));
-    assertIllegalArgumentException(() -> peer1.send(Buffer.buffer(), 65536, "127.0.0.1", ar -> {}));
+    assertNullPointerException(() -> peer1.send((Buffer) null, 1, "127.0.0.1", ar -> {
+    }));
+    assertIllegalArgumentException(() -> peer1.send(Buffer.buffer(), -1, "127.0.0.1", ar -> {
+    }));
+    assertIllegalArgumentException(() -> peer1.send(Buffer.buffer(), 65536, "127.0.0.1", ar -> {
+    }));
 
-    assertNullPointerException(() -> peer1.send((String) null, 1, "127.0.0.1", ar -> {}));
-    assertIllegalArgumentException(() -> peer1.send("", -1, "127.0.0.1", ar -> {}));
-    assertIllegalArgumentException(() -> peer1.send("", 65536, "127.0.0.1", ar -> {}));
+    assertNullPointerException(() -> peer1.send((String) null, 1, "127.0.0.1", ar -> {
+    }));
+    assertIllegalArgumentException(() -> peer1.send("", -1, "127.0.0.1", ar -> {
+    }));
+    assertIllegalArgumentException(() -> peer1.send("", 65536, "127.0.0.1", ar -> {
+    }));
 
-    assertNullPointerException(() -> peer1.send((String) null, "UTF-8", 1, "127.0.0.1", ar -> {}));
-    assertIllegalArgumentException(() -> peer1.send("", "UTF-8", -1, "127.0.0.1", ar -> {}));
-    assertIllegalArgumentException(() -> peer1.send("", "UTF-8", 65536, "127.0.0.1", ar -> {}));
-    assertNullPointerException(() -> peer1.send("", null, 1, "127.0.0.1", ar -> {}));
+    assertNullPointerException(() -> peer1.send((String) null, "UTF-8", 1, "127.0.0.1", ar -> {
+    }));
+    assertIllegalArgumentException(() -> peer1.send("", "UTF-8", -1, "127.0.0.1", ar -> {
+    }));
+    assertIllegalArgumentException(() -> peer1.send("", "UTF-8", 65536, "127.0.0.1", ar -> {
+    }));
+    assertNullPointerException(() -> peer1.send("", null, 1, "127.0.0.1", ar -> {
+    }));
 
     assertIllegalArgumentException(() -> peer1.sender(-1, "127.0.0.1"));
     assertIllegalArgumentException(() -> peer1.sender(65536, "127.0.0.1"));
     assertNullPointerException(() -> peer1.sender(1, null));
 
-    assertIllegalArgumentException(() -> peer1.listen(-1, "127.0.0.1", ar -> {}));
-    assertIllegalArgumentException(() -> peer1.listen(65536, "127.0.0.1", ar -> {}));
-    assertNullPointerException(() -> peer1.listen(1, null, ar -> {}));
+    assertIllegalArgumentException(() -> peer1.listen(-1, "127.0.0.1", ar -> {
+    }));
+    assertIllegalArgumentException(() -> peer1.listen(65536, "127.0.0.1", ar -> {
+    }));
+    assertNullPointerException(() -> peer1.listen(1, null, ar -> {
+    }));
     assertNullPointerException(() -> peer1.listen(1, "127.0.0.1", null));
   }
 
@@ -476,11 +489,11 @@ public class DatagramTest extends VertxTestBase {
     boolean reuseAddress = rand.nextBoolean();
     boolean ipV6 = rand.nextBoolean();
     JsonObject json = new JsonObject().put("broadcast", broadcast)
-      .put("loopbackModeDisabled", loopbackModeDisabled)
-      .put("multicastTimeToLive", multicastTimeToLive)
-      .put("multicastNetworkInterface", multicastNetworkInterface)
-      .put("reuseAddress", reuseAddress)
-      .put("ipV6", ipV6);
+        .put("loopbackModeDisabled", loopbackModeDisabled)
+        .put("multicastTimeToLive", multicastTimeToLive)
+        .put("multicastNetworkInterface", multicastNetworkInterface)
+        .put("reuseAddress", reuseAddress)
+        .put("ipV6", ipV6);
     DatagramSocketOptions copy = new DatagramSocketOptions(json);
     assertEquals(broadcast, copy.isBroadcast());
     assertEquals(loopbackModeDisabled, copy.isLoopbackModeDisabled());

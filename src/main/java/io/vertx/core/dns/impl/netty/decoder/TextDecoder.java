@@ -28,27 +28,25 @@ import java.util.List;
  */
 public class TextDecoder implements RecordDecoder<List<String>> {
 
-    /**
-     * Returns a decoded TXT (text) resource record, stored as an
-     * {@link java.util.ArrayList} of {@code String}s.
-     *
-     * @param response
-     *            the DNS response that contains the resource record being
-     *            decoded
-     * @param resource
-     *            the resource record being decoded
-     */
-    @Override
-    public List<String> decode(DnsResponse response, DnsResource resource) {
-        List<String> list = new ArrayList<>();
-        ByteBuf data = resource.content().readerIndex(response.originalIndex());
-        int index = data.readerIndex();
-        while (index < data.writerIndex()) {
-            int len = data.getUnsignedByte(index++);
-            list.add(data.toString(index, len, CharsetUtil.UTF_8));
-            index += len;
-        }
-        return list;
+  /**
+   * Returns a decoded TXT (text) resource record, stored as an
+   * {@link java.util.ArrayList} of {@code String}s.
+   *
+   * @param response the DNS response that contains the resource record being
+   *                 decoded
+   * @param resource the resource record being decoded
+   */
+  @Override
+  public List<String> decode(DnsResponse response, DnsResource resource) {
+    List<String> list = new ArrayList<>();
+    ByteBuf data = resource.content().readerIndex(response.originalIndex());
+    int index = data.readerIndex();
+    while (index < data.writerIndex()) {
+      int len = data.getUnsignedByte(index++);
+      list.add(data.toString(index, len, CharsetUtil.UTF_8));
+      index += len;
     }
+    return list;
+  }
 
 }

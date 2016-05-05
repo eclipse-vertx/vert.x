@@ -33,8 +33,6 @@ import java.util.*;
  * is invoked.
  * <p/>
  * The watcher watches all files from the current directory and sub-directories.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class Watcher implements Runnable {
 

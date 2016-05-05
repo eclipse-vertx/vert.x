@@ -17,30 +17,29 @@
 package io.vertx.core.datagram;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.datagram.DatagramSocketOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.datagram.DatagramSocketOptions} original class using Vert.x codegen.
  */
 public class DatagramSocketOptionsConverter {
 
   public static void fromJson(JsonObject json, DatagramSocketOptions obj) {
     if (json.getValue("broadcast") instanceof Boolean) {
-      obj.setBroadcast((Boolean)json.getValue("broadcast"));
+      obj.setBroadcast((Boolean) json.getValue("broadcast"));
     }
     if (json.getValue("ipV6") instanceof Boolean) {
-      obj.setIpV6((Boolean)json.getValue("ipV6"));
+      obj.setIpV6((Boolean) json.getValue("ipV6"));
     }
     if (json.getValue("loopbackModeDisabled") instanceof Boolean) {
-      obj.setLoopbackModeDisabled((Boolean)json.getValue("loopbackModeDisabled"));
+      obj.setLoopbackModeDisabled((Boolean) json.getValue("loopbackModeDisabled"));
     }
     if (json.getValue("multicastNetworkInterface") instanceof String) {
-      obj.setMulticastNetworkInterface((String)json.getValue("multicastNetworkInterface"));
+      obj.setMulticastNetworkInterface((String) json.getValue("multicastNetworkInterface"));
     }
     if (json.getValue("multicastTimeToLive") instanceof Number) {
-      obj.setMulticastTimeToLive(((Number)json.getValue("multicastTimeToLive")).intValue());
+      obj.setMulticastTimeToLive(((Number) json.getValue("multicastTimeToLive")).intValue());
     }
   }
 

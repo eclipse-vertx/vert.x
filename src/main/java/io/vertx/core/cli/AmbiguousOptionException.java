@@ -21,8 +21,6 @@ import java.util.stream.Collectors;
 
 /**
  * Exception thrown when the command line is ambiguous meaning it cannot determine exactly which option has to be set.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class AmbiguousOptionException extends CLIException {
 

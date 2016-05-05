@@ -22,13 +22,10 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 
 /**
- *
  * Represents a stream of data that can be written to.
  * <p>
  * Any class that implements this interface can be used by a {@link Pump} to pump data from a {@code ReadStream}
  * to it.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
 public interface WriteStream<T> extends StreamBase {
@@ -36,7 +33,7 @@ public interface WriteStream<T> extends StreamBase {
   /**
    * Set an exception handler on the write stream.
    *
-   * @param handler  the exception handler
+   * @param handler the exception handler
    * @return a reference to this, so the API can be used fluently
    */
   @Override
@@ -47,7 +44,7 @@ public interface WriteStream<T> extends StreamBase {
    * asynchronously. To avoid running out of memory by putting too much on the write queue,
    * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    *
-   * @param data  the data to write
+   * @param data the data to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -73,7 +70,7 @@ public interface WriteStream<T> extends StreamBase {
    * if there is more than {@code maxSize} bytes in the write queue. This is used as an indicator by classes such as
    * {@code Pump} to provide flow control.
    *
-   * @param maxSize  the max size of the write stream
+   * @param maxSize the max size of the write stream
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -91,7 +88,7 @@ public interface WriteStream<T> extends StreamBase {
    * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
    * queue has been reduced to maxSize / 2. See {@link Pump} for an example of this being used.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent

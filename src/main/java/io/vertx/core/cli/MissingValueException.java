@@ -18,8 +18,6 @@ package io.vertx.core.cli;
 /**
  * Exception thrown when an option requiring a value does not receive the value, or when a mandatory argument does not
  * receive a value.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class MissingValueException extends CLIException {
   private final Option option;

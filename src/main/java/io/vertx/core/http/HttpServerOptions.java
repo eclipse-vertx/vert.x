@@ -28,8 +28,6 @@ import java.util.List;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public class HttpServerOptions extends NetServerOptions {
@@ -53,12 +51,12 @@ public class HttpServerOptions extends NetServerOptions {
    * Default max HTTP chunk size = 8192
    */
   public static final int DEFAULT_MAX_CHUNK_SIZE = 8192;
-  
+
   /**
    * Default max length of the initial line (e.g. {@code "GET / HTTP/1.0"}) = 4096
    */
   public static final int DEFAULT_MAX_INITIAL_LINE_LENGTH = 4096;
-  
+
   /**
    * Default max length of all headers = 8192
    */
@@ -96,7 +94,7 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * Copy constructor
    *
-   * @param other  the options to copy
+   * @param other the options to copy
    */
   public HttpServerOptions(HttpServerOptions other) {
     super(other);
@@ -114,7 +112,7 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * Create an options from JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public HttpServerOptions(JsonObject json) {
     super(json);
@@ -309,7 +307,7 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return  the maximum websocket framesize
+   * @return the maximum websocket framesize
    */
   public int getMaxWebsocketFrameSize() {
     return maxWebsocketFrameSize;
@@ -318,7 +316,7 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * Set the maximum websocket frames size
    *
-   * @param maxWebsocketFrameSize  the maximum frame size in bytes.
+   * @param maxWebsocketFrameSize the maximum frame size in bytes.
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxWebsocketFrameSize(int maxWebsocketFrameSize) {
@@ -329,7 +327,7 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * Set the websocket subprotocols supported by the server.
    *
-   * @param subProtocols  comma separated list of subprotocols
+   * @param subProtocols comma separated list of subprotocols
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebsocketSubProtocols(String subProtocols) {
@@ -353,6 +351,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   /**
    * Set whether 100 Continue should be handled automatically
+   *
    * @param handle100ContinueAutomatically true if it should be handled automatically
    * @return a reference to this, so the API can be used fluently
    */
@@ -363,6 +362,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   /**
    * Set the maximum HTTP chunk size
+   *
    * @param maxChunkSize the maximum chunk size
    * @return a reference to this, so the API can be used fluently
    */
@@ -373,23 +373,24 @@ public class HttpServerOptions extends NetServerOptions {
 
   /**
    * Returns the maximum HTTP chunk size
+   *
    * @return the maximum HTTP chunk size
    */
   public int getMaxChunkSize() {
     return maxChunkSize;
   }
 
-  
+
   /**
    * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    */
   public int getMaxInitialLineLength() {
     return maxInitialLineLength;
   }
-	
+
   /**
    * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
-   * 
+   *
    * @param maxInitialLineLength the new maximum initial length
    * @return a reference to this, so the API can be used fluently
    */
@@ -397,14 +398,14 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxInitialLineLength = maxInitialLineLength;
     return this;
   }
-	
+
   /**
    * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
     return maxHeaderSize;
   }
-	
+
   /**
    * Set the maximum length of all headers for HTTP/1.x .
    *
@@ -466,7 +467,8 @@ public class HttpServerOptions extends NetServerOptions {
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxInitialLineLength != that.maxInitialLineLength) return false;
     if (maxHeaderSize != that.maxHeaderSize) return false;
-    if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
+    if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings))
+      return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
   }

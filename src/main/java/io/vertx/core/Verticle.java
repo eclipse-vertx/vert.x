@@ -28,8 +28,6 @@ package io.vertx.core;
  * will be composed of many verticle instances in each Vert.x instance.
  * <p>
  * The verticles communicate with each other by sending messages over the {@link io.vertx.core.eventbus.EventBus}.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Verticle {
 
@@ -45,7 +43,7 @@ public interface Verticle {
    * <p>
    * This method is called by Vert.x when the instance is deployed. You do not call it yourself.
    *
-   * @param vertx  the Vert.x instance
+   * @param vertx   the Vert.x instance
    * @param context the context
    */
   void init(Vertx vertx, Context context);
@@ -58,7 +56,7 @@ public interface Verticle {
    * A future is passed into the method, and when deployment is complete the verticle should either call
    * {@link io.vertx.core.Future#complete} or {@link io.vertx.core.Future#fail} the future.
    *
-   * @param startFuture  the future
+   * @param startFuture the future
    */
   void start(Future<Void> startFuture) throws Exception;
 
@@ -70,7 +68,7 @@ public interface Verticle {
    * A future is passed into the method, and when un-deployment is complete the verticle should either call
    * {@link io.vertx.core.Future#complete} or {@link io.vertx.core.Future#fail} the future.
    *
-   * @param stopFuture  the future
+   * @param stopFuture the future
    */
   void stop(Future<Void> stopFuture) throws Exception;
 }

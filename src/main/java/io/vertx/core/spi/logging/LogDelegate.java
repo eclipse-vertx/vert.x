@@ -18,8 +18,6 @@ package io.vertx.core.spi.logging;
 
 /**
  * I represent operations that are delegated to underlying logging frameworks.
- *
- * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public interface LogDelegate {
 

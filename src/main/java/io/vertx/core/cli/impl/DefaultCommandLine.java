@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 /**
  * Default implementation of the {@link CommandLine}.
  * This implementation is <strong>not</strong> thread-safe.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class DefaultCommandLine implements CommandLine {
 
@@ -191,7 +189,7 @@ public class DefaultCommandLine implements CommandLine {
       throw new CLIException("The option " + option.getName() + " does not accept value or has " +
           "already been set");
     }
-    if (! option.getChoices().isEmpty()  && ! option.getChoices().contains(value)) {
+    if (!option.getChoices().isEmpty() && !option.getChoices().contains(value)) {
       throw new InvalidValueException(option, value);
     }
     List<String> list = optionValues.get(option);

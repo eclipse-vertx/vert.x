@@ -18,29 +18,13 @@ package io.vertx.test.core;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
-import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2ConnectionHandler;
-import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2EventAdapter;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2FrameListener;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
@@ -51,13 +35,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetSocket;
@@ -83,7 +61,7 @@ import java.util.zip.GZIPOutputStream;
 import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class Http2ClientTest extends Http2TestBase {
 
@@ -166,7 +144,7 @@ public class Http2ClientTest extends Http2TestBase {
   public void testServerSettings() throws Exception {
     waitFor(2);
     io.vertx.core.http.Http2Settings expectedSettings = TestUtils.randomHttp2Settings();
-    expectedSettings.setHeaderTableSize((int)io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
+    expectedSettings.setHeaderTableSize((int) io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
     server.close();
     server = vertx.createHttpServer(serverOptions);
     Context otherContext = vertx.getOrCreateContext();
@@ -214,6 +192,7 @@ public class Http2ClientTest extends Http2TestBase {
           ctx.flush();
         });
       }
+
       @Override
       public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
         vertx.runOnContext(v -> {
@@ -347,7 +326,7 @@ public class Http2ClientTest extends Http2TestBase {
       resp.write("some-content");
       resp.putTrailer("Foo", "foo_value");
       resp.putTrailer("bar", "bar_value");
-      resp.putTrailer("juu", (List<String>)Arrays.asList("juu_value_1", "juu_value_2"));
+      resp.putTrailer("juu", (List<String>) Arrays.asList("juu_value_1", "juu_value_2"));
       resp.end();
     });
     startServer();
@@ -566,7 +545,7 @@ public class Http2ClientTest extends Http2TestBase {
       fail();
     }).end();
     awaitLatch(latch);
-    for (int i = 0;i < numReq;i++) {
+    for (int i = 0; i < numReq; i++) {
       client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
         Buffer content = Buffer.buffer();
         resp.handler(content::appendBuffer);
@@ -1042,6 +1021,7 @@ public class Http2ClientTest extends Http2TestBase {
       protected Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
         return new Handler(decoder, encoder, initialSettings);
       }
+
       @Override
       public Handler build() {
         return super.build();
@@ -1122,7 +1102,7 @@ public class Http2ClientTest extends Http2TestBase {
         // normal frame    : 00 00 12 00 08 00 00 00 03 0c 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
         // corrupted frame : 00 00 12 00 08 00 00 00 03 1F 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
         ctx.channel().write(Buffer.buffer(new byte[]{
-            0x00, 0x00, 0x12, 0x00, 0x08, 0x00, 0x00, 0x00, (byte)(streamId & 0xFF), 0x1F, 0x68, 0x65, 0x6c, 0x6c,
+            0x00, 0x00, 0x12, 0x00, 0x08, 0x00, 0x00, 0x00, (byte) (streamId & 0xFF), 0x1F, 0x68, 0x65, 0x6c, 0x6c,
             0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         }).getByteBuf());
         ctx.flush();
@@ -1616,7 +1596,8 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
     });
-    server.requestHandler(req -> {});
+    server.requestHandler(req -> {
+    });
     startServer(ctx);
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
 
@@ -1643,7 +1624,8 @@ public class Http2ClientTest extends Http2TestBase {
 
       });
     });
-    server.requestHandler(req -> {});
+    server.requestHandler(req -> {
+    });
     startServer(ctx);
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
 

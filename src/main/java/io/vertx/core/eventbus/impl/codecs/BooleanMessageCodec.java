@@ -20,13 +20,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class BooleanMessageCodec implements MessageCodec<Boolean, Boolean> {
 
   @Override
   public void encodeToWire(Buffer buffer, Boolean b) {
-    buffer.appendByte((byte)(b ? 0 : 1));
+    buffer.appendByte((byte) (b ? 0 : 1));
   }
 
   @Override

@@ -16,13 +16,9 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
@@ -31,14 +27,8 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveHeaders;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.HttpFrame;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -51,13 +41,11 @@ import java.net.URISyntaxException;
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
  * However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected by using the connection as a lock. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
+ * <p>
  * It's important we don't have different locks for connection and request/response to avoid deadlock conditions
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServerRequestImpl implements HttpServerRequest {
 
@@ -251,7 +239,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   public boolean isSSL() {
     return conn.isSSL();
   }
-  
+
   @Override
   public SocketAddress remoteAddress() {
     return conn.remoteAddress();
@@ -318,8 +306,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
             String lowerCaseContentType = contentType.toLowerCase();
             boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
-              (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
-                || method.equals(HttpMethod.DELETE))) {
+                (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
+                    || method.equals(HttpMethod.DELETE))) {
               decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.vertx(), this, () -> uploadHandler), request);
             }
           }

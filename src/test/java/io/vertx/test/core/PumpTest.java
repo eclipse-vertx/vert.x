@@ -28,7 +28,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class PumpTest {
 

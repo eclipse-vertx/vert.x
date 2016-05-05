@@ -16,32 +16,31 @@
 
 /**
  * === Passing configuration to a verticle
- *
+ * <p>
  * Configuration in the form of JSON can be passed to a verticle at deployment time:
- *
+ * <p>
  * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example13}
  * ----
- *
+ * <p>
  * This configuration is then available via the {@link io.vertx.core.Context} object or directly using the
  * {@link io.vertx.core.AbstractVerticle#config()} method. The configuration is returned as a JSON object so you
  * can retrieve data as follows:
- *
+ * <p>
  * [source,$lang]
  * ----
  * {@link examples.ConfigurableVerticleExamples#start()}
  * ----
- *
+ * <p>
  * === Accessing environment variables in a Verticle
- *
+ * <p>
  * Environment variables and system properties are accessible using the Java API:
- *
+ * <p>
  * [source,$lang]
  * ----
  * {@link examples.CoreExamples#systemAndEnvProperties()}
  * ----
- *
  */
 @Document(fileName = "override/verticle-configuration.adoc")
 package docoverride.verticles.configuration;

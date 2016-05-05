@@ -22,11 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.shareddata.Counter;
-import io.vertx.core.shareddata.LocalMap;
-import io.vertx.core.shareddata.Lock;
-import io.vertx.core.shareddata.SharedData;
+import io.vertx.core.shareddata.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.io.Serializable;
@@ -35,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class SharedDataImpl implements SharedData {
 
@@ -143,13 +139,13 @@ public class SharedDataImpl implements SharedData {
     }
     Class<?> clazz = obj.getClass();
     if (clazz == Integer.class || clazz == int.class ||
-      clazz == Long.class || clazz == long.class ||
-      clazz == Short.class || clazz == short.class ||
-      clazz == Float.class || clazz == float.class ||
-      clazz == Double.class || clazz == double.class ||
-      clazz == Boolean.class || clazz == boolean.class ||
-      clazz == Byte.class || clazz == byte.class ||
-      clazz == String.class || clazz == byte[].class) {
+        clazz == Long.class || clazz == long.class ||
+        clazz == Short.class || clazz == short.class ||
+        clazz == Float.class || clazz == float.class ||
+        clazz == Double.class || clazz == double.class ||
+        clazz == Boolean.class || clazz == boolean.class ||
+        clazz == Byte.class || clazz == byte.class ||
+        clazz == String.class || clazz == byte[].class) {
       // Basic types - can go in as is
       return;
     } else if (obj instanceof ClusterSerializable) {

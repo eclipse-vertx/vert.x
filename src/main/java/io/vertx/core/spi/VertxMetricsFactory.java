@@ -23,17 +23,15 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 
 /**
  * A factory for the plugable metrics SPI.
- *
- * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface VertxMetricsFactory {
 
   /**
    * Create a new {@link io.vertx.core.spi.metrics.VertxMetrics} object.<p/>
-   *
+   * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param vertx the vertx instance
+   * @param vertx   the vertx instance
    * @param options the metrics configuration option
    * @return the metrics implementation
    */

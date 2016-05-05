@@ -16,26 +16,13 @@
 
 package examples;
 
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.net.JksOptions;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class HTTP2Examples {
 
@@ -246,7 +233,7 @@ public class HTTP2Examples {
 
   public void example23(HttpConnection connection) {
     Buffer data = Buffer.buffer();
-    for (byte i = 0;i < 8;i++) {
+    for (byte i = 0; i < 8; i++) {
       data.appendByte(i);
     }
     connection.ping(data, pong -> {

@@ -16,27 +16,27 @@
 
 /**
  * ==== Message Codecs
- *
+ * <p>
  * You can send any object you like across the event bus if you define and register a {@link io.vertx.core.eventbus.MessageCodec message codec} for it.
- *
+ * <p>
  * Message codecs have a name and you specify that name in the {@link io.vertx.core.eventbus.DeliveryOptions}
  * when sending or publishing the message:
- *
+ * <p>
  * [source,java]
  * ----
  * {@link docoverride.eventbus.Examples#example10}
  * ----
- *
+ * <p>
  * If you always want the same codec to be used for a particular type then you can register a default codec for it, then
  * you don't have to specify the codec on each send in the delivery options:
- *
+ * <p>
  * [source,java]
  * ----
  * {@link docoverride.eventbus.Examples#example11}
  * ----
- *
+ * <p>
  * You unregister a message codec with {@link io.vertx.core.eventbus.EventBus#unregisterCodec}.
- *
+ * <p>
  * Message codecs don't always have to encode and decode as the same type. For example you can write a codec that
  * allows a MyPOJO class to be sent, but when that message is sent to a handler it arrives as a MyOtherPOJO class.
  */

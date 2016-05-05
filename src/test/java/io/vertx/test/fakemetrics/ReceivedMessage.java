@@ -17,8 +17,8 @@
 package io.vertx.test.fakemetrics;
 
 /**
-* @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-*/
+ *
+ */
 public class ReceivedMessage {
 
   public final String address;

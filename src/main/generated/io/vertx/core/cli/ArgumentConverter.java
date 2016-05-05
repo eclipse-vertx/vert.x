@@ -17,36 +17,35 @@
 package io.vertx.core.cli;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.cli.Argument}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.cli.Argument} original class using Vert.x codegen.
  */
 public class ArgumentConverter {
 
   public static void fromJson(JsonObject json, Argument obj) {
     if (json.getValue("argName") instanceof String) {
-      obj.setArgName((String)json.getValue("argName"));
+      obj.setArgName((String) json.getValue("argName"));
     }
     if (json.getValue("defaultValue") instanceof String) {
-      obj.setDefaultValue((String)json.getValue("defaultValue"));
+      obj.setDefaultValue((String) json.getValue("defaultValue"));
     }
     if (json.getValue("description") instanceof String) {
-      obj.setDescription((String)json.getValue("description"));
+      obj.setDescription((String) json.getValue("description"));
     }
     if (json.getValue("hidden") instanceof Boolean) {
-      obj.setHidden((Boolean)json.getValue("hidden"));
+      obj.setHidden((Boolean) json.getValue("hidden"));
     }
     if (json.getValue("index") instanceof Number) {
-      obj.setIndex(((Number)json.getValue("index")).intValue());
+      obj.setIndex(((Number) json.getValue("index")).intValue());
     }
     if (json.getValue("multiValued") instanceof Boolean) {
-      obj.setMultiValued((Boolean)json.getValue("multiValued"));
+      obj.setMultiValued((Boolean) json.getValue("multiValued"));
     }
     if (json.getValue("required") instanceof Boolean) {
-      obj.setRequired((Boolean)json.getValue("required"));
+      obj.setRequired((Boolean) json.getValue("required"));
     }
   }
 

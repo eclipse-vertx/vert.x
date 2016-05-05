@@ -26,7 +26,7 @@ import java.util.TimerTask;
 import java.util.WeakHashMap;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class BlockedThreadChecker {
 

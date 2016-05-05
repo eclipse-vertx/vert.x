@@ -25,7 +25,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
+ *
  */
 public class FileSelectorTest {
 

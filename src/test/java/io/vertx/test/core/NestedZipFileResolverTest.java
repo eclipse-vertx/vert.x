@@ -20,7 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * @author <a href="http://www.ernestojpg.com">Ernesto J. Perez</a>
+ *
  */
 public class NestedZipFileResolverTest extends FileResolverTestBase {
 

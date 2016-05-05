@@ -23,8 +23,6 @@ import io.vertx.core.Handler;
 
 /**
  * Base interface for a stream.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
 public interface StreamBase {

@@ -20,7 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocketFrame;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public interface WebSocketFrameFactory {
 

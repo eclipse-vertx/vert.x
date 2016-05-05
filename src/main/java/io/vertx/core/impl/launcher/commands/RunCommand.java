@@ -35,8 +35,6 @@ import java.util.stream.Collectors;
 
 /**
  * The vert.x run command that lets you execute verticles.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Name("run")
 @Summary("Runs a verticle called <main-verticle> in its own instance of vert.x.")
@@ -142,6 +140,7 @@ public class RunCommand extends BareCommand {
 
   /**
    * Sets the user command executed during redeployment.
+   *
    * @param command the on redeploy command
    * @deprecated Use 'on-redeploy' instead. It will be removed in vert.x 3.3
    */

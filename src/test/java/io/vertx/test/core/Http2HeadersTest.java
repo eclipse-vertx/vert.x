@@ -27,10 +27,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class Http2HeadersTest {
 
@@ -68,18 +69,18 @@ public class Http2HeadersTest {
   public void testSetConvertUpperCase() {
     map.set("Foo", "foo_value");
     map.set((CharSequence) "Bar", "bar_value");
-    map.set("Juu", (Iterable<String>)Collections.singletonList("juu_value"));
-    map.set("Daa", Collections.singletonList((CharSequence)"daa_value"));
-    assertHeaderNames("foo","bar", "juu", "daa");
+    map.set("Juu", (Iterable<String>) Collections.singletonList("juu_value"));
+    map.set("Daa", Collections.singletonList((CharSequence) "daa_value"));
+    assertHeaderNames("foo", "bar", "juu", "daa");
   }
 
   @Test
   public void testAddConvertUpperCase() {
     map.add("Foo", "foo_value");
     map.add((CharSequence) "Bar", "bar_value");
-    map.add("Juu", (Iterable<String>)Collections.singletonList("juu_value"));
-    map.add("Daa", Collections.singletonList((CharSequence)"daa_value"));
-    assertHeaderNames("foo","bar", "juu", "daa");
+    map.add("Juu", (Iterable<String>) Collections.singletonList("juu_value"));
+    map.add("Daa", Collections.singletonList((CharSequence) "daa_value"));
+    assertHeaderNames("foo", "bar", "juu", "daa");
   }
 
   @Test

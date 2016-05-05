@@ -21,8 +21,6 @@ import io.vertx.core.cli.converters.Converter;
 /**
  * An implementation of {@link Argument} for java specifying the type of object received by the argument. This
  * allows converting the given <em>raw</em> value into the specified type.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class TypedArgument<T> extends Argument {
 

@@ -19,7 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.Vertx;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class ClusterWideMapTestDifferentNodes extends ClusterWideMapTest {
 
@@ -30,6 +30,7 @@ public class ClusterWideMapTestDifferentNodes extends ClusterWideMapTest {
   }
 
   int pos;
+
   @Override
   protected Vertx getVertx() {
     Vertx vertx = vertices[pos];

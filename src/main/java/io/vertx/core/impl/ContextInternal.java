@@ -25,8 +25,6 @@ import io.vertx.core.WorkerExecutor;
  * This interface provides an api for vert.x core internal use only
  * It is not part of the public API and should not be used by
  * developers creating vert.x applications
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface ContextInternal extends Context {
 
@@ -40,9 +38,9 @@ public interface ContextInternal extends Context {
 
   /**
    * Create a worker executor using the underlying worker pool of the context.
-   *
+   * <p>
    * The executor does not have to be closed, as the worker pool is managed by the context itself.
-   *
+   * <p>
    * It should be used when a separate executor per context is needed.
    *
    * @return a new worker executor
@@ -52,9 +50,9 @@ public interface ContextInternal extends Context {
   /**
    * Execute the context task and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
-   *
+   * <p>
    * The caller thread should be the the event loop thread of this context.<p/>
-   *
+   * <p>
    * Any exception thrown from the {@literal stack} will be reported on this context.
    *
    * @param task the task to execute

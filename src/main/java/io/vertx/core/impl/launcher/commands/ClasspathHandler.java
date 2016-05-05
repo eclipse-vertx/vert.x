@@ -36,8 +36,6 @@ import java.util.List;
 /**
  * Command using the classpath option should extends this class as it manages the interaction with the
  * custom classloader.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public abstract class ClasspathHandler extends DefaultCommand {
 

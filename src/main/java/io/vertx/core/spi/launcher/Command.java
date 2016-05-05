@@ -36,8 +36,6 @@ import io.vertx.core.cli.annotations.Summary;
  * command. Finally, once the command has completed, the {@link #tearDown()} method is called. In this method
  * you have the opportunity to cleanup.
  * </p>
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public interface Command {
 

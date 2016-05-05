@@ -24,8 +24,6 @@ import java.lang.annotation.Target;
 
 /**
  * Defines the name of a {@link CLI}.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

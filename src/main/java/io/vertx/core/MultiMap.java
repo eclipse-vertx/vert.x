@@ -31,9 +31,6 @@ import java.util.Set;
  * <p>
  * It's useful in Vert.x to represent things in Vert.x like HTTP headers and HTTP parameters which allow
  * multiple values for keys.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface MultiMap extends Iterable<Map.Entry<String, String>> {
@@ -64,7 +61,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    *
    * @param name The name to search
    * @return A immutable {@link java.util.List} of values which will be empty if no values
-   *         are found
+   * are found
    */
   List<String> getAll(String name);
 
@@ -78,7 +75,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * Returns all entries in the multi-map.
    *
    * @return A immutable {@link java.util.List} of the name-value entries, which will be
-   *         empty if no pairs are found
+   * empty if no pairs are found
    */
   @GenIgnore
   List<Map.Entry<String, String>> entries();
@@ -112,7 +109,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   /**
    * Adds a new value with the specified name and value.
    *
-   * @param name The name
+   * @param name  The name
    * @param value The value being added
    * @return a reference to this, so the API can be used fluently
    */
@@ -128,7 +125,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   /**
    * Adds a new values under the specified name
    *
-   * @param name The name being set
+   * @param name   The name being set
    * @param values The values
    * @return a reference to this, so the API can be used fluently
    */
@@ -162,7 +159,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * <p>
    * If there is an existing header with the same name, it is removed.
    *
-   * @param name The name
+   * @param name  The name
    * @param value The value
    * @return a reference to this, so the API can be used fluently
    */
@@ -178,7 +175,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   /**
    * Sets values for the specified name.
    *
-   * @param name The name of the headers being set
+   * @param name   The name of the headers being set
    * @param values The values of the headers being set
    * @return a reference to this, so the API can be used fluently
    */
@@ -207,12 +204,12 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   @GenIgnore
   MultiMap setAll(Map<String, String> headers);
 
- /**
-  * Removes the value with the given name
-  *
-  * @param name The name  of the value to remove
-  * @return a reference to this, so the API can be used fluently
-  */
+  /**
+   * Removes the value with the given name
+   *
+   * @param name The name  of the value to remove
+   * @return a reference to this, so the API can be used fluently
+   */
   @Fluent
   MultiMap remove(String name);
 

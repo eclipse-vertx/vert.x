@@ -31,7 +31,7 @@ import io.vertx.core.net.NetServerOptions;
 import org.junit.Test;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class DummyMetricsTest extends VertxTestBase {
 

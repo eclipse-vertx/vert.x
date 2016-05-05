@@ -21,7 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.spi.BufferFactory;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class BufferFactoryImpl implements BufferFactory {
 

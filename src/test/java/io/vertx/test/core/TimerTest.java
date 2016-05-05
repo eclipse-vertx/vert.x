@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class TimerTest extends VertxTestBase {
 
@@ -64,6 +64,7 @@ public class TimerTest extends VertxTestBase {
   public void testInVerticle() throws Exception {
     class MyVerticle extends AbstractVerticle {
       AtomicInteger cnt = new AtomicInteger();
+
       @Override
       public void start() {
         Thread thr = Thread.currentThread();
@@ -112,6 +113,7 @@ public class TimerTest extends VertxTestBase {
     id.set(vertx.setTimer(delay, new Handler<Long>() {
       int count;
       boolean fired;
+
       public void handle(Long timerID) {
         assertFalse(fired);
         fired = true;

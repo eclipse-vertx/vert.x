@@ -26,7 +26,7 @@ import io.vertx.core.impl.ContextImpl;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
 

@@ -17,7 +17,7 @@
 package io.vertx.core;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public interface Closeable {
 

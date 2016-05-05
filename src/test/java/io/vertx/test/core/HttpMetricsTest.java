@@ -19,19 +19,9 @@ package io.vertx.test.core;
 import io.vertx.core.Context;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
-import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
-import io.vertx.test.fakemetrics.FakeMetricsBase;
-import io.vertx.test.fakemetrics.FakeMetricsFactory;
-import io.vertx.test.fakemetrics.HttpClientMetric;
-import io.vertx.test.fakemetrics.HttpServerMetric;
+import io.vertx.test.fakemetrics.*;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class HttpMetricsTest extends HttpTestBase {
 
@@ -119,7 +109,7 @@ public class HttpMetricsTest extends HttpTestBase {
           latch.countDown();
         });
       });
-      for (int i = 0;i < numBuffers;i++) {
+      for (int i = 0; i < numBuffers; i++) {
         req.write(TestUtils.randomBuffer(1000));
       }
       req.end();

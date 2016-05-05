@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public abstract class HttpTLSTest extends HttpTestBase {
 
@@ -256,7 +256,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.MIM, TLSCert.NONE).clientTrustAll().clientVerifyHost().fail();
   }
 
-    // OpenSSL tests
+  // OpenSSL tests
 
   @Test
   // Server uses OpenSSL with PEM
@@ -299,8 +299,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean serverUsesAlpn;
     String[] clientEnabledCipherSuites = new String[0];
     String[] serverEnabledCipherSuites = new String[0];
-    String[] clientEnabledSecureTransportProtocol   = new String[0];
-    String[] serverEnabledSecureTransportProtocol   = new String[0];
+    String[] clientEnabledSecureTransportProtocol = new String[0];
+    String[] serverEnabledSecureTransportProtocol = new String[0];
 
 
     public TLSTest(TLSCert clientCert, TLSCert clientTrust, TLSCert serverCert, TLSCert serverTrust) {
@@ -351,8 +351,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
     }
 
     TLSTest serverEnabledCipherSuites(String[] value) {
-     serverEnabledCipherSuites = value;
-     return this;
+      serverEnabledCipherSuites = value;
+      return this;
     }
 
     TLSTest clientEnabledSecureTransportProtocol(String[] value) {
@@ -404,10 +404,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       setOptions(options, clientTrust.getClientTrustOptions());
       setOptions(options, clientCert.getClientKeyCertOptions());
-      for (String suite: clientEnabledCipherSuites) {
+      for (String suite : clientEnabledCipherSuites) {
         options.addEnabledCipherSuite(suite);
       }
-      for (String protocols: clientEnabledSecureTransportProtocol) {
+      for (String protocols : clientEnabledSecureTransportProtocol) {
         options.addEnabledSecureTransportProtocol(protocols);
       }
       client = createHttpClient(options);
@@ -427,10 +427,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (serverUsesAlpn) {
         serverOptions.setUseAlpn(true);
       }
-      for (String suite: serverEnabledCipherSuites) {
+      for (String suite : serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
       }
-      for (String protocols: serverEnabledSecureTransportProtocol) {
+      for (String protocols : serverEnabledSecureTransportProtocol) {
         serverOptions.addEnabledSecureTransportProtocol(protocols);
       }
       server = createHttpServer(serverOptions.setPort(4043));
@@ -468,7 +468,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   abstract HttpClient createHttpClient(HttpClientOptions options);
 
   protected TLSTest testTLS(TLSCert clientCert, TLSCert clientTrust,
-                          TLSCert serverCert, TLSCert serverTrust) throws Exception {
+                            TLSCert serverCert, TLSCert serverTrust) throws Exception {
     return new TLSTest(clientCert, clientTrust, serverCert, serverTrust);
   }
 
@@ -552,7 +552,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         "Empty pem file",
         "Input byte[] should at least have 2 bytes for base64 bytes"
     };
-    for (int i = 0;i < contents.length;i++) {
+    for (int i = 0; i < contents.length; i++) {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
@@ -584,7 +584,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         "Empty pem file",
         "Input byte[] should at least have 2 bytes for base64 bytes"
     };
-    for (int i = 0;i < contents.length;i++) {
+    for (int i = 0; i < contents.length; i++) {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
@@ -621,7 +621,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       fail("Was expecting a failure");
     } catch (VertxException e) {
       Throwable cause = e.getCause();
-      if(expectedSuffix == null) {
+      if (expectedSuffix == null) {
         boolean ok = expectedPossiblePrefixes.isEmpty();
         for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
           ok |= expectedPossiblePrefix.equals(cause.getMessage());
@@ -649,7 +649,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);
-    HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", (handler) -> {});
+    HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", (handler) -> {
+    });
     try {
       req.end();
       fail("Was expecting a failure");

@@ -22,12 +22,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LocationAwareLogger;
 
-import java.util.Arrays;
-
 import static org.slf4j.spi.LocationAwareLogger.*;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class SLF4JLogDelegate implements LogDelegate {
   private static final String FQCN = io.vertx.core.logging.Logger.class.getCanonicalName();
@@ -162,12 +160,12 @@ public class SLF4JLogDelegate implements LogDelegate {
     // If we don't have parameters, we need to build a new array [t]
     // If we don't have error, it's just params.
     Object[] parameters = params;
-    if (params != null  && t != null) {
+    if (params != null && t != null) {
       parameters = new Object[params.length + 1];
       System.arraycopy(params, 0, parameters, 0, params.length);
       parameters[params.length] = t;
-    } else if (params == null  && t != null) {
-      parameters = new Object[] {t};
+    } else if (params == null && t != null) {
+      parameters = new Object[]{t};
     }
 
     if (logger instanceof LocationAwareLogger) {

@@ -16,59 +16,59 @@
 
 package io.vertx.core;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Converter for {@link io.vertx.core.DeploymentOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.DeploymentOptions} original class using Vert.x codegen.
  */
 public class DeploymentOptionsConverter {
 
   public static void fromJson(JsonObject json, DeploymentOptions obj) {
     if (json.getValue("config") instanceof JsonObject) {
-      obj.setConfig(((JsonObject)json.getValue("config")).copy());
+      obj.setConfig(((JsonObject) json.getValue("config")).copy());
     }
     if (json.getValue("extraClasspath") instanceof JsonArray) {
       java.util.ArrayList<java.lang.String> list = new java.util.ArrayList<>();
-      json.getJsonArray("extraClasspath").forEach( item -> {
+      json.getJsonArray("extraClasspath").forEach(item -> {
         if (item instanceof String)
-          list.add((String)item);
+          list.add((String) item);
       });
       obj.setExtraClasspath(list);
     }
     if (json.getValue("ha") instanceof Boolean) {
-      obj.setHa((Boolean)json.getValue("ha"));
+      obj.setHa((Boolean) json.getValue("ha"));
     }
     if (json.getValue("instances") instanceof Number) {
-      obj.setInstances(((Number)json.getValue("instances")).intValue());
+      obj.setInstances(((Number) json.getValue("instances")).intValue());
     }
     if (json.getValue("isolatedClasses") instanceof JsonArray) {
       java.util.ArrayList<java.lang.String> list = new java.util.ArrayList<>();
-      json.getJsonArray("isolatedClasses").forEach( item -> {
+      json.getJsonArray("isolatedClasses").forEach(item -> {
         if (item instanceof String)
-          list.add((String)item);
+          list.add((String) item);
       });
       obj.setIsolatedClasses(list);
     }
     if (json.getValue("isolationGroup") instanceof String) {
-      obj.setIsolationGroup((String)json.getValue("isolationGroup"));
+      obj.setIsolationGroup((String) json.getValue("isolationGroup"));
     }
     if (json.getValue("maxWorkerExecuteTime") instanceof Number) {
-      obj.setMaxWorkerExecuteTime(((Number)json.getValue("maxWorkerExecuteTime")).longValue());
+      obj.setMaxWorkerExecuteTime(((Number) json.getValue("maxWorkerExecuteTime")).longValue());
     }
     if (json.getValue("multiThreaded") instanceof Boolean) {
-      obj.setMultiThreaded((Boolean)json.getValue("multiThreaded"));
+      obj.setMultiThreaded((Boolean) json.getValue("multiThreaded"));
     }
     if (json.getValue("worker") instanceof Boolean) {
-      obj.setWorker((Boolean)json.getValue("worker"));
+      obj.setWorker((Boolean) json.getValue("worker"));
     }
     if (json.getValue("workerPoolName") instanceof String) {
-      obj.setWorkerPoolName((String)json.getValue("workerPoolName"));
+      obj.setWorkerPoolName((String) json.getValue("workerPoolName"));
     }
     if (json.getValue("workerPoolSize") instanceof Number) {
-      obj.setWorkerPoolSize(((Number)json.getValue("workerPoolSize")).intValue());
+      obj.setWorkerPoolSize(((Number) json.getValue("workerPoolSize")).intValue());
     }
   }
 

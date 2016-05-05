@@ -23,7 +23,6 @@ import java.lang.annotation.Target;
 /**
  * Annotates a setter to be called with the value of a command line argument.
  *
- * @author Clement Escoffier <clement@apache.org>
  * @see Option
  */
 @Target(ElementType.METHOD)

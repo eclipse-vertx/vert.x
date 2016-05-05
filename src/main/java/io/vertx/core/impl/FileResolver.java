@@ -18,8 +18,8 @@ package io.vertx.core.impl;
 
 import io.vertx.core.*;
 
-import java.io.*;
 import java.io.Closeable;
+import java.io.*;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
@@ -35,16 +35,13 @@ import java.util.zip.ZipFile;
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
  * available on the file system, e.g. in the case of a Vert.x webapp bundled as a fat jar.
- *
+ * <p>
  * In this case we want the application to access the resource from the classpath as if it was on the file system.
- *
+ * <p>
  * We can do this by looking for the file on the classpath, and if found, copying it to a temporary cache directory
  * on disk and serving it from there.
- *
+ * <p>
  * There is one cache dir per Vert.x instance and they are deleted on Vert.x shutdown.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
- * @author <a href="https://github.com/rworsnop/">Rob Worsnop</a>
  */
 public class FileResolver {
 
@@ -152,7 +149,7 @@ public class FileResolver {
     } else {
       cacheFile.mkdirs();
       String[] listing = resource.list();
-      for (String file: listing) {
+      for (String file : listing) {
         String subResource = fileName + "/" + file;
         URL url2 = cl.getResource(subResource);
         unpackFromFileURL(url2, subResource, cl);
@@ -228,7 +225,7 @@ public class FileResolver {
    * is not much we can do to get the file from it, except reading it from the url. This method copies the files by
    * reading it from the url.
    *
-   * @param url      the url
+   * @param url the url
    * @return the extracted file
    */
   private synchronized File unpackFromBundleURL(URL url) {

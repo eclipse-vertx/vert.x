@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
 
 /**
  * The entry point of the Vert.x Command Line interface.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class VertxCommandLauncher extends UsageMessageFormatter {
 

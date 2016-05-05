@@ -25,8 +25,6 @@ import io.vertx.core.streams.WriteStream;
 /**
  * Represents a stream of message that can be written to.
  * <p>
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public interface MessageProducer<T> extends WriteStream<T> {
@@ -36,8 +34,8 @@ public interface MessageProducer<T> extends WriteStream<T> {
   /**
    * Synonym for {@link #write(Object)}.
    *
-   * @param message  the message to send
-   * @return  reference to this for fluency
+   * @param message the message to send
+   * @return reference to this for fluency
    */
   MessageProducer<T> send(T message);
 

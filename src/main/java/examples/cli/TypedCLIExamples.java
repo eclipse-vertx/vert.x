@@ -28,7 +28,7 @@ import java.io.File;
 import java.util.List;
 
 /**
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
+ *
  */
 @Source(translate = false)
 public class TypedCLIExamples {

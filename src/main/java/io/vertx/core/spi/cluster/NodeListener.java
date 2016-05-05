@@ -16,22 +16,21 @@
 package io.vertx.core.spi.cluster;
 
 /**
- *
  * A NodeListener is called when nodes join or leave the cluster
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface NodeListener {
 
   /**
    * A node has been added
+   *
    * @param nodeID The unique ID of the node
    */
   void nodeAdded(String nodeID);
 
   /**
    * A node has left
-   * @param nodeID  The unique ID of the node
+   *
+   * @param nodeID The unique ID of the node
    */
   void nodeLeft(String nodeID);
 }

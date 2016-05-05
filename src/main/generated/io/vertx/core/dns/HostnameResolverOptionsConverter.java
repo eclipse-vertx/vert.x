@@ -16,42 +16,42 @@
 
 package io.vertx.core.dns;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Converter for {@link io.vertx.core.dns.HostnameResolverOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.dns.HostnameResolverOptions} original class using Vert.x codegen.
  */
 public class HostnameResolverOptionsConverter {
 
   public static void fromJson(JsonObject json, HostnameResolverOptions obj) {
     if (json.getValue("cacheMaxTimeToLive") instanceof Number) {
-      obj.setCacheMaxTimeToLive(((Number)json.getValue("cacheMaxTimeToLive")).intValue());
+      obj.setCacheMaxTimeToLive(((Number) json.getValue("cacheMaxTimeToLive")).intValue());
     }
     if (json.getValue("cacheMinTimeToLive") instanceof Number) {
-      obj.setCacheMinTimeToLive(((Number)json.getValue("cacheMinTimeToLive")).intValue());
+      obj.setCacheMinTimeToLive(((Number) json.getValue("cacheMinTimeToLive")).intValue());
     }
     if (json.getValue("cacheNegativeTimeToLive") instanceof Number) {
-      obj.setCacheNegativeTimeToLive(((Number)json.getValue("cacheNegativeTimeToLive")).intValue());
+      obj.setCacheNegativeTimeToLive(((Number) json.getValue("cacheNegativeTimeToLive")).intValue());
     }
     if (json.getValue("maxQueries") instanceof Number) {
-      obj.setMaxQueries(((Number)json.getValue("maxQueries")).intValue());
+      obj.setMaxQueries(((Number) json.getValue("maxQueries")).intValue());
     }
     if (json.getValue("optResourceEnabled") instanceof Boolean) {
-      obj.setOptResourceEnabled((Boolean)json.getValue("optResourceEnabled"));
+      obj.setOptResourceEnabled((Boolean) json.getValue("optResourceEnabled"));
     }
     if (json.getValue("queryTimeout") instanceof Number) {
-      obj.setQueryTimeout(((Number)json.getValue("queryTimeout")).longValue());
+      obj.setQueryTimeout(((Number) json.getValue("queryTimeout")).longValue());
     }
     if (json.getValue("rdFlag") instanceof Boolean) {
-      obj.setRdFlag((Boolean)json.getValue("rdFlag"));
+      obj.setRdFlag((Boolean) json.getValue("rdFlag"));
     }
     if (json.getValue("servers") instanceof JsonArray) {
       json.getJsonArray("servers").forEach(item -> {
         if (item instanceof String)
-          obj.addServer((String)item);
+          obj.addServer((String) item);
       });
     }
   }

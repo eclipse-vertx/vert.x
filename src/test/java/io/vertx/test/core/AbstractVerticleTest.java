@@ -22,7 +22,7 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class AbstractVerticleTest extends VertxTestBase {
 

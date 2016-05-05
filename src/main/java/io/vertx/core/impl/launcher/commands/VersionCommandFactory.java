@@ -20,8 +20,6 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
 /**
  * Factory to create the {@code version} command.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class VersionCommandFactory extends DefaultCommandFactory<VersionCommand> {
 

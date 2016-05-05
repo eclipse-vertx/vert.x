@@ -26,8 +26,6 @@ import io.vertx.core.Handler;
  * <p>
  * Any class that implements this interface can be used by a {@link Pump} to pump data from it
  * to a {@link WriteStream}.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
 public interface ReadStream<T> extends StreamBase {
@@ -35,7 +33,7 @@ public interface ReadStream<T> extends StreamBase {
   /**
    * Set an exception handler on the read stream.
    *
-   * @param handler  the exception handler
+   * @param handler the exception handler
    * @return a reference to this, so the API can be used fluently
    */
   ReadStream<T> exceptionHandler(Handler<Throwable> handler);

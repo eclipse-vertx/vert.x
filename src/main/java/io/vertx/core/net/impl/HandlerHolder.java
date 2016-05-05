@@ -19,7 +19,7 @@ package io.vertx.core.net.impl;
 import io.vertx.core.impl.ContextImpl;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class HandlerHolder<T> {
   public final ContextImpl context;

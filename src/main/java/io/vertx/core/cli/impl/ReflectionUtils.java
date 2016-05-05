@@ -26,8 +26,6 @@ import java.util.stream.Collectors;
 
 /**
  * Some utilities methods to ease reflection calls.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class ReflectionUtils {
 

@@ -26,23 +26,20 @@ import io.vertx.core.json.JsonObject;
  * When used as a key store, it should point to a store containing a private key and its certificate.
  * When used as a trust store, it should point to a store containing a list of accepted certificates.
  * <p>
- *
+ * <p>
  * The store can either be loaded by Vert.x from the filesystem:
  * <p>
  * <pre>
  * HttpServerOptions options = new HttpServerOptions();
  * options.setPfxKeyCertOptions(new PfxOptions().setPath("/mykeystore.p12").setPassword("foo"));
  * </pre>
- *
+ * <p>
  * Or directly provided as a buffer:<p>
- *
+ * <p>
  * <pre>
  * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.p12");
  * options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
  * </pre>
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
@@ -61,7 +58,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   /**
    * Copy constructor
    *
-   * @param other  the options to copy
+   * @param other the options to copy
    */
   public PfxOptions(PfxOptions other) {
     super();
@@ -73,7 +70,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   /**
    * Create options from JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public PfxOptions(JsonObject json) {
     super();
@@ -83,7 +80,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   /**
    * Get the password
    *
-   * @return  the password
+   * @return the password
    */
   public String getPassword() {
     return password;
@@ -92,7 +89,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   /**
    * Set the password
    *
-   * @param password  the password
+   * @param password the password
    * @return a reference to this, so the API can be used fluently
    */
   public PfxOptions setPassword(String password) {
@@ -112,7 +109,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   /**
    * Set the path
    *
-   * @param path  the path
+   * @param path the path
    * @return a reference to this, so the API can be used fluently
    */
   public PfxOptions setPath(String path) {
@@ -132,7 +129,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   /**
    * Set the store as a buffer
    *
-   * @param value  the store as a buffer
+   * @param value the store as a buffer
    * @return a reference to this, so the API can be used fluently
    */
   public PfxOptions setValue(Buffer value) {

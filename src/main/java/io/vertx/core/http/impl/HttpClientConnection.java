@@ -19,7 +19,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Context;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 interface HttpClientConnection {
 

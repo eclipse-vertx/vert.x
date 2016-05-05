@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class IsolatingClassLoader extends URLClassLoader {
 
@@ -130,11 +130,11 @@ public class IsolatingClassLoader extends URLClassLoader {
   private boolean isVertxOrSystemClass(String name) {
     return
         name.startsWith("java.") ||
-        name.startsWith("javax.") ||
-        name.startsWith("sun.*") ||
-        name.startsWith("com.sun.") ||
-        name.startsWith("io.vertx.core") ||
-        name.startsWith("io.netty.") ||
-        name.startsWith("com.fasterxml.jackson");
+            name.startsWith("javax.") ||
+            name.startsWith("sun.*") ||
+            name.startsWith("com.sun.") ||
+            name.startsWith("io.vertx.core") ||
+            name.startsWith("io.netty.") ||
+            name.startsWith("com.fasterxml.jackson");
   }
 }

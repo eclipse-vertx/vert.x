@@ -16,55 +16,55 @@
 
 package io.vertx.core.cli;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Converter for {@link io.vertx.core.cli.Option}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.cli.Option} original class using Vert.x codegen.
  */
 public class OptionConverter {
 
   public static void fromJson(JsonObject json, Option obj) {
     if (json.getValue("argName") instanceof String) {
-      obj.setArgName((String)json.getValue("argName"));
+      obj.setArgName((String) json.getValue("argName"));
     }
     if (json.getValue("choices") instanceof JsonArray) {
       json.getJsonArray("choices").forEach(item -> {
         if (item instanceof String)
-          obj.addChoice((String)item);
+          obj.addChoice((String) item);
       });
     }
     if (json.getValue("defaultValue") instanceof String) {
-      obj.setDefaultValue((String)json.getValue("defaultValue"));
+      obj.setDefaultValue((String) json.getValue("defaultValue"));
     }
     if (json.getValue("description") instanceof String) {
-      obj.setDescription((String)json.getValue("description"));
+      obj.setDescription((String) json.getValue("description"));
     }
     if (json.getValue("flag") instanceof Boolean) {
-      obj.setFlag((Boolean)json.getValue("flag"));
+      obj.setFlag((Boolean) json.getValue("flag"));
     }
     if (json.getValue("help") instanceof Boolean) {
-      obj.setHelp((Boolean)json.getValue("help"));
+      obj.setHelp((Boolean) json.getValue("help"));
     }
     if (json.getValue("hidden") instanceof Boolean) {
-      obj.setHidden((Boolean)json.getValue("hidden"));
+      obj.setHidden((Boolean) json.getValue("hidden"));
     }
     if (json.getValue("longName") instanceof String) {
-      obj.setLongName((String)json.getValue("longName"));
+      obj.setLongName((String) json.getValue("longName"));
     }
     if (json.getValue("multiValued") instanceof Boolean) {
-      obj.setMultiValued((Boolean)json.getValue("multiValued"));
+      obj.setMultiValued((Boolean) json.getValue("multiValued"));
     }
     if (json.getValue("required") instanceof Boolean) {
-      obj.setRequired((Boolean)json.getValue("required"));
+      obj.setRequired((Boolean) json.getValue("required"));
     }
     if (json.getValue("shortName") instanceof String) {
-      obj.setShortName((String)json.getValue("shortName"));
+      obj.setShortName((String) json.getValue("shortName"));
     }
     if (json.getValue("singleValued") instanceof Boolean) {
-      obj.setSingleValued((Boolean)json.getValue("singleValued"));
+      obj.setSingleValued((Boolean) json.getValue("singleValued"));
     }
   }
 

@@ -19,7 +19,6 @@ import io.vertx.core.Launcher;
 import io.vertx.core.Vertx;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;

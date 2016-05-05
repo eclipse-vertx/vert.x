@@ -19,8 +19,6 @@ package io.vertx.core.spi.metrics;
 /**
  * The metrics interface is implemented by metrics providers that wants to provide monitoring of
  * Vert.x core.
- *
- * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface Metrics {
 
@@ -33,7 +31,7 @@ public interface Metrics {
 
   /**
    * Used to close out the metrics, for example when an http server/client has been closed.<p/>
-   *
+   * <p>
    * No specific thread and context can be expected when this method is called.
    */
   void close();

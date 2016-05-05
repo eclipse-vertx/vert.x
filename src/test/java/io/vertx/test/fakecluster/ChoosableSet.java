@@ -25,7 +25,7 @@ import java.util.Set;
 
 /**
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 class ChoosableSet<T> implements ChoosableIterable<T> {
 

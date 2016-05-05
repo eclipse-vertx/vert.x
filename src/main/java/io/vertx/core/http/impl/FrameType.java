@@ -17,8 +17,9 @@
 package io.vertx.core.http.impl;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
+
 /**
  * List of all frame types.
  */

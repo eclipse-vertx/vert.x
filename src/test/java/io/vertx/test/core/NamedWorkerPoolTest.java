@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class NamedWorkerPoolTest extends VertxTestBase {
 
@@ -69,7 +69,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     int num = 1000;
     AtomicReference<Thread> t = new AtomicReference<>();
     CountDownLatch submitted = new CountDownLatch(1);
-    for (int i = 0;i < num;i++) {
+    for (int i = 0; i < num; i++) {
       boolean first = i == 0;
       boolean last = i == num - 1;
       worker.executeBlocking(fut -> {
@@ -105,7 +105,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     WorkerExecutor worker = vertx.createWorkerExecutor(poolName);
     CountDownLatch latch1 = new CountDownLatch(num);
     CountDownLatch latch2 = new CountDownLatch(1);
-    for (int i = 0;i < num;i++) {
+    for (int i = 0; i < num; i++) {
       worker.executeBlocking(fut -> {
         latch1.countDown();
         try {
@@ -133,7 +133,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     WorkerExecutor worker = vertx.createWorkerExecutor(poolName, poolSize);
     CountDownLatch latch1 = new CountDownLatch(poolSize * 100);
     Set<String> names = Collections.synchronizedSet(new HashSet<>());
-    for (int i = 0;i < poolSize * 100;i++) {
+    for (int i = 0; i < poolSize * 100; i++) {
       worker.executeBlocking(fut -> {
         names.add(Thread.currentThread().getName());
         latch1.countDown();
@@ -178,7 +178,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     }, onSuccess(deploymentIdRef::complete));
     waitUntil(() -> thread.get() != null);
     String deploymentId = deploymentIdRef.get(20, TimeUnit.SECONDS);
-    vertx.undeploy(deploymentId, onSuccess(v -> {}));
+    vertx.undeploy(deploymentId, onSuccess(v -> {
+    }));
     waitUntil(() -> thread.get().getState() == Thread.State.TERMINATED);
   }
 
@@ -200,7 +201,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           vertx.undeploy(context.deploymentID());
         }));
       }
-    }, new DeploymentOptions().setWorkerPoolName(poolName), onSuccess(v -> {}));
+    }, new DeploymentOptions().setWorkerPoolName(poolName), onSuccess(v -> {
+    }));
     waitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
   }
 

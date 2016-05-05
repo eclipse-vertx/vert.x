@@ -56,13 +56,10 @@ import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
- *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class ServerConnection extends ConnectionBase {
 
@@ -188,10 +185,10 @@ class ServerConnection extends ConnectionBase {
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
-    
+
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
-      request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
-      null, server.options().getMaxWebsocketFrameSize());
+        request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
+        null, server.options().getMaxWebsocketFrameSize());
     ws.setMetric(metrics.upgrade(requestMetric, ws));
     try {
       handshaker.handshake(channel, nettyReq);
@@ -408,7 +405,7 @@ class ServerConnection extends ConnectionBase {
       handleRequest(req, resp);
     }
     if (msg instanceof HttpContent) {
-        HttpContent chunk = (HttpContent) msg;
+      HttpContent chunk = (HttpContent) msg;
       if (chunk.content().isReadable()) {
         Buffer buff = Buffer.buffer(chunk.content());
         handleChunk(buff);

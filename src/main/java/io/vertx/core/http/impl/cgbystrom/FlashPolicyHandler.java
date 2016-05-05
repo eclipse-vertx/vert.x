@@ -26,13 +26,13 @@ import io.netty.util.CharsetUtil;
 /**
  * A Flash policy file handler
  * Will detect connection attempts made by Adobe Flash clients and return a policy file response
- *
+ * <p>
  * After the policy has been sent, it will instantly close the connection.
  * If the first bytes sent are not a policy file request the handler will simply remove itself
  * from the pipeline.
- *
+ * <p>
  * Read more at http://www.adobe.com/devnet/articles/crossdomain_policy_file_spec.html
- *
+ * <p>
  * Example usage:
  * <code>
  * ChannelPipeline pipeline = Channels.pipeline();
@@ -41,7 +41,7 @@ import io.netty.util.CharsetUtil;
  * pipeline.addLast("encoder", new MyProtocolEncoder());
  * pipeline.addLast("handler", new MyBusinessLogicHandler());
  * </code>
- *
+ * <p>
  * For license see LICENSE file in this directory
  */
 public class FlashPolicyHandler extends ChannelInboundHandlerAdapter {

@@ -4,7 +4,7 @@ import io.vertx.core.Context;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class HandlerHolder<T> {
 
@@ -73,5 +73,6 @@ public class HandlerHolder<T> {
   public boolean isLocalOnly() {
     return localOnly;
   }
-;
+
+  ;
 }

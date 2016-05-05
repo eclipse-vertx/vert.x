@@ -20,8 +20,6 @@ import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * The SSL engine implementation to use in a Vert.x server or client.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public enum SSLEngine {

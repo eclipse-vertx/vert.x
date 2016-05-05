@@ -23,7 +23,7 @@ import io.vertx.core.http.HttpServerOptions;
 import org.junit.Test;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class Http1xTLSTest extends HttpTLSTest {
 

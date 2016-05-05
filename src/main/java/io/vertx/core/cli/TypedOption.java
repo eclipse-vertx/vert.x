@@ -18,15 +18,12 @@ package io.vertx.core.cli;
 
 import io.vertx.core.cli.converters.Converter;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * An implementation of {@link Option} for java specifying the type of
  * object received by the option. This allows converting the given <em>raw</em> value into the specified type.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class TypedOption<T> extends Option {
 
@@ -136,7 +133,7 @@ public class TypedOption<T> extends Option {
 
   public TypedOption<T> setType(Class<T> type) {
     this.type = type;
-    if (type != null  && getChoices().isEmpty() && type.isEnum()) {
+    if (type != null && getChoices().isEmpty() && type.isEnum()) {
       setChoicesFromEnumType();
     }
     return this;

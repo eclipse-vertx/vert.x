@@ -20,12 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -35,13 +30,11 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  * <p>
  * Unlike some other languages Java does not have a native understanding of JSON. To enable JSON to be used easily
  * in Vert.x code we use this class to encapsulate the notion of a JSON array.
- *
+ * <p>
  * The implementation adheres to the <a href="http://rfc-editor.org/rfc/rfc7493.txt">RFC-7493</a> to support Temporal
  * data types as well as binary data.
  * <p>
  * Please see the documentation for more information.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonArray implements Iterable<Object>, ClusterSerializable {
 
@@ -75,28 +68,28 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Get the String at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the String, or null if a null value present
+   * @param pos the position in the array
+   * @return the String, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to String
    */
   public String getString(int pos) {
-    CharSequence cs = (CharSequence)list.get(pos);
+    CharSequence cs = (CharSequence) list.get(pos);
     return cs == null ? null : cs.toString();
   }
 
   /**
    * Get the Integer at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Integer, or null if a null value present
+   * @param pos the position in the array
+   * @return the Integer, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Integer
    */
   public Integer getInteger(int pos) {
-    Number number = (Number)list.get(pos);
+    Number number = (Number) list.get(pos);
     if (number == null) {
       return null;
     } else if (number instanceof Integer) {
-      return (Integer)number; // Avoids unnecessary unbox/box
+      return (Integer) number; // Avoids unnecessary unbox/box
     } else {
       return number.intValue();
     }
@@ -105,16 +98,16 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Get the Long at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Long, or null if a null value present
+   * @param pos the position in the array
+   * @return the Long, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Long
    */
   public Long getLong(int pos) {
-    Number number = (Number)list.get(pos);
+    Number number = (Number) list.get(pos);
     if (number == null) {
       return null;
     } else if (number instanceof Long) {
-      return (Long)number; // Avoids unnecessary unbox/box
+      return (Long) number; // Avoids unnecessary unbox/box
     } else {
       return number.longValue();
     }
@@ -123,16 +116,16 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Get the Double at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Double, or null if a null value present
+   * @param pos the position in the array
+   * @return the Double, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Double
    */
   public Double getDouble(int pos) {
-    Number number = (Number)list.get(pos);
+    Number number = (Number) list.get(pos);
     if (number == null) {
       return null;
     } else if (number instanceof Double) {
-      return (Double)number; // Avoids unnecessary unbox/box
+      return (Double) number; // Avoids unnecessary unbox/box
     } else {
       return number.doubleValue();
     }
@@ -141,16 +134,16 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Get the Float at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Float, or null if a null value present
+   * @param pos the position in the array
+   * @return the Float, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Float
    */
   public Float getFloat(int pos) {
-    Number number = (Number)list.get(pos);
+    Number number = (Number) list.get(pos);
     if (number == null) {
       return null;
     } else if (number instanceof Float) {
-      return (Float)number; // Avoids unnecessary unbox/box
+      return (Float) number; // Avoids unnecessary unbox/box
     } else {
       return number.floatValue();
     }
@@ -159,42 +152,42 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Get the Boolean at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Boolean, or null if a null value present
+   * @param pos the position in the array
+   * @return the Boolean, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Integer
    */
   public Boolean getBoolean(int pos) {
-    return (Boolean)list.get(pos);
+    return (Boolean) list.get(pos);
   }
 
   /**
    * Get the JsonObject at position {@code pos} in the array.
    *
-   * @param pos  the position in the array
-   * @return  the Integer, or null if a null value present
+   * @param pos the position in the array
+   * @return the Integer, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to JsonObject
    */
   public JsonObject getJsonObject(int pos) {
     Object val = list.get(pos);
     if (val instanceof Map) {
-      val = new JsonObject((Map)val);
+      val = new JsonObject((Map) val);
     }
-    return (JsonObject)val;
+    return (JsonObject) val;
   }
 
   /**
    * Get the JsonArray at position {@code pos} in the array.
    *
-   * @param pos  the position in the array
-   * @return  the Integer, or null if a null value present
+   * @param pos the position in the array
+   * @return the Integer, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to JsonArray
    */
   public JsonArray getJsonArray(int pos) {
     Object val = list.get(pos);
     if (val instanceof List) {
-      val = new JsonArray((List)val);
+      val = new JsonArray((List) val);
     }
-    return (JsonArray)val;
+    return (JsonArray) val;
   }
 
   /**
@@ -205,12 +198,12 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * <p>
    * This method should be used in conjunction with {@link #add(byte[])}
    *
-   * @param pos  the position in the array
-   * @return  the byte[], or null if a null value present
+   * @param pos the position in the array
+   * @return the byte[], or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to String
    */
   public byte[] getBinary(int pos) {
-    String val = (String)list.get(pos);
+    String val = (String) list.get(pos);
     if (val == null) {
       return null;
     } else {
@@ -226,12 +219,12 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * <p>
    * This method should be used in conjunction with {@link #add(Instant)}
    *
-   * @param pos  the position in the array
-   * @return  the Instant, or null if a null value present
+   * @param pos the position in the array
+   * @return the Instant, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to String
    */
   public Instant getInstant(int pos) {
-    String val = (String)list.get(pos);
+    String val = (String) list.get(pos);
     if (val == null) {
       return null;
     } else {
@@ -242,15 +235,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Get the Object value at position {@code pos} in the array.
    *
-   * @param pos  the position in the array
-   * @return  the Integer, or null if a null value present
+   * @param pos the position in the array
+   * @return the Integer, or null if a null value present
    */
   public Object getValue(int pos) {
     Object val = list.get(pos);
     if (val instanceof Map) {
-      val = new JsonObject((Map)val);
+      val = new JsonObject((Map) val);
     } else if (val instanceof List) {
-      val = new JsonArray((List)val);
+      val = new JsonArray((List) val);
     }
     return val;
   }
@@ -258,7 +251,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Is there a null value at position pos?
    *
-   * @param pos  the position in the array
+   * @param pos the position in the array
    * @return true if null value present, false otherwise
    */
   public boolean hasNull(int pos) {
@@ -271,8 +264,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name}
    * method and the value added as a String.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Enum value) {
     Objects.requireNonNull(value);
@@ -283,8 +276,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add a CharSequence to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(CharSequence value) {
     Objects.requireNonNull(value);
@@ -295,8 +288,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add a String to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(String value) {
     Objects.requireNonNull(value);
@@ -307,8 +300,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add an Integer to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Integer value) {
     Objects.requireNonNull(value);
@@ -319,8 +312,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add a Long to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Long value) {
     Objects.requireNonNull(value);
@@ -331,8 +324,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add a Double to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Double value) {
     Objects.requireNonNull(value);
@@ -343,8 +336,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add a Float to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Float value) {
     Objects.requireNonNull(value);
@@ -355,8 +348,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add a Boolean to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Boolean value) {
     Objects.requireNonNull(value);
@@ -367,7 +360,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add a null value to the JSON array.
    *
-   * @return  a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray addNull() {
     list.add(null);
@@ -377,8 +370,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add a JSON object to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(JsonObject value) {
     Objects.requireNonNull(value);
@@ -389,8 +382,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add another JSON array to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(JsonArray value) {
     Objects.requireNonNull(value);
@@ -403,8 +396,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * <p>
    * JSON has no notion of binary so the binary will be base64 encoded to a String, and the String added.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(byte[] value) {
     Objects.requireNonNull(value);
@@ -417,8 +410,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * <p>
    * JSON has no notion of Temporal data so the Instant will be ISOString encoded, and the String added.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Instant value) {
     Objects.requireNonNull(value);
@@ -429,8 +422,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add an Object to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Object value) {
     Objects.requireNonNull(value);
@@ -443,7 +436,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * Appends all of the elements in the specified array to the end of this JSON array.
    *
    * @param array the array
-   * @return  a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray addAll(JsonArray array) {
     Objects.requireNonNull(array);
@@ -455,8 +448,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * Does the JSON array contain the specified value? This method will scan the entire array until it finds a value
    * or reaches the end.
    *
-   * @param value  the value
-   * @return  true if it contains the value, false if not
+   * @param value the value
+   * @return true if it contains the value, false if not
    */
   public boolean contains(Object value) {
     return list.contains(value);
@@ -466,7 +459,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * Remove the specified value from the JSON array. This method will scan the entire array until it finds a value
    * or reaches the end.
    *
-   * @param value  the value to remove
+   * @param value the value to remove
    * @return true if it removed it, false if not found
    */
   public boolean remove(Object value) {
@@ -476,7 +469,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Remove the value at the specified position in the JSON array.
    *
-   * @param pos  the position to remove the value at
+   * @param pos the position to remove the value at
    * @return the removed value if removed, null otherwise
    */
   public Object remove(int pos) {
@@ -504,7 +497,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Get the unerlying List
    *
-   * @return  the underlying List
+   * @return the underlying List
    */
   public List getList() {
     return list;
@@ -513,7 +506,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Remove all entries from the JSON array
    *
-   * @return  a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray clear() {
     list.clear();
@@ -555,7 +548,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    */
   public JsonArray copy() {
     List<Object> copiedList = new ArrayList<>(list.size());
-    for (Object val: list) {
+    for (Object val : list) {
       val = Json.checkAndCopy(val, true);
       copiedList.add(val);
     }
@@ -653,9 +646,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     public Object next() {
       Object val = listIter.next();
       if (val instanceof Map) {
-        val = new JsonObject((Map)val);
+        val = new JsonObject((Map) val);
       } else if (val instanceof List) {
-        val = new JsonArray((List)val);
+        val = new JsonArray((List) val);
       }
       return val;
     }

@@ -21,7 +21,6 @@ import io.vertx.core.json.JsonObject;
 import java.util.List;
 
 /**
- *
  * An abstract base class that you can extend to write your own Verticle classes.
  * <p>
  * Instead of implementing {@link io.vertx.core.Verticle} directly, it is often simpler to just extend this class.
@@ -35,8 +34,6 @@ import java.util.List;
  * instances of the verticle for easy access.<p>
  * It also provides methods for getting the {@link #config verticle configuration}, {@link #processArgs process arguments},
  * and {@link #deploymentID deployment ID}.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class AbstractVerticle implements Verticle {
 
@@ -53,6 +50,7 @@ public abstract class AbstractVerticle implements Verticle {
 
   /**
    * Get the Vert.x instance
+   *
    * @return the Vert.x instance
    */
   @Override
@@ -63,8 +61,9 @@ public abstract class AbstractVerticle implements Verticle {
   /**
    * Initialise the verticle.<p>
    * This is called by Vert.x when the verticle instance is deployed. Don't call it yourself.
-   * @param vertx  the deploying Vert.x instance
-   * @param context  the context of the verticle
+   *
+   * @param vertx   the deploying Vert.x instance
+   * @param context the context of the verticle
    */
   @Override
   public void init(Vertx vertx, Context context) {
@@ -74,6 +73,7 @@ public abstract class AbstractVerticle implements Verticle {
 
   /**
    * Get the deployment ID of the verticle deployment
+   *
    * @return the deployment ID
    */
   public String deploymentID() {
@@ -84,6 +84,7 @@ public abstract class AbstractVerticle implements Verticle {
    * Get the configuration of the verticle.
    * <p>
    * This can be specified when the verticle is deployed.
+   *
    * @return the configuration
    */
   public JsonObject config() {
@@ -92,6 +93,7 @@ public abstract class AbstractVerticle implements Verticle {
 
   /**
    * Get the arguments used when deploying the Vert.x process.
+   *
    * @return the list of arguments
    */
   public List<String> processArgs() {
@@ -103,7 +105,8 @@ public abstract class AbstractVerticle implements Verticle {
    * This is called by Vert.x when the verticle instance is deployed. Don't call it yourself.<p>
    * If your verticle does things in it's startup which take some time then you can override this method
    * and call the startFuture some time later when start up is complete.
-   * @param startFuture  a future which should be called when verticle start-up is complete.
+   *
+   * @param startFuture a future which should be called when verticle start-up is complete.
    * @throws Exception
    */
   @Override
@@ -117,7 +120,8 @@ public abstract class AbstractVerticle implements Verticle {
    * This is called by Vert.x when the verticle instance is un-deployed. Don't call it yourself.<p>
    * If your verticle does things in it's shut-down which take some time then you can override this method
    * and call the stopFuture some time later when clean-up is complete.
-   * @param stopFuture  a future which should be called when verticle clean-up is complete.
+   *
+   * @param stopFuture a future which should be called when verticle clean-up is complete.
    * @throws Exception
    */
   @Override
@@ -129,6 +133,7 @@ public abstract class AbstractVerticle implements Verticle {
   /**
    * If your verticle does a simple, synchronous start-up then override this method and put your start-up
    * code in there.
+   *
    * @throws Exception
    */
   public void start() throws Exception {
@@ -137,6 +142,7 @@ public abstract class AbstractVerticle implements Verticle {
   /**
    * If your verticle has simple synchronous clean-up tasks to complete then override this method and put your clean-up
    * code in there.
+   *
    * @throws Exception
    */
   public void stop() throws Exception {

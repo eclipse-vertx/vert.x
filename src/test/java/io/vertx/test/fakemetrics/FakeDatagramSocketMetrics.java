@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class FakeDatagramSocketMetrics extends FakeMetricsBase implements DatagramSocketMetrics {
 
@@ -66,7 +66,7 @@ public class FakeDatagramSocketMetrics extends FakeMetricsBase implements Datagr
   }
 
   @Override
-  public void bytesWritten(Void socketMetric, SocketAddress remoteAddress,long numberOfBytes) {
+  public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     writes.add(new PacketMetric(remoteAddress, numberOfBytes));
   }
 

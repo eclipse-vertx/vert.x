@@ -17,9 +17,8 @@
 package io.vertx.core.cli.impl;
 
 import io.vertx.core.cli.*;
-import io.vertx.core.cli.Argument;
-import io.vertx.core.cli.Option;
-import io.vertx.core.cli.annotations.*;
+import io.vertx.core.cli.annotations.CLIConfigurator;
+import io.vertx.core.cli.annotations.Name;
 import org.junit.Before;
 import org.junit.Test;
 

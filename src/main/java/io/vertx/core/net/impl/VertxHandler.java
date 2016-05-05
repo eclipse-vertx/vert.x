@@ -27,7 +27,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.impl.ContextImpl;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
@@ -46,7 +46,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     if (buf.isDirect() || buf instanceof CompositeByteBuf) {
       try {
         if (buf.isReadable()) {
-          ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
+          ByteBuf buffer = allocator.heapBuffer(buf.readableBytes());
           buffer.writeBytes(buf);
           return buffer;
         } else {

@@ -17,24 +17,23 @@
 package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.http.GoAway}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.GoAway} original class using Vert.x codegen.
  */
 public class GoAwayConverter {
 
   public static void fromJson(JsonObject json, GoAway obj) {
     if (json.getValue("debugData") instanceof String) {
-      obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)json.getValue("debugData"))));
+      obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String) json.getValue("debugData"))));
     }
     if (json.getValue("errorCode") instanceof Number) {
-      obj.setErrorCode(((Number)json.getValue("errorCode")).longValue());
+      obj.setErrorCode(((Number) json.getValue("errorCode")).longValue());
     }
     if (json.getValue("lastStreamId") instanceof Number) {
-      obj.setLastStreamId(((Number)json.getValue("lastStreamId")).intValue());
+      obj.setLastStreamId(((Number) json.getValue("lastStreamId")).intValue());
     }
   }
 

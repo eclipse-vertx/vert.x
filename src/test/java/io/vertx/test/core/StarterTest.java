@@ -26,7 +26,6 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.VertxMetrics;
-import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -41,7 +40,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class StarterTest extends VertxTestBase {
 
@@ -138,7 +137,7 @@ public class StarterTest extends VertxTestBase {
   }
 
   private void cleanup(MyStarter starter) {
-    if (starter != null  && starter.getVertx() != null) {
+    if (starter != null && starter.getVertx() != null) {
       starter.getVertx().close();
     }
   }
@@ -213,9 +212,9 @@ public class StarterTest extends VertxTestBase {
     MyStarter starter = new MyStarter();
     String[] args;
     if (clustered) {
-      args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
+      args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     } else {
-      args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
+      args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName()};
     }
     starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);

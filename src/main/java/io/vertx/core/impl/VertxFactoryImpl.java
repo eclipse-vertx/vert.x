@@ -15,16 +15,12 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.spi.VertxFactory;
 
 /**
- * @author pidster
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
+ *
  *
  */
 public class VertxFactoryImpl implements VertxFactory {

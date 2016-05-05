@@ -32,8 +32,6 @@ import javax.security.cert.X509Certificate;
  * <p>
  * Instances of this class are passed into a {@link io.vertx.core.http.HttpServer#websocketHandler} or provided
  * when a WebSocket handshake is manually {@link HttpServerRequest#upgrade}ed.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface ServerWebSocket extends WebSocketBase {
@@ -115,7 +113,7 @@ public interface ServerWebSocket extends WebSocketBase {
 
   /**
    * @return an array of the peer certificates. Returns null if connection is
-   *         not SSL.
+   * not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
    */
   @GenIgnore

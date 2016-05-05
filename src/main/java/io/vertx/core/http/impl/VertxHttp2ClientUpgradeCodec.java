@@ -16,7 +16,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
@@ -33,7 +32,7 @@ import static io.netty.handler.codec.http2.Http2CodecUtil.HTTP_UPGRADE_SETTINGS_
 import static io.netty.util.CharsetUtil.UTF_8;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class VertxHttp2ClientUpgradeCodec implements HttpClientUpgradeHandler.UpgradeCodec {
 

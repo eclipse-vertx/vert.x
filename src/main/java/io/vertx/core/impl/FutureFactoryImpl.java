@@ -20,7 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.spi.FutureFactory;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class FutureFactoryImpl implements FutureFactory {
 
@@ -32,7 +32,7 @@ public class FutureFactoryImpl implements FutureFactory {
   // TODO - for completed futures with null values we could maybe reuse a static instance to save allocation
   @Override
   public <T> Future<T> completedFuture() {
-    return new FutureImpl<>((T)null);
+    return new FutureImpl<>((T) null);
   }
 
   @Override

@@ -16,12 +16,12 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Converter for {@link io.vertx.core.net.PemTrustOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PemTrustOptions} original class using Vert.x codegen.
  */
 public class PemTrustOptionsConverter {
@@ -30,13 +30,13 @@ public class PemTrustOptionsConverter {
     if (json.getValue("certPaths") instanceof JsonArray) {
       json.getJsonArray("certPaths").forEach(item -> {
         if (item instanceof String)
-          obj.addCertPath((String)item);
+          obj.addCertPath((String) item);
       });
     }
     if (json.getValue("certValues") instanceof JsonArray) {
       json.getJsonArray("certValues").forEach(item -> {
         if (item instanceof String)
-          obj.addCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+          obj.addCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String) item)));
       });
     }
   }

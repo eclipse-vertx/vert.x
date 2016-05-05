@@ -18,8 +18,6 @@ package io.vertx.core.spi.logging;
 
 /**
  * I am responsible for creating {@link LogDelegate} instances.
- *
- * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public interface LogDelegateFactory {
   LogDelegate createDelegate(String name);

@@ -20,15 +20,14 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -40,16 +39,13 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- *
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
  * However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
+ * <p>
  * It's important we don't have different locks for connection and request/response to avoid deadlock conditions
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServerResponseImpl implements HttpServerResponse {
 
@@ -78,12 +74,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private long bytesWritten;
 
   HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
-  	this.vertx = vertx;
-  	this.conn = conn;
+    this.vertx = vertx;
+    this.conn = conn;
     this.version = request.getProtocolVersion();
     this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
-      || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
+        || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
   }
 
   @Override
@@ -397,7 +393,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       FullHttpResponse resp;
       if (trailing != null) {
         resp = new AssembledFullHttpResponse(response, data, trailing.trailingHeaders(), trailing.getDecoderResult());
-      }  else {
+      } else {
         resp = new AssembledFullHttpResponse(response, data);
       }
       channelFuture = conn.writeToChannel(resp);
@@ -582,7 +578,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       checkWritten();
       if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
         throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+            + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
       }
 
       bytesWritten += chunk.readableBytes();

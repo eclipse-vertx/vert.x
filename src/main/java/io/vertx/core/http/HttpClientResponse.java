@@ -16,11 +16,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -37,8 +33,6 @@ import java.util.List;
  * <p>
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with
  * {@link io.vertx.core.streams.Pump} to pump data with flow control.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface HttpClientResponse extends ReadStream<Buffer> {
@@ -82,7 +76,7 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   /**
    * Return the first header value with the specified name
    *
-   * @param headerName  the header name
+   * @param headerName the header name
    * @return the header value
    */
   @Nullable String getHeader(String headerName);
@@ -90,7 +84,7 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   /**
    * Return the first header value with the specified name
    *
-   * @param headerName  the header name
+   * @param headerName the header name
    * @return the header value
    */
   @GenIgnore
@@ -99,7 +93,7 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   /**
    * Return the first trailer value with the specified name
    *
-   * @param trailerName  the trailer name
+   * @param trailerName the trailer name
    * @return the trailer value
    */
   @Nullable String getTrailer(String trailerName);

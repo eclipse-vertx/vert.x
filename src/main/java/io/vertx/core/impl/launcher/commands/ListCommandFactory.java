@@ -20,8 +20,6 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
 /**
  * Defines the `list` command.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class ListCommandFactory extends DefaultCommandFactory<ListCommand> {
   /**

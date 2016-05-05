@@ -17,12 +17,11 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 
 /**
@@ -33,8 +32,6 @@ import io.vertx.core.metrics.Measured;
  * <p>
  * You receive WebSockets by providing a {@link #websocketHandler}. As WebSocket connections arrive on the server, the
  * WebSocket is passed to the handler.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface HttpServer extends Measured {
@@ -58,7 +55,7 @@ public interface HttpServer extends Measured {
   HttpServer requestHandler(Handler<HttpServerRequest> handler);
 
   /**
-   * @return  the request handler
+   * @return the request handler
    */
   @GenIgnore
   Handler<HttpServerRequest> requestHandler();
@@ -113,9 +110,8 @@ public interface HttpServer extends Measured {
    * <p>
    * The listen happens asynchronously and the server may not be listening until some time after the call has returned.
    *
-   * @param port  the port to listen on
-   * @param host  the host to listen on
-   *
+   * @param port the port to listen on
+   * @param host the host to listen on
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -125,9 +121,9 @@ public interface HttpServer extends Measured {
    * Like {@link #listen(int, String)} but supplying a handler that will be called when the server is actually
    * listening (or has failed).
    *
-   * @param port  the port to listen on
-   * @param host  the host to listen on
-   * @param listenHandler  the listen handler
+   * @param port          the port to listen on
+   * @param host          the host to listen on
+   * @param listenHandler the listen handler
    */
   @Fluent
   HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
@@ -136,8 +132,7 @@ public interface HttpServer extends Measured {
    * Like {@link #listen(int, String)} but the server will listen on host "0.0.0.0" and port specified here ignoring
    * any value in the {@link io.vertx.core.http.HttpServerOptions} that was used when creating the server.
    *
-   * @param port  the port to listen on
-   *
+   * @param port the port to listen on
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -146,8 +141,8 @@ public interface HttpServer extends Measured {
   /**
    * Like {@link #listen(int)} but supplying a handler that will be called when the server is actually listening (or has failed).
    *
-   * @param port  the port to listen on
-   * @param listenHandler  the listen handler
+   * @param port          the port to listen on
+   * @param listenHandler the listen handler
    */
   @Fluent
   HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler);
@@ -155,7 +150,7 @@ public interface HttpServer extends Measured {
   /**
    * Like {@link #listen} but supplying a handler that will be called when the server is actually listening (or has failed).
    *
-   * @param listenHandler  the listen handler
+   * @param listenHandler the listen handler
    */
   @Fluent
   HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler);
@@ -170,7 +165,7 @@ public interface HttpServer extends Measured {
   /**
    * Like {@link #close} but supplying a handler that will be called when the server is actually closed (or has failed).
    *
-   * @param completionHandler  the handler
+   * @param completionHandler the handler
    */
   void close(Handler<AsyncResult<Void>> completionHandler);
 

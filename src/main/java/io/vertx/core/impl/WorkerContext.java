@@ -20,7 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class WorkerContext extends ContextImpl {
 

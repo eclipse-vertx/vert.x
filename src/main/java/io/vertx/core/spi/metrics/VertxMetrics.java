@@ -32,8 +32,6 @@ import io.vertx.core.net.*;
  * to be called by Vert.x itself for events like verticles deployed, timers created, etc. The other
  * to provide Vert.x with other metrics SPI's which will be used for specific components i.e.
  * {@link io.vertx.core.http.HttpServer}, {@link io.vertx.core.spi.metrics.EventBusMetrics}, etc.
- *
- * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface VertxMetrics extends Metrics, Measured {
 
@@ -169,8 +167,8 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Provides the pool metrics SPI.
    *
-   * @param pool the pool of resource, it can be used by the metrics implementation to gather extra statistics
-   * @param poolName the name of the thread pool
+   * @param pool        the pool of resource, it can be used by the metrics implementation to gather extra statistics
+   * @param poolName    the name of the thread pool
    * @param maxPoolSize the pool max size, or -1 if the number cannot be determined
    * @return the thread pool metrics SPI
    */

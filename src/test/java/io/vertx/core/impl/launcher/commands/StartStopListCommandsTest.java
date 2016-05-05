@@ -30,8 +30,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Check the behavior of the start, stop and list commands.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class StartStopListCommandsTest extends CommandTestBase {
 

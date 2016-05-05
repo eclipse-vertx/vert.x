@@ -15,10 +15,8 @@
  */
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.cli.*;
+import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.annotations.*;
-import io.vertx.core.cli.annotations.Argument;
-import io.vertx.core.cli.annotations.Option;
 import io.vertx.core.spi.launcher.DefaultCommand;
 
 @Summary("A command with options and arguments.")

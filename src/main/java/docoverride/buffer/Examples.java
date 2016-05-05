@@ -20,13 +20,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.docgen.Source;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 @Source
 public class Examples {
 
   public void example4() {
-    byte[] bytes = new byte[] {1, 3, 5};
+    byte[] bytes = new byte[]{1, 3, 5};
     Buffer buff = Buffer.buffer(bytes);
   }
 }

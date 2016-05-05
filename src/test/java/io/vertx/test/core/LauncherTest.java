@@ -16,7 +16,10 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.*;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Launcher;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.launcher.commands.HelloCommand;
 import io.vertx.core.impl.launcher.commands.RunCommand;
 import io.vertx.core.impl.launcher.commands.VersionCommand;
@@ -24,9 +27,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.launcher.Command;
 import io.vertx.core.spi.metrics.VertxMetrics;
-import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -431,9 +432,9 @@ public class LauncherTest extends VertxTestBase {
     MyLauncher launcher = new MyLauncher();
     String[] args;
     if (clustered) {
-      args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
+      args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     } else {
-      args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
+      args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName()};
     }
     launcher.dispatch(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
@@ -516,7 +517,7 @@ public class LauncherTest extends VertxTestBase {
     // Should be ignored
 
     MyLauncher launcher = new MyLauncher();
-    String[] args =  {"run", "java:" + TestVerticle.class.getCanonicalName()};
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
     launcher.dispatch(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
@@ -532,7 +533,7 @@ public class LauncherTest extends VertxTestBase {
   public void testWhenPassingTheMainObject() throws Exception {
     MyLauncher launcher = new MyLauncher();
     int instances = 10;
-    launcher.dispatch(launcher, new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(),
+    launcher.dispatch(launcher, new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(),
         "-instances", "10"});
     waitUntil(() -> TestVerticle.instanceCount.get() == instances);
   }
@@ -540,14 +541,14 @@ public class LauncherTest extends VertxTestBase {
   @Test
   public void testBare() throws Exception {
     MyLauncher launcher = new MyLauncher();
-    launcher.dispatch(new String[] {"bare"});
+    launcher.dispatch(new String[]{"bare"});
     waitUntil(() -> launcher.afterStartingVertxInvoked);
   }
 
   @Test
   public void testBareAlias() throws Exception {
     MyLauncher launcher = new MyLauncher();
-    launcher.dispatch(new String[] {"-ha"});
+    launcher.dispatch(new String[]{"-ha"});
     waitUntil(() -> launcher.afterStartingVertxInvoked);
   }
 

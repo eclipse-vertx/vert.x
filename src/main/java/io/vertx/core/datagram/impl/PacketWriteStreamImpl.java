@@ -21,13 +21,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.PacketWritestream;
-import io.vertx.core.streams.WriteStream;
 
 /**
  * A write stream for packets.
- *
-* @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-*/
+ */
 class PacketWriteStreamImpl implements PacketWritestream, Handler<AsyncResult<DatagramSocket>> {
 
   private DatagramSocketImpl datagramSocket;

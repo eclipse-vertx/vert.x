@@ -20,8 +20,6 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
 /**
  * Defines the `start` command.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class StartCommandFactory extends DefaultCommandFactory<StartCommand> {
 

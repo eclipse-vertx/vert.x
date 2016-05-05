@@ -34,8 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A local event bus implementation
- *
- * @author <a href="http://tfox.org">Tim Fox</a>                                                                                        T
  */
 public class EventBusImpl implements EventBus, MetricsProvider {
 
@@ -346,7 +344,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       metrics.replyFailure(sendContext.message.address, ReplyFailure.NO_HANDLERS);
       if (sendContext.handlerRegistration != null) {
         sendContext.handlerRegistration.sendAsyncResultFailure(ReplyFailure.NO_HANDLERS, "No handlers for address "
-                                                               + sendContext.message.address);
+            + sendContext.message.address);
       }
     }
   }
@@ -369,7 +367,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       } else {
         // Publish
         metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), handlers.list.size());
-        for (HandlerHolder holder: handlers.list) {
+        for (HandlerHolder holder : handlers.list) {
           deliverToHandler(msg, holder);
         }
       }
@@ -399,7 +397,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       message.setReplyAddress(replyAddress);
       Handler<Message<T>> simpleReplyHandler = convertHandler(replyHandler);
       HandlerRegistration<T> registration =
-        new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, replyHandler, timeout);
+          new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, replyHandler, timeout);
       registration.handler(simpleReplyHandler);
       return registration;
     } else {
@@ -478,8 +476,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private void unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
-    for (Handlers handlers: handlerMap.values()) {
-      for (HandlerHolder holder: handlers.list) {
+    for (Handlers handlers : handlerMap.values()) {
+      for (HandlerHolder holder : handlers.list) {
         holder.getHandler().unregister(true);
       }
     }
@@ -545,7 +543,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     // Make sure this gets cleaned up if there are no more references to it
     // so as not to leave connections and resources dangling until the system is shutdown
     // which could make the JVM run out of file handles.
-    close(ar -> {});
+    close(ar -> {
+    });
     super.finalize();
   }
 

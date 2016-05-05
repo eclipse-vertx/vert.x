@@ -17,8 +17,6 @@ package io.vertx.core.cli.converters;
 
 /**
  * Converts String to String, that's the easy one.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public final class StringConverter implements Converter<String> {
 

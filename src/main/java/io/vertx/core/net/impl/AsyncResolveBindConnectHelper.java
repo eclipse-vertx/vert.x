@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class AsyncResolveBindConnectHelper<T> implements Handler<AsyncResult<T>> {
 
@@ -49,7 +49,7 @@ public class AsyncResolveBindConnectHelper<T> implements Handler<AsyncResult<T>>
   @Override
   public synchronized void handle(AsyncResult<T> res) {
     if (!complete) {
-      for (Handler<AsyncResult<T>> handler: handlers) {
+      for (Handler<AsyncResult<T>> handler : handlers) {
         handler.handle(res);
       }
       complete = true;
@@ -77,7 +77,7 @@ public class AsyncResolveBindConnectHelper<T> implements Handler<AsyncResult<T>>
 
   private static AsyncResolveBindConnectHelper<ChannelFuture> doBindConnect(VertxInternal vertx, int port, String host,
                                                                             Function<InetSocketAddress,
-                                                                            ChannelFuture> cfProducer) {
+                                                                                ChannelFuture> cfProducer) {
     checkPort(port);
     AsyncResolveBindConnectHelper<ChannelFuture> asyncResolveBindConnectHelper = new AsyncResolveBindConnectHelper<>();
     vertx.resolveHostname(host, res -> {

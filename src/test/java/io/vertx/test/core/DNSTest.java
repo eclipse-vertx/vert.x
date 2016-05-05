@@ -16,24 +16,12 @@
 
 package io.vertx.test.core;
 
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.resolver.dns.DnsNameResolver;
-import io.netty.resolver.dns.DnsNameResolverBuilder;
-import io.netty.resolver.dns.DnsServerAddresses;
-import io.netty.util.concurrent.Future;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.dns.DnsClient;
-import io.vertx.core.dns.DnsException;
-import io.vertx.core.dns.DnsResponseCode;
-import io.vertx.core.dns.MxRecord;
-import io.vertx.core.dns.SrvRecord;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.dns.*;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -41,8 +29,8 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
+ *
  */
 public class DNSTest extends VertxTestBase {
 
@@ -52,17 +40,28 @@ public class DNSTest extends VertxTestBase {
   public void testIllegalArguments() throws Exception {
     DnsClient dns = prepareDns(FakeDNSServer.testResolveAAAA("::1"));
 
-    assertNullPointerException(() -> dns.lookup(null, ar -> {}));
-    assertNullPointerException(() -> dns.lookup4(null, ar -> {}));
-    assertNullPointerException(() -> dns.lookup6(null, ar -> {}));
-    assertNullPointerException(() -> dns.resolveA(null, ar -> {}));
-    assertNullPointerException(() -> dns.resolveAAAA(null, ar -> {}));
-    assertNullPointerException(() -> dns.resolveCNAME(null, ar -> {}));
-    assertNullPointerException(() -> dns.resolveMX(null, ar -> {}));
-    assertNullPointerException(() -> dns.resolveTXT(null, ar -> {}));
-    assertNullPointerException(() -> dns.resolvePTR(null, ar -> {}));
-    assertNullPointerException(() -> dns.resolveNS(null, ar -> {}));
-    assertNullPointerException(() -> dns.resolveSRV(null, ar -> {}));
+    assertNullPointerException(() -> dns.lookup(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.lookup4(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.lookup6(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.resolveA(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.resolveAAAA(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.resolveCNAME(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.resolveMX(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.resolveTXT(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.resolvePTR(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.resolveNS(null, ar -> {
+    }));
+    assertNullPointerException(() -> dns.resolveSRV(null, ar -> {
+    }));
 
     dnsServer.stop();
   }
@@ -264,7 +263,7 @@ public class DNSTest extends VertxTestBase {
   public void testLookupNonExisting() throws Exception {
     DnsClient dns = prepareDns(FakeDNSServer.testLookupNonExisting());
     dns.lookup("gfegjegjf.sg1", ar -> {
-      DnsException cause = (DnsException)ar.cause();
+      DnsException cause = (DnsException) ar.cause();
       assertEquals(DnsResponseCode.NXDOMAIN, cause.code());
       testComplete();
     });

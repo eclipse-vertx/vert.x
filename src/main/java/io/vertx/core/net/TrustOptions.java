@@ -17,8 +17,6 @@ package io.vertx.core.net;
 
 /**
  * Certification authority configuration options.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface TrustOptions {
 

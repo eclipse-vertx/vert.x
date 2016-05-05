@@ -28,8 +28,8 @@ import io.vertx.core.logging.LoggerFactory;
 import java.util.Objects;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
- * @author Juergen Donnerstag
+ *
+ *
  */
 public class WindowsFileSystem extends FileSystemImpl {
 

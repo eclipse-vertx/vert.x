@@ -29,8 +29,6 @@ import java.util.Set;
 
 /**
  * Class responsible for defining CLI using annotations and injecting values extracted by the parser.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class CLIConfigurator {
 

@@ -17,21 +17,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpClientUpgradeHandler;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
@@ -57,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class ConnectionManager {
 
@@ -107,7 +95,7 @@ public class ConnectionManager {
     }
 
     public void close() {
-      for (ConnQueue queue: queueMap.values()) {
+      for (ConnQueue queue : queueMap.values()) {
         queue.closeAllConnections();
       }
       queueMap.clear();
@@ -171,10 +159,10 @@ public class ConnectionManager {
 
   /**
    * The connection queue delegates to the connection pool, the pooling strategy.
-   *
+   * <p>
    * - HTTP/1.x pools several connections
    * - HTTP/2 uses a single connection
-   *
+   * <p>
    * After a queue is initialized with an HTTP/2 pool, this pool changed to an HTTP/1/1
    * pool if the server does not support HTTP/2 or after negotiation. In this situation
    * all waiters on this queue will use HTTP/1.1 connections.
@@ -191,7 +179,7 @@ public class ConnectionManager {
       this.address = address;
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
-        pool =  new Http2Pool(this, client, mgr.connectionMap);
+        pool = new Http2Pool(this, client, mgr.connectionMap);
       } else {
         pool = new Http1xPool(client, options, this, mgr.connectionMap, version);
       }
@@ -278,6 +266,7 @@ public class ConnectionManager {
                   fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_0, port, host, waiter);
                 }
               }
+
               @Override
               protected void handshakeFailure(ChannelHandlerContext ctx, Throwable cause) throws Exception {
                 ConnQueue.this.handshakeFailure(context, ch, cause, waiter);
@@ -298,6 +287,7 @@ public class ConnectionManager {
                     ctx.writeAndFlush(upgradeRequest);
                     ctx.fireChannelActive();
                   }
+
                   @Override
                   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
                     super.userEventTriggered(ctx, evt);
@@ -384,14 +374,14 @@ public class ConnectionManager {
 
     private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
       context.executeFromIO(() ->
-          ((Http1xPool)pool).createConn(version, context, port, host, ch, waiter)
+          ((Http1xPool) pool).createConn(version, context, port, host, ch, waiter)
       );
     }
 
     private void http2Connected(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {
       context.executeFromIO(() -> {
         try {
-          ((Http2Pool)pool).createConn(context, ch, waiter, upgrade);
+          ((Http2Pool) pool).createConn(context, ch, waiter, upgrade);
         } catch (Http2Exception e) {
           connectionFailed(context, ch, waiter::handleFailure, e);
         }
@@ -450,7 +440,7 @@ public class ConnectionManager {
       if (options.getIdleTimeout() > 0) {
         pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
       }
-      pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)mgr.connectionMap));
+      pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map) mgr.connectionMap));
     }
   }
 

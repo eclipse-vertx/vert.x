@@ -24,16 +24,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class Http2SettingsTest extends HttpTestBase {
 
-  long[] min = { 0, 0, 0, 0, 0x4000, 0 };
-  long[] max = { Integer.MAX_VALUE, 1, 0xFFFFFFFFL, Integer.MAX_VALUE, 0xFFFFFF, Integer.MAX_VALUE };
+  long[] min = {0, 0, 0, 0, 0x4000, 0};
+  long[] max = {Integer.MAX_VALUE, 1, 0xFFFFFFFFL, Integer.MAX_VALUE, 0xFFFFFF, Integer.MAX_VALUE};
 
   @Test
   public void testSettingsMin() {
-    for (int i = 1;i <= 6;i++) {
+    for (int i = 1; i <= 6; i++) {
       try {
         new Http2Settings().set(i, min[i - 1] - 1);
         fail();
@@ -41,7 +41,7 @@ public class Http2SettingsTest extends HttpTestBase {
       }
     }
     Http2Settings settings = new Http2Settings();
-    for (int i = 1;i <= 6;i++) {
+    for (int i = 1; i <= 6; i++) {
       settings.set(i, min[i - 1]);
     }
     HttpUtils.fromVertxSettings(settings);
@@ -49,7 +49,7 @@ public class Http2SettingsTest extends HttpTestBase {
 
   @Test
   public void testSettinsMax() {
-    for (int i = 1;i <= 6;i++) {
+    for (int i = 1; i <= 6; i++) {
       try {
         new Http2Settings().set(i, max[i - 1] + 1);
         System.out.println("i = " + i);
@@ -58,7 +58,7 @@ public class Http2SettingsTest extends HttpTestBase {
       }
     }
     Http2Settings settings = new Http2Settings();
-    for (int i = 1;i <= 6;i++) {
+    for (int i = 1; i <= 6; i++) {
       settings.set(i, max[i - 1]);
     }
     HttpUtils.fromVertxSettings(settings);
@@ -67,16 +67,16 @@ public class Http2SettingsTest extends HttpTestBase {
   @Test
   public void toNettySettings() {
     Http2Settings settings = new Http2Settings();
-    for (int i = 7;i <= 0xFFFF;i += 1) {
+    for (int i = 7; i <= 0xFFFF; i += 1) {
       settings.set(0xFFFF, TestUtils.randomPositiveLong());
     }
     io.netty.handler.codec.http2.Http2Settings conv = HttpUtils.fromVertxSettings(settings);
-    for (int i = 1;i <= 0xFFFF;i += 1) {
-      assertEquals(settings.get(i), conv.get((char)i));
+    for (int i = 1; i <= 0xFFFF; i += 1) {
+      assertEquals(settings.get(i), conv.get((char) i));
     }
     settings = HttpUtils.toVertxSettings(conv);
-    for (int i = 1;i <= 0xFFFF;i += 1) {
-      assertEquals(settings.get(i), conv.get((char)i));
+    for (int i = 1; i <= 0xFFFF; i += 1) {
+      assertEquals(settings.get(i), conv.get((char) i));
     }
   }
 

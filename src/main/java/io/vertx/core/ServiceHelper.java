@@ -20,8 +20,6 @@ import java.util.ServiceLoader;
 
 /**
  * A helper class for loading factories from the classpath and from the vert.x OSGi bundle.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ServiceHelper {
 

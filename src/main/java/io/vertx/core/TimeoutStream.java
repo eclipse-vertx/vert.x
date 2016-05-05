@@ -26,8 +26,6 @@ import io.vertx.core.streams.ReadStream;
  * <p>
  * Pausing the timer inhibits the timer shots until the stream is resumed. Setting a null handler callback cancels
  * the timer.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public interface TimeoutStream extends ReadStream<Long> {

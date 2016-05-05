@@ -19,15 +19,8 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Flags;
-import io.netty.handler.codec.http2.Http2FrameListener;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Settings;
-import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
@@ -50,7 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameListener, HttpConnection {
 
@@ -235,7 +228,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public synchronized void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
-                             Http2Flags flags, ByteBuf payload) {
+                                          Http2Flags flags, ByteBuf payload) {
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
       Buffer buff = Buffer.buffer(payload.copy());
@@ -257,7 +250,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public synchronized int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    int[] consumed = { padding };
+    int[] consumed = {padding};
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
       Buffer buff = Buffer.buffer(data.copy());
@@ -435,7 +428,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (!shutdown) {
       Http2Connection conn = handler.connection();
       if ((conn.goAwayReceived() || conn.goAwaySent()) && conn.numActiveStreams() == 0) {
-        shutdown  = true;
+        shutdown = true;
         Handler<Void> handler = shutdownHandler;
         if (handler != null) {
           context.executeFromIO(() -> {

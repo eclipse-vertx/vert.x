@@ -19,7 +19,7 @@ package io.vertx.core.spi;
 import io.vertx.core.Future;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public interface FutureFactory {
 

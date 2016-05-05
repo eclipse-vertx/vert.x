@@ -23,8 +23,6 @@ import java.util.logging.LogRecord;
 
 /**
  * A {@link io.vertx.core.spi.logging.LogDelegate} which delegates to java.util.logging
- *
- * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public class JULLogDelegate implements LogDelegate {
   private final java.util.logging.Logger logger;

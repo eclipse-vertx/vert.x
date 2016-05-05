@@ -21,7 +21,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 /*
  * Workaround fo Hazelcast bug https://github.com/hazelcast/hazelcast/issues/5220
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public interface ExtendedClusterManager extends ClusterManager {
 

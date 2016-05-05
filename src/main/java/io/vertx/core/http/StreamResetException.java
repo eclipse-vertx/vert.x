@@ -20,8 +20,6 @@ import io.vertx.core.VertxException;
 
 /**
  * This exception signals a stream reset, it is used only for HTTP/2.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class StreamResetException extends VertxException {
 

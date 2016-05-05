@@ -19,14 +19,8 @@ package io.vertx.core.impl.verticle;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
+import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
-import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -36,10 +30,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- *
  * Classloader for dynamic .java source file compilation and loading.
- *
- * @author Janne Hietam&auml;ki
  */
 public class CompilingClassLoader extends ClassLoader {
 
@@ -55,7 +46,7 @@ public class CompilingClassLoader extends ClassLoader {
       String[] array = props.split(",");
       List<String> compilerProps = new ArrayList<>(array.length);
 
-      for (String prop :array) {
+      for (String prop : array) {
         compilerProps.add(prop.trim());
       }
       COMPILER_OPTIONS = Collections.unmodifiableList(compilerProps);
@@ -66,6 +57,7 @@ public class CompilingClassLoader extends ClassLoader {
 
   private final JavaSourceContext javaSourceContext;
   private final MemoryFileManager fileManager;
+
   public CompilingClassLoader(ClassLoader loader, String sourceName) {
     super(loader);
     URL resource = getResource(sourceName);

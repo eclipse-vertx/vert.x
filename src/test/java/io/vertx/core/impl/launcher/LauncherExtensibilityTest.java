@@ -23,9 +23,7 @@ import io.vertx.core.cli.annotations.Name;
 import io.vertx.core.impl.launcher.commands.CommandTestBase;
 import io.vertx.core.impl.launcher.commands.HttpTestVerticle;
 import io.vertx.core.impl.launcher.commands.RunCommandTest;
-import io.vertx.core.spi.launcher.CommandFactory;
 import io.vertx.core.spi.launcher.DefaultCommand;
-import io.vertx.core.spi.launcher.DefaultCommandFactory;
 import org.junit.After;
 import org.junit.Test;
 
@@ -35,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
+ *
  */
 public class LauncherExtensibilityTest extends CommandTestBase {
 

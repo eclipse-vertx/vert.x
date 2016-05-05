@@ -23,8 +23,6 @@ import java.util.logging.Logger;
 
 /**
  * A helper class registering "error" output.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class Recording {
 

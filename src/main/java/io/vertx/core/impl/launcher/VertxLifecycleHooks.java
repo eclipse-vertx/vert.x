@@ -22,8 +22,6 @@ import io.vertx.core.json.JsonObject;
 
 /**
  * Interface that let sub-classes of launcher to be notified on different events.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public interface VertxLifecycleHooks {
 

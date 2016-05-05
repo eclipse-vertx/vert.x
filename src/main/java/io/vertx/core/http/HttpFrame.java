@@ -22,8 +22,6 @@ import io.vertx.core.buffer.Buffer;
 
 /**
  * An HTTP/2 frame.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public interface HttpFrame {

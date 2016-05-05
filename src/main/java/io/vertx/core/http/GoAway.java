@@ -22,8 +22,6 @@ import io.vertx.core.json.JsonObject;
 
 /**
  * A {@literal GOAWAY} frame.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject(generateConverter = true)
 public class GoAway {
@@ -59,7 +57,7 @@ public class GoAway {
 
   /**
    * @return the highest numbered stream identifier for which the sender of the frame might have taken some
-   *         action on or might yet take action
+   * action on or might yet take action
    */
   public int getLastStreamId() {
     return lastStreamId;

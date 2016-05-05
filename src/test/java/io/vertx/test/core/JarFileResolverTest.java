@@ -17,7 +17,7 @@
 package io.vertx.test.core;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class JarFileResolverTest extends FileResolverTestBase {
 

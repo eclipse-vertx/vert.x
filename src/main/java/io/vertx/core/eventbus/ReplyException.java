@@ -23,8 +23,6 @@ import io.vertx.core.VertxException;
  * <p>
  * If a message was sent specifying a reply handler and the message delivery fails, a failure will be provided to the
  * reply handler and the cause of the failure will be an instance of this.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ReplyException extends VertxException {
 
@@ -34,21 +32,21 @@ public class ReplyException extends VertxException {
   /**
    * Create a ReplyException
    *
-   * @param failureType  the failure type
-   * @param failureCode  the failure code
-   * @param message  the failure message
+   * @param failureType the failure type
+   * @param failureCode the failure code
+   * @param message     the failure message
    */
   public ReplyException(ReplyFailure failureType, int failureCode, String message) {
-      super(message);
-      this.failureType = failureType;
-      this.failureCode = failureCode;
+    super(message);
+    this.failureType = failureType;
+    this.failureCode = failureCode;
   }
 
   /**
    * Create a ReplyException
    *
-   * @param failureType  the failure type
-   * @param message  the failure message
+   * @param failureType the failure type
+   * @param message     the failure message
    */
   public ReplyException(ReplyFailure failureType, String message) {
     this(failureType, -1, message);
@@ -57,7 +55,7 @@ public class ReplyException extends VertxException {
   /**
    * Create a ReplyException
    *
-   * @param failureType  the failure type
+   * @param failureType the failure type
    */
   public ReplyException(ReplyFailure failureType) {
     this(failureType, -1, null);
@@ -66,7 +64,7 @@ public class ReplyException extends VertxException {
   /**
    * Get the failure type for the message
    *
-   * @return  the failure type
+   * @return the failure type
    */
   public ReplyFailure failureType() {
     return failureType;
@@ -75,7 +73,7 @@ public class ReplyException extends VertxException {
   /**
    * Get the failure code for the message
    *
-   * @return  the failure code
+   * @return the failure code
    */
   public int failureCode() {
     return failureCode;

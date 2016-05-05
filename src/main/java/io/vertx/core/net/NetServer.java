@@ -16,19 +16,17 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.streams.ReadStream;
 
 /**
  * Represents a TCP server
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface NetServer extends Measured {
@@ -68,7 +66,7 @@ public interface NetServer extends Measured {
   /**
    * Like {@link #listen} but providing a handler that will be notified when the server is listening, or fails.
    *
-   * @param listenHandler  handler that will be notified when listening or failed
+   * @param listenHandler handler that will be notified when listening or failed
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -92,8 +90,8 @@ public interface NetServer extends Measured {
   /**
    * Like {@link #listen(int, String)} but providing a handler that will be notified when the server is listening, or fails.
    *
-   * @param port  the port to listen on
-   * @param host  the host to listen on
+   * @param port          the port to listen on
+   * @param host          the host to listen on
    * @param listenHandler handler that will be notified when listening or failed
    * @return a reference to this, so the API can be used fluently
    */
@@ -116,7 +114,7 @@ public interface NetServer extends Measured {
   /**
    * Like {@link #listen(int)} but providing a handler that will be notified when the server is listening, or fails.
    *
-   * @param port  the port to listen on
+   * @param port          the port to listen on
    * @param listenHandler handler that will be notified when listening or failed
    * @return a reference to this, so the API can be used fluently
    */
@@ -132,7 +130,7 @@ public interface NetServer extends Measured {
   /**
    * Like {@link #close} but supplying a handler that will be notified when close is complete.
    *
-   * @param completionHandler  the handler
+   * @param completionHandler the handler
    */
   void close(Handler<AsyncResult<Void>> completionHandler);
 

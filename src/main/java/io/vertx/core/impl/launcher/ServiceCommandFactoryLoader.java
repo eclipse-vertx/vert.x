@@ -25,8 +25,6 @@ import java.util.ServiceLoader;
 
 /**
  * Looks for command factories using a service loader.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class ServiceCommandFactoryLoader implements CommandFactoryLookup {
 

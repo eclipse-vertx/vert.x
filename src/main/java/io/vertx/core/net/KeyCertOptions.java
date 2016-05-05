@@ -17,8 +17,6 @@ package io.vertx.core.net;
 
 /**
  * Key/cert configuration options.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface KeyCertOptions {
 

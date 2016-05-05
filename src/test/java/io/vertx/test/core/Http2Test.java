@@ -28,7 +28,7 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class Http2Test extends HttpTest {
 

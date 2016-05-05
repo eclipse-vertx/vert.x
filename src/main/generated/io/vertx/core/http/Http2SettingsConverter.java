@@ -17,33 +17,32 @@
 package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.http.Http2Settings}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.Http2Settings} original class using Vert.x codegen.
  */
 public class Http2SettingsConverter {
 
   public static void fromJson(JsonObject json, Http2Settings obj) {
     if (json.getValue("headerTableSize") instanceof Number) {
-      obj.setHeaderTableSize(((Number)json.getValue("headerTableSize")).longValue());
+      obj.setHeaderTableSize(((Number) json.getValue("headerTableSize")).longValue());
     }
     if (json.getValue("initialWindowSize") instanceof Number) {
-      obj.setInitialWindowSize(((Number)json.getValue("initialWindowSize")).intValue());
+      obj.setInitialWindowSize(((Number) json.getValue("initialWindowSize")).intValue());
     }
     if (json.getValue("maxConcurrentStreams") instanceof Number) {
-      obj.setMaxConcurrentStreams(((Number)json.getValue("maxConcurrentStreams")).longValue());
+      obj.setMaxConcurrentStreams(((Number) json.getValue("maxConcurrentStreams")).longValue());
     }
     if (json.getValue("maxFrameSize") instanceof Number) {
-      obj.setMaxFrameSize(((Number)json.getValue("maxFrameSize")).intValue());
+      obj.setMaxFrameSize(((Number) json.getValue("maxFrameSize")).intValue());
     }
     if (json.getValue("maxHeaderListSize") instanceof Number) {
-      obj.setMaxHeaderListSize(((Number)json.getValue("maxHeaderListSize")).intValue());
+      obj.setMaxHeaderListSize(((Number) json.getValue("maxHeaderListSize")).intValue());
     }
     if (json.getValue("pushEnabled") instanceof Boolean) {
-      obj.setPushEnabled((Boolean)json.getValue("pushEnabled"));
+      obj.setPushEnabled((Boolean) json.getValue("pushEnabled"));
     }
   }
 

@@ -24,7 +24,7 @@ import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class AsynchronousLockTest extends VertxTestBase {
 
@@ -34,11 +34,14 @@ public class AsynchronousLockTest extends VertxTestBase {
 
   @Test
   public void testIllegalArguments() throws Exception {
-    assertNullPointerException(() -> getVertx().sharedData().getLock(null, ar -> {}));
+    assertNullPointerException(() -> getVertx().sharedData().getLock(null, ar -> {
+    }));
     assertNullPointerException(() -> getVertx().sharedData().getLock("foo", null));
-    assertNullPointerException(() -> getVertx().sharedData().getLockWithTimeout(null, 1, ar -> {}));
+    assertNullPointerException(() -> getVertx().sharedData().getLockWithTimeout(null, 1, ar -> {
+    }));
     assertNullPointerException(() -> getVertx().sharedData().getLockWithTimeout("foo", 1, null));
-    assertIllegalArgumentException(() -> getVertx().sharedData().getLockWithTimeout("foo", -1, ar -> {}));
+    assertIllegalArgumentException(() -> getVertx().sharedData().getLockWithTimeout("foo", -1, ar -> {
+    }));
   }
 
   @Test

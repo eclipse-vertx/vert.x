@@ -20,7 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class NestedJarFileResolverTest extends FileResolverTestBase {
 

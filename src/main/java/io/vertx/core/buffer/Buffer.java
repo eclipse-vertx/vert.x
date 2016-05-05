@@ -36,8 +36,6 @@ import java.nio.charset.Charset;
  * necessary to accommodate any bytes written to it. You can perhaps think of a buffer as smart byte array.
  * <p>
  * Please consult the documentation for more information on buffers.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface Buffer extends ClusterSerializable {
@@ -57,7 +55,7 @@ public interface Buffer extends ClusterSerializable {
    * If you know the buffer will require a certain size, providing the hint can prevent unnecessary re-allocations
    * as the buffer is written to and resized.
    *
-   * @param initialSizeHint  the hint, in bytes
+   * @param initialSizeHint the hint, in bytes
    * @return the buffer
    */
   static Buffer buffer(int initialSizeHint) {
@@ -67,8 +65,8 @@ public interface Buffer extends ClusterSerializable {
   /**
    * Create a new buffer from a string. The string will be UTF-8 encoded into the buffer.
    *
-   * @param string  the string
-   * @return  the buffer
+   * @param string the string
+   * @return the buffer
    */
   static Buffer buffer(String string) {
     return factory.buffer(string);
@@ -78,8 +76,8 @@ public interface Buffer extends ClusterSerializable {
    * Create a new buffer from a string and using the specified encoding.
    * The string will be encoded into the buffer using the specified encoding.
    *
-   * @param string  the string
-   * @return  the buffer
+   * @param string the string
+   * @return the buffer
    */
   static Buffer buffer(String string, String enc) {
     return factory.buffer(string, enc);
@@ -88,8 +86,8 @@ public interface Buffer extends ClusterSerializable {
   /**
    * Create a new buffer from a byte[]. The byte[] will be copied to form the buffer.
    *
-   * @param bytes  the byte array
-   * @return  the buffer
+   * @param bytes the byte array
+   * @return the buffer
    */
   @GenIgnore
   static Buffer buffer(byte[] bytes) {
@@ -110,7 +108,7 @@ public interface Buffer extends ClusterSerializable {
    *   Buffer clone = Buffer.buffer(src.getByteBuf());
    * </pre>
    *
-   * @param byteBuf  the Netty ByteBuf
+   * @param byteBuf the Netty ByteBuf
    * @return the buffer
    */
   @GenIgnore

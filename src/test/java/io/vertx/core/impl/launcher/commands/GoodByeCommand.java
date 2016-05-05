@@ -17,8 +17,8 @@ package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.cli.CLI;
 import io.vertx.core.cli.CLIException;
-import io.vertx.core.cli.impl.DefaultCLI;
 import io.vertx.core.cli.TypedOption;
+import io.vertx.core.cli.impl.DefaultCLI;
 import io.vertx.core.spi.launcher.DefaultCommand;
 
 public class GoodByeCommand extends DefaultCommand {

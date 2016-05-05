@@ -24,8 +24,6 @@ import java.util.Objects;
 
 /**
  * Options for configuring a {@link io.vertx.core.net.NetClient}.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public class NetClientOptions extends ClientOptionsBase {
@@ -51,7 +49,7 @@ public class NetClientOptions extends ClientOptionsBase {
   private String hostnameVerificationAlgorithm;
 
 
-    /**
+  /**
    * The default constructor
    */
   public NetClientOptions() {
@@ -62,7 +60,7 @@ public class NetClientOptions extends ClientOptionsBase {
   /**
    * Copy constructor
    *
-   * @param other  the options to copy
+   * @param other the options to copy
    */
   public NetClientOptions(NetClientOptions other) {
     super(other);
@@ -74,7 +72,7 @@ public class NetClientOptions extends ClientOptionsBase {
   /**
    * Create options from JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public NetClientOptions(JsonObject json) {
     super(json);
@@ -217,7 +215,7 @@ public class NetClientOptions extends ClientOptionsBase {
   /**
    * Set the value of reconnect attempts
    *
-   * @param attempts  the maximum number of reconnect attempts
+   * @param attempts the maximum number of reconnect attempts
    * @return a reference to this, so the API can be used fluently
    */
   public NetClientOptions setReconnectAttempts(int attempts) {
@@ -229,7 +227,7 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return  the value of reconnect attempts
+   * @return the value of reconnect attempts
    */
   public int getReconnectAttempts() {
     return reconnectAttempts;
@@ -238,7 +236,7 @@ public class NetClientOptions extends ClientOptionsBase {
   /**
    * Set the reconnect interval
    *
-   * @param interval  the reconnect interval in ms
+   * @param interval the reconnect interval in ms
    * @return a reference to this, so the API can be used fluently
    */
   public NetClientOptions setReconnectInterval(long interval) {
@@ -250,7 +248,7 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return  the value of the hostname verification algorithm
+   * @return the value of the hostname verification algorithm
    */
 
   public String getHostnameVerificationAlgorithm() {
@@ -272,13 +270,13 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return  the value of reconnect interval
+   * @return the value of reconnect interval
    */
   public long getReconnectInterval() {
     return reconnectInterval;
   }
 
-    @Override
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof NetClientOptions)) return false;

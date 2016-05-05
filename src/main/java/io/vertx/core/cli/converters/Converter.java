@@ -17,8 +17,6 @@ package io.vertx.core.cli.converters;
 
 /**
  * The converter interface to convert {@code String}s to {@code Object}s.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public interface Converter<T> {
 

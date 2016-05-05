@@ -23,8 +23,6 @@ import java.lang.reflect.Modifier;
 /**
  * This 'default' converter tries to create objects using a static 'from' method taking a single String argument.
  * This converter is particularly convenient for converters themselves.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public final class FromStringBasedConverter<T> implements Converter<T> {
 

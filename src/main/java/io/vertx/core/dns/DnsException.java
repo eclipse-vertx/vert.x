@@ -20,8 +20,6 @@ import java.util.Objects;
 /**
  * Exception which is used to notify the {@link io.vertx.core.AsyncResult}
  * if the DNS query returns a {@link DnsResponseCode} which indicates and error.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public final class DnsException extends Exception {
 

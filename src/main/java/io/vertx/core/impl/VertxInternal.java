@@ -21,7 +21,6 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.NetServerImpl;
@@ -38,8 +37,6 @@ import java.util.concurrent.ExecutorService;
  * This interface provides services for vert.x core internal use only
  * It is not part of the public API and should not be used by
  * developers creating vert.x applications
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface VertxInternal extends Vertx {
 
@@ -58,11 +55,12 @@ public interface VertxInternal extends Vertx {
 
   VertxMetrics metricsSPI();
 
-	/**
-	 * Get the current context
-	 * @return the context
-	 */
-	ContextImpl getContext();
+  /**
+   * Get the current context
+   *
+   * @return the context
+   */
+  ContextImpl getContext();
 
   /**
    * @return event loop context
@@ -104,7 +102,7 @@ public interface VertxInternal extends Vertx {
   /**
    * Resolve an hostname (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
    *
-   * @param hostname the hostname to resolve
+   * @param hostname      the hostname to resolve
    * @param resultHandler the result handler
    */
   void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler);

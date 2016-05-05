@@ -22,11 +22,7 @@ import io.vertx.core.Handler;
 
 
 /**
- *
  * An asynchronous map.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
- *
  */
 @VertxGen
 public interface AsyncMap<K, V> {
@@ -34,7 +30,7 @@ public interface AsyncMap<K, V> {
   /**
    * Get a value from the map, asynchronously.
    *
-   * @param k  the key
+   * @param k             the key
    * @param resultHandler - this will be called some time later with the async result.
    */
   void get(K k, Handler<AsyncResult<V>> resultHandler);
@@ -42,8 +38,8 @@ public interface AsyncMap<K, V> {
   /**
    * Put a value in the map, asynchronously.
    *
-   * @param k  the key
-   * @param v  the value
+   * @param k                 the key
+   * @param v                 the value
    * @param completionHandler - this will be called some time later to signify the value has been put
    */
   void put(K k, V v, Handler<AsyncResult<Void>> completionHandler);
@@ -52,10 +48,10 @@ public interface AsyncMap<K, V> {
    * Like {@link #put} but specifying a timeout. If the value cannot be put within the timeout a
    * failure will be passed to the handler
    *
-   * @param k  the key
-   * @param v  the value
-   * @param ttl  The time to live (in ms) for the entry
-   * @param completionHandler  the handler
+   * @param k                 the key
+   * @param v                 the value
+   * @param ttl               The time to live (in ms) for the entry
+   * @param completionHandler the handler
    */
   void put(K k, V v, long ttl, Handler<AsyncResult<Void>> completionHandler);
 
@@ -63,9 +59,9 @@ public interface AsyncMap<K, V> {
    * Put the entry only if there is no entry with the key already present. If key already present then the existing
    * value will be returned to the handler, otherwise null.
    *
-   * @param k  the key
-   * @param v  the value
-   * @param completionHandler  the handler
+   * @param k                 the key
+   * @param v                 the value
+   * @param completionHandler the handler
    */
   void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler);
 
@@ -73,17 +69,17 @@ public interface AsyncMap<K, V> {
    * Link {@link #putIfAbsent} but specifying a timeout. If the value cannot be put within the timeout a
    * failure will be passed to the handler
    *
-   * @param k  the key
-   * @param v  the value
-   * @param ttl  The time to live (in ms) for the entry
-   * @param completionHandler  the handler
+   * @param k                 the key
+   * @param v                 the value
+   * @param ttl               The time to live (in ms) for the entry
+   * @param completionHandler the handler
    */
   void putIfAbsent(K k, V v, long ttl, Handler<AsyncResult<V>> completionHandler);
 
   /**
    * Remove a value from the map, asynchronously.
    *
-   * @param k  the key
+   * @param k             the key
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
   void remove(K k, Handler<AsyncResult<V>> resultHandler);
@@ -91,8 +87,8 @@ public interface AsyncMap<K, V> {
   /**
    * Remove a value from the map, only if entry already exists with same value.
    *
-   * @param k  the key
-   * @param v  the value
+   * @param k             the key
+   * @param v             the value
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
   void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler);
@@ -101,18 +97,18 @@ public interface AsyncMap<K, V> {
   /**
    * Replace the entry only if it is currently mapped to some value
    *
-   * @param k  the key
-   * @param v  the new value
-   * @param resultHandler  the result handler will be passed the previous value
+   * @param k             the key
+   * @param v             the new value
+   * @param resultHandler the result handler will be passed the previous value
    */
   void replace(K k, V v, Handler<AsyncResult<V>> resultHandler);
 
   /**
    * Replace the entry only if it is currently mapped to a specific value
    *
-   * @param k  the key
-   * @param oldValue  the existing value
-   * @param newValue  the new value
+   * @param k             the key
+   * @param oldValue      the existing value
+   * @param newValue      the new value
    * @param resultHandler the result handler
    */
   void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler);
@@ -120,14 +116,14 @@ public interface AsyncMap<K, V> {
   /**
    * Clear all entries in the map
    *
-   * @param resultHandler  called on completion
+   * @param resultHandler called on completion
    */
   void clear(Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Provide the number of entries in the map
    *
-   * @param resultHandler  handler which will receive the number of entries
+   * @param resultHandler handler which will receive the number of entries
    */
   void size(Handler<AsyncResult<Integer>> resultHandler);
 

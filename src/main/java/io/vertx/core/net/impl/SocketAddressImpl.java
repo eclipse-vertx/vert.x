@@ -23,9 +23,9 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
-public class SocketAddressImpl implements SocketAddress{
+public class SocketAddressImpl implements SocketAddress {
 
   private final String hostAddress;
   private final int port;

@@ -41,8 +41,6 @@ import io.vertx.core.spi.PumpFactory;
  * or from {@link io.vertx.core.net.NetSocket} to a {@link io.vertx.core.http.WebSocket}.
  * <p>
  * Please see the documentation for more information.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface Pump {
@@ -50,8 +48,8 @@ public interface Pump {
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
    *
-   * @param rs  the read stream
-   * @param ws  the write stream
+   * @param rs the read stream
+   * @param ws the write stream
    * @return the pump
    */
   static <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws) {
@@ -62,9 +60,9 @@ public interface Pump {
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream} and
    * {@code writeQueueMaxSize}
    *
-   * @param rs  the read stream
-   * @param ws  the write stream
-   * @param writeQueueMaxSize  the max size of the write queue
+   * @param rs                the read stream
+   * @param ws                the write stream
+   * @param writeQueueMaxSize the max size of the write queue
    * @return the pump
    */
   static <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws, int writeQueueMaxSize) {
@@ -74,7 +72,7 @@ public interface Pump {
   /**
    * Set the write queue max size to {@code maxSize}
    *
-   * @param maxSize  the max size
+   * @param maxSize the max size
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent

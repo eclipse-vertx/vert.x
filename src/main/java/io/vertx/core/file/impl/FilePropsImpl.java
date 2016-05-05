@@ -22,7 +22,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 
 public class FilePropsImpl implements FileProps {
-  
+
   private final long creationTime;
   private final long lastAccessTime;
   private final long lastModifiedTime;

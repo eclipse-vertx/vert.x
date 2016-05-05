@@ -21,7 +21,7 @@ import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.spi.VerticleFactory;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class JavaVerticleFactory implements VerticleFactory {
 

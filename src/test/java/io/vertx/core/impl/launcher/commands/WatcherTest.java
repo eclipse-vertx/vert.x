@@ -29,8 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test the watching service behavior.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class WatcherTest extends CommandTestBase {
 

@@ -19,16 +19,16 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
@@ -45,22 +45,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
-import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
-import static io.vertx.core.http.HttpHeaders.CLOSE;
-import static io.vertx.core.http.HttpHeaders.CONNECTION;
-import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
-import static io.vertx.core.http.HttpHeaders.HOST;
-import static io.vertx.core.http.HttpHeaders.KEEP_ALIVE;
-import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
+import static io.vertx.core.http.HttpHeaders.*;
 
 /**
- *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class ClientConnection extends ConnectionBase implements HttpClientConnection, HttpClientStream {
 
@@ -115,7 +106,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
-                   int maxWebSocketFrameSize, Handler<WebSocket> wsConnect) {
+                                int maxWebSocketFrameSize, Handler<WebSocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
     }
@@ -127,19 +118,19 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + requestURI);
       }
       WebSocketVersion version =
-         WebSocketVersion.valueOf((vers == null ?
-           WebSocketVersion.V13 : vers).toString());
+          WebSocketVersion.valueOf((vers == null ?
+              WebSocketVersion.V13 : vers).toString());
       HttpHeaders nettyHeaders;
       if (headers != null) {
         nettyHeaders = new DefaultHttpHeaders();
-        for (Map.Entry<String, String> entry: headers) {
+        for (Map.Entry<String, String> entry : headers) {
           nettyHeaders.add(entry.getKey(), entry.getValue());
         }
       } else {
         nettyHeaders = null;
       }
       handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
-                                                                  nettyHeaders, maxWebSocketFrameSize);
+          nettyHeaders, maxWebSocketFrameSize);
       ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(channel).addListener(future -> {
@@ -239,7 +230,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       // Need to set context before constructor is called as writehandler registration needs this
       ContextImpl.setContext(context);
       WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation,
-                                                  client.getOptions().getMaxWebsocketFrameSize());
+          client.getOptions().getMaxWebsocketFrameSize());
       ws = webSocket;
       handshaker.finishHandshake(channel, response);
       context.executeFromIO(() -> {
@@ -378,7 +369,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
     // Signal requests failed
     if (metrics.isEnabled()) {
-      for (HttpClientRequestImpl req: requests) {
+      for (HttpClientRequestImpl req : requests) {
         metrics.requestReset(req.metric());
       }
       if (requestForResponse != null) {
@@ -387,7 +378,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
 
     // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
-    for (HttpClientRequestImpl req: requests) {
+    for (HttpClientRequestImpl req : requests) {
       req.handleException(e);
     }
     if (currentRequest != null) {
@@ -532,7 +523,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler(channel, socket, connectionMap) {
+    pipeline.replace("handler", "handler", new VertxNetHandler(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping

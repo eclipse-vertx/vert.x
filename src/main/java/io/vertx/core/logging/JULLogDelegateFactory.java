@@ -25,9 +25,6 @@ import java.util.logging.LogManager;
 
 /**
  * A {@link io.vertx.core.spi.logging.LogDelegateFactory} which creates {@link JULLogDelegate} instances.
- *
- * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JULLogDelegateFactory implements LogDelegateFactory {
 

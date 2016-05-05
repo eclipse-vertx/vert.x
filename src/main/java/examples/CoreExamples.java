@@ -229,7 +229,7 @@ public class CoreExamples {
   public void example14(Vertx vertx) {
     DeploymentOptions options = new DeploymentOptions().setIsolationGroup("mygroup");
     options.setIsolatedClasses(Arrays.asList("com.mycompany.myverticle.*",
-                       "com.mycompany.somepkg.SomeClass", "org.somelibrary.*"));
+        "com.mycompany.somepkg.SomeClass", "org.somelibrary.*"));
     vertx.deployVerticle("com.mycompany.myverticle.VerticleClass", options);
   }
 
@@ -277,13 +277,13 @@ public class CoreExamples {
       System.out.println("Context attached to Worker Thread");
     } else if (context.isMultiThreadedWorkerContext()) {
       System.out.println("Context attached to Worker Thread - multi threaded worker");
-    } else if (! Context.isOnVertxThread()) {
+    } else if (!Context.isOnVertxThread()) {
       System.out.println("Context not attached to a thread managed by vert.x");
     }
   }
 
   public void runInContext(Vertx vertx) {
-    vertx.getOrCreateContext().runOnContext( (v) -> {
+    vertx.getOrCreateContext().runOnContext((v) -> {
       System.out.println("This will be executed asynchronously in the same context");
     });
   }

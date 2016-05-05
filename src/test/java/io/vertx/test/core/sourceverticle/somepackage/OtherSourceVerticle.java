@@ -19,7 +19,7 @@ package io.vertx.test.core.sourceverticle.somepackage;
 import io.vertx.core.AbstractVerticle;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class OtherSourceVerticle extends AbstractVerticle {
 }

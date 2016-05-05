@@ -28,15 +28,12 @@ import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 
 /**
  * Theses test checks the SLF4J log delegate. It assumes the binding used by SLF4J is slf4j-simple with the default
  * configuration. It injects a print stream to read the logged message. This is definitely a hack, but it's the only
  * way to test the output.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class SLF4JLogDelegateTest {
 

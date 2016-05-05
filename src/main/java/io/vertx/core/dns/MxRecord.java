@@ -19,8 +19,6 @@ import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represent a Mail-Exchange-Record (MX) which was resolved for a domain.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 @VertxGen
 public interface MxRecord {

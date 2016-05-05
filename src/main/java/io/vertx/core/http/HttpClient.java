@@ -47,8 +47,6 @@ import io.vertx.core.metrics.Measured;
  * and there are no outstanding pending requests to write.
  * <p>
  * The client is designed to be reused between requests.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface HttpClient extends Measured {
@@ -56,159 +54,176 @@ public interface HttpClient extends Measured {
 
   /**
    * Create an HTTP request to send to the server at the specified host and port.
-   * @param method  the HTTP method
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param method     the HTTP method
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI);
 
   /**
    * Create an HTTP request to send to the server at the specified host and default port.
-   * @param method  the HTTP method
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param method     the HTTP method
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest request(HttpMethod method, String host, String requestURI);
 
   /**
    * Create an HTTP request to send to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param method  the HTTP method
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param method          the HTTP method
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP request to send to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param method  the HTTP method
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param method          the HTTP method
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest request(HttpMethod method, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP request to send to the server at the default host and port.
-   * @param method  the HTTP method
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param method     the HTTP method
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest request(HttpMethod method, String requestURI);
 
   /**
    * Create an HTTP request to send to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param method  the HTTP method
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param method          the HTTP method
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest request(HttpMethod method, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP request to send to the server using an absolute URI
-   * @param method  the HTTP method
-   * @param absoluteURI  the absolute URI
-   * @return  an HTTP client request object
+   *
+   * @param method      the HTTP method
+   * @param absoluteURI the absolute URI
+   * @return an HTTP client request object
    */
   HttpClientRequest requestAbs(HttpMethod method, String absoluteURI);
 
   /**
    * Create an HTTP request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
-   * @param method  the HTTP method
-   * @param absoluteURI  the absolute URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param method          the HTTP method
+   * @param absoluteURI     the absolute URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server at the specified host and port.
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest get(int port, String host, String requestURI);
 
   /**
    * Create an HTTP GET request to send to the server at the specified host and default port.
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest get(String host, String requestURI);
 
   /**
    * Create an HTTP GET request to send to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest get(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest get(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server at the default host and port.
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest get(String requestURI);
 
   /**
    * Create an HTTP GET request to send to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest get(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server using an absolute URI
-   * @param absoluteURI  the absolute URI
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI the absolute URI
+   * @return an HTTP client request object
    */
   HttpClientRequest getAbs(String absoluteURI);
 
   /**
    * Create an HTTP GET request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
-   * @param absoluteURI  the absolute URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI     the absolute URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest getAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Sends an HTTP GET request to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -217,9 +232,10 @@ public interface HttpClient extends Measured {
   /**
    * Sends an HTTP GET request to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -228,8 +244,9 @@ public interface HttpClient extends Measured {
   /**
    * Sends an HTTP GET request  to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -237,151 +254,168 @@ public interface HttpClient extends Measured {
 
   /**
    * Create an HTTP POST request to send to the server at the specified host and port.
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest post(int port, String host, String requestURI);
 
   /**
    * Create an HTTP POST request to send to the server at the specified host and default port.
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest post(String host, String requestURI);
 
   /**
    * Create an HTTP POST request to send to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest post(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP POST request to send to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest post(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP POST request to send to the server at the default host and port.
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest post(String requestURI);
 
   /**
    * Create an HTTP POST request to send to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest post(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP POST request to send to the server using an absolute URI
-   * @param absoluteURI  the absolute URI
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI the absolute URI
+   * @return an HTTP client request object
    */
   HttpClientRequest postAbs(String absoluteURI);
 
   /**
    * Create an HTTP POST request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
-   * @param absoluteURI  the absolute URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI     the absolute URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest postAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server at the specified host and port.
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest head(int port, String host, String requestURI);
 
   /**
    * Create an HTTP HEAD request to send to the server at the specified host and default port.
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest head(String host, String requestURI);
 
   /**
    * Create an HTTP HEAD request to send to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest head(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest head(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server at the default host and port.
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest head(String requestURI);
 
   /**
    * Create an HTTP HEAD request to send to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest head(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server using an absolute URI
-   * @param absoluteURI  the absolute URI
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI the absolute URI
+   * @return an HTTP client request object
    */
   HttpClientRequest headAbs(String absoluteURI);
 
   /**
    * Create an HTTP HEAD request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
-   * @param absoluteURI  the absolute URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI     the absolute URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest headAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Sends an HTTP HEAD request to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -390,9 +424,10 @@ public interface HttpClient extends Measured {
   /**
    * Sends an HTTP HEAD request to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -401,8 +436,9 @@ public interface HttpClient extends Measured {
   /**
    * Sends an HTTP HEAD request  to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -410,81 +446,90 @@ public interface HttpClient extends Measured {
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the specified host and port.
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest options(int port, String host, String requestURI);
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the specified host and default port.
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest options(String host, String requestURI);
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest options(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest options(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the default host and port.
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest options(String requestURI);
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest options(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP OPTIONS request to send to the server using an absolute URI
-   * @param absoluteURI  the absolute URI
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI the absolute URI
+   * @return an HTTP client request object
    */
   HttpClientRequest optionsAbs(String absoluteURI);
 
   /**
    * Create an HTTP OPTIONS request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
-   * @param absoluteURI  the absolute URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI     the absolute URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest optionsAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Sends an HTTP OPTIONS request to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -493,9 +538,10 @@ public interface HttpClient extends Measured {
   /**
    * Sends an HTTP OPTIONS request to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -504,8 +550,9 @@ public interface HttpClient extends Measured {
   /**
    * Sends an HTTP OPTIONS request  to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -513,149 +560,166 @@ public interface HttpClient extends Measured {
 
   /**
    * Create an HTTP PUT request to send to the server at the specified host and port.
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest put(int port, String host, String requestURI);
 
   /**
    * Create an HTTP PUT request to send to the server at the specified host and default port.
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest put(String host, String requestURI);
 
   /**
    * Create an HTTP PUT request to send to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest put(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP PUT request to send to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest put(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP PUT request to send to the server at the default host and port.
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest put(String requestURI);
 
   /**
    * Create an HTTP PUT request to send to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest put(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP PUT request to send to the server using an absolute URI
-   * @param absoluteURI  the absolute URI
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI the absolute URI
+   * @return an HTTP client request object
    */
   HttpClientRequest putAbs(String absoluteURI);
 
   /**
    * Create an HTTP PUT request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
-   * @param absoluteURI  the absolute URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI     the absolute URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest putAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server at the specified host and port.
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest delete(int port, String host, String requestURI);
 
   /**
    * Create an HTTP DELETE request to send to the server at the specified host and default port.
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest delete(String host, String requestURI);
 
   /**
    * Create an HTTP DELETE request to send to the server at the specified host and port, specifying a response handler to receive
    * the response
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param port            the port
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest delete(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server at the specified host and default port, specifying a response handler to receive
    * the response
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param host            the host
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest delete(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server at the default host and port.
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   *
+   * @param requestURI the relative URI
+   * @return an HTTP client request object
    */
   HttpClientRequest delete(String requestURI);
 
   /**
    * Create an HTTP DELETE request to send to the server at the default host and port, specifying a response handler to receive
    * the response
-   * @param requestURI  the relative URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param requestURI      the relative URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest delete(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server using an absolute URI
-   * @param absoluteURI  the absolute URI
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI the absolute URI
+   * @return an HTTP client request object
    */
   HttpClientRequest deleteAbs(String absoluteURI);
 
   /**
    * Create an HTTP DELETE request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
-   * @param absoluteURI  the absolute URI
-   * @param responseHandler  the response handler
-   * @return  an HTTP client request object
+   *
+   * @param absoluteURI     the absolute URI
+   * @param responseHandler the response handler
+   * @return an HTTP client request object
    */
   HttpClientRequest deleteAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Connect a WebSocket to the specified port, host and relative request URI
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -664,10 +728,11 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket to the specified port, host and relative request URI
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param port           the port
+   * @param host           the host
+   * @param requestURI     the relative URI
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -676,8 +741,9 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket to the host and relative request URI and default port
-   * @param host  the host
-   * @param requestURI  the relative URI
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -686,9 +752,10 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket to the host and relative request URI and default port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param host           the host
+   * @param requestURI     the relative URI
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -697,10 +764,11 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket to the specified port, host and relative request URI, and with the specified headers
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param headers    the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -709,11 +777,12 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket to the specified port, host and relative request URI, and with the specified headers
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param port           the port
+   * @param host           the host
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -722,9 +791,10 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket to the specified host,relative request UR, and default port and with the specified headers
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param headers    the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -733,10 +803,11 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket to the specified host,relative request UR, and default port and with the specified headers
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param host           the host
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -746,11 +817,12 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket to the specified port, host and relative request URI, with the specified headers and using
    * the specified version of WebSockets
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param headers    the headers
+   * @param version    the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -761,12 +833,13 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket to the specified port, host and relative request URI, with the specified headers and using
    * the specified version of WebSockets
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param port           the port
+   * @param host           the host
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -777,10 +850,11 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket to the specified host, relative request URI and default port with the specified headers and using
    * the specified version of WebSockets
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param headers    the headers
+   * @param version    the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -791,11 +865,12 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket to the specified host, relative request URI and default port with the specified headers and using
    * the specified version of WebSockets
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param host           the host
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -806,13 +881,14 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket to the specified port, host and relative request URI, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols to use
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param port         the port
+   * @param host         the host
+   * @param requestURI   the relative URI
+   * @param headers      the headers
+   * @param version      the websocket version
+   * @param subProtocols the subprotocols to use
+   * @param wsConnect    handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -822,13 +898,14 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket to the specified port, host and relative request URI, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols to use
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param port           the port
+   * @param host           the host
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param subProtocols   the subprotocols to use
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -839,12 +916,13 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket to the specified host, relative request URI and default port, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols to use
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param host         the host
+   * @param requestURI   the relative URI
+   * @param headers      the headers
+   * @param version      the websocket version
+   * @param subProtocols the subprotocols to use
+   * @param wsConnect    handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -854,12 +932,13 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket to the specified host, relative request URI and default port, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols to use
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param host           the host
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param subProtocols   the subprotocols to use
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -869,7 +948,8 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket at the relative request URI using the default host and port
-   * @param requestURI  the relative URI
+   *
+   * @param requestURI the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -878,8 +958,9 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket at the relative request URI using the default host and port
-   * @param requestURI  the relative URI
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param requestURI     the relative URI
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -888,8 +969,9 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket at the relative request URI using the default host and port and the specified headers
-   * @param requestURI  the relative URI
-   * @param headers  the headers
+   *
+   * @param requestURI the relative URI
+   * @param headers    the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -898,9 +980,10 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket at the relative request URI using the default host and port and the specified headers
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -910,9 +993,10 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket at the relative request URI using the default host and port, the specified headers and the
    * specified version of WebSockets
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
+   *
+   * @param requestURI the relative URI
+   * @param headers    the headers
+   * @param version    the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
@@ -923,10 +1007,11 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket at the relative request URI using the default host and port, the specified headers and the
    * specified version of WebSockets
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -938,11 +1023,12 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket at the relative request URI using the default host and port, the specified headers, the
    * specified version of WebSockets and the specified sub protocols
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param requestURI   the relative URI
+   * @param headers      the headers
+   * @param version      the websocket version
+   * @param subProtocols the subprotocols
+   * @param wsConnect    handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -952,11 +1038,12 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket at the relative request URI using the default host and port, the specified headers, the
    * specified version of WebSockets and the specified sub protocols
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols
-   * @param wsConnect  handler that will be called with the websocket when connected
+   *
+   * @param requestURI     the relative URI
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param subProtocols   the subprotocols
+   * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
@@ -967,36 +1054,40 @@ public interface HttpClient extends Measured {
 
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(int port, String host, String requestURI);
 
   /**
    * Create a WebSocket stream to the specified host, relative request URI and default port
-   * @param host  the host
-   * @param requestURI  the relative URI
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(String host, String requestURI);
 
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI, and with the specified headers
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param headers    the headers
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers);
 
   /**
    * Create a WebSocket stream to the specified host, relative request URI and default port and with the specified headers
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param headers    the headers
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(String host, String requestURI, MultiMap headers);
@@ -1004,11 +1095,12 @@ public interface HttpClient extends Measured {
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI, with the specified headers and using
    * the specified version of WebSockets
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
+   *
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param headers    the headers
+   * @param version    the websocket version
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version);
@@ -1016,10 +1108,11 @@ public interface HttpClient extends Measured {
   /**
    * Create a WebSocket stream to the specified host, relative request URI and default port and with the specified headers and using
    * the specified version of WebSockets
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
+   *
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param headers    the headers
+   * @param version    the websocket version
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version);
@@ -1027,12 +1120,13 @@ public interface HttpClient extends Measured {
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols to use
+   *
+   * @param port         the port
+   * @param host         the host
+   * @param requestURI   the relative URI
+   * @param headers      the headers
+   * @param version      the websocket version
+   * @param subProtocols the subprotocols to use
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
@@ -1041,11 +1135,12 @@ public interface HttpClient extends Measured {
   /**
    * Create a WebSocket stream to the specified host, relative request URI and default port, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols to use
+   *
+   * @param host         the host
+   * @param requestURI   the relative URI
+   * @param headers      the headers
+   * @param version      the websocket version
+   * @param subProtocols the subprotocols to use
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version,
@@ -1053,15 +1148,17 @@ public interface HttpClient extends Measured {
 
   /**
    * Create a WebSocket stream at the relative request URI using the default host and port and the specified headers
-   * @param requestURI  the relative URI
+   *
+   * @param requestURI the relative URI
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(String requestURI);
 
   /**
    * Create a WebSocket stream at the relative request URI using the default host and port and the specified headers
-   * @param requestURI  the relative URI
-   * @param headers  the headers
+   *
+   * @param requestURI the relative URI
+   * @param headers    the headers
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(String requestURI, MultiMap headers);
@@ -1069,9 +1166,10 @@ public interface HttpClient extends Measured {
   /**
    * Create a WebSocket stream at the relative request URI using the default host and port, the specified headers and the
    * specified version of WebSockets
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
+   *
+   * @param requestURI the relative URI
+   * @param headers    the headers
+   * @param version    the websocket version
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(String requestURI, MultiMap headers, WebsocketVersion version);
@@ -1079,10 +1177,11 @@ public interface HttpClient extends Measured {
   /**
    * Create a WebSocket stream at the relative request URI using the default host and port, the specified headers, the
    * specified version of WebSockets and the specified sub protocols
-   * @param requestURI  the relative URI
-   * @param headers  the headers
-   * @param version  the websocket version
-   * @param subProtocols  the subprotocols
+   *
+   * @param requestURI   the relative URI
+   * @param headers      the headers
+   * @param version      the websocket version
+   * @param subProtocols the subprotocols
    * @return a reference to this, so the API can be used fluently
    */
   WebSocketStream websocketStream(String requestURI, MultiMap headers, WebsocketVersion version,

@@ -18,9 +18,6 @@ package io.vertx.core.impl;
 
 /**
  * Simple generic utility methods and constants
- *
- * @author Juergen Donnerstag
- * @author Alain Penders
  */
 public class Utils {
 

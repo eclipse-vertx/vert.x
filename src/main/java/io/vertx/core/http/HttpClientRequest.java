@@ -16,14 +16,10 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -53,8 +49,6 @@ import io.vertx.core.streams.WriteStream;
  * <p>
  * An example of using this class is as follows:
  * <p>
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpClientResponse> {
@@ -136,7 +130,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
 
   /**
    * Set the request host.<p/>
-   *
+   * <p>
    * For HTTP2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header
    */
   @Fluent
@@ -284,19 +278,19 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
 
   /**
    * Set a push handler for this request.<p/>
-   *
+   * <p>
    * The handler is called when the client receives a <i>push promise</i> from the server. The handler can be called
    * multiple times, for each push promise.<p/>
-   *
+   * <p>
    * The handler is called with a <i>read-only</i> {@link HttpClientRequest}, the following methods can be called:<p/>
-   *
+   * <p>
    * <ul>
-   *   <li>{@link HttpClientRequest#method()}</li>
-   *   <li>{@link HttpClientRequest#uri()}</li>
-   *   <li>{@link HttpClientRequest#headers()}</li>
-   *   <li>{@link HttpClientRequest#getHost()}</li>
+   * <li>{@link HttpClientRequest#method()}</li>
+   * <li>{@link HttpClientRequest#uri()}</li>
+   * <li>{@link HttpClientRequest#headers()}</li>
+   * <li>{@link HttpClientRequest#getHost()}</li>
    * </ul>
-   *
+   * <p>
    * In addition the handler should call the {@link HttpClientRequest#handler} method to set an handler to
    * process the response.<p/>
    *
@@ -337,14 +331,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
 
   /**
    * Write an HTTP/2 frame to the request, allowing to extend the HTTP/2 protocol.<p>
-   *
+   * <p>
    * The frame is sent immediatly and is not subject to flow control.<p>
-   *
+   * <p>
    * This method must be called after the request headers have been sent and only for the protocol HTTP/2.
    * The {@link #sendHead(Handler)} should be used for this purpose.
    *
-   * @param type the 8-bit frame type
-   * @param flags the 8-bit frame flags
+   * @param type    the 8-bit frame type
+   * @param flags   the 8-bit frame flags
    * @param payload the frame payload
    * @return a reference to this, so the API can be used fluently
    */
@@ -353,7 +347,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
 
   /**
    * @return the id of the stream of this response, {@literal -1} when it is not yet determined, i.e
-   *         the request has not been yet sent or it is not supported HTTP/1.x
+   * the request has not been yet sent or it is not supported HTTP/1.x
    */
   default int streamId() {
     return -1;

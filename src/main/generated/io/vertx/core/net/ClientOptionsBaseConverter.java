@@ -17,21 +17,20 @@
 package io.vertx.core.net;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.net.ClientOptionsBase}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.ClientOptionsBase} original class using Vert.x codegen.
  */
 public class ClientOptionsBaseConverter {
 
   public static void fromJson(JsonObject json, ClientOptionsBase obj) {
     if (json.getValue("connectTimeout") instanceof Number) {
-      obj.setConnectTimeout(((Number)json.getValue("connectTimeout")).intValue());
+      obj.setConnectTimeout(((Number) json.getValue("connectTimeout")).intValue());
     }
     if (json.getValue("trustAll") instanceof Boolean) {
-      obj.setTrustAll((Boolean)json.getValue("trustAll"));
+      obj.setTrustAll((Boolean) json.getValue("trustAll"));
     }
   }
 

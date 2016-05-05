@@ -17,12 +17,7 @@ package io.vertx.core.net.impl;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -43,7 +38,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public abstract class KeyStoreHelper {
 
@@ -126,7 +121,7 @@ public abstract class KeyStoreHelper {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     fact.getProvider();
     KeyStore ks = loadStore(vertx);
-    fact.init(ks, password != null ? password.toCharArray(): null);
+    fact.init(ks, password != null ? password.toCharArray() : null);
     return fact;
   }
 
@@ -169,7 +164,7 @@ public abstract class KeyStoreHelper {
       InputStream in = null;
       try {
         in = new ByteArrayInputStream(value.get().getBytes());
-        ks.load(in, password != null ? password.toCharArray(): null);
+        ks.load(in, password != null ? password.toCharArray() : null);
       } finally {
         if (in != null) {
           try {

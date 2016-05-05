@@ -18,8 +18,6 @@ package io.vertx.core.spi.metrics;
 
 /**
  * An SPI used internally by Vert.x to gather metrics on pools used by Vert.x  (execute blocking, worker verticle).
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public interface PoolMetrics<T> extends Metrics {
 

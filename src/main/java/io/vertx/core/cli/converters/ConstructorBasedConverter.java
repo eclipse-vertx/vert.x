@@ -21,8 +21,6 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * This 'default' converter tries to create objects using a constructor taking a single String argument.
  * Be aware that implementation must also handle the case where the input is {@literal null}.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public final class ConstructorBasedConverter<T> implements Converter<T> {
 

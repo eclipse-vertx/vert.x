@@ -16,14 +16,14 @@
 
 /**
  * === Error handling
- *
+ * <p>
  * As you saw in previous sections the DnsClient allows you to pass in a Handler which will be notified with an
  * AsyncResult once the query was complete. In case of an error it will be notified with a DnsException which will
  * hole a {@link io.vertx.core.dns.DnsResponseCode} that indicate why the resolution failed. This DnsResponseCode
  * can be used to inspect the cause in more detail.
- *
+ * <p>
  * Possible DnsResponseCodes are:
- *
+ * <p>
  * - {@link io.vertx.core.dns.DnsResponseCode#NOERROR} No record was found for a given query
  * - {@link io.vertx.core.dns.DnsResponseCode#FORMERROR} Format error
  * - {@link io.vertx.core.dns.DnsResponseCode#SERVFAIL} Server failure
@@ -38,11 +38,11 @@
  * - {@link io.vertx.core.dns.DnsResponseCode#BADSIG} Bad signature
  * - {@link io.vertx.core.dns.DnsResponseCode#BADKEY} Bad key
  * - {@link io.vertx.core.dns.DnsResponseCode#BADTIME} Bad timestamp
- *
+ * <p>
  * All of those errors are "generated" by the DNS Server itself.
- *
+ * <p>
  * You can obtain the DnsResponseCode from the DnsException like:
- *
+ * <p>
  * [source,java]
  * ----
  * {@link docoverride.dns.Examples#example16}

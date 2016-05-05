@@ -20,7 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class DoubleMessageCodec implements MessageCodec<Double, Double> {
 

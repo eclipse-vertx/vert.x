@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
@@ -111,7 +111,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
       // User codec
       writeString(buffer, messageCodec.name());
     }
-    buffer.appendByte(send ? (byte)0 : (byte)1);
+    buffer.appendByte(send ? (byte) 0 : (byte) 1);
     writeString(buffer, address);
     if (replyAddress != null) {
       writeString(buffer, replyAddress);
@@ -132,7 +132,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     byte protocolVersion = buffer.getByte(pos);
     if (protocolVersion > WIRE_PROTOCOL_VERSION) {
       throw new IllegalStateException("Invalid wire protocol version " + protocolVersion +
-                                      " should be <= " + WIRE_PROTOCOL_VERSION);
+          " should be <= " + WIRE_PROTOCOL_VERSION);
     }
     pos++;
     byte systemCodecCode = buffer.getByte(pos);
@@ -193,7 +193,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
       buffer.appendInt(0);
       buffer.appendInt(headers.size());
       List<Map.Entry<String, String>> entries = headers.entries();
-      for (Map.Entry<String, String> entry: entries) {
+      for (Map.Entry<String, String> entry : entries) {
         writeString(buffer, entry.getKey());
         writeString(buffer, entry.getValue());
       }

@@ -22,7 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.test.core.sourceverticle.somepackage.OtherSourceVerticle;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class SourceVerticle extends AbstractVerticle {
 

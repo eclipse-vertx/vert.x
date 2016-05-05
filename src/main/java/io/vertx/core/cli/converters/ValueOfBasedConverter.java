@@ -22,8 +22,6 @@ import java.lang.reflect.Modifier;
 /**
  * This 'default' converter tries to create objects using a static 'valueOf' method taking a single String argument.
  * This converter is particularly convenient to for enumeration and primitive types.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public final class ValueOfBasedConverter<T> implements Converter<T> {
 

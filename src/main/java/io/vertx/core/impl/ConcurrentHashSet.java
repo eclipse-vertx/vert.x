@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class ConcurrentHashSet<E> implements Set<E> {
 
@@ -87,7 +87,7 @@ public class ConcurrentHashSet<E> implements Set<E> {
   @Override
   public boolean addAll(Collection<? extends E> c) {
     boolean changed = false;
-    for (E e: c) {
+    for (E e : c) {
       if (map.put(e, OBJ) == null) {
         changed = true;
       }

@@ -16,12 +16,7 @@
 
 package io.vertx.core.impl.verticle;
 
-import javax.tools.FileObject;
-import javax.tools.ForwardingJavaFileManager;
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardLocation;
+import javax.tools.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,8 +29,6 @@ import java.util.Set;
 /**
  * Java in-memory file manager used by {@link CompilingClassLoader} to handle
  * compiled classes
- *
- * @author Janne Hietam&auml;ki
  */
 public class MemoryFileManager extends ForwardingJavaFileManager<JavaFileManager> {
   private final Map<String, ByteArrayOutputStream> compiledClasses = new HashMap<>();
