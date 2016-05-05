@@ -16,12 +16,12 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Converter for {@link io.vertx.core.http.HttpServerOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.HttpServerOptions} original class using Vert.x codegen.
  */
 public class HttpServerOptionsConverter {
@@ -29,35 +29,35 @@ public class HttpServerOptionsConverter {
   public static void fromJson(JsonObject json, HttpServerOptions obj) {
     if (json.getValue("alpnVersions") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
-      json.getJsonArray("alpnVersions").forEach( item -> {
+      json.getJsonArray("alpnVersions").forEach(item -> {
         if (item instanceof String)
-          list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
+          list.add(io.vertx.core.http.HttpVersion.valueOf((String) item));
       });
       obj.setAlpnVersions(list);
     }
     if (json.getValue("compressionSupported") instanceof Boolean) {
-      obj.setCompressionSupported((Boolean)json.getValue("compressionSupported"));
+      obj.setCompressionSupported((Boolean) json.getValue("compressionSupported"));
     }
     if (json.getValue("handle100ContinueAutomatically") instanceof Boolean) {
-      obj.setHandle100ContinueAutomatically((Boolean)json.getValue("handle100ContinueAutomatically"));
+      obj.setHandle100ContinueAutomatically((Boolean) json.getValue("handle100ContinueAutomatically"));
     }
     if (json.getValue("initialSettings") instanceof JsonObject) {
-      obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
+      obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject) json.getValue("initialSettings")));
     }
     if (json.getValue("maxChunkSize") instanceof Number) {
-      obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
+      obj.setMaxChunkSize(((Number) json.getValue("maxChunkSize")).intValue());
     }
     if (json.getValue("maxHeaderSize") instanceof Number) {
-      obj.setMaxHeaderSize(((Number)json.getValue("maxHeaderSize")).intValue());
+      obj.setMaxHeaderSize(((Number) json.getValue("maxHeaderSize")).intValue());
     }
     if (json.getValue("maxInitialLineLength") instanceof Number) {
-      obj.setMaxInitialLineLength(((Number)json.getValue("maxInitialLineLength")).intValue());
+      obj.setMaxInitialLineLength(((Number) json.getValue("maxInitialLineLength")).intValue());
     }
     if (json.getValue("maxWebsocketFrameSize") instanceof Number) {
-      obj.setMaxWebsocketFrameSize(((Number)json.getValue("maxWebsocketFrameSize")).intValue());
+      obj.setMaxWebsocketFrameSize(((Number) json.getValue("maxWebsocketFrameSize")).intValue());
     }
     if (json.getValue("websocketSubProtocols") instanceof String) {
-      obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
+      obj.setWebsocketSubProtocols((String) json.getValue("websocketSubProtocols"));
     }
   }
 

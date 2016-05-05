@@ -16,13 +16,8 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.http.*;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -41,10 +36,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- *
  * This class is thread-safe
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientImpl implements HttpClient, MetricsProvider {
 
@@ -98,7 +90,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return this;
   }
 
-  public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler){
+  public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
     websocketStream(port, host, requestURI, null, null).exceptionHandler(failureHandler).handler(wsConnect);
     return this;
   }
@@ -143,7 +135,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version
-          , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+      , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
     websocketStream(port, host, requestURI, headers, version, null).exceptionHandler(failureHandler).handler(wsConnect);
     return this;
   }
@@ -155,7 +147,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version
-          , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+      , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
     return websocket(options.getDefaultPort(), host, requestURI, headers, version, wsConnect, failureHandler);
   }
 
@@ -180,7 +172,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols
-          , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+      , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
     return websocket(options.getDefaultPort(), host, requestURI, headers, version, subProtocols, wsConnect, failureHandler);
   }
 
@@ -218,11 +210,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   public HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect) {
     return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, version, subProtocols, wsConnect);
   }
+
   @Override
   public HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols
-          , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+      , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
     return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, version, subProtocols
-            , wsConnect, failureHandler);
+        , wsConnect, failureHandler);
   }
 
   @Override
@@ -322,7 +315,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       char chend = protocol.charAt(protocol.length() - 1);
       if (chend == 'p') {
         port = 80;
-      } else if (chend == 's'){
+      } else if (chend == 's') {
         port = 443;
       }
     }
@@ -666,15 +659,18 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       @Override
       void handleConnection(HttpClientConnection conn) {
       }
+
       @Override
       void handleStream(HttpClientStream stream) {
         // Use some variance for this
         handler.handle((ClientConnection) stream);
       }
+
       @Override
       void handleFailure(Throwable failure) {
         connectionExceptionHandler.handle(failure);
       }
+
       @Override
       boolean isCancelled() {
         return false;

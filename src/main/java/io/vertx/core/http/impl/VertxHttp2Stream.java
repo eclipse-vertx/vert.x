@@ -28,7 +28,7 @@ import io.vertx.core.impl.VertxInternal;
 import java.util.ArrayDeque;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 

@@ -23,8 +23,6 @@ import io.vertx.core.streams.ReadStream;
 /**
  * A body stream that transform a <code>ReadStream&lt;Message&lt;T&gt;&gt;</code> into a
  * <code>ReadStream&lt;T&gt;</code>.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class BodyReadStream<T> implements ReadStream<T> {
 

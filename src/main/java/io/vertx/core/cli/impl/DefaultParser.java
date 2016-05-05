@@ -27,8 +27,6 @@ import java.util.stream.Collectors;
 /**
  * The default implementation of the command line parser.
  * Absolutely not thread safe!
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class DefaultParser {
 
@@ -131,8 +129,8 @@ public class DefaultParser {
       validate();
       commandLine.setValidity(true);
     } catch (CLIException e) {
-      if (validate  && ! commandLine.isAskingForHelp()) {
-        throw  e;
+      if (validate && !commandLine.isAskingForHelp()) {
+        throw e;
       } else {
         commandLine.setValidity(false);
       }

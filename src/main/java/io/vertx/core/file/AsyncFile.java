@@ -31,8 +31,6 @@ import io.vertx.core.streams.WriteStream;
  * {@link io.vertx.core.streams.WriteStream}. This allows the data to be pumped to and from
  * other streams, e.g. an {@link io.vertx.core.http.HttpClientRequest} instance,
  * using the {@link io.vertx.core.streams.Pump} class
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
@@ -76,7 +74,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Close the file. The actual close happens asynchronously.
    * The handler will be called when the close is complete, or an error occurs.
    *
-   * @param handler  the handler
+   * @param handler the handler
    */
   void close(Handler<AsyncResult<Void>> handler);
 
@@ -91,8 +89,8 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * <p>
    * The handler will be called when the write is complete, or if an error occurs.
    *
-   * @param buffer  the buffer to write
-   * @param position  the position in the file to write it at
+   * @param buffer   the buffer to write
+   * @param position the position in the file to write it at
    * @param handler  the handler to call when the write is complete
    * @return a reference to this, so the API can be used fluently
    */
@@ -109,10 +107,10 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * <p>
    * The handler will be called when the close is complete, or if an error occurs.
    *
-   * @param buffer  the buffer to read into
-   * @param offset  the offset into the buffer where the data will be read
-   * @param position  the position in the file where to start reading
-   * @param length  the number of bytes to read
+   * @param buffer   the buffer to read into
+   * @param offset   the offset into the buffer where the data will be read
+   * @param position the position in the file where to start reading
+   * @param length   the number of bytes to read
    * @param handler  the handler to call when the write is complete
    * @return a reference to this, so the API can be used fluently
    */
@@ -140,7 +138,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Sets the position from which data will be read from when using the file as a {@link io.vertx.core.streams.ReadStream}.
    *
-   * @param readPos  the position in the file
+   * @param readPos the position in the file
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -149,7 +147,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Sets the position from which data will be written when using the file as a {@link io.vertx.core.streams.WriteStream}.
    *
-   * @param writePos  the position in the file
+   * @param writePos the position in the file
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -158,6 +156,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Sets the buffer size that will be used to read the data from the file. Changing this value will impact how much
    * the data will be read at a time from the file system.
+   *
    * @param readBufferSize the buffer size
    * @return a reference to this, so the API can be used fluently
    */

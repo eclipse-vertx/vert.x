@@ -31,66 +31,63 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- *
  * Handles HA
- *
+ * <p>
  * We compute failover and whether there is a quorum synchronously as we receive nodeAdded and nodeRemoved events
  * from the cluster manager.
- *
+ * <p>
  * It's vital that this is done synchronously as the cluster manager only guarantees that the set of nodes retrieved
  * from getNodes() is the same for each node in the cluster when processing the exact same nodeAdded/nodeRemoved
  * event.
- *
+ * <p>
  * As HA modules are deployed, if a quorum has been attained they are deployed immediately, otherwise the deployment
  * information is added to a list.
- *
+ * <p>
  * Periodically we check the value of attainedQuorum and if true we deploy any HA deploymentIDs waiting for a quorum.
- *
+ * <p>
  * If false, we check if there are any HA deploymentIDs current deployed, and if so undeploy them, and add them to the list
  * of deploymentIDs waiting for a quorum.
- *
+ * <p>
  * By doing this check periodically we can avoid race conditions resulting in modules being deployed after a quorum has
  * been lost, and without having to resort to exclusive locking which is actually quite tricky here, and prone to
  * deadlock·
- *
+ * <p>
  * We maintain a clustered map where the key is the node id and the value is some stringified JSON which describes
  * the group of the cluster and an array of the HA modules deployed on that node.
- *
+ * <p>
  * There is an entry in the map for each node of the cluster.
- *
+ * <p>
  * When a node joins the cluster or an HA module is deployed or undeployed that entry is updated.
- *
+ * <p>
  * When a node leaves the cluster cleanly, it removes it's own entry before leaving.
- *
+ * <p>
  * When the cluster manager sends us an event to say a node has left the cluster we check if its entry in the cluster
  * map is there, and if so we infer a clean close has happened and no failover will occur.
- *
+ * <p>
  * If the map entry is there it implies the node died suddenly. In that case each node of the cluster must compute
  * whether it is the failover node for the failed node.
- *
+ * <p>
  * First each node of the cluster determines whether it is in the same group as the failed node, if not then it will not
  * be a candidate for the failover node. Nodes in the cluster only failover to other nodes in the same group.
- *
+ * <p>
  * If the node is in the same group then the node takes the UUID of the failed node, computes the hash-code and chooses
  * a node from the list of nodes in the cluster by taking the hash-code modulo the number of nodes as an index to the
  * list of nodes.
- *
+ * <p>
  * The cluster manager guarantees each node in the cluster sees the same set of nodes for each membership event that is
  * processed. Therefore it is guaranteed that each node in the cluster will compute the same value. It is critical that
  * any cluster manager implementation provides this guarantee!
- *
+ * <p>
  * Once the value has been computed, it is compared to the current node, and if it is the same the current node
  * assumes failover for the failed node.
- *
+ * <p>
  * During failover the failover node deploys all the HA modules from the failed node, as described in the JSON with the
  * same values of config and instances.
- *
+ * <p>
  * Once failover is complete the failover node removes the cluster map entry for the failed node.
- *
+ * <p>
  * If the failover node itself fails while it is processing failover for another node, then this is also checked by
  * other nodes when they detect the failure of the second node.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HAManager {
 
@@ -176,6 +173,7 @@ public class HAManager {
       clusterMap.put(nodeID, haInfo.encode());
     }
   }
+
   // Deploy an HA verticle
   public void deployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
                              final Handler<AsyncResult<String>> doneHandler) {
@@ -252,7 +250,7 @@ public class HAManager {
   // A node has joined the cluster
   // synchronize this in case the cluster manager is naughty and calls it concurrently
   private synchronized void nodeAdded(final String nodeID) {
-     // This is not ideal but we need to wait for the group information to appear - and this will be shortly
+    // This is not ideal but we need to wait for the group information to appear - and this will be shortly
     // after the node has been added
     checkQuorumWhenAdded(nodeID, System.currentTimeMillis());
   }
@@ -279,7 +277,7 @@ public class HAManager {
       // We can determine this if there any ids in the cluster map which aren't in the node list
       List<String> nodes = clusterManager.getNodes();
 
-      for (Map.Entry<String, String> entry: clusterMap.entrySet()) {
+      for (Map.Entry<String, String> entry : clusterMap.entrySet()) {
         if (!leftNodeID.equals(entry.getKey()) && !nodes.contains(entry.getKey())) {
           checkFailover(entry.getKey(), new JsonObject(entry.getValue()));
         }
@@ -368,7 +366,7 @@ public class HAManager {
         ContextImpl.setContext(ctx);
       }
     });
-   }
+  }
 
   private void checkHADeployments() {
     try {
@@ -384,7 +382,7 @@ public class HAManager {
 
   // Undeploy any HA deploymentIDs now there is no quorum
   private void undeployHADeployments() {
-    for (String deploymentID: deploymentManager.deployments()) {
+    for (String deploymentID : deploymentManager.deployments()) {
       Deployment dep = deploymentManager.getDeployment(deploymentID);
       if (dep != null) {
         if (dep.deploymentOptions().isHa()) {
@@ -444,8 +442,8 @@ public class HAManager {
       if (chosen != null && chosen.equals(this.nodeID)) {
         if (deployments != null && deployments.size() != 0) {
           log.info("node" + nodeID + " says: Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deploymentIDs from that node.");
-          for (Object obj: deployments) {
-            JsonObject app = (JsonObject)obj;
+          for (Object obj : deployments) {
+            JsonObject app = (JsonObject) obj;
             processFailover(app);
           }
         }
@@ -533,7 +531,7 @@ public class HAManager {
   private String chooseHashedNode(String group, int hashCode) {
     List<String> nodes = clusterManager.getNodes();
     ArrayList<String> matchingMembers = new ArrayList<>();
-    for (String node: nodes) {
+    for (String node : nodes) {
       String sclusterInfo = clusterMap.get(node);
       if (sclusterInfo != null) {
         JsonObject clusterInfo = new JsonObject(sclusterInfo);
@@ -545,9 +543,9 @@ public class HAManager {
     }
     if (!matchingMembers.isEmpty()) {
       // Hashcodes can be -ve so make it positive
-      long absHash = (long)hashCode + Integer.MAX_VALUE;
+      long absHash = (long) hashCode + Integer.MAX_VALUE;
       long lpos = absHash % matchingMembers.size();
-      return matchingMembers.get((int)lpos);
+      return matchingMembers.get((int) lpos);
     } else {
       return null;
     }

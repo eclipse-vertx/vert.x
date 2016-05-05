@@ -22,8 +22,6 @@ import org.apache.logging.log4j.message.FormattedMessage;
 
 /**
  * A {@link LogDelegate} which delegates to Apache Log4j 2
- *
- * @author Clement Escoffier - clement@apache.org
  */
 public class Log4j2LogDelegate implements LogDelegate {
 

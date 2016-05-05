@@ -27,7 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class AsynchronousCounter implements Counter {
 

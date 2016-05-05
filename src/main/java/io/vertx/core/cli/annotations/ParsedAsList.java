@@ -27,7 +27,6 @@ import java.lang.annotation.Target;
  * When annotated with {@link ParsedAsList}, the option value is parsed as a list. The value is split and then each
  * segment is trimmed.
  *
- * @author Clement Escoffier <clement@apache.org>
  * @see Option
  */
 @Target(ElementType.METHOD)

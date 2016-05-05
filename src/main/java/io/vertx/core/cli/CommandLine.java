@@ -27,8 +27,6 @@ import java.util.List;
  * The parser transforms a CLI (a model) into an {@link CommandLine}. This {@link CommandLine}
  * has stored the argument and option values. Only  instance of parser should create
  * objects of this type.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @VertxGen
 public interface CommandLine {
@@ -61,8 +59,7 @@ public interface CommandLine {
    * @param <T>  the expected type
    * @return the value, {@code null} if not set
    */
-  @Nullable
-  <T> T getOptionValue(String name);
+  @Nullable <T> T getOptionValue(String name);
 
   /**
    * Gets the value of an argument with the matching name (arg name).
@@ -71,8 +68,7 @@ public interface CommandLine {
    * @param <T>  the expected type
    * @return the value, {@code null} if not set
    */
-  @Nullable
-  <T> T getArgumentValue(String name);
+  @Nullable <T> T getArgumentValue(String name);
 
   /**
    * Gets the value of an argument with the given index.
@@ -81,8 +77,7 @@ public interface CommandLine {
    * @param <T>   the expected type
    * @return the value, {@code null} if not set
    */
-  @Nullable
-  <T> T getArgumentValue(int index);
+  @Nullable <T> T getArgumentValue(int index);
 
   /**
    * Gets the values of an option with the matching name (can be the long name, short name or arg name).

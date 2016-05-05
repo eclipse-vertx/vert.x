@@ -17,45 +17,44 @@
 package io.vertx.core.file;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.file.OpenOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.file.OpenOptions} original class using Vert.x codegen.
  */
 public class OpenOptionsConverter {
 
   public static void fromJson(JsonObject json, OpenOptions obj) {
     if (json.getValue("create") instanceof Boolean) {
-      obj.setCreate((Boolean)json.getValue("create"));
+      obj.setCreate((Boolean) json.getValue("create"));
     }
     if (json.getValue("createNew") instanceof Boolean) {
-      obj.setCreateNew((Boolean)json.getValue("createNew"));
+      obj.setCreateNew((Boolean) json.getValue("createNew"));
     }
     if (json.getValue("deleteOnClose") instanceof Boolean) {
-      obj.setDeleteOnClose((Boolean)json.getValue("deleteOnClose"));
+      obj.setDeleteOnClose((Boolean) json.getValue("deleteOnClose"));
     }
     if (json.getValue("dsync") instanceof Boolean) {
-      obj.setDsync((Boolean)json.getValue("dsync"));
+      obj.setDsync((Boolean) json.getValue("dsync"));
     }
     if (json.getValue("perms") instanceof String) {
-      obj.setPerms((String)json.getValue("perms"));
+      obj.setPerms((String) json.getValue("perms"));
     }
     if (json.getValue("read") instanceof Boolean) {
-      obj.setRead((Boolean)json.getValue("read"));
+      obj.setRead((Boolean) json.getValue("read"));
     }
     if (json.getValue("sparse") instanceof Boolean) {
-      obj.setSparse((Boolean)json.getValue("sparse"));
+      obj.setSparse((Boolean) json.getValue("sparse"));
     }
     if (json.getValue("sync") instanceof Boolean) {
-      obj.setSync((Boolean)json.getValue("sync"));
+      obj.setSync((Boolean) json.getValue("sync"));
     }
     if (json.getValue("truncateExisting") instanceof Boolean) {
-      obj.setTruncateExisting((Boolean)json.getValue("truncateExisting"));
+      obj.setTruncateExisting((Boolean) json.getValue("truncateExisting"));
     }
     if (json.getValue("write") instanceof Boolean) {
-      obj.setWrite((Boolean)json.getValue("write"));
+      obj.setWrite((Boolean) json.getValue("write"));
     }
   }
 

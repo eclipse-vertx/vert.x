@@ -8,7 +8,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * NONE - No client authentication is requested or required.
  * <p>
  * REQUEST - Accept authentication if presented by client. If this option is set and the client chooses
- *      not to provide authentication information about itself, the negotiations will continue.
+ * not to provide authentication information about itself, the negotiations will continue.
  * <p>
  * REQUIRED - Require client to present authentication, if not presented then negotiations will be declined.
  * <p>
@@ -16,5 +16,5 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen
 public enum ClientAuth {
-    NONE, REQUEST, REQUIRED
+  NONE, REQUEST, REQUIRED
 }

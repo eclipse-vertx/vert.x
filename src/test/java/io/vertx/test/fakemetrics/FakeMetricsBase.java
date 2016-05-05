@@ -16,14 +16,13 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class FakeMetricsBase implements Metrics {
 

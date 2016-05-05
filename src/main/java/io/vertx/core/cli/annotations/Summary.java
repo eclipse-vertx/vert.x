@@ -23,8 +23,6 @@ import java.lang.annotation.Target;
 /**
  * Annotates a {@link io.vertx.core.cli.CLI} with summary. The summary is the main short explanation of the command. Long
  * description should be written in the {@link Description}.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

@@ -449,7 +449,7 @@ public class HTTPExamples {
     });
   }
 
-  public void  statusCodeHandling(HttpClient client) {
+  public void statusCodeHandling(HttpClient client) {
     HttpClientRequest request = client.post("some-uri", response -> {
       if (response.statusCode() == 200) {
         System.out.println("Everything fine");

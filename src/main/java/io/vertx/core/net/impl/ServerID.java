@@ -19,7 +19,7 @@ package io.vertx.core.net.impl;
 import java.io.Serializable;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class ServerID implements Serializable {
 

@@ -20,7 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class HttpFrameImpl implements HttpFrame {
 

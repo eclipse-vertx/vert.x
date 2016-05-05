@@ -16,12 +16,7 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocketBase;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -30,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServerMetrics<HttpServerMetric, WebSocketMetric, SocketMetric> {
 

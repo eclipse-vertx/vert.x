@@ -25,8 +25,6 @@ import io.vertx.core.cli.impl.ReflectionUtils;
  * Default implementation of {@link CommandFactory}. This implementation defines the {@link CLI} from the
  * given {@link Command} implementation (by reading the annotation). Then, {@link Command} instance are
  * created by calling an empty constructor on the given {@link Command} implementation.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class DefaultCommandFactory<C extends Command> implements CommandFactory<C> {
 

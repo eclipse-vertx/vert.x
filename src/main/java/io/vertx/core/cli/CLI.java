@@ -40,7 +40,6 @@ import java.util.List;
  * Command Line Interface object does not contains "value", it's a model. It must be evaluated by a
  * parser that returns a {@link CommandLine} object containing the argument and option values.
  *
- * @author Clement Escoffier <clement@apache.org>
  * @see Argument
  * @see Option
  */

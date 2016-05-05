@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class MessageImpl<U, V> implements Message<V> {
 
@@ -66,7 +66,7 @@ public class MessageImpl<U, V> implements Message<V> {
     if (other.headers != null) {
       List<Map.Entry<String, String>> entries = other.headers.entries();
       this.headers = new CaseInsensitiveHeaders();
-      for (Map.Entry<String, String> entry: entries) {
+      for (Map.Entry<String, String> entry : entries) {
         this.headers.add(entry.getKey(), entry.getValue());
       }
     }
@@ -112,7 +112,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public void fail(int failureCode, String message) {
     if (replyAddress != null) {
       sendReply(bus.createMessage(true, replyAddress, null,
-        new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message), null), null, null);
+          new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message), null), null, null);
     }
   }
 

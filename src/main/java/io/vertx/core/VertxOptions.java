@@ -27,8 +27,6 @@ import java.util.Objects;
 
 /**
  * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public class VertxOptions {

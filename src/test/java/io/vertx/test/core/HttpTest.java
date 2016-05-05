@@ -18,28 +18,9 @@ package io.vertx.test.core;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
@@ -48,34 +29,22 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertIllegalStateException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public abstract class HttpTest extends HttpTestBase {
 
@@ -242,7 +211,8 @@ public abstract class HttpTest extends HttpTestBase {
   public void testRequestNPE() {
     String uri = "/some-uri?foo=bar";
     TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, null));
-    TestUtils.assertNullPointerException(() -> client.request((HttpMethod)null, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, resp -> {}));
+    TestUtils.assertNullPointerException(() -> client.request((HttpMethod) null, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, resp -> {
+    }));
     TestUtils.assertNullPointerException(() -> client.requestAbs((HttpMethod) null, "http://someuri", resp -> {
     }));
     TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", "/somepath", null));
@@ -657,7 +627,7 @@ public abstract class HttpTest extends HttpTestBase {
       });
       req.response().end();
     });
-    String postData = "param=" + URLEncoder.encode(value,"UTF-8");
+    String postData = "param=" + URLEncoder.encode(value, "UTF-8");
     server.listen(onSuccess(server -> {
       client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
           .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
@@ -858,8 +828,8 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertTrue(headers.size() < resp.headers().size());
 
-        headers.forEach((k,v) -> assertEquals(v, resp.headers().get(k)));
-        headers.forEach((k,v) -> assertEquals(v, resp.getHeader(k)));
+        headers.forEach((k, v) -> assertEquals(v, resp.headers().get(k)));
+        headers.forEach((k, v) -> assertEquals(v, resp.getHeader(k)));
 
         testComplete();
       }).end();
@@ -2572,6 +2542,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.close();
     class MyVerticle extends AbstractVerticle {
       Context ctx;
+
       @Override
       public void start() {
         ctx = Vertx.currentContext();
@@ -2738,26 +2709,27 @@ public abstract class HttpTest extends HttpTestBase {
       assertFalse(req.isEnded());
       req.endHandler(v -> {
         assertTrue(req.isEnded());
-        try  {
-          req.endHandler(v2 -> {});
+        try {
+          req.endHandler(v2 -> {
+          });
           fail("Shouldn't be able to set end handler");
         } catch (IllegalStateException e) {
           // OK
         }
-        try  {
+        try {
           req.setExpectMultipart(true);
           fail("Shouldn't be able to set expect multipart");
         } catch (IllegalStateException e) {
           // OK
         }
-        try  {
+        try {
           req.bodyHandler(v2 -> {
           });
           fail("Shouldn't be able to set body handler");
         } catch (IllegalStateException e) {
           // OK
         }
-        try  {
+        try {
           req.handler(v2 -> {
           });
           fail("Shouldn't be able to set handler");
@@ -2877,7 +2849,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testDumpManyRequestsOnQueue() throws Exception {
     int sendRequests = 10000;
     AtomicInteger receivedRequests = new AtomicInteger();
-    vertx.createHttpServer(createBaseServerOptions()).requestHandler(r-> {
+    vertx.createHttpServer(createBaseServerOptions()).requestHandler(r -> {
       r.response().end();
       if (receivedRequests.incrementAndGet() == sendRequests) {
         testComplete();
@@ -2888,7 +2860,8 @@ public abstract class HttpTest extends HttpTestBase {
           .setPipelining(true)
           .setKeepAlive(true);
       HttpClient client = vertx.createHttpClient(ops);
-      IntStream.range(0, sendRequests).forEach(x -> client.getNow("/", r -> {}));
+      IntStream.range(0, sendRequests).forEach(x -> client.getNow("/", r -> {
+      }));
     }));
     await();
   }

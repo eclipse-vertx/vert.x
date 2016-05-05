@@ -20,8 +20,6 @@ import java.io.File;
 
 /**
  * Utilities method to analyse original command line.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class CommandLineUtils {
 

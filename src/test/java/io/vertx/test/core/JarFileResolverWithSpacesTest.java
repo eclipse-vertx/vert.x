@@ -21,7 +21,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 /**
- * @author Clement Escoffier
+ *
  */
 public class JarFileResolverWithSpacesTest extends FileResolverTestBase {
 
@@ -30,7 +30,7 @@ public class JarFileResolverWithSpacesTest extends FileResolverTestBase {
   @Override
   public void setUp() throws Exception {
     original = Thread.currentThread().getContextClassLoader();
-    URLClassLoader someClassloader = new URLClassLoader(new URL[] { new File("src/test/resources/dir with " +
+    URLClassLoader someClassloader = new URLClassLoader(new URL[]{new File("src/test/resources/dir with " +
         "spaces/webroot3.jar").toURI().toURL()}, JarFileResolverWithSpacesTest.class.getClassLoader());
     Thread.currentThread().setContextClassLoader(someClassloader);
     super.setUp();

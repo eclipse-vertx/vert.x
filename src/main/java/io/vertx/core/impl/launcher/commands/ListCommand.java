@@ -33,8 +33,6 @@ import java.util.regex.Pattern;
 /**
  * A command listing launched vert.x instances. Instances are found using the `vertx.id` indicator in the
  * process list.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Name("list")
 @Summary("List vert.x applications")

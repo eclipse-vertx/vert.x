@@ -31,8 +31,6 @@ import io.vertx.core.spi.logging.LogDelegate;
  * For Log4J the value is {@code io.vertx.core.logging.Log4jLogDelegateFactory}, for SLF4J the value
  * is {@code io.vertx.core.logging.SLF4JLogDelegateFactory}. You will need to ensure whatever jar files
  * required by your favourite log framework are on your classpath.
- *
- * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  */
 public class Logger {
 

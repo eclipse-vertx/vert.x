@@ -35,7 +35,7 @@ import io.vertx.core.net.impl.VertxHandler;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHandler<C> {
 
@@ -97,7 +97,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     } else if (msg instanceof WebSocketFrame) {
       ByteBuf payload = safeBuffer((WebSocketFrame) msg, allocator);
       boolean isFinal = ((WebSocketFrame) msg).isFinalFragment();
-        FrameType frameType;
+      FrameType frameType;
       if (msg instanceof BinaryWebSocketFrame) {
         frameType = FrameType.BINARY;
       } else if (msg instanceof CloseWebSocketFrame) {
@@ -125,7 +125,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
       ByteBuf buf = frame.getBinaryData();
       if (buf != Unpooled.EMPTY_BUFFER) {
-         buf = safeBuffer(buf, ctx.alloc());
+        buf = safeBuffer(buf, ctx.alloc());
       }
       switch (frame.type()) {
         case BINARY:

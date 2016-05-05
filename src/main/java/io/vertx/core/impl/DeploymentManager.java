@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class DeploymentManager {
 
@@ -53,7 +53,7 @@ public class DeploymentManager {
 
   private void loadVerticleFactories() {
     ServiceLoader<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
-    for (VerticleFactory factory: factories) {
+    for (VerticleFactory factory : factories) {
       registerVerticleFactory(factory);
     }
     VerticleFactory defaultFactory = new JavaVerticleFactory();
@@ -221,7 +221,7 @@ public class DeploymentManager {
 
     // We only deploy the top level verticles as the children will be undeployed when the parent is
     Set<String> deploymentIDs = new HashSet<>();
-    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
+    for (Map.Entry<String, Deployment> entry : deployments.entrySet()) {
       if (!entry.getValue().isChild()) {
         deploymentIDs.add(entry.getKey());
       }
@@ -286,7 +286,7 @@ public class DeploymentManager {
 
   public Set<VerticleFactory> verticleFactories() {
     Set<VerticleFactory> facts = new HashSet<>();
-    for (List<VerticleFactory> list: verticleFactories.values()) {
+    for (List<VerticleFactory> list : verticleFactories.values()) {
       facts.addAll(list);
     }
     return facts;
@@ -345,7 +345,7 @@ public class DeploymentManager {
           // Add any extra URLs to the beginning of the classpath
           List<String> extraClasspath = options.getExtraClasspath();
           if (extraClasspath != null) {
-            for (String pathElement: extraClasspath) {
+            for (String pathElement : extraClasspath) {
               File file = new File(pathElement);
               try {
                 URL url = file.toURI().toURL();
@@ -356,12 +356,12 @@ public class DeploymentManager {
             }
           }
           // And add the URLs of the Vert.x classloader
-          URLClassLoader urlc = (URLClassLoader)current;
+          URLClassLoader urlc = (URLClassLoader) current;
           urls.addAll(Arrays.asList(urlc.getURLs()));
 
           // Create an isolating cl with the urls
           cl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
-                                        options.getIsolatedClasses());
+              options.getIsolatedClasses());
           classloaders.put(isolationGroup, cl);
         }
       }
@@ -416,14 +416,14 @@ public class DeploymentManager {
 
     Deployment parent = parentContext.getDeployment();
     DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
-    
+
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
-    for (Verticle verticle: verticles) {
+    for (Verticle verticle : verticles) {
       NamedWorkerExecutor workerExec = poolName != null ? vertx.createWorkerExecutor(poolName, options.getWorkerPoolSize()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
       ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, pool, conf, tccl) :
-        vertx.createEventLoopContext(deploymentID, pool, conf, tccl);
+          vertx.createEventLoopContext(deploymentID, pool, conf, tccl);
       if (workerExec != null) {
         context.addCloseHook(workerExec);
       }
@@ -503,7 +503,7 @@ public class DeploymentManager {
         final int size = children.size();
         AtomicInteger childCount = new AtomicInteger();
         boolean undeployedSome = false;
-        for (Deployment childDeployment: new HashSet<>(children)) {
+        for (Deployment childDeployment : new HashSet<>(children)) {
           undeployedSome = true;
           childDeployment.doUndeploy(undeployingContext, ar -> {
             children.remove(childDeployment);
@@ -523,7 +523,7 @@ public class DeploymentManager {
         undeployed = true;
         AtomicInteger undeployCount = new AtomicInteger();
         int numToUndeploy = verticles.size();
-        for (VerticleHolder verticleHolder: verticles) {
+        for (VerticleHolder verticleHolder : verticles) {
           ContextImpl context = verticleHolder.context;
           context.runOnContext(v -> {
             Future<Void> stopFuture = Future.future();
@@ -583,7 +583,7 @@ public class DeploymentManager {
     @Override
     public Set<Verticle> getVerticles() {
       Set<Verticle> verts = new HashSet<>();
-      for (VerticleHolder holder: verticles) {
+      for (VerticleHolder holder : verticles) {
         verts.add(holder.verticle);
       }
       return verts;

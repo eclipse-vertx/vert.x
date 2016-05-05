@@ -22,7 +22,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.spi.WebSocketFrameFactory;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class WebSocketFrameFactoryImpl implements WebSocketFrameFactory {
 

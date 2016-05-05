@@ -1,18 +1,11 @@
 package io.vertx.test.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-
+import io.vertx.core.*;
 import org.junit.Test;
 
 /**
  * please note that this test class does not assert anything about the log output (this would require a kind of log
  * mock), it just runs the different methods to get coverage
- *
- * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
 public class BlockedThreadCheckerTest extends VertxTestBase {
 

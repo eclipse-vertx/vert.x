@@ -17,12 +17,12 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult<CompositeFuture>> {
 
@@ -60,7 +60,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   public static CompositeFuture any(Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
     int len = results.length;
-    for (int i = 0;i < len;i++) {
+    for (int i = 0; i < len; i++) {
       results[i].setHandler(ar -> {
         Handler<AsyncResult<CompositeFuture>> handler = null;
         if (ar.succeeded()) {

@@ -20,7 +20,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class TestVerticle3 extends AbstractVerticle {
 
@@ -30,5 +30,6 @@ public class TestVerticle3 extends AbstractVerticle {
   }
 
   @Override
-  public void stop(Future<Void> stopFuture) throws Exception { }
+  public void stop(Future<Void> stopFuture) throws Exception {
+  }
 }

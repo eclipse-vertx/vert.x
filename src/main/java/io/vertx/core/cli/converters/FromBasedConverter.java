@@ -25,7 +25,6 @@ import java.lang.reflect.Modifier;
  * This converter is particularly convenient for builders.
  *
  * @param <T> the built type.
- * @author Clement Escoffier <clement@apache.org>
  */
 public final class FromBasedConverter<T> implements Converter<T> {
 

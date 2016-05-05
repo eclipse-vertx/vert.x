@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 public class HeadersAdaptor implements MultiMap {
   private final HttpHeaders headers;
@@ -78,7 +78,7 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap addAll(MultiMap headers) {
-    for (Map.Entry<String, String> entry: headers.entries()) {
+    for (Map.Entry<String, String> entry : headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -86,7 +86,7 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap addAll(Map<String, String> map) {
-    for (Map.Entry<String, String> entry: map.entrySet()) {
+    for (Map.Entry<String, String> entry : map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -107,7 +107,7 @@ public class HeadersAdaptor implements MultiMap {
   @Override
   public MultiMap setAll(MultiMap httpHeaders) {
     clear();
-    for (Map.Entry<String, String> entry: httpHeaders) {
+    for (Map.Entry<String, String> entry : httpHeaders) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -137,7 +137,7 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap setAll(Map<String, String> headers) {
-    for (Map.Entry<String, String> entry: headers.entrySet()) {
+    for (Map.Entry<String, String> entry : headers.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
     return this;

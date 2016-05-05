@@ -35,8 +35,6 @@ import io.vertx.core.json.JsonObject;
  * It can also be used as the main class of an executable jar so you can run verticles directly with:
  * <p/>
  * {@code java -jar myapp.jar}
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class Launcher extends VertxCommandLauncher implements VertxLifecycleHooks {
 
@@ -60,7 +58,6 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
   }
 
   /**
-   *
    * Hook for sub-classes of {@link Launcher} after the config has been parsed.
    */
   public void afterConfigParsed(JsonObject config) {

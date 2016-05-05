@@ -21,7 +21,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
 
@@ -38,6 +38,7 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
   }
 
   int pos;
+
   @Override
   protected Vertx getVertx() {
     Vertx vertx = vertices[pos];

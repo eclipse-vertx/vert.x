@@ -20,8 +20,6 @@ import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents an HTTP method
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public enum HttpMethod {

@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class Args {
 
@@ -28,7 +28,7 @@ public class Args {
 
   public Args(String[] args) {
     String currentKey = null;
-    for (String arg: args) {
+    for (String arg : args) {
       if (arg.startsWith("-")) {
         if (currentKey != null) {
           map.put(currentKey, "");

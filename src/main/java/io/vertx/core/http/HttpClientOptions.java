@@ -19,13 +19,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.ClientOptionsBase;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.SSLEngine;
-import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.net.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,8 +27,6 @@ import java.util.List;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public class HttpClientOptions extends ClientOptionsBase {
@@ -130,7 +122,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Copy constructor
    *
-   * @param other  the options to copy
+   * @param other the options to copy
    */
   public HttpClientOptions(HttpClientOptions other) {
     super(other);
@@ -153,7 +145,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Constructor to create an options from JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public HttpClientOptions(JsonObject json) {
     super(json);
@@ -307,7 +299,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Get the maximum pool size for connections
    *
-   * @return  the maximum pool size
+   * @return the maximum pool size
    */
   public int getMaxPoolSize() {
     return maxPoolSize;
@@ -316,7 +308,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set the maximum pool size for connections
    *
-   * @param maxPoolSize  the maximum pool size
+   * @param maxPoolSize the maximum pool size
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setMaxPoolSize(int maxPoolSize) {
@@ -339,7 +331,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set whether keep alive is enabled on the client
    *
-   * @param keepAlive  true if enabled
+   * @param keepAlive true if enabled
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setKeepAlive(boolean keepAlive) {
@@ -350,7 +342,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Is pipe-lining enabled on the client
    *
-   * @return  true if pipe-lining is enabled
+   * @return true if pipe-lining is enabled
    */
   public boolean isPipelining() {
     return pipelining;
@@ -359,7 +351,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set whether pipe-lining is enabled on the client
    *
-   * @param pipelining  true if enabled
+   * @param pipelining true if enabled
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setPipelining(boolean pipelining) {
@@ -370,7 +362,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Is hostname verification (for SSL/TLS) enabled?
    *
-   * @return  true if enabled
+   * @return true if enabled
    */
   public boolean isVerifyHost() {
     return verifyHost;
@@ -379,7 +371,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set whether hostname verification is enabled
    *
-   * @param verifyHost  true if enabled
+   * @param verifyHost true if enabled
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setVerifyHost(boolean verifyHost) {
@@ -390,7 +382,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Is compression enabled on the client?
    *
-   * @return  true if enabled
+   * @return true if enabled
    */
   public boolean isTryUseCompression() {
     return tryUseCompression;
@@ -399,7 +391,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set whether compression is enabled
    *
-   * @param tryUseCompression  true if enabled
+   * @param tryUseCompression true if enabled
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setTryUseCompression(boolean tryUseCompression) {
@@ -410,7 +402,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Get the maximum websocket framesize to use
    *
-   * @return  the max websocket framesize
+   * @return the max websocket framesize
    */
   public int getMaxWebsocketFrameSize() {
     return maxWebsocketFrameSize;
@@ -419,7 +411,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set the max websocket frame size
    *
-   * @param maxWebsocketFrameSize  the max frame size, in bytes
+   * @param maxWebsocketFrameSize the max frame size, in bytes
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setMaxWebsocketFrameSize(int maxWebsocketFrameSize) {
@@ -430,7 +422,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Get the default host name to be used by this client in requests if none is provided when making the request.
    *
-   * @return  the default host name
+   * @return the default host name
    */
   public String getDefaultHost() {
     return defaultHost;
@@ -449,7 +441,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Get the default port to be used by this client in requests if none is provided when making the request.
    *
-   * @return  the default port
+   * @return the default port
    */
   public int getDefaultPort() {
     return defaultPort;
@@ -490,6 +482,7 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * Set the maximum HTTP chunk size
+   *
    * @param maxChunkSize the maximum chunk size
    * @return a reference to this, so the API can be used fluently
    */
@@ -500,6 +493,7 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * Returns the maximum HTTP chunk size
+   *
    * @return the maximum HTTP chunk size
    */
   public int getMaxChunkSize() {
@@ -509,6 +503,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set the maximum requests allowed in the wait queue, any requests beyond the max size will result in
    * a ConnectionPoolTooBusyException.  If the value is set to a negative number then the queue will be unbounded.
+   *
    * @param maxWaitQueueSize the maximum number of waiting requests
    * @return a reference to this, so the API can be used fluently
    */
@@ -519,6 +514,7 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * Returns the maximum wait queue size
+   *
    * @return the maximum wait queue size
    */
   public int getMaxWaitQueueSize() {
@@ -564,10 +560,10 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
    * When the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}:
-   *
+   * <p>
    * <ul>
-   *   <li>{@link HttpVersion#HTTP_2}: [ "h2", "http/1.1" ]</li>
-   *   <li>otherwise: [{@link #getProtocolVersion()}]</li>
+   * <li>{@link HttpVersion#HTTP_2}: [ "h2", "http/1.1" ]</li>
+   * <li>otherwise: [{@link #getProtocolVersion()}]</li>
    * </ul>
    *
    * @param alpnVersions the versions
@@ -616,7 +612,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (protocolVersion != that.protocolVersion) return false;
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxWaitQueueSize != that.maxWaitQueueSize) return false;
-    if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
+    if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings))
+      return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (h2cUpgrade != that.h2cUpgrade) return false;
 

@@ -26,15 +26,11 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertIndexOutOfBoundsException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static io.vertx.test.core.TestUtils.*;
+import static org.junit.Assert.*;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class BufferTest {
 

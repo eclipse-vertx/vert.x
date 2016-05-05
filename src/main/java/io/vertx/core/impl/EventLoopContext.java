@@ -22,7 +22,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class EventLoopContext extends ContextImpl {
 
@@ -57,5 +57,5 @@ public class EventLoopContext extends ContextImpl {
       throw new IllegalStateException("Event delivered on unexpected thread " + current + " expected: " + contextThread);
     }
   }
-  
+
 }

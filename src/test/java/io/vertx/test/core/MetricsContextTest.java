@@ -37,7 +37,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class MetricsContextTest extends VertxTestBase {
 
@@ -103,36 +103,43 @@ public class MetricsContextTest extends VertxTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void responseEnd(Void requestMetric, HttpServerResponse response) {
             responseEndCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public boolean isEnabled() {
             return true;
           }
+
           @Override
           public void close() {
             closeCalled.set(true);
@@ -206,36 +213,43 @@ public class MetricsContextTest extends VertxTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void disconnected(Void serverWebSocketMetric) {
             websocketDisconnected.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public boolean isEnabled() {
             return true;
           }
+
           @Override
           public void close() {
             closeCalled.set(true);
@@ -310,35 +324,42 @@ public class MetricsContextTest extends VertxTestBase {
             requestBeginCalled.set(true);
             return null;
           }
+
           @Override
           public void responseEnd(Void requestMetric, HttpClientResponse response) {
             responseEndCalled.set(true);
           }
+
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void close() {
             closeCalled.set(true);
           }
+
           @Override
           public boolean isEnabled() {
             return true;
@@ -420,35 +441,42 @@ public class MetricsContextTest extends VertxTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void disconnected(Void webSocketMetric) {
             websocketDisconnected.set(true);
           }
+
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void close() {
             closeCalled.set(true);
           }
+
           @Override
           public boolean isEnabled() {
             return true;
@@ -527,25 +555,30 @@ public class MetricsContextTest extends VertxTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public boolean isEnabled() {
             return true;
           }
+
           @Override
           public void close() {
             closeCalled.set(true);
@@ -620,25 +653,30 @@ public class MetricsContextTest extends VertxTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
+
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public boolean isEnabled() {
             return true;
           }
+
           @Override
           public void close() {
             closeCalled.set(true);
@@ -711,20 +749,24 @@ public class MetricsContextTest extends VertxTestBase {
             listening.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }
+
           @Override
           public void close() {
             closeCalled.set(true);
           }
+
           @Override
           public boolean isEnabled() {
             return true;
@@ -772,6 +814,7 @@ public class MetricsContextTest extends VertxTestBase {
           public boolean isEnabled() {
             return true;
           }
+
           @Override
           public void close() {
             closeCalled.set(true);
@@ -815,21 +858,25 @@ public class MetricsContextTest extends VertxTestBase {
           public boolean isEnabled() {
             return true;
           }
+
           @Override
           public Void handlerRegistered(String address, String repliedAddress) {
             registeredCalled.set(true);
             return null;
           }
+
           @Override
           public void handlerUnregistered(Void handler) {
             unregisteredCalled.set(true);
           }
+
           @Override
           public void beginHandleMessage(Void handler, boolean local) {
             consumerThread.set(Thread.currentThread());
             consumerContext.set(Vertx.currentContext());
             beginHandleCalled.set(true);
           }
+
           @Override
           public void endHandleMessage(Void handler, Throwable failure) {
             endHandleCalled.set(true);
@@ -888,6 +935,7 @@ public class MetricsContextTest extends VertxTestBase {
         deployedCalled.set(true);
         checker.accept(verticleThread.get(), verticleContext.get());
       }
+
       @Override
       public void verticleUndeployed(Verticle verticle) {
         undeployedCalled.set(true);

@@ -16,14 +16,10 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
@@ -41,8 +37,6 @@ import javax.security.cert.X509Certificate;
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with
  * {@link io.vertx.core.streams.Pump} to pump data with flow control.
  * <p>
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface HttpServerRequest extends ReadStream<Buffer> {
@@ -76,7 +70,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the HTTP method as sent by the client
    */
   String rawMethod();
-  
+
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS
    */
@@ -127,7 +121,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Return the first header value with the specified name
    *
-   * @param headerName  the header name
+   * @param headerName the header name
    * @return the header value
    */
   @Nullable
@@ -136,7 +130,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Return the first header value with the specified name
    *
-   * @param headerName  the header name
+   * @param headerName the header name
    * @return the header value
    */
   @GenIgnore
@@ -151,7 +145,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Return the first param value with the specified name
    *
-   * @param paramName  the param name
+   * @param paramName the param name
    * @return the param value
    */
   @Nullable
@@ -172,9 +166,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
 
   /**
    * @return an array of the peer certificates. Returns null if connection is
-   *         not SSL.
+   * not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
-  */
+   */
   @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
@@ -217,14 +211,14 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * Call this with true if you are expecting a multi-part body to be submitted in the request.
    * This must be called before the body of the request has been received
    *
-   * @param expect  true - if you are expecting a multi-part body
+   * @param expect true - if you are expecting a multi-part body
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   HttpServerRequest setExpectMultipart(boolean expect);
 
   /**
-   * @return  true if we are expecting a multi-part body for this request. See {@link #setExpectMultipart}.
+   * @return true if we are expecting a multi-part body for this request. See {@link #setExpectMultipart}.
    */
   boolean isExpectMultipart();
 
@@ -253,7 +247,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Return the first form attribute value with the specified name
    *
-   * @param attributeName  the attribute name
+   * @param attributeName the attribute name
    * @return the attribute value
    */
   @Nullable
@@ -265,7 +259,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * This is an alternative way of handling WebSockets and can only be used if no websocket handlers are set on the
    * Http server, and can only be used during the upgrade request during the WebSocket handshake.
    *
-   * @return  the WebSocket
+   * @return the WebSocket
    */
   ServerWebSocket upgrade();
 

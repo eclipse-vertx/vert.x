@@ -16,7 +16,7 @@
 
 /**
  * Create a buffer from a byte[]
- *
+ * <p>
  * [source,java]
  * ----
  * {@link docoverride.buffer.Examples#example4}

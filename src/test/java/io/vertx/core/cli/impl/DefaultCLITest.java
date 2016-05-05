@@ -26,8 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests the {@link DefaultCLI}.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class DefaultCLITest {
 
@@ -153,7 +151,7 @@ public class DefaultCLITest {
     assertThat(builder)
         .contains("test -f <value> foo")
         .contains(" -f,--file <value>   a file")
-    .contains("<foo>               foo");
+        .contains("<foo>               foo");
   }
 
   @Test

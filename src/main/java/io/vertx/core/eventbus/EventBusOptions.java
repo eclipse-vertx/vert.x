@@ -25,8 +25,6 @@ import io.vertx.core.net.*;
 
 /**
  * Options to configure the event bus.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 @DataObject(generateConverter = true, inheritConverter = true)
 public class EventBusOptions extends TCPSSLOptions {
@@ -557,7 +555,7 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * See {@link #setClusterPublicHost(String)} for an explanation.
    *
-   * @param clusterPublicPort  the public port to use
+   * @param clusterPublicPort the public port to use
    * @return a reference to this, so the API can be used fluently
    */
   public EventBusOptions setClusterPublicPort(int clusterPublicPort) {

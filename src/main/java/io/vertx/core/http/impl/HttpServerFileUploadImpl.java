@@ -29,11 +29,9 @@ import java.nio.charset.Charset;
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
  * However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
@@ -148,7 +146,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     pause();
     vertx.fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
-        file =  ar.result();
+        file = ar.result();
         Pump p = Pump.pump(HttpServerFileUploadImpl.this, ar.result());
         p.start();
         resume();

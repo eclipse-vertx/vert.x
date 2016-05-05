@@ -30,8 +30,6 @@ import java.util.UUID;
 
 /**
  * A command starting a vert.x application in the background.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Name("start")
 @Summary("Start a vert.x application in background")

@@ -27,7 +27,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 final class NettyFileUpload implements FileUpload {
 

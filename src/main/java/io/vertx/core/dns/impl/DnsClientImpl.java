@@ -16,30 +16,15 @@
 package io.vertx.core.dns.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.dns.DnsClient;
-import io.vertx.core.dns.DnsException;
+import io.vertx.core.dns.*;
 import io.vertx.core.dns.DnsResponseCode;
-import io.vertx.core.dns.MxRecord;
-import io.vertx.core.dns.SrvRecord;
-import io.vertx.core.dns.impl.netty.DnsEntry;
-import io.vertx.core.dns.impl.netty.DnsQuery;
-import io.vertx.core.dns.impl.netty.DnsQueryEncoder;
-import io.vertx.core.dns.impl.netty.DnsQuestion;
-import io.vertx.core.dns.impl.netty.DnsResource;
-import io.vertx.core.dns.impl.netty.DnsResponse;
-import io.vertx.core.dns.impl.netty.DnsResponseDecoder;
+import io.vertx.core.dns.impl.netty.*;
 import io.vertx.core.dns.impl.netty.decoder.RecordDecoderFactory;
 import io.vertx.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 import io.vertx.core.dns.impl.netty.decoder.record.ServiceRecord;
@@ -51,15 +36,11 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 public final class DnsClientImpl implements DnsClient {
 
@@ -118,7 +99,7 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String> >> handler) {
+  public DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String>>> handler) {
     lookup(name, handler, DnsEntry.TYPE_CNAME);
     return this;
   }
@@ -145,7 +126,7 @@ public final class DnsClientImpl implements DnsClient {
         } else {
           List<String> txts = new ArrayList<>();
           List<List<String>> records = (List<List<String>>) event.result();
-          for (List<String> txt: records) {
+          for (List<String> txt : records) {
             txts.addAll(txt);
           }
           handler.handle(Future.succeededFuture(txts));
@@ -197,9 +178,9 @@ public final class DnsClientImpl implements DnsClient {
       if (inetAddress instanceof Inet4Address) {
         // reverse ipv4 address
         reverseName.append(addr[3] & 0xff).append(".")
-                .append(addr[2]& 0xff).append(".")
-                .append(addr[1]& 0xff).append(".")
-                .append(addr[0]& 0xff);
+            .append(addr[2] & 0xff).append(".")
+            .append(addr[1] & 0xff).append(".")
+            .append(addr[0] & 0xff);
       } else {
         // It is an ipv 6 address time to reverse it
         for (int i = 0; i < 16; i++) {
@@ -214,13 +195,13 @@ public final class DnsClientImpl implements DnsClient {
       reverseName.append(".in-addr.arpa");
 
       return resolvePTR(reverseName.toString(), ar -> {
-          if (ar.failed()) {
-            handler.handle(Future.failedFuture(ar.cause()));
-          } else {
-            String result = ar.result();
-            handler.handle(Future.succeededFuture(result));
-          }
-        });
+        if (ar.failed()) {
+          handler.handle(Future.failedFuture(ar.cause()));
+        } else {
+          String result = ar.result();
+          handler.handle(Future.succeededFuture(result));
+        }
+      });
     } catch (UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
@@ -243,7 +224,7 @@ public final class DnsClientImpl implements DnsClient {
       @Override
       public void onSuccess(ChannelFuture future) throws Exception {
         DnsQuery query = new DnsQuery(ThreadLocalRandom.current().nextInt());
-        for (int type: types) {
+        for (int type : types) {
           query.addQuestion(new DnsQuestion(name, type));
         }
         future.channel().writeAndFlush(query).addListener(new RetryChannelFutureListener(result) {
@@ -260,7 +241,7 @@ public final class DnsClientImpl implements DnsClient {
                   for (DnsResource resource : msg.getAnswers()) {
                     Object record = RecordDecoderFactory.getFactory().decode(resource.type(), msg, resource);
                     if (record instanceof InetAddress) {
-                      record = ((InetAddress)record).getHostAddress();
+                      record = ((InetAddress) record).getHostAddress();
                     }
                     records.add(record);
                   }

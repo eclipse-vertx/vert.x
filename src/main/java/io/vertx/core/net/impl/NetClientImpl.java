@@ -23,9 +23,9 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -42,10 +42,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *
  * This class is thread-safe
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetClientImpl implements NetClient, MetricsProvider {
 
@@ -200,8 +197,8 @@ public class NetClientImpl implements NetClient, MetricsProvider {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
-              connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                - 1)
+                connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
+                    - 1)
             );
           });
         } else {

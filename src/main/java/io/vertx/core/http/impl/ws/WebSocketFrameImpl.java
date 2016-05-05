@@ -26,8 +26,6 @@ import io.vertx.core.http.impl.FrameType;
 /**
  * The default {@link WebSocketFrameInternal} implementation.
  *
- * @author <a href="http://www.jboss.org/netty/">The Netty Project</a>
- * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
 public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCounted {
@@ -83,9 +81,9 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   /**
    * Creates a new frame with the specified frame type and the specified data.
    *
-   * @param type       the type of the frame. {@code 0} is the only allowed type currently.
-   * @param binaryData the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
-   *                   it must be encoded in UTF-8.
+   * @param type         the type of the frame. {@code 0} is the only allowed type currently.
+   * @param binaryData   the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
+   *                     it must be encoded in UTF-8.
    * @param isFinalFrame If this is the final frame in a sequence
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8

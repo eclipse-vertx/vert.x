@@ -26,8 +26,6 @@ import io.vertx.core.buffer.Buffer;
 
 /**
  * Represents an HTTP/2 connection.<p/>
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public interface HttpConnection {
@@ -50,16 +48,16 @@ public interface HttpConnection {
 
   /**
    * Send a go away frame to the remote endpoint of the connection.<p/>
-   *
+   * <p>
    * <ul>
-   *   <li>a {@literal GOAWAY} frame is sent to the to the remote endpoint with the {@code errorCode} and {@@code debugData}</li>
-   *   <li>any stream created after the stream identified by {@code lastStreamId} will be closed</li>
-   *   <li>for an {@literal errorCode} is different than {@literal 0} when all the remaining streams are closed this connection will be closed automatically</li>
+   * <li>a {@literal GOAWAY} frame is sent to the to the remote endpoint with the {@code errorCode} and {@@code debugData}</li>
+   * <li>any stream created after the stream identified by {@code lastStreamId} will be closed</li>
+   * <li>for an {@literal errorCode} is different than {@literal 0} when all the remaining streams are closed this connection will be closed automatically</li>
    * </ul>
    *
-   * @param errorCode the {@literal GOAWAY} error code
+   * @param errorCode    the {@literal GOAWAY} error code
    * @param lastStreamId the last stream id
-   * @param debugData additional debug data sent to the remote endpoint
+   * @param debugData    additional debug data sent to the remote endpoint
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -81,7 +79,7 @@ public interface HttpConnection {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
+  HttpConnection shutdownHandler(@Nullable Handler<Void> handler);
 
   /**
    * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current active streams
@@ -132,10 +130,10 @@ public interface HttpConnection {
 
   /**
    * Send to the remote endpoint an update of this endpoint settings.<p/>
-   *
+   * <p>
    * The {@code completionHandler} will be notified when the remote endpoint has acknowledged the settings.
    *
-   * @param settings the new settings
+   * @param settings          the new settings
    * @param completionHandler the handler notified when the settings have been acknowledged by the remote endpoint
    * @return a reference to this, so the API can be used fluently
    */
@@ -165,7 +163,7 @@ public interface HttpConnection {
   /**
    * Send a {@literal PING} frame to the remote endpoint.
    *
-   * @param data the 8 bytes data of the frame
+   * @param data        the 8 bytes data of the frame
    * @param pongHandler an async result handler notified with pong reply or the failure
    * @return a reference to this, so the API can be used fluently
    */

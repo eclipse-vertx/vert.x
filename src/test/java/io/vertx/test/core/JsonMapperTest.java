@@ -21,7 +21,7 @@ import io.vertx.core.json.Json;
 import org.junit.Test;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class JsonMapperTest extends VertxTestBase {
 

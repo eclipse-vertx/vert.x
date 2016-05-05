@@ -15,15 +15,10 @@
  */
 package io.vertx.test.core;
 
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 enum TLSCert {
 
@@ -32,14 +27,17 @@ enum TLSCert {
     KeyCertOptions getServerKeyCertOptions() {
       return null;
     }
+
     @Override
     TrustOptions getServerTrustOptions() {
       return null;
     }
+
     @Override
     TrustOptions getClientTrustOptions() {
       return null;
     }
+
     @Override
     KeyCertOptions getClientKeyCertOptions() {
       return null;
@@ -52,14 +50,17 @@ enum TLSCert {
     KeyCertOptions getServerKeyCertOptions() {
       return new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble");
     }
+
     @Override
     TrustOptions getServerTrustOptions() {
       return new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble");
     }
+
     @Override
     TrustOptions getClientTrustOptions() {
       return new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble");
     }
+
     @Override
     KeyCertOptions getClientKeyCertOptions() {
       return new JksOptions().setPath("tls/client-keystore.jks").setPassword("wibble");
@@ -72,14 +73,17 @@ enum TLSCert {
     KeyCertOptions getServerKeyCertOptions() {
       return new PfxOptions().setPath("tls/server-keystore.p12").setPassword("wibble");
     }
+
     @Override
     TrustOptions getServerTrustOptions() {
       return new PfxOptions().setPath("tls/server-truststore.p12").setPassword("wibble");
     }
+
     @Override
     TrustOptions getClientTrustOptions() {
       return new PfxOptions().setPath("tls/client-truststore.p12").setPassword("wibble");
     }
+
     @Override
     KeyCertOptions getClientKeyCertOptions() {
       return new PfxOptions().setPath("tls/client-keystore.p12").setPassword("wibble");
@@ -92,14 +96,17 @@ enum TLSCert {
     KeyCertOptions getServerKeyCertOptions() {
       return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert.pem");
     }
+
     @Override
     TrustOptions getServerTrustOptions() {
       return new PemTrustOptions().addCertPath("tls/client-cert.pem");
     }
+
     @Override
     TrustOptions getClientTrustOptions() {
       return new PemTrustOptions().addCertPath("tls/server-cert.pem");
     }
+
     @Override
     KeyCertOptions getClientKeyCertOptions() {
       return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert.pem");
@@ -112,14 +119,17 @@ enum TLSCert {
     KeyCertOptions getServerKeyCertOptions() {
       return new JksOptions().setPath("tls/server-keystore-ca.jks").setPassword("wibble");
     }
+
     @Override
     TrustOptions getServerTrustOptions() {
       throw new UnsupportedOperationException();
     }
+
     @Override
     TrustOptions getClientTrustOptions() {
       return new JksOptions().setPath("tls/client-truststore-ca.jks").setPassword("wibble");
     }
+
     @Override
     KeyCertOptions getClientKeyCertOptions() {
       throw new UnsupportedOperationException();
@@ -132,14 +142,17 @@ enum TLSCert {
     KeyCertOptions getServerKeyCertOptions() {
       return new PfxOptions().setPath("tls/server-keystore-ca.p12").setPassword("wibble");
     }
+
     @Override
     TrustOptions getServerTrustOptions() {
       throw new UnsupportedOperationException();
     }
+
     @Override
     TrustOptions getClientTrustOptions() {
       return new PfxOptions().setPath("tls/client-truststore-ca.p12").setPassword("wibble");
     }
+
     @Override
     KeyCertOptions getClientKeyCertOptions() {
       throw new UnsupportedOperationException();
@@ -152,14 +165,17 @@ enum TLSCert {
     KeyCertOptions getServerKeyCertOptions() {
       return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-ca.pem");
     }
+
     @Override
     TrustOptions getServerTrustOptions() {
       return new PemTrustOptions().addCertPath("tls/ca/ca-cert.pem");
     }
+
     @Override
     TrustOptions getClientTrustOptions() {
       return new PemTrustOptions().addCertPath("tls/ca/ca-cert.pem");
     }
+
     @Override
     KeyCertOptions getClientKeyCertOptions() {
       return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert-ca.pem");
@@ -168,28 +184,34 @@ enum TLSCert {
 
   // Man-in-middle attack : the server cert CN does not match the resolved URI host
   MIM() {
-      @Override
-      KeyCertOptions getServerKeyCertOptions() {
-          return new JksOptions().setPath("tls/mim-server-keystore.jks").setPassword("wibble");
-      }
-      @Override
-      TrustOptions getServerTrustOptions() {
-          return null;
-      }
-      @Override
-      TrustOptions getClientTrustOptions() {
-          return null;
-      }
-      @Override
-      KeyCertOptions getClientKeyCertOptions() {
-          return null;
-      }
+    @Override
+    KeyCertOptions getServerKeyCertOptions() {
+      return new JksOptions().setPath("tls/mim-server-keystore.jks").setPassword("wibble");
+    }
+
+    @Override
+    TrustOptions getServerTrustOptions() {
+      return null;
+    }
+
+    @Override
+    TrustOptions getClientTrustOptions() {
+      return null;
+    }
+
+    @Override
+    KeyCertOptions getClientKeyCertOptions() {
+      return null;
+    }
   };
 
 
   abstract KeyCertOptions getServerKeyCertOptions();
+
   abstract KeyCertOptions getClientKeyCertOptions();
+
   abstract TrustOptions getServerTrustOptions();
+
   abstract TrustOptions getClientTrustOptions();
 
 }

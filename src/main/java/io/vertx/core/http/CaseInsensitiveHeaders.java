@@ -17,31 +17,21 @@
 package io.vertx.core.http;
 
 
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.BiConsumer;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
  * This multi-map implementation has case insensitive keys, and can be used to hold some HTTP headers
  * prior to making an HTTP request.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public final class CaseInsensitiveHeaders implements MultiMap {
   private static final int BUCKET_SIZE = 17;
 
   private static int hash(String name) {
     int h = 0;
-    for (int i = name.length() - 1; i >= 0; i --) {
+    for (int i = name.length() - 1; i >= 0; i--) {
       char c = name.charAt(i);
       if (c >= 'A' && c <= 'Z') {
         c += 32;
@@ -60,7 +50,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   private MultiMap set0(Iterable<Map.Entry<String, String>> map) {
     clear();
-    for (Map.Entry<String, String> entry: map) {
+    for (Map.Entry<String, String> entry : map) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -87,7 +77,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
       return false;
     }
 
-    for (int i = nameLen - 1; i >= 0; i --) {
+    for (int i = nameLen - 1; i >= 0; i--) {
       char c1 = name1.charAt(i);
       char c2 = name2.charAt(i);
       if (c1 != c2) {
@@ -128,7 +118,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
   public MultiMap add(String name, Iterable<String> values) {
     int h = hash(name);
     int i = index(h);
-    for (String vstr: values) {
+    for (String vstr : values) {
       add0(h, i, name, vstr);
     }
     return this;
@@ -136,7 +126,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap addAll(MultiMap headers) {
-    for (Map.Entry<String, String> entry: headers.entries()) {
+    for (Map.Entry<String, String> entry : headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -144,7 +134,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap addAll(Map<String, String> map) {
-    for (Map.Entry<String, String> entry: map.entrySet()) {
+    for (Map.Entry<String, String> entry : map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -176,7 +166,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
       return;
     }
 
-    for (;;) {
+    for (; ; ) {
       if (e.hash == h && eq(name, e.key)) {
         e.remove();
         MapEntry next = e.next;
@@ -192,7 +182,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
       }
     }
 
-    for (;;) {
+    for (; ; ) {
       MapEntry next = e.next;
       if (next == null) {
         break;
@@ -223,7 +213,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
     int i = index(h);
 
     remove0(h, i, name);
-    for (String v: values) {
+    for (String v : values) {
       if (v == null) {
         break;
       }
@@ -235,7 +225,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap clear() {
-    for (int i = 0; i < entries.length; i ++) {
+    for (int i = 0; i < entries.length; i++) {
       entries[i] = null;
     }
     head.before = head.after = head;
@@ -289,7 +279,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
   @Override
   public List<Map.Entry<String, String>> entries() {
     List<Map.Entry<String, String>> all =
-            new LinkedList<>();
+        new LinkedList<>();
 
     MapEntry e = head.after;
     while (e != head) {
@@ -350,7 +340,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
   @Override
   public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
     String n = name.toString();
-    for (CharSequence seq: values) {
+    for (CharSequence seq : values) {
       add(n, seq.toString());
     }
     return this;
@@ -365,7 +355,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
   public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
     remove(name);
     String n = name.toString();
-    for (CharSequence seq: values) {
+    for (CharSequence seq : values) {
       add(n, seq.toString());
     }
     return this;
@@ -378,7 +368,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    for (Map.Entry<String, String> entry: this) {
+    for (Map.Entry<String, String> entry : this) {
       sb.append(entry).append('\n');
     }
     return sb.toString();
@@ -403,7 +393,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
     }
 
     void addBefore(MapEntry e) {
-      after  = e;
+      after = e;
       before = e.before;
       before.after = this;
       after.before = this;

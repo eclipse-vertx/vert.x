@@ -24,7 +24,7 @@ import io.vertx.core.logging.LoggerFactory;
 import java.util.concurrent.TimeoutException;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 abstract class HttpClientRequestBase implements HttpClientRequest {
 
@@ -60,7 +60,9 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   protected abstract Object getLock();
+
   protected abstract void doHandleResponse(HttpClientResponseImpl resp);
+
   protected abstract void checkComplete();
 
   public String query() {

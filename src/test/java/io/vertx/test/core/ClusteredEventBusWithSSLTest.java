@@ -29,8 +29,6 @@ import java.util.List;
 
 /**
  * Tests the clustered event bus with various SSL / TLS configuration.
- *
- * @author Clement Escoffier
  */
 @RunWith(value = Parameterized.class)
 public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {

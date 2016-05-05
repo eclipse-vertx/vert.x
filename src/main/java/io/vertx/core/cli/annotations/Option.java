@@ -27,7 +27,6 @@ import java.lang.annotation.Target;
  * The cardinality of the option is detected from the single method parameter type: arrays, list and set can receive
  * several values.
  *
- * @author Clement Escoffier <clement@apache.org>
  * @see Argument
  */
 @Target(ElementType.METHOD)

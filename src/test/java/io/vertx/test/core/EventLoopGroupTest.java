@@ -19,15 +19,9 @@ package io.vertx.test.core;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
@@ -40,7 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class EventLoopGroupTest extends VertxTestBase {
 
@@ -82,6 +76,7 @@ public class EventLoopGroupTest extends VertxTestBase {
                 assertSame(context, Vertx.currentContext());
               });
             }
+
             @Override
             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
               ByteBuf buf = (ByteBuf) msg;
@@ -92,6 +87,7 @@ public class EventLoopGroupTest extends VertxTestBase {
                 assertSame(context, Vertx.currentContext());
               });
             }
+
             @Override
             public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
               assertSame(contextThread.get(), Thread.currentThread());
@@ -101,6 +97,7 @@ public class EventLoopGroupTest extends VertxTestBase {
                 ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
               });
             }
+
             @Override
             public void channelInactive(ChannelHandlerContext ctx) throws Exception {
               assertSame(contextThread.get(), Thread.currentThread());
@@ -110,6 +107,7 @@ public class EventLoopGroupTest extends VertxTestBase {
                 testComplete();
               });
             }
+
             @Override
             public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
               fail(cause.getMessage());

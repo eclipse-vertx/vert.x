@@ -17,7 +17,7 @@
 package io.vertx.core.impl;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class NoStackTraceThrowable extends Throwable {
 

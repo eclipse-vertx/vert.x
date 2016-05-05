@@ -23,7 +23,6 @@ import java.lang.annotation.Target;
 /**
  * Annotation used to write the option or command documentation.
  *
- * @author Clement Escoffier <clement@apache.org>
  * @see Summary
  */
 @Retention(RetentionPolicy.RUNTIME)

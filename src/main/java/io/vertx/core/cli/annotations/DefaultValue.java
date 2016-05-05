@@ -25,7 +25,6 @@ import java.lang.annotation.Target;
 /**
  * Annotation to set a default value to an option.
  *
- * @author Clement Escoffier <clement@apache.org>
  * @see Option
  */
 @Retention(RetentionPolicy.RUNTIME)

@@ -21,9 +21,9 @@ import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
-public class ClasspathVerticleFactory implements VerticleFactory{
+public class ClasspathVerticleFactory implements VerticleFactory {
 
   @Override
   public void init(Vertx vertx) {

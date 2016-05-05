@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public interface BufferFactory {
 

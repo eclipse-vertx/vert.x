@@ -1,9 +1,10 @@
 package io.vertx.test.core;
-import static org.junit.Assert.assertEquals;
+
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClientOptions;
-
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * test that the default object of NetClientOptions equals to when creating
@@ -13,7 +14,7 @@ import org.junit.Test;
  */
 
 /**
- * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
+ *
  *
  */
 public class NetClientOptionsTest {

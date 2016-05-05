@@ -19,49 +19,24 @@ package io.vertx.core.file.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
-import io.vertx.core.file.FileProps;
+import io.vertx.core.file.*;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.FileSystemException;
-import io.vertx.core.file.FileSystemProps;
-import io.vertx.core.file.OpenOptions;
+import io.vertx.core.impl.Action;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.Action;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.FileStore;
-import java.nio.file.FileVisitOption;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.GroupPrincipal;
-import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.nio.file.attribute.UserPrincipal;
-import java.nio.file.attribute.UserPrincipalLookupService;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- *
  * This class is thread-safe
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystemImpl implements FileSystem {
 
@@ -592,6 +567,7 @@ public class FileSystemImpl implements FileSystem {
                 Files.delete(file);
                 return FileVisitResult.CONTINUE;
               }
+
               public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
                 if (e == null) {
                   Files.delete(dir);
@@ -734,6 +710,7 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(options);
     return new BlockingAction<AsyncFile>(handler) {
       String path = vertx.resolveFile(p).getAbsolutePath();
+
       public AsyncFile perform() {
         return doOpen(path, options, context);
       }
@@ -772,6 +749,7 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(path);
     return new BlockingAction<Boolean>(handler) {
       File file = vertx.resolveFile(path);
+
       public Boolean perform() {
         return file.exists();
       }
@@ -802,6 +780,7 @@ public class FileSystemImpl implements FileSystem {
       this.handler = handler;
       this.context = vertx.getOrCreateContext();
     }
+
     /**
      * Run the blocking action using a thread from the worker pool.
      */

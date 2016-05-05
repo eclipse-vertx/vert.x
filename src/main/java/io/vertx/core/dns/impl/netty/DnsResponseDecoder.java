@@ -74,7 +74,7 @@ public class DnsResponseDecoder extends MessageToMessageDecoder<DatagramPacket> 
   public static String getName(ByteBuf buf, int offset) {
     StringBuilder name = new StringBuilder();
     for (int len = buf.getUnsignedByte(offset++); buf.writerIndex() > offset && len != 0; len = buf
-      .getUnsignedByte(offset++)) {
+        .getUnsignedByte(offset++)) {
       boolean pointer = (len & 0xc0) == 0xc0;
       if (pointer) {
         offset = (len & 0x3f) << 8 | buf.getUnsignedByte(offset++);

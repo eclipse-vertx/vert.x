@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class AsyncTestBaseTest extends AsyncTestBase {
 

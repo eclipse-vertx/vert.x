@@ -27,8 +27,6 @@ package io.vertx.core.shareddata;
  * <p>
  * Use this interface with caution.
  * <p>
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Shareable {
 }

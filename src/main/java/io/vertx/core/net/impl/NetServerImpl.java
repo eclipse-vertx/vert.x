@@ -26,11 +26,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Closeable;
+import io.vertx.core.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -50,10 +46,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *
  * This class is thread-safe
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
@@ -192,7 +185,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
               Channel ch = res.result().channel();
               log.trace("Net server listening on " + host + ":" + ch.localAddress());
               // Update port to actual port - wildcard port 0 might have been used
-              NetServerImpl.this.actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+              NetServerImpl.this.actualPort = ((InetSocketAddress) ch.localAddress()).getPort();
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
               serverChannelGroup.add(ch);
               vertx.sharedNetServers().put(id, NetServerImpl.this);
@@ -205,7 +198,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
         } catch (Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnContext(v ->  listenHandler.handle(Future.failedFuture(t)));
+            vertx.runOnContext(v -> listenHandler.handle(Future.failedFuture(t)));
           } else {
             // No handler - log so user can see failure
             log.error(t);
@@ -455,10 +448,10 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       }
     }
 
-     Handler<Void> endHandler() {
-       synchronized (NetServerImpl.this) {
-         return endHandler;
-       }
+    Handler<Void> endHandler() {
+      synchronized (NetServerImpl.this) {
+        return endHandler;
+      }
     }
 
     @Override

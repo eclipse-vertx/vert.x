@@ -21,7 +21,7 @@ package io.vertx.core;
  * <p>
  * This is a general purpose exception class that is often thrown from Vert.x APIs if things go wrong.
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  *
  */
 public class VertxException extends RuntimeException {
@@ -29,7 +29,7 @@ public class VertxException extends RuntimeException {
   /**
    * Create an instance given a message
    *
-   * @param message  the message
+   * @param message the message
    */
   public VertxException(String message) {
     super(message);
@@ -38,8 +38,8 @@ public class VertxException extends RuntimeException {
   /**
    * Create an instance given a message and a cause
    *
-   * @param message  the message
-   * @param cause  the cause
+   * @param message the message
+   * @param cause   the cause
    */
   public VertxException(String message, Throwable cause) {
     super(message, cause);
@@ -48,7 +48,7 @@ public class VertxException extends RuntimeException {
   /**
    * Create an instance given a cause
    *
-   * @param cause  the cause
+   * @param cause the cause
    */
   public VertxException(Throwable cause) {
     super(cause);

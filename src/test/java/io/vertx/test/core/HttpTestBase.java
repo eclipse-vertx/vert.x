@@ -25,8 +25,8 @@ import io.vertx.core.http.HttpServerOptions;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
- * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
+ *
+ *
  */
 public class HttpTestBase extends VertxTestBase {
 

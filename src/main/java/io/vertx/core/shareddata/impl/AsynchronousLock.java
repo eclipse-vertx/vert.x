@@ -23,7 +23,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class AsynchronousLock implements Lock {
 

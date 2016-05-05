@@ -17,8 +17,6 @@ package io.vertx.core.cli;
 
 /**
  * High level exception thrown when an issue in the command line processing occurs.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class CLIException extends RuntimeException {
 

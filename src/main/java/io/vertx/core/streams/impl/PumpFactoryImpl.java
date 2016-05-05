@@ -16,15 +16,15 @@
 
 package io.vertx.core.streams.impl;
 
-import java.util.Objects;
-
 import io.vertx.core.spi.PumpFactory;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.util.Objects;
+
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class PumpFactoryImpl implements PumpFactory {
   @Override

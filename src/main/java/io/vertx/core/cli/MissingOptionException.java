@@ -20,8 +20,6 @@ import java.util.stream.Collectors;
 
 /**
  * Exception thrown when an option was expected and was not found on the command line.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class MissingOptionException extends CLIException {
   private final Collection<Option> expected;

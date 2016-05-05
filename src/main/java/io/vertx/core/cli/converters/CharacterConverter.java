@@ -19,8 +19,6 @@ package io.vertx.core.cli.converters;
 /**
  * A converter for character. Unlike other primitive types, characters cannot be created using 'valueOf'. Notice that
  * only input having a length of 1 can be converted to characters. Other inputs are rejected.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public final class CharacterConverter implements Converter<Character> {
 

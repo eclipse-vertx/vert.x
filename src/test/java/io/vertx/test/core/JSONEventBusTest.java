@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class JSONEventBusTest extends VertxTestBase {
 
@@ -95,7 +95,7 @@ public class JSONEventBusTest extends VertxTestBase {
   @Test
   public void testChangesNotVisibleArray2() {
     final JsonArray obj = new JsonArray();
-    eb.<JsonArray>consumer("foo").handler((Message<JsonArray> msg) ->  msg.body().add("blah"));
+    eb.<JsonArray>consumer("foo").handler((Message<JsonArray> msg) -> msg.body().add("blah"));
     eb.send("foo", obj);
     vertx.setTimer(1000, id -> {
       assertEquals(0, obj.size());

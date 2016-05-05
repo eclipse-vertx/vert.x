@@ -19,7 +19,9 @@ package io.vertx.core.net.impl;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -37,13 +39,11 @@ import java.net.InetSocketAddress;
 
 /**
  * Abstract base class for TCP connections.
- *
+ * <p>
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class ConnectionBase {
 

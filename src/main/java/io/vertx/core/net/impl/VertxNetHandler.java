@@ -26,7 +26,7 @@ import io.vertx.core.impl.ContextImpl;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 

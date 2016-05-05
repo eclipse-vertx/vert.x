@@ -3,7 +3,7 @@ package io.vertx.core.eventbus;
 import io.vertx.core.Handler;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public abstract class FilteringInterceptor implements Handler<SendContext> {
 

@@ -22,7 +22,7 @@ import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.docgen.Source;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 @Source
 public class Examples {

@@ -19,12 +19,13 @@ package io.vertx.core.dns.impl;
 import java.util.Comparator;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 final class MxRecordComparator implements Comparator<MxRecordImpl> {
   static final Comparator<MxRecordImpl> INSTANCE = new MxRecordComparator();
 
-  private MxRecordComparator() {}
+  private MxRecordComparator() {
+  }
 
   @Override
   public int compare(MxRecordImpl o1, MxRecordImpl o2) {

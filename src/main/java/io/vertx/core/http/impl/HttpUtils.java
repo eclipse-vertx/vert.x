@@ -17,11 +17,7 @@ package io.vertx.core.http.impl;
 
 
 import io.netty.handler.codec.compression.ZlibWrapper;
-import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.MultiMap;
@@ -35,17 +31,10 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-import static io.vertx.core.http.Http2Settings.DEFAULT_ENABLE_PUSH;
-import static io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_FRAME_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_HEADER_LIST_SIZE;
+import static io.vertx.core.http.Http2Settings.*;
 
 /**
  * Various http utils.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public final class HttpUtils {
 
@@ -87,7 +76,7 @@ public final class HttpUtils {
     if (i == -1) {
       return null;
     } else {
-      return uri.substring(i + 1 , uri.length());
+      return uri.substring(i + 1, uri.length());
     }
   }
 
@@ -114,7 +103,7 @@ public final class HttpUtils {
     Map<String, List<String>> prms = queryStringDecoder.parameters();
     MultiMap params = new CaseInsensitiveHeaders();
     if (!prms.isEmpty()) {
-      for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
+      for (Map.Entry<String, List<String>> entry : prms.entrySet()) {
         params.add(entry.getKey(), entry.getValue());
       }
     }
@@ -127,7 +116,7 @@ public final class HttpUtils {
         nettySettings.pushEnabled(vertxSettings.isPushEnabled());
       }
       if (vertxSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
-        nettySettings.put('\u0001', (Long)vertxSettings.getHeaderTableSize());
+        nettySettings.put('\u0001', (Long) vertxSettings.getHeaderTableSize());
       }
       if (vertxSettings.getInitialWindowSize() != DEFAULT_INITIAL_WINDOW_SIZE) {
         nettySettings.initialWindowSize(vertxSettings.getInitialWindowSize());
@@ -139,12 +128,12 @@ public final class HttpUtils {
         nettySettings.maxFrameSize(vertxSettings.getMaxFrameSize());
       }
       if (vertxSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
-        nettySettings.maxHeaderListSize((int)(long) vertxSettings.getMaxHeaderListSize());
+        nettySettings.maxHeaderListSize((int) (long) vertxSettings.getMaxHeaderListSize());
       }
       Map<Integer, Long> extraSettings = vertxSettings.getExtraSettings();
       if (extraSettings != null) {
         extraSettings.forEach((code, setting) -> {
-          nettySettings.put((char)(int)code, setting);
+          nettySettings.put((char) (int) code, setting);
         });
       }
     }
@@ -155,12 +144,12 @@ public final class HttpUtils {
     converted.pushEnabled(settings.isPushEnabled());
     converted.maxFrameSize(settings.getMaxFrameSize());
     converted.initialWindowSize(settings.getInitialWindowSize());
-    converted.headerTableSize((int)(long)settings.getHeaderTableSize());
+    converted.headerTableSize((int) (long) settings.getHeaderTableSize());
     converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
     converted.maxHeaderListSize(settings.getMaxHeaderListSize());
     if (settings.getExtraSettings() != null) {
       settings.getExtraSettings().forEach((key, value) -> {
-        converted.put((char)(int)key, value);
+        converted.put((char) (int) key, value);
       });
     }
     return converted;
@@ -190,7 +179,7 @@ public final class HttpUtils {
     }
     Long headerTableSize = settings.headerTableSize();
     if (headerTableSize != null) {
-      converted.setHeaderTableSize((int)(long) headerTableSize);
+      converted.setHeaderTableSize((int) (long) headerTableSize);
     }
     settings.forEach((key, value) -> {
       if (key > 6) {
@@ -211,7 +200,7 @@ public final class HttpUtils {
         pos += 2;
         long j = buffer.getUnsignedInt(pos);
         pos += 4;
-        settings.put((char)i, (Long)j);
+        settings.put((char) i, (Long) j);
       }
       return settings;
     } catch (Exception ignore) {
@@ -225,6 +214,7 @@ public final class HttpUtils {
       return super.determineWrapper(acceptEncoding);
     }
   }
+
   private static final CustomCompressor compressor = new CustomCompressor();
 
   static String determineContentEncoding(Http2Headers headers) {

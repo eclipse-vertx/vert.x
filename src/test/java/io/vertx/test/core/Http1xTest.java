@@ -20,7 +20,9 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
@@ -38,12 +40,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.randomHttp2Settings;
 
 /**
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
- * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
+ *
+ *
  */
 public class Http1xTest extends HttpTest {
 
@@ -407,7 +410,7 @@ public class Http1xTest extends HttpTest {
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
     assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
+    assertEquals(tsPassword, ((JksOptions) copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, copy.getConnectTimeout());
@@ -499,39 +502,39 @@ public class Http1xTest extends HttpTest {
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
-      .put("receiveBufferSize", receiverBufferSize)
-      .put("reuseAddress", reuseAddress)
-      .put("trafficClass", trafficClass)
-      .put("tcpNoDelay", tcpNoDelay)
-      .put("tcpKeepAlive", tcpKeepAlive)
-      .put("soLinger", soLinger)
-      .put("usePooledBuffers", usePooledBuffers)
-      .put("idleTimeout", idleTimeout)
-      .put("ssl", ssl)
-      .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
-      .put("connectTimeout", connectTimeout)
-      .put("trustAll", trustAll)
-      .put("crlPaths", new JsonArray().add(crlPath))
-      .put("keyStoreOptions", new JsonObject().put("password", ksPassword).put("path", ksPath))
-      .put("trustStoreOptions", new JsonObject().put("password", tsPassword).put("path", tsPath))
-      .put("verifyHost", verifyHost)
-      .put("maxPoolSize", maxPoolSize)
-      .put("keepAlive", keepAlive)
-      .put("pipelining", pipelining)
-      .put("tryUseCompression", tryUseCompression)
-      .put("protocolVersion", protocolVersion.name())
-      .put("maxWaitQueueSize", maxWaitQueueSize)
-      .put("initialSettings", new JsonObject()
-          .put("pushEnabled", initialSettings.isPushEnabled())
-          .put("headerTableSize", initialSettings.getHeaderTableSize())
-          .put("maxHeaderListSize", initialSettings.getMaxHeaderListSize())
-          .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
-          .put("initialWindowSize", initialSettings.getInitialWindowSize())
-          .put("maxFrameSize", initialSettings.getMaxFrameSize()))
-      .put("useAlpn", useAlpn)
-      .put("sslEngine", sslEngine.name())
-      .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
-      .put("h2cUpgrade", h2cUpgrade);
+        .put("receiveBufferSize", receiverBufferSize)
+        .put("reuseAddress", reuseAddress)
+        .put("trafficClass", trafficClass)
+        .put("tcpNoDelay", tcpNoDelay)
+        .put("tcpKeepAlive", tcpKeepAlive)
+        .put("soLinger", soLinger)
+        .put("usePooledBuffers", usePooledBuffers)
+        .put("idleTimeout", idleTimeout)
+        .put("ssl", ssl)
+        .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
+        .put("connectTimeout", connectTimeout)
+        .put("trustAll", trustAll)
+        .put("crlPaths", new JsonArray().add(crlPath))
+        .put("keyStoreOptions", new JsonObject().put("password", ksPassword).put("path", ksPath))
+        .put("trustStoreOptions", new JsonObject().put("password", tsPassword).put("path", tsPath))
+        .put("verifyHost", verifyHost)
+        .put("maxPoolSize", maxPoolSize)
+        .put("keepAlive", keepAlive)
+        .put("pipelining", pipelining)
+        .put("tryUseCompression", tryUseCompression)
+        .put("protocolVersion", protocolVersion.name())
+        .put("maxWaitQueueSize", maxWaitQueueSize)
+        .put("initialSettings", new JsonObject()
+            .put("pushEnabled", initialSettings.isPushEnabled())
+            .put("headerTableSize", initialSettings.getHeaderTableSize())
+            .put("maxHeaderListSize", initialSettings.getMaxHeaderListSize())
+            .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
+            .put("initialWindowSize", initialSettings.getInitialWindowSize())
+            .put("maxFrameSize", initialSettings.getMaxFrameSize()))
+        .put("useAlpn", useAlpn)
+        .put("sslEngine", sslEngine.name())
+        .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
+        .put("h2cUpgrade", h2cUpgrade);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -573,7 +576,7 @@ public class Http1xTest extends HttpTest {
     json.remove("keyStoreOptions");
     json.remove("trustStoreOptions");
     json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
-      .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
+        .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new HttpClientOptions(json);
     assertTrue(options.getTrustOptions() instanceof PfxOptions);
     assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
@@ -581,7 +584,7 @@ public class Http1xTest extends HttpTest {
     json.remove("pfxKeyCertOptions");
     json.remove("pfxTrustOptions");
     json.put("pemKeyCertOptions", new JsonObject())
-      .put("pemTrustOptions", new JsonObject());
+        .put("pemTrustOptions", new JsonObject());
     options = new HttpClientOptions(json);
     assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
@@ -759,40 +762,40 @@ public class Http1xTest extends HttpTest {
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
-      .put("receiveBufferSize", receiverBufferSize)
-      .put("reuseAddress", reuseAddress)
-      .put("trafficClass", trafficClass)
-      .put("tcpNoDelay", tcpNoDelay)
-      .put("tcpKeepAlive", tcpKeepAlive)
-      .put("soLinger", soLinger)
-      .put("usePooledBuffers", usePooledBuffers)
-      .put("idleTimeout", idleTimeout)
-      .put("ssl", ssl)
-      .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
-      .put("crlPaths", new JsonArray().add(crlPath))
-      .put("keyStoreOptions", new JsonObject().put("password", ksPassword).put("path", ksPath))
-      .put("trustStoreOptions", new JsonObject().put("password", tsPassword).put("path", tsPath))
-      .put("port", port)
-      .put("host", host)
-      .put("acceptBacklog", acceptBacklog)
-      .put("compressionSupported", compressionSupported)
-      .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
-      .put("websocketSubProtocols", wsSubProtocol)
-      .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
-      .put("maxChunkSize", maxChunkSize)
-      .put("maxInitialLineLength", maxInitialLineLength)
-      .put("maxHeaderSize", maxHeaderSize)
-      .put("enabledProtocols", new JsonArray().add(enabledProtocol.name()))
-      .put("initialSettings", new JsonObject()
-          .put("pushEnabled", initialSettings.isPushEnabled())
-          .put("headerTableSize", initialSettings.getHeaderTableSize())
-          .put("maxHeaderListSize", initialSettings.getMaxHeaderListSize())
-          .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
-          .put("initialWindowSize", initialSettings.getInitialWindowSize())
-          .put("maxFrameSize", initialSettings.getMaxFrameSize()))
-      .put("useAlpn", useAlpn)
-      .put("sslEngine", sslEngine.name())
-      .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()));
+        .put("receiveBufferSize", receiverBufferSize)
+        .put("reuseAddress", reuseAddress)
+        .put("trafficClass", trafficClass)
+        .put("tcpNoDelay", tcpNoDelay)
+        .put("tcpKeepAlive", tcpKeepAlive)
+        .put("soLinger", soLinger)
+        .put("usePooledBuffers", usePooledBuffers)
+        .put("idleTimeout", idleTimeout)
+        .put("ssl", ssl)
+        .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
+        .put("crlPaths", new JsonArray().add(crlPath))
+        .put("keyStoreOptions", new JsonObject().put("password", ksPassword).put("path", ksPath))
+        .put("trustStoreOptions", new JsonObject().put("password", tsPassword).put("path", tsPath))
+        .put("port", port)
+        .put("host", host)
+        .put("acceptBacklog", acceptBacklog)
+        .put("compressionSupported", compressionSupported)
+        .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
+        .put("websocketSubProtocols", wsSubProtocol)
+        .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
+        .put("maxChunkSize", maxChunkSize)
+        .put("maxInitialLineLength", maxInitialLineLength)
+        .put("maxHeaderSize", maxHeaderSize)
+        .put("enabledProtocols", new JsonArray().add(enabledProtocol.name()))
+        .put("initialSettings", new JsonObject()
+            .put("pushEnabled", initialSettings.isPushEnabled())
+            .put("headerTableSize", initialSettings.getHeaderTableSize())
+            .put("maxHeaderListSize", initialSettings.getMaxHeaderListSize())
+            .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
+            .put("initialWindowSize", initialSettings.getInitialWindowSize())
+            .put("maxFrameSize", initialSettings.getMaxFrameSize()))
+        .put("useAlpn", useAlpn)
+        .put("sslEngine", sslEngine.name())
+        .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()));
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -834,7 +837,7 @@ public class Http1xTest extends HttpTest {
     json.remove("keyStoreOptions");
     json.remove("trustStoreOptions");
     json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
-      .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
+        .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new HttpServerOptions(json);
     assertTrue(options.getTrustOptions() instanceof PfxOptions);
     assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
@@ -842,7 +845,7 @@ public class Http1xTest extends HttpTest {
     json.remove("pfxKeyCertOptions");
     json.remove("pfxTrustOptions");
     json.put("pemKeyCertOptions", new JsonObject())
-      .put("pemTrustOptions", new JsonObject());
+        .put("pemTrustOptions", new JsonObject());
     options = new HttpServerOptions(json);
     assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
@@ -871,7 +874,7 @@ public class Http1xTest extends HttpTest {
     CountDownLatch latch = new CountDownLatch(requests);
 
     server.listen(onSuccess(s -> {
-      for(int count = 0; count < requests; count++) {
+      for (int count = 0; count < requests; count++) {
         HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
           resp.bodyHandler(buff -> {
             assertEquals("OK", buff.toString());
@@ -1005,7 +1008,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(expectedConnectedServers, connectedServers.size());
 
     CountDownLatch serverCloseLatch = new CountDownLatch(numServers);
-    for (HttpServer server: servers) {
+    for (HttpServer server : servers) {
       server.close(ar -> {
         assertTrue(ar.succeeded());
         serverCloseLatch.countDown();
@@ -1160,7 +1163,8 @@ public class Http1xTest extends HttpTest {
   public void testServerWebsocketIdleTimeout() {
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
-    server.websocketHandler(ws -> {}).listen(ar -> {
+    server.websocketHandler(ws -> {
+    }).listen(ar -> {
       assertTrue(ar.succeeded());
       client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", ws -> {
         ws.closeHandler(v -> testComplete());
@@ -1175,7 +1179,8 @@ public class Http1xTest extends HttpTest {
   public void testClientWebsocketIdleTimeout() {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
-    server.websocketHandler(ws -> {}).listen(ar -> {
+    server.websocketHandler(ws -> {
+    }).listen(ar -> {
       client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", ws -> {
         ws.closeHandler(v -> testComplete());
       });
@@ -1570,9 +1575,10 @@ public class Http1xTest extends HttpTest {
     CountDownLatch serverLatch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.response().end();
-    } ).listen(ar -> {
+    }).listen(ar -> {
       assertTrue(ar.succeeded());
-      serverLatch.countDown();;
+      serverLatch.countDown();
+      ;
     });
     awaitLatch(serverLatch);
     CountDownLatch req1Latch = new CountDownLatch(1);
@@ -1697,7 +1703,7 @@ public class Http1xTest extends HttpTest {
         assertTrue(Vertx.currentContext().isWorkerContext());
         assertTrue(Context.isOnWorkerThread());
         HttpServer server1 = vertx.createHttpServer(new HttpServerOptions()
-                .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+            .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
         server1.requestHandler(req -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
@@ -1779,23 +1785,23 @@ public class Http1xTest extends HttpTest {
     int sendRequests = 100;
     AtomicInteger receivedRequests = new AtomicInteger();
     vertx.createHttpServer()
-      .requestHandler(x -> {
-        x.response().end("hello");
-      })
-      .listen(8080, r -> {
-        if (r.succeeded()) {
-          HttpClient client = vertx.createHttpClient(new HttpClientOptions()
-              .setKeepAlive(true)
-              .setPipelining(true)
-              .setDefaultPort(8080)
-          );
-          IntStream.range(0, 5).forEach(i -> recursiveCall(client, receivedRequests, sendRequests));
-        }
-      });
+        .requestHandler(x -> {
+          x.response().end("hello");
+        })
+        .listen(8080, r -> {
+          if (r.succeeded()) {
+            HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+                .setKeepAlive(true)
+                .setPipelining(true)
+                .setDefaultPort(8080)
+            );
+            IntStream.range(0, 5).forEach(i -> recursiveCall(client, receivedRequests, sendRequests));
+          }
+        });
     await();
   }
 
-  private void recursiveCall(HttpClient client, AtomicInteger receivedRequests, int sendRequests){
+  private void recursiveCall(HttpClient client, AtomicInteger receivedRequests, int sendRequests) {
     client.getNow("/", r -> {
       int numRequests = receivedRequests.incrementAndGet();
       if (numRequests == sendRequests) {
@@ -1813,35 +1819,35 @@ public class Http1xTest extends HttpTest {
 
   private void testUnsupported(String rawReq, boolean method) throws Exception {
     vertx.createHttpServer()
-      .requestHandler(req -> {
-        try {
-          if (method) {
-            req.method();
-          } else {
-            req.version();
+        .requestHandler(req -> {
+          try {
+            if (method) {
+              req.method();
+            } else {
+              req.version();
+            }
+            fail("Should throw exception");
+          } catch (IllegalStateException e) {
+            // OK
           }
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
-      })
-      .listen(8080, r -> {
-        if (r.succeeded()) {
-          NetClient client = vertx.createNetClient();
-          // Send a raw request
-          client.connect(8080, "localhost", onSuccess(conn -> {
-            conn.write(rawReq);
-            Buffer respBuff = Buffer.buffer();
-            conn.handler(respBuff::appendBuffer);
-            conn.closeHandler(v -> {
-              // Server should automatically close it after sending back 501
-              assertTrue(respBuff.toString().contains("501 Not Implemented"));
-              client.close();
-              testComplete();
-            });
-          }));
-        }
-      });
+        })
+        .listen(8080, r -> {
+          if (r.succeeded()) {
+            NetClient client = vertx.createNetClient();
+            // Send a raw request
+            client.connect(8080, "localhost", onSuccess(conn -> {
+              conn.write(rawReq);
+              Buffer respBuff = Buffer.buffer();
+              conn.handler(respBuff::appendBuffer);
+              conn.closeHandler(v -> {
+                // Server should automatically close it after sending back 501
+                assertTrue(respBuff.toString().contains("501 Not Implemented"));
+                client.close();
+                testComplete();
+              });
+            }));
+          }
+        });
     await();
   }
 
@@ -1918,44 +1924,44 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testMaxInitialLineLengthOption() {
-	  
+
     String longParam = TestUtils.randomAlphaString(5000);
-	
+
     // 5017 = 5000 for longParam and 17 for the rest in the following line - "GET /?t=longParam HTTP/1.1"
     vertx.createHttpServer(new HttpServerOptions().setMaxInitialLineLength(5017)
-    						.setHost("localhost").setPort(8080)).requestHandler(req -> {
+        .setHost("localhost").setPort(8080)).requestHandler(req -> {
       assertEquals(req.getParam("t"), longParam);
       req.response().end();
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
-      		.request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam, resp -> {
-        testComplete();
-      }).end();
+          .request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam, resp -> {
+            testComplete();
+          }).end();
     }));
-    
+
     await();
   }
-  
+
   @Test
   public void testMaxHeaderSizeOption() {
-	  
+
     String longHeader = TestUtils.randomAlphaString(9000);
-	
+
     // min 9023 = 9000 for longHeader and 23 for "Content-Length: 0 t: "
     vertx.createHttpServer(new HttpServerOptions().setMaxHeaderSize(10000)
-    						.setHost("localhost").setPort(8080)).requestHandler(req -> {
+        .setHost("localhost").setPort(8080)).requestHandler(req -> {
       assertEquals(req.getHeader("t"), longHeader);
       req.response().end();
     }).listen(onSuccess(res -> {
       HttpClientRequest req = vertx.createHttpClient(new HttpClientOptions())
-      		.request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
-        testComplete();
-      });
+          .request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+            testComplete();
+          });
       // Add longHeader
       req.putHeader("t", longHeader);
       req.end();
     }));
-    
+
     await();
   }
 
@@ -2121,7 +2127,7 @@ public class Http1xTest extends HttpTest {
     CountDownLatch listenLatch = new CountDownLatch(1);
     CountDownLatch doneLatch = new CountDownLatch(2);
     List<String> responses = new ArrayList<>();
-    server.requestHandler(req-> {
+    server.requestHandler(req -> {
       responses.add(req.path());
       req.response().end();
       doneLatch.countDown();

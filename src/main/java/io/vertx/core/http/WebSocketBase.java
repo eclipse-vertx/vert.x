@@ -31,8 +31,6 @@ import io.vertx.core.streams.WriteStream;
  * <p>
  * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with
  * {@link io.vertx.core.streams.Pump} to pump data with flow control.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
 public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
@@ -86,7 +84,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Write a WebSocket frame to the connection
    *
-   * @param frame  the frame to write
+   * @param frame the frame to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -95,7 +93,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Write a final WebSocket text frame to the connection
    *
-   * @param text  The text to write
+   * @param text The text to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -104,7 +102,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Write a final WebSocket binary frame to the connection
    *
-   * @param data  The data to write
+   * @param data The data to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -114,7 +112,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Writes a (potentially large) piece of binary data to the connection. This data might be written as multiple frames
    * if it exceeds the maximum WebSocket frame size.
    *
-   * @param data  the data to write
+   * @param data the data to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -123,7 +121,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Set a close handler. This will be called when the WebSocket is closed.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -132,7 +130,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Set a frame handler on the connection. This handler will be called when frames are read on the connection.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent

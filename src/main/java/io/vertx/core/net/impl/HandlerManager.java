@@ -17,7 +17,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -28,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class HandlerManager<T> {
 
@@ -86,6 +85,7 @@ public class HandlerManager<T> {
   private static final class Handlers<T> {
     private int pos;
     private final List<HandlerHolder<T>> list = new CopyOnWriteArrayList<>();
+
     HandlerHolder<T> chooseHandler() {
       HandlerHolder<T> handler = list.get(pos);
       pos++;

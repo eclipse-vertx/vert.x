@@ -15,18 +15,11 @@
  */
 package io.vertx.core.spi;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 
 /**
  * Factory for creating Vertx instances.<p>
  * Use this to create Vertx instances when embedding Vert.x core directly.<p>
- *
- * @author pidster
- *
  */
 public interface VertxFactory {
 

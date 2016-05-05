@@ -50,7 +50,6 @@ import java.util.jar.Manifest;
  * <p>
  * {@code java -jar myapp.jar}
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
  * @deprecated Use {@link Launcher} instead
  */
 @Deprecated
@@ -157,21 +156,21 @@ public class Starter {
    * Hook for sub classes of {@link Starter} before the vertx instance is started.
    */
   protected void beforeStartingVertx(VertxOptions options) {
-    
+
   }
-  
+
   /**
    * Hook for sub classes of {@link Starter} after the vertx instance is started.
    */
   protected void afterStartingVertx() {
-    
+
   }
-  
+
   /**
    * Hook for sub classes of {@link Starter} before the verticle is deployed.
    */
   protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
-    
+
   }
 
   /**
@@ -182,7 +181,7 @@ public class Starter {
     // Default behaviour is to close Vert.x if the deploy failed
     vertx.close();
   }
-  
+
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     MetricsOptions metricsOptions;
@@ -302,7 +301,7 @@ public class Starter {
     JsonObject conf;
 
     if (confArg != null) {
-      try (Scanner scanner = new Scanner(new File(confArg)).useDelimiter("\\A")){
+      try (Scanner scanner = new Scanner(new File(confArg)).useDelimiter("\\A")) {
         String sconf = scanner.next();
         try {
           conf = new JsonObject(sconf);
@@ -343,7 +342,7 @@ public class Starter {
       if (res.failed()) {
         Throwable cause = res.cause();
         if (cause instanceof VertxException) {
-          VertxException ve = (VertxException)cause;
+          VertxException ve = (VertxException) cause;
           log.error(ve.getMessage());
           if (ve.getCause() != null) {
             log.error(ve.getCause());
@@ -365,7 +364,7 @@ public class Starter {
     Enumeration e = props.propertyNames();
     // Uhh, properties suck
     while (e.hasMoreElements()) {
-      String propName = (String)e.nextElement();
+      String propName = (String) e.nextElement();
       String propVal = props.getProperty(propName);
       if (propName.startsWith(prefix)) {
         String fieldName = propName.substring(prefix.length());
@@ -404,7 +403,7 @@ public class Starter {
 
   private Method getSetter(String fieldName, Class<?> clazz) {
     Method[] meths = clazz.getDeclaredMethods();
-    for (Method meth: meths) {
+    for (Method meth : meths) {
       if (("set" + fieldName).toLowerCase().equals(meth.getName().toLowerCase())) {
         return meth;
       }
@@ -452,7 +451,7 @@ public class Starter {
       while (addresses.hasMoreElements()) {
         InetAddress address = addresses.nextElement();
         if (!address.isAnyLocalAddress() && !address.isMulticastAddress()
-          && !(address instanceof Inet6Address)) {
+            && !(address instanceof Inet6Address)) {
           return address.getHostAddress();
         }
       }
@@ -514,43 +513,43 @@ public class Starter {
     String usage =
 
         "    vertx run <main> [-options]                                                \n" +
-        "        runs a verticle called <main> in its own instance of vert.x.         \n\n" +
-        "    valid options are:                                                         \n" +
-        "        -conf <config>         Specifies configuration that should be provided \n" +
-        "                               to the verticle. <config> should reference      \n" +
-        "                               either a text file containing a valid JSON      \n" +
-        "                               object which represents the configuration OR    \n" +
-        "                               be a JSON string.                               \n" +
-        "        -instances <instances> specifies how many instances of the verticle    \n" +
-        "                               will be deployed. Defaults to 1                 \n" +
-        "        -worker                if specified then the verticle is a worker      \n" +
-        "                               verticle.                                       \n" +
-        "        -cp <classpath>        provide an extra classpath to be used for the   \n" +
-        "                               verticle deployment.                            \n" +
-        "        -cluster               if specified then the vert.x instance will form \n" +
-        "                               a cluster with any other vert.x instances on    \n" +
-        "                               the network.                                    \n" +
-        "        -cluster-port          port to use for cluster communication.          \n" +
-        "                               Default is 0 which means choose a spare         \n" +
-        "                               random port.                                    \n" +
-        "        -cluster-host          host to bind to for cluster communication.      \n" +
-        "                               If this is not specified vert.x will attempt    \n" +
-        "                               to choose one from the available interfaces.    \n" +
-        "        -ha                    if specified the verticle will be deployed as a \n" +
-        "                               high availability (HA) deployment.              \n" +
-        "                               This means it can fail over to any other nodes  \n" +
-        "                               in the cluster started with the same HA group   \n" +
-        "        -quorum                used in conjunction with -ha this specifies the \n" +
-        "                               minimum number of nodes in the cluster for any  \n" +
-        "                               HA deploymentIDs to be active. Defaults to 0    \n" +
-        "        -hagroup               used in conjunction with -ha this specifies the \n" +
-        "                               HA group this node will join. There can be      \n" +
-        "                               multiple HA groups in a cluster. Nodes will only\n" +
-        "                               failover to other nodes in the same group.      \n" +
-        "                               Defaults to __DEFAULT__                       \n\n" +
+            "        runs a verticle called <main> in its own instance of vert.x.         \n\n" +
+            "    valid options are:                                                         \n" +
+            "        -conf <config>         Specifies configuration that should be provided \n" +
+            "                               to the verticle. <config> should reference      \n" +
+            "                               either a text file containing a valid JSON      \n" +
+            "                               object which represents the configuration OR    \n" +
+            "                               be a JSON string.                               \n" +
+            "        -instances <instances> specifies how many instances of the verticle    \n" +
+            "                               will be deployed. Defaults to 1                 \n" +
+            "        -worker                if specified then the verticle is a worker      \n" +
+            "                               verticle.                                       \n" +
+            "        -cp <classpath>        provide an extra classpath to be used for the   \n" +
+            "                               verticle deployment.                            \n" +
+            "        -cluster               if specified then the vert.x instance will form \n" +
+            "                               a cluster with any other vert.x instances on    \n" +
+            "                               the network.                                    \n" +
+            "        -cluster-port          port to use for cluster communication.          \n" +
+            "                               Default is 0 which means choose a spare         \n" +
+            "                               random port.                                    \n" +
+            "        -cluster-host          host to bind to for cluster communication.      \n" +
+            "                               If this is not specified vert.x will attempt    \n" +
+            "                               to choose one from the available interfaces.    \n" +
+            "        -ha                    if specified the verticle will be deployed as a \n" +
+            "                               high availability (HA) deployment.              \n" +
+            "                               This means it can fail over to any other nodes  \n" +
+            "                               in the cluster started with the same HA group   \n" +
+            "        -quorum                used in conjunction with -ha this specifies the \n" +
+            "                               minimum number of nodes in the cluster for any  \n" +
+            "                               HA deploymentIDs to be active. Defaults to 0    \n" +
+            "        -hagroup               used in conjunction with -ha this specifies the \n" +
+            "                               HA group this node will join. There can be      \n" +
+            "                               multiple HA groups in a cluster. Nodes will only\n" +
+            "                               failover to other nodes in the same group.      \n" +
+            "                               Defaults to __DEFAULT__                       \n\n" +
 
-        "    vertx -version                                                             \n" +
-        "        displays the version";
+            "    vertx -version                                                             \n" +
+            "        displays the version";
 
     log.info(usage);
   }

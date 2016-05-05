@@ -16,19 +16,8 @@
 package io.vertx.core.net.impl;
 
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelHandlerInvoker;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelProgressivePromise;
-import io.netty.channel.ChannelPromise;
+import io.netty.buffer.*;
+import io.netty.channel.*;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
@@ -38,8 +27,6 @@ import java.net.SocketAddress;
 /**
  * A {@link io.netty.buffer.ByteBufAllocator} which is partial pooled. Which means only direct {@link io.netty.buffer.ByteBuf}s are pooled. The rest
  * is unpooled.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
   // Make sure we use the same number of areas as EventLoop's to reduce condition.
@@ -50,7 +37,8 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
   public static final PartialPooledByteBufAllocator INSTANCE = new PartialPooledByteBufAllocator();
 
-  private PartialPooledByteBufAllocator() { }
+  private PartialPooledByteBufAllocator() {
+  }
 
   @Override
   public ByteBuf buffer() {
@@ -161,6 +149,7 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
   private static final class PooledChannelHandlerContext implements ChannelHandlerContext {
     private final ChannelHandlerContext ctx;
+
     PooledChannelHandlerContext(ChannelHandlerContext ctx) {
       this.ctx = ctx;
     }

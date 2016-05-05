@@ -26,8 +26,6 @@ import static junit.framework.Assert.assertTrue;
 
 /**
  * Theses test checks the Log4J 2 log delegate.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class Log4J2LogDelegateTest {
 

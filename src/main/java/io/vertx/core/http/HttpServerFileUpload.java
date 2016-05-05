@@ -23,8 +23,6 @@ import io.vertx.core.streams.ReadStream;
 
 /**
  * Represents an file upload from an HTML FORM.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 @VertxGen
 public interface HttpServerFileUpload extends ReadStream<Buffer> {
@@ -47,7 +45,7 @@ public interface HttpServerFileUpload extends ReadStream<Buffer> {
   /**
    * Stream the content of this upload to the given file on storage.
    *
-   * @param filename  the name of the file
+   * @param filename the name of the file
    */
   @Fluent
   HttpServerFileUpload streamToFileSystem(String filename);
@@ -63,7 +61,7 @@ public interface HttpServerFileUpload extends ReadStream<Buffer> {
   String name();
 
   /**
-   * @return  the content type for the upload
+   * @return the content type for the upload
    */
   String contentType();
 

@@ -15,14 +15,12 @@
  */
 package io.vertx.core.datagram;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
 
 /**
  * A received datagram packet (UDP) which contains the data and information about the sender of the data itself.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 @VertxGen
 public interface DatagramPacket {

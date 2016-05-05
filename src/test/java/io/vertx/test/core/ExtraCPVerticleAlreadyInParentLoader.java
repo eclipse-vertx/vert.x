@@ -21,8 +21,8 @@ import io.vertx.core.impl.IsolatingClassLoader;
 import org.junit.Assert;
 
 /**
-* @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-*/
+ *
+ */
 public class ExtraCPVerticleAlreadyInParentLoader extends AbstractVerticle {
   @Override
   public void start() throws Exception {

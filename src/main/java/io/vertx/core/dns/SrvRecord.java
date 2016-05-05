@@ -20,8 +20,6 @@ import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represent a Service-Record (SRV) which was resolved for a domain.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 @VertxGen
 public interface SrvRecord {

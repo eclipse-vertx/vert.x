@@ -24,7 +24,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.impl.VertxHandler;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
 
@@ -56,7 +56,7 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
     if (msg instanceof DatagramPacket) {
       DatagramPacket packet = (DatagramPacket) msg;
       ByteBuf content = packet.content();
-      if (content.isDirect())  {
+      if (content.isDirect()) {
         content = safeBuffer(content, allocator);
       }
       return new DatagramPacketImpl(packet.sender(), Buffer.buffer(content));

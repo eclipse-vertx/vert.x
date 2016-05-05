@@ -19,7 +19,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.impl.ContextImpl;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 abstract class Waiter {
 
@@ -56,5 +56,5 @@ abstract class Waiter {
    * @return true if the waiter has been cancelled
    */
   abstract boolean isCancelled();
-  
+
 }

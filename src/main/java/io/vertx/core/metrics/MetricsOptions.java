@@ -22,8 +22,6 @@ import io.vertx.core.json.JsonObject;
 /**
  * Vert.x metrics base configuration, this class can be extended by provider implementations to configure
  * those specific implementations.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject(generateConverter = true)
 public class MetricsOptions {
@@ -109,8 +107,8 @@ public class MetricsOptions {
   @Override
   public String toString() {
     return "MetricsOptions{" +
-      "enabled=" + enabled +
-      ", json=" + json +
-      '}';
+        "enabled=" + enabled +
+        ", json=" + json +
+        '}';
   }
 }

@@ -27,10 +27,8 @@ import static junit.framework.Assert.assertTrue;
 /**
  * These tests check the JUL log delegate. It analyses the output, so any change in the configuration may break the
  * tests.
- *
+ * <p>
  * TODO Ignore these tests for now, they break the CI, because the logging has already been initialized.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class JULLogDelegateTest {
 

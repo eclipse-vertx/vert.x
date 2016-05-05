@@ -24,8 +24,6 @@ import java.util.*;
 
 /**
  * Base class. TCP and SSL related options
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public abstract class TCPSSLOptions extends NetworkOptions {
@@ -65,9 +63,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final boolean DEFAULT_USE_ALPN = false;
 
-   /**
-    * Default SSL engine = JDK
-    */
+  /**
+   * Default SSL engine = JDK
+   */
   public static final SSLEngine DEFAULT_SSL_ENGINE = SSLEngine.JDK;
 
 
@@ -97,7 +95,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * Copy constructor
    *
-   * @param other  the options to copy
+   * @param other the options to copy
    */
   public TCPSSLOptions(TCPSSLOptions other) {
     super(other);
@@ -125,7 +123,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions(JsonObject json) {
     super(json);
     init();
-    TCPSSLOptionsConverter.fromJson(json ,this);
+    TCPSSLOptionsConverter.fromJson(json, this);
   }
 
   private void init() {
@@ -178,7 +176,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   *
    * @return is SO_linger enabled
    */
   public int getSoLinger() {
@@ -201,7 +198,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * @return are Netty pooled buffers enabled?
-   *
    */
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
@@ -222,7 +218,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Set the idle timeout, in seconds. zero means don't timeout.
    * This determines if a connection will timeout and be closed if no data is received within the timeout.
    *
-   * @param idleTimeout  the timeout, in seconds
+   * @param idleTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setIdleTimeout(int idleTimeout) {
@@ -234,14 +230,13 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return  the idle timeout, in seconds
+   * @return the idle timeout, in seconds
    */
   public int getIdleTimeout() {
     return idleTimeout;
   }
 
   /**
-   *
    * @return is SSL/TLS enabled?
    */
   public boolean isSsl() {
@@ -251,7 +246,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * Set whether SSL/TLS is enabled
    *
-   * @param ssl  true if enabled
+   * @param ssl true if enabled
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setSsl(boolean ssl) {
@@ -268,6 +263,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the key/cert options in jks format, aka Java keystore.
+   *
    * @param options the key store in jks format
    * @return a reference to this, so the API can be used fluently
    */
@@ -278,6 +274,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the key/cert options in pfx format.
+   *
    * @param options the key cert options in pfx format
    * @return a reference to this, so the API can be used fluently
    */
@@ -288,6 +285,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the key/cert store options in pem format.
+   *
    * @param options the options in pem format
    * @return a reference to this, so the API can be used fluently
    */
@@ -305,6 +303,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the trust options in jks format, aka Java trustore
+   *
    * @param options the options in jks format
    * @return a reference to this, so the API can be used fluently
    */
@@ -315,6 +314,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the trust options in pfx format
+   *
    * @param options the options in pfx format
    * @return a reference to this, so the API can be used fluently
    */
@@ -325,6 +325,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the trust options in pem format
+   *
    * @param options the options in pem format
    * @return a reference to this, so the API can be used fluently
    */
@@ -336,7 +337,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * Add an enabled cipher suite
    *
-   * @param suite  the suite
+   * @param suite the suite
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions addEnabledCipherSuite(String suite) {
@@ -345,7 +346,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   *
    * @return the enabled cipher suites
    */
   public Set<String> getEnabledCipherSuites() {
@@ -353,7 +353,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   *
    * @return the CRL (Certificate revocation list) paths
    */
   public List<String> getCrlPaths() {
@@ -362,7 +361,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Add a CRL path
-   * @param crlPath  the path
+   *
+   * @param crlPath the path
    * @return a reference to this, so the API can be used fluently
    * @throws NullPointerException
    */
@@ -384,7 +384,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * Add a CRL value
    *
-   * @param crlValue  the value
+   * @param crlValue the value
    * @return a reference to this, so the API can be used fluently
    * @throws NullPointerException
    */
@@ -432,7 +432,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * Add an enabled SSL/TLS protocols
    *
-   * @param protocol  the SSL/TLS protocol do enabled
+   * @param protocol the SSL/TLS protocol do enabled
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions addEnabledSecureTransportProtocol(String protocol) {
@@ -442,6 +442,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Returns the enabled SSL/TLS protocols
+   *
    * @return the enabled protocols
    */
   public Set<String> getEnabledSecureTransportProtocols() {
@@ -466,7 +467,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (crlValues != null ? !crlValues.equals(that.crlValues) : that.crlValues != null) return false;
     if (enabledCipherSuites != null ? !enabledCipherSuites.equals(that.enabledCipherSuites) : that.enabledCipherSuites != null)
       return false;
-    if (keyCertOptions != null ? !keyCertOptions.equals(that.keyCertOptions) : that.keyCertOptions != null) return false;
+    if (keyCertOptions != null ? !keyCertOptions.equals(that.keyCertOptions) : that.keyCertOptions != null)
+      return false;
     if (trustOptions != null ? !trustOptions.equals(that.trustOptions) : that.trustOptions != null) return false;
     if (useAlpn != that.useAlpn) return false;
     if (sslEngine != that.sslEngine) return false;

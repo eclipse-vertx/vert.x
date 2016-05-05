@@ -25,7 +25,10 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -33,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public abstract class ContextImpl implements ContextInternal {
 
@@ -131,7 +134,7 @@ public abstract class ContextImpl implements ContextInternal {
     return new WorkerExecutor() {
       @Override
       public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-        ContextImpl.this.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? orderedExecutor :  workerPool.executor(), workerPool.metrics());
+        ContextImpl.this.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? orderedExecutor : workerPool.executor(), workerPool.metrics());
       }
     };
   }
@@ -293,8 +296,8 @@ public abstract class ContextImpl implements ContextInternal {
   }
 
   <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler,
-      Handler<AsyncResult<T>> resultHandler,
-      Executor exec, PoolMetrics metrics) {
+                           Handler<AsyncResult<T>> resultHandler,
+                           Executor exec, PoolMetrics metrics) {
     Object metric = metrics != null ? metrics.taskSubmitted() : null;
     try {
       exec.execute(() -> {

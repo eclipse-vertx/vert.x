@@ -28,8 +28,6 @@ import java.util.TreeSet;
  * syntaxes depend on the parser.
  * <p/>
  * Short name is generally used with a single dash, while long name requires a double-dash.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @DataObject(generateConverter = true)
 public class Option {

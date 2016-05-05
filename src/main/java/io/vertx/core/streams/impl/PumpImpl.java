@@ -34,10 +34,8 @@ import io.vertx.core.streams.WriteStream;
  * This class can be used to pump from any {@link io.vertx.core.streams.ReadStream} to any {@link io.vertx.core.streams.WriteStream},
  * e.g. from an {@link io.vertx.core.http.HttpServerRequest} to an {@link io.vertx.core.file.AsyncFile},
  * or from {@link io.vertx.core.net.NetSocket} to a {@link io.vertx.core.http.WebSocket}.<p>
- *
+ * <p>
  * Instances of this class are not thread-safe.<p>
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class PumpImpl<T> implements Pump {
 
@@ -59,7 +57,7 @@ public class PumpImpl<T> implements Pump {
   PumpImpl(ReadStream<T> rs, WriteStream<T> ws) {
     this.readStream = rs;
     this.writeStream = ws;
-    drainHandler = v-> readStream.resume();
+    drainHandler = v -> readStream.resume();
     dataHandler = data -> {
       writeStream.write(data);
       incPumped();

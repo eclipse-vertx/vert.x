@@ -16,16 +16,12 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.WorkerExecutor;
+import io.vertx.core.*;
 
 import java.util.concurrent.Executor;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 class NamedWorkerExecutor implements WorkerExecutor, Closeable {
 

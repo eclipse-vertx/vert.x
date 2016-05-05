@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 
 /**
- * @author Janne Hietam&auml;ki
+ *
  */
 
 public class PackageHelper {

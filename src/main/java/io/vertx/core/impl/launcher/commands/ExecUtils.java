@@ -19,8 +19,6 @@ import java.util.List;
 
 /**
  * A couple of utility methods easing process creation.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class ExecUtils {
 
@@ -50,7 +48,7 @@ public class ExecUtils {
 
     // strip the quotes from both ends
     while (cleanedArgument.startsWith(SINGLE_QUOTE) && cleanedArgument.endsWith(SINGLE_QUOTE)
-        || cleanedArgument.startsWith(DOUBLE_QUOTE)  && cleanedArgument.endsWith(DOUBLE_QUOTE)) {
+        || cleanedArgument.startsWith(DOUBLE_QUOTE) && cleanedArgument.endsWith(DOUBLE_QUOTE)) {
       cleanedArgument = cleanedArgument.substring(1, cleanedArgument.length() - 1);
     }
 
@@ -74,7 +72,7 @@ public class ExecUtils {
   /**
    * Adds an argument to the given list. It automatically adds quotes to the argument if necessary.
    *
-   * @param args the list of arguments
+   * @param args     the list of arguments
    * @param argument the argument to add
    */
   public static void addArgument(List<String> args, String argument) {

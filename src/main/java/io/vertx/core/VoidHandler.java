@@ -18,8 +18,6 @@ package io.vertx.core;
 
 /**
  * This class can be used for simple handlers which don't receive any value.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class VoidHandler implements Handler<Void> {
 

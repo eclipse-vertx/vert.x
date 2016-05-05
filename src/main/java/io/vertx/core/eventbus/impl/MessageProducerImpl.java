@@ -26,7 +26,7 @@ import java.util.Queue;
 import java.util.UUID;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class MessageProducerImpl<T> implements MessageProducer<T> {
 

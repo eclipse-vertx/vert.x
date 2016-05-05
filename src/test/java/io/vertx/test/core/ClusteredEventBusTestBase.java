@@ -18,25 +18,20 @@ package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.eventbus.*;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class ClusteredEventBusTestBase extends EventBusTestBase {
 
@@ -82,7 +77,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
   }
 
   @Override
-  protected <T> void testSend(T val, Consumer <T> consumer) {
+  protected <T> void testSend(T val, Consumer<T> consumer) {
     testSend(val, val, consumer, null);
   }
 
@@ -113,7 +108,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
           if (options != null && options.getHeaders() != null) {
             assertNotNull(reply.headers());
             assertEquals(options.getHeaders().size(), reply.headers().size());
-            for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+            for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
               assertEquals(reply.headers().get(entry.getKey()), entry.getValue());
             }
           }

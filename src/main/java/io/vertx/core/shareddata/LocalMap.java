@@ -30,8 +30,6 @@ import java.util.Set;
  * <p>
  * This ensures there is no shared access to mutable state from different threads (e.g. different event loops) in the
  * Vert.x instance, and means you don't have to protect access to that state using synchronization or locks.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface LocalMap<K, V> {
@@ -39,25 +37,25 @@ public interface LocalMap<K, V> {
   /**
    * Get a value from the map
    *
-   * @param key  the key
-   * @return  the value, or null if none
+   * @param key the key
+   * @return the value, or null if none
    */
   V get(K key);
 
   /**
    * Put an entry in the map
    *
-   * @param key  the key
-   * @param value  the value
-   * @return  return the old value, or null if none
+   * @param key   the key
+   * @param value the value
+   * @return return the old value, or null if none
    */
   V put(K key, V value);
 
   /**
    * Remove an entry from the map
    *
-   * @param key  the key
-   * @return  the old value
+   * @param key the key
+   * @return the old value
    */
   V remove(K key);
 
@@ -69,7 +67,7 @@ public interface LocalMap<K, V> {
   /**
    * Get the size of the map
    *
-   * @return  the number of entries in the map
+   * @return the number of entries in the map
    */
   int size();
 
@@ -81,17 +79,17 @@ public interface LocalMap<K, V> {
   /**
    * Put the entry only if there is no existing entry for that key
    *
-   * @param key  the key
-   * @param value  the value
-   * @return  the old value or null, if none
+   * @param key   the key
+   * @param value the value
+   * @return the old value or null, if none
    */
   V putIfAbsent(K key, V value);
 
   /**
    * Remove the entry only if there is an entry with the specified key and value
    *
-   * @param key  the key
-   * @param value  the value
+   * @param key   the key
+   * @param value the value
    * @return true if removed
    */
   boolean removeIfPresent(K key, V value);
@@ -99,9 +97,9 @@ public interface LocalMap<K, V> {
   /**
    * Replace the entry only if there is an existing entry with the specified key and value
    *
-   * @param key  the key
-   * @param oldValue  the old value
-   * @param newValue  the new value
+   * @param key      the key
+   * @param oldValue the old value
+   * @param newValue the new value
    * @return true if removed
    */
   boolean replaceIfPresent(K key, V oldValue, V newValue);
@@ -109,9 +107,9 @@ public interface LocalMap<K, V> {
   /**
    * Replace the entry only if there is an existing entry with the key
    *
-   * @param key  the key
-   * @param value  the new value
-   * @return  the old value
+   * @param key   the key
+   * @param value the new value
+   * @return the old value
    */
   V replace(K key, V value);
 
@@ -127,7 +125,7 @@ public interface LocalMap<K, V> {
   Set<K> keySet();
 
   /**
-   * @return  the set of values in the map
+   * @return the set of values in the map
    */
   @GenIgnore
   Collection<V> values();

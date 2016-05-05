@@ -27,11 +27,9 @@ import java.util.Map;
 
 /**
  * HTTP2 settings, the settings is initialized with the default HTTP/2 values.<p>
- *
+ * <p>
  * The settings expose the parameters defined by the HTTP/2 specification, as well as extra settings for
  * protocol extensions.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject(generateConverter = true)
 public class Http2Settings {
@@ -276,11 +274,11 @@ public class Http2Settings {
       case 3:
         return maxConcurrentStreams;
       case 4:
-        return (long)initialWindowSize;
+        return (long) initialWindowSize;
       case 5:
-        return (long)maxFrameSize;
+        return (long) maxFrameSize;
       case 6:
-        return (long)maxHeaderListSize;
+        return (long) maxHeaderListSize;
       default:
         return extraSettings != null ? extraSettings.get(id) : null;
     }
@@ -289,7 +287,7 @@ public class Http2Settings {
   /**
    * Set a setting {@code value} for a given setting {@code id}.
    *
-   * @param id the setting id
+   * @param id    the setting id
    * @param value the setting value
    * @return a reference to this, so the API can be used fluently
    */

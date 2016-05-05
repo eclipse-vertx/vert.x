@@ -33,11 +33,9 @@ import java.util.UUID;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class WebSocketImplBase implements WebSocketBase {
 
@@ -114,7 +112,7 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     int end = offset + maxWebSocketFrameSize;
     boolean isFinal;
     if (end >= data.length()) {
-      end  = data.length();
+      end = data.length();
       isFinal = true;
     } else {
       isFinal = false;

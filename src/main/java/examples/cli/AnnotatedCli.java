@@ -20,7 +20,6 @@ import io.vertx.core.cli.annotations.*;
 
 /**
  * An example of annotated cli.
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 // tag::content[]
 @Name("some-name")

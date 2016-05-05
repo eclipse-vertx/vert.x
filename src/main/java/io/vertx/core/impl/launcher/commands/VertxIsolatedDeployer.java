@@ -21,8 +21,6 @@ import io.vertx.core.logging.LoggerFactory;
 
 /**
  * A class isolating the deployment of verticle.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class VertxIsolatedDeployer {
 

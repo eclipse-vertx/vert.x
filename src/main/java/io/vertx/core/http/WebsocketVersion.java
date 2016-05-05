@@ -20,8 +20,6 @@ import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents the WebSocket version
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public enum WebsocketVersion {

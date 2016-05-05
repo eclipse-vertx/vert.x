@@ -16,11 +16,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -46,8 +42,6 @@ import io.vertx.core.streams.WriteStream;
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
  * {@link io.vertx.core.streams.Pump} to pump data with flow control.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface HttpServerResponse extends WriteStream<Buffer> {
@@ -125,7 +119,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Put an HTTP header
    *
    * @param name  the header name
-   * @param value  the header value.
+   * @param value the header value.
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -159,7 +153,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Put an HTTP trailer
    *
    * @param name  the trailer name
-   * @param value  the trailer value
+   * @param value the trailer value
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -187,7 +181,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Set a close handler for the response. This will be called if the underlying connection closes before the response
    * is complete.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -196,8 +190,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *
-   * @param chunk  the string to write
-   * @param enc  the encoding to use
+   * @param chunk the string to write
+   * @param enc   the encoding to use
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -206,7 +200,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Write a {@link String} to the response body, encoded in UTF-8.
    *
-   * @param chunk  the string to write
+   * @param chunk the string to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -215,6 +209,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Used to write an interim 100 Continue response to signify that the client should send the rest of the request.
    * Must only be used if the request contains an "Expect:100-Continue" header
+   *
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -223,15 +218,15 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding before ending the response.
    *
-   * @param chunk  the string to write before ending the response
+   * @param chunk the string to write before ending the response
    */
   void end(String chunk);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding before ending the response.
    *
-   * @param chunk  the string to write before ending the response
-   * @param enc  the encoding to use
+   * @param chunk the string to write before ending the response
+   * @param enc   the encoding to use
    */
   void end(String chunk, String enc);
 
@@ -239,7 +234,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
    * no other data has been written then the @code{Content-Length} header will be automatically set.
    *
-   * @param chunk  the buffer to write before ending the response
+   * @param chunk the buffer to write before ending the response
    */
   void end(Buffer chunk);
 
@@ -254,7 +249,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #sendFile(String, long)} using offset @code{0} which means starting from the beginning of the file.
    *
-   * @param filename  path to the file to serve
+   * @param filename path to the file to serve
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -266,8 +261,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Same as {@link #sendFile(String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
    * file.
    *
-   * @param filename  path to the file to serve
-   * @param offset offset to start serving from
+   * @param filename path to the file to serve
+   * @param offset   offset to start serving from
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -282,9 +277,9 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * This is a very efficient way to serve files.<p>
    * The actual serve is asynchronous and may not complete until some time after this method has returned.
    *
-   * @param filename  path to the file to serve
-   * @param offset offset to start serving from
-   * @param length length to serve to
+   * @param filename path to the file to serve
+   * @param offset   offset to start serving from
+   * @param length   length to serve to
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -294,8 +289,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Like {@link #sendFile(String)} but providing a handler which will be notified once the file has been completely
    * written to the wire.
    *
-   * @param filename path to the file to serve
-   * @param resultHandler  handler that will be called on completion
+   * @param filename      path to the file to serve
+   * @param resultHandler handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -307,9 +302,9 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Like {@link #sendFile(String, long)} but providing a handler which will be notified once the file has been completely
    * written to the wire.
    *
-   * @param filename path to the file to serve
-   * @param offset the offset to serve from
-   * @param resultHandler  handler that will be called on completion
+   * @param filename      path to the file to serve
+   * @param offset        the offset to serve from
+   * @param resultHandler handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -321,10 +316,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Like {@link #sendFile(String, long, long)} but providing a handler which will be notified once the file has been
    * completely written to the wire.
    *
-   * @param filename path to the file to serve
-   * @param offset the offset to serve from
-   * @param length the length to serve to
-   * @param resultHandler  handler that will be called on completion
+   * @param filename      path to the file to serve
+   * @param offset        the offset to serve from
+   * @param length        the length to serve to
+   * @param resultHandler handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -354,7 +349,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Provide a handler that will be called just before the headers are written to the wire.<p>
    * This provides a hook allowing you to add any more headers or do any more operations before this occurs.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -365,7 +360,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * and the response is ended.<p>
    * This provides a hook allowing you to do any more operations before this occurs.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -399,18 +394,18 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   /**
    * Push a response to the client.<p/>
-   *
+   * <p>
    * The {@code handler} will be notified with a <i>success</i> when the push can be sent and with
    * a <i>failure</i> when the client has disabled push or reset the push before it has been sent.<p/>
-   *
+   * <p>
    * The {@code handler} may be queued if the client has reduced the maximum number of streams the server can push
    * concurrently.<p/>
-   *
+   * <p>
    * Push can be sent only for peer initiated streams and if the response is not ended.
    *
-   * @param method the method of the promised request
-   * @param host the host of the promised request
-   * @param path the path of the promised request
+   * @param method  the method of the promised request
+   * @param host    the host of the promised request
+   * @param path    the path of the promised request
    * @param headers the headers of the promised request
    * @param handler the handler notified when the response can be written
    * @return a reference to this, so the API can be used fluently
@@ -434,11 +429,11 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   /**
    * Write an HTTP/2 frame to the response, allowing to extend the HTTP/2 protocol.<p>
-   *
+   * <p>
    * The frame is sent immediatly and is not subject to flow control.
    *
-   * @param type the 8-bit frame type
-   * @param flags the 8-bit frame flags
+   * @param type    the 8-bit frame type
+   * @param flags   the 8-bit frame flags
    * @param payload the frame payload
    * @return a reference to this, so the API can be used fluently
    */

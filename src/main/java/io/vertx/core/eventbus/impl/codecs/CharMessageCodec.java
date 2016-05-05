@@ -20,18 +20,18 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class CharMessageCodec implements MessageCodec<Character, Character> {
 
   @Override
   public void encodeToWire(Buffer buffer, Character chr) {
-    buffer.appendShort((short)chr.charValue());
+    buffer.appendShort((short) chr.charValue());
   }
 
   @Override
   public Character decodeFromWire(int pos, Buffer buffer) {
-    return (char)buffer.getShort(pos);
+    return (char) buffer.getShort(pos);
   }
 
   @Override

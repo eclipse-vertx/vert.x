@@ -22,8 +22,8 @@ import io.vertx.core.http.HttpServerOptions;
 import org.junit.Test;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
- * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
+ *
+ *
  */
 public class HttpCompressionTest extends HttpTestBase {
 

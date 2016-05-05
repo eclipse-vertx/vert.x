@@ -21,8 +21,6 @@ import io.vertx.core.json.JsonObject;
 
 /**
  * Base class for Client options
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public abstract class ClientOptionsBase extends TCPSSLOptions {
@@ -51,7 +49,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   /**
    * Copy constructor
    *
-   * @param other  the options to copy
+   * @param other the options to copy
    */
   public ClientOptionsBase(ClientOptionsBase other) {
     super(other);
@@ -62,7 +60,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   /**
    * Create options from some JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public ClientOptionsBase(JsonObject json) {
     super(json);
@@ -76,7 +74,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   /**
-   *
    * @return true if all server certificates should be trusted
    */
   public boolean isTrustAll() {
@@ -104,7 +101,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   /**
    * Set the connect timeout
    *
-   * @param connectTimeout  connect timeout, in ms
+   * @param connectTimeout connect timeout, in ms
    * @return a reference to this, so the API can be used fluently
    */
   public ClientOptionsBase setConnectTimeout(int connectTimeout) {

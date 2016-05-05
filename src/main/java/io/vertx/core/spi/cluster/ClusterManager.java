@@ -28,11 +28,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * A cluster provider for Vert.x must implement this interface.
- *
+ * <p>
  * In order for HA to work correctly, all implementations of this interface MUST be implemented such that:
- *
+ * <p>
  * 1. Whenever a node joins or leaves the cluster the registered NodeListener (if any) MUST be called with the
  * appropriate join or leave event.
  * 2. For all nodes that are part of the cluster, the registered NodeListener MUST be called with the exact same
@@ -42,8 +41,6 @@ import java.util.Map;
  * 4. All of the methods in the implementation must return immediately, i.e. they must not block while the operation
  * is being executed. If the underlying implementation does block, then {@link io.vertx.core.Vertx#executeBlocking}
  * should be used to run the operation on a worker.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface ClusterManager {
 
@@ -75,7 +72,6 @@ public interface ClusterManager {
 
   /**
    * Return a list of node IDs corresponding to the nodes in the cluster
-   *
    */
   List<String> getNodes();
 
@@ -99,7 +95,7 @@ public interface ClusterManager {
   /**
    * Is the cluster manager active?
    *
-   * @return  true if active, false otherwise
+   * @return true if active, false otherwise
    */
   boolean isActive();
 }

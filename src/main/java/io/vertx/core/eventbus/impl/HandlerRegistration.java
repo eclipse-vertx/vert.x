@@ -181,7 +181,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           boolean local = true;
           if (message instanceof ClusteredMessage) {
             // A bit hacky
-            ClusteredMessage cmsg = (ClusteredMessage)message;
+            ClusteredMessage cmsg = (ClusteredMessage) message;
             if (cmsg.isFromWire()) {
               local = false;
             }

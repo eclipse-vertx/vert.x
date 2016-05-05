@@ -16,10 +16,10 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.metrics.Measured;
 
 /**
@@ -29,8 +29,6 @@ import io.vertx.core.metrics.Measured;
  * <p>
  * This client supports a configurable number of connection attempts and a configurable
  * delay between attempts.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface NetClient extends Measured {
@@ -41,8 +39,8 @@ public interface NetClient extends Measured {
    * {@code host} can be a valid host name or IP address. The connect is done asynchronously and on success, a
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    *
-   * @param port  the port
-   * @param host  the host
+   * @param port the port
+   * @param host the host
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent

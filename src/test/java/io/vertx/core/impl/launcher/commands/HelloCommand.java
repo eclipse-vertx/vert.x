@@ -15,7 +15,7 @@
  */
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.cli.*;
+import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.cli.annotations.Name;
 import io.vertx.core.cli.annotations.Option;

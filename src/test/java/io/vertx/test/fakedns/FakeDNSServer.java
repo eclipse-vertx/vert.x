@@ -19,12 +19,7 @@ package io.vertx.test.fakedns;
 import org.apache.directory.server.dns.DnsServer;
 import org.apache.directory.server.dns.io.encoder.DnsMessageEncoder;
 import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
-import org.apache.directory.server.dns.messages.DnsMessage;
-import org.apache.directory.server.dns.messages.QuestionRecord;
-import org.apache.directory.server.dns.messages.RecordClass;
-import org.apache.directory.server.dns.messages.RecordType;
-import org.apache.directory.server.dns.messages.ResourceRecord;
-import org.apache.directory.server.dns.messages.ResourceRecordModifier;
+import org.apache.directory.server.dns.messages.*;
 import org.apache.directory.server.dns.protocol.DnsProtocolHandler;
 import org.apache.directory.server.dns.protocol.DnsUdpDecoder;
 import org.apache.directory.server.dns.protocol.DnsUdpEncoder;
@@ -33,11 +28,7 @@ import org.apache.directory.server.dns.store.RecordStore;
 import org.apache.directory.server.protocol.shared.transport.UdpTransport;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.ProtocolCodecFactory;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.codec.ProtocolDecoder;
-import org.apache.mina.filter.codec.ProtocolEncoder;
-import org.apache.mina.filter.codec.ProtocolEncoderOutput;
+import org.apache.mina.filter.codec.*;
 import org.apache.mina.transport.socket.DatagramAcceptor;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
 
@@ -46,7 +37,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 public final class FakeDNSServer extends DnsServer {
 
@@ -299,7 +290,7 @@ public final class FakeDNSServer extends DnsServer {
   @Override
   public void start() throws IOException {
     UdpTransport transport = new UdpTransport("127.0.0.1", PORT);
-    setTransports( transport );
+    setTransports(transport);
 
     acceptor = transport.getAcceptor();
 
@@ -308,7 +299,7 @@ public final class FakeDNSServer extends DnsServer {
       public void sessionCreated(IoSession session) throws Exception {
         // USe our own codec to support AAAA testing
         session.getFilterChain().addFirst("codec",
-          new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
+            new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
       }
     });
 
@@ -339,10 +330,10 @@ public final class FakeDNSServer extends DnsServer {
 
         @Override
         public void encode(IoSession session, Object message, ProtocolEncoderOutput out) {
-          IoBuffer buf = IoBuffer.allocate( 1024 );
+          IoBuffer buf = IoBuffer.allocate(1024);
           DnsMessage dnsMessage = (DnsMessage) message;
           encoder.encode(buf, dnsMessage);
-          for (ResourceRecord record: dnsMessage.getAnswerRecords()) {
+          for (ResourceRecord record : dnsMessage.getAnswerRecords()) {
             // This is a hack to allow to also test for AAAA resolution as DnsMessageEncoder does not support it and it
             // is hard to extend, because the interesting methods are private...
             // In case of RecordType.AAAA we need to encode the RecordType by ourself
@@ -357,7 +348,7 @@ public final class FakeDNSServer extends DnsServer {
           }
           buf.flip();
 
-          out.write( buf );
+          out.write(buf);
         }
       };
     }

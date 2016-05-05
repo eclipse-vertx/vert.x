@@ -22,7 +22,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class Checker {
 
@@ -48,7 +48,7 @@ public class Checker {
 
   static <T> T copyIfRequired(T obj) {
     if (obj instanceof JsonObject) {
-      return (T)((JsonObject)obj).copy();
+      return (T) ((JsonObject) obj).copy();
     } else if (obj instanceof JsonArray) {
       return (T) ((JsonArray) obj).copy();
     } else if (obj instanceof byte[]) {

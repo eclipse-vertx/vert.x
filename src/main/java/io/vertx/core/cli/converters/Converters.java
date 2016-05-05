@@ -22,8 +22,6 @@ import java.util.NoSuchElementException;
 
 /**
  * Entry point to the converter system.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class Converters {
 

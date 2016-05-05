@@ -8,8 +8,8 @@ import io.vertx.core.AbstractVerticle;
 public class ConfigurableVerticleExamples extends AbstractVerticle {
 
 
-    @Override
-    public void start() throws Exception {
-        System.out.println("Configuration: " + config().getString("name"));
-    }
+  @Override
+  public void start() throws Exception {
+    System.out.println("Configuration: " + config().getString("name"));
+  }
 }

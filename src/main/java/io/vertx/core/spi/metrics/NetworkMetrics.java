@@ -21,15 +21,13 @@ import io.vertx.core.net.SocketAddress;
 /**
  * An SPI used internally by Vert.x to gather metrics on a net socket which serves
  * as a base class for TCP or UDP.<p/>
- *
- * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface NetworkMetrics<S> extends Metrics {
 
   /**
    * Called when bytes have been read
    *
-   * @param socketMetric the socket metric, null for UDP
+   * @param socketMetric  the socket metric, null for UDP
    * @param remoteAddress the remote address which this socket received bytes from
    * @param numberOfBytes the number of bytes read
    */
@@ -38,7 +36,7 @@ public interface NetworkMetrics<S> extends Metrics {
   /**
    * Called when bytes have been written
    *
-   * @param socketMetric the socket metric, null for UDP
+   * @param socketMetric  the socket metric, null for UDP
    * @param remoteAddress the remote address which bytes are being written to
    * @param numberOfBytes the number of bytes written
    */
@@ -47,9 +45,9 @@ public interface NetworkMetrics<S> extends Metrics {
   /**
    * Called when exceptions occur for a specific connection.
    *
-   * @param socketMetric the socket metric, null for UDP
+   * @param socketMetric  the socket metric, null for UDP
    * @param remoteAddress the remote address of the connection or null if it's datagram/udp
-   * @param t the exception that occurred
+   * @param t             the exception that occurred
    */
   void exceptionOccurred(S socketMetric, SocketAddress remoteAddress, Throwable t);
 }

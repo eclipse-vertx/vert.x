@@ -27,8 +27,6 @@ import java.util.function.Function;
 /**
  * Represents the result of an action that may, or may not, have occurred yet.
  * <p>
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface Future<T> extends AsyncResult<T> {
@@ -36,8 +34,8 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Create a future that hasn't completed yet
    *
-   * @param <T>  the result type
-   * @return  the future
+   * @param <T> the result type
+   * @return the future
    */
   static <T> Future<T> future() {
     return factory.future();
@@ -46,8 +44,8 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Create a succeeded future with a null result
    *
-   * @param <T>  the result type
-   * @return  the future
+   * @param <T> the result type
+   * @return the future
    */
   static <T> Future<T> succeededFuture() {
     return factory.completedFuture();
@@ -56,9 +54,9 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Created a succeeded future with the specified result.
    *
-   * @param result  the result
-   * @param <T>  the result type
-   * @return  the future
+   * @param result the result
+   * @param <T>    the result type
+   * @return the future
    */
   static <T> Future<T> succeededFuture(T result) {
     return factory.completedFuture(result);
@@ -67,9 +65,9 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Create a failed future with the specified failure cause.
    *
-   * @param t  the failure cause as a Throwable
-   * @param <T>  the result type
-   * @return  the future
+   * @param t   the failure cause as a Throwable
+   * @param <T> the result type
+   * @return the future
    */
   @GenIgnore
   static <T> Future<T> failedFuture(Throwable t) {
@@ -79,9 +77,9 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Create a failed future with the specified failure message.
    *
-   * @param failureMessage  the failure message
-   * @param <T>  the result type
-   * @return  the future
+   * @param failureMessage the failure message
+   * @param <T>            the result type
+   * @return the future
    */
   static <T> Future<T> failedFuture(String failureMessage) {
     return factory.completedFuture(failureMessage, true);
@@ -102,9 +100,8 @@ public interface Future<T> extends AsyncResult<T> {
    * If the future has already been completed it will be called immediately. Otherwise it will be called when the
    * future is completed.
    *
-   * @param handler  the Handler that will be called with the result
+   * @param handler the Handler that will be called with the result
    * @return a reference to this, so it can be used fluently
-   *
    */
   @Fluent
   Future<T> setHandler(Handler<AsyncResult<T>> handler);
@@ -112,7 +109,7 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.
    *
-   * @param result  the result
+   * @param result the result
    * @throws IllegalStateException when the future is already completed
    */
   void complete(T result);
@@ -127,14 +124,14 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Set the failure. Any handler will be called, if there is one, and the future will be marked as completed.
    *
-   * @param throwable  the failure cause
+   * @param throwable the failure cause
    */
   void fail(Throwable throwable);
 
   /**
    * Set the failure. Any handler will be called, if there is one, and the future will be marked as completed.
    *
-   * @param failureMessage  the failure message
+   * @param failureMessage the failure message
    */
   void fail(String failureMessage);
 
@@ -172,16 +169,16 @@ public interface Future<T> extends AsyncResult<T> {
 
   /**
    * Compose this future with a provided {@code next} future.<p>
-   *
+   * <p>
    * When this future succeeds, the {@code handler} will be called with the completed value, this handler
    * should complete the next future.<p>
-   *
+   * <p>
    * If the {@code handler} throws an exception, the returned future will be failed with this exception.<p>
-   *
+   * <p>
    * When this future fails, the failure will be propagated to the {@code next} future and the {@code handler}
    * will not be called.
    *
-   * @param handler the handler
+   * @param handler  the handler
    * @param composed the composed future
    * @return the composed future, used for chaining
    */
@@ -205,12 +202,12 @@ public interface Future<T> extends AsyncResult<T> {
 
   /**
    * Compose this future with a {@code mapper} function.<p>
-   *
+   * <p>
    * When this future succeeds, the {@code mapper} will be called with the completed value and this mapper
    * returns a future. This returned future completion will trigger the future returned by this method call.<p>
-   *
+   * <p>
    * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
-   *
+   * <p>
    * When this future fails, the failure will be propagated to the returned future and the {@code mapper}
    * will not be called.
    *
@@ -238,12 +235,12 @@ public interface Future<T> extends AsyncResult<T> {
 
   /**
    * Apply a {@code mapper} function on this future.<p>
-   *
+   * <p>
    * When this future succeeds, the {@code mapper} will be called with the completed value and this mapper
    * returns a value. This value will complete the future returned by this method call.<p>
-   *
+   * <p>
    * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
-   *
+   * <p>
    * When this future fails, the failure will be propagated to the returned future and the {@code mapper}
    * will not be called.
    *
@@ -271,9 +268,9 @@ public interface Future<T> extends AsyncResult<T> {
 
   /**
    * Map the result of a future to a specific {@code value}.<p>
-   *
+   * <p>
    * When this future succeeds, this {@code value} will complete the future returned by this method call.<p>
-   *
+   * <p>
    * When this future fails, the failure will be propagated to the returned future.
    *
    * @param value the value that eventually completes the mapped future

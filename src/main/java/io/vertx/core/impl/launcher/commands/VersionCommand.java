@@ -29,8 +29,6 @@ import java.util.Scanner;
 
 /**
  * Comment to display the vert.x (core) version.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Name("version")
 @Summary("Displays the version.")

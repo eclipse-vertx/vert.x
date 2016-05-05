@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class TestVerticle extends AbstractVerticle {
 
@@ -42,7 +42,7 @@ public class TestVerticle extends AbstractVerticle {
 //      throw new IllegalStateException("Wrong tccl!");
 //    }
     vertx.eventBus().send("testcounts",
-      new JsonObject().put("deploymentID", context.deploymentID()).put("count", instanceCount.incrementAndGet()));
+        new JsonObject().put("deploymentID", context.deploymentID()).put("count", instanceCount.incrementAndGet()));
   }
 
   @Override

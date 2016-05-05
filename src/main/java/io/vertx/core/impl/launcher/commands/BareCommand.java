@@ -39,8 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Command to create a <em>bare</em> instance of vert.x.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Summary("Creates a bare instance of vert.x.")
 @Description("This command launches a vert.x instance but do not deploy any verticles. It will " +

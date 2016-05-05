@@ -23,8 +23,6 @@ import io.vertx.codegen.annotations.VertxGen;
  * <p>
  * When the lock is obtained, no-one else in the cluster can obtain the lock with the same name until the lock
  * is released.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface Lock {

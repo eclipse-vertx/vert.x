@@ -23,9 +23,6 @@ import io.vertx.core.Handler;
 /**
  * An asynchronous counter that can be used to across the cluster to maintain a consistent count.
  * <p>
- *
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface Counter {
@@ -61,7 +58,7 @@ public interface Counter {
   /**
    * Add the value to the counter atomically and return the new count
    *
-   * @param value  the value to add
+   * @param value         the value to add
    * @param resultHandler handler which will be passed the value
    */
   void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler);
@@ -69,7 +66,7 @@ public interface Counter {
   /**
    * Add the value to the counter atomically and return the value before the add
    *
-   * @param value  the value to add
+   * @param value         the value to add
    * @param resultHandler handler which will be passed the value
    */
   void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler);
@@ -78,9 +75,9 @@ public interface Counter {
    * Set the counter to the specified value only if the current value is the expectec value. This happens
    * atomically.
    *
-   * @param expected  the expected value
-   * @param value  the new value
-   * @param resultHandler  the handler will be passed true on success
+   * @param expected      the expected value
+   * @param value         the new value
+   * @param resultHandler the handler will be passed true on success
    */
   void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler);
 }

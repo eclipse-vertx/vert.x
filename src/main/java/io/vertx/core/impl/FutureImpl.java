@@ -35,6 +35,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
 
   /**
    * Create a VoidResult that has already completed
+   *
    * @param t The Throwable or null if succeeded
    */
   FutureImpl(Throwable t) {
@@ -51,6 +52,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
 
   /**
    * Create a FutureResult that has already succeeded
+   *
    * @param result The result
    */
   FutureImpl(T result) {

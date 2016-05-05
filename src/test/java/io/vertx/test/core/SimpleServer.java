@@ -22,7 +22,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class SimpleServer extends AbstractVerticle {
 

@@ -25,8 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A fake implementation of the {@link PoolMetrics} SPI.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class FakeThreadPoolMetrics implements PoolMetrics<Void> {
   private final static Map<String, PoolMetrics> METRICS = new ConcurrentHashMap<>();

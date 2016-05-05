@@ -15,10 +15,10 @@
  */
 /**
  * ==== Setting headers on messages
- *
+ * <p>
  * Messages sent over the event bus can also contain headers. This can be specified by providing a
  * {@link io.vertx.core.eventbus.DeliveryOptions} when sending or publishing:
- *
+ * <p>
  * [source,$lang]
  * ----
  * {@link docoverride.eventbus.Examples#headers(io.vertx.core.eventbus.EventBus)}

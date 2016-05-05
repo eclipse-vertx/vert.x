@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 
 /**
  * Usage message formatter.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class UsageMessageFormatter {
 
@@ -285,7 +283,7 @@ public class UsageMessageFormatter {
     }
     builder.append("\n");
 
-    if (cli.getOptions().isEmpty()  && cli.getArguments().isEmpty()) {
+    if (cli.getOptions().isEmpty() && cli.getArguments().isEmpty()) {
       // When we have neither options and arguments, just leave.
       return;
     }

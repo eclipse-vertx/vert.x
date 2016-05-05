@@ -25,8 +25,6 @@ import java.util.StringTokenizer;
 /**
  * Utility methods to test path matching. This is used by the {@link Watcher} to determine whether or not a file
  * triggers a redeployment.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public final class FileSelector {
 

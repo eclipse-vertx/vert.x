@@ -17,14 +17,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerRequestStream;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.*;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -36,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class HttpRequestStreamTest extends VertxTestBase {
 
@@ -106,7 +99,8 @@ public class HttpRequestStreamTest extends VertxTestBase {
     ReadStream<HttpServerRequest> stream = server.requestStream();
     AtomicBoolean closed = new AtomicBoolean();
     stream.endHandler(v -> closed.set(true));
-    stream.handler(req -> {});
+    stream.handler(req -> {
+    });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       assertFalse(closed.get());
@@ -124,7 +118,8 @@ public class HttpRequestStreamTest extends VertxTestBase {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     AtomicInteger done = new AtomicInteger();
     HttpServerRequestStream stream = server.requestStream();
-    stream.handler(req -> {});
+    stream.handler(req -> {
+    });
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
     stream.endHandler(v -> {

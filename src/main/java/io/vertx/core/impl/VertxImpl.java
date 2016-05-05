@@ -69,7 +69,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class VertxImpl implements VertxInternal, MetricsProvider {
 
@@ -162,7 +162,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
           // Provide a memory barrier as we are setting from a different thread
           synchronized (VertxImpl.this) {
             haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(),
-                                      options.getHAGroup(), haEnabled);
+                options.getHAGroup(), haEnabled);
             createAndStartEventBus(options, resultHandler);
           }
         }
@@ -199,7 +199,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * @return The FileSystem implementation for the OS
    */
   protected FileSystem getFileSystem() {
-  	return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
+    return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
   }
 
   @Override
@@ -387,7 +387,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
           // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
           try {
             Class<?> clazz = Class.forName(clusterManagerClassName);
-            mgr = (ClusterManager)clazz.newInstance();
+            mgr = (ClusterManager) clazz.newInstance();
           } catch (Exception e) {
             throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
           }
@@ -419,7 +419,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public static Context context() {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
-      return ((VertxThread)current).getContext();
+      return ((VertxThread) current).getContext();
     }
     return null;
   }
@@ -445,7 +445,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (clusterManager != null) {
       // Workaround fo Hazelcast bug https://github.com/hazelcast/hazelcast/issues/5220
       if (clusterManager instanceof ExtendedClusterManager) {
-        ExtendedClusterManager ecm = (ExtendedClusterManager)clusterManager;
+        ExtendedClusterManager ecm = (ExtendedClusterManager) clusterManager;
         ecm.beforeLeave();
       }
       clusterManager.leave(ar -> {

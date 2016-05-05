@@ -26,8 +26,6 @@ package io.vertx.core;
  * If it failed then the cause of the failure is available with {@link #cause}.
  * <p>
  * If it succeeded then the actual result is available with {@link #result}
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface AsyncResult<T> {
 

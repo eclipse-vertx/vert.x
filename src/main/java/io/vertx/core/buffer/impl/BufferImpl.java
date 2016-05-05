@@ -30,7 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class BufferImpl implements Buffer {
 
@@ -138,7 +138,7 @@ public class BufferImpl implements Buffer {
 
   @Override
   public Buffer getBytes(byte[] dst) {
-   return getBytes(dst, 0);
+    return getBytes(dst, 0);
   }
 
   @Override

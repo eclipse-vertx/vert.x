@@ -23,7 +23,6 @@ import java.util.Collection;
  * The interface to implement to look for commands.
  *
  * @see ServiceCommandFactoryLoader
- * @author Clement Escoffier <clement@apache.org>
  */
 public interface CommandFactoryLookup {
 

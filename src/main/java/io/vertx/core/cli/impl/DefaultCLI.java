@@ -18,13 +18,14 @@ package io.vertx.core.cli.impl;
 
 import io.vertx.core.cli.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
  * Default implementation of {@link CLI}.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class DefaultCLI implements CLI {
 

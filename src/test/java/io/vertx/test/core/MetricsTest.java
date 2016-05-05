@@ -47,7 +47,7 @@ import java.util.function.Consumer;
 import static org.hamcrest.core.Is.is;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class MetricsTest extends VertxTestBase {
 

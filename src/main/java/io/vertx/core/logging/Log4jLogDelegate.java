@@ -21,8 +21,6 @@ import org.apache.log4j.Level;
 
 /**
  * A {@link io.vertx.core.spi.logging.LogDelegate} which delegates to Apache Log4j
- *
- * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public class Log4jLogDelegate implements LogDelegate {
   private static final String FQCN = Logger.class.getCanonicalName();

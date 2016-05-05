@@ -16,10 +16,8 @@
 
 package examples;
 
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.*;
 import io.vertx.core.shareddata.*;
 
 /**
@@ -126,7 +124,6 @@ public class SharedDataExamples {
       }
     });
   }
-
 
 
 }

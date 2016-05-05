@@ -23,8 +23,6 @@ import io.vertx.core.streams.ReadStream;
 /**
  * A {@link io.vertx.core.streams.ReadStream} of {@link io.vertx.core.http.ServerWebSocket}, used for
  * notifying web socket connections to a {@link io.vertx.core.http.HttpServer}.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public interface ServerWebSocketStream extends ReadStream<ServerWebSocket> {

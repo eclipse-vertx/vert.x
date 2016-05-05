@@ -29,17 +29,20 @@ import static io.vertx.test.core.TestUtils.assertNullPointerException;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
- * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
+ *
+ *
  */
 public class RecordParserTest {
 
   @Test
   public void testIllegalArguments() throws Exception {
-    assertNullPointerException(() -> RecordParser.newDelimited((Buffer) null, handler -> {}));
-    assertNullPointerException(() -> RecordParser.newDelimited((String) null, handler -> {}));
+    assertNullPointerException(() -> RecordParser.newDelimited((Buffer) null, handler -> {
+    }));
+    assertNullPointerException(() -> RecordParser.newDelimited((String) null, handler -> {
+    }));
 
-    RecordParser parser = RecordParser.newDelimited("", handler -> {});
+    RecordParser parser = RecordParser.newDelimited("", handler -> {
+    });
     assertNullPointerException(() -> parser.setOutput(null));
     assertNullPointerException(() -> parser.delimitedMode((Buffer) null));
     assertNullPointerException(() -> parser.delimitedMode((String) null));
@@ -50,7 +53,7 @@ public class RecordParserTest {
   Test parsing with delimiters
    */
   public void testDelimited() {
-    delimited(Buffer.buffer().appendByte((byte)'\n'));
+    delimited(Buffer.buffer().appendByte((byte) '\n'));
     delimited(Buffer.buffer().appendByte((byte) '\r').appendByte((byte) '\n'));
     delimited(Buffer.buffer(new byte[]{0, 3, 2, 5, 6, 4, 6}));
   }
@@ -240,7 +243,7 @@ public class RecordParserTest {
   private void checkResults(Buffer[] expected, Buffer[] results) {
     for (int i = 0; i < expected.length; i++) {
       assertEquals("Expected:" + expected[i] + " length:" + expected[i].length() +
-        " Actual:" + results[i] + " length:" + results[i].length(), expected[i], results[i]);
+          " Actual:" + results[i] + " length:" + results[i].length(), expected[i], results[i]);
     }
   }
 
@@ -269,10 +272,10 @@ public class RecordParserTest {
    */
   public void testSpreadDelimiter() {
     doTestDelimited(Buffer.buffer("start-a-b-c-dddabc"), Buffer.buffer("abc"),
-      new Integer[] { 18 }, Buffer.buffer("start-a-b-c-ddd"));
+        new Integer[]{18}, Buffer.buffer("start-a-b-c-ddd"));
     doTestDelimited(Buffer.buffer("start-abc-dddabc"), Buffer.buffer("abc"),
-      new Integer[] { 18 }, Buffer.buffer("start-"), Buffer.buffer("-ddd"));
+        new Integer[]{18}, Buffer.buffer("start-"), Buffer.buffer("-ddd"));
     doTestDelimited(Buffer.buffer("start-ab-c-dddabc"), Buffer.buffer("abc"),
-      new Integer[] { 18 }, Buffer.buffer("start-ab-c-ddd"));
+        new Integer[]{18}, Buffer.buffer("start-ab-c-ddd"));
   }
 }

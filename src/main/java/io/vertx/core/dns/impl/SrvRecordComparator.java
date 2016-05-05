@@ -19,12 +19,13 @@ import java.util.Comparator;
 
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 final class SrvRecordComparator implements Comparator<SrcRecordImpl> {
   static final Comparator<SrcRecordImpl> INSTANCE = new SrvRecordComparator();
 
-  private SrvRecordComparator() {}
+  private SrvRecordComparator() {
+  }
 
   @Override
   public int compare(SrcRecordImpl o1, SrcRecordImpl o2) {

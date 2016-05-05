@@ -22,7 +22,7 @@ import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonObject;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class JsonObjectMessageCodec implements MessageCodec<JsonObject, JsonObject> {
 

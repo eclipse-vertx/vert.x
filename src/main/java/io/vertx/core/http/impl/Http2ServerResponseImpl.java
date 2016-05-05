@@ -24,11 +24,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -43,7 +39,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.ClosedChannelException;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class Http2ServerResponseImpl implements HttpServerResponse {
 
@@ -486,7 +482,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         if (resultHandler != null) {
           resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
         } else {
-           log.error("File not found: " + filename);
+          log.error("File not found: " + filename);
         }
         return this;
       }

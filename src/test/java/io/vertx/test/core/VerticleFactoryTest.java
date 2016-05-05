@@ -26,7 +26,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class VerticleFactoryTest extends VertxTestBase {
 
@@ -229,7 +229,7 @@ public class VerticleFactoryTest extends VertxTestBase {
       assertTrue(verticle.startCalled);
       assertTrue(verticle.startCalled);
       assertEquals(1, vertx.deploymentIDs().size());
-      Deployment dep = ((VertxInternal)vertx).getDeployment(res.result());
+      Deployment dep = ((VertxInternal) vertx).getDeployment(res.result());
       assertNotNull(dep);
       assertFalse(original.equals(dep.deploymentOptions()));
       assertFalse(dep.deploymentOptions().getConfig().containsKey("foo"));

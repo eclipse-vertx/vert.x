@@ -22,7 +22,7 @@ import io.vertx.core.json.JsonObject;
 
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 @DataObject(generateConverter = true)
 public abstract class NetworkOptions {
@@ -65,7 +65,7 @@ public abstract class NetworkOptions {
   /**
    * Copy constructor
    *
-   * @param other  the options to copy
+   * @param other the options to copy
    */
   public NetworkOptions(NetworkOptions other) {
     this.sendBufferSize = other.getSendBufferSize();
@@ -77,7 +77,7 @@ public abstract class NetworkOptions {
   /**
    * Constructor from JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public NetworkOptions(JsonObject json) {
     this();
@@ -96,11 +96,11 @@ public abstract class NetworkOptions {
   /**
    * Set the TCP send buffer size
    *
-   * @param sendBufferSize  the buffers size, in bytes
+   * @param sendBufferSize the buffers size, in bytes
    * @return a reference to this, so the API can be used fluently
    */
   public NetworkOptions setSendBufferSize(int sendBufferSize) {
-    Arguments.require(sendBufferSize > 0  || sendBufferSize == DEFAULT_SEND_BUFFER_SIZE, "sendBufferSize must be > 0");
+    Arguments.require(sendBufferSize > 0 || sendBufferSize == DEFAULT_SEND_BUFFER_SIZE, "sendBufferSize must be > 0");
     this.sendBufferSize = sendBufferSize;
     return this;
   }
@@ -117,7 +117,7 @@ public abstract class NetworkOptions {
   /**
    * Set the TCP receive buffer size
    *
-   * @param receiveBufferSize  the buffers size, in bytes
+   * @param receiveBufferSize the buffers size, in bytes
    * @return a reference to this, so the API can be used fluently
    */
   public NetworkOptions setReceiveBufferSize(int receiveBufferSize) {
@@ -127,7 +127,7 @@ public abstract class NetworkOptions {
   }
 
   /**
-   * @return  the value of reuse address
+   * @return the value of reuse address
    */
   public boolean isReuseAddress() {
     return reuseAddress;
@@ -135,7 +135,8 @@ public abstract class NetworkOptions {
 
   /**
    * Set the value of reuse address
-   * @param reuseAddress  the value of reuse address
+   *
+   * @param reuseAddress the value of reuse address
    * @return a reference to this, so the API can be used fluently
    */
   public NetworkOptions setReuseAddress(boolean reuseAddress) {
@@ -144,7 +145,7 @@ public abstract class NetworkOptions {
   }
 
   /**
-   * @return  the value of traffic class
+   * @return the value of traffic class
    */
   public int getTrafficClass() {
     return trafficClass;
@@ -153,7 +154,7 @@ public abstract class NetworkOptions {
   /**
    * Set the value of traffic class
    *
-   * @param trafficClass  the value of traffic class
+   * @param trafficClass the value of traffic class
    * @return a reference to this, so the API can be used fluently
    */
   public NetworkOptions setTrafficClass(int trafficClass) {

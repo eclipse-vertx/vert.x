@@ -32,12 +32,11 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class HostnameResolverTest extends VertxTestBase {
 
@@ -70,7 +69,7 @@ public class HostnameResolverTest extends VertxTestBase {
 
   @Test
   public void testAsyncResolve() throws Exception {
-    ((VertxImpl)vertx).resolveHostname("vertx.io", onSuccess(resolved -> {
+    ((VertxImpl) vertx).resolveHostname("vertx.io", onSuccess(resolved -> {
       assertEquals("127.0.0.1", resolved.getHostAddress());
       testComplete();
     }));
@@ -79,7 +78,7 @@ public class HostnameResolverTest extends VertxTestBase {
 
   @Test
   public void testAsyncResolveFail() throws Exception {
-    ((VertxImpl)vertx).resolveHostname("vertx.com", onFailure(failure -> {
+    ((VertxImpl) vertx).resolveHostname("vertx.com", onFailure(failure -> {
       assertEquals(UnknownHostException.class, failure.getClass());
       testComplete();
     }));

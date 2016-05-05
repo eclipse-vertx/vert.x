@@ -26,7 +26,7 @@ import org.junit.Test;
 import java.util.Random;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class VertxOptionsTest extends VertxTestBase {
 

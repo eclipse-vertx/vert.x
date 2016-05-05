@@ -25,18 +25,16 @@ import io.vertx.core.dns.impl.netty.DnsResponseDecoder;
  */
 public class DomainDecoder implements RecordDecoder<String> {
 
-    /**
-     * Returns the decoded domain name for a resource record.
-     *
-     * @param response
-     *            the {@link io.vertx.core.dns.impl.netty.DnsResponse} received that contained the resource
-     *            record being decoded
-     * @param resource
-     *            the {@link DnsResource} being decoded
-     */
-    @Override
-    public String decode(DnsResponse response, DnsResource resource) {
-        return DnsResponseDecoder.getName(response.content(), resource.contentIndex());
-    }
+  /**
+   * Returns the decoded domain name for a resource record.
+   *
+   * @param response the {@link io.vertx.core.dns.impl.netty.DnsResponse} received that contained the resource
+   *                 record being decoded
+   * @param resource the {@link DnsResource} being decoded
+   */
+  @Override
+  public String decode(DnsResponse response, DnsResource resource) {
+    return DnsResponseDecoder.getName(response.content(), resource.contentIndex());
+  }
 
 }

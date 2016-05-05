@@ -24,7 +24,7 @@ import java.net.InetSocketAddress;
 
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 final class DatagramPacketImpl implements DatagramPacket {
   private final InetSocketAddress sender;

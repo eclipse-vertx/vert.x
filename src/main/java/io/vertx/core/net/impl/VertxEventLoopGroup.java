@@ -19,19 +19,14 @@ package io.vertx.core.net.impl;
 import io.netty.channel.*;
 import io.netty.util.concurrent.*;
 
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 @SuppressWarnings("deprecation")
 public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implements EventLoopGroup {

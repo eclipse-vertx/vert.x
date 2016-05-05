@@ -16,19 +16,11 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 
 /**
  * Helper wrapper class which allows to assemble a LastHttpContent and a HttpRequest into one "packet" and so more
  * efficient write it through the pipeline.
- *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpRequest {
 

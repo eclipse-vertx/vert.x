@@ -17,12 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.handler.ssl.ApplicationProtocolConfig;
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
@@ -36,13 +31,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.ManagerFactoryParameters;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -54,13 +43,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.net.ssl.SSLContext;
-
 /**
- *
  * This is a pretty sucky class - could do with a refactoring
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SSLHelper {
 
@@ -276,10 +260,12 @@ public class SSLHelper {
       TrustManager[] mgrs = new TrustManager[]{createTrustAllTrustManager()};
       fact = new SimpleTrustManagerFactory() {
         @Override
-        protected void engineInit(KeyStore keyStore) throws Exception {}
+        protected void engineInit(KeyStore keyStore) throws Exception {
+        }
 
         @Override
-        protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {}
+        protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
+        }
 
         @Override
         protected TrustManager[] engineGetTrustManagers() {
@@ -305,10 +291,12 @@ public class SSLHelper {
       TrustManager[] mgrs = createUntrustRevokedCertTrustManager(fact.getTrustManagers(), crls);
       fact = new SimpleTrustManagerFactory() {
         @Override
-        protected void engineInit(KeyStore keyStore) throws Exception {}
+        protected void engineInit(KeyStore keyStore) throws Exception {
+        }
 
         @Override
-        protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {}
+        protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
+        }
 
         @Override
         protected TrustManager[] engineGetTrustManagers() {
@@ -325,7 +313,7 @@ public class SSLHelper {
    */
   private static TrustManager[] createUntrustRevokedCertTrustManager(TrustManager[] trustMgrs, ArrayList<CRL> crls) {
     trustMgrs = trustMgrs.clone();
-    for (int i = 0;i < trustMgrs.length;i++) {
+    for (int i = 0; i < trustMgrs.length; i++) {
       TrustManager trustMgr = trustMgrs[i];
       if (trustMgr instanceof X509TrustManager) {
         X509TrustManager x509TrustManager = (X509TrustManager) trustMgr;
@@ -335,11 +323,13 @@ public class SSLHelper {
             checkRevoked(x509Certificates);
             x509TrustManager.checkClientTrusted(x509Certificates, s);
           }
+
           @Override
           public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
             checkRevoked(x509Certificates);
             x509TrustManager.checkServerTrusted(x509Certificates, s);
           }
+
           private void checkRevoked(X509Certificate[] x509Certificates) throws CertificateException {
             for (X509Certificate cert : x509Certificates) {
               for (CRL crl : crls) {
@@ -349,6 +339,7 @@ public class SSLHelper {
               }
             }
           }
+
           @Override
           public X509Certificate[] getAcceptedIssuers() {
             return x509TrustManager.getAcceptedIssuers();

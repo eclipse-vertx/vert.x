@@ -16,17 +16,13 @@
 
 package examples;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class DatagramExamples {
 
@@ -79,7 +75,7 @@ public class DatagramExamples {
 
         // join the multicast group
         socket.listenMulticastGroup("230.0.0.1", asyncResult2 -> {
-            System.out.println("Listen succeeded? " + asyncResult2.succeeded());
+          System.out.println("Listen succeeded? " + asyncResult2.succeeded());
         });
       } else {
         System.out.println("Listen failed" + asyncResult.cause());
@@ -90,28 +86,28 @@ public class DatagramExamples {
   public void example6(Vertx vertx) {
     DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
     socket.listen(1234, "0.0.0.0", asyncResult -> {
-        if (asyncResult.succeeded()) {
-          socket.handler(packet -> {
-            // Do something with the packet
-          });
+      if (asyncResult.succeeded()) {
+        socket.handler(packet -> {
+          // Do something with the packet
+        });
 
-          // join the multicast group
-          socket.listenMulticastGroup("230.0.0.1", asyncResult2 -> {
-              if (asyncResult2.succeeded()) {
-                // will now receive packets for group
+        // join the multicast group
+        socket.listenMulticastGroup("230.0.0.1", asyncResult2 -> {
+          if (asyncResult2.succeeded()) {
+            // will now receive packets for group
 
-                // do some work
+            // do some work
 
-                socket.unlistenMulticastGroup("230.0.0.1", asyncResult3 -> {
-                  System.out.println("Unlisten succeeded? " + asyncResult3.succeeded());
-                });
-              } else {
-                System.out.println("Listen failed" + asyncResult2.cause());
-              }
-          });
-        } else {
-          System.out.println("Listen failed" + asyncResult.cause());
-        }
+            socket.unlistenMulticastGroup("230.0.0.1", asyncResult3 -> {
+              System.out.println("Unlisten succeeded? " + asyncResult3.succeeded());
+            });
+          } else {
+            System.out.println("Listen failed" + asyncResult2.cause());
+          }
+        });
+      } else {
+        System.out.println("Listen failed" + asyncResult.cause());
+      }
     });
   }
 

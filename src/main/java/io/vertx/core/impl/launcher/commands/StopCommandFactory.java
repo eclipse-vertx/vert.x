@@ -20,8 +20,6 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
 /**
  * Defines the `stop` command.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class StopCommandFactory extends DefaultCommandFactory<StopCommand> {
 

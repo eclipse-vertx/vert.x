@@ -27,10 +27,11 @@ import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
 
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class LocalSharedDataTest extends VertxTestBase {
 
@@ -69,11 +70,11 @@ public class LocalSharedDataTest extends VertxTestBase {
     map.put(key, f);
     assertEquals(f, map.get(key));
 
-    byte b = (byte)new Random().nextInt();
+    byte b = (byte) new Random().nextInt();
     map.put(key, b);
     assertEquals(b, map.get(key));
 
-    short s = (short)new Random().nextInt();
+    short s = (short) new Random().nextInt();
     map.put(key, s);
     assertEquals(s, map.get(key));
 
@@ -86,21 +87,21 @@ public class LocalSharedDataTest extends VertxTestBase {
     assertEquals(l, map.get(key));
 
     map.put(key, true);
-    assertTrue((Boolean)map.get(key));
+    assertTrue((Boolean) map.get(key));
 
     map.put(key, false);
     assertFalse((Boolean) map.get(key));
 
-    char c = (char)new Random().nextLong();
+    char c = (char) new Random().nextLong();
     map.put(key, c);
     assertEquals(c, map.get(key));
 
     Buffer buff = TestUtils.randomBuffer(100);
     map.put(key, buff);
-    Buffer got1 = (Buffer)map.get(key);
+    Buffer got1 = (Buffer) map.get(key);
     assertTrue(got1 != buff); // Make sure it's copied
     assertEquals(buff, map.get(key));
-    Buffer got2 = (Buffer)map.get(key);
+    Buffer got2 = (Buffer) map.get(key);
     assertTrue(got1 != got2); // Should be copied each time
     assertTrue(got2 != buff);
     assertEquals(buff, map.get(key));
@@ -120,13 +121,13 @@ public class LocalSharedDataTest extends VertxTestBase {
 
     JsonObject obj = new JsonObject().put("foo", "bar");
     map.put("obj", obj);
-    JsonObject other = (JsonObject)map.get("obj");
+    JsonObject other = (JsonObject) map.get("obj");
     assertEquals(obj, other);
     assertNotSame(obj, other); // Should be copied
 
     JsonArray arr = new JsonArray().add("foo");
     map.put("arr", arr);
-    JsonArray otherArr = (JsonArray)map.get("arr");
+    JsonArray otherArr = (JsonArray) map.get("arr");
     assertEquals(arr, otherArr);
     assertNotSame(arr, otherArr); // Should be copied
   }
@@ -170,7 +171,7 @@ public class LocalSharedDataTest extends VertxTestBase {
   }
 
   private boolean containsExact(Collection<JsonObject> coll, JsonObject obj) {
-    for (JsonObject j: coll) {
+    for (JsonObject j : coll) {
       if (j == obj) {
         return true;
       }
@@ -215,7 +216,6 @@ public class LocalSharedDataTest extends VertxTestBase {
     assertFalse(containsExact(values, json2));
     assertFalse(containsExact(values, json3));
   }
-
 
 
   class SomeOtherClass {

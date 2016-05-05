@@ -45,14 +45,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
  * However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AsyncFileImpl implements AsyncFile {
 
@@ -168,7 +165,7 @@ public class AsyncFileImpl implements AsyncFile {
       doWrite(buf.nioBuffers(), position, wrapped);
     } else {
       ByteBuffer bb = buf.nioBuffer();
-      doWrite(bb, position, bb.limit(),  wrapped);
+      doWrite(bb, position, bb.limit(), wrapped);
     }
     return this;
   }
@@ -298,7 +295,7 @@ public class AsyncFileImpl implements AsyncFile {
   private synchronized void doWrite(ByteBuffer[] buffers, long position, Handler<AsyncResult<Void>> handler) {
     AtomicInteger cnt = new AtomicInteger();
     AtomicBoolean sentFailure = new AtomicBoolean();
-    for (ByteBuffer b: buffers) {
+    for (ByteBuffer b : buffers) {
       int limit = b.limit();
       doWrite(b, position, limit, ar -> {
         if (ar.succeeded()) {

@@ -17,8 +17,6 @@ package io.vertx.core.cli;
 
 /**
  * Exception thrown when an option or an argument receives an invalid value.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public class InvalidValueException extends CLIException {
   private final Option option;

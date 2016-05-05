@@ -17,24 +17,23 @@
 package io.vertx.core.net;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.net.JksOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.JksOptions} original class using Vert.x codegen.
  */
 public class JksOptionsConverter {
 
   public static void fromJson(JsonObject json, JksOptions obj) {
     if (json.getValue("password") instanceof String) {
-      obj.setPassword((String)json.getValue("password"));
+      obj.setPassword((String) json.getValue("password"));
     }
     if (json.getValue("path") instanceof String) {
-      obj.setPath((String)json.getValue("path"));
+      obj.setPath((String) json.getValue("path"));
     }
     if (json.getValue("value") instanceof String) {
-      obj.setValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)json.getValue("value"))));
+      obj.setValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String) json.getValue("value"))));
     }
   }
 

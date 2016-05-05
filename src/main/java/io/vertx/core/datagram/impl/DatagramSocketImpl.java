@@ -45,7 +45,7 @@ import java.net.*;
 import java.util.Objects;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ *
  */
 public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket, MetricsProvider {
 
@@ -53,7 +53,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   public DatagramSocketImpl(VertxInternal vertx, DatagramSocketOptions options) {
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-          new DatagramSocketOptions(options)), vertx.getOrCreateContext(), options);
+        new DatagramSocketOptions(options)), vertx.getOrCreateContext(), options);
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
@@ -94,7 +94,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
         sourceAddress = InetAddress.getByName(source);
       }
       addListener(channel().joinGroup(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
+          NetworkInterface.getByName(networkInterface), sourceAddress), handler);
     } catch (Exception e) {
       notifyException(handler, e);
     }
@@ -121,7 +121,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
         sourceAddress = InetAddress.getByName(source);
       }
       addListener(channel().leaveGroup(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
+          NetworkInterface.getByName(networkInterface), sourceAddress), handler);
     } catch (Exception e) {
       notifyException(handler, e);
     }
@@ -138,11 +138,11 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
         sourceAddress = InetAddress.getByName(sourceToBlock);
       }
       addListener(channel().block(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
+          NetworkInterface.getByName(networkInterface), sourceAddress), handler);
     } catch (Exception e) {
       notifyException(handler, e);
     }
-    return  this;
+    return this;
   }
 
   @Override

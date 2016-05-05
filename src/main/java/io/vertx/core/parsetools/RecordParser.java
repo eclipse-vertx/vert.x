@@ -16,14 +16,10 @@
 
 package io.vertx.core.parsetools;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.parsetools.impl.RecordParserImpl;
-
-import java.util.Objects;
 
 /**
  * A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
@@ -55,9 +51,6 @@ import java.util.Objects;
  * a 1-1 byte-char mapping.
  * <p>
  * Please see the documentation for more information.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
- * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
 @VertxGen
 public interface RecordParser extends Handler<Buffer> {
@@ -71,7 +64,7 @@ public interface RecordParser extends Handler<Buffer> {
    * {@code output} Will receive whole records which have been parsed.
    *
    * @param delim  the initial delimiter string
-   * @param output  handler that will receive the output
+   * @param output handler that will receive the output
    */
   static RecordParser newDelimited(String delim, Handler<Buffer> output) {
     return RecordParserImpl.newDelimited(delim, output);
@@ -84,11 +77,11 @@ public interface RecordParser extends Handler<Buffer> {
    * {@code output} Will receive whole records which have been parsed.
    *
    * @param delim  the initial delimiter buffer
-   * @param output  handler that will receive the output
+   * @param output handler that will receive the output
    */
-   static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
-     return RecordParserImpl.newDelimited(delim, output); 
-   }
+  static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
+    return RecordParserImpl.newDelimited(delim, output);
+  }
 
   /**
    * Create a new {@code RecordParser} instance, initially in fixed size mode, and where the record size is specified
@@ -96,8 +89,8 @@ public interface RecordParser extends Handler<Buffer> {
    * <p>
    * {@code output} Will receive whole records which have been parsed.
    *
-   * @param size  the initial record size
-   * @param output  handler that will receive the output
+   * @param size   the initial record size
+   * @param output handler that will receive the output
    */
   static RecordParser newFixed(int size, Handler<Buffer> output) {
     return RecordParserImpl.newFixed(size, output);
@@ -109,7 +102,7 @@ public interface RecordParser extends Handler<Buffer> {
    * <p>
    * This method can be called multiple times with different values of delim while data is being parsed.
    *
-   * @param delim  the new delimeter
+   * @param delim the new delimeter
    */
   void delimitedMode(String delim);
 
@@ -119,7 +112,7 @@ public interface RecordParser extends Handler<Buffer> {
    * <p>
    * This method can be called multiple times with different values of delim while data is being parsed.
    *
-   * @param delim  the new delimiter
+   * @param delim the new delimiter
    */
   void delimitedMode(Buffer delim);
 
@@ -128,14 +121,14 @@ public interface RecordParser extends Handler<Buffer> {
    * <p>
    * This method can be called multiple times with different values of size while data is being parsed.
    *
-   * @param size  the new record size
+   * @param size the new record size
    */
   void fixedSizeMode(int size);
 
   /**
    * This method is called to provide the parser with data.
    *
-   * @param buffer  a chunk of data
+   * @param buffer a chunk of data
    */
   void handle(Buffer buffer);
 }

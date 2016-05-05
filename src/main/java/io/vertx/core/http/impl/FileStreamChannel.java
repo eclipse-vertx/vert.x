@@ -17,24 +17,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.AbstractChannel;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelConfig;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelId;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelMetadata;
-import io.netty.channel.ChannelOutboundBuffer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.DefaultChannelConfig;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoop;
 import io.netty.handler.stream.ChunkedFile;
-import io.netty.handler.stream.ChunkedStream;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -45,8 +30,6 @@ import java.net.SocketAddress;
 
 /**
  * A channel used for writing a file in an HTTP2 stream.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class FileStreamChannel extends AbstractChannel {
 
@@ -76,7 +59,7 @@ class FileStreamChannel extends AbstractChannel {
           @Override
           public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             if (evt instanceof RandomAccessFile) {
-              ChannelFuture fut = ctx.writeAndFlush(new ChunkedFile((RandomAccessFile) evt, offset, length, 8192 /* default chunk size */ ));
+              ChannelFuture fut = ctx.writeAndFlush(new ChunkedFile((RandomAccessFile) evt, offset, length, 8192 /* default chunk size */));
               fut.addListener(f -> {
                 if (resultHandler != null) {
                   if (f.isSuccess()) {
@@ -193,7 +176,8 @@ class FileStreamChannel extends AbstractChannel {
 
     static final ChannelId INSTANCE = new Id();
 
-    private Id() { }
+    private Id() {
+    }
 
     @Override
     public String asShortText() {

@@ -34,7 +34,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class JsonObjectTest {
 
@@ -719,7 +719,7 @@ public class JsonObjectTest {
     innerMap.put("blah", "wibble");
     map.put("foo", innerMap);
     jsonObject = new JsonObject(map);
-    obj = (JsonObject)jsonObject.getValue("foo");
+    obj = (JsonObject) jsonObject.getValue("foo");
     assertEquals("wibble", obj.getString("blah"));
     // JsonObject with inner List
     map = new HashMap<>();
@@ -727,7 +727,7 @@ public class JsonObjectTest {
     innerList.add("blah");
     map.put("foo", innerList);
     jsonObject = new JsonObject(map);
-    arr = (JsonArray)jsonObject.getValue("foo");
+    arr = (JsonArray) jsonObject.getValue("foo");
     assertEquals("blah", arr.getString(0));
   }
 
@@ -765,7 +765,7 @@ public class JsonObjectTest {
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
     assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String) jsonObject.getValue("foo", "blah"))));
-    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String)jsonObject.getValue("foo", null))));
+    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String) jsonObject.getValue("foo", null))));
     jsonObject.putNull("foo");
     assertNull(jsonObject.getValue("foo", "blah"));
     assertNull(jsonObject.getValue("foo", null));
@@ -853,7 +853,7 @@ public class JsonObjectTest {
     assertSame(jsonObject, jsonObject.put("foo", new StringBuilder("bar")));
     assertEquals("bar", jsonObject.getString("foo"));
     assertEquals("bar", jsonObject.getString("foo", "def"));
-    jsonObject.put("quux",new StringBuilder("wibble"));
+    jsonObject.put("quux", new StringBuilder("wibble"));
     assertEquals("wibble", jsonObject.getString("quux"));
     assertEquals("bar", jsonObject.getString("foo"));
     jsonObject.put("foo", new StringBuilder("blah"));
@@ -861,7 +861,7 @@ public class JsonObjectTest {
     jsonObject.put("foo", (CharSequence) null);
     assertTrue(jsonObject.containsKey("foo"));
     try {
-      jsonObject.put(null, (CharSequence)"blah");
+      jsonObject.put(null, (CharSequence) "blah");
       fail();
     } catch (NullPointerException e) {
       // OK
@@ -1079,20 +1079,20 @@ public class JsonObjectTest {
 
   @Test
   public void testPutValue() {
-    jsonObject.put("str", (Object)"bar");
-    jsonObject.put("int", (Object)(Integer.valueOf(123)));
-    jsonObject.put("long", (Object)(Long.valueOf(123l)));
-    jsonObject.put("float", (Object)(Float.valueOf(1.23f)));
-    jsonObject.put("double", (Object)(Double.valueOf(1.23d)));
+    jsonObject.put("str", (Object) "bar");
+    jsonObject.put("int", (Object) (Integer.valueOf(123)));
+    jsonObject.put("long", (Object) (Long.valueOf(123l)));
+    jsonObject.put("float", (Object) (Float.valueOf(1.23f)));
+    jsonObject.put("double", (Object) (Double.valueOf(1.23d)));
     jsonObject.put("boolean", (Object) true);
     byte[] bytes = TestUtils.randomByteArray(10);
-    jsonObject.put("binary", (Object)(bytes));
+    jsonObject.put("binary", (Object) (bytes));
     Instant now = Instant.now();
     jsonObject.put("instant", now);
     JsonObject obj = new JsonObject().put("foo", "blah");
     JsonArray arr = new JsonArray().add("quux");
-    jsonObject.put("obj", (Object)obj);
-    jsonObject.put("arr", (Object)arr);
+    jsonObject.put("obj", (Object) obj);
+    jsonObject.put("arr", (Object) arr);
     assertEquals("bar", jsonObject.getString("str"));
     assertEquals(Integer.valueOf(123), jsonObject.getInteger("int"));
     assertEquals(Long.valueOf(123l), jsonObject.getLong("long"));
@@ -1164,7 +1164,7 @@ public class JsonObjectTest {
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
     String expected = "{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+        "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     String json = jsonObject.encode();
     assertEquals(expected, json);
   }
@@ -1176,7 +1176,7 @@ public class JsonObjectTest {
     Instant now = Instant.now();
     String strInstant = ISO_INSTANT.format(now);
     String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+        "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     JsonObject obj = new JsonObject(json);
     assertEquals(json, obj.encode());
     assertEquals("foo", obj.getString("mystr"));
@@ -1218,19 +1218,19 @@ public class JsonObjectTest {
     String strBytes = Base64.getEncoder().encodeToString(bytes);
     String strInstant = ISO_INSTANT.format(now);
     String expected = "{" + Utils.LINE_SEPARATOR +
-      "  \"mystr\" : \"foo\"," + Utils.LINE_SEPARATOR +
-      "  \"myint\" : 123," + Utils.LINE_SEPARATOR +
-      "  \"mylong\" : 1234," + Utils.LINE_SEPARATOR +
-      "  \"myfloat\" : 1.23," + Utils.LINE_SEPARATOR +
-      "  \"mydouble\" : 2.34," + Utils.LINE_SEPARATOR +
-      "  \"myboolean\" : true," + Utils.LINE_SEPARATOR +
-      "  \"mybinary\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
-      "  \"myinstant\" : \"" + strInstant + "\"," + Utils.LINE_SEPARATOR +
-      "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
-      "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
-      "  }," + Utils.LINE_SEPARATOR +
-      "  \"myarr\" : [ \"foo\", 123 ]" + Utils.LINE_SEPARATOR +
-      "}";
+        "  \"mystr\" : \"foo\"," + Utils.LINE_SEPARATOR +
+        "  \"myint\" : 123," + Utils.LINE_SEPARATOR +
+        "  \"mylong\" : 1234," + Utils.LINE_SEPARATOR +
+        "  \"myfloat\" : 1.23," + Utils.LINE_SEPARATOR +
+        "  \"mydouble\" : 2.34," + Utils.LINE_SEPARATOR +
+        "  \"myboolean\" : true," + Utils.LINE_SEPARATOR +
+        "  \"mybinary\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
+        "  \"myinstant\" : \"" + strInstant + "\"," + Utils.LINE_SEPARATOR +
+        "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
+        "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
+        "  }," + Utils.LINE_SEPARATOR +
+        "  \"myarr\" : [ \"foo\", 123 ]" + Utils.LINE_SEPARATOR +
+        "}";
     String json = jsonObject.encodePrettily();
     assertEquals(expected, json);
   }
@@ -1239,19 +1239,19 @@ public class JsonObjectTest {
   @Test
   public void testCommentsInJson() {
     String jsonWithComments =
-      "// single line comment\n" +
-      "/*\n" +
-      "  This is a multi \n" +
-      "  line comment\n" +
-      "*/\n" +
-      "{\n" +
-      "// another single line comment this time inside the JSON object itself\n" +
-      "  \"foo\": \"bar\" // and a single line comment at end of line \n" +
-      "/*\n" +
-      "  This is a another multi \n" +
-      "  line comment this time inside the JSON object itself\n" +
-      "*/\n" +
-      "}";
+        "// single line comment\n" +
+            "/*\n" +
+            "  This is a multi \n" +
+            "  line comment\n" +
+            "*/\n" +
+            "{\n" +
+            "// another single line comment this time inside the JSON object itself\n" +
+            "  \"foo\": \"bar\" // and a single line comment at end of line \n" +
+            "/*\n" +
+            "  This is a another multi \n" +
+            "  line comment this time inside the JSON object itself\n" +
+            "*/\n" +
+            "}";
     JsonObject json = new JsonObject(jsonWithComments);
     assertEquals("{\"foo\":\"bar\"}", json.encode());
   }
@@ -1411,7 +1411,7 @@ public class JsonObjectTest {
     Map<String, Object> invalid = new HashMap<>();
     Map<String, Object> invalid2 = new HashMap<>();
     invalid2.put("foo", new SomeClass());
-    invalid.put("bar",invalid2);
+    invalid.put("bar", invalid2);
     JsonObject object = new JsonObject(invalid);
     try {
       object.copy();
@@ -1426,7 +1426,7 @@ public class JsonObjectTest {
     Map<String, Object> invalid = new HashMap<>();
     List<Object> invalid2 = new ArrayList<>();
     invalid2.add(new SomeClass());
-    invalid.put("bar",invalid2);
+    invalid.put("bar", invalid2);
     JsonObject object = new JsonObject(invalid);
     try {
       object.copy();
@@ -1535,12 +1535,12 @@ public class JsonObjectTest {
   @Test
   public void testNumberEquality() {
     assertNumberEquals(4, 4);
-    assertNumberEquals(4, (long)4);
+    assertNumberEquals(4, (long) 4);
     assertNumberEquals(4, 4f);
     assertNumberEquals(4, 4D);
-    assertNumberEquals((long)4, (long)4);
-    assertNumberEquals((long)4, 4f);
-    assertNumberEquals((long)4, 4D);
+    assertNumberEquals((long) 4, (long) 4);
+    assertNumberEquals((long) 4, 4f);
+    assertNumberEquals((long) 4, 4D);
     assertNumberEquals(4f, 4f);
     assertNumberEquals(4f, 4D);
     assertNumberEquals(4D, 4D);
@@ -1551,12 +1551,12 @@ public class JsonObjectTest {
     assertNumberEquals(4.5f, 4.5f);
     assertNumberEquals(4.5f, 4.5D);
     assertNumberNotEquals(4, 5);
-    assertNumberNotEquals(4, (long)5);
+    assertNumberNotEquals(4, (long) 5);
     assertNumberNotEquals(4, 5D);
     assertNumberNotEquals(4, 5f);
-    assertNumberNotEquals((long)4, (long)5);
-    assertNumberNotEquals((long)4, 5D);
-    assertNumberNotEquals((long)4, 5f);
+    assertNumberNotEquals((long) 4, (long) 5);
+    assertNumberNotEquals((long) 4, 5D);
+    assertNumberNotEquals((long) 4, 5f);
     assertNumberNotEquals(4f, 5f);
     assertNumberNotEquals(4f, 5D);
     assertNumberNotEquals(4D, 5D);
@@ -1607,7 +1607,7 @@ public class JsonObjectTest {
   @Test
   public void testJsonObjectEquality2() {
     JsonObject obj1 = new JsonObject().put("arr", new JsonArray().add("x"));
-    List < Object > list = new ArrayList<>();
+    List<Object> list = new ArrayList<>();
     list.add("x");
     Map<String, Object> map = new HashMap<>();
     map.put("arr", list);

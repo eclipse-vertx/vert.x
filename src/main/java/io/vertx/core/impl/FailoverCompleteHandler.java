@@ -19,7 +19,7 @@ package io.vertx.core.impl;
 import io.vertx.core.json.JsonObject;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public interface FailoverCompleteHandler {
 

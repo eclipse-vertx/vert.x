@@ -19,7 +19,7 @@ package io.vertx.test.fakemetrics;
 import io.vertx.core.http.WebSocketBase;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class WebSocketMetric {
 

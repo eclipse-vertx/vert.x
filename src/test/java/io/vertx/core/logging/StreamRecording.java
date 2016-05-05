@@ -23,8 +23,6 @@ import java.util.logging.LogManager;
 
 /**
  * A helper class registering "error" output.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class StreamRecording {
   private static final PrintStream ORIGINAL_ERR = System.err;

@@ -16,12 +16,7 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
+import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
 import org.junit.Test;
 
@@ -31,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class ContextTest extends VertxTestBase {
 

@@ -28,8 +28,6 @@ import io.vertx.core.streams.ReadStream;
  * <p>
  * The connection occurs when the {@link #handler} method is called with a non null handler, the other handlers should be
  * set before setting the handler.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public interface WebSocketStream extends ReadStream<WebSocket> {

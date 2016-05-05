@@ -33,8 +33,6 @@ import java.util.regex.Pattern;
 /**
  * A command stopping a vert.x application launched using the `start` command.  The application is
  * identified by its id.
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 @Name("stop")
 @Summary("Stop a vert.x application")

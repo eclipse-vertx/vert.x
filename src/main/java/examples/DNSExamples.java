@@ -24,7 +24,7 @@ import io.vertx.core.dns.SrvRecord;
 import java.util.List;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class DNSExamples {
 
@@ -112,7 +112,7 @@ public class DNSExamples {
     client.resolveMX("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<MxRecord> records = ar.result();
-        for (MxRecord record: records) {
+        for (MxRecord record : records) {
           System.out.println(record);
         }
       } else {
@@ -131,7 +131,7 @@ public class DNSExamples {
     client.resolveTXT("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
-        for (String record: records) {
+        for (String record : records) {
           System.out.println(record);
         }
       } else {
@@ -145,7 +145,7 @@ public class DNSExamples {
     client.resolveNS("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
-        for (String record: records) {
+        for (String record : records) {
           System.out.println(record);
         }
       } else {
@@ -159,7 +159,7 @@ public class DNSExamples {
     client.resolveSRV("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<SrvRecord> records = ar.result();
-        for (SrvRecord record: records) {
+        for (SrvRecord record : records) {
           System.out.println(record);
         }
       } else {

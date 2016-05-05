@@ -17,18 +17,17 @@
 package io.vertx.core.metrics;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.metrics.MetricsOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.metrics.MetricsOptions} original class using Vert.x codegen.
  */
 public class MetricsOptionsConverter {
 
   public static void fromJson(JsonObject json, MetricsOptions obj) {
     if (json.getValue("enabled") instanceof Boolean) {
-      obj.setEnabled((Boolean)json.getValue("enabled"));
+      obj.setEnabled((Boolean) json.getValue("enabled"));
     }
   }
 

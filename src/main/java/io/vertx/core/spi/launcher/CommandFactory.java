@@ -26,8 +26,6 @@ import io.vertx.core.cli.CommandLine;
  * <li>{@link #define()} - creates a {@link CLI} instance (so the model)</li>
  * <li>{@link #create(CommandLine)}} - creates a new command instance</li>
  * </ol>
- *
- * @author Clement Escoffier <clement@apache.org>
  */
 public interface CommandFactory<C extends Command> {
 

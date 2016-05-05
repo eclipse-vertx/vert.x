@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class AsyncMultiMapTest extends VertxTestBase {
 

@@ -23,7 +23,7 @@ import org.junit.Test;
 import java.util.Random;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class MetricsOptionsTest extends VertxTestBase {
 

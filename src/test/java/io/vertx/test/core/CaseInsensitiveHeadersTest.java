@@ -4,13 +4,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -863,7 +857,7 @@ public class CaseInsensitiveHeadersTest {
     String[] lines = str.split("\n");
     Arrays.sort(lines);
     StringBuilder sb = new StringBuilder();
-    for (String s:lines) {
+    for (String s : lines) {
       sb.append(s);
       sb.append("\n");
     }
@@ -879,12 +873,12 @@ public class CaseInsensitiveHeadersTest {
         sortByLine(mm.toString()));
     mm.add("Header2", "Value2");
     assertEquals("Header1: Value1\n"
-        + "Header2: Value2\n",
+            + "Header2: Value2\n",
         sortByLine(mm.toString()));
     mm.add("Header1", "Value3");
     assertEquals("Header1: Value1\n"
-        + "Header1: Value3\n"
-        + "Header2: Value2\n",
+            + "Header1: Value3\n"
+            + "Header2: Value2\n",
         sortByLine(mm.toString()));
     mm.remove("Header1");
     assertEquals("Header2: Value2\n",
@@ -905,7 +899,7 @@ public class CaseInsensitiveHeadersTest {
 
     mmap.add("Header", "oldvalue");
 
-    for (Map.Entry<String, String> me:mmap) {
+    for (Map.Entry<String, String> me : mmap) {
       me.setValue("newvalue");
     }
     assertEquals("newvalue", mmap.get("Header"));
@@ -926,7 +920,7 @@ public class CaseInsensitiveHeadersTest {
 
     mmap.add("Header", "oldvalue");
 
-    for (Map.Entry<String, String> me:mmap) {
+    for (Map.Entry<String, String> me : mmap) {
       me.setValue(null);
     }
   }

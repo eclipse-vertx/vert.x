@@ -41,7 +41,7 @@ import java.util.function.Consumer;
 import static io.vertx.test.core.TestUtils.*;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class LocalEventBusTest extends EventBusTestBase {
 
@@ -86,19 +86,24 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testArgumentValidation() throws Exception {
     assertNullPointerException(() -> eb.send(null, ""));
-    assertNullPointerException(() -> eb.send(null, "", handler -> {}));
+    assertNullPointerException(() -> eb.send(null, "", handler -> {
+    }));
     assertNullPointerException(() -> eb.send(null, "", new DeliveryOptions()));
     assertNullPointerException(() -> eb.send("", "", (DeliveryOptions) null));
-    assertNullPointerException(() -> eb.send(null, "", new DeliveryOptions(), handler -> {}));
-    assertNullPointerException(() -> eb.send("", "", null, handler -> {}));
+    assertNullPointerException(() -> eb.send(null, "", new DeliveryOptions(), handler -> {
+    }));
+    assertNullPointerException(() -> eb.send("", "", null, handler -> {
+    }));
     assertNullPointerException(() -> eb.publish(null, ""));
     assertNullPointerException(() -> eb.publish(null, "", new DeliveryOptions()));
     assertNullPointerException(() -> eb.publish("", "", null));
     assertNullPointerException(() -> eb.consumer(null));
-    assertNullPointerException(() -> eb.consumer(null, msg -> {}));
+    assertNullPointerException(() -> eb.consumer(null, msg -> {
+    }));
     assertNullPointerException(() -> eb.consumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.localConsumer(null));
-    assertNullPointerException(() -> eb.localConsumer(null, msg -> {}));
+    assertNullPointerException(() -> eb.localConsumer(null, msg -> {
+    }));
     assertNullPointerException(() -> eb.localConsumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.sender(null));
     assertNullPointerException(() -> eb.sender(null, new DeliveryOptions()));
@@ -125,7 +130,8 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testUnregisterTwice() {
-    Handler<Message<String>> handler = msg -> {};
+    Handler<Message<String>> handler = msg -> {
+    };
     MessageConsumer reg = eb.<String>consumer(ADDRESS1).handler(handler);
     reg.unregister();
     reg.unregister(); // Ok to unregister twice
@@ -190,7 +196,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         countMap.put(handlers[index], icnt);
         if (totalCount.incrementAndGet() == numMessages) {
           assertEquals(numHandlers, countMap.size());
-          for (Integer ind: countMap.values()) {
+          for (Integer ind : countMap.values()) {
             assertEquals(numMessages / numHandlers, ind.intValue());
           }
           testComplete();
@@ -319,7 +325,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }));
     });
-    eb.send(ADDRESS1, str, onSuccess((Message<String>msg) -> {
+    eb.send(ADDRESS1, str, onSuccess((Message<String> msg) -> {
       assertEquals(reply, msg.body());
       msg.reply(replyReply);
     }));
@@ -346,7 +352,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       });
     });
-    eb.send(ADDRESS1, str, onSuccess((Message<String>msg) -> {
+    eb.send(ADDRESS1, str, onSuccess((Message<String> msg) -> {
       assertEquals(reply, msg.body());
       // Now don't reply
     }));
@@ -367,7 +373,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       });
     });
-    eb.send(ADDRESS1, str, onSuccess((Message<String>msg) -> {
+    eb.send(ADDRESS1, str, onSuccess((Message<String> msg) -> {
       assertEquals(reply, msg.body());
       msg.reply(replyReply);
     }));
@@ -458,7 +464,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     long timeout = 1000;
     eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
-      vertx.setTimer((int)(timeout * 1.5), id -> {
+      vertx.setTimer((int) (timeout * 1.5), id -> {
         msg.reply("too late!");
       });
     });
@@ -659,9 +665,10 @@ public class LocalEventBusTest extends EventBusTestBase {
     testInVerticle(true, true);
   }
 
-  private void testInVerticle(boolean  worker, boolean multiThreaded) throws Exception {
+  private void testInVerticle(boolean worker, boolean multiThreaded) throws Exception {
     class MyVerticle extends AbstractVerticle {
       Context ctx;
+
       @Override
       public void start() {
         ctx = context;
@@ -721,7 +728,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     awaitLatch(latch);
     assertEquals(2, contexts.size());
   }
-  
+
   @Test
   public void testContextsPublish() throws Exception {
     Set<ContextImpl> contexts = new ConcurrentHashSet<>();
@@ -928,7 +935,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         if (options != null && options.getHeaders() != null) {
           assertNotNull(msg.headers());
           assertEquals(options.getHeaders().size(), msg.headers().size());
-          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+          for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
             assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
           }
         }
@@ -973,7 +980,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         if (options != null && options.getHeaders() != null) {
           assertNotNull(reply.headers());
           assertEquals(options.getHeaders().size(), reply.headers().size());
-          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+          for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
             assertEquals(reply.headers().get(entry.getKey()), entry.getValue());
           }
         }
@@ -1019,7 +1026,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   private void testPauseResume(BiFunction<MessageConsumer<String>, Handler<String>, ReadStream<?>> register) {
     String[] data = new String[11];
-    for (int i = 0;i < data.length;i++) {
+    for (int i = 0; i < data.length; i++) {
       data[i] = TestUtils.randomAlphaString(10);
     }
     Set<String> expected = new HashSet<>();
@@ -1055,7 +1062,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   private void testExceptionWhenDeliveringBufferedMessage(BiFunction<MessageConsumer<String>, Handler<String>, ReadStream<?>> register) {
     String[] data = new String[11];
-    for (int i = 0;i < data.length;i++) {
+    for (int i = 0; i < data.length; i++) {
       data[i] = TestUtils.randomAlphaString(10);
     }
     Set<String> expected = new HashSet<>();
@@ -1094,7 +1101,8 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   private void testUnregisterationOfRegisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
-    consumer.handler(msg -> {});
+    consumer.handler(msg -> {
+    });
     consumer.endHandler(v -> {
       fail();
     });
@@ -1108,7 +1116,8 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testUnregisterThenUnsetEndHandler() {
     MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
-    consumer.endHandler(v -> {});
+    consumer.endHandler(v -> {
+    });
     consumer.unregister(res -> {
       testComplete();
     });
@@ -1129,7 +1138,8 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   private void testUnregistrationWhenSettingNullHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
-    readStream.handler(msg -> {});
+    readStream.handler(msg -> {
+    });
     assertTrue(consumer.isRegistered());
     readStream.handler(null);
     assertFalse(consumer.isRegistered());
@@ -1168,7 +1178,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     assertEquals(ADDRESS1, publisher.address());
     AtomicInteger count = new AtomicInteger();
     int n = 2;
-    for (int i = 0;i < n;i++) {
+    for (int i = 0; i < n; i++) {
       eb.consumer(ADDRESS1).handler(message -> {
         if (message.body().equals(str) && count.incrementAndGet() == n) {
           testComplete();
@@ -1186,7 +1196,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     assertEquals(ADDRESS1, publisher.address());
     AtomicInteger count = new AtomicInteger();
     int n = 2;
-    for (int i = 0;i < n;i++) {
+    for (int i = 0; i < n; i++) {
       eb.consumer(ADDRESS1).handler(message -> {
         if (message.body().equals(str) && "foo_value".equals(message.headers().get("foo")) && count.incrementAndGet() == n) {
           testComplete();
@@ -1279,7 +1289,8 @@ public class LocalEventBusTest extends EventBusTestBase {
         assertSame(Vertx.currentContext(), ctx);
         testComplete();
       });
-      consumer.handler(msg -> {});
+      consumer.handler(msg -> {
+      });
       consumer.completionHandler(ar -> {
         assertTrue(ar.succeeded());
         registered.countDown();

@@ -20,9 +20,6 @@ import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents properties of the file system.
- *
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface FileSystemProps {

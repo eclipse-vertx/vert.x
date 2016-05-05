@@ -16,12 +16,12 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Converter for {@link io.vertx.core.http.HttpClientOptions}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.HttpClientOptions} original class using Vert.x codegen.
  */
 public class HttpClientOptionsConverter {
@@ -29,50 +29,50 @@ public class HttpClientOptionsConverter {
   public static void fromJson(JsonObject json, HttpClientOptions obj) {
     if (json.getValue("alpnVersions") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
-      json.getJsonArray("alpnVersions").forEach( item -> {
+      json.getJsonArray("alpnVersions").forEach(item -> {
         if (item instanceof String)
-          list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
+          list.add(io.vertx.core.http.HttpVersion.valueOf((String) item));
       });
       obj.setAlpnVersions(list);
     }
     if (json.getValue("defaultHost") instanceof String) {
-      obj.setDefaultHost((String)json.getValue("defaultHost"));
+      obj.setDefaultHost((String) json.getValue("defaultHost"));
     }
     if (json.getValue("defaultPort") instanceof Number) {
-      obj.setDefaultPort(((Number)json.getValue("defaultPort")).intValue());
+      obj.setDefaultPort(((Number) json.getValue("defaultPort")).intValue());
     }
     if (json.getValue("h2cUpgrade") instanceof Boolean) {
-      obj.setH2cUpgrade((Boolean)json.getValue("h2cUpgrade"));
+      obj.setH2cUpgrade((Boolean) json.getValue("h2cUpgrade"));
     }
     if (json.getValue("initialSettings") instanceof JsonObject) {
-      obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
+      obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject) json.getValue("initialSettings")));
     }
     if (json.getValue("keepAlive") instanceof Boolean) {
-      obj.setKeepAlive((Boolean)json.getValue("keepAlive"));
+      obj.setKeepAlive((Boolean) json.getValue("keepAlive"));
     }
     if (json.getValue("maxChunkSize") instanceof Number) {
-      obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
+      obj.setMaxChunkSize(((Number) json.getValue("maxChunkSize")).intValue());
     }
     if (json.getValue("maxPoolSize") instanceof Number) {
-      obj.setMaxPoolSize(((Number)json.getValue("maxPoolSize")).intValue());
+      obj.setMaxPoolSize(((Number) json.getValue("maxPoolSize")).intValue());
     }
     if (json.getValue("maxWaitQueueSize") instanceof Number) {
-      obj.setMaxWaitQueueSize(((Number)json.getValue("maxWaitQueueSize")).intValue());
+      obj.setMaxWaitQueueSize(((Number) json.getValue("maxWaitQueueSize")).intValue());
     }
     if (json.getValue("maxWebsocketFrameSize") instanceof Number) {
-      obj.setMaxWebsocketFrameSize(((Number)json.getValue("maxWebsocketFrameSize")).intValue());
+      obj.setMaxWebsocketFrameSize(((Number) json.getValue("maxWebsocketFrameSize")).intValue());
     }
     if (json.getValue("pipelining") instanceof Boolean) {
-      obj.setPipelining((Boolean)json.getValue("pipelining"));
+      obj.setPipelining((Boolean) json.getValue("pipelining"));
     }
     if (json.getValue("protocolVersion") instanceof String) {
-      obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)json.getValue("protocolVersion")));
+      obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String) json.getValue("protocolVersion")));
     }
     if (json.getValue("tryUseCompression") instanceof Boolean) {
-      obj.setTryUseCompression((Boolean)json.getValue("tryUseCompression"));
+      obj.setTryUseCompression((Boolean) json.getValue("tryUseCompression"));
     }
     if (json.getValue("verifyHost") instanceof Boolean) {
-      obj.setVerifyHost((Boolean)json.getValue("verifyHost"));
+      obj.setVerifyHost((Boolean) json.getValue("verifyHost"));
     }
   }
 

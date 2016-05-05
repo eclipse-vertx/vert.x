@@ -26,9 +26,6 @@ import java.util.List;
 /**
  * Options for configuring a verticle deployment.
  * <p>
- *
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public class DeploymentOptions {
@@ -88,7 +85,7 @@ public class DeploymentOptions {
   /**
    * Constructor for creating a instance from JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public DeploymentOptions(JsonObject json) {
     this();
@@ -98,7 +95,7 @@ public class DeploymentOptions {
   /**
    * Initialise the fields of this instance from the specified JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public void fromJson(JsonObject json) {
     this.config = json.getJsonObject("config");
@@ -120,7 +117,7 @@ public class DeploymentOptions {
   /**
    * Get the JSON configuration that will be passed to the verticle(s) when deployed.
    *
-   * @return  the JSON config
+   * @return the JSON config
    */
   public JsonObject getConfig() {
     return config;
@@ -129,7 +126,7 @@ public class DeploymentOptions {
   /**
    * Set the JSON configuration that will be passed to the verticle(s) when it's deployed
    *
-   * @param config  the JSON config
+   * @param config the JSON config
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setConfig(JsonObject config) {
@@ -211,7 +208,7 @@ public class DeploymentOptions {
   /**
    * Set whether the verticle(s) will be deployed as HA.
    *
-   * @param ha  true if to be deployed as HA, false otherwise
+   * @param ha true if to be deployed as HA, false otherwise
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setHa(boolean ha) {
@@ -224,7 +221,7 @@ public class DeploymentOptions {
    * <p>
    * Ignored if no isolation group is set.
    *
-   * @return  any extra classpath
+   * @return any extra classpath
    */
   public List<String> getExtraClasspath() {
     return extraClasspath;
@@ -245,7 +242,7 @@ public class DeploymentOptions {
   /**
    * Get the number of instances that should be deployed.
    *
-   * @return  the number of instances
+   * @return the number of instances
    */
   public int getInstances() {
     return instances;
@@ -254,7 +251,7 @@ public class DeploymentOptions {
   /**
    * Set the number of instances that should be deployed.
    *
-   * @param instances  the number of instances
+   * @param instances the number of instances
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setInstances(int instances) {
@@ -360,7 +357,7 @@ public class DeploymentOptions {
   /**
    * Convert this to JSON
    *
-   * @return  the JSON
+   * @return the JSON
    */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();

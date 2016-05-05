@@ -30,46 +30,43 @@ import java.net.UnknownHostException;
  */
 public class AddressDecoder implements RecordDecoder<InetAddress> {
 
-    private final int octets;
+  private final int octets;
 
-    /**
-     * Constructs an {@code AddressDecoder}, which decodes A and AAAA resource
-     * records.
-     *
-     * @param octets
-     *            the number of octets an address has. 4 for type A records and
-     *            16 for type AAAA records
-     */
-    public AddressDecoder(int octets) {
-        this.octets = octets;
-    }
+  /**
+   * Constructs an {@code AddressDecoder}, which decodes A and AAAA resource
+   * records.
+   *
+   * @param octets the number of octets an address has. 4 for type A records and
+   *               16 for type AAAA records
+   */
+  public AddressDecoder(int octets) {
+    this.octets = octets;
+  }
 
-    /**
-     * Returns an {@link java.net.InetAddress} containing a decoded address from either an A
-     * or AAAA resource record.
-     *
-     * @param response
-     *            the {@link io.vertx.core.dns.impl.netty.DnsResponse} received that contained the resource
-     *            record being decoded
-     * @param resource
-     *            the {@link DnsResource} being decoded
-     */
-    @Override
-    public InetAddress decode(DnsResponse response, DnsResource resource) {
-        ByteBuf data = resource.content().copy().readerIndex(response.originalIndex());
-        int size = data.writerIndex() - data.readerIndex();
-        if (data.readerIndex() != 0 || size != octets) {
-            throw new DecoderException("Invalid content length, or reader index when decoding address [index: "
-                    + data.readerIndex() + ", expected length: " + octets + ", actual: " + size + "].");
-        }
-        byte[] address = new byte[octets];
-        data.getBytes(data.readerIndex(), address);
-        try {
-            return InetAddress.getByAddress(address);
-        } catch (UnknownHostException e) {
-            throw new DecoderException("Could not convert address "
-                    + data.toString(data.readerIndex(), size, CharsetUtil.UTF_8) + " to InetAddress.");
-        }
+  /**
+   * Returns an {@link java.net.InetAddress} containing a decoded address from either an A
+   * or AAAA resource record.
+   *
+   * @param response the {@link io.vertx.core.dns.impl.netty.DnsResponse} received that contained the resource
+   *                 record being decoded
+   * @param resource the {@link DnsResource} being decoded
+   */
+  @Override
+  public InetAddress decode(DnsResponse response, DnsResource resource) {
+    ByteBuf data = resource.content().copy().readerIndex(response.originalIndex());
+    int size = data.writerIndex() - data.readerIndex();
+    if (data.readerIndex() != 0 || size != octets) {
+      throw new DecoderException("Invalid content length, or reader index when decoding address [index: "
+          + data.readerIndex() + ", expected length: " + octets + ", actual: " + size + "].");
     }
+    byte[] address = new byte[octets];
+    data.getBytes(data.readerIndex(), address);
+    try {
+      return InetAddress.getByAddress(address);
+    } catch (UnknownHostException e) {
+      throw new DecoderException("Could not convert address "
+          + data.toString(data.readerIndex(), size, CharsetUtil.UTF_8) + " to InetAddress.");
+    }
+  }
 
 }

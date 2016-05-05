@@ -24,7 +24,7 @@ import io.vertx.core.Verticle;
 import java.util.Set;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public interface Deployment {
 

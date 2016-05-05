@@ -21,7 +21,7 @@ import io.vertx.core.http.HttpClientRequest;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class HttpClientMetric {
 

@@ -25,7 +25,6 @@ import java.util.Objects;
  * Defines a command line argument. Unlike options, argument don't have names and are identified using an index. The
  * first index is 0 (because we are in the computer world).
  *
- * @author Clement Escoffier <clement@apache.org>
  * @see Option
  */
 @DataObject(generateConverter = true)

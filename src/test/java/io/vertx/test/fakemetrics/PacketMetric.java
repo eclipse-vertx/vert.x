@@ -19,14 +19,14 @@ package io.vertx.test.fakemetrics;
 import io.vertx.core.net.SocketAddress;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ *
  */
 public class PacketMetric {
 
   public final SocketAddress remoteAddress;
   public final long numberOfBytes;
 
-  public PacketMetric(SocketAddress remoteAddress,  long numberOfBytes) {
+  public PacketMetric(SocketAddress remoteAddress, long numberOfBytes) {
     this.remoteAddress = remoteAddress;
     this.numberOfBytes = numberOfBytes;
   }

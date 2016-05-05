@@ -21,16 +21,10 @@ import io.vertx.core.spi.logging.LogDelegateFactory;
 
 /**
  * A {@link io.vertx.core.spi.logging.LogDelegateFactory} which creates {@link Log4jLogDelegate} instances.
- *
- * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
- *
- *
  */
-public class Log4jLogDelegateFactory implements LogDelegateFactory
-{
-   public LogDelegate createDelegate(final String name)
-   {
-      return new Log4jLogDelegate(name);
-   }
+public class Log4jLogDelegateFactory implements LogDelegateFactory {
+  public LogDelegate createDelegate(final String name) {
+    return new Log4jLogDelegate(name);
+  }
 
 }

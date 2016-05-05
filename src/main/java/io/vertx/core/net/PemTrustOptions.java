@@ -19,11 +19,9 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,7 +31,7 @@ import java.util.Objects;
  * validating certificates.
  * <p>
  * Validating certificates must contain X.509 certificates wrapped in a PEM block:<p>
- *
+ * <p>
  * <pre>
  * -----BEGIN CERTIFICATE-----
  * MIIDezCCAmOgAwIBAgIEVmLkwTANBgkqhkiG9w0BAQsFADBuMRAwDgYDVQQGEwdV
@@ -41,25 +39,22 @@ import java.util.Objects;
  * z5+DuODBJUQst141Jmgq8bS543IU/5apcKQeGNxEyQ==
  * -----END CERTIFICATE-----
  * </pre>
- *
+ * <p>
  * The certificates can either be loaded by Vert.x from the filesystem:
  * <p>
  * <pre>
  * HttpServerOptions options = new HttpServerOptions();
  * options.setPemTrustOptions(new PemTrustOptions().addCertPath("/cert.pem"));
  * </pre>
- *
+ * <p>
  * Or directly provided as a buffer:
  * <p>
- *
+ * <p>
  * <pre>
  * Buffer cert = vertx.fileSystem().readFileSync("/cert.pem");
  * HttpServerOptions options = new HttpServerOptions();
  * options.setPemTrustOptions(new PemTrustOptions().addCertValue(cert));
  * </pre>
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
 public class PemTrustOptions implements TrustOptions, Cloneable {
@@ -79,7 +74,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   /**
    * Copy constructor
    *
-   * @param other  the options to copy
+   * @param other the options to copy
    */
   public PemTrustOptions(PemTrustOptions other) {
     super();
@@ -90,7 +85,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   /**
    * Create options from JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public PemTrustOptions(JsonObject json) {
     this();
@@ -98,7 +93,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   }
 
   /**
-   * @return  the certificate paths used to locate certificates
+   * @return the certificate paths used to locate certificates
    */
   public List<String> getCertPaths() {
     return certPaths;
@@ -107,7 +102,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   /**
    * Add a certificate path
    *
-   * @param certPath  the path to add
+   * @param certPath the path to add
    * @return a reference to this, so the API can be used fluently
    * @throws NullPointerException
    */
@@ -119,7 +114,6 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   }
 
   /**
-   *
    * @return the certificate values
    */
   public List<Buffer> getCertValues() {
@@ -129,7 +123,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   /**
    * Add a certificate value
    *
-   * @param certValue  the value to add
+   * @param certValue the value to add
    * @return a reference to this, so the API can be used fluently
    * @throws NullPointerException
    */
