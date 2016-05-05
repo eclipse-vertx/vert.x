@@ -10,6 +10,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.ProxyConnectionEvent;
+import io.netty.resolver.NoopAddressResolverGroup;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -66,6 +67,8 @@ public class ProxyChannelProvider implements ChannelProvider {
           }
         });
         log.info("NotResolve "+host+":"+port);
+        // do not resolve the hostname on the client
+        bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         InetSocketAddress t = InetSocketAddress.createUnresolved(host, port);
         ChannelFuture future1 = bootstrap.connect(t);
         future1.addListener(f -> {
