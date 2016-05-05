@@ -713,6 +713,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().pass();
     // check that the connection did in fact go through the proxy
     assertNotNull(proxy.getLastUri());
+    assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
   }
 
   @Test
@@ -729,5 +730,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().pass();
     // check that the connection did in fact go through the proxy
     assertNotNull(proxy.getLastUri());
+    assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
   }
 }
