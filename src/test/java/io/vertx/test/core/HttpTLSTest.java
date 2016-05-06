@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -39,6 +40,22 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
+  private ConnectHttpProxy proxy;
+
+  @Override
+  protected void tearDown() throws Exception {
+    if (proxy != null) {
+      proxy.stop();
+    }
+    super.tearDown();
+  }
+
+  private void startProxy(String username) throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    proxy = new ConnectHttpProxy(username);
+    proxy.start(vertx, v -> latch.countDown());
+    awaitLatch(latch);
+  }
 
   @Test
   // Client trusts all server certs
@@ -284,6 +301,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   class TLSTest {
 
+    HttpVersion version;
     TLSCert clientCert;
     TLSCert clientTrust;
     TLSCert serverCert;
@@ -297,6 +315,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean serverUsesCrl;
     boolean serverOpenSSL;
     boolean serverUsesAlpn;
+    boolean useProxy;
+    boolean useProxyAuth;
     String[] clientEnabledCipherSuites = new String[0];
     String[] serverEnabledCipherSuites = new String[0];
     String[] clientEnabledSecureTransportProtocol   = new String[0];
@@ -304,10 +324,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
 
     public TLSTest(TLSCert clientCert, TLSCert clientTrust, TLSCert serverCert, TLSCert serverTrust) {
+      this.version = HttpVersion.HTTP_1_1;
       this.clientCert = clientCert;
       this.clientTrust = clientTrust;
       this.serverCert = serverCert;
       this.serverTrust = serverTrust;
+    }
+
+    TLSTest version(HttpVersion version) {
+      this.version = version;
+      return this;
     }
 
     TLSTest requiresClientAuth() {
@@ -375,6 +401,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
+    TLSTest useProxy() {
+      useProxy = true;
+      return this;
+    }
+
+    TLSTest useProxyAuth() {
+      useProxyAuth = true;
+      return this;
+    }
+
     void pass() {
       run(true);
     }
@@ -386,6 +422,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     void run(boolean shouldPass) {
       server.close();
       HttpClientOptions options = new HttpClientOptions();
+      options.setProtocolVersion(version);
       options.setSsl(true);
       if (clientTrustAll) {
         options.setTrustAll(true);
@@ -409,6 +446,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       for (String protocols: clientEnabledSecureTransportProtocol) {
         options.addEnabledSecureTransportProtocol(protocols);
+      }
+      if (useProxy) {
+        options.setProxyHost("localhost");
+        options.setProxyPort(13128);
+      }
+      if (useProxyAuth) {
+        options.setProxyUsername("username");
+        options.setProxyPassword("username");
       }
       client = createHttpClient(options);
       HttpServerOptions serverOptions = new HttpServerOptions();
@@ -435,6 +480,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       server = createHttpServer(serverOptions.setPort(4043));
       server.requestHandler(req -> {
+        assertEquals(version, req.version());
         req.bodyHandler(buffer -> {
           assertEquals(true, req.isSSL());
           assertEquals("foo", buffer.toString());
@@ -451,6 +497,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         });
         req.exceptionHandler(t -> {
           if (shouldPass) {
+            t.printStackTrace();
             HttpTLSTest.this.fail("Should not throw exception");
           } else {
             testComplete();
@@ -657,5 +704,32 @@ public abstract class HttpTLSTest extends HttpTestBase {
       assertNotNull(e.getCause());
       assertEquals(NoSuchFileException.class, e.getCause().getCause().getClass());
     }
+  }
+
+  @Test
+  // Access https server via connect proxy
+  public void testHttpsProxy() throws Exception {
+    startProxy(null);
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().pass();
+    // check that the connection did in fact go through the proxy
+    assertNotNull(proxy.getLastUri());
+    assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
+  }
+
+  @Test
+  // Check that proxy auth fails if it is missing
+  public void testHttpsProxyAuthFail() throws Exception {
+    startProxy("username");
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().fail();
+  }
+
+  @Test
+  // Access https server via connect proxy with proxy auth required
+  public void testHttpsProxyAuth() throws Exception {
+    startProxy("username");
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().pass();
+    // check that the connection did in fact go through the proxy
+    assertNotNull(proxy.getLastUri());
+    assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
   }
 }

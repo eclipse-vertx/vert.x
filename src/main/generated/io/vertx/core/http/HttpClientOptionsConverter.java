@@ -68,6 +68,18 @@ public class HttpClientOptionsConverter {
     if (json.getValue("protocolVersion") instanceof String) {
       obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)json.getValue("protocolVersion")));
     }
+    if (json.getValue("proxyHost") instanceof String) {
+      obj.setProxyHost((String)json.getValue("proxyHost"));
+    }
+    if (json.getValue("proxyPassword") instanceof String) {
+      obj.setProxyPassword((String)json.getValue("proxyPassword"));
+    }
+    if (json.getValue("proxyPort") instanceof Number) {
+      obj.setProxyPort(((Number)json.getValue("proxyPort")).intValue());
+    }
+    if (json.getValue("proxyUsername") instanceof String) {
+      obj.setProxyUsername((String)json.getValue("proxyUsername"));
+    }
     if (json.getValue("tryUseCompression") instanceof Boolean) {
       obj.setTryUseCompression((Boolean)json.getValue("tryUseCompression"));
     }
@@ -100,6 +112,16 @@ public class HttpClientOptionsConverter {
     json.put("pipelining", obj.isPipelining());
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
+    }
+    if (obj.getProxyHost() != null) {
+      json.put("proxyHost", obj.getProxyHost());
+    }
+    if (obj.getProxyPassword() != null) {
+      json.put("proxyPassword", obj.getProxyPassword());
+    }
+    json.put("proxyPort", obj.getProxyPort());
+    if (obj.getProxyUsername() != null) {
+      json.put("proxyUsername", obj.getProxyUsername());
     }
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
