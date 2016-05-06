@@ -61,7 +61,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     if (timeout != -1) {
       timeoutID = vertx.setTimer(timeout, tid -> {
         metrics.replyFailure(address, ReplyFailure.TIMEOUT);
-        sendAsyncResultFailure(ReplyFailure.TIMEOUT, "Timed out waiting for a reply");
+        sendAsyncResultFailure(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address);
       });
     }
   }
