@@ -142,11 +142,14 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     MyReplyExceptionMessageCodec codec = new MyReplyExceptionMessageCodec();
     vertices[0].eventBus().registerDefaultCodec(MyReplyException.class, codec);
     vertices[1].eventBus().registerDefaultCodec(MyReplyException.class, codec);
-    vertices[0].eventBus().<ReplyException>consumer(ADDRESS1, msg -> {
+    MessageConsumer<ReplyException> reg = vertices[0].eventBus().<ReplyException>consumer(ADDRESS1, msg -> {
       assertTrue(msg.body() instanceof MyReplyException);
       testComplete();
     });
-    vertices[1].eventBus().send(ADDRESS1, myReplyException);
+    reg.completionHandler(ar -> {
+      vertices[1].eventBus().send(ADDRESS1, myReplyException);
+    });
+
     await();
   }
 
