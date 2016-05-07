@@ -17,6 +17,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -53,6 +55,29 @@ import java.util.Objects;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameListener, HttpConnection {
+
+  /**
+   * Return a buffer from HTTP/2 codec that Vert.x can use:
+   *
+   * - if it's a direct buffer (coming likely from OpenSSL) : we get a heap buffer version
+   * - if it's a composite buffer we do the same
+   * - otherwise we increase the ref count
+   */
+  static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
+    if (buf == Unpooled.EMPTY_BUFFER) {
+      return buf;
+    }
+    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
+      if (buf.isReadable()) {
+        ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
+        buffer.writeBytes(buf);
+        return buffer;
+      } else {
+        return Unpooled.EMPTY_BUFFER;
+      }
+    }
+    return buf.retain();
+  }
 
   protected final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   protected ChannelHandlerContext handlerContext;
@@ -202,7 +227,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public synchronized void onPingRead(ChannelHandlerContext ctx, ByteBuf data) {
     Handler<Buffer> handler = pingHandler;
     if (handler != null) {
-      Buffer buff = Buffer.buffer(data.copy());
+      Buffer buff = Buffer.buffer(safeBuffer(data, ctx.alloc()));
       context.executeFromIO(() -> {
         handler.handle(buff);
       });
@@ -214,7 +239,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     Handler<AsyncResult<Buffer>> handler = pongHandlers.poll();
     if (handler != null) {
       context.executeFromIO(() -> {
-        Buffer buff = Buffer.buffer(data.copy());
+        Buffer buff = Buffer.buffer(safeBuffer(data, ctx.alloc()));
         handler.handle(Future.succeededFuture(buff));
       });
     }
@@ -238,7 +263,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
                              Http2Flags flags, ByteBuf payload) {
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
-      Buffer buff = Buffer.buffer(payload.copy());
+      Buffer buff = Buffer.buffer(safeBuffer(payload, ctx.alloc()));
       context.executeFromIO(() -> {
         req.handleUnknownFrame(frameType, flags.value(), buff);
       });
@@ -260,7 +285,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     int[] consumed = { padding };
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
-      Buffer buff = Buffer.buffer(data.copy());
+      data = safeBuffer(data, ctx.alloc());
+      Buffer buff = Buffer.buffer(data);
       context.executeFromIO(() -> {
         int len = buff.length();
         if (req.onDataRead(buff)) {
