@@ -726,8 +726,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testHttpsProxy() throws Exception {
     startProxy(null);
     testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().pass();
-    // check that the connection did in fact go through the proxy
-    assertNotNull(proxy.getLastUri());
+    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
   }
 
@@ -743,8 +742,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testHttpsProxyAuth() throws Exception {
     startProxy("username");
     testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().pass();
-    // check that the connection did in fact go through the proxy
-    assertNotNull(proxy.getLastUri());
+    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
   }
 
@@ -757,8 +755,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     proxy.setForceUri("localhost:4043");
     testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth()
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
-    // check that the connection did in fact go through the proxy
-    assertNotNull(proxy.getLastUri());
+    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
   }
 }
