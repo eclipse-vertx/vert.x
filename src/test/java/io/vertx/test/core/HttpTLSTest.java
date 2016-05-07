@@ -310,7 +310,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean clientUsesCrl;
     boolean clientUsesAlpn;
     boolean clientOpenSSL;
-    boolean clientVerifyHost;
+    boolean clientVerifyHost = true;
     boolean requiresClientAuth;
     boolean serverUsesCrl;
     boolean serverOpenSSL;
@@ -321,6 +321,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String[] serverEnabledCipherSuites = new String[0];
     String[] clientEnabledSecureTransportProtocol   = new String[0];
     String[] serverEnabledSecureTransportProtocol   = new String[0];
+    private String connectHostname;
 
 
     public TLSTest(TLSCert clientCert, TLSCert clientTrust, TLSCert serverCert, TLSCert serverTrust) {
@@ -371,6 +372,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
+    TLSTest clientVerifyHost(boolean verify) {
+      clientVerifyHost = verify;
+      return this;
+    }
+
     TLSTest clientEnabledCipherSuites(String[] value) {
       clientEnabledCipherSuites = value;
       return this;
@@ -411,6 +417,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
+    TLSTest connectHostname(String connectHostname) {
+      this.connectHostname = connectHostname;
+      return this;
+    }
+
     void pass() {
       run(true);
     }
@@ -436,9 +447,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (clientUsesAlpn) {
         options.setUseAlpn(true);
       }
-      if (clientVerifyHost) {
-        options.setVerifyHost(true);
-      }
+      options.setVerifyHost(clientVerifyHost);
       setOptions(options, clientTrust.getClientTrustOptions());
       setOptions(options, clientCert.getClientKeyCertOptions());
       for (String suite: clientEnabledCipherSuites) {
@@ -490,7 +499,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
       server.listen(ar -> {
         assertTrue(ar.succeeded());
 
-        HttpClientRequest req = client.request(HttpMethod.GET, 4043, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, response -> {
+        String httpHost;
+        if (connectHostname != null) {
+          httpHost = connectHostname;
+        } else {
+          httpHost = DEFAULT_HTTP_HOST;
+        }
+        HttpClientRequest req = client.request(HttpMethod.GET, 4043, httpHost, DEFAULT_TEST_URI, response -> {
           response.version();
           response.bodyHandler(data -> assertEquals("bar", data.toString()));
           testComplete();
@@ -731,5 +746,19 @@ public abstract class HttpTLSTest extends HttpTestBase {
     // check that the connection did in fact go through the proxy
     assertNotNull(proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
+  }
+
+  @Test
+  // Access https server via connect proxy with a hostname that doesn't resolve
+  // the hostname may resolve at the proxy if that is accessing another DNS
+  // we simulate this by mapping the hostname to localhost:xxx in the test proxy code
+  public void testHttpsProxyUnknownHost() throws Exception {
+    startProxy(null);
+    proxy.setForceUri("localhost:4043");
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth()
+        .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
+    // check that the connection did in fact go through the proxy
+    assertNotNull(proxy.getLastUri());
+    assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
   }
 }
