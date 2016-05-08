@@ -171,12 +171,12 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     });
 
     applyConnectionOptions(bootstrap);
-    AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+    AsyncResolveBindConnectHelper future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
     future.addListener(res -> {
 
       if (res.succeeded()) {
 
-        Channel ch = res.result().channel();
+        Channel ch = res.result();
 
         if (sslHelper.isSSL()) {
           // TCP connected, so now we must do the SSL handshake

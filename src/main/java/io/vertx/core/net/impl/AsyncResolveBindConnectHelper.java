@@ -18,6 +18,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -32,27 +33,30 @@ import java.util.function.Function;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AsyncResolveBindConnectHelper<T> implements Handler<AsyncResult<T>> {
+public class AsyncResolveBindConnectHelper {
 
-  private List<Handler<AsyncResult<T>>> handlers = new ArrayList<>();
-  private boolean complete;
-  private AsyncResult<T> result;
+  private List<Handler<AsyncResult<Channel>>> handlers = new ArrayList<>();
+  private ChannelFuture future;
+  private AsyncResult<Channel> result;
 
-  public synchronized void addListener(Handler<AsyncResult<T>> handler) {
-    if (complete) {
-      handler.handle(result);
+  public synchronized void addListener(Handler<AsyncResult<Channel>> handler) {
+    if (result != null) {
+      if (future != null) {
+        future.addListener(v -> handler.handle(result));
+      } else {
+        handler.handle(result);
+      }
     } else {
       handlers.add(handler);
     }
   }
 
-  @Override
-  public synchronized void handle(AsyncResult<T> res) {
-    if (!complete) {
-      for (Handler<AsyncResult<T>> handler: handlers) {
+  private synchronized void handle(ChannelFuture cf, AsyncResult<Channel> res) {
+    if (result == null) {
+      for (Handler<AsyncResult<Channel>> handler: handlers) {
         handler.handle(res);
       }
-      complete = true;
+      future = cf;
       result = res;
     } else {
       throw new IllegalStateException("Already complete!");
@@ -65,21 +69,21 @@ public class AsyncResolveBindConnectHelper<T> implements Handler<AsyncResult<T>>
     }
   }
 
-  public static AsyncResolveBindConnectHelper<ChannelFuture> doBind(VertxInternal vertx, int port, String host,
+  public static AsyncResolveBindConnectHelper doBind(VertxInternal vertx, int port, String host,
                                                                     ServerBootstrap bootstrap) {
     return doBindConnect(vertx, port, host, bootstrap::bind);
   }
 
-  public static AsyncResolveBindConnectHelper<ChannelFuture> doConnect(VertxInternal vertx, int port, String host,
+  public static AsyncResolveBindConnectHelper doConnect(VertxInternal vertx, int port, String host,
                                                                        Bootstrap bootstrap) {
     return doBindConnect(vertx, port, host, bootstrap::connect);
   }
 
-  private static AsyncResolveBindConnectHelper<ChannelFuture> doBindConnect(VertxInternal vertx, int port, String host,
+  private static AsyncResolveBindConnectHelper doBindConnect(VertxInternal vertx, int port, String host,
                                                                             Function<InetSocketAddress,
                                                                             ChannelFuture> cfProducer) {
     checkPort(port);
-    AsyncResolveBindConnectHelper<ChannelFuture> asyncResolveBindConnectHelper = new AsyncResolveBindConnectHelper<>();
+    AsyncResolveBindConnectHelper asyncResolveBindConnectHelper = new AsyncResolveBindConnectHelper();
     vertx.resolveHostname(host, res -> {
       if (res.succeeded()) {
         // At this point the name is an IP address so there will be no resolve hit
@@ -87,13 +91,13 @@ public class AsyncResolveBindConnectHelper<T> implements Handler<AsyncResult<T>>
         ChannelFuture future = cfProducer.apply(t);
         future.addListener(f -> {
           if (f.isSuccess()) {
-            asyncResolveBindConnectHelper.handle(Future.succeededFuture(future));
+            asyncResolveBindConnectHelper.handle(future, Future.succeededFuture(future.channel()));
           } else {
-            asyncResolveBindConnectHelper.handle(Future.failedFuture(f.cause()));
+            asyncResolveBindConnectHelper.handle(future, Future.failedFuture(f.cause()));
           }
         });
       } else {
-        asyncResolveBindConnectHelper.handle(Future.failedFuture(res.cause()));
+        asyncResolveBindConnectHelper.handle(null, Future.failedFuture(res.cause()));
       }
     });
     return asyncResolveBindConnectHelper;

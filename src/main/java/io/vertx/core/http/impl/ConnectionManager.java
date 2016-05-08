@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -276,10 +275,10 @@ public class ConnectionManager {
               protected void initChannel(Channel ch) throws Exception {
               }
             });
-            AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+            AsyncResolveBindConnectHelper future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
             future.addListener(res -> {
               if (res.succeeded()) {
-                channelHandler.handle(Future.succeededFuture(res.result().channel()));
+                channelHandler.handle(Future.succeededFuture(res.result()));
               } else {
                 channelHandler.handle(Future.failedFuture(res.cause()));
               }

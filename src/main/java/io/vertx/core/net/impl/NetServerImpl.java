@@ -72,7 +72,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private volatile boolean listening;
   private volatile ServerID id;
   private NetServerImpl actualServer;
-  private AsyncResolveBindConnectHelper<ChannelFuture> bindFuture;
+  private AsyncResolveBindConnectHelper bindFuture;
   private volatile int actualPort;
   private ContextImpl listenContext;
   private TCPMetrics metrics;
@@ -189,7 +189,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
           bindFuture = AsyncResolveBindConnectHelper.doBind(vertx, port, host, bootstrap);
           bindFuture.addListener(res -> {
             if (res.succeeded()) {
-              Channel ch = res.result().channel();
+              Channel ch = res.result();
               log.trace("Net server listening on " + host + ":" + ch.localAddress());
               // Update port to actual port - wildcard port 0 might have been used
               NetServerImpl.this.actualPort = ((InetSocketAddress)ch.localAddress()).getPort();

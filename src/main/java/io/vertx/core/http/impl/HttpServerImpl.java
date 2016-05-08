@@ -101,7 +101,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
-  private AsyncResolveBindConnectHelper<ChannelFuture> bindFuture;
+  private AsyncResolveBindConnectHelper bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
   private volatile int actualPort;
@@ -255,7 +255,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             if (res.failed()) {
               vertx.sharedHttpServers().remove(id);
             } else {
-              Channel serverChannel = res.result().channel();
+              Channel serverChannel = res.result();
               HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
               serverChannelGroup.add(serverChannel);
               metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
