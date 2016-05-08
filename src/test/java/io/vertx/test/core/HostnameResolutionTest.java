@@ -16,15 +16,22 @@
 
 package io.vertx.test.core;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.HostnameResolverOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxThreadFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
+import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
 
@@ -35,11 +42,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HostnameResolverTest extends VertxTestBase {
+public class HostnameResolutionTest extends VertxTestBase {
 
   private FakeDNSServer dnsServer;
   private InetSocketAddress dnsServerAddress;
@@ -226,5 +234,32 @@ public class HostnameResolverTest extends VertxTestBase {
     assertEquals(HostnameResolverOptions.DEFAULT_QUERY_TIMEOUT, options.getQueryTimeout());
     assertEquals(HostnameResolverOptions.DEFAULT_MAX_QUERIES, options.getMaxQueries());
     assertEquals(HostnameResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
+  }
+
+  @Test
+  public void testAsyncResolveConnectIsNotifiedOnChannelEventLoop() throws Exception {
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    NetServer s = vertx.createNetServer().connectHandler(so -> {});
+    s.listen(1234, "localhost", onSuccess(v -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    AtomicReference<Thread> channelThread = new AtomicReference<>();
+    CountDownLatch connectLatch = new CountDownLatch(1);
+    Bootstrap bootstrap = new Bootstrap();
+    bootstrap.channel(NioSocketChannel.class);
+    bootstrap.group(vertx.nettyEventLoopGroup());
+    bootstrap.handler(new ChannelInitializer<Channel>() {
+      @Override
+      protected void initChannel(Channel ch) throws Exception {
+        channelThread.set(Thread.currentThread());
+        connectLatch.countDown();
+      }
+    });
+    AsyncResolveBindConnectHelper h = AsyncResolveBindConnectHelper.doConnect((VertxInternal) vertx, 1234, "localhost", bootstrap);
+    awaitLatch(connectLatch);
+    h.addListener(onSuccess(channel -> {
+      assertEquals(channelThread.get(), Thread.currentThread());
+      testComplete();
+    }));
+    await();
   }
 }
