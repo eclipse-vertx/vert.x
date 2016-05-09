@@ -1094,7 +1094,7 @@
  * the module explicitly (_Build_ menu -> _Make project_).
  *
  * To debug your application, create your run configuration as a remote application and configure the debugger
- * using `--java-opts`. However, don’t forget to re-plug the debugger after every redeployment as a new process is
+ * using `--java-opts`. However, don't forget to re-plug the debugger after every redeployment as a new process is
  * created every time.
  *
  * You can also hook your build process in the redeploy cycle:

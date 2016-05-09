@@ -29,6 +29,7 @@ public class ConnectHttpProxy {
   private final String username;
   private HttpServer server;
   private String lastUri;
+  private String forceUri;
 
   public ConnectHttpProxy(String username) {
     this.username = username;
@@ -40,6 +41,14 @@ public class ConnectHttpProxy {
    */
   public String getLastUri() {
     return lastUri;
+  }
+
+  /**
+   * force uri to connect to a given string (e.g. "localhost:4443")
+   * this is to simulate a host that only resolves on the proxy
+   */
+  public void setForceUri(String uri) {
+    forceUri = uri;
   }
 
   /**
@@ -69,6 +78,9 @@ public class ConnectHttpProxy {
         request.response().setStatusCode(405).end("method not allowed");
       } else {
         lastUri = uri;
+        if (forceUri != null) {
+          uri = forceUri;
+        }
         String split[] = uri.split(":");
         String host = split[0];
         int port;
