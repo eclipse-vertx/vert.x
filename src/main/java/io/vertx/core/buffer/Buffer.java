@@ -511,6 +511,7 @@ public interface Buffer extends ClusterSerializable {
    * Sets the unsigned {@code byte} at position {@code pos} in the Buffer to the value {@code b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
+  @Fluent
   Buffer setUnsignedByte(int pos, short b);
 
   /**
