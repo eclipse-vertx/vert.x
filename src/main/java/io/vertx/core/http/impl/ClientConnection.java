@@ -299,7 +299,11 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
-    requestForResponse.handleResponse(nResp);
+    if(resp.getDecoderResult().isFailure()) {
+      handleException(resp.getDecoderResult().cause());
+    } else {
+      requestForResponse.handleResponse(nResp);
+    }
   }
 
   public void doPause() {
