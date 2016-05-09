@@ -265,13 +265,14 @@ public class Watcher implements Runnable {
       try {
         List<String> command = new ArrayList<>();
         if (ExecUtils.isWindows()) {
-          ExecUtils.addArgument(command, cmd);
+          ExecUtils.addArgument(command, "cmd");
+          ExecUtils.addArgument(command, "/c");
         } else {
           ExecUtils.addArgument(command, "sh");
           ExecUtils.addArgument(command, "-c");
-          // Do not add quote to the given command:
-          command.add(cmd);
         }
+        // Do not add quote to the given command:
+        command.add(cmd);
 
         final Process process = new ProcessBuilder(command)
             .redirectError(ProcessBuilder.Redirect.INHERIT)
