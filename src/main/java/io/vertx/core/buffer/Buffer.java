@@ -180,8 +180,9 @@ public interface Buffer extends ClusterSerializable {
   long getUnsignedInt(int pos);
 
   /**
-   * @param pos
-   * @return
+   * Returns the unsigned {@code int} at position {@code pos} in the Buffer, as a {@code long} in Little Endian Byte Order.
+   *
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
    */
   long getUnsignedIntLE(int pos);
 
