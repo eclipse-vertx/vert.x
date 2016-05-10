@@ -29,6 +29,7 @@ import io.vertx.core.streams.Pump;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1937,7 +1938,7 @@ public class Http1xTest extends HttpTest {
   }
   
   @Test
-  public void testMaxHeaderSizeOption() {
+  public void testServerMaxHeaderSizeOption() {
 	  
     String longHeader = TestUtils.randomAlphaString(9000);
 	
@@ -1958,6 +1959,80 @@ public class Http1xTest extends HttpTest {
     
     await();
   }
+
+  @Test
+  public void testInvalidHttpResponse() {
+
+    waitFor(2);
+
+    AtomicInteger count = new AtomicInteger(0);
+    CompletableFuture<Void> sendResp = new CompletableFuture<>();
+    NetServer server  = vertx.createNetServer();
+    String match = "GET /somepath HTTP/1.1\r\nHost: localhost:8080\r\n\r\n";
+    server.connectHandler(so -> {
+      StringBuilder content = new StringBuilder();
+      so.handler(buff -> {
+        content.append(buff);
+        while (content.toString().startsWith(match)) {
+          System.out.println("REQ!!!");
+          content.delete(0, match.length());
+          switch (count.getAndIncrement()) {
+            case 0:
+              // Send an invalid response
+              sendResp.thenAccept(v -> {
+                so.write(Buffer.buffer(TestUtils.randomAlphaString(40) + "\r\n"));
+              });
+              break;
+            case 1:
+              // Send a valid response even though it will be ignored by Netty decoder
+              sendResp.thenAccept(v -> {
+                so.write(Buffer.buffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"));
+              });
+              break;
+            default:
+              fail();
+              break;
+          }
+        }
+      });
+    }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s -> {
+
+      // We force two pipelined requests to check that the second request does not get stuck after the first failing
+      client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
+
+      AtomicBoolean fail1 = new AtomicBoolean();
+      HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        assertEquals(999, resp.statusCode()); // Netty specific for invalid responses
+        resp.exceptionHandler(err -> {
+          if (fail1.compareAndSet(false, true)) {
+            assertEquals(IllegalArgumentException.class, err.getClass()); // invalid version format
+            complete();
+          }
+        });
+      });
+
+      AtomicBoolean fail2 = new AtomicBoolean();
+      HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        System.out.println("got RESP 2");
+        resp.bodyHandler(buff -> {
+          assertEquals("okusa", buff.toString());
+          testComplete();
+        });
+      }).exceptionHandler(err -> {
+        if (fail2.compareAndSet(false, true)) {
+          assertEquals(VertxException.class, err.getClass()); // Closed
+          complete();
+        }
+      });
+
+      req1.end();
+      req2.end();
+      sendResp.complete(null);
+    }));
+
+    await();
+  }
+
 
   @Test
   public void testConnectionCloseHttp_1_0_NoClose() throws Exception {

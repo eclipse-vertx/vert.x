@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
@@ -279,7 +280,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   void handleResponse(HttpResponse resp) {
-    if (resp.getStatus().code() == 100) {
+    if (resp.status().code() == 100) {
       //If we get a 100 continue it will be followed by the real response later, so we don't remove it yet
       requestForResponse = requests.peek();
     } else {
@@ -300,6 +301,13 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
     requestForResponse.handleResponse(nResp);
+    DecoderResult decoderResult = resp.decoderResult();
+    if(decoderResult.isFailure()) {
+      handleException(decoderResult.cause());
+      // Close the connection as Netty's HttpResponseDecoder will not try further processing
+      // see https://github.com/netty/netty/issues/3362
+      close();
+    }
   }
 
   public void doPause() {
