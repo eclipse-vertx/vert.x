@@ -1974,7 +1974,6 @@ public class Http1xTest extends HttpTest {
       so.handler(buff -> {
         content.append(buff);
         while (content.toString().startsWith(match)) {
-          System.out.println("REQ!!!");
           content.delete(0, match.length());
           switch (count.getAndIncrement()) {
             case 0:
@@ -2013,7 +2012,6 @@ public class Http1xTest extends HttpTest {
 
       AtomicBoolean fail2 = new AtomicBoolean();
       HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        System.out.println("got RESP 2");
         resp.bodyHandler(buff -> {
           assertEquals("okusa", buff.toString());
           testComplete();
