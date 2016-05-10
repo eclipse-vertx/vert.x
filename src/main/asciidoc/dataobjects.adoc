@@ -84,6 +84,11 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[metricsName]]`metricsName`|`String`|
++++
+Set the metrics name identifying the reported metrics, useful for grouping metrics
+ with the same name.
++++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
 Set the key/cert store options in pem format.
@@ -663,6 +668,11 @@ Set the maximum requests allowed in the wait queue, any requests beyond the max 
 +++
 Set the max websocket frame size
 +++
+|[[metricsName]]`metricsName`|`String`|
++++
+Set the metrics name identifying the reported metrics, useful for grouping metrics
+ with the same name.
++++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
 Set the key/cert store options in pem format.
@@ -1032,6 +1042,11 @@ Set the idle timeout, in seconds. zero means don't timeout.
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
 Set the key/cert options in jks format, aka Java keystore.
++++
+|[[metricsName]]`metricsName`|`String`|
++++
+Set the metrics name identifying the reported metrics, useful for grouping metrics
+ with the same name.
 +++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++

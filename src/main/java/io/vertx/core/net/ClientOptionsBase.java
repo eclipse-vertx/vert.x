@@ -19,6 +19,8 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Objects;
+
 /**
  * Base class for Client options
  *
@@ -37,8 +39,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public static final boolean DEFAULT_TRUST_ALL = false;
 
+  public static final String DEFAULT_METRICS_NAME = "";
+
   private int connectTimeout;
   private boolean trustAll;
+  private String metricsName;
 
   /**
    * Default constructor
@@ -57,6 +62,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     super(other);
     this.connectTimeout = other.getConnectTimeout();
     this.trustAll = other.isTrustAll();
+    this.metricsName = other.metricsName;
   }
 
   /**
@@ -73,6 +79,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private void init() {
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     this.trustAll = DEFAULT_TRUST_ALL;
+    this.metricsName = DEFAULT_METRICS_NAME;
   }
 
   /**
@@ -115,6 +122,25 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return this;
   }
 
+  /**
+   * @return the metrics name identifying the reported metrics.
+   */
+  public String getMetricsName() {
+    return metricsName;
+  }
+
+  /**
+   * Set the metrics name identifying the reported metrics, useful for grouping metrics
+   * with the same name.
+   *
+   * @param metricsName the metrics name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setMetricsName(String metricsName) {
+    this.metricsName = metricsName;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -125,6 +151,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
 
     if (connectTimeout != that.connectTimeout) return false;
     if (trustAll != that.trustAll) return false;
+    if (!Objects.equals(metricsName, that.metricsName)) return false;
 
     return true;
   }
@@ -134,6 +161,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     int result = super.hashCode();
     result = 31 * result + connectTimeout;
     result = 31 * result + (trustAll ? 1 : 0);
+    result = 31 * result + (metricsName != null ? metricsName.hashCode() : 0);
     return result;
   }
 }

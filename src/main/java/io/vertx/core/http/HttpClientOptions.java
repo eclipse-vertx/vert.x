@@ -610,6 +610,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  public HttpClientOptions setMetricsName(String metricsName) {
+    return (HttpClientOptions) super.setMetricsName(metricsName);
+  }
+
   /**
    * Set proxy hostname for ssl connections via CONNECT proxy (e.g. Squid).
    *

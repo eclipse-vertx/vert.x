@@ -30,6 +30,9 @@ public class ClientOptionsBaseConverter {
     if (json.getValue("connectTimeout") instanceof Number) {
       obj.setConnectTimeout(((Number)json.getValue("connectTimeout")).intValue());
     }
+    if (json.getValue("metricsName") instanceof String) {
+      obj.setMetricsName((String)json.getValue("metricsName"));
+    }
     if (json.getValue("trustAll") instanceof Boolean) {
       obj.setTrustAll((Boolean)json.getValue("trustAll"));
     }
@@ -37,6 +40,9 @@ public class ClientOptionsBaseConverter {
 
   public static void toJson(ClientOptionsBase obj, JsonObject json) {
     json.put("connectTimeout", obj.getConnectTimeout());
+    if (obj.getMetricsName() != null) {
+      json.put("metricsName", obj.getMetricsName());
+    }
     json.put("trustAll", obj.isTrustAll());
   }
 }

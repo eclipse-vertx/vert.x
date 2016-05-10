@@ -214,6 +214,11 @@ public class NetClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  @Override
+  public NetClientOptions setMetricsName(String metricsName) {
+    return (NetClientOptions) super.setMetricsName(metricsName);
+  }
+
   /**
    * Set the value of reconnect attempts
    *

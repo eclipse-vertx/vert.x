@@ -21,6 +21,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketBase;
+import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -32,8 +33,14 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric> {
 
+  private final String name;
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<HttpClientRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
+
+  public FakeHttpClientMetrics(Measured measured, String name) {
+    super(measured);
+    this.name = name;
+  }
 
   public WebSocketMetric getMetric(WebSocket ws) {
     return webSockets.get(ws);
@@ -43,8 +50,8 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
     return requests.get(request);
   }
 
-  public FakeHttpClientMetrics(HttpClient measured) {
-    super(measured);
+  public String getName() {
+    return name;
   }
 
   @Override

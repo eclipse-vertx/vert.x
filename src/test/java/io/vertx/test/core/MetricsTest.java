@@ -545,6 +545,17 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
+  public void testHttpClientName() throws Exception {
+    HttpClient client1 = vertx.createHttpClient();
+    FakeHttpClientMetrics metrics1 = FakeMetricsBase.getMetrics(client1);
+    assertEquals("", metrics1.getName());
+    String name = TestUtils.randomAlphaString(10);
+    HttpClient client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
+    FakeHttpClientMetrics metrics2 = FakeMetricsBase.getMetrics(client2);
+    assertEquals(name, metrics2.getName());
+  }
+
+  @Test
   public void testMulti() {
     HttpServer s1 = vertx.createHttpServer();
     s1.requestHandler(req -> {
