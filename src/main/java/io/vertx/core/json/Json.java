@@ -26,12 +26,15 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -116,6 +119,8 @@ public class Json {
       }
     } else if (val instanceof byte[]) {
       val = Base64.getEncoder().encodeToString((byte[])val);
+    } else if (val instanceof Instant) {
+      val = ISO_INSTANT.format((Instant) val);
     } else {
       throw new IllegalStateException("Illegal type in JsonObject: " + val.getClass());
     }
