@@ -23,6 +23,7 @@ import io.vertx.core.logging.LoggerFactory;
 import java.io.File;
 import java.nio.file.WatchService;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A file alteration monitor based on a home made file system scan and watching files matching a set of includes
@@ -74,7 +75,7 @@ public class Watcher implements Runnable {
                  String onRedeployCommand, long gracePeriod, long scanPeriod) {
     this.gracePeriod = gracePeriod;
     this.root = root;
-    this.includes = includes;
+    this.includes = sanitizeIncludePatterns(includes);
     this.deploy = deploy;
     this.undeploy = undeploy;
     this.cmd = onRedeployCommand;
@@ -82,6 +83,15 @@ public class Watcher implements Runnable {
     addFileToWatch(root);
   }
 
+  private List<String> sanitizeIncludePatterns(List<String> includes) {
+    return includes.stream().map(p -> {
+      if (ExecUtils.isWindows()) {
+        return p.replace('/', File.separatorChar);
+      }
+      return p.replace('\\', File.separatorChar);
+    }).collect(Collectors.toList());
+  }
+  
   private void addFileToWatch(File file) {
     filesToWatch.add(file);
     Map<File, FileInfo> map = new HashMap<>();
@@ -195,7 +205,8 @@ public class Watcher implements Runnable {
     }
     String rel = file.getAbsolutePath().substring(root.getAbsolutePath().length() + 1);
     for (String include : includes) {
-      if (FileSelector.matchPath(include, rel)) {
+      // Windows files are not case sensitive
+      if (FileSelector.matchPath(include, rel, !ExecUtils.isWindows())) {
         return true;
       }
     }

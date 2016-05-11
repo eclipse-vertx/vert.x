@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,22 +52,18 @@ public class WatcherTest extends CommandTestBase {
     deploy = new AtomicInteger();
     undeploy = new AtomicInteger();
 
-    watcher = new Watcher(root, Collections.singletonList("**" + File.separator + "*.txt"),
-        next -> {
+    watcher = new Watcher(root, Collections.unmodifiableList(
+        Arrays.asList("**" + File.separator + "*.txt", "windows\\*.win", "unix/*.nix", "FOO.bar")), next -> {
           deploy.incrementAndGet();
           if (next != null) {
             next.handle(null);
           }
-        },
-        next -> {
+        }, next -> {
           undeploy.incrementAndGet();
           if (next != null) {
             next.handle(null);
           }
-        },
-        null,
-        10,
-        10);
+        }, null, 10, 10);
   }
 
   @After
@@ -173,6 +170,58 @@ public class WatcherTest extends CommandTestBase {
     deleteRecursive(newDir);
 
     waitUntil(() -> undeploy.get() == 3 && deploy.get() == 4);
+  }
+  
+  @Test
+  public void testOSSpecificIncludePaths() throws IOException, InterruptedException {
+    watcher.watch();
+
+    // Initial deployment
+    waitUntil(() -> deploy.get() == 1);
+
+    // create a file to be matched using windows style include pattern
+    File winDir = new File(root, "windows");
+    winDir.mkdir();
+    Thread.sleep(500);
+    File winFile = new File(winDir, "foo.win");
+    winFile.createNewFile();
+
+    // undeployment followed by redeployment
+    waitUntil(() -> undeploy.get() == 1 && deploy.get() == 2);
+    Thread.sleep(1000);
+
+    // create a file to be matched using *nix style include pattern
+    File nixDir = new File(root, "unix");
+    nixDir.mkdir();
+    Thread.sleep(500);
+    File nixFile = new File(nixDir, "foo.nix");
+    nixFile.createNewFile();
+    
+    // undeployment followed by redeployment
+    waitUntil(() -> undeploy.get() == 2 && deploy.get() == 3);
+  }
+  
+  @Test
+  public void testCaseSensitivity() throws IOException, InterruptedException {
+    watcher.watch();
+
+    // Initial deployment
+    waitUntil(() -> deploy.get() == 1);
+    
+    // create a file to be matched against "FOO.bar" pattern
+    File file = new File(root, "fOo.BAr");
+    file.createNewFile();
+    
+    if(ExecUtils.isWindows()) {      
+      // undeployment followed by redeployment. Windows is not case sensitive
+      waitUntil(() -> undeploy.get() == 1 && deploy.get() == 2);
+    }
+    else {
+      Thread.sleep(500);
+      // fOo.BAr != FOO.bar on *nix 
+      assertThat(undeploy.get()).isEqualTo(0);
+      assertThat(deploy.get()).isEqualTo(1);
+    }
   }
 
   public static boolean deleteRecursive(File path) {
