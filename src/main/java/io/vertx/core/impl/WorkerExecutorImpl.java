@@ -21,23 +21,39 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.WorkerExecutor;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.concurrent.Executor;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class NamedWorkerExecutor implements WorkerExecutor, Closeable {
+class WorkerExecutorImpl implements WorkerExecutor, Closeable, MetricsProvider {
 
   private final ContextImpl context;
-  final VertxImpl.SharedWorkerPool pool;
+  final WorkerPool pool;
   private boolean closed;
   private final Executor workerExec;
+  private final boolean releaseOnClose;
 
-  public NamedWorkerExecutor(ContextImpl context, VertxImpl.SharedWorkerPool pool) {
+  public WorkerExecutorImpl(ContextImpl context, WorkerPool pool, boolean releaseOnClose) {
     this.pool = pool;
     this.context = context;
     this.workerExec = pool.createOrderedExecutor();
+    this.releaseOnClose = releaseOnClose;
+  }
+
+  @Override
+  public Metrics getMetrics() {
+    return pool.metrics();
+  }
+
+  @Override
+  public boolean isMetricsEnabled() {
+    PoolMetrics metrics = pool.metrics();
+    return metrics != null && metrics.isEnabled();
   }
 
   public WorkerPool getPool() {
@@ -60,7 +76,9 @@ class NamedWorkerExecutor implements WorkerExecutor, Closeable {
         return;
       }
     }
-    pool.release();
+    if (releaseOnClose && pool instanceof VertxImpl.SharedWorkerPool) {
+      ((VertxImpl.SharedWorkerPool)pool).release();
+    }
   }
 
   @Override

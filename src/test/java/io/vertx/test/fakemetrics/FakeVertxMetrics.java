@@ -32,7 +32,6 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.*;
 
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -136,7 +135,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public <P> PoolMetrics<?> createMetrics(P pool, String poolName, int maxPoolSize) {
+  public <P> PoolMetrics<?> createMetrics(P pool, String poolType, String poolName, int maxPoolSize) {
     return new FakeThreadPoolMetrics(poolName, maxPoolSize);
   }
 

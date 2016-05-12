@@ -719,8 +719,8 @@ public class MetricsTest extends VertxTestBase {
 
     await();
 
-    assertEquals(metrics.submitted(), 100);
-    assertEquals(metrics.completed(), 100);
+    assertEquals(metrics.numberOfSubmittedTask(), 100);
+    assertEquals(metrics.numberOfCompletedTasks(), 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
@@ -772,8 +772,8 @@ public class MetricsTest extends VertxTestBase {
 
     await();
 
-    assertEquals(metrics.submitted(), 100);
-    assertEquals(metrics.completed(), 100);
+    assertEquals(metrics.numberOfSubmittedTask(), 100);
+    assertEquals(metrics.numberOfCompletedTasks(), 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
@@ -847,8 +847,8 @@ public class MetricsTest extends VertxTestBase {
     await();
 
     // The verticle deployment is also executed on the worker thread pool
-    assertEquals(metrics.submitted(), count + 1);
-    assertEquals(metrics.completed(), count + 1);
+    assertEquals(metrics.numberOfSubmittedTask(), count + 1);
+    assertEquals(metrics.numberOfCompletedTasks(), count + 1);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
@@ -900,8 +900,8 @@ public class MetricsTest extends VertxTestBase {
 
     await();
 
-    assertEquals(metrics.submitted(), 100);
-    assertEquals(metrics.completed(), 100);
+    assertEquals(metrics.numberOfSubmittedTask(), 100);
+    assertEquals(metrics.numberOfCompletedTasks(), 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
@@ -909,6 +909,30 @@ public class MetricsTest extends VertxTestBase {
     assertEquals(metrics.numberOfIdleThreads(), 10);
     assertEquals(metrics.numberOfRunningTasks(), 0);
     assertEquals(metrics.numberOfWaitingTasks(), 0);
+  }
+
+  @Test
+  public void testWorkerPoolClose() {
+    WorkerExecutor ex1 = vertx.createWorkerExecutor("ex1");
+    WorkerExecutor ex1_ = vertx.createWorkerExecutor("ex1");
+    WorkerExecutor ex2 = vertx.createWorkerExecutor("ex2");
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    FakeThreadPoolMetrics metrics1 = (FakeThreadPoolMetrics) all.get("ex1");
+    FakeThreadPoolMetrics metrics2 = (FakeThreadPoolMetrics) all.get("ex2");
+    assertNotNull(metrics1);
+    assertNotNull(metrics2);
+    assertNotSame(metrics1, metrics2);
+    assertFalse(metrics1.isClosed());
+    assertFalse(metrics2.isClosed());
+    ex1_.close();
+    assertFalse(metrics1.isClosed());
+    assertFalse(metrics2.isClosed());
+    ex1.close();
+    assertTrue(metrics1.isClosed());
+    assertFalse(metrics2.isClosed());
+    ex2.close();
+    assertTrue(metrics1.isClosed());
+    assertTrue(metrics2.isClosed());
   }
 
   private Handler<Future<Void>> getSomeDumbTask() {

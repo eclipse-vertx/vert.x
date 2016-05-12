@@ -56,27 +56,26 @@ public class FakeThreadPoolMetrics implements PoolMetrics<Void> {
     return name;
   }
 
-  @Override
-  public synchronized Void taskSubmitted() {
+  public synchronized Void submitted() {
     submitted.incrementAndGet();
     waiting.incrementAndGet();
     return null;
   }
 
   @Override
-  public void taskRejected(Void task) {
+  public void rejected(Void t) {
     waiting.decrementAndGet();
   }
 
   @Override
-  public void taskBegin(Void task) {
+  public Void begin(Void t) {
     waiting.decrementAndGet();
     idle.decrementAndGet();
     running.incrementAndGet();
+    return null;
   }
 
-  @Override
-  public void taskEnd(Void task, boolean succeeded) {
+  public void end(Void t, boolean succeeded) {
     running.decrementAndGet();
     idle.incrementAndGet();
     completed.incrementAndGet();
@@ -97,11 +96,11 @@ public class FakeThreadPoolMetrics implements PoolMetrics<Void> {
     return closed.get();
   }
 
-  public int submitted() {
+  public int numberOfSubmittedTask() {
     return submitted.get();
   }
 
-  public int completed() {
+  public int numberOfCompletedTasks() {
     return completed.get();
   }
 

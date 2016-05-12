@@ -127,13 +127,7 @@ public abstract class ContextImpl implements ContextInternal {
 
   @Override
   public WorkerExecutor createWorkerExecutor() {
-    Executor orderedExecutor = workerPool.createOrderedExecutor();
-    return new WorkerExecutor() {
-      @Override
-      public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-        ContextImpl.this.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? orderedExecutor :  workerPool.executor(), workerPool.metrics());
-      }
-    };
+    return new WorkerExecutorImpl(this, workerPool, false);
   }
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
@@ -295,11 +289,12 @@ public abstract class ContextImpl implements ContextInternal {
   <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
       Executor exec, PoolMetrics metrics) {
-    Object metric = metrics != null ? metrics.taskSubmitted() : null;
+    Object queueMetric = metrics != null ? metrics.submitted() : null;
     try {
       exec.execute(() -> {
+        Object execMetric = null;
         if (metrics != null) {
-          metrics.taskBegin(metric);
+          execMetric = metrics.begin(queueMetric);
         }
         Future<T> res = Future.future();
         try {
@@ -314,7 +309,7 @@ public abstract class ContextImpl implements ContextInternal {
           res.fail(e);
         }
         if (metrics != null) {
-          metrics.taskEnd(metric, res.succeeded());
+          metrics.end(execMetric, res.succeeded());
         }
         if (resultHandler != null) {
           runOnContext(v -> res.setHandler(resultHandler));
@@ -323,7 +318,7 @@ public abstract class ContextImpl implements ContextInternal {
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
       if (metrics != null) {
-        metrics.taskRejected(metric);
+        metrics.rejected(queueMetric);
       }
     }
   }
@@ -336,7 +331,7 @@ public abstract class ContextImpl implements ContextInternal {
   }
 
   protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread, PoolMetrics metrics) {
-    Object metric = metrics != null ? metrics.taskSubmitted() : null;
+    Object metric = metrics != null ? metrics.submitted() : null;
     return () -> {
       Thread th = Thread.currentThread();
       if (!(th instanceof VertxThread)) {
@@ -351,7 +346,7 @@ public abstract class ContextImpl implements ContextInternal {
         }
       }
       if (metrics != null) {
-        metrics.taskBegin(metric);
+        metrics.begin(metric);
       }
       if (!DISABLE_TIMINGS) {
         current.executeStart();
@@ -364,7 +359,7 @@ public abstract class ContextImpl implements ContextInternal {
           hTask.handle(null);
         }
         if (metrics != null) {
-          metrics.taskEnd(metric, true);
+          metrics.end(metric, true);
         }
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
@@ -376,7 +371,7 @@ public abstract class ContextImpl implements ContextInternal {
           handler.handle(t);
         }
         if (metrics != null) {
-          metrics.taskEnd(metric, false);
+          metrics.end(metric, false);
         }
       } finally {
         // We don't unset the context after execution - this is done later when the context is closed via

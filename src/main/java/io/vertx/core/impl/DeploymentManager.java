@@ -420,7 +420,7 @@ public class DeploymentManager {
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
-      NamedWorkerExecutor workerExec = poolName != null ? vertx.createWorkerExecutor(poolName, options.getWorkerPoolSize()) : null;
+      WorkerExecutorImpl workerExec = poolName != null ? vertx.createWorkerExecutor(poolName, options.getWorkerPoolSize()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
       ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, pool, conf, tccl) :
         vertx.createEventLoopContext(deploymentID, pool, conf, tccl);

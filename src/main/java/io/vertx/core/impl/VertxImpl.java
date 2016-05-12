@@ -138,10 +138,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     ExecutorService workerExec = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
         new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime()));
-    PoolMetrics workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
+    PoolMetrics workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, "worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
         new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
-    PoolMetrics internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(internalBlockingExec, "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
+    PoolMetrics internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(internalBlockingExec, "worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
@@ -882,9 +882,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       synchronized (VertxImpl.this) {
         if (--refCount == 0) {
           releaseWorkerExecutor(name);
-          if (metrics != null) {
-            metrics.close();
-          }
+          close();
           workerExec.shutdownNow();
         }
       }
@@ -892,17 +890,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public NamedWorkerExecutor createWorkerExecutor(String name) {
+  public WorkerExecutorImpl createWorkerExecutor(String name) {
     return createWorkerExecutor(name, defaultWorkerPoolSize);
   }
 
   @Override
-  public NamedWorkerExecutor createWorkerExecutor(String name, int poolSize) {
+  public WorkerExecutorImpl createWorkerExecutor(String name, int poolSize) {
     return createWorkerExecutor(name, poolSize, defaultWorkerMaxExecTime);
   }
 
   @Override
-  public synchronized NamedWorkerExecutor createWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
+  public synchronized WorkerExecutorImpl createWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
     if (maxExecuteTime < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
@@ -912,13 +910,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
     if (sharedWorkerPool == null) {
       ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(name + "-", checker, true, maxExecuteTime));
-      PoolMetrics workerMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, name, poolSize) : null;
+      PoolMetrics workerMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, "worker", name, poolSize) : null;
       namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {
       sharedWorkerPool.refCount++;
     }
     ContextImpl context = getOrCreateContext();
-    NamedWorkerExecutor namedExec = new NamedWorkerExecutor(context, sharedWorkerPool);
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool, true);
     context.addCloseHook(namedExec);
     return namedExec;
   }

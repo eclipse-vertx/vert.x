@@ -17,6 +17,7 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.metrics.Measured;
 
 /**
  * An executor for executing blocking code in Vert.x .<p>
@@ -27,7 +28,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface WorkerExecutor {
+public interface WorkerExecutor extends Measured {
 
   /**
    * Safely execute some blocking code.
