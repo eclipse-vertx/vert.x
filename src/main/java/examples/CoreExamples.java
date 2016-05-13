@@ -80,7 +80,7 @@ public class CoreExamples {
   }
 
   public void workerExecutor1(Vertx vertx) {
-    WorkerExecutor executor = vertx.createWorkerExecutor("my-worker-pool");
+    WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool");
     executor.executeBlocking(future -> {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
@@ -102,7 +102,7 @@ public class CoreExamples {
     // 2 minutes
     long maxExecuteTime = 120000;
 
-    WorkerExecutor executor = vertx.createWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
+    WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
   }
 
   BlockingAPI someAPI = new BlockingAPI();

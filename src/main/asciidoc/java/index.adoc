@@ -297,7 +297,7 @@ Additional pools can be created for different purposes:
 
 [source,java]
 ----
-WorkerExecutor executor = vertx.createWorkerExecutor("my-worker-pool");
+WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool");
 executor.executeBlocking(future -> {
   // Call some blocking API that takes a significant amount of time to return
   String result = someAPI.blockingMethod("hello");
@@ -329,7 +329,7 @@ int poolSize = 10;
 // 2 minutes
 long maxExecuteTime = 120000;
 
-WorkerExecutor executor = vertx.createWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
+WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
 ----
 
 NOTE: the configuration is set when the worker pool is created

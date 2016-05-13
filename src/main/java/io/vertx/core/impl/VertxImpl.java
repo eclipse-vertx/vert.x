@@ -890,17 +890,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public WorkerExecutorImpl createWorkerExecutor(String name) {
-    return createWorkerExecutor(name, defaultWorkerPoolSize);
+  public WorkerExecutorImpl createSharedWorkerExecutor(String name) {
+    return createSharedWorkerExecutor(name, defaultWorkerPoolSize);
   }
 
   @Override
-  public WorkerExecutorImpl createWorkerExecutor(String name, int poolSize) {
-    return createWorkerExecutor(name, poolSize, defaultWorkerMaxExecTime);
+  public WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize) {
+    return createSharedWorkerExecutor(name, poolSize, defaultWorkerMaxExecTime);
   }
 
   @Override
-  public synchronized WorkerExecutorImpl createWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
+  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
     if (maxExecuteTime < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }

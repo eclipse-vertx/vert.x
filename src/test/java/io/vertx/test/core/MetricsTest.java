@@ -863,7 +863,7 @@ public class MetricsTest extends VertxTestBase {
     vertx.close(); // Close the instance automatically created
     vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
 
-    WorkerExecutor workerExec = vertx.createWorkerExecutor("my-pool", 10);
+    WorkerExecutor workerExec = vertx.createSharedWorkerExecutor("my-pool", 10);
 
     Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
 
@@ -913,9 +913,9 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testWorkerPoolClose() {
-    WorkerExecutor ex1 = vertx.createWorkerExecutor("ex1");
-    WorkerExecutor ex1_ = vertx.createWorkerExecutor("ex1");
-    WorkerExecutor ex2 = vertx.createWorkerExecutor("ex2");
+    WorkerExecutor ex1 = vertx.createSharedWorkerExecutor("ex1");
+    WorkerExecutor ex1_ = vertx.createSharedWorkerExecutor("ex1");
+    WorkerExecutor ex2 = vertx.createSharedWorkerExecutor("ex2");
     Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
     FakeThreadPoolMetrics metrics1 = (FakeThreadPoolMetrics) all.get("ex1");
     FakeThreadPoolMetrics metrics2 = (FakeThreadPoolMetrics) all.get("ex2");
