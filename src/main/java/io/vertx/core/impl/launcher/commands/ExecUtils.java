@@ -88,5 +88,42 @@ public class ExecUtils {
     return osName.contains("windows");
   }
 
+  /**
+   * Exits the JVM with the given exit code.
+   * @param code the code, {@code 0} for success. By convention a non zero value if return to denotes an
+   *             error.
+   */
+  public static void exit(int code) {
+    System.exit(code);
+  }
+
+  /**
+   * Exits the JVM and indicate an issue during the Vert.x initialization.
+   */
+  public static void exitBecauseOfVertxInitializationIssue() {
+    exit(1);
+  }
+
+  /**
+   * Exits the JVM and indicate an issue during the deployment of the main verticle.
+   */
+  public static void exitBecauseOfVertxDeploymentIssue() {
+    exit(5);
+  }
+
+  /**
+   * Exits the JVM and indicate an issue with a process creation or termination.
+   */
+  public static void exitBecauseOfProcessIssue() {
+    exit(2);
+  }
+
+  /**
+   * Exits the JVM and indicate an issue with the system configuration.
+   */
+  public static void exitBecauseOfSystemConfigurationIssue() {
+    exit(3);
+  }
+
 
 }

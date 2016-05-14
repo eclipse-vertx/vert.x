@@ -64,10 +64,12 @@ public class StartStopListCommandsTest extends CommandTestBase {
     String[] lines = output.toString().split(System.lineSeparator());
     String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     output.reset();
-    cli.dispatch(new String[]{"stop", id});
+    // pass --redeploy to not call system.exit
+    cli.dispatch(new String[]{"stop", id, "--redeploy"});
     assertThat(output.toString())
         .contains("Stopping vert.x application '" + id + "'")
-        .contains("Application '" + id + "' stopped");
+        .contains("Application '" + id + "' terminated with status 0");
+
 
     waitForShutdown();
 
@@ -102,10 +104,11 @@ public class StartStopListCommandsTest extends CommandTestBase {
     String[] lines = output.toString().split(System.lineSeparator());
     String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     output.reset();
-    cli.dispatch(new String[]{"stop", id});
+    // pass --redeploy to not call system.exit
+    cli.dispatch(new String[]{"stop", id, "--redeploy"});
     assertThat(output.toString())
         .contains("Stopping vert.x application '" + id + "'")
-        .contains("Application '" + id + "' stopped");
+        .contains("Application '" + id + "' terminated with status 0");
 
     waitForShutdown();
 
@@ -158,10 +161,11 @@ public class StartStopListCommandsTest extends CommandTestBase {
     String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     assertThat(id).isEqualToIgnoringCase("hello");
     output.reset();
-    cli.dispatch(new String[]{"stop", id});
+    // pass --redeploy to not call system.exit
+    cli.dispatch(new String[]{"stop", id, "--redeploy"});
     assertThat(output.toString())
         .contains("Stopping vert.x application '" + id + "'")
-        .contains("Application '" + id + "' stopped");
+        .contains("Application '" + id + "' terminated with status 0");
 
     waitForShutdown();
 
@@ -194,10 +198,11 @@ public class StartStopListCommandsTest extends CommandTestBase {
     String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     assertThat(id).isEqualToIgnoringCase("hello");
     output.reset();
-    cli.dispatch(new String[]{"stop", id});
+    // pass --redeploy to not call system.exit
+    cli.dispatch(new String[]{"stop", id, "--redeploy"});
     assertThat(output.toString())
         .contains("Stopping vert.x application '" + id + "'")
-        .contains("Application '" + id + "' stopped");
+        .contains("Application '" + id + "' terminated with status 0");
 
     waitForShutdown();
 
@@ -230,10 +235,11 @@ public class StartStopListCommandsTest extends CommandTestBase {
     String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     assertThat(id).isEqualToIgnoringCase("hello");
     output.reset();
-    cli.dispatch(new String[]{"stop", id});
+    // pass --redeploy to not call system.exit
+    cli.dispatch(new String[]{"stop", id, "--redeploy"});
     assertThat(output.toString())
         .contains("Stopping vert.x application '" + id + "'")
-        .contains("Application '" + id + "' stopped");
+        .contains("Application '" + id + "' terminated with status 0");
 
     waitForShutdown();
 
@@ -261,6 +267,18 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
     command = "java foo bar -Dvertx.id=xxx --cluster";
     assertThat(ListCommand.extractApplicationDetails(command)).isEqualTo("");
+  }
+
+  @Test
+  public void testStoppingAnUnknownProcess() {
+    record();
+    String id = "this-process-does-not-exist";
+    output.reset();
+    // pass --redeploy to not call system.exit
+    cli.dispatch(new String[]{"stop", id, "--redeploy"});
+    assertThat(output.toString())
+        .contains("Stopping vert.x application '" + id + "'")
+        .contains("Cannot find process for application using the id");
   }
 
   @Test

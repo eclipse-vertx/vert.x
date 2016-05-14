@@ -278,7 +278,8 @@ public class Watcher implements Runnable {
             .redirectOutput(ProcessBuilder.Redirect.INHERIT)
             .start();
 
-        process.waitFor();
+        int status = process.waitFor();
+        System.out.println("User command terminated with status " + status);
       } catch (Throwable e) {
         System.err.println("Error while executing the on-redeploy command : '" + cmd + "'");
         e.printStackTrace();
