@@ -271,6 +271,10 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
   @Test
   public void testStoppingAnUnknownProcess() {
+    if (ExecUtils.isWindows()) {
+      // Test skipped on windows, because on windows we do not check whether or not the pid exists.
+      return;
+    }
     record();
     String id = "this-process-does-not-exist";
     output.reset();
