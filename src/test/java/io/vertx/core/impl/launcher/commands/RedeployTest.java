@@ -125,4 +125,36 @@ public class RedeployTest extends CommandTestBase {
     }, 20000);
   }
 
+  @Test
+  public void testRedeploymentWithSlash() throws IOException {
+    cli.dispatch(new Launcher(), new String[]{"run",
+        // Use "/", on windows it gets replaced.
+        HttpTestVerticle.class.getName(), "--redeploy=**" + "/" + "*.txt",
+        "--launcher-class=" + Launcher.class.getName(),
+        ExecUtils.isWindows() ? "--redeploy-termination-period=3000" : ""
+    });
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    long start1 = RunCommandTest.getContent().getLong("startTime");
+
+    File file = new File("target/test-classes/foo.txt");
+    if (file.exists()) {
+      file.delete();
+    }
+    file.createNewFile();
+
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200 && start1 != RunCommandTest.getContent().getLong("startTime");
+      } catch (IOException e) {
+        return false;
+      }
+    }, 20000);
+  }
+
 }
