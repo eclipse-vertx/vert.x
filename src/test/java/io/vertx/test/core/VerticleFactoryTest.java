@@ -449,6 +449,29 @@ public class VerticleFactoryTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testDeploymentOnClosedVertxWithCompletionHandler() {
+    TestVerticle verticle = new TestVerticle();
+    vertx.close(done -> {
+      vertx.deployVerticle(verticle, ar -> {
+        assertFalse(ar.succeeded());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testDeploymentOnClosedVertxWithoutCompletionHandler() {
+    TestVerticle verticle = new TestVerticle();
+    vertx.close(done -> {
+      vertx.deployVerticle(verticle);
+      testComplete();
+    });
+    await();
+  }
+
+
   class TestVerticleFactory implements VerticleFactory {
 
     String prefix;
