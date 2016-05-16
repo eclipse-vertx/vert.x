@@ -148,8 +148,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
-    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.fileResolver = new FileResolver(this);
+    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
     this.haEnabled = options.isClustered() && options.isHAEnabled();
     if (options.isClustered()) {
