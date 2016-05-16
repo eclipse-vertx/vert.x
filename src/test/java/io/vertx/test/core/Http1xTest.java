@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -2227,5 +2228,46 @@ public class Http1xTest extends HttpTest {
     assertEquals(Arrays.asList("/second", "/third"), responses);
     awaitLatch(respLatch);
     server.close();
+  }
+
+  @Test
+  public void testClientConnectionExceptionHandler() throws Exception {
+    server.requestHandler(req -> {
+      NetSocket so = req.netSocket();
+      so.write(Buffer.buffer(TestUtils.randomAlphaString(40) + "\r\n"));
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+    });
+    req.connectionHandler(conn -> {
+      conn.exceptionHandler(err -> {
+        testComplete();
+      });
+    });
+    req.sendHead();
+    await();
+  }
+
+  @Test
+  public void testServerConnectionExceptionHandler() throws Exception {
+    server.connectionHandler(conn -> {
+      conn.exceptionHandler(err -> {
+        assertTrue(err instanceof TooLongFrameException);
+        testComplete();
+      });
+    });
+    server.requestHandler(req -> {
+      fail();
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+    });
+    req.putHeader("the_header", TestUtils.randomAlphaString(10000));
+    req.sendHead();
+    await();
   }
 }

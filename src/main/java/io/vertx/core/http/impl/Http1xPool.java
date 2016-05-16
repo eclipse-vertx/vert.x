@@ -117,20 +117,16 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
   }
 
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-    ClientConnection conn = new ClientConnection(version, client, waiter::handleFailure, ch,
+    ClientConnection conn = new ClientConnection(version, client, ch,
         ssl, host, port, context, this, client.metrics);
-    conn.closeHandler(v -> {
-      // The connection has been closed - tell the pool about it, this allows the pool to create more
-      // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
-      // gets the closed on, they will check if it's closed and if so get another one.
-      connectionClosed(conn);
-    });
+    conn.exceptionHandler(waiter::handleFailure);
     ClientHandler handler = ch.pipeline().get(ClientHandler.class);
     handler.conn = conn;
     synchronized (queue) {
       allConnections.add(conn);
     }
     connectionMap.put(ch, conn);
+    waiter.handleConnection(conn);
     deliverStream(conn, waiter);
   }
 

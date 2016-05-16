@@ -694,6 +694,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         connectionMap.put(ch, conn);
         reqHandler.context.executeFromIO(() -> {
           conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          Handler<HttpConnection> connHandler = reqHandler.handler.connectionHandler;
+          if (connHandler != null) {
+            connHandler.handle(conn);
+          }
           conn.handleMessage(msg);
         });
       }

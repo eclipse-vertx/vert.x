@@ -17,7 +17,6 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
@@ -25,7 +24,14 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 
 /**
- * Represents an HTTP/2 connection.<p/>
+ * Represents an HTTP connection.
+ * <p/>
+ * HTTP/1.x connection provides an limited implementation, the following methods are implemented:
+ * <ul>
+ *   <li>{@link #close}</li>
+ *   <li>{@link #closeHandler}</li>
+ *   <li>{@link #exceptionHandler}</li>
+ * </ul>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -49,13 +55,15 @@ public interface HttpConnection {
   }
 
   /**
-   * Send a go away frame to the remote endpoint of the connection.<p/>
-   *
+   * Send a go away frame to the remote endpoint of the connection.
+   * <p/>
    * <ul>
    *   <li>a {@literal GOAWAY} frame is sent to the to the remote endpoint with the {@code errorCode} and {@@code debugData}</li>
    *   <li>any stream created after the stream identified by {@code lastStreamId} will be closed</li>
    *   <li>for an {@literal errorCode} is different than {@literal 0} when all the remaining streams are closed this connection will be closed automatically</li>
    * </ul>
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param errorCode the {@literal GOAWAY} error code
    * @param lastStreamId the last stream id
@@ -67,6 +75,8 @@ public interface HttpConnection {
 
   /**
    * Set an handler called when a {@literal GOAWAY} frame is received.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
@@ -76,6 +86,8 @@ public interface HttpConnection {
 
   /**
    * Set an handler called when a {@literal GOAWAY} frame has been sent or received and all connections are closed.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
@@ -86,6 +98,8 @@ public interface HttpConnection {
   /**
    * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current active streams
    * are closed or after a time out of 30 seconds.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @return a reference to this, so the API can be used fluently
    */
@@ -95,6 +109,8 @@ public interface HttpConnection {
   /**
    * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current streams
    * will be closed or the {@code timeout} is fired.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param timeoutMs the timeout in milliseconds
    * @return a reference to this, so the API can be used fluently
@@ -112,17 +128,21 @@ public interface HttpConnection {
   HttpConnection closeHandler(Handler<Void> handler);
 
   /**
-   * Close the connection and all the currently active streams. A {@literal GOAWAY} frame will be sent before.<p/>
+   * Close the connection and all the currently active streams.
+   * <p/>
+   * An HTTP/2 connection will send a {@literal GOAWAY} frame before.
    */
   void close();
 
   /**
-   * @return the latest server settings acknowledged by the remote endpoint
+   * @return the latest server settings acknowledged by the remote endpoint - this is not implemented for HTTP/1.x
    */
   Http2Settings settings();
 
   /**
    * Send to the remote endpoint an update of the server settings.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param settings the new settings
    * @return a reference to this, so the API can be used fluently
@@ -131,9 +151,11 @@ public interface HttpConnection {
   HttpConnection updateSettings(Http2Settings settings);
 
   /**
-   * Send to the remote endpoint an update of this endpoint settings.<p/>
-   *
+   * Send to the remote endpoint an update of this endpoint settings
+   * <p/>
    * The {@code completionHandler} will be notified when the remote endpoint has acknowledged the settings.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param settings the new settings
    * @param completionHandler the handler notified when the settings have been acknowledged by the remote endpoint
@@ -143,12 +165,14 @@ public interface HttpConnection {
   HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler);
 
   /**
-   * @return the current remote endpoint settings for this connection
+   * @return the current remote endpoint settings for this connection - this is not implemented for HTTP/1.x
    */
   Http2Settings remoteSettings();
 
   /**
    * Set an handler that is called when remote endpoint {@link Http2Settings} are updated.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param handler the handler for remote endpoint settings
    * @return a reference to this, so the API can be used fluently
@@ -157,13 +181,9 @@ public interface HttpConnection {
   HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler);
 
   /**
-   * @return the handler for remote endpoint settings
-   */
-  @GenIgnore
-  Handler<Http2Settings> remoteSettingsHandler();
-
-  /**
    * Send a {@literal PING} frame to the remote endpoint.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param data the 8 bytes data of the frame
    * @param pongHandler an async result handler notified with pong reply or the failure
@@ -174,6 +194,8 @@ public interface HttpConnection {
 
   /**
    * Set an handler notified when a {@literal PING} frame is received from the remote endpoint.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
    *
    * @param handler the handler to be called when a {@literal PING} is received
    * @return a reference to this, so the API can be used fluently
@@ -190,9 +212,4 @@ public interface HttpConnection {
   @Fluent
   HttpConnection exceptionHandler(Handler<Throwable> handler);
 
-  /**
-   * @return the handler for exceptions
-   */
-  @GenIgnore
-  Handler<Throwable> exceptionHandler();
 }

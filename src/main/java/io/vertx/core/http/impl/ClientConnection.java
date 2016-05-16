@@ -23,6 +23,8 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
+import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
@@ -74,7 +76,6 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private final Http1xPool pool;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
-  private final Handler<Throwable> exceptionHandler;
   private final Object metric;
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
@@ -88,7 +89,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(HttpVersion version, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
+  ClientConnection(HttpVersion version, HttpClientImpl client, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context, metrics);
     this.client = client;
@@ -96,7 +97,6 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     this.host = host;
     this.port = port;
     this.pool = pool;
-    this.exceptionHandler = exceptionHandler;
     this.metrics = metrics;
     this.metric = metrics.connected(remoteAddress(), remoteName());
     this.version = version;
@@ -144,8 +144,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(channel).addListener(future -> {
-        if (!future.isSuccess() && exceptionHandler != null) {
-          exceptionHandler.handle(future.cause());
+        Handler<Throwable> handler = exceptionHandler();
+        if (!future.isSuccess() && handler != null) {
+          handler.handle(future.cause());
         }
       });
     } catch (Exception e) {
@@ -221,9 +222,10 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     private void handleException(WebSocketHandshakeException e) {
       handshaking = false;
       buffered.clear();
-      if (exceptionHandler != null) {
+      Handler<Throwable> handler = exceptionHandler();
+      if (handler != null) {
         context.executeFromIO(() -> {
-          exceptionHandler.handle(e);
+          handler.handle(e);
         });
       } else {
         log.error("Error in websocket handshake", e);
@@ -251,8 +253,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
   }
 
-  public void closeHandler(Handler<Void> handler) {
-    this.closeHandler = handler;
+  public ClientConnection closeHandler(Handler<Void> handler) {
+    return (ClientConnection) super.closeHandler(handler);
   }
 
   public boolean isValid() {
@@ -403,6 +405,11 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     } else if (currentResponse != null) {
       currentResponse.handleException(e);
     }
+
+    // The connection has been closed - tell the pool about it, this allows the pool to create more
+    // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
+    // gets the closed on, they will check if it's closed and if so get another one.
+    pool.connectionClosed(this);
   }
 
   public ContextImpl getContext() {
@@ -582,5 +589,72 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   @Override
   public int id() {
     return -1;
+  }
+
+  //
+
+  @Override
+  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public HttpConnection shutdown() {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public HttpConnection shutdown(long timeoutMs) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public Http2Settings settings() {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public HttpConnection updateSettings(Http2Settings settings) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public Http2Settings remoteSettings() {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+  }
+
+  @Override
+  public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+  }
+
+  @Override
+  public ClientConnection exceptionHandler(Handler<Throwable> handler) {
+    return (ClientConnection) super.exceptionHandler(handler);
   }
 }

@@ -378,7 +378,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (stream == null) {
         throw new IllegalStateException("Not yet connected");
       }
-      return (HttpConnection) stream.connection();
+      return stream.connection();
     }
   }
 
@@ -589,8 +589,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         @Override
         void handleConnection(HttpClientConnection conn) {
           synchronized (HttpClientRequestImpl.this) {
-            if (connectionHandler != null && conn instanceof HttpConnection) {
-              connectionHandler.handle((HttpConnection) conn);
+            if (connectionHandler != null) {
+              connectionHandler.handle(conn);
             }
           }
         }

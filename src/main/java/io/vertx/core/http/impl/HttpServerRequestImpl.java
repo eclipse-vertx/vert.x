@@ -357,7 +357,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public HttpConnection connection() {
-    return null;
+    return conn;
   }
 
   void handleData(Buffer data) {

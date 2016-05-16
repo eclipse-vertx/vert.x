@@ -17,11 +17,12 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.Context;
+import io.vertx.core.http.HttpConnection;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface HttpClientConnection {
+interface HttpClientConnection extends HttpConnection {
 
   Context getContext();
 

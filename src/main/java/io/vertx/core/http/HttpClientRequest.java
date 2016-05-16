@@ -321,13 +321,13 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   void reset(long code);
 
   /**
-   * @return the {@link HttpConnection} associated with this request when it is an HTTP/2 connection, null otherwise
+   * @return the {@link HttpConnection} associated with this request
    */
   @CacheReturn
   HttpConnection connection();
 
   /**
-   * Set a connection handler called when an HTTP/2 connection has been established.
+   * Set a connection handler called when an HTTP connection has been established.
    *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently

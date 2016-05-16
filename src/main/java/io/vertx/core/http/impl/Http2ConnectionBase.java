@@ -21,7 +21,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -90,7 +89,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Http2Settings serverSettings = new Http2Settings();
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
-  private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> pingHandler;
   private boolean closed;
 
@@ -147,10 +145,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
           }
         });
       }
-      Handler<Throwable> handler = exceptionHandler;
-      if (handler != null) {
-        handler.handle(cause);
-      }
+      handleException(cause);
     }
   }
 
@@ -340,10 +335,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized HttpConnection closeHandler(Handler<Void> handler) {
-    closed = true;
-    closeHandler = handler;
-    return this;
+  public Http2ConnectionBase closeHandler(Handler<Void> handler) {
+    return (Http2ConnectionBase) super.closeHandler(handler);
   }
 
   @Override
@@ -356,11 +349,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
     clientSettingsHandler = handler;
     return this;
-  }
-
-  @Override
-  public synchronized Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler() {
-    return clientSettingsHandler;
   }
 
   @Override
@@ -445,14 +433,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized HttpConnection exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
-    return this;
-  }
-
-  @Override
-  public synchronized Handler<Throwable> exceptionHandler() {
-    return exceptionHandler;
+  public synchronized Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
+    return (Http2ConnectionBase) super.exceptionHandler(handler);
   }
 
   // Private
