@@ -23,6 +23,7 @@ import io.vertx.core.logging.LoggerFactory;
 import java.io.File;
 import java.nio.file.WatchService;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A file alteration monitor based on a home made file system scan and watching files matching a set of includes
@@ -74,7 +75,10 @@ public class Watcher implements Runnable {
                  String onRedeployCommand, long gracePeriod, long scanPeriod) {
     this.gracePeriod = gracePeriod;
     this.root = root;
-    this.includes = includes;
+    // If the include list contains /, replace them by the system file separator, so on windows you can still use
+    // "/", it will be replaced by "\", On other systems, it does nothing. Be aware that it lets windows users uses
+    // "/" but not Linux and Mac user uses "\".
+    this.includes = includes.stream().map(incl -> incl.replace("/", File.separator)).collect(Collectors.toList());
     this.deploy = deploy;
     this.undeploy = undeploy;
     this.cmd = onRedeployCommand;

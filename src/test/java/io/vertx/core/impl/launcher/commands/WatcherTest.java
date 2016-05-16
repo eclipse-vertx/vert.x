@@ -51,7 +51,8 @@ public class WatcherTest extends CommandTestBase {
     deploy = new AtomicInteger();
     undeploy = new AtomicInteger();
 
-    watcher = new Watcher(root, Collections.singletonList("**" + File.separator + "*.txt"),
+    // Use "/" on purpose, on windows it should replace it by "\".
+    watcher = new Watcher(root, Collections.singletonList("**" + "/" + "*.txt"),
         next -> {
           deploy.incrementAndGet();
           if (next != null) {
