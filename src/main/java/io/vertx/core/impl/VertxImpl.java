@@ -539,7 +539,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       closed = this.closed;
     }
     if (closed) {
-      completionHandler.handle(Future.failedFuture("Vert.x closed"));
+      if (completionHandler != null) {
+        completionHandler.handle(Future.failedFuture("Vert.x closed"));
+      }
     } else {
       deploymentManager.deployVerticle(verticle, options, completionHandler);
     }
