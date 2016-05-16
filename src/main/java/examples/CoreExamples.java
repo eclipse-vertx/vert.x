@@ -310,6 +310,14 @@ public class CoreExamples {
     );
   }
 
+  public void configureHosts() {
+    Vertx vertx = Vertx.vertx(new VertxOptions().
+        setHostnameResolverOptions(
+            new HostnameResolverOptions().
+                setHostsPath("/path/to/hosts"))
+    );
+  }
+
   public void deployVerticleWithDifferentWorkerPool(Vertx vertx) {
     vertx.deployVerticle("the-verticle", new DeploymentOptions().setWorkerPoolName("the-specific-pool"));
   }

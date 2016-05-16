@@ -1214,6 +1214,13 @@
  * The default port of a DNS server is `53`, when a server uses a different port, this port can be set
  * using a colon delimiter: `192.168.0.2:40000`.
  *
+ * The resolver can be configured to use an alternative _hosts_ file:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#configureHosts}
+ * ----
+ *
  * == High Availability and Fail-Over
  *
  * Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x

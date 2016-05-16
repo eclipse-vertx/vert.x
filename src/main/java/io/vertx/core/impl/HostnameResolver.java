@@ -17,6 +17,9 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.resolver.DefaultHostsFileEntriesResolver;
+import io.netty.resolver.HostsFileEntriesResolver;
+import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.InetNameResolver;
 import io.netty.resolver.dns.DnsNameResolverBuilder;
 import io.netty.resolver.dns.DnsServerAddresses;
@@ -30,11 +33,15 @@ import io.vertx.core.VertxException;
 import io.vertx.core.dns.HostnameResolverOptions;
 import io.vertx.core.json.JsonObject;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -71,6 +78,32 @@ public class HostnameResolver {
         DnsServerAddresses nameServerAddresses = DnsServerAddresses.sequential(serverList);
         builder.nameServerAddresses(nameServerAddresses);
       }
+
+
+      Map<String, InetAddress> entries;
+      if (options.getHostsPath() != null) {
+        File file = vertx.resolveFile(options.getHostsPath()).getAbsoluteFile();
+        try {
+          if (!file.exists() || !file.isFile()) {
+            throw new IOException();
+          }
+          entries = HostsFileParser.parse(file);
+        } catch (IOException e) {
+          throw new VertxException("Cannot read hosts file " + file.getAbsolutePath());
+        }
+      } else if (options.getHostsValue() != null) {
+        try {
+          entries = HostsFileParser.parse(new StringReader(options.getHostsValue().toString()));
+        } catch (IOException e) {
+          throw new VertxException("Cannot read hosts config ", e);
+        }
+      } else {
+        entries = null;
+      }
+      if (entries != null) {
+        builder.hostsFileEntriesResolver(entries::get);
+      }
+
       builder.optResourceEnabled(options.isOptResourceEnabled());
       builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
       builder.negativeTtl(options.getCacheNegativeTimeToLive());
