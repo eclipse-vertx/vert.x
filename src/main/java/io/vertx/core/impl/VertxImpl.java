@@ -138,18 +138,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     ExecutorService workerExec = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
         new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime()));
-    PoolMetrics workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
+    PoolMetrics workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, "worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
         new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
-    PoolMetrics internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(internalBlockingExec, "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
+    PoolMetrics internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(internalBlockingExec, "worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
-    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.fileResolver = new FileResolver(this);
+    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
     this.haEnabled = options.isClustered() && options.isHAEnabled();
     if (options.isClustered()) {
@@ -539,7 +539,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       closed = this.closed;
     }
     if (closed) {
-      completionHandler.handle(Future.failedFuture("Vert.x closed"));
+      if (completionHandler != null) {
+        completionHandler.handle(Future.failedFuture("Vert.x closed"));
+      }
     } else {
       deploymentManager.deployVerticle(verticle, options, completionHandler);
     }
@@ -882,9 +884,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       synchronized (VertxImpl.this) {
         if (--refCount == 0) {
           releaseWorkerExecutor(name);
-          if (metrics != null) {
-            metrics.close();
-          }
+          close();
           workerExec.shutdownNow();
         }
       }
@@ -892,17 +892,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public NamedWorkerExecutor createWorkerExecutor(String name) {
-    return createWorkerExecutor(name, defaultWorkerPoolSize);
+  public WorkerExecutorImpl createSharedWorkerExecutor(String name) {
+    return createSharedWorkerExecutor(name, defaultWorkerPoolSize);
   }
 
   @Override
-  public NamedWorkerExecutor createWorkerExecutor(String name, int poolSize) {
-    return createWorkerExecutor(name, poolSize, defaultWorkerMaxExecTime);
+  public WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize) {
+    return createSharedWorkerExecutor(name, poolSize, defaultWorkerMaxExecTime);
   }
 
   @Override
-  public synchronized NamedWorkerExecutor createWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
+  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
     if (maxExecuteTime < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
@@ -912,13 +912,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
     if (sharedWorkerPool == null) {
       ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(name + "-", checker, true, maxExecuteTime));
-      PoolMetrics workerMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, name, poolSize) : null;
+      PoolMetrics workerMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, "worker", name, poolSize) : null;
       namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {
       sharedWorkerPool.refCount++;
     }
     ContextImpl context = getOrCreateContext();
-    NamedWorkerExecutor namedExec = new NamedWorkerExecutor(context, sharedWorkerPool);
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool, true);
     context.addCloseHook(namedExec);
     return namedExec;
   }

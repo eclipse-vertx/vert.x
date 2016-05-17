@@ -20,6 +20,8 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.HostnameResolverOptions;
@@ -35,6 +37,7 @@ import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -258,6 +261,50 @@ public class HostnameResolutionTest extends VertxTestBase {
     awaitLatch(connectLatch);
     h.addListener(onSuccess(channel -> {
       assertEquals(channelThread.get(), Thread.currentThread());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testInvalidHostsConfig() {
+    try {
+      HostnameResolverOptions options = new HostnameResolverOptions().setHostsPath("whatever.txt");
+      Vertx.vertx(new VertxOptions().setHostnameResolverOptions(options));
+      fail();
+    } catch (VertxException ignore) {
+    }
+  }
+
+  @Test
+  public void testResolveFromClasspath() {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setHostnameResolverOptions(new HostnameResolverOptions().setHostsPath("hosts_config.txt")));
+    vertx.resolveHostname("server.net", onSuccess(addr -> {
+      assertEquals("192.168.0.15", addr.getHostAddress());
+      assertEquals("server.net", addr.getHostName());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testResolveFromFile() {
+    File f = new File(new File(new File(new File("src"), "test"), "resources"), "hosts_config.txt");
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setHostnameResolverOptions(new HostnameResolverOptions().setHostsPath(f.getAbsolutePath())));
+    vertx.resolveHostname("server.net", onSuccess(addr -> {
+      assertEquals("192.168.0.15", addr.getHostAddress());
+      assertEquals("server.net", addr.getHostName());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testResolveFromBuffer() {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setHostnameResolverOptions(new HostnameResolverOptions().setHostsValue(Buffer.buffer("192.168.0.15 server.net"))));
+    vertx.resolveHostname("server.net", onSuccess(addr -> {
+      assertEquals("192.168.0.15", addr.getHostAddress());
+      assertEquals("server.net", addr.getHostName());
       testComplete();
     }));
     await();

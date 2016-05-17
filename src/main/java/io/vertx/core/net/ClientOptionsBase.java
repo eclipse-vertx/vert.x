@@ -39,6 +39,9 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public static final boolean DEFAULT_TRUST_ALL = false;
 
+  /**
+   * The default value of the client metrics = "":
+   */
   public static final String DEFAULT_METRICS_NAME = "";
 
   private int connectTimeout;

@@ -39,7 +39,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   @Test
   public void testThread() {
     String poolName = TestUtils.randomAlphaString(10);
-    WorkerExecutor worker = vertx.createWorkerExecutor(poolName);
+    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName);
     AtomicBoolean onVertxThread = new AtomicBoolean();
     AtomicBoolean onWorkerThread = new AtomicBoolean();
     AtomicBoolean onEventLoopThread = new AtomicBoolean();
@@ -65,7 +65,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   @Test
   public void testOrdered() {
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
-    WorkerExecutor worker = vertx.createWorkerExecutor(poolName);
+    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName);
     int num = 1000;
     AtomicReference<Thread> t = new AtomicReference<>();
     CountDownLatch submitted = new CountDownLatch(1);
@@ -102,7 +102,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     int num = 5;
     waitFor(num);
-    WorkerExecutor worker = vertx.createWorkerExecutor(poolName);
+    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName);
     CountDownLatch latch1 = new CountDownLatch(num);
     CountDownLatch latch2 = new CountDownLatch(1);
     for (int i = 0;i < num;i++) {
@@ -130,7 +130,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     int poolSize = 5;
     waitFor(poolSize);
-    WorkerExecutor worker = vertx.createWorkerExecutor(poolName, poolSize);
+    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName, poolSize);
     CountDownLatch latch1 = new CountDownLatch(poolSize * 100);
     Set<String> names = Collections.synchronizedSet(new HashSet<>());
     for (int i = 0;i < poolSize * 100;i++) {
@@ -148,8 +148,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testCloseWorkerPool() throws Exception {
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     AtomicReference<Thread> thread = new AtomicReference<>();
-    WorkerExecutor worker1 = vertx.createWorkerExecutor(poolName);
-    WorkerExecutor worker2 = vertx.createWorkerExecutor(poolName);
+    WorkerExecutor worker1 = vertx.createSharedWorkerExecutor(poolName);
+    WorkerExecutor worker2 = vertx.createSharedWorkerExecutor(poolName);
     worker1.executeBlocking(fut -> {
       thread.set(Thread.currentThread());
     }, ar -> {
@@ -169,7 +169,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
-        WorkerExecutor pool = vertx.createWorkerExecutor(poolName);
+        WorkerExecutor pool = vertx.createSharedWorkerExecutor(poolName);
         pool.executeBlocking(fut -> {
           thread.set(Thread.currentThread());
         }, ar -> {

@@ -481,14 +481,14 @@ public interface Vertx extends Measured {
   EventLoopGroup nettyEventLoopGroup();
 
   /**
-   * Like {@link #createWorkerExecutor(String, int)} but with the {@link VertxOptions#setWorkerPoolSize} {@code poolSize}.
+   * Like {@link #createSharedWorkerExecutor(String, int)} but with the {@link VertxOptions#setWorkerPoolSize} {@code poolSize}.
    */
-  WorkerExecutor createWorkerExecutor(String name);
+  WorkerExecutor createSharedWorkerExecutor(String name);
 
   /**
-   * Like {@link #createWorkerExecutor(String, int, long)} but with the {@link VertxOptions#setMaxWorkerExecuteTime} {@code maxExecuteTime}.
+   * Like {@link #createSharedWorkerExecutor(String, int, long)} but with the {@link VertxOptions#setMaxWorkerExecuteTime} {@code maxExecuteTime}.
    */
-  WorkerExecutor createWorkerExecutor(String name, int poolSize);
+  WorkerExecutor createSharedWorkerExecutor(String name, int poolSize);
 
   /**
    * Create a named worker executor, the executor should be closed when it's not needed anymore to release
@@ -505,7 +505,7 @@ public interface Vertx extends Measured {
    * @param maxExecuteTime the value of max worker execute time, in ms
    * @return the named worker executor
    */
-  WorkerExecutor createWorkerExecutor(String name, int poolSize, long maxExecuteTime);
+  WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 
   /**
    * Set a default exception handler for {@link Context}, set on {@link Context#exceptionHandler(Handler)} at creation.

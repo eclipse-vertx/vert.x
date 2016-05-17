@@ -36,6 +36,12 @@ public class HostnameResolverOptionsConverter {
     if (json.getValue("cacheNegativeTimeToLive") instanceof Number) {
       obj.setCacheNegativeTimeToLive(((Number)json.getValue("cacheNegativeTimeToLive")).intValue());
     }
+    if (json.getValue("hostsPath") instanceof String) {
+      obj.setHostsPath((String)json.getValue("hostsPath"));
+    }
+    if (json.getValue("hostsValue") instanceof String) {
+      obj.setHostsValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)json.getValue("hostsValue"))));
+    }
     if (json.getValue("maxQueries") instanceof Number) {
       obj.setMaxQueries(((Number)json.getValue("maxQueries")).intValue());
     }
@@ -60,6 +66,12 @@ public class HostnameResolverOptionsConverter {
     json.put("cacheMaxTimeToLive", obj.getCacheMaxTimeToLive());
     json.put("cacheMinTimeToLive", obj.getCacheMinTimeToLive());
     json.put("cacheNegativeTimeToLive", obj.getCacheNegativeTimeToLive());
+    if (obj.getHostsPath() != null) {
+      json.put("hostsPath", obj.getHostsPath());
+    }
+    if (obj.getHostsValue() != null) {
+      json.put("hostsValue", obj.getHostsValue().getBytes());
+    }
     json.put("maxQueries", obj.getMaxQueries());
     json.put("optResourceEnabled", obj.isOptResourceEnabled());
     json.put("queryTimeout", obj.getQueryTimeout());
