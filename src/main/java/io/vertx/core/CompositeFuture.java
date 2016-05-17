@@ -22,7 +22,7 @@ import io.vertx.core.impl.CompositeFutureImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
@@ -74,7 +74,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
 
   /**
    * Like {@link #all(Future, Future)} but with a list of futures.<p>
-   *
+   * <p>
    * When the list is empty, the returned future will be already completed.
    */
   static CompositeFuture all(List<Future> futures) {
@@ -122,11 +122,79 @@ public interface CompositeFuture extends Future<CompositeFuture> {
 
   /**
    * Like {@link #any(Future, Future)} but with a list of futures.<p>
-   *
+   * <p>
    * When the list is empty, the returned future will be already completed.
    */
   static CompositeFuture any(List<Future> futures) {
     return CompositeFutureImpl.any(futures.toArray(new Future[futures.size()]));
+  }
+
+  /**
+   * Reduction of futures.
+   * <p>
+   * When all futures succeed, then the resulting future succeeds with the reduction of their values using {@code zero}
+   * as an initializer, and {@code reducer} as a reduction function.
+   * <p>
+   * If any future fails, then the resulting future also fails with the first failing future exception.
+   *
+   * @param zero    the reduction initial value
+   * @param reducer the reduction function
+   * @param f1      the first future
+   * @param f2      the second future
+   * @param <T>     the futures base type for success values
+   * @param <U>     the reduction success value type
+   * @return a reduction future
+   */
+  static <T, U> Future<U> reduce(U zero, BiFunction<U, T, U> reducer, Future<? extends T> f1, Future<? extends T> f2) {
+    return CompositeFutureImpl.reduce(zero, reducer, f1, f2);
+  }
+
+  /**
+   * Reduction with 3 futures.
+   *
+   * @see CompositeFuture#reduce(Object, BiFunction, Future, Future)
+   */
+  static <T, U> Future<U> reduce(U zero, BiFunction<U, T, U> reducer, Future<? extends T> f1, Future<? extends T> f2, Future<? extends T> f3) {
+    return CompositeFutureImpl.reduce(zero, reducer, f1, f2, f3);
+  }
+
+  /**
+   * Reduction with 4 futures.
+   *
+   * @see CompositeFuture#reduce(Object, BiFunction, Future, Future)
+   */
+  static <T, U> Future<U> reduce(U zero, BiFunction<U, T, U> reducer, Future<? extends T> f1, Future<? extends T> f2, Future<? extends T> f3, Future<? extends T> f4) {
+    return CompositeFutureImpl.reduce(zero, reducer, f1, f2, f3, f4);
+  }
+
+  /**
+   * Reduction with 5 futures.
+   *
+   * @see CompositeFuture#reduce(Object, BiFunction, Future, Future)
+   */
+  static <T, U> Future<U> reduce(U zero, BiFunction<U, T, U> reducer, Future<? extends T> f1, Future<? extends T> f2, Future<? extends T> f3, Future<? extends T> f4, Future<? extends T> f5) {
+    return CompositeFutureImpl.reduce(zero, reducer, f1, f2, f3, f4, f5);
+  }
+
+  /**
+   * Reduction with 6 futures.
+   *
+   * @see CompositeFuture#reduce(Object, BiFunction, Future, Future)
+   */
+  static <T, U> Future<U> reduce(U zero, BiFunction<U, T, U> reducer, Future<? extends T> f1, Future<? extends T> f2, Future<? extends T> f3, Future<? extends T> f4, Future<? extends T> f5, Future<? extends T> f6) {
+    return CompositeFutureImpl.reduce(zero, reducer, f1, f2, f3, f4, f5, f6);
+  }
+
+  /**
+   * Reduction with a list of futures.
+   * <p>
+   * The resulting future succeeds with value {@code zero} if {@code futures} is an empty list.
+   *
+   * @see CompositeFuture#reduce(Object, BiFunction, Future, Future)
+   */
+  @SuppressWarnings("unchecked")
+  static <T, U> Future<U> reduce(U zero, BiFunction<U, T, U> reducer, List<Future<? extends T>> futures) {
+    return CompositeFutureImpl.reduce(zero, reducer, futures.toArray(new Future[futures.size()]));
   }
 
   @Override
@@ -174,13 +242,13 @@ public interface CompositeFuture extends Future<CompositeFuture> {
 
   /**
    * @return a list of the current completed values. If one future is not yet resolved or is failed, {@code} null
-   *         will be used
+   * will be used
    */
   @GenIgnore
   default <T> List<T> list() {
     int size = size();
     ArrayList<T> list = new ArrayList<>(size);
-    for (int index = 0;index < size;index++) {
+    for (int index = 0; index < size; index++) {
       list.add(result(index));
     }
     return list;
