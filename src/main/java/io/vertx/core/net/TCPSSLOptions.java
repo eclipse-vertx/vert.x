@@ -297,6 +297,16 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Set the key/cert options by delegating to an existing Java Security Provider.
+   * @param options the key store options
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setKeyProviderOptions(SecurityProviderOptions options) {
+    this.keyCertOptions = options;
+    return this;
+  }
+
+  /**
    * @return the trust options
    */
   public TrustOptions getTrustOptions() {
@@ -309,6 +319,16 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
+    this.trustOptions = options;
+    return this;
+  }
+
+  /**
+   * Set the trust options by delegating to an existing Java Security Provider.
+   * @param options the trust store options
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTrustProviderOptions(SecurityProviderOptions options) {
     this.trustOptions = options;
     return this;
   }
