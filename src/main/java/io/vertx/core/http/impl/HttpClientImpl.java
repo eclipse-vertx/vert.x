@@ -27,7 +27,6 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -73,9 +72,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           break;
       }
     }
-    this.sslHelper = new SSLHelper(options,
-        KeyStoreHelper.create(vertx, options.getKeyCertOptions()),
-        KeyStoreHelper.create(vertx, options.getTrustOptions())).
+    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).
         setApplicationProtocols(alpnVersions);
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {

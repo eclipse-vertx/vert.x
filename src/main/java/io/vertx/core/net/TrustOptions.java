@@ -15,6 +15,12 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.impl.KeyStoreHelper;
+
+import javax.net.ssl.TrustManagerFactory;
+
 /**
  * Certification authority configuration options.
  *
@@ -27,4 +33,13 @@ public interface TrustOptions {
    */
   TrustOptions clone();
 
+  /**
+   * Create and return the trust manager factory for these options.
+   *
+   * @param vertx the vertx instance
+   * @return the trust manager factory
+   */
+  default TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
+    return KeyStoreHelper.create((VertxInternal) vertx, this).getTrustMgrFactory((VertxInternal) vertx);
+  }
 }

@@ -80,7 +80,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
+    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
       if (creatingContext.isMultiThreadedWorkerContext()) {

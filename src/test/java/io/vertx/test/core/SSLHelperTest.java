@@ -41,10 +41,9 @@ public class SSLHelperTest extends VertxTestBase {
     context.init(null, null, null);
     SSLEngine engine = context.createSSLEngine();
     String[] expected = engine.getEnabledCipherSuites();
-    SSLHelper helper = new SSLHelper(
-        new HttpClientOptions(),
-        KeyStoreHelper.create((VertxInternal) vertx, TLSCert.JKS.getClientKeyCertOptions()),
-        KeyStoreHelper.create((VertxInternal) vertx, TLSCert.JKS.getClientTrustOptions()));
+    SSLHelper helper = new SSLHelper(new HttpClientOptions(),
+        TLSCert.JKS.getClientKeyCertOptions(),
+        TLSCert.JKS.getClientTrustOptions());
     SslContext ctx = helper.getContext((VertxInternal) vertx);
     assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
   }
@@ -54,8 +53,8 @@ public class SSLHelperTest extends VertxTestBase {
     Set<String> expected = OpenSsl.availableCipherSuites();
     SSLHelper helper = new SSLHelper(
         new HttpClientOptions().setSslEngine(io.vertx.core.net.SSLEngine.OPENSSL),
-        KeyStoreHelper.create((VertxInternal) vertx, TLSCert.PEM.getClientKeyCertOptions()),
-        KeyStoreHelper.create((VertxInternal) vertx, TLSCert.PEM.getClientTrustOptions()));
+        TLSCert.PEM.getClientKeyCertOptions(),
+        TLSCert.PEM.getClientTrustOptions());
     SslContext ctx = helper.getContext((VertxInternal) vertx);
     assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
   }
