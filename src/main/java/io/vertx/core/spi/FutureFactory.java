@@ -25,11 +25,11 @@ public interface FutureFactory {
 
   <T> Future<T> future();
 
-  <T> Future<T> completedFuture();
+  <T> Future<T> succeededFuture();
 
-  <T> Future<T> completedFuture(T result);
+  <T> Future<T> succeededFuture(T result);
 
-  <T> Future<T> completedFuture(Throwable t);
+  <T> Future<T> failedFuture(Throwable t);
 
-  <T> Future<T> completedFuture(String failureMessage, boolean failed);
+  <T> Future<T> failureFuture(String failureMessage);
 }
