@@ -240,7 +240,8 @@ public class RunCommand extends BareCommand {
 
       super.run();
       if (vertx == null) {
-        return; // Already logged.
+        // Already logged.
+        ExecUtils.exitBecauseOfVertxInitializationIssue();
       }
       deploymentOptions = new DeploymentOptions();
       configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
@@ -298,8 +299,7 @@ public class RunCommand extends BareCommand {
    * @param onCompletion an optional on-completion handler. If set it must be invoked at the end of this method.
    */
   protected synchronized void stopBackgroundApplication(Handler<Void> onCompletion) {
-    executionContext.execute("stop", vertxApplicationBackgroundId);
-
+    executionContext.execute("stop", vertxApplicationBackgroundId, "--redeploy");
     if (redeployTerminationPeriod > 0) {
       try {
         Thread.sleep(redeployTerminationPeriod);
@@ -383,6 +383,8 @@ public class RunCommand extends BareCommand {
   private void handleDeployFailed(Throwable cause) {
     if (executionContext.main() instanceof VertxLifecycleHooks) {
       ((VertxLifecycleHooks) executionContext.main()).handleDeployFailed(vertx, mainVerticle, deploymentOptions, cause);
+    } else {
+      ExecUtils.exitBecauseOfVertxDeploymentIssue();
     }
   }
 

@@ -22,7 +22,6 @@ import io.vertx.core.impl.launcher.CommandLineUtils;
 import io.vertx.core.spi.launcher.DefaultCommand;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -124,9 +123,10 @@ public class StartCommand extends DefaultCommand {
       }
       builder.start();
       out.println(id);
-    } catch (IOException e) {
+    } catch (Exception e) {
       out.println("Cannot create vert.x application process");
       e.printStackTrace(out);
+      ExecUtils.exitBecauseOfProcessIssue();
     }
 
   }
@@ -162,8 +162,8 @@ public class StartCommand extends DefaultCommand {
     }
 
     if (!java.isFile()) {
-      throw new IllegalStateException("Cannot find java executable - " + java.getAbsolutePath()
-          + " does not exist");
+      out.println("Cannot find java executable - " + java.getAbsolutePath() + " does not exist");
+      ExecUtils.exitBecauseOfSystemConfigurationIssue();
     }
     return java;
   }
