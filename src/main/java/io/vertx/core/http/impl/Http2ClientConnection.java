@@ -54,7 +54,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   final Http2Pool http2Pool;
   final HttpClientMetrics metrics;
   final Object metric;
-  long streamCount;
+  int streamCount;
 
   public Http2ClientConnection(Http2Pool http2Pool,
                                ContextImpl context,

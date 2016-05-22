@@ -55,6 +55,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
@@ -69,7 +70,9 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1655,6 +1658,54 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     req.end();
+    await();
+  }
+
+  @Test
+  public void testMaxConcurrencySingleConnection() throws Exception {
+    testMaxConcurrency(1, 5);
+  }
+
+  @Test
+  public void testMaxConcurrencyMultipleConnections() throws Exception {
+    testMaxConcurrency(3, 5);
+  }
+
+  private void testMaxConcurrency(int poolSize, int maxConcurrency) throws Exception {
+    int maxRequests = poolSize * maxConcurrency;
+    int totalRequests = maxRequests + maxConcurrency;
+    Set<HttpConnection> serverConn = new HashSet<>();
+    server.connectionHandler(conn -> {
+      serverConn.add(conn);
+      assertTrue(serverConn.size() <= poolSize);
+    });
+    ArrayList<HttpServerRequest> requests = new ArrayList<>();
+    server.requestHandler(req -> {
+      if (requests.size() < maxRequests) {
+        requests.add(req);
+        if (requests.size() == maxRequests) {
+          vertx.setTimer(300, v -> {
+            assertEquals(maxRequests, requests.size());
+            requests.forEach(r -> r.response().end());
+          });
+        }
+      } else {
+        req.response().end();
+      }
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions(clientOptions).setMaxPoolSize(poolSize).setMaxStreams(maxConcurrency));
+    AtomicInteger respCount = new AtomicInteger();
+    for (int i = 0;i < maxRequests + maxConcurrency;i++) {
+      client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+        resp.endHandler(v -> {
+          if (respCount.incrementAndGet() == totalRequests) {
+            testComplete();
+          }
+        });
+      });
+    }
     await();
   }
 }

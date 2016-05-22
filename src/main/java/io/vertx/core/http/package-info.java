@@ -1176,8 +1176,21 @@
  *
  * === HTTP/2 multiplexing
  *
- * For HTTP/2, the http client uses a single connection for each server, all the requests to the same server are
- * multiplexed on the same connection.
+ * HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
+ * connection for each server, all the streams to the same server are multiplexed on the same connection.
+ *
+ * When it is desirable to limit the number of concurrent streams per server and uses a connection
+ * pool instead of a single connection, {@link io.vertx.core.http.HttpClientOptions#setMaxStreams(int)}
+ * can be used.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#useMaxStreams}
+ * ----
+ *
+ * The maximum streams for a connection is a setting set on the client that limits the streams
+ * of a single connection. The effective value can be even lower if the server sets a lower limit
+ * with the {@link io.vertx.core.http.Http2Settings#setMaxConcurrentStreams SETTINGS_MAX_CONCURRENT_STREAMS} setting.
  *
  * HTTP/2 connections will not be closed by the client automatically. To close them you can call {@link io.vertx.core.http.HttpConnection#close()}
  * or close the client instance.

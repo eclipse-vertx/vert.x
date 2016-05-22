@@ -58,20 +58,9 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
     return version;
   }
 
-  public boolean getConnection(Waiter waiter) {
-    ClientConnection conn = availableConnections.poll();
-    if (conn != null && conn.isValid()) {
-      ContextImpl context = waiter.context;
-      if (context == null) {
-        context = conn.getContext();
-      } else if (context != conn.getContext()) {
-        ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
-      }
-      context.runOnContext(v -> deliverStream(conn, waiter));
-      return true;
-    } else {
-      return false;
-    }
+  @Override
+  ClientConnection pollConnection() {
+    return availableConnections.poll();
   }
 
   @Override

@@ -16,14 +16,14 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Context;
+import io.vertx.core.impl.ContextImpl;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 interface HttpClientConnection {
 
-  Context getContext();
+  ContextImpl getContext();
 
   void reportBytesWritten(long numberOfBytes);
 
