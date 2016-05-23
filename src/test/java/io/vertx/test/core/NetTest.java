@@ -24,6 +24,8 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import org.junit.Assume;
@@ -54,8 +56,11 @@ import static io.vertx.test.core.TestUtils.assertNullPointerException;
  */
 public class NetTest extends VertxTestBase {
 
+  private static final Logger log = LoggerFactory.getLogger(NetTest.class);
+
   private NetServer server;
   private NetClient client;
+  private TestProxyBase proxy;
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
@@ -80,6 +85,9 @@ public class NetTest extends VertxTestBase {
     }
     if (server != null) {
       awaitClose(server);
+    }
+    if (proxy != null) {
+      proxy.stop();
     }
     super.tearDown();
   }
@@ -2204,6 +2212,214 @@ public class NetTest extends VertxTestBase {
         //Should be able to connect
         assertTrue(ar2.succeeded());
         testComplete();
+      });
+    });
+    await();
+  }
+
+  /**
+   * test socks5 proxy for accessing arbitrary server port.
+   */
+  @Test
+  public void testWithSocks5Proxy() {
+    server.close();
+    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
+
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5).setProxyPort(11080));
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new SocksProxy(null);
+    proxy.start(vertx, v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        client.connect(1234, "localhost", ar2 -> {
+          if (ar2.failed()) {
+            log.warn("failed", ar2.cause());
+          }
+          assertTrue(ar2.succeeded());
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  /**
+   * test socks5 proxy for accessing arbitrary server port with authentication.
+   */
+  @Test
+  public void testWithSocks5ProxyAuth() {
+    server.close();
+    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
+
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5).setProxyPort(11080)
+            .setProxyUsername("username").setProxyPassword("username"));
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new SocksProxy("username");
+    proxy.start(vertx, v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        client.connect(1234, "localhost", ar2 -> {
+          if (ar2.failed()) {
+            log.warn("failed", ar2.cause());
+          }
+          assertTrue(ar2.succeeded());
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  /**
+   * test http connect proxy for accessing a arbitrary server port
+   * note that this may not work with a "real" proxy since there are usually access rules defined
+   * that limit the target host and ports (e.g. connecting to localhost may not be allowed)
+   */
+  @Test
+  public void testWithHttpConnectProxy() {
+    server.close();
+    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
+
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.HTTP).setProxyPort(13128));
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new ConnectHttpProxy(null);
+    proxy.start(vertx, v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        client.connect(1234, "localhost", ar2 -> {
+          if (ar2.failed()) {
+            log.warn("failed", ar2.cause());
+          }
+          assertTrue(ar2.succeeded());
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  /**
+   * test socks4a proxy for accessing arbitrary server port.
+   */
+  @Test
+  public void testWithSocks4aProxy() {
+    server.close();
+    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
+
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS4).setProxyPort(11080));
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new Socks4Proxy(null);
+    proxy.start(vertx, v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        client.connect(1234, "localhost", ar2 -> {
+          if (ar2.failed()) {
+            log.warn("failed", ar2.cause());
+          }
+          assertTrue(ar2.succeeded());
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  /**
+   * test socks4a proxy for accessing arbitrary server port using username auth.
+   */
+  @Test
+  public void testWithSocks4aProxyAuth() {
+    server.close();
+    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
+
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS4).setProxyPort(11080)
+            .setProxyUsername("username"));
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new Socks4Proxy("username");
+    proxy.start(vertx, v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        client.connect(1234, "localhost", ar2 -> {
+          if (ar2.failed()) {
+            log.warn("failed", ar2.cause());
+          }
+          assertTrue(ar2.succeeded());
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  /**
+   * test socks4a proxy for accessing arbitrary server port using an already resolved address.
+   */
+  @Test
+  public void testWithSocks4LocalResolver() {
+    server.close();
+    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
+
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS4).setProxyPort(11080));
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new Socks4Proxy(null);
+    proxy.start(vertx, v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        client.connect(1234, "127.0.0.1", ar2 -> {
+          if (ar2.failed()) {
+            log.warn("failed", ar2.cause());
+          }
+          assertTrue(ar2.succeeded());
+          // make sure we have gone through the proxy
+          assertEquals("127.0.0.1:1234", proxy.getLastUri());
+          testComplete();
+        });
       });
     });
     await();

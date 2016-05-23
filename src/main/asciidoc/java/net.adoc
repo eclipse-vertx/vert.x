@@ -877,3 +877,27 @@ ALPN version for the JVM running it:
 ----
 -javaagent:/path/to/alpn/agent
 ----
+
+=== Using a proxy for NetClient connections
+
+The NetClient supports configuring a HTTP/1.x CONNECT method proxy or SOCKS4a/SOCKS5 proxy.
+
+The proxy can be configured in the `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` by setting a
+`link:../../apidocs/io/vertx/core/net/ProxyOptions.html[ProxyOptions]` object containing proxy type, hostname, port and optionally username and password.
+
+For this feature, the jar io.netty:netty-handler-proxy has to be present on the classpath.
+
+Here's an example:
+
+[source,java]
+
+----
+NetClientOptions options = new NetClientOptions()
+    .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5)
+        .setProxyHost("localhost").setProxyPort(1080)
+        .setProxyUsername("username").setProxyPassword("secret"));
+NetClient client = vertx.createNetClient(options);
+----
+
+The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
+to resolve the DNS address locally.
