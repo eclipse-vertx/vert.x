@@ -351,13 +351,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest unknownFrameHandler(Handler<HttpFrame> handler) {
+  public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
     return this;
   }
 
   @Override
   public HttpConnection connection() {
-    return null;
+    return conn;
   }
 
   void handleData(Buffer data) {

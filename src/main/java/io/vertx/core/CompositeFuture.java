@@ -35,6 +35,8 @@ public interface CompositeFuture extends Future<CompositeFuture> {
 
   /**
    * Return a composite future, succeeded when all futures are succeeded, failed when any future is failed.
+   * <p/>
+   * The returned future fails as soon as one of {@code f1} or {@code f2} fails.
    *
    * @param f1 future
    * @param f2 future
@@ -83,6 +85,8 @@ public interface CompositeFuture extends Future<CompositeFuture> {
 
   /**
    * Return a composite future, succeeded when any futures is succeeded, failed when all futures are failed.
+   * <p/>
+   * The returned future succeeds as soon as one of {@code f1} or {@code f2} succeeds.
    *
    * @param f1 future
    * @param f2 future

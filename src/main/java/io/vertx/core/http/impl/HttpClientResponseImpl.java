@@ -48,7 +48,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final HttpClientStream stream;
 
   private Handler<Buffer> dataHandler;
-  private Handler<HttpFrame> unknownFrameHandler;
+  private Handler<HttpFrame> customFrameHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean hasPausedEnd;
@@ -194,9 +194,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public HttpClientResponse unknownFrameHandler(Handler<HttpFrame> handler) {
+  public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) {
     synchronized (conn) {
-      unknownFrameHandler = handler;
+      customFrameHandler = handler;
       return this;
     }
   }
@@ -214,9 +214,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   void handleUnknowFrame(HttpFrame frame) {
     synchronized (conn) {
-      if (unknownFrameHandler != null) {
+      if (customFrameHandler != null) {
         try {
-          unknownFrameHandler.handle(frame);
+          customFrameHandler.handle(frame);
         } catch (Throwable t) {
           handleException(t);
         }

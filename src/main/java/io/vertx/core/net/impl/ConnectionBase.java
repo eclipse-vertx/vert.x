@@ -53,8 +53,8 @@ public abstract class ConnectionBase {
   protected final Channel channel;
   protected final ContextImpl context;
   protected final NetworkMetrics metrics;
-  protected Handler<Throwable> exceptionHandler;
-  protected Handler<Void> closeHandler;
+  private Handler<Throwable> exceptionHandler;
+  private Handler<Void> closeHandler;
   private boolean read;
   private boolean needsFlush;
   private Thread ctxThread;
@@ -132,6 +132,20 @@ public abstract class ConnectionBase {
     // make sure everything is flushed out on close
     endReadAndFlush();
     channel.close();
+  }
+
+  public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
+    closeHandler = handler;
+    return this;
+  }
+
+  public synchronized ConnectionBase exceptionHandler(Handler<Throwable> handler) {
+    this.exceptionHandler = handler;
+    return this;
+  }
+
+  protected synchronized Handler<Throwable> exceptionHandler() {
+    return exceptionHandler;
   }
 
   public void doPause() {

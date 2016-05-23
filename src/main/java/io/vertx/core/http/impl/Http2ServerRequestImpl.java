@@ -80,7 +80,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private HttpPostRequestDecoder postRequestDecoder;
 
   private Handler<Throwable> exceptionHandler;
-  private Handler<HttpFrame> unknownFrameHandler;
+  private Handler<HttpFrame> customFrameHandler;
 
   private NetSocket netSocket;
 
@@ -125,9 +125,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   @Override
-  void handleUnknownFrame(int type, int flags, Buffer buff) {
-    if (unknownFrameHandler != null) {
-      unknownFrameHandler.handle(new HttpFrameImpl(type, flags, buff));
+  void handleCustomFrame(int type, int flags, Buffer buff) {
+    if (customFrameHandler != null) {
+      customFrameHandler.handle(new HttpFrameImpl(type, flags, buff));
     }
   }
 
@@ -479,9 +479,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   @Override
-  public HttpServerRequest unknownFrameHandler(Handler<HttpFrame> handler) {
+  public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
     synchronized (conn) {
-      unknownFrameHandler = handler;
+      customFrameHandler = handler;
       return this;
     }
   }

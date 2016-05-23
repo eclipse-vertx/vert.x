@@ -166,7 +166,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void handleData(Buffer buf) {
   }
 
-  void handleUnknownFrame(int type, int flags, Buffer buff) {
+  void handleCustomFrame(int type, int flags, Buffer buff) {
   }
 
   void handleEnd(MultiMap trailers) {

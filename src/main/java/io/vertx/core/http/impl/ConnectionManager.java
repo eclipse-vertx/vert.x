@@ -74,6 +74,8 @@ public class ConnectionManager {
   private final boolean keepAlive;
   private final boolean pipelining;
   private final int maxWaitQueueSize;
+  private final int http2MaxSockets;
+  private final int http2MaxConcurrency;
 
   ConnectionManager(HttpClientImpl client) {
     this.client = client;
@@ -83,6 +85,9 @@ public class ConnectionManager {
     this.keepAlive = client.getOptions().isKeepAlive();
     this.pipelining = client.getOptions().isPipelining();
     this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
+    int maxStreams = options.getMaxStreams();
+    this.http2MaxSockets = maxStreams < 1 ? 1 : options.getMaxPoolSize();
+    this.http2MaxConcurrency = maxStreams < 1 ? Integer.MAX_VALUE : maxStreams;
   }
 
   /**
@@ -193,7 +198,7 @@ public class ConnectionManager {
       this.address = address;
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
-        pool =  new Http2Pool(this, client, mgr.connectionMap);
+        pool =  new Http2Pool(this, client, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency);
       } else {
         pool = new Http1xPool(client, options, this, mgr.connectionMap, version);
       }
@@ -502,7 +507,23 @@ public class ConnectionManager {
 
     abstract HttpVersion version();
 
-    abstract boolean getConnection(Waiter waiter);
+    abstract C pollConnection();
+
+    boolean getConnection(Waiter waiter) {
+      C conn = pollConnection();
+      if (conn != null && conn.isValid()) {
+        ContextImpl context = waiter.context;
+        if (context == null) {
+          context = conn.getContext();
+        } else if (context != conn.getContext()) {
+          ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
+        }
+        context.runOnContext(v -> deliverStream(conn, waiter));
+        return true;
+      } else {
+        return false;
+      }
+    }
 
     abstract void closeAllConnections();
 

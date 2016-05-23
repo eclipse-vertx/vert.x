@@ -277,16 +277,16 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   boolean isEnded();
 
   /**
-   * Set an unknown frame handler. The handler will get notified when the http stream receives an unknown HTTP/2
+   * Set a custom frame handler. The handler will get notified when the http stream receives an custom HTTP/2
    * frame. HTTP/2 permits extension of the protocol.
    *
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerRequest unknownFrameHandler(Handler<HttpFrame> handler);
+  HttpServerRequest customFrameHandler(Handler<HttpFrame> handler);
 
   /**
-   * @return the {@link HttpConnection} associated with this request when it is an HTTP/2 connection, null otherwise
+   * @return the {@link HttpConnection} associated with this request
    */
   @CacheReturn
   HttpConnection connection();

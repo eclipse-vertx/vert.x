@@ -54,7 +54,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   final Http2Pool http2Pool;
   final HttpClientMetrics metrics;
   final Object metric;
-  long streamCount;
+  int streamCount;
 
   public Http2ClientConnection(Http2Pool http2Pool,
                                ContextImpl context,
@@ -227,7 +227,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void handleUnknownFrame(int type, int flags, Buffer buff) {
+    void handleCustomFrame(int type, int flags, Buffer buff) {
       response.handleUnknowFrame(new HttpFrameImpl(type, flags, buff));
     }
 

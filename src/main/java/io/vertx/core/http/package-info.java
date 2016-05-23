@@ -334,21 +334,21 @@
  * WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
  * to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
  *
- * ==== Receiving unknown HTTP/2 frames
+ * ==== Receiving custom HTTP/2 frames
  *
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
  * of frames to be sent and received.
  *
- * To receive unknown frames, you can use the {@link io.vertx.core.http.HttpServerRequest#unknownFrameHandler} on the request,
- * this will get called every time an unknown frame arrives. Here's an example:
+ * To receive custom frames, you can use the {@link io.vertx.core.http.HttpServerRequest#customFrameHandler} on the request,
+ * this will get called every time a custom frame arrives. Here's an example:
  *
  * [source,$lang]
  * ----
  * {@link examples.HTTP2Examples#example1}
  * ----
  *
- * HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when an
- * unkown frame is received whether the request is paused or is not
+ * HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when a
+ * custom frame is received whether the request is paused or is not
  *
  * ==== Non standard HTTP methods
  *
@@ -568,7 +568,7 @@
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
  * of frames to be sent and received.
  *
- * To send such frames, you can use the {@link io.vertx.core.http.HttpServerResponse#writeFrame} on the response.
+ * To send such frames, you can use the {@link io.vertx.core.http.HttpServerResponse#writeCustomFrame} on the response.
  * Here's an example:
  *
  * [source,$lang]
@@ -1097,12 +1097,12 @@
  * When no handler is set, any stream pushed will be automatically cancelled by the client with
  * a stream reset (`8` error code).
  *
- * ==== Receiving unknown HTTP/2 frames
+ * ==== Receiving custom HTTP/2 frames
  *
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind of
  * frames to be sent and received.
  *
- * To receive unknown frames, you can use the unknownFrameHandler on the request, this will get called every time an unknown
+ * To receive custom frames, you can use the customFrameHandler on the request, this will get called every time a custom
  * frame arrives. Here's an example:
  *
  * [source,$lang]
@@ -1176,8 +1176,21 @@
  *
  * === HTTP/2 multiplexing
  *
- * For HTTP/2, the http client uses a single connection for each server, all the requests to the same server are
- * multiplexed on the same connection.
+ * HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
+ * connection for each server, all the streams to the same server are multiplexed on the same connection.
+ *
+ * When it is desirable to limit the number of concurrent streams per server and use a connection
+ * pool instead of a single connection, {@link io.vertx.core.http.HttpClientOptions#setMaxStreams(int)}
+ * can be used.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#useMaxStreams}
+ * ----
+ *
+ * The maximum streams for a connection is a setting set on the client that limits the streams
+ * of a single connection. The effective value can be even lower if the server sets a lower limit
+ * with the {@link io.vertx.core.http.Http2Settings#setMaxConcurrentStreams SETTINGS_MAX_CONCURRENT_STREAMS} setting.
  *
  * HTTP/2 connections will not be closed by the client automatically. To close them you can call {@link io.vertx.core.http.HttpConnection#close()}
  * or close the client instance.
@@ -1185,13 +1198,16 @@
  * Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
  * connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
  *
- * === HTTP/2 connections
+ * === HTTP connections
  *
- * HTTP/2 does not change HTTP programming and the design of HTTP server and clients remains the same. However HTTP/2
- * defines a mapping of HTTP's semantics to a connection.
- *
- * The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP/2 connection events, lifecycle
+ * The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP connection events, lifecycle
  * and settings.
+ *
+ * HTTP/2 implements fully the {@link io.vertx.core.http.HttpConnection} API.
+ *
+ * HTTP/1.x implements partially the {@link io.vertx.core.http.HttpConnection} API: only the close operation,
+ * the close handler and exception handler are implemented. This protocol does not provide semantics for
+ * the other operations.
  *
  * ==== Server connections
  *
@@ -1209,8 +1225,6 @@
  * {@link examples.HTTP2Examples#example17}
  * ----
  *
- * NOTE: this only applies to the HTTP/2 protocol
- *
  * ==== Client connections
  *
  * The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the request connection on the client:
@@ -1226,8 +1240,6 @@
  * ----
  * {@link examples.HTTP2Examples#example19}
  * ----
- *
- * NOTE: this only applies to the HTTP/2 protocol
  *
  * ==== Connection settings
  *
@@ -1262,6 +1274,8 @@
  * {@link examples.HTTP2Examples#example22}
  * ----
  *
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
  * ==== Connection ping
  *
  * HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
@@ -1284,7 +1298,9 @@
  * The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
  * implementing  protocols on top of HTTP/2.
  *
- * ==== Connection shutdown
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
+ * ==== Connection shutdown and go away
  *
  * Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GOAWAY} frame to the
  * remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
@@ -1296,14 +1312,10 @@
  * {@link examples.HTTP2Examples#example25}
  * ----
  *
- * Connection {@link io.vertx.core.http.HttpConnection#close} close is a shutdown with no delay, the {@literal GOAWAY}
- * frame will still be sent before the connection is closed.
- *
- * The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when connection is closed,
- * {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed but the
+ * The {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed, the
  * connection is not yet closed.
  *
- * Finally it's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
+ * It's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
  * it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
  * close:
  *
@@ -1328,6 +1340,17 @@
  * ----
  *
  * This applies also when a {@literal GOAWAY} is received.
+ *
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
+ * ==== Connection close
+ *
+ * Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
+ *
+ * - it closes the socket for HTTP/1.x
+ * - a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed. *
+ *
+ * The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
  *
  * === HttpClient usage
  *

@@ -673,6 +673,16 @@ Set the maximum HTTP chunk size
 +++
 Set the maximum pool size for connections
 +++
+|[[maxStreams]]`maxStreams`|`Number (int)`|
++++
+Set the maximum of concurrent streams for an HTTP/2 connection, this limits the number
+ of streams the client will create for a connection. The effective number of streams for a
+ connection can be lower than this value when the server has a lower limit than
+ this value.
+ <p/>
+ Setting the maximum to <code>-1</code> means the client will not limit the concurrency and the client
+ will use a single connection. <code>-1</code> is the default value.
++++
 |[[maxWaitQueueSize]]`maxWaitQueueSize`|`Number (int)`|
 +++
 Set the maximum requests allowed in the wait queue, any requests beyond the max size will result in

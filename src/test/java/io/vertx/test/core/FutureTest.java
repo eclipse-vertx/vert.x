@@ -19,6 +19,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.NoStackTraceThrowable;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -183,6 +184,24 @@ public class FutureTest extends VertxTestBase {
     assertTrue(fut.isComplete());
     assertTrue(fut.failed());
     assertEquals(cause, fut.cause());
+  }
+
+
+  @Test
+  public void testCreateFailedWithNullFailure() {
+    Future<String> future = Future.failedFuture((Throwable)null);
+    Checker<String> checker = new Checker<>(future);
+    NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
+    assertNull(failure.getMessage());
+  }
+
+  @Test
+  public void testFailurFutureWithNullFailure() {
+    Future<String> future = Future.future();
+    future.fail((Throwable)null);
+    Checker<String> checker = new Checker<>(future);
+    NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
+    assertNull(failure.getMessage());
   }
 
   @Test
@@ -602,7 +621,7 @@ public class FutureTest extends VertxTestBase {
     }
   }
 
-/*
+  /*
   private <T> void assertSucceeded(Future<T> future, T expected) {
     assertTrue(future.isComplete());
     assertTrue(future.succeeded());

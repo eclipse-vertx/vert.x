@@ -23,21 +23,30 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
 
-  private Http2ClientConnection connection;
+  private Queue<Http2ClientConnection> availableConnections = new ArrayDeque<>();
+  private final Set<Http2ClientConnection> allConnections = new HashSet<>();
   private final Map<Channel, ? super Http2ClientConnection> connectionMap;
   final HttpClientImpl client;
+  final int maxConcurrency;
 
-  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, Map<Channel, ? super Http2ClientConnection> connectionMap) {
-    super(queue, 1);
+  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, Map<Channel, ? super Http2ClientConnection> connectionMap, int maxSockets, int maxConcurrency) {
+    super(queue, maxSockets);
     this.client = client;
     this.connectionMap = connectionMap;
+    this.maxConcurrency = maxConcurrency;
   }
 
   @Override
@@ -45,24 +54,16 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
     return HttpVersion.HTTP_2;
   }
 
-  // Under sync when called
-  public boolean getConnection(Waiter waiter) {
-    Http2ClientConnection conn = this.connection;
-    if (conn != null && canReserveStream(conn)) {
+  @Override
+  Http2ClientConnection pollConnection() {
+    Http2ClientConnection conn = availableConnections.peek();
+    if (conn != null) {
       conn.streamCount++;
-      ContextImpl context = waiter.context;
-      if (context == null) {
-        context = conn.getContext();
-      } else if (context != conn.getContext()) {
-        ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
+      if (!canReserveStream(conn)) {
+        availableConnections.remove();
       }
-      context.runOnContext(v -> {
-        deliverStream(conn, waiter);
-      });
-      return true;
-    } else {
-      return false;
     }
+    return conn;
   }
 
   void createConn(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) throws Http2Exception {
@@ -79,38 +80,40 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
         handler.onHttpClientUpgrade();
       }
       Http2ClientConnection conn = handler.connection;
-      connection = conn;
       int idleTimeout = client.getOptions().getIdleTimeout();
       if (idleTimeout > 0) {
         p.addLast("idle", new IdleStateHandler(0, 0, idleTimeout));
       }
       p.addLast(handler);
+      allConnections.add(conn);
       conn.streamCount++;
       waiter.handleConnection(conn); // Should make same tests than in deliverRequest
       deliverStream(conn, waiter);
       checkPending(conn);
+      if (canReserveStream(conn)) {
+        availableConnections.add(conn);
+      }
     }
   }
 
   private boolean canReserveStream(Http2ClientConnection handler) {
-    int maxConcurrentStreams = handler.handler.connection().local().maxActiveStreams();
+    int maxConcurrentStreams = Math.min(handler.handler.connection().local().maxActiveStreams(), maxConcurrency);
     return handler.streamCount < maxConcurrentStreams;
   }
 
-  void checkPending(Http2ClientConnection handler) {
+  void checkPending(Http2ClientConnection conn) {
     synchronized (queue) {
       Waiter waiter;
-      while (canReserveStream(handler) && (waiter = queue.getNextWaiter()) != null) {
-        handler.streamCount++;
-        deliverStream(handler, waiter);
+      while (canReserveStream(conn) && (waiter = queue.getNextWaiter()) != null) {
+        conn.streamCount++;
+        deliverStream(conn, waiter);
       }
     }
   }
 
   void discard(Http2ClientConnection conn) {
     synchronized (queue) {
-      if (connection == conn) {
-        connection = null;
+      if (allConnections.remove(conn)) {
         queue.connectionClosed();
       }
     }
@@ -121,6 +124,9 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
     synchronized (queue) {
       conn.streamCount--;
       checkPending(conn);
+      if (canReserveStream(conn)) {
+        availableConnections.add(conn);
+      }
     }
   }
 
@@ -131,13 +137,11 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
 
   @Override
   void closeAllConnections() {
-    Http2ClientConnection conn;
+    List<Http2ClientConnection> toClose;
     synchronized (queue) {
-      conn = this.connection;
+      toClose = new ArrayList<>(allConnections);
     }
     // Close outside sync block to avoid deadlock
-    if (conn != null) {
-      conn.close();
-    }
+    toClose.forEach(Http2ConnectionBase::close);
   }
 }

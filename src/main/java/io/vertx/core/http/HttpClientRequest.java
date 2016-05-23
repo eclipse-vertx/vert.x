@@ -321,13 +321,13 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   void reset(long code);
 
   /**
-   * @return the {@link HttpConnection} associated with this request when it is an HTTP/2 connection, null otherwise
+   * @return the {@link HttpConnection} associated with this request
    */
   @CacheReturn
   HttpConnection connection();
 
   /**
-   * Set a connection handler called when an HTTP/2 connection has been established.
+   * Set a connection handler called when an HTTP connection has been established.
    *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
@@ -349,7 +349,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientRequest writeFrame(int type, int flags, Buffer payload);
+  HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload);
 
   /**
    * @return the id of the stream of this response, {@literal -1} when it is not yet determined, i.e
@@ -360,12 +360,12 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   }
 
   /**
-   * Like {@link #writeFrame(int, int, Buffer)} but with an {@link HttpFrame}.
+   * Like {@link #writeCustomFrame(int, int, Buffer)} but with an {@link HttpFrame}.
    *
    * @param frame the frame to write
    */
   @Fluent
-  default HttpClientRequest writeFrame(HttpFrame frame) {
-    return writeFrame(frame.type(), frame.flags(), frame.payload());
+  default HttpClientRequest writeCustomFrame(HttpFrame frame) {
+    return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
 }

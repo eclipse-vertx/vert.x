@@ -16,7 +16,6 @@
 
 package examples;
 
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
@@ -50,7 +49,7 @@ public class HTTP2Examples {
 
   public void example1(HttpServerRequest request) {
 
-    request.unknownFrameHandler(frame -> {
+    request.customFrameHandler(frame -> {
 
       System.out.println("Received a frame type=" + frame.type() +
           " payload" + frame.payload().toString());
@@ -64,7 +63,7 @@ public class HTTP2Examples {
     Buffer payload = Buffer.buffer("some data");
 
     // Sending a frame to the client
-    response.writeFrame(frameType, frameStatus, payload);
+    response.writeCustomFrame(frameType, frameStatus, payload);
   }
 
   public void example3(HttpServerRequest request) {
@@ -139,7 +138,7 @@ public class HTTP2Examples {
     Buffer payload = Buffer.buffer("some data");
 
     // Sending a frame to the server
-    request.writeFrame(frameType, frameStatus, payload);
+    request.writeCustomFrame(frameType, frameStatus, payload);
   }
 
   public void example10(HttpClientRequest request) {
@@ -197,7 +196,7 @@ public class HTTP2Examples {
   }
 
   public void example15(HttpClientResponse response) {
-    response.unknownFrameHandler(frame -> {
+    response.customFrameHandler(frame -> {
 
       System.out.println("Received a frame type=" + frame.type() +
           " payload" + frame.payload().toString());
@@ -281,5 +280,13 @@ public class HTTP2Examples {
       // All streams are closed, close the connection
       connection.close();
     });
+  }
+
+  public void useMaxStreams(Vertx vertx) {
+
+    HttpClientOptions clientOptions = new HttpClientOptions().setMaxStreams(10).setMaxPoolSize(3);
+
+    // Uses up to 3 connections and up to 10 streams per connection
+    HttpClient client = vertx.createHttpClient(clientOptions);
   }
 }

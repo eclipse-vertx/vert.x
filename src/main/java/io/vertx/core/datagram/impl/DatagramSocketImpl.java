@@ -167,15 +167,13 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public synchronized DatagramSocket endHandler(Handler<Void> endHandler) {
-    this.closeHandler = endHandler;
-    return this;
+  public DatagramSocketImpl endHandler(Handler<Void> endHandler) {
+    return (DatagramSocketImpl) super.closeHandler(endHandler);
   }
 
   @Override
-  public synchronized DatagramSocket exceptionHandler(Handler<Throwable> handler) {
-    this.exceptionHandler = handler;
-    return this;
+  public DatagramSocketImpl exceptionHandler(Handler<Throwable> handler) {
+    return (DatagramSocketImpl) super.exceptionHandler(handler);
   }
 
   private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {

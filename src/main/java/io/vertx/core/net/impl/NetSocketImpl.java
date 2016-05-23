@@ -222,15 +222,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public synchronized NetSocket exceptionHandler(Handler<Throwable> handler) {
-    this.exceptionHandler = handler;
-    return this;
+  public NetSocketImpl exceptionHandler(Handler<Throwable> handler) {
+    return (NetSocketImpl) super.exceptionHandler(handler);
   }
 
   @Override
-  public synchronized NetSocket closeHandler(Handler<Void> handler) {
-    this.closeHandler = handler;
-    return this;
+  public NetSocketImpl closeHandler(Handler<Void> handler) {
+    return (NetSocketImpl) super.closeHandler(handler);
   }
 
   @Override

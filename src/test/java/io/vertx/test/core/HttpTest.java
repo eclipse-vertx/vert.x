@@ -34,6 +34,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -2914,6 +2915,97 @@ public abstract class HttpTest extends HttpTestBase {
         testComplete();
       }).setRawMethod("COPY").end();
     }));
+    await();
+  }
+
+  @Test
+  public void testClientConnectionHandler() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    AtomicInteger status = new AtomicInteger();
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(1, status.getAndIncrement());
+      testComplete();
+    });
+    req.connectionHandler(conn -> {
+      assertEquals(0, status.getAndIncrement());
+    });
+    req.end();
+    await();
+  }
+
+  @Test
+  public void testServerConnectionHandler() throws Exception {
+    AtomicInteger status = new AtomicInteger();
+    AtomicReference<HttpConnection> connRef = new AtomicReference<>();
+    server.connectionHandler(conn -> {
+      assertEquals(0, status.getAndIncrement());
+      assertNull(connRef.getAndSet(conn));
+    });
+    server.requestHandler(req -> {
+      assertEquals(1, status.getAndIncrement());
+      assertSame(connRef.get(), req.connection());
+      req.response().end();
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testClientConnectionClose() throws Exception {
+    // Test client connection close + server close handler
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      AtomicInteger len = new AtomicInteger();
+      req.handler(buff -> {
+        if (len.addAndGet(buff.length()) == 1024) {
+          latch.countDown();
+        }
+      });
+      req.connection().closeHandler(v -> {
+        testComplete();
+      });
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      fail();
+    });
+    req.setChunked(true);
+    req.write(TestUtils.randomBuffer(1024));
+    awaitLatch(latch);
+    req.connection().close();
+    await();
+  }
+
+  @Test
+  public void testServerConnectionClose() throws Exception {
+    // Test server connection close + client close handler
+    server.requestHandler(req -> {
+      req.connection().close();
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      fail();
+    });
+    req.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        testComplete();
+      });
+    });
+    req.sendHead();
     await();
   }
 
