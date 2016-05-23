@@ -32,6 +32,7 @@ import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -76,6 +77,7 @@ public class ConnectionManager {
   private final int maxWaitQueueSize;
   private final int http2MaxSockets;
   private final int http2MaxConcurrency;
+  private final boolean logEnabled;
 
   ConnectionManager(HttpClientImpl client) {
     this.client = client;
@@ -88,6 +90,7 @@ public class ConnectionManager {
     int maxStreams = options.getMaxStreams();
     this.http2MaxSockets = maxStreams < 1 ? 1 : options.getMaxPoolSize();
     this.http2MaxConcurrency = maxStreams < 1 ? Integer.MAX_VALUE : maxStreams;
+    this.logEnabled = client.getOptions().getLogActivity();
   }
 
   /**
@@ -198,7 +201,7 @@ public class ConnectionManager {
       this.address = address;
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
-        pool =  new Http2Pool(this, client, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency);
+        pool =  new Http2Pool(this, client, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency, logEnabled);
       } else {
         pool = new Http1xPool(client, options, this, mgr.connectionMap, version);
       }
@@ -483,6 +486,9 @@ public class ConnectionManager {
     }
 
     void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
+      if (logEnabled) {
+        pipeline.addLast("logging", new LoggingHandler());
+      }
       pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
       if (options.isTryUseCompression()) {
         pipeline.addLast("inflater", new HttpContentDecompressor(true));

@@ -41,12 +41,16 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
   private final Map<Channel, ? super Http2ClientConnection> connectionMap;
   final HttpClientImpl client;
   final int maxConcurrency;
+  final boolean logEnabled;
 
-  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, Map<Channel, ? super Http2ClientConnection> connectionMap, int maxSockets, int maxConcurrency) {
+  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client,
+                   Map<Channel, ? super Http2ClientConnection> connectionMap, int maxSockets,
+                   int maxConcurrency, boolean logEnabled) {
     super(queue, maxSockets);
     this.client = client;
     this.connectionMap = connectionMap;
     this.maxConcurrency = maxConcurrency;
+    this.logEnabled = logEnabled;
   }
 
   @Override
@@ -75,6 +79,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
           .useCompression(client.getOptions().isTryUseCompression())
           .initialSettings(client.getOptions().getInitialSettings())
           .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler, client.metrics))
+          .logEnabled(logEnabled)
           .build();
       if (upgrade) {
         handler.onHttpClientUpgrade();

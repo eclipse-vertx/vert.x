@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -28,8 +29,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -37,13 +36,13 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,7 +66,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -3007,6 +3005,55 @@ public abstract class HttpTest extends HttpTestBase {
     });
     req.sendHead();
     await();
+  }
+
+  @Test
+  public void testNoLogging() throws Exception {
+    TestLoggerFactory factory = testLogging();
+    assertFalse(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
+  }
+
+  @Test
+  public void testServerLogging() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setLogActivity(true));
+    TestLoggerFactory factory = testLogging();
+    if (this instanceof Http1xTest) {
+      assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+    } else {
+      assertTrue(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
+    }
+  }
+
+  @Test
+  public void testClientLogging() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setLogActivity(true));
+    TestLoggerFactory factory = testLogging();
+    if (this instanceof Http1xTest) {
+      assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+    } else {
+      assertTrue(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
+    }
+  }
+
+  private TestLoggerFactory testLogging() throws Exception {
+    InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
+    TestLoggerFactory factory = new TestLoggerFactory();
+    InternalLoggerFactory.setDefaultFactory(factory);
+    try {
+      server.requestHandler(req -> {
+        req.response().end();
+      });
+      startServer();
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        testComplete();
+      });
+      await();
+    } finally {
+      InternalLoggerFactory.setDefaultFactory(prev);
+    }
+    return factory;
   }
 
   protected File setupFile(String fileName, String content) throws Exception {

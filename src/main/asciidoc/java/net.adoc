@@ -337,6 +337,44 @@ NetClient client = vertx.createNetClient(options);
 
 By default, multiple connection attempts are disabled.
 
+[[logging_network_activity]]
+=== Logging network activity
+
+For debugging purposes, network activity can be logged:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setLogActivity(true);
+
+NetServer server = vertx.createNetServer(options);
+----
+
+for the client
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setLogActivity(true);
+
+NetClient client = vertx.createNetClient(options);
+----
+
+Network activity is logged by Netty with the `DEBUG` level and with the `io.netty.handler.logging.LoggingHandler`
+name. Netty will try to locate the following logger implementations, in the following order:
+
+- Slf4j
+- Log4j
+- JDK
+
+The presense of the slf4j or log4j classes on the classpath is enough to pick up the logging implementation.
+
+The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly:
+
+[source,java]
+----
+// Force logging to SLF4J
+InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
+----
+
 [[ssl]]
 === Configuring servers and clients to work with SSL/TLS
 

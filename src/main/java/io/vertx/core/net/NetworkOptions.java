@@ -47,10 +47,16 @@ public abstract class NetworkOptions {
    */
   public static final boolean DEFAULT_REUSE_ADDRESS = true;
 
+  /**
+   * The default log enabled = false
+   */
+  public static final boolean DEFAULT_LOG_ENABLED = false;
+
   private int sendBufferSize;
   private int receiveBufferSize;
   private int trafficClass;
   private boolean reuseAddress;
+  private boolean logActivity;
 
   /**
    * Default constructor
@@ -60,6 +66,7 @@ public abstract class NetworkOptions {
     receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
     reuseAddress = DEFAULT_REUSE_ADDRESS;
     trafficClass = DEFAULT_TRAFFIC_CLASS;
+    logActivity = DEFAULT_LOG_ENABLED;
   }
 
   /**
@@ -72,6 +79,7 @@ public abstract class NetworkOptions {
     this.receiveBufferSize = other.getReceiveBufferSize();
     this.reuseAddress = other.isReuseAddress();
     this.trafficClass = other.getTrafficClass();
+    this.logActivity = other.logActivity;
   }
 
   /**
@@ -159,6 +167,24 @@ public abstract class NetworkOptions {
   public NetworkOptions setTrafficClass(int trafficClass) {
     Arguments.requireInRange(trafficClass, DEFAULT_TRAFFIC_CLASS, 255, "trafficClass tc must be 0 <= tc <= 255");
     this.trafficClass = trafficClass;
+    return this;
+  }
+
+  /**
+   * @return true when network activity logging is enabled
+   */
+  public boolean getLogActivity() {
+    return logActivity;
+  }
+
+  /**
+   * Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
+   *
+   * @param logActivity true for logging the network activity
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetworkOptions setLogActivity(boolean logActivity) {
+    this.logActivity = logActivity;
     return this;
   }
 

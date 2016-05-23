@@ -449,6 +449,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   @Override
+  public TCPSSLOptions setLogActivity(boolean logEnabled) {
+    return (TCPSSLOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof TCPSSLOptions)) return false;

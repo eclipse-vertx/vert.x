@@ -40,6 +40,13 @@ public class HTTPExamples {
     HttpServer server = vertx.createHttpServer(options);
   }
 
+  public void exampleServerLogging(Vertx vertx) {
+
+    HttpServerOptions options = new HttpServerOptions().setLogActivity(true);
+
+    HttpServer server = vertx.createHttpServer(options);
+  }
+
   public void example3(Vertx vertx) {
 
     HttpServer server = vertx.createHttpServer();
@@ -287,6 +294,11 @@ public class HTTPExamples {
 
   public void example29(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setKeepAlive(false);
+    HttpClient client = vertx.createHttpClient(options);
+  }
+
+  public void exampleClientLogging(Vertx vertx) {
+    HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
     HttpClient client = vertx.createHttpClient(options);
   }
 

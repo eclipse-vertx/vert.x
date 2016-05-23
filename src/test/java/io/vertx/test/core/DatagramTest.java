@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
@@ -25,6 +26,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -522,5 +524,47 @@ public class DatagramTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
     await();
+  }
+
+  @Test
+  public void testNoLogging() throws Exception {
+    TestLoggerFactory factory = testLogging(new DatagramSocketOptions(), new DatagramSocketOptions());
+    assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+  }
+
+  @Test
+  public void testSendLogging() throws Exception {
+    TestLoggerFactory factory = testLogging(new DatagramSocketOptions().setLogActivity(true), new DatagramSocketOptions());
+    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+  }
+
+  @Test
+  public void testListenLogging() throws Exception {
+    TestLoggerFactory factory = testLogging(new DatagramSocketOptions(), new DatagramSocketOptions().setLogActivity(true));
+    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+  }
+
+  private TestLoggerFactory testLogging(DatagramSocketOptions sendOptions, DatagramSocketOptions listenOptions) throws Exception {
+    InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
+    TestLoggerFactory factory = new TestLoggerFactory();
+    InternalLoggerFactory.setDefaultFactory(factory);
+    try {
+      peer1 = vertx.createDatagramSocket(sendOptions);
+      peer2 = vertx.createDatagramSocket(listenOptions);
+      peer2.exceptionHandler(t -> fail(t.getMessage()));
+      peer2.listen(1234, "127.0.0.1", ar -> {
+        assertTrue(ar.succeeded());
+        Buffer buffer = TestUtils.randomBuffer(128);
+        peer2.handler(packet -> {
+          assertEquals(buffer, packet.data());
+          testComplete();
+        });
+        peer1.send(buffer, 1234, "127.0.0.1", ar2 -> assertTrue(ar2.succeeded()));
+      });
+      await();
+    } finally {
+      InternalLoggerFactory.setDefaultFactory(prev);
+    }
+    return factory;
   }
 }

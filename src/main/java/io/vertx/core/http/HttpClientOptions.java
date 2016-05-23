@@ -728,6 +728,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setLogActivity(boolean logEnabled) {
+    return (HttpClientOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof HttpClientOptions)) return false;

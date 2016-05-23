@@ -84,6 +84,9 @@ public class EventBusOptionsConverter {
     if (json.getValue("keyStoreOptions") instanceof JsonObject) {
       obj.setKeyStoreOptions(new io.vertx.core.net.JksOptions((JsonObject)json.getValue("keyStoreOptions")));
     }
+    if (json.getValue("logActivity") instanceof Boolean) {
+      obj.setLogActivity((Boolean)json.getValue("logActivity"));
+    }
     if (json.getValue("pemKeyCertOptions") instanceof JsonObject) {
       obj.setPemKeyCertOptions(new io.vertx.core.net.PemKeyCertOptions((JsonObject)json.getValue("pemKeyCertOptions")));
     }
@@ -191,6 +194,7 @@ public class EventBusOptionsConverter {
       json.put("host", obj.getHost());
     }
     json.put("idleTimeout", obj.getIdleTimeout());
+    json.put("logActivity", obj.getLogActivity());
     json.put("port", obj.getPort());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reconnectAttempts", obj.getReconnectAttempts());

@@ -84,6 +84,10 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
++++
 |[[metricsName]]`metricsName`|`String`|
 +++
 Set the metrics name identifying the reported metrics, useful for grouping metrics
@@ -178,6 +182,10 @@ Set if the socket can receive broadcast packets
 |[[ipV6]]`ipV6`|`Boolean`|
 +++
 Set if IP v6 should be used
++++
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
 +++
 |[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
 +++
@@ -374,6 +382,10 @@ Set the idle timeout, in seconds. zero means don't timeout.
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
 Set the key/cert options in jks format, aka Java keystore.
++++
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
 +++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
@@ -665,6 +677,10 @@ Set whether keep alive is enabled on the client
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
++++
 |[[maxChunkSize]]`maxChunkSize`|`Number (int)`|
 +++
 Set the maximum HTTP chunk size
@@ -868,6 +884,10 @@ Set the HTTP/2 connection settings immediatly sent by the server when a client c
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
++++
 |[[maxChunkSize]]`maxChunkSize`|`Number (int)`|
 +++
 Set the maximum HTTP chunk size
@@ -1067,6 +1087,10 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
++++
 |[[metricsName]]`metricsName`|`String`|
 +++
 Set the metrics name identifying the reported metrics, useful for grouping metrics
@@ -1203,6 +1227,10 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
++++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
 Set the key/cert store options in pem format.
@@ -1285,6 +1313,10 @@ Set whether Netty pooled buffers are enabled
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
++++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
 Set the TCP receive buffer size
@@ -1631,6 +1663,10 @@ Set the idle timeout, in seconds. zero means don't timeout.
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
 Set the key/cert options in jks format, aka Java keystore.
++++
+|[[logActivity]]`logActivity`|`Boolean`|
++++
+Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
 +++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++

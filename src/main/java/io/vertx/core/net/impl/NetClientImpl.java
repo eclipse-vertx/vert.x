@@ -19,6 +19,7 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -58,6 +59,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   private final Closeable closeHook;
   private final ContextImpl creatingContext;
   private final TCPMetrics metrics;
+  private final boolean logEnabled;
   private volatile boolean closed;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
@@ -68,6 +70,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     this.vertx = vertx;
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
+    this.logEnabled = options.getLogActivity();
     this.closeHook = completionHandler -> {
       NetClientImpl.this.close();
       completionHandler.handle(Future.succeededFuture());
@@ -158,6 +161,9 @@ public class NetClientImpl implements NetClient, MetricsProvider {
         if (sslHelper.isSSL()) {
           SslHandler sslHandler = sslHelper.createSslHandler(vertx, host, port);
           pipeline.addLast("ssl", sslHandler);
+        }
+        if (logEnabled) {
+          pipeline.addLast("logging", new LoggingHandler());
         }
         if (sslHelper.isSSL()) {
           // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
