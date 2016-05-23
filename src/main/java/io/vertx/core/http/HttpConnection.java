@@ -58,9 +58,9 @@ public interface HttpConnection {
    * Send a go away frame to the remote endpoint of the connection.
    * <p/>
    * <ul>
-   *   <li>a {@literal GOAWAY} frame is sent to the to the remote endpoint with the {@code errorCode} and {@@code debugData}</li>
+   *   <li>a {@literal GOAWAY} frame is sent to the to the remote endpoint with the {@code errorCode} and {@code debugData}</li>
    *   <li>any stream created after the stream identified by {@code lastStreamId} will be closed</li>
-   *   <li>for an {@literal errorCode} is different than {@literal 0} when all the remaining streams are closed this connection will be closed automatically</li>
+   *   <li>for an {@literal errorCode} is different than {@code 0} when all the remaining streams are closed this connection will be closed automatically</li>
    * </ul>
    * <p/>
    * This is not implemented for HTTP/1.x.
