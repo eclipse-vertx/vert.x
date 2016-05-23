@@ -512,6 +512,20 @@ Set the negative cache TTL value in seconds. After a failed hostname resolution,
  for a period of time equals to the negative TTL. This allows to reduce the response time of negative replies
  and reduce the amount of messages to DNS servers.
 +++
+|[[hostsPath]]`hostsPath`|`String`|
++++
+Set the path of an alternate hosts configuration file to use instead of the one provided by the os.
+ <p/>
+ The default value is null, so the operating system hosts config is used.
++++
+|[[hostsValue]]`hostsValue`|`Buffer`|
++++
+Set an alternate hosts configuration file to use instead of the one provided by the os.
+ <p/>
+ The value should contain the hosts content literaly, for instance <i>127.0.0.1 localhost</i>
+ <p/>
+ The default value is null, so the operating system hosts config is used.
++++
 |[[maxQueries]]`maxQueries`|`Number (int)`|
 +++
 Set the maximum number of queries when an hostname is resolved.
@@ -658,6 +672,16 @@ Set the maximum HTTP chunk size
 |[[maxPoolSize]]`maxPoolSize`|`Number (int)`|
 +++
 Set the maximum pool size for connections
++++
+|[[maxStreams]]`maxStreams`|`Number (int)`|
++++
+Set the maximum of concurrent streams for an HTTP/2 connection, this limits the number
+ of streams the client will create for a connection. The effective number of streams for a
+ connection can be lower than this value when the server has a lower limit than
+ this value.
+ <p/>
+ Setting the maximum to <code>-1</code> means the client will not limit the concurrency and the client
+ will use a single connection. <code>-1</code> is the default value.
 +++
 |[[maxWaitQueueSize]]`maxWaitQueueSize`|`Number (int)`|
 +++

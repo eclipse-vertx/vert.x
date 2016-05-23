@@ -504,7 +504,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.runOnContext((v) -> done.handle(Future.failedFuture(e)));
+      Future<Void> fut = e != null ? Future.failedFuture(e) : Future.succeededFuture();
+      closeContext.runOnContext((v) -> done.handle(fut));
     }
   }
 

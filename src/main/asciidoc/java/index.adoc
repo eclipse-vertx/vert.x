@@ -1315,6 +1315,17 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
 The default port of a DNS server is `53`, when a server uses a different port, this port can be set
 using a colon delimiter: `192.168.0.2:40000`.
 
+The resolver can be configured to use an alternative _hosts_ file:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+    setHostnameResolverOptions(
+        new HostnameResolverOptions().
+            setHostsPath("/path/to/hosts"))
+);
+----
+
 == High Availability and Fail-Over
 
 Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x
@@ -1576,3 +1587,15 @@ overriding `link:../../apidocs/io/vertx/core/Launcher.html#afterStartingVertx-io
 `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#getDefaultCommand--[getDefaultCommand]`
 * add / remove commands using `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#register-java.lang.Class-[register]`
 and `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#unregister-java.lang.String-[unregister]`
+
+=== Launcher and exit code
+
+When you use the `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` class as main class, it uses the following exit code:
+
+* `0` if the process ends smoothly, or if an uncaught error is thrown
+* `1` for general purpose error
+* `11` if Vert.x cannot be initialized
+* `12` if a spawn process cannot be started, found or stopped. This error code is used by the `start` and
+`stop` command
+* `14` if the system configuration is not meeting the system requirement (shc as java not found)
+* `15` if the main verticle cannot be deployed

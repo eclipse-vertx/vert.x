@@ -372,7 +372,8 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
   private void executeCloseDone(ContextImpl closeContext, Handler<AsyncResult<Void>> done, Exception e) {
     if (done != null) {
-      closeContext.runOnContext(v -> done.handle(Future.failedFuture(e)));
+      Future<Void> fut = e == null ? Future.succeededFuture() : Future.failedFuture(e);
+      closeContext.runOnContext(v -> done.handle(fut));
     }
   }
 

@@ -25,7 +25,6 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.SSLEngine;
-import io.vertx.core.net.TCPSSLOptions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +42,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    * The default maximum number of connections a client will pool = 5
    */
   public static final int DEFAULT_MAX_POOL_SIZE = 5;
+
+  /**
+   * The default maximum number of concurrent stream per connection for HTTP/2 = -1
+   */
+  public static final int DEFAULT_MAX_STREAMS = -1;
 
   /**
    * Default value of whether keep-alive is enabled = true
@@ -108,6 +112,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxPoolSize;
   private boolean keepAlive;
   private boolean pipelining;
+  private int maxStreams;
+
   private boolean tryUseCompression;
   private int maxWebsocketFrameSize;
   private String defaultHost;
@@ -143,6 +149,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
     this.pipelining = other.isPipelining();
+    this.maxStreams = other.maxStreams;
     this.tryUseCompression = other.isTryUseCompression();
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
     this.defaultHost = other.defaultHost;
@@ -175,6 +182,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
     pipelining = DEFAULT_PIPELINING;
+    maxStreams = DEFAULT_MAX_STREAMS;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     defaultHost = DEFAULT_DEFAULT_HOST;
@@ -337,6 +345,31 @@ public class HttpClientOptions extends ClientOptionsBase {
       throw new IllegalArgumentException("maxPoolSize must be > 0");
     }
     this.maxPoolSize = maxPoolSize;
+    return this;
+  }
+
+  /**
+   * @return the maximum number of concurrent streams for an HTTP/2 connection, {@code -1} means
+   * no limit (default value)
+   */
+  public int getMaxStreams() {
+    return maxStreams;
+  }
+
+  /**
+   * Set the maximum of concurrent streams for an HTTP/2 connection, this limits the number
+   * of streams the client will create for a connection. The effective number of streams for a
+   * connection can be lower than this value when the server has a lower limit than
+   * this value.
+   * <p/>
+   * Setting the maximum to {@code -1} means the client will not limit the concurrency and the client
+   * will use a single connection. {@code -1} is the default value.
+   *
+   * @param maxStreams the maximum concurrent for a connection
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxStreams(int maxStreams) {
+    this.maxStreams = maxStreams;
     return this;
   }
 
@@ -705,6 +738,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (defaultPort != that.defaultPort) return false;
     if (keepAlive != that.keepAlive) return false;
     if (maxPoolSize != that.maxPoolSize) return false;
+    if (maxStreams != that.maxStreams) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
     if (pipelining != that.pipelining) return false;
     if (tryUseCompression != that.tryUseCompression) return false;
@@ -729,6 +763,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     int result = super.hashCode();
     result = 31 * result + (verifyHost ? 1 : 0);
     result = 31 * result + maxPoolSize;
+    result = 31 * result + maxStreams;
     result = 31 * result + (keepAlive ? 1 : 0);
     result = 31 * result + (pipelining ? 1 : 0);
     result = 31 * result + (tryUseCompression ? 1 : 0);

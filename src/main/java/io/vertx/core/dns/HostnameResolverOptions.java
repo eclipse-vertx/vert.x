@@ -17,6 +17,7 @@
 package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -48,6 +49,8 @@ public class HostnameResolverOptions {
   public static final int DEFAULT_MAX_QUERIES = 3;
   public static final boolean DEFAULT_RD_FLAG = true;
 
+  private String hostsPath;
+  private Buffer hostsValue;
   private List<String> servers;
   private boolean optResourceEnabled;
   private int cacheMinTimeToLive;
@@ -69,6 +72,8 @@ public class HostnameResolverOptions {
   }
 
   public HostnameResolverOptions(HostnameResolverOptions other) {
+    this.hostsPath = other.hostsPath;
+    this.hostsValue = other.hostsValue != null ? other.hostsValue.copy() : null;
     this.servers = other.servers != null ? new ArrayList<>(other.servers) : null;
     this.optResourceEnabled = other.optResourceEnabled;
     this.cacheMinTimeToLive = other.cacheMinTimeToLive;
@@ -82,6 +87,48 @@ public class HostnameResolverOptions {
   public HostnameResolverOptions(JsonObject json) {
     this();
     HostnameResolverOptionsConverter.fromJson(json, this);
+  }
+
+  /**
+   * @return the path to the alternate hosts configuration file
+   */
+  public String getHostsPath() {
+    return hostsPath;
+  }
+
+  /**
+   * Set the path of an alternate hosts configuration file to use instead of the one provided by the os.
+   * <p/>
+   * The default value is null, so the operating system hosts config is used.
+   *
+   * @param hostsPath the hosts path
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HostnameResolverOptions setHostsPath(String hostsPath) {
+    this.hostsPath = hostsPath;
+    return this;
+  }
+
+  /**
+   * @return the hosts configuration file value
+   */
+  public Buffer getHostsValue() {
+    return hostsValue;
+  }
+
+  /**
+   * Set an alternate hosts configuration file to use instead of the one provided by the os.
+   * <p/>
+   * The value should contain the hosts content literaly, for instance <i>127.0.0.1 localhost</i>
+   * <p/>
+   * The default value is null, so the operating system hosts config is used.
+   *
+   * @param hostsValue the hosts content
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HostnameResolverOptions setHostsValue(Buffer hostsValue) {
+    this.hostsValue = hostsValue;
+    return this;
   }
 
   /**

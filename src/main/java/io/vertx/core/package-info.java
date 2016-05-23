@@ -1214,6 +1214,13 @@
  * The default port of a DNS server is `53`, when a server uses a different port, this port can be set
  * using a colon delimiter: `192.168.0.2:40000`.
  *
+ * The resolver can be configured to use an alternative _hosts_ file:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#configureHosts}
+ * ----
+ *
  * == High Availability and Fail-Over
  *
  * Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x
@@ -1475,6 +1482,19 @@
  * {@link io.vertx.core.impl.launcher.VertxCommandLauncher#getDefaultCommand()}
  * * add / remove commands using {@link io.vertx.core.impl.launcher.VertxCommandLauncher#register(java.lang.Class)}
  * and {@link io.vertx.core.impl.launcher.VertxCommandLauncher#unregister(java.lang.String)}
+ *
+ * === Launcher and exit code
+ *
+ * When you use the {@link io.vertx.core.Launcher} class as main class, it uses the following exit code:
+ *
+ * * {@code 0} if the process ends smoothly, or if an uncaught error is thrown
+ * * {@code 1} for general purpose error
+ * * {@code 11} if Vert.x cannot be initialized
+ * * {@code 12} if a spawn process cannot be started, found or stopped. This error code is used by the `start` and
+ * `stop` command
+ * * {@code 14} if the system configuration is not meeting the system requirement (shc as java not found)
+ * * {@code 15} if the main verticle cannot be deployed
+ *
  *
  */
 @Document(fileName = "index.adoc")

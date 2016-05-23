@@ -148,8 +148,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
-    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.fileResolver = new FileResolver(this);
+    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
     this.haEnabled = options.isClustered() && options.isHAEnabled();
     if (options.isClustered()) {
@@ -539,7 +539,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       closed = this.closed;
     }
     if (closed) {
-      completionHandler.handle(Future.failedFuture("Vert.x closed"));
+      if (completionHandler != null) {
+        completionHandler.handle(Future.failedFuture("Vert.x closed"));
+      }
     } else {
       deploymentManager.deployVerticle(verticle, options, completionHandler);
     }

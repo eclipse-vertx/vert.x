@@ -282,4 +282,12 @@ public class HTTP2Examples {
       connection.close();
     });
   }
+
+  public void useMaxStreams(Vertx vertx) {
+
+    HttpClientOptions clientOptions = new HttpClientOptions().setMaxStreams(10).setMaxPoolSize(3);
+
+    // Uses up to 3 connections and up to 10 streams per connection
+    HttpClient client = vertx.createHttpClient(clientOptions);
+  }
 }

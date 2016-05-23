@@ -31,22 +31,22 @@ public class FutureFactoryImpl implements FutureFactory {
 
   // TODO - for completed futures with null values we could maybe reuse a static instance to save allocation
   @Override
-  public <T> Future<T> completedFuture() {
+  public <T> Future<T> succeededFuture() {
     return new FutureImpl<>((T)null);
   }
 
   @Override
-  public <T> Future<T> completedFuture(T result) {
+  public <T> Future<T> succeededFuture(T result) {
     return new FutureImpl<>(result);
   }
 
   @Override
-  public <T> Future<T> completedFuture(Throwable t) {
+  public <T> Future<T> failedFuture(Throwable t) {
     return new FutureImpl<>(t);
   }
 
   @Override
-  public <T> Future<T> completedFuture(String failureMessage, boolean failed) {
-    return new FutureImpl<>(failureMessage, true);
+  public <T> Future<T> failureFuture(String failureMessage) {
+    return new FutureImpl<>(failureMessage);
   }
 }

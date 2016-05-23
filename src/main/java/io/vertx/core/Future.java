@@ -50,7 +50,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> succeededFuture() {
-    return factory.completedFuture();
+    return factory.succeededFuture();
   }
 
   /**
@@ -61,7 +61,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> succeededFuture(T result) {
-    return factory.completedFuture(result);
+    return factory.succeededFuture(result);
   }
 
   /**
@@ -73,7 +73,7 @@ public interface Future<T> extends AsyncResult<T> {
    */
   @GenIgnore
   static <T> Future<T> failedFuture(Throwable t) {
-    return factory.completedFuture(t);
+    return factory.failedFuture(t);
   }
 
   /**
@@ -84,7 +84,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> failedFuture(String failureMessage) {
-    return factory.completedFuture(failureMessage, true);
+    return factory.failureFuture(failureMessage);
   }
 
   /**

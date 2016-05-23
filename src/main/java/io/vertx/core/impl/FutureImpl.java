@@ -28,30 +28,30 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   private Throwable throwable;
 
   /**
-   * Create a FutureResult that hasn't completed yet
+   * Create a future that hasn't completed yet
    */
   FutureImpl() {
   }
 
   /**
-   * Create a VoidResult that has already completed
-   * @param t The Throwable or null if succeeded
+   * Create a future that has already failed
+   * @param t the throwable
    */
   FutureImpl(Throwable t) {
-    if (t == null) {
-      complete(null);
-    } else {
-      fail(t);
-    }
+    fail(t != null ? t : new NoStackTraceThrowable(null));
   }
 
-  FutureImpl(String failureMessage, boolean failed) {
+  /**
+   * Create a future that has already failed
+   * @param failureMessage the failure message
+   */
+  FutureImpl(String failureMessage) {
     this(new NoStackTraceThrowable(failureMessage));
   }
 
   /**
-   * Create a FutureResult that has already succeeded
-   * @param result The result
+   * Create a future that has already succeeded
+   * @param result the result
    */
   FutureImpl(T result) {
     complete(result);
@@ -143,7 +143,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
    */
   public void fail(Throwable throwable) {
     checkComplete();
-    this.throwable = throwable;
+    this.throwable = throwable != null ? throwable : new NoStackTraceThrowable(null);
     failed = true;
     checkCallHandler();
   }
