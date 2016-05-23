@@ -21,6 +21,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.streams.Pump;
 
 /**
@@ -700,8 +702,20 @@ public class HTTPExamples {
 
   public void example58(Vertx vertx) {
 
-    HttpClientOptions options = new HttpClientOptions().setProxyHost("localhost").setProxyPort(3128);
-    options.setProxyUsername("username").setProxyPassword("secret");
+    HttpClientOptions options = new HttpClientOptions()
+        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.HTTP)
+            .setProxyHost("localhost").setProxyPort(3128)
+            .setProxyUsername("username").setProxyPassword("secret"));
+    HttpClient client = vertx.createHttpClient(options);
+
+  }
+
+  public void example59(Vertx vertx) {
+
+    HttpClientOptions options = new HttpClientOptions()
+        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5)
+            .setProxyHost("localhost").setProxyPort(1080)
+            .setProxyUsername("username").setProxyPassword("secret"));
     HttpClient client = vertx.createHttpClient(options);
 
   }

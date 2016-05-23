@@ -43,14 +43,17 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.proxy.ProxyChannelProvider;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
+import io.vertx.core.net.impl.ChannelProviderAdditionalOperations;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.proxy.ProxyChannelProvider;
+import io.vertx.core.net.impl.ChannelProvider;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.util.ArrayDeque;
@@ -128,10 +131,10 @@ public class ConnectionManager {
   }
 
   public void getConnectionForWebsocket(int port, String host, Waiter waiter) {
-//    if (!keepAlive && pipelining) {
-//      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
-//    } else {
-//    }
+    //    if (!keepAlive && pipelining) {
+    //      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
+    //    } else {
+    //    }
     TargetAddress address = new TargetAddress(host, port);
     ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);
@@ -308,12 +311,31 @@ public class ConnectionManager {
       bootstrap.channel(NioSocketChannel.class);
       applyConnectionOptions(options, bootstrap);
 
-      //
+      ChannelProviderAdditionalOperations addl = new ChannelProviderAdditionalOperations() {
+
+        HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
+
+        @Override
+        public void channelStartup(Channel ch) {
+        }
+
+        @Override
+        public void pipelineSetup(ChannelPipeline pipeline) {
+          pipeline.addLast("codec", codec);
+        }
+
+        @Override
+        public void pipelineDeprov(ChannelPipeline pipeline) {
+          pipeline.remove(codec);
+        }
+
+      };
+
       ChannelProvider channelProvider;
-      if (options.getProxyHost() == null) {
+      if (options.getProxyOptions() == null) {
         channelProvider = new ChannelProvider() {
           @Override
-          public void connect(VertxInternal vertx, Bootstrap bootstrap, HttpClientOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
+          public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
             bootstrap.handler(new ChannelInitializer<Channel>() {
               @Override
               protected void initChannel(Channel ch) throws Exception {
@@ -330,7 +352,7 @@ public class ConnectionManager {
           }
         };
       } else {
-        channelProvider = new ProxyChannelProvider();
+        channelProvider = new ProxyChannelProvider(addl);
       }
 
       Handler<AsyncResult<Channel>> channelHandler = res -> {
@@ -435,9 +457,9 @@ public class ConnectionManager {
       };
 
       try {
-        channelProvider.connect(vertx, bootstrap, options, host, port, channelHandler);
+        channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelHandler);
       } catch (NoClassDefFoundError e) {
-        if (options.getProxyHost() != null && e.getMessage().contains("io/netty/handler/proxy")) {
+        if (options.getProxyOptions() != null && e.getMessage().contains("io/netty/handler/proxy")) {
           log.warn("Depedency io.netty:netty-handler-proxy missing - check your classpath");
           channelHandler.handle(Future.failedFuture(e));
         }
@@ -478,7 +500,7 @@ public class ConnectionManager {
     }
 
     private void connectionFailed(ContextImpl context, Channel ch, Handler<Throwable> connectionExceptionHandler,
-                                  Throwable t) {
+        Throwable t) {
       // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
       // If that doesn't exist just log it
       Handler<Throwable> exHandler =

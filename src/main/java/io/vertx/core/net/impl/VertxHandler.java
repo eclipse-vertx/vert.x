@@ -127,6 +127,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
       ctx.close();
     }
+    ctx.fireUserEventTriggered(evt);
   }
 
   protected abstract void channelRead(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception;

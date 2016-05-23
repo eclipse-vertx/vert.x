@@ -7,6 +7,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -14,41 +16,28 @@ import io.vertx.core.streams.Pump;
 
 /**
  * Http Connect Proxy
+ *
  * <p>
  * A simple Http CONNECT proxy for testing https proxy functionality. HTTP server running on localhost allowing CONNECT
  * requests only. This is basically a socket forwarding protocol allowing to use the proxy server to connect to the
  * internet.
+ *
  * <p>
  * Usually the server will be started in @Before and stopped in @After for a unit test using HttpClient with the
  * setProxyXXX methods.
  *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-public class ConnectHttpProxy {
+public class ConnectHttpProxy extends TestProxyBase {
 
-  private final String username;
+  private static final int PORT = 13128;
+
+  private static final Logger log = LoggerFactory.getLogger(ConnectHttpProxy.class);
+
   private HttpServer server;
-  private String lastUri;
-  private String forceUri;
 
   public ConnectHttpProxy(String username) {
-    this.username = username;
-  }
-
-  /**
-   * check the last accessed host:ip
-   * @return the lastUri
-   */
-  public String getLastUri() {
-    return lastUri;
-  }
-
-  /**
-   * force uri to connect to a given string (e.g. "localhost:4443")
-   * this is to simulate a host that only resolves on the proxy
-   */
-  public void setForceUri(String uri) {
-    forceUri = uri;
+    super(username);
   }
 
   /**
@@ -59,9 +48,10 @@ public class ConnectHttpProxy {
    * @param finishedHandler
    *          will be called when the start has started
    */
+  @Override
   public void start(Vertx vertx, Handler<Void> finishedHandler) {
     HttpServerOptions options = new HttpServerOptions();
-    options.setHost("localhost").setPort(13128);
+    options.setHost("localhost").setPort(PORT);
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
       HttpMethod method = request.method();
@@ -81,7 +71,7 @@ public class ConnectHttpProxy {
         if (forceUri != null) {
           uri = forceUri;
         }
-        String split[] = uri.split(":");
+        String[] split = uri.split(":");
         String host = split[0];
         int port;
         try {
@@ -101,6 +91,7 @@ public class ConnectHttpProxy {
             Pump.pump(serverSocket, clientSocket).start();
             Pump.pump(clientSocket, serverSocket).start();
           } else {
+            log.error("connect() failed", result.cause());
             request.response().setStatusCode(403).end("request failed");
           }
         });
@@ -113,13 +104,19 @@ public class ConnectHttpProxy {
 
   /**
    * Stop the server.
-   *
+   * <p>
    * Doesn't wait for the close operation to finish
    */
+  @Override
   public void stop() {
     if (server != null) {
       server.close();
       server = null;
     }
+  }
+
+  @Override
+  public int getPort() {
+    return PORT;
   }
 }
