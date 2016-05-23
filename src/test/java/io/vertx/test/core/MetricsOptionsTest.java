@@ -16,10 +16,24 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.metrics.impl.DummyVertxMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.test.fakemetrics.FakeVertxMetrics;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Random;
 
 /**
@@ -61,5 +75,67 @@ public class MetricsOptionsTest extends VertxTestBase {
     assertEquals(metricsEnabled, options.isEnabled());
     assertEquals(metricsEnabled, options.toJson().getBoolean("enabled"));
     assertEquals(customValue, options.toJson().getString("custom"));
+  }
+
+  @Test
+  public void testMetricsEnabledWithoutConfig() {
+    vertx.close();
+    vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
+    assertNotNull(metrics);
+    assertTrue(metrics instanceof DummyVertxMetrics);
+  }
+
+  @Test
+  public void testSetMetricsInstance() {
+    DummyVertxMetrics metrics = new DummyVertxMetrics();
+    vertx.close();
+    vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new SimpleVertxMetricsFactory<>(metrics))));
+    assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
+  }
+
+  @Test
+  public void testMetricsFromServiceLoader() {
+    vertx.close();
+    VertxOptions options = new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true));
+    vertx = createVertxLoadingMetricsFromMetaInf(options, "io.vertx.test.fakemetrics.FakeMetricsFactory");
+    VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
+    assertNotNull(metrics);
+    assertTrue(metrics instanceof FakeVertxMetrics);
+  }
+
+  @Test
+  public void testSetMetricsInstanceTakesPrecedenceOverServiceLoader() {
+    DummyVertxMetrics metrics = new DummyVertxMetrics();
+    vertx.close();
+    VertxOptions options = new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new SimpleVertxMetricsFactory<>(metrics)));
+    vertx = createVertxLoadingMetricsFromMetaInf(options, "io.vertx.test.fakemetrics.FakeMetricsFactory");
+    assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
+  }
+
+  static Vertx createVertxLoadingMetricsFromMetaInf(VertxOptions options, String factoryFqn) {
+    ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
+    ClassLoader cl = createMetricsFromMetaInfLoader(factoryFqn);
+    Thread.currentThread().setContextClassLoader(cl);
+    try {
+      return Vertx.vertx(options);
+    } finally {
+      Thread.currentThread().setContextClassLoader(oldCL);
+    }
+  }
+
+  static ClassLoader createMetricsFromMetaInfLoader(String factoryFqn) {
+    return new URLClassLoader(new URL[0], Thread.currentThread().getContextClassLoader()) {
+      @Override
+      public Enumeration<URL> findResources(String name) throws IOException {
+        if (name.equals("META-INF/services/io.vertx.core.spi.VertxMetricsFactory")) {
+          File f = File.createTempFile("vertx", ".txt");
+          f.deleteOnExit();
+          Files.write(f.toPath(), factoryFqn.getBytes());
+          return Collections.enumeration(Collections.singleton(f.toURI().toURL()));
+        }
+        return super.findResources(name);
+      }
+    };
   }
 }

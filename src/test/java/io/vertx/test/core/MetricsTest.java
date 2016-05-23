@@ -53,20 +53,10 @@ public class MetricsTest extends VertxTestBase {
 
   private static final String ADDRESS1 = "some-address1";
 
-  @BeforeClass
-  public static void setFactory() {
-    ConfigurableMetricsFactory.delegate = new FakeMetricsFactory();
-  }
-
-  @AfterClass
-  public static void unsetFactory() {
-    ConfigurableMetricsFactory.delegate = null;
-  }
-
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
-    options.setMetricsOptions(new MetricsOptions().setEnabled(true));
+    options.setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory()));
     return options;
   }
 
@@ -861,7 +851,7 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testThreadPoolMetricsWithNamedExecuteBlocking() {
     vertx.close(); // Close the instance automatically created
-    vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory())));
 
     WorkerExecutor workerExec = vertx.createSharedWorkerExecutor("my-pool", 10);
 

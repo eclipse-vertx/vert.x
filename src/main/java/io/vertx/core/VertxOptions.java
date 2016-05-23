@@ -132,7 +132,7 @@ public class VertxOptions {
   private boolean haEnabled = DEFAULT_HA_ENABLED;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
-  private MetricsOptions metrics = new MetricsOptions();
+  private MetricsOptions metricsOptions = new MetricsOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
   private EventBusOptions eventBusOptions = new EventBusOptions();
   private HostnameResolverOptions hostnameResolverOptions = new HostnameResolverOptions();
@@ -159,7 +159,7 @@ public class VertxOptions {
     this.haEnabled = other.isHAEnabled();
     this.quorumSize = other.getQuorumSize();
     this.haGroup = other.getHAGroup();
-    this.metrics = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
+    this.metricsOptions = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.hostnameResolverOptions = other.hostnameResolverOptions != null ? new HostnameResolverOptions() : null;
@@ -574,7 +574,7 @@ public class VertxOptions {
    * @return the metrics options
    */
   public MetricsOptions getMetricsOptions() {
-    return metrics;
+    return metricsOptions;
   }
 
   /**
@@ -584,7 +584,7 @@ public class VertxOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setMetricsOptions(MetricsOptions metrics) {
-    this.metrics = metrics;
+    this.metricsOptions = metrics;
     return this;
   }
 
@@ -671,7 +671,7 @@ public class VertxOptions {
       return false;
     if (hostnameResolverOptions != null ? !hostnameResolverOptions.equals(that.hostnameResolverOptions) : that.hostnameResolverOptions != null)
       return false;
-    return !(metrics != null ? !metrics.equals(that.metrics) : that.metrics != null);
+    return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
 
   }
 
@@ -687,7 +687,7 @@ public class VertxOptions {
     result = 31 * result + (haEnabled ? 1 : 0);
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
-    result = 31 * result + (metrics != null ? metrics.hashCode() : 0);
+    result = 31 * result + (metricsOptions != null ? metricsOptions.hashCode() : 0);
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
     result = 31 * result + (hostnameResolverOptions != null ? hostnameResolverOptions.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
@@ -707,7 +707,7 @@ public class VertxOptions {
         ", haEnabled=" + haEnabled +
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
-        ", metrics=" + metrics +
+        ", metrics=" + metricsOptions +
         ", hostnameResolver=" + hostnameResolverOptions.toJson() +
         ", eventbus=" + eventBusOptions.toJson() +
         ", warningExceptionTime=" + warningExceptionTime +

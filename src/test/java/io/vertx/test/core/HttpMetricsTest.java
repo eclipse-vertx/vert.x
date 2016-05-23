@@ -45,20 +45,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class HttpMetricsTest extends HttpTestBase {
 
-  @BeforeClass
-  public static void setFactory() {
-    ConfigurableMetricsFactory.delegate = new FakeMetricsFactory();
-  }
-
-  @AfterClass
-  public static void unsetFactory() {
-    ConfigurableMetricsFactory.delegate = null;
-  }
-
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
-    options.setMetricsOptions(new MetricsOptions().setEnabled(true));
+    options.setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory()));
     return options;
   }
 

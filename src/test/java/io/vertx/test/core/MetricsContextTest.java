@@ -26,6 +26,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.net.*;
+import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.*;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,12 +46,12 @@ public class MetricsContextTest extends VertxTestBase {
   public void testFactory() throws Exception {
     AtomicReference<Thread> metricsThread = new AtomicReference<>();
     AtomicReference<Context> metricsContext = new AtomicReference<>();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> {
+    VertxMetricsFactory factory = (vertx, options) -> {
       metricsThread.set(Thread.currentThread());
       metricsContext.set(Vertx.currentContext());
       return new DummyVertxMetrics();
     };
-    vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     assertSame(Thread.currentThread(), metricsThread.get());
     assertNull(metricsContext.get());
   }
@@ -60,12 +61,12 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicReference<Thread> metricsThread = new AtomicReference<>();
     AtomicReference<Context> metricsContext = new AtomicReference<>();
     Thread testThread = Thread.currentThread();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> {
+    VertxMetricsFactory factory = (vertx, options) -> {
       metricsThread.set(Thread.currentThread());
       metricsContext.set(Vertx.currentContext());
       return new DummyVertxMetrics();
     };
-    clusteredVertx(new VertxOptions().setClustered(true).setMetricsOptions(new MetricsOptions().setEnabled(true)), onSuccess(vertx -> {
+    clusteredVertx(new VertxOptions().setClustered(true).setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)), onSuccess(vertx -> {
       assertSame(testThread, metricsThread.get());
       assertNull(metricsContext.get());
       testComplete();
@@ -93,7 +94,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
         return new DummyHttpServerMetrics() {
@@ -141,7 +142,7 @@ public class MetricsContextTest extends VertxTestBase {
       }
     };
     CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       HttpServer server = vertx.createHttpServer().requestHandler(req -> {
@@ -196,7 +197,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
         return new DummyHttpServerMetrics() {
@@ -244,7 +245,7 @@ public class MetricsContextTest extends VertxTestBase {
       }
     };
     CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       HttpServer server = vertx.createHttpServer().websocketHandler(ws -> {
@@ -301,7 +302,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
@@ -346,7 +347,7 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     HttpServer server = vertx.createHttpServer();
     server.requestHandler(req -> {
       req.endHandler(buf -> {
@@ -410,7 +411,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
@@ -456,7 +457,7 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     HttpServer server = vertx.createHttpServer();
     server.websocketHandler(ws -> {
       ws.handler(buf -> {
@@ -517,7 +518,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
         return new DummyTCPMetrics() {
@@ -554,7 +555,7 @@ public class MetricsContextTest extends VertxTestBase {
       }
     };
     CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       NetServer server = vertx.createNetServer().connectHandler(so -> {
@@ -610,7 +611,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public TCPMetrics createMetrics(NetClient client, NetClientOptions options) {
         return new DummyTCPMetrics() {
@@ -647,7 +648,7 @@ public class MetricsContextTest extends VertxTestBase {
       }
     };
     CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     Context ctx = contextFactory.apply(vertx);
     NetServer server = vertx.createNetServer().connectHandler(so -> {
       so.handler(buf -> {
@@ -702,7 +703,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
         return new DummyDatagramMetrics() {
@@ -732,7 +733,7 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       expectedThread.set(Thread.currentThread());
@@ -764,7 +765,7 @@ public class MetricsContextTest extends VertxTestBase {
   @Test
   public void testEventBusLifecycle() {
     AtomicBoolean closeCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public EventBusMetrics createMetrics(EventBus eventBus) {
         return new DummyEventBusMetrics() {
@@ -779,7 +780,7 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     vertx.eventBus();
     executeInVanillaThread(() -> {
       vertx.close(onSuccess(v -> {
@@ -807,7 +808,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean unregisteredCalled = new AtomicBoolean();
     AtomicBoolean beginHandleCalled = new AtomicBoolean();
     AtomicBoolean endHandleCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public EventBusMetrics createMetrics(EventBus eventBus) {
         return new DummyEventBusMetrics() {
@@ -838,7 +839,7 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     EventBus eb = vertx.eventBus();
     runOnContext.accept(vertx, v -> {
       MessageConsumer<Object> consumer = eb.consumer("the_address");
@@ -882,7 +883,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicReference<Context> verticleContext = new AtomicReference<>();
     AtomicBoolean deployedCalled = new AtomicBoolean();
     AtomicBoolean undeployedCalled = new AtomicBoolean();
-    ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public void verticleDeployed(Verticle verticle) {
         deployedCalled.set(true);
@@ -894,7 +895,7 @@ public class MetricsContextTest extends VertxTestBase {
         checker.accept(verticleThread.get(), verticleContext.get());
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {

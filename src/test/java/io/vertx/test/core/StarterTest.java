@@ -247,32 +247,23 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testCustomMetricsOptions() throws Exception {
+    System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
+    System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "customProperty", "customPropertyValue");
+    MyStarter starter = new MyStarter();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
+    ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(MetricsOptionsTest.createMetricsFromMetaInfLoader("io.vertx.test.core.CustomMetricsFactory"));
     try {
-      ConfigurableMetricsFactory.delegate = new VertxMetricsFactory() {
-        @Override
-        public VertxMetrics metrics(Vertx vertx, VertxOptions options) {
-          return new DummyVertxMetrics();
-        }
-
-        @Override
-        public MetricsOptions newOptions() {
-          return new CustomMetricsOptions();
-        }
-      };
-      System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
-      System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "customProperty", "customPropertyValue");
-      MyStarter starter = new MyStarter();
-      String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
       starter.run(args);
-      waitUntil(() -> TestVerticle.instanceCount.get() == 1);
-      VertxOptions opts = starter.getVertxOptions();
-      CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
-      assertEquals("customPropertyValue", custom.getCustomProperty());
-
-      cleanup(starter);
     } finally {
-      ConfigurableMetricsFactory.delegate = null;
+      Thread.currentThread().setContextClassLoader(oldCL);
     }
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    VertxOptions opts = starter.getVertxOptions();
+    CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
+    assertEquals("customPropertyValue", custom.getCustomProperty());
+
+    cleanup(starter);
   }
 
   @Test

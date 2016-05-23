@@ -778,6 +778,9 @@
  * order to gather metrics. For more information on this, please consult the
  * {@link io.vertx.core.spi.metrics.VertxMetrics API Documentation}.
  *
+ * You can also specify a metrics factory programmatically if embedding Vert.x using
+ * {@link io.vertx.core.metrics.MetricsOptions#setFactory(io.vertx.core.spi.VertxMetricsFactory)}.
+ *
  * == OSGi
  *
  * Vert.x Core is packaged as an OSGi bundle, so can be used in any OSGi R4.2+ environment such as Apache Felix

@@ -871,6 +871,9 @@ to the classpath. The metrics SPI is an advanced feature which allows implemente
 order to gather metrics. For more information on this, please consult the
 `link:../../apidocs/io/vertx/core/spi/metrics/VertxMetrics.html[API Documentation]`.
 
+You can also specify a metrics factory programmatically if embedding Vert.x using
+`link:../../apidocs/io/vertx/core/metrics/MetricsOptions.html#setFactory-io.vertx.core.spi.VertxMetricsFactory-[setFactory]`.
+
 == OSGi
 
 Vert.x Core is packaged as an OSGi bundle, so can be used in any OSGi R4.2+ environment such as Apache Felix

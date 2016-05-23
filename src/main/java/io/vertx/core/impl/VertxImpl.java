@@ -363,14 +363,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private VertxMetrics initialiseMetrics(VertxOptions options) {
     if (options.getMetricsOptions() != null && options.getMetricsOptions().isEnabled()) {
-      ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
-      if (factories.iterator().hasNext()) {
-        VertxMetricsFactory factory = factories.iterator().next();
+      VertxMetricsFactory factory = options.getMetricsOptions().getFactory();
+      if (factory == null) {
+        ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
+        if (factories.iterator().hasNext()) {
+          factory = factories.iterator().next();
+        } else {
+          log.warn("Metrics has been set to enabled but no VertxMetricsFactory found on classpath");
+        }
+      }
+      if (factory != null) {
         VertxMetrics metrics = factory.metrics(this, options);
         Objects.requireNonNull(metrics, "The metric instance created from " + factory + " cannot be null");
         return metrics;
-      } else {
-        log.warn("Metrics has been set to enabled but no VertxMetricsFactory found on classpath");
       }
     }
     return new DummyVertxMetrics();
