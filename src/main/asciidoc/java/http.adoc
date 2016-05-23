@@ -1541,7 +1541,7 @@ When pipe-lining is enabled requests will be written to connections without wait
 HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
 connection for each server, all the streams to the same server are multiplexed on the same connection.
 
-When it is desirable to limit the number of concurrent streams per server and uses a connection
+When it is desirable to limit the number of concurrent streams per server and use a connection
 pool instead of a single connection, `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxStreams-int-[setMaxStreams]`
 can be used.
 

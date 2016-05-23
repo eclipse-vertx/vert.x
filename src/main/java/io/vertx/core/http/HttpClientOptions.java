@@ -349,7 +349,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return the maximum number of concurrent streams for an HTTP/2 connection, {@literal -1} means
+   * @return the maximum number of concurrent streams for an HTTP/2 connection, {@code -1} means
    * no limit (default value)
    */
   public int getMaxStreams() {
@@ -357,13 +357,13 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set the maximum of concurrent concurrency for an HTTP/2 connection, this limits the number
-   * of streams the client will create for a connection. The effective number of stream for a
-   * connection can be lower than this value when the server has limited this value lower than
+   * Set the maximum of concurrent streams for an HTTP/2 connection, this limits the number
+   * of streams the client will create for a connection. The effective number of streams for a
+   * connection can be lower than this value when the server has a lower limit than
    * this value.
    * <p/>
-   * Setting a maximum to {@literal -1} means the client will not limit the concurrency and the client
-   * will use a single connection. {@literal -1} is the default value.
+   * Setting the maximum to {@code -1} means the client will not limit the concurrency and the client
+   * will use a single connection. {@code -1} is the default value.
    *
    * @param maxStreams the maximum concurrent for a connection
    * @return a reference to this, so the API can be used fluently

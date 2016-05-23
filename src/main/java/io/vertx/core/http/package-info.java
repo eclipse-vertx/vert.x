@@ -1179,7 +1179,7 @@
  * HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
  * connection for each server, all the streams to the same server are multiplexed on the same connection.
  *
- * When it is desirable to limit the number of concurrent streams per server and uses a connection
+ * When it is desirable to limit the number of concurrent streams per server and use a connection
  * pool instead of a single connection, {@link io.vertx.core.http.HttpClientOptions#setMaxStreams(int)}
  * can be used.
  *
