@@ -1198,13 +1198,16 @@
  * Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
  * connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
  *
- * === HTTP/2 connections
+ * === HTTP connections
  *
- * HTTP/2 does not change HTTP programming and the design of HTTP server and clients remains the same. However HTTP/2
- * defines a mapping of HTTP's semantics to a connection.
- *
- * The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP/2 connection events, lifecycle
+ * The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP connection events, lifecycle
  * and settings.
+ *
+ * HTTP/2 implements fully the {@link io.vertx.core.http.HttpConnection} API.
+ *
+ * HTTP/1.x implements partially the {@link io.vertx.core.http.HttpConnection} API: only the close operation,
+ * the close handler and exception handler are implemented. This protocol does not provide semantics for
+ * the other operations.
  *
  * ==== Server connections
  *
@@ -1222,8 +1225,6 @@
  * {@link examples.HTTP2Examples#example17}
  * ----
  *
- * NOTE: this only applies to the HTTP/2 protocol
- *
  * ==== Client connections
  *
  * The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the request connection on the client:
@@ -1239,8 +1240,6 @@
  * ----
  * {@link examples.HTTP2Examples#example19}
  * ----
- *
- * NOTE: this only applies to the HTTP/2 protocol
  *
  * ==== Connection settings
  *
@@ -1275,6 +1274,8 @@
  * {@link examples.HTTP2Examples#example22}
  * ----
  *
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
  * ==== Connection ping
  *
  * HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
@@ -1297,7 +1298,9 @@
  * The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
  * implementing  protocols on top of HTTP/2.
  *
- * ==== Connection shutdown
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
+ * ==== Connection shutdown and go away
  *
  * Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GOAWAY} frame to the
  * remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
@@ -1309,14 +1312,10 @@
  * {@link examples.HTTP2Examples#example25}
  * ----
  *
- * Connection {@link io.vertx.core.http.HttpConnection#close} close is a shutdown with no delay, the {@literal GOAWAY}
- * frame will still be sent before the connection is closed.
- *
- * The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when connection is closed,
- * {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed but the
+ * The {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed, the
  * connection is not yet closed.
  *
- * Finally it's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
+ * It's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
  * it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
  * close:
  *
@@ -1341,6 +1340,17 @@
  * ----
  *
  * This applies also when a {@literal GOAWAY} is received.
+ *
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
+ * ==== Connection close
+ *
+ * Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
+ *
+ * - it closes the socket for HTTP/1.x
+ * - a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed. *
+ *
+ * The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
  *
  * === HttpClient usage
  *

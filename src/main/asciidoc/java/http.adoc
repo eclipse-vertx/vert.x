@@ -1563,13 +1563,16 @@ or close the client instance.
 Alternatively you can set idle timeout using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setIdleTimeout-int-[setIdleTimeout]` - any
 connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
 
-=== HTTP/2 connections
+=== HTTP connections
 
-HTTP/2 does not change HTTP programming and the design of HTTP server and clients remains the same. However HTTP/2
-defines a mapping of HTTP's semantics to a connection.
-
-The `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` offers the API for dealing with HTTP/2 connection events, lifecycle
+The `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` offers the API for dealing with HTTP connection events, lifecycle
 and settings.
+
+HTTP/2 implements fully the `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` API.
+
+HTTP/1.x implements partially the `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` API: only the close operation,
+the close handler and exception handler are implemented. This protocol does not provide semantics for
+the other operations.
 
 ==== Server connections
 
@@ -1591,8 +1594,6 @@ server.connectionHandler(connection -> {
 });
 ----
 
-NOTE: this only applies to the HTTP/2 protocol
-
 ==== Client connections
 
 The `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#connection--[connection]` method returns the request connection on the client:
@@ -1610,8 +1611,6 @@ request.connectionHandler(connection -> {
   System.out.println("Connected to the server");
 });
 ----
-
-NOTE: this only applies to the HTTP/2 protocol
 
 ==== Connection settings
 
@@ -1652,6 +1651,8 @@ connection.remoteSettingsHandler(settings -> {
 });
 ----
 
+NOTE: this only applies to the HTTP/2 protocol
+
 ==== Connection ping
 
 HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
@@ -1682,7 +1683,9 @@ connection.pingHandler(ping -> {
 The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
 implementing  protocols on top of HTTP/2.
 
-==== Connection shutdown
+NOTE: this only applies to the HTTP/2 protocol
+
+==== Connection shutdown and go away
 
 Calling `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdown--[shutdown]` will send a `GOAWAY` frame to the
 remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
@@ -1694,14 +1697,10 @@ waits some time (30 seconds by default) until all current streams closed and clo
 connection.shutdown();
 ----
 
-Connection `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]` close is a shutdown with no delay, the `GOAWAY`
-frame will still be sent before the connection is closed.
-
-The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#closeHandler-io.vertx.core.Handler-[closeHandler]` notifies when connection is closed,
-`link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` notifies when all streams have been closed but the
+The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` notifies when all streams have been closed, the
 connection is not yet closed.
 
-Finally it's possible to just send a `GOAWAY` frame, the main difference with a shutdown is that
+It's possible to just send a `GOAWAY` frame, the main difference with a shutdown is that
 it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
 close:
 
@@ -1733,6 +1732,17 @@ connection.shutdownHandler(v -> {
 ----
 
 This applies also when a `GOAWAY` is received.
+
+NOTE: this only applies to the HTTP/2 protocol
+
+==== Connection close
+
+Connection `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]` closes the connection:
+
+- it closes the socket for HTTP/1.x
+- a shutdown with no delay for HTTP/2, the `GOAWAY` frame will still be sent before the connection is closed. *
+
+The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#closeHandler-io.vertx.core.Handler-[closeHandler]` notifies when a connection is closed.
 
 === HttpClient usage
 
