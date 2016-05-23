@@ -1626,6 +1626,8 @@ public class JsonObjectTest {
     Object instant = Instant.now();
     JsonObject jsonObject = new JsonObject();
     jsonObject.put("instant", instant);
+    // assert data is stored as String
+    assertTrue(jsonObject.getValue("instant") instanceof String);
   }
 
   @Test
