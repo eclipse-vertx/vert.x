@@ -349,7 +349,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientRequest writeFrame(int type, int flags, Buffer payload);
+  HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload);
 
   /**
    * @return the id of the stream of this response, {@literal -1} when it is not yet determined, i.e
@@ -360,12 +360,12 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   }
 
   /**
-   * Like {@link #writeFrame(int, int, Buffer)} but with an {@link HttpFrame}.
+   * Like {@link #writeCustomFrame(int, int, Buffer)} but with an {@link HttpFrame}.
    *
    * @param frame the frame to write
    */
   @Fluent
-  default HttpClientRequest writeFrame(HttpFrame frame) {
-    return writeFrame(frame.type(), frame.flags(), frame.payload());
+  default HttpClientRequest writeCustomFrame(HttpFrame frame) {
+    return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
 }

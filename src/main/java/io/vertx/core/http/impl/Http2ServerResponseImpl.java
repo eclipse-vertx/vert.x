@@ -404,7 +404,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse writeFrame(int type, int flags, Buffer payload) {
+  public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
     synchronized (conn) {
       checkEnded();
       checkSendHeaders(false);

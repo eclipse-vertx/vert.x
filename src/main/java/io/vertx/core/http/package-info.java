@@ -334,21 +334,21 @@
  * WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
  * to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
  *
- * ==== Receiving unknown HTTP/2 frames
+ * ==== Receiving custom HTTP/2 frames
  *
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
  * of frames to be sent and received.
  *
- * To receive unknown frames, you can use the {@link io.vertx.core.http.HttpServerRequest#unknownFrameHandler} on the request,
- * this will get called every time an unknown frame arrives. Here's an example:
+ * To receive custom frames, you can use the {@link io.vertx.core.http.HttpServerRequest#customFrameHandler} on the request,
+ * this will get called every time a custom frame arrives. Here's an example:
  *
  * [source,$lang]
  * ----
  * {@link examples.HTTP2Examples#example1}
  * ----
  *
- * HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when an
- * unkown frame is received whether the request is paused or is not
+ * HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when a
+ * custom frame is received whether the request is paused or is not
  *
  * ==== Non standard HTTP methods
  *
@@ -568,7 +568,7 @@
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
  * of frames to be sent and received.
  *
- * To send such frames, you can use the {@link io.vertx.core.http.HttpServerResponse#writeFrame} on the response.
+ * To send such frames, you can use the {@link io.vertx.core.http.HttpServerResponse#writeCustomFrame} on the response.
  * Here's an example:
  *
  * [source,$lang]
@@ -1097,12 +1097,12 @@
  * When no handler is set, any stream pushed will be automatically cancelled by the client with
  * a stream reset (`8` error code).
  *
- * ==== Receiving unknown HTTP/2 frames
+ * ==== Receiving custom HTTP/2 frames
  *
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind of
  * frames to be sent and received.
  *
- * To receive unknown frames, you can use the unknownFrameHandler on the request, this will get called every time an unknown
+ * To receive custom frames, you can use the customFrameHandler on the request, this will get called every time a custom
  * frame arrives. Here's an example:
  *
  * [source,$lang]

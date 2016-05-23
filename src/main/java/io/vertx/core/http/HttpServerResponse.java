@@ -443,15 +443,15 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse writeFrame(int type, int flags, Buffer payload);
+  HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload);
 
   /**
-   * Like {@link #writeFrame(int, int, Buffer)} but with an {@link HttpFrame}.
+   * Like {@link #writeCustomFrame(int, int, Buffer)} but with an {@link HttpFrame}.
    *
    * @param frame the frame to write
    */
   @Fluent
-  default HttpServerResponse writeFrame(HttpFrame frame) {
-    return writeFrame(frame.type(), frame.flags(), frame.payload());
+  default HttpServerResponse writeCustomFrame(HttpFrame frame) {
+    return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
 }

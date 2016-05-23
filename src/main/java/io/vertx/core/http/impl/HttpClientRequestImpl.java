@@ -391,7 +391,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public HttpClientRequest writeFrame(int type, int flags, Buffer payload) {
+  public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) {
     synchronized (getLock()) {
       if (stream == null) {
         throw new IllegalStateException("Not yet connected");
@@ -521,8 +521,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
 
           @Override
-          public HttpClientResponse unknownFrameHandler(Handler<HttpFrame> handler) {
-            resp.unknownFrameHandler(handler);
+          public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) {
+            resp.customFrameHandler(handler);
             return this;
           }
 

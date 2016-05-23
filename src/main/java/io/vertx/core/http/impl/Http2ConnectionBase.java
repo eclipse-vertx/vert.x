@@ -260,7 +260,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (req != null) {
       Buffer buff = Buffer.buffer(safeBuffer(payload, ctx.alloc()));
       context.executeFromIO(() -> {
-        req.handleUnknownFrame(frameType, flags.value(), buff);
+        req.handleCustomFrame(frameType, flags.value(), buff);
       });
     }
   }

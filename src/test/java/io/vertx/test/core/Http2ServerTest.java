@@ -2445,12 +2445,12 @@ public class Http2ServerTest extends Http2TestBase {
     Buffer expectedRecv = TestUtils.randomBuffer(500);
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
-      req.unknownFrameHandler(frame -> {
+      req.customFrameHandler(frame -> {
         assertOnIOContext(ctx);
         assertEquals(10, frame.type());
         assertEquals(253, frame.flags());
         assertEquals(expectedSend, frame.payload());
-        req.response().writeFrame(12, 134, expectedRecv).end();
+        req.response().writeCustomFrame(12, 134, expectedRecv).end();
       });
     });
     startServer(ctx);

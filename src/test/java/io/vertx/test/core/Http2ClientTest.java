@@ -1451,11 +1451,11 @@ public class Http2ClientTest extends Http2TestBase {
     Buffer expectedSend = TestUtils.randomBuffer(500);
     Buffer expectedRecv = TestUtils.randomBuffer(500);
     server.requestHandler(req -> {
-      req.unknownFrameHandler(frame -> {
+      req.customFrameHandler(frame -> {
         assertEquals(10, frame.type());
         assertEquals(253, frame.flags());
         assertEquals(expectedSend, frame.payload());
-        req.response().writeFrame(12, 134, expectedRecv).end();
+        req.response().writeCustomFrame(12, 134, expectedRecv).end();
       });
     });
     startServer();
@@ -1463,7 +1463,7 @@ public class Http2ClientTest extends Http2TestBase {
     HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       Context ctx = Vertx.currentContext();
       assertEquals(0, status.getAndIncrement());
-      resp.unknownFrameHandler(frame -> {
+      resp.customFrameHandler(frame -> {
         assertOnIOContext(ctx);
         assertEquals(1, status.getAndIncrement());
         assertEquals(12, frame.type());
@@ -1477,7 +1477,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     req.sendHead(version -> {
       assertSame(HttpVersion.HTTP_2, version);
-      req.writeFrame(10, 253, expectedSend);
+      req.writeCustomFrame(10, 253, expectedSend);
       req.end();
     });
     await();

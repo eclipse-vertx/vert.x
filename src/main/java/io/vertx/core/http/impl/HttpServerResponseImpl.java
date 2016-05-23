@@ -628,7 +628,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse writeFrame(int type, int flags, Buffer payload) {
+  public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
     return this;
   }
 }

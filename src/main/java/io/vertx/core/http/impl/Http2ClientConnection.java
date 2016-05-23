@@ -227,7 +227,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void handleUnknownFrame(int type, int flags, Buffer buff) {
+    void handleCustomFrame(int type, int flags, Buffer buff) {
       response.handleUnknowFrame(new HttpFrameImpl(type, flags, buff));
     }
 
