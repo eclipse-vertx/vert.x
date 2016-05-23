@@ -99,7 +99,6 @@ public class SSLHelper {
   private ArrayList<Buffer> crlValues;
   private ClientAuth clientAuth = ClientAuth.NONE;
   private Set<String> enabledCipherSuites;
-  private boolean verifyHost;
   private io.vertx.core.net.SSLEngine sslEngine;
   private boolean client;
   private boolean useAlpn;
