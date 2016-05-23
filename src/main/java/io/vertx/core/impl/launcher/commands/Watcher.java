@@ -75,10 +75,7 @@ public class Watcher implements Runnable {
                  String onRedeployCommand, long gracePeriod, long scanPeriod) {
     this.gracePeriod = gracePeriod;
     this.root = root;
-    // If the include list contains /, replace them by the system file separator, so on windows you can still use
-    // "/", it will be replaced by "\", On other systems, it does nothing. Be aware that it lets windows users uses
-    // "/" but not Linux and Mac user uses "\".
-    this.includes = includes.stream().map(incl -> incl.replace("/", File.separator)).collect(Collectors.toList());
+    this.includes = sanitizeIncludePatterns(includes);
     this.deploy = deploy;
     this.undeploy = undeploy;
     this.cmd = onRedeployCommand;
@@ -86,6 +83,15 @@ public class Watcher implements Runnable {
     addFileToWatch(root);
   }
 
+  private List<String> sanitizeIncludePatterns(List<String> includes) {
+    return includes.stream().map(p -> {
+      if (ExecUtils.isWindows()) {
+        return p.replace('/', File.separatorChar);
+      }
+      return p.replace('\\', File.separatorChar);
+    }).collect(Collectors.toList());
+  }
+  
   private void addFileToWatch(File file) {
     filesToWatch.add(file);
     Map<File, FileInfo> map = new HashMap<>();
@@ -199,7 +205,8 @@ public class Watcher implements Runnable {
     }
     String rel = file.getAbsolutePath().substring(root.getAbsolutePath().length() + 1);
     for (String include : includes) {
-      if (FileSelector.matchPath(include, rel)) {
+      // Windows files are not case sensitive
+      if (FileSelector.matchPath(include, rel, !ExecUtils.isWindows())) {
         return true;
       }
     }
