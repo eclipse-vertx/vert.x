@@ -1638,6 +1638,28 @@ public class JsonObjectTest {
     testStreamCorrectTypes(object);
   }
 
+  @Test
+  public void testRemoveMethodReturnedObject() {
+    JsonObject obj = new JsonObject();
+    obj.put("simple", "bar")
+        .put("object", new JsonObject().put("name", "vert.x").put("count", 2))
+        .put("array", new JsonArray().add(1.0).add(2.0));
+
+    Object removed = obj.remove("missing");
+    assertNull(removed);
+
+    removed = obj.remove("simple");
+    assertTrue(removed instanceof String);
+
+    removed = obj.remove("object");
+    assertTrue(removed instanceof JsonObject);
+    assertEquals(((JsonObject) removed).getString("name"), "vert.x");
+
+    removed = obj.remove("array");
+    assertTrue(removed instanceof JsonArray);
+    assertEquals(((JsonArray) removed).getDouble(0), 1.0, 0.0);
+  }
+
   private void testStreamCorrectTypes(JsonObject object) {
     object.stream().forEach(entry -> {
       String key = entry.getKey();

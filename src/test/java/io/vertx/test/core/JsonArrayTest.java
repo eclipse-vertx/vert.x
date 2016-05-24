@@ -1063,6 +1063,25 @@ public class JsonArrayTest {
     testStreamCorrectTypes(object);
   }
 
+  @Test
+  public void testRemoveMethodReturnedObject() {
+    JsonArray obj = new JsonArray();
+    obj.add("bar")
+        .add(new JsonObject().put("name", "vert.x").put("count", 2))
+        .add(new JsonArray().add(1.0).add(2.0));
+
+    Object removed = obj.remove(0);
+    assertTrue(removed instanceof String);
+
+    removed = obj.remove(0);
+    assertTrue(removed instanceof JsonObject);
+    assertEquals(((JsonObject) removed).getString("name"), "vert.x");
+
+    removed = obj.remove(0);
+    assertTrue(removed instanceof JsonArray);
+    assertEquals(((JsonArray) removed).getDouble(0), 1.0, 0.0);
+  }
+
   private void testStreamCorrectTypes(JsonObject object) {
     object.getJsonArray("object1").stream().forEach(innerMap -> {
       assertTrue("Expecting JsonObject, found: " + innerMap.getClass().getCanonicalName(), innerMap instanceof JsonObject);
