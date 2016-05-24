@@ -1622,6 +1622,15 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testPutInstantAsObject() {
+    Object instant = Instant.now();
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.put("instant", instant);
+    // assert data is stored as String
+    assertTrue(jsonObject.getValue("instant") instanceof String);
+  }
+
+  @Test
   public void testStreamCorrectTypes() throws Exception {
     String json = "{\"object1\": {\"object2\": 12}}";
     JsonObject object = new JsonObject(json);
