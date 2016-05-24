@@ -24,6 +24,7 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SSLEngine;
 
 import java.util.ArrayList;
@@ -125,11 +126,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   private List<HttpVersion> alpnVersions;
   private boolean h2cUpgrade;
 
-  private String proxyHost;
-  private int proxyPort;
-  private String proxyUsername;
-  private String proxyPassword;
-
   /**
    * Default constructor
    */
@@ -160,10 +156,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.h2cUpgrade = other.h2cUpgrade;
-    this.proxyHost = other.proxyHost;
-    this.proxyPort = other.proxyPort;
-    this.proxyUsername = other.proxyUsername;
-    this.proxyPassword = other.proxyPassword;
   }
 
   /**
@@ -193,10 +185,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     h2cUpgrade = DEFAULT_H2C_UPGRADE;
-    proxyHost = null;
-    proxyPort = 0;
-    proxyUsername = null;
-    proxyPassword = null;
   }
 
   @Override
@@ -648,83 +636,13 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set proxy hostname for ssl connections via CONNECT proxy (e.g. Squid).
+   * Set proxy options for https connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
    *
-   * @param proxyHost proxy hostname to use for ssl connections
+   * @param proxyOptions proxy options object
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setProxyHost(String proxyHost) {
-    this.proxyHost = proxyHost;
-    return this;
-  }
-
-  /**
-   * Get proxy hostname for ssl connections
-   *
-   * @return proxy hostname
-   */
-  public String getProxyHost() {
-    return proxyHost;
-  }
-
-  /**
-   * Set proxy port for ssl connections
-   *
-   * @param proxyPort proxy port to use for ssl connections
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setProxyPort(int proxyPort) {
-    this.proxyPort = proxyPort;
-    return this;
-  }
-
-  /**
-   * Get proxy port for ssl connections
-   *
-   * @return proxy port
-   */
-  public int getProxyPort() {
-    return proxyPort;
-  }
-
-  /**
-   * Set proxy username for ssl connections
-   *
-   * @param proxyUsername username for Proxy Authentication header
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setProxyUsername(String proxyUsername) {
-    this.proxyUsername = proxyUsername;
-    return this;
-  }
-
-  /**
-   * Get proxy username for ssl connections
-   *
-   * @return proxy username
-   */
-  public String getProxyUsername() {
-    return proxyUsername;
-  }
-
-  /**
-   * Set proxy password for ssl connections
-   *
-   * @param proxyPassword password for Proxy Authentication header
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setProxyPassword(String proxyPassword) {
-    this.proxyPassword = proxyPassword;
-    return this;
-  }
-
-  /**
-   * Get proxy password for ssl connections
-   *
-   * @return proxy password
-   */
-  public String getProxyPassword() {
-    return proxyPassword;
+  public HttpClientOptions setProxyOptions(ProxyOptions proxyOptions) {
+    return (HttpClientOptions) super.setProxyOptions(proxyOptions);
   }
 
   @Override
@@ -750,10 +668,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (h2cUpgrade != that.h2cUpgrade) return false;
-    if (proxyHost == null ? that.proxyHost != null : !proxyHost.equals(that.proxyHost)) return false;
-    if (proxyPort != that.proxyPort) return false;
-    if (proxyUsername == null ? that.proxyUsername != null : !proxyUsername.equals(that.proxyUsername)) return false;
-    if (proxyPassword == null ? that.proxyPassword != null : !proxyPassword.equals(that.proxyPassword)) return false;
 
     return true;
   }
@@ -776,12 +690,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + (h2cUpgrade ? 1 : 0);
-    result = 31 * result + (proxyHost != null ? proxyHost.hashCode() : 0);
-    result = 31 * result + proxyPort;
-    result = 31 * result + (proxyUsername != null ? proxyUsername.hashCode() : 0);
-    result = 31 * result + (proxyPassword != null ? proxyPassword.hashCode() : 0);
     return result;
   }
 }
-
-

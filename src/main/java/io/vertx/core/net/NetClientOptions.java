@@ -50,7 +50,6 @@ public class NetClientOptions extends ClientOptionsBase {
   private long reconnectInterval;
   private String hostnameVerificationAlgorithm;
 
-
     /**
    * The default constructor
    */
@@ -248,7 +247,7 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public NetClientOptions setReconnectInterval(long interval) {
     if (interval < 1) {
-      throw new IllegalArgumentException("reconnect interval nust be >= 1");
+      throw new IllegalArgumentException("reconnect interval must be >= 1");
     }
     this.reconnectInterval = interval;
     return this;
@@ -283,7 +282,17 @@ public class NetClientOptions extends ClientOptionsBase {
     return reconnectInterval;
   }
 
-    @Override
+  /**
+   * Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
+   *
+   * @param proxyOptions proxy options object
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {
+    return (NetClientOptions) super.setProxyOptions(proxyOptions);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof NetClientOptions)) return false;

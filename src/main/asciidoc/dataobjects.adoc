@@ -105,6 +105,10 @@ Set the key/cert options in pfx format.
 +++
 Set the trust options in pfx format
 +++
+|[[proxyOptions]]`proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|
++++
+Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
++++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
 Set the TCP receive buffer size
@@ -721,21 +725,9 @@ Set whether pipe-lining is enabled on the client
 +++
 Set the protocol version.
 +++
-|[[proxyHost]]`proxyHost`|`String`|
+|[[proxyOptions]]`proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|
 +++
-Set proxy hostname for ssl connections via CONNECT proxy (e.g. Squid).
-+++
-|[[proxyPassword]]`proxyPassword`|`String`|
-+++
-Set proxy password for ssl connections
-+++
-|[[proxyPort]]`proxyPort`|`Number (int)`|
-+++
-Set proxy port for ssl connections
-+++
-|[[proxyUsername]]`proxyUsername`|`String`|
-+++
-Set proxy username for ssl connections
+Set proxy options for https connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
@@ -1087,6 +1079,10 @@ Set the key/cert options in pfx format.
 |[[pfxTrustOptions]]`pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|
 +++
 Set the trust options in pfx format
++++
+|[[proxyOptions]]`proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|
++++
+Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
@@ -1592,6 +1588,42 @@ Set the path
 |[[value]]`value`|`Buffer`|
 +++
 Set the store as a buffer
++++
+|===
+
+[[ProxyOptions]]
+== ProxyOptions
+
+++++
+ Proxy options for a NetClient or HttpClient
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[proxyHost]]`proxyHost`|`String`|
++++
+Set proxy host.
++++
+|[[proxyPassword]]`proxyPassword`|`String`|
++++
+Set proxy password.
++++
+|[[proxyPort]]`proxyPort`|`Number (int)`|
++++
+Set proxy port.
++++
+|[[proxyType]]`proxyType`|`link:enums.html#ProxyType[ProxyType]`|
++++
+Set proxy type.
+
+ <p>ProxyType can be HTTP, SOCKS4 and SOCKS5
++++
+|[[proxyUsername]]`proxyUsername`|`String`|
++++
+Set proxy username.
 +++
 |===
 

@@ -33,6 +33,9 @@ public class ClientOptionsBaseConverter {
     if (json.getValue("metricsName") instanceof String) {
       obj.setMetricsName((String)json.getValue("metricsName"));
     }
+    if (json.getValue("proxyOptions") instanceof JsonObject) {
+      obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((JsonObject)json.getValue("proxyOptions")));
+    }
     if (json.getValue("trustAll") instanceof Boolean) {
       obj.setTrustAll((Boolean)json.getValue("trustAll"));
     }

@@ -48,6 +48,8 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private boolean trustAll;
   private String metricsName;
 
+  private ProxyOptions proxyOptions;
+
   /**
    * Default constructor
    */
@@ -66,6 +68,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.connectTimeout = other.getConnectTimeout();
     this.trustAll = other.isTrustAll();
     this.metricsName = other.metricsName;
+    this.proxyOptions = other.proxyOptions != null ? other.proxyOptions.clone() : null;
   }
 
   /**
@@ -83,6 +86,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     this.trustAll = DEFAULT_TRUST_ALL;
     this.metricsName = DEFAULT_METRICS_NAME;
+    this.proxyOptions = null;
   }
 
   /**
@@ -144,6 +148,26 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return this;
   }
 
+  /**
+   * Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
+   *
+   * @param proxyOptions proxy options object
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setProxyOptions(ProxyOptions proxyOptions) {
+    this.proxyOptions = proxyOptions;
+    return this;
+  }
+
+  /**
+   * Get proxy options for connections
+   *
+   * @return proxy options
+   */
+  public ProxyOptions getProxyOptions() {
+    return proxyOptions;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -155,6 +179,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     if (connectTimeout != that.connectTimeout) return false;
     if (trustAll != that.trustAll) return false;
     if (!Objects.equals(metricsName, that.metricsName)) return false;
+    if (!Objects.equals(proxyOptions, that.proxyOptions)) return false;
 
     return true;
   }
@@ -165,6 +190,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     result = 31 * result + connectTimeout;
     result = 31 * result + (trustAll ? 1 : 0);
     result = 31 * result + (metricsName != null ? metricsName.hashCode() : 0);
+    result = 31 * result + (proxyOptions != null ? proxyOptions.hashCode() : 0);
     return result;
   }
 }
