@@ -87,7 +87,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   synchronized HttpClientStream createStream() throws Http2Exception {
     Http2Connection conn = handler.connection();
     Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
-    Http2ClientStream clientStream = new Http2ClientStream(this, stream);
+    boolean writable = handler.encoder().flowController().isWritable(stream);
+    Http2ClientStream clientStream = new Http2ClientStream(this, stream, writable);
     streams.put(clientStream.stream.id(), clientStream);
     return clientStream;
   }
@@ -146,12 +147,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     private boolean requestEnded;
     private boolean responseEnded;
 
-    public Http2ClientStream(Http2ClientConnection conn, Http2Stream stream) throws Http2Exception {
-      this(conn, null, stream);
+    public Http2ClientStream(Http2ClientConnection conn, Http2Stream stream, boolean writable) throws Http2Exception {
+      this(conn, null, stream, writable);
     }
 
-    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase request, Http2Stream stream) throws Http2Exception {
-      super(conn, stream);
+    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase request, Http2Stream stream, boolean writable) throws Http2Exception {
+      super(conn, stream, writable);
       this.request = request;
     }
 

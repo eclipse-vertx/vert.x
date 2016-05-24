@@ -16,16 +16,20 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.SSLEngine;
 import org.junit.Test;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -147,6 +151,106 @@ public class Http2Test extends HttpTest {
       assertEquals(200, resp.statusCode());
       testComplete();
     }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testServerStreamPausedWhenConnectionIsPaused() throws Exception {
+    CountDownLatch fullLatch = new CountDownLatch(1);
+    CompletableFuture<Void> resumeLatch = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      switch (req.path()) {
+        case "/0": {
+          vertx.setPeriodic(1, timerID -> {
+            if (resp.writeQueueFull()) {
+              vertx.cancelTimer(timerID);
+              fullLatch.countDown();
+            } else {
+              resp.write(Buffer.buffer(TestUtils.randomAlphaString(512)));
+            }
+          });
+          break;
+        }
+        case "/1": {
+          assertTrue(resp.writeQueueFull());
+          resp.drainHandler(v -> {
+            resp.end();
+          });
+          resumeLatch.complete(null);
+          break;
+        }
+      }
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/0", resp -> {
+      resp.pause();
+      Context ctx = vertx.getOrCreateContext();
+      resumeLatch.thenAccept(v1 -> {
+        ctx.runOnContext(v2 -> {
+          resp.endHandler(v -> {
+            testComplete();
+          });
+          resp.resume();
+        });
+      });
+    });
+    awaitLatch(fullLatch);
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", resp -> {
+      resp.endHandler(v -> {
+        complete();
+      });
+    });
+    resumeLatch.get(20, TimeUnit.SECONDS); // Make sure it completes
+    await();
+  }
+
+  @Test
+  public void testClientStreamPausedWhenConnectionIsPaused() throws Exception {
+    waitFor(2);
+    Buffer buffer = TestUtils.randomBuffer(512);
+    CompletableFuture<Void> resumeLatch = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      switch (req.path()) {
+        case "/0": {
+          req.pause();
+          resumeLatch.thenAccept(v -> {
+            req.resume();
+          });
+          req.endHandler(v -> {
+            req.response().end();
+          });
+          break;
+        }
+        case "/1": {
+          req.bodyHandler(v -> {
+            assertEquals(v, buffer);
+            req.response().end();
+          });
+          break;
+        }
+      }
+    });
+    startServer();
+    HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/0", resp -> {
+      complete();
+    }).setChunked(true);
+    while (!req1.writeQueueFull()) {
+      req1.write(Buffer.buffer(TestUtils.randomAlphaString(512)));
+      Thread.sleep(1);
+    }
+    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", resp -> {
+      complete();
+    }).setChunked(true);
+    assertFalse(req2.writeQueueFull());
+    req2.sendHead(v -> {
+      assertTrue(req2.writeQueueFull());
+      resumeLatch.complete(null);
+    });
+    resumeLatch.get(20, TimeUnit.SECONDS);
+    waitUntil(() -> !req2.writeQueueFull());
+    req1.end();
+    req2.end(buffer);
     await();
   }
 }

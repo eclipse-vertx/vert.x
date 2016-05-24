@@ -117,7 +117,9 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-      Http2ServerRequestImpl req = new Http2ServerRequestImpl(this, handler.connection().stream(streamId), metrics, serverOrigin, headers, contentEncoding);
+      Http2Stream s = handler.connection().stream(streamId);
+      boolean writable = handler.encoder().flowController().isWritable(s);
+      Http2ServerRequestImpl req = new Http2ServerRequestImpl(this, s, metrics, serverOrigin, headers, contentEncoding, writable);
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -169,7 +171,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             int promisedStreamId = ar.result();
             String contentEncoding = HttpUtils.determineContentEncoding(headers_);
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-            Push push = new Push(promisedStream, contentEncoding, method, path, completionHandler);
+            boolean writable = handler.encoder().flowController().isWritable(promisedStream);
+            Push push = new Push(promisedStream, contentEncoding, method, path, writable, completionHandler);
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
@@ -209,8 +212,9 @@ public class Http2ServerConnection extends Http2ConnectionBase {
                 String contentEncoding,
                 HttpMethod method,
                 String uri,
+                boolean writable,
                 Handler<AsyncResult<HttpServerResponse>> completionHandler) {
-      super(Http2ServerConnection.this, stream);
+      super(Http2ServerConnection.this, stream, writable);
       this.method = method;
       this.uri = uri;
       this.contentEncoding = contentEncoding;

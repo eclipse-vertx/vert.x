@@ -85,8 +85,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private NetSocket netSocket;
 
   public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
-      String serverOrigin, Http2Headers headers, String contentEncoding) {
-    super(conn, stream);
+      String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable) {
+    super(conn, stream, writable);
 
     this.serverOrigin = serverOrigin;
     this.headers = headers;

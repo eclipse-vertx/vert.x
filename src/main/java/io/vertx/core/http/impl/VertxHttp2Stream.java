@@ -44,12 +44,13 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private boolean paused;
   private boolean writable = true;
 
-  VertxHttp2Stream(C conn, Http2Stream stream) {
+  VertxHttp2Stream(C conn, Http2Stream stream, boolean writable) {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.handlerContext = conn.handlerContext;
     this.stream = stream;
     this.context = conn.getContext();
+    this.writable = writable;
   }
 
   void onResetRead(long code) {

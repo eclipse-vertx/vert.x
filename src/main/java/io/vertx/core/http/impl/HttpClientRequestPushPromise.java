@@ -54,7 +54,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       MultiMap headers) throws Http2Exception {
     super(client, method, host, uri);
     this.conn = conn;
-    this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream);
+    this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream, false);
     this.method = method;
     this.rawMethod = rawMethod;
     this.uri = uri;

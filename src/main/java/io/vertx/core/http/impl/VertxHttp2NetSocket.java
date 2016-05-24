@@ -49,8 +49,8 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
 
-  public VertxHttp2NetSocket(C conn, Http2Stream stream) {
-    super(conn, stream);
+  public VertxHttp2NetSocket(C conn, Http2Stream stream, boolean writable) {
+    super(conn, stream, writable);
   }
 
   // Stream impl
