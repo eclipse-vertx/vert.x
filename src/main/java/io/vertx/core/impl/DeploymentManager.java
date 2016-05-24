@@ -52,7 +52,7 @@ public class DeploymentManager {
   }
 
   private void loadVerticleFactories() {
-    ServiceLoader<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
+    ServiceLoader<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class, VerticleFactory.class.getClassLoader());
     for (VerticleFactory factory: factories) {
       registerVerticleFactory(factory);
     }
