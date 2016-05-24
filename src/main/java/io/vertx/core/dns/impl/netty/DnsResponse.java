@@ -55,15 +55,15 @@ public class DnsResponse extends DnsMessage<DnsResponseHeader> implements ByteBu
    */
   @Override
   public DnsResponse copy() {
-    return DnsResponseDecoder.decodeResponse(rawPacket.copy(), rawPacket.alloc());
+    return replace(rawPacket.copy());
   }
 
   /**
    * Returns a duplicate of this DNS response.
    */
   @Override
-  public ByteBufHolder duplicate() {
-    return DnsResponseDecoder.decodeResponse(rawPacket.duplicate(), rawPacket.alloc());
+  public DnsResponse duplicate() {
+    return replace(rawPacket.duplicate());
   }
 
   @Override
@@ -74,13 +74,23 @@ public class DnsResponse extends DnsMessage<DnsResponseHeader> implements ByteBu
 
   @Override
   public DnsResponse retain(int increment) {
-    rawPacket.retain(increment);
+    rawPacket.retain();
     return this;
   }
 
   @Override
+  public DnsResponse retainedDuplicate() {
+    return replace(rawPacket.retainedDuplicate());
+  }
+
+  @Override
+  public DnsResponse replace(ByteBuf content) {
+    return DnsResponseDecoder.decodeResponse(content, content.alloc());
+  }
+
+  @Override
   public boolean release(int decrement) {
-    return rawPacket.release(decrement);
+    return rawPacket.release();
   }
 
   /**

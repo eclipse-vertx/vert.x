@@ -16,6 +16,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -60,6 +61,16 @@ class AssembledLastHttpContent extends DefaultByteBufHolder implements LastHttpC
 
   @Override
   public LastHttpContent duplicate() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public LastHttpContent replace(ByteBuf content) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public LastHttpContent retainedDuplicate() {
     throw new UnsupportedOperationException();
   }
 

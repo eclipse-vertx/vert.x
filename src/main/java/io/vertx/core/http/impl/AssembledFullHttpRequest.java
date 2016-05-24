@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -53,6 +54,18 @@ class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpR
   }
 
   @Override
+  public AssembledFullHttpRequest replace(ByteBuf content) {
+    super.replace(content);
+    return this;
+  }
+
+  @Override
+  public AssembledFullHttpRequest retainedDuplicate() {
+    super.retainedDuplicate();
+    return this;
+  }
+
+  @Override
   public AssembledFullHttpRequest setUri(String uri) {
     super.setUri(uri);
     return this;
@@ -77,11 +90,6 @@ class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpR
 
   @Override
   public AssembledFullHttpRequest copy() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public AssembledFullHttpRequest copy(ByteBuf newContent) {
     throw new UnsupportedOperationException();
   }
 

@@ -56,6 +56,16 @@ class AssembledHttpResponse implements HttpResponse, HttpContent {
   }
 
   @Override
+  public HttpContent retainedDuplicate() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public HttpContent replace(ByteBuf content) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public AssembledHttpResponse retain() {
     content.retain();
     return this;

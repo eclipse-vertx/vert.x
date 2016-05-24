@@ -807,7 +807,7 @@ public class Http2ServerTest extends Http2TestBase {
             expected.appendBuffer(buf);
             request.encoder.writeData(request.context, id, buf.getByteBuf(), 0, false, request.context.newPromise());
             request.context.flush();
-            request.context.invoker().executor().execute(this::send);
+            request.context.executor().execute(this::send);
           } else {
             request.encoder.writeData(request.context, id, Unpooled.EMPTY_BUFFER, 0, true, request.context.newPromise());
             request.context.flush();
@@ -888,7 +888,7 @@ public class Http2ServerTest extends Http2TestBase {
         }
       });
       whenFull.setHandler(ar -> {
-        request.context.invoker().executor().execute(() -> {
+        request.context.executor().execute(() -> {
           try {
             request.decoder.flowController().consumeBytes(request.connection.stream(id), toAck.intValue());
             request.context.flush();

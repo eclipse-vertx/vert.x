@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -86,17 +87,26 @@ class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHtt
 
   @Override
   public AssembledFullHttpResponse duplicate() {
-    throw new UnsupportedOperationException();
+    super.duplicate();
+    return this;
   }
 
   @Override
   public AssembledFullHttpResponse copy() {
-    throw new UnsupportedOperationException();
+    super.copy();
+    return this;
   }
 
   @Override
-  public AssembledFullHttpResponse copy(ByteBuf newContent) {
-    throw new UnsupportedOperationException();
+  public AssembledFullHttpResponse retainedDuplicate() {
+    super.retainedDuplicate();
+    return this;
+  }
+
+  @Override
+  public AssembledFullHttpResponse replace(ByteBuf content) {
+    super.replace(content);
+    return this;
   }
 
   @Override

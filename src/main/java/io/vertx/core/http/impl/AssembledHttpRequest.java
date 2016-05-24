@@ -17,6 +17,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.UnsupportedMessageTypeException;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -52,6 +53,16 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
   @Override
   public AssembledHttpRequest duplicate() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public HttpContent retainedDuplicate() {
+    throw new UnsupportedMessageTypeException();
+  }
+
+  @Override
+  public HttpContent replace(ByteBuf content) {
+    throw new UnsupportedMessageTypeException();
   }
 
   @Override

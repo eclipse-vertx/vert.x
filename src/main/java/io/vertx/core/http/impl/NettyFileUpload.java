@@ -218,6 +218,16 @@ final class NettyFileUpload implements FileUpload {
   }
 
   @Override
+  public FileUpload retainedDuplicate() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public FileUpload replace(ByteBuf content) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public FileUpload retain() {
     return this;
   }

@@ -25,7 +25,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelHandlerInvoker;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
@@ -163,11 +162,6 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
     private final ChannelHandlerContext ctx;
     PooledChannelHandlerContext(ChannelHandlerContext ctx) {
       this.ctx = ctx;
-    }
-
-    @Override
-    public ChannelHandlerInvoker invoker() {
-      return ctx.invoker();
     }
 
     @Override

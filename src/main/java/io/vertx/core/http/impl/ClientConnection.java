@@ -567,6 +567,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
+          if (msg instanceof LastHttpContent) {
+            handleResponseEnd((LastHttpContent) msg);
+          }
           ReferenceCountUtil.release(msg);
           return;
         }

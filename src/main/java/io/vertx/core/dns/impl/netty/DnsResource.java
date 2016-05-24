@@ -81,15 +81,25 @@ public class DnsResource extends DnsEntry implements ByteBufHolder {
    */
   @Override
   public DnsResource copy() {
-    return new DnsResource(name(), type(), dnsClass(), ttl, contentIndex, content.copy());
+    return replace(content.copy());
   }
 
   /**
    * Returns a duplicate of this resource record.
    */
   @Override
-  public ByteBufHolder duplicate() {
-    return new DnsResource(name(), type(), dnsClass(), ttl, contentIndex, content.duplicate());
+  public DnsResource duplicate() {
+    return replace(content.duplicate());
+  }
+
+  @Override
+  public DnsResource retainedDuplicate() {
+    return replace(content.retainedDuplicate());
+  }
+
+  @Override
+  public DnsResource replace(ByteBuf content) {
+    return new DnsResource(name(), type(), dnsClass(), ttl, contentIndex, content);
   }
 
   @Override

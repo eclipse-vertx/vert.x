@@ -19,7 +19,6 @@ package io.vertx.core.net.impl;
 import io.netty.channel.*;
 import io.netty.util.concurrent.*;
 
-import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -70,6 +69,11 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
   }
 
   @Override
+  public ChannelFuture register(ChannelPromise promise) {
+    return next().register(promise);
+  }
+
+  @Override
   public boolean isShutdown() {
     return latch.getCount() == 0;
   }
@@ -82,11 +86,6 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
   @Override
   public synchronized boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
     return latch.await(timeout, unit);
-  }
-
-  @Override
-  public <E extends EventExecutor> Set<E> children() {
-    return (Set<E>) children;
   }
 
   public synchronized void addWorker(EventLoop worker) {
