@@ -23,6 +23,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.SecurityProviderOptions;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -94,6 +95,9 @@ public abstract class KeyStoreHelper {
         }
       };
       return new KeyCert(DUMMY_PASSWORD, key, cert);
+    } else if (options instanceof SecurityProviderOptions) {
+      final SecurityProviderOptions secProvOptions = (SecurityProviderOptions) options;
+      return new SecurityProviderDelegate(secProvOptions.getManagerAlgorithm(), secProvOptions.getKeyStoreAlgorithm());
     } else {
       return null;
     }
@@ -117,13 +121,19 @@ public abstract class KeyStoreHelper {
   }
 
   protected final String password;
+  protected final String algorithm;
 
   public KeyStoreHelper(String password) {
+    this(password, null);
+  }
+
+  public KeyStoreHelper(String password, String algorithm) {
     this.password = password;
+    this.algorithm = algorithm;
   }
 
   public KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
-    KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    KeyManagerFactory fact = KeyManagerFactory.getInstance(algorithm == null ? KeyManagerFactory.getDefaultAlgorithm() : algorithm);
     fact.getProvider();
     KeyStore ks = loadStore(vertx);
     fact.init(ks, password != null ? password.toCharArray(): null);
@@ -135,7 +145,7 @@ public abstract class KeyStoreHelper {
   }
 
   public TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
-    TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    TrustManagerFactory fact = TrustManagerFactory.getInstance(algorithm == null ? TrustManagerFactory.getDefaultAlgorithm() : algorithm);
     KeyStore ts = loadStore(vertx);
     fact.init(ts);
     return fact;
@@ -239,6 +249,26 @@ public abstract class KeyStoreHelper {
       }
       return keyStore;
     }
+  }
+
+  static class SecurityProviderDelegate extends KeyStoreHelper {
+
+    private final String keyStoreAlgorithm;
+
+    SecurityProviderDelegate(String managerAlgorithm, String keyStoreAlgorithm) {
+      super(null, managerAlgorithm);
+      this.keyStoreAlgorithm = keyStoreAlgorithm;
+    }
+
+    public KeyStore loadStore(VertxInternal vertx) throws Exception {
+      final KeyStore keyStore = KeyStore.getInstance(keyStoreAlgorithm == null ? KeyStore.getDefaultType() : keyStoreAlgorithm);
+      try {
+        keyStore.load(null);
+      } catch (IOException e) {
+      }
+      return keyStore;
+    }
+
   }
 
   private static byte[] loadPem(Buffer data, String delimiter) throws IOException {
