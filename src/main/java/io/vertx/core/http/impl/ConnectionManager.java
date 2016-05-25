@@ -49,7 +49,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
-import io.vertx.core.net.impl.ChannelProviderAdditionalOperations;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.proxy.ProxyChannelProvider;
@@ -376,22 +375,6 @@ public class ConnectionManager {
     bootstrap.channel(NioSocketChannel.class);
     applyConnectionOptions(options, bootstrap);
 
-    ChannelProviderAdditionalOperations addl = new ChannelProviderAdditionalOperations() {
-
-      HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
-
-      @Override
-      public void pipelineSetup(ChannelPipeline pipeline) {
-        pipeline.addLast("codec", codec);
-      }
-
-      @Override
-      public void pipelineDeprov(ChannelPipeline pipeline) {
-        pipeline.remove(codec);
-      }
-
-    };
-
     ChannelProvider channelProvider;
     if (options.getProxyOptions() == null) {
       channelProvider = new ChannelProvider() {
@@ -413,7 +396,7 @@ public class ConnectionManager {
         }
       };
     } else {
-      channelProvider = new ProxyChannelProvider(addl);
+      channelProvider = new ProxyChannelProvider();
     }
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {

@@ -161,17 +161,6 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     bootstrap.group(context.nettyEventLoop());
     bootstrap.channel(NioSocketChannel.class);
 
-    ChannelProviderAdditionalOperations addl = new ChannelProviderAdditionalOperations() {
-
-      @Override
-      public void pipelineSetup(ChannelPipeline pipeline) {
-      }
-
-      @Override
-      public void pipelineDeprov(ChannelPipeline pipeline) {
-      }
-    };
-
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
@@ -198,7 +187,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
         }
       };
     } else {
-      channelProvider = new ProxyChannelProvider(addl);
+      channelProvider = new ProxyChannelProvider();
     }
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {

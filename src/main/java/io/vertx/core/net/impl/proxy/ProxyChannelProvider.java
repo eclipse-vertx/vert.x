@@ -28,7 +28,6 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.ChannelProvider;
-import io.vertx.core.net.impl.ChannelProviderAdditionalOperations;
 
 /**
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
@@ -36,12 +35,11 @@ import io.vertx.core.net.impl.ChannelProviderAdditionalOperations;
  */
 public class ProxyChannelProvider implements ChannelProvider {
 
+  // Could become a singleton as it does not hold state
+
   private static final Logger log = LoggerFactory.getLogger(ProxyChannelProvider.class);
 
-  private final ChannelProviderAdditionalOperations addl;
-
-  public ProxyChannelProvider(ChannelProviderAdditionalOperations addl) {
-    this.addl = addl;
+  public ProxyChannelProvider() {
   }
 
   @Override
@@ -88,14 +86,11 @@ public class ProxyChannelProvider implements ChannelProvider {
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
             pipeline.addFirst("proxy", proxy);
-            // set up other pipeline entries
-            addl.pipelineSetup(ch.pipeline());
             pipeline.addLast(new ChannelInboundHandlerAdapter() {
               @Override
               public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
                 if (evt instanceof ProxyConnectionEvent) {
                   pipeline.remove(proxy);
-                  addl.pipelineDeprov(pipeline);
                   pipeline.remove(this);
                   channelHandler.handle(Future.succeededFuture(ch));
                 }
