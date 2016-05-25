@@ -308,7 +308,12 @@
  * ----
  *
  * Network activity is logged by Netty with the `DEBUG` level and with the `io.netty.handler.logging.LoggingHandler`
- * name. Netty will try to locate the following logger implementations, in the following order:
+ * name. When using network activity logging there are a few things to keep in mind:
+ *
+ * - logging is not performed by Vert.x logging but by Netty
+ * - this is *not* a production feature
+ *
+ * Netty will try to locate the following logger implementations, in the following order:
  *
  * - Slf4j
  * - Log4j
