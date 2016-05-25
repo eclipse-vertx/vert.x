@@ -17,6 +17,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -314,6 +315,13 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
+  @GenIgnore
+  public EventBusOptions setKeyStoreOptions(KeyCertOptions options) {
+    super.setKeyStoreOptions(options);
+    return this;
+  }
+
+  @Override
   public EventBusOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
@@ -364,6 +372,12 @@ public class EventBusOptions extends TCPSSLOptions {
   @Override
   public EventBusOptions setTcpNoDelay(boolean tcpNoDelay) {
     super.setTcpNoDelay(tcpNoDelay);
+    return this;
+  }
+
+  @Override
+  public EventBusOptions setTrustStoreOptions(TrustOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
   }
 

@@ -21,11 +21,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.SSLEngine;
 import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.net.TrustOptions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -252,6 +254,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setKeyStoreOptions(KeyCertOptions options) {
+    super.setKeyStoreOptions(options);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
@@ -260,6 +268,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   @Override
   public HttpClientOptions setPfxKeyCertOptions(PfxOptions options) {
     return (HttpClientOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpClientOptions setTrustStoreOptions(TrustOptions options) {
+    super.setTrustStoreOptions(options);
+    return this;
   }
 
   @Override

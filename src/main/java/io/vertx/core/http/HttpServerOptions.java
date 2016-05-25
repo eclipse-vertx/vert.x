@@ -201,6 +201,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setKeyStoreOptions(KeyCertOptions options) {
+    super.setKeyStoreOptions(options);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
@@ -214,6 +220,12 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     return (HttpServerOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpServerOptions setTrustStoreOptions(TrustOptions options) {
+    super.setTrustStoreOptions(options);
+    return this;
   }
 
   @Override
