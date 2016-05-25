@@ -68,7 +68,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.connectTimeout = other.getConnectTimeout();
     this.trustAll = other.isTrustAll();
     this.metricsName = other.metricsName;
-    this.proxyOptions = other.proxyOptions != null ? other.proxyOptions.clone() : null;
+    this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
   }
 
   /**

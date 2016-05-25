@@ -26,7 +26,22 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
 @DataObject(generateConverter = true)
-public class ProxyOptions implements Cloneable {
+public class ProxyOptions {
+
+  /**
+   * The default proxy type (HTTP)
+   */
+  public static final ProxyType DEFAULT_PROXY_TYPE = ProxyType.HTTP;
+  /**
+   * The default port for proxy connect = 3128
+   *
+   * 3128 is the default port for e.g. Squid
+   */
+  public static final int DEFAULT_PROXY_PORT = 3128;
+  /**
+   * The default hostname for proxy connect = "localhost"
+   */
+  public static final String DEFAULT_PROXY_HOST = "localhost";
 
   private String proxyHost;
   private int proxyPort;
@@ -38,11 +53,9 @@ public class ProxyOptions implements Cloneable {
    * Default constructor.
    */
   public ProxyOptions() {
-    proxyHost = "localhost";
-    proxyPort = 3128;
-    proxyUsername = null;
-    proxyPassword = null;
-    proxyType = ProxyType.HTTP;
+    proxyHost = DEFAULT_PROXY_HOST;
+    proxyPort = DEFAULT_PROXY_PORT;
+    proxyType = DEFAULT_PROXY_TYPE;
   }
 
   /**
@@ -171,11 +184,6 @@ public class ProxyOptions implements Cloneable {
     Objects.requireNonNull(proxyType, "ProxyType may not be null");
     this.proxyType = proxyType;
     return this;
-  }
-
-  @Override
-  public ProxyOptions clone() {
-    return new ProxyOptions(this);
   }
 
 }

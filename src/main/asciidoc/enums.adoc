@@ -146,6 +146,33 @@ ID 14, bad timestamp
 |[[HTTP_2]]`HTTP_2`|-
 |===
 
+[[ProxyType]]
+== ProxyType
+
+++++
+ @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
+
+++++
+'''
+
+[cols=">25%,75%"]
+[frame="topbot"]
+|===
+^|Name | Description
+|[[HTTP]]`HTTP`|
++++
+HTTP CONNECT ssl proxy
++++
+|[[SOCKS4]]`SOCKS4`|
++++
+SOCKS4/4a tcp proxy
++++
+|[[SOCKS5]]`SOCKS5`|
++++
+SOCSK5 tcp proxy
++++
+|===
+
 [[ReplyFailure]]
 == ReplyFailure
 

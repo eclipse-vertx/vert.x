@@ -45,13 +45,6 @@ public class ProxyOptionsTest {
     assertEquals("somehost", options.getProxyHost());
   }
 
-  @Test
-  public void testClone() {
-    ProxyOptions options = new ProxyOptions().setProxyHost("hostname").clone();
-
-    assertEquals("hostname", options.getProxyHost());
-  }
-
   @Test(expected = NullPointerException.class)
   public void testProxyTypeNull() {
     new ProxyOptions().setProxyType(null);
