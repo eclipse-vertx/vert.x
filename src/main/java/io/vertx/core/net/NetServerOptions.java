@@ -311,6 +311,11 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions setLogActivity(boolean logEnabled) {
+    return (NetServerOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof NetServerOptions)) return false;

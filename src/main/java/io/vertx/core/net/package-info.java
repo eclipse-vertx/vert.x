@@ -290,6 +290,45 @@
  *
  * By default, multiple connection attempts are disabled.
  *
+ * [[logging_network_activity]]
+ * === Logging network activity
+ *
+ * For debugging purposes, network activity can be logged:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#exampleNetworkActivityLoggingOnServer}
+ * ----
+ *
+ * for the client
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#exampleNetworkActivityLoggingOnClient}
+ * ----
+ *
+ * Network activity is logged by Netty with the `DEBUG` level and with the `io.netty.handler.logging.LoggingHandler`
+ * name. When using network activity logging there are a few things to keep in mind:
+ *
+ * - logging is not performed by Vert.x logging but by Netty
+ * - this is *not* a production feature
+ *
+ * Netty will try to locate the following logger implementations, in the following order:
+ *
+ * - Slf4j
+ * - Log4j
+ * - JDK
+ *
+ * The presense of the slf4j or log4j classes on the classpath is enough to pick up the logging implementation.
+ *
+ * The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly:
+ *
+ * [source,java]
+ * ----
+ * // Force logging to SLF4J
+ * InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
+ * ----
+ *
  * [[ssl]]
  * === Configuring servers and clients to work with SSL/TLS
  *

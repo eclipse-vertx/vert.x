@@ -187,6 +187,20 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(options);
   }
 
+  public void exampleNetworkActivityLoggingOnServer(Vertx vertx) {
+
+    NetServerOptions options = new NetServerOptions().setLogActivity(true);
+
+    NetServer server = vertx.createNetServer(options);
+  }
+
+  public void exampleNetworkActivityLoggingOnClient(Vertx vertx) {
+
+    NetClientOptions options = new NetClientOptions().setLogActivity(true);
+
+    NetClient client = vertx.createNetClient(options);
+  }
+
   // SSL/TLS server key/cert
 
   public void example17(Vertx vertx) {

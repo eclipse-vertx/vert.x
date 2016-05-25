@@ -145,6 +145,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setLogActivity(boolean logEnabled) {
+    return (ClientOptionsBase) super.setLogActivity(logEnabled);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof ClientOptionsBase)) return false;

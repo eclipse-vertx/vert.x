@@ -70,6 +70,17 @@
  *
  * WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
  *
+ * === Logging network server activity
+ *
+ * For debugging purposes, network activity can be logged.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#exampleServerLogging}
+ * ----
+ *
+ * See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+ *
  * === Start the Server Listening
  *
  * To tell the server to listen for incoming requests you use one of the {@link io.vertx.core.http.HttpServer#listen}
@@ -691,6 +702,18 @@
  *
  * The http server may not support HTTP/2, the actual version can be checked
  * with {@link io.vertx.core.http.HttpClientResponse#version()} when the response arrives.
+ *
+ *
+ * === Logging network client activity
+ *
+ * For debugging purposes, network activity can be logged.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#exampleClientLogging}
+ * ----
+ *
+ * See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
  *
  * === Making requests
  *

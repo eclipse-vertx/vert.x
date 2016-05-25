@@ -22,7 +22,9 @@ import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
 import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2FrameLogger;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.logging.LogLevel;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -36,6 +38,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   private boolean useCompression;
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
+  private boolean logEnabled;
 
   VertxHttp2ConnectionHandlerBuilder() {
   }
@@ -64,10 +67,18 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     return this;
   }
 
+  VertxHttp2ConnectionHandlerBuilder<C> logEnabled(boolean logEnabled) {
+    this.logEnabled = logEnabled;
+    return this;
+  }
+
   @Override
   protected VertxHttp2ConnectionHandler<C> build() {
     if (initialSettings != null) {
       HttpUtils.fromVertxInitialSettings(isServer(), initialSettings, initialSettings());
+    }
+    if (logEnabled) {
+      frameLogger(new Http2FrameLogger(LogLevel.DEBUG));
     }
     return super.build();
   }

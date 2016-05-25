@@ -27,6 +27,9 @@ import io.vertx.core.json.JsonArray;
 public class NetworkOptionsConverter {
 
   public static void fromJson(JsonObject json, NetworkOptions obj) {
+    if (json.getValue("logActivity") instanceof Boolean) {
+      obj.setLogActivity((Boolean)json.getValue("logActivity"));
+    }
     if (json.getValue("receiveBufferSize") instanceof Number) {
       obj.setReceiveBufferSize(((Number)json.getValue("receiveBufferSize")).intValue());
     }
@@ -42,6 +45,7 @@ public class NetworkOptionsConverter {
   }
 
   public static void toJson(NetworkOptions obj, JsonObject json) {
+    json.put("logActivity", obj.getLogActivity());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reuseAddress", obj.isReuseAddress());
     json.put("sendBufferSize", obj.getSendBufferSize());

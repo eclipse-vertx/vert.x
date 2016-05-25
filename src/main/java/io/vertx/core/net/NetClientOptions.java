@@ -283,7 +283,12 @@ public class NetClientOptions extends ClientOptionsBase {
     return reconnectInterval;
   }
 
-    @Override
+  @Override
+  public NetClientOptions setLogActivity(boolean logEnabled) {
+    return (NetClientOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof NetClientOptions)) return false;

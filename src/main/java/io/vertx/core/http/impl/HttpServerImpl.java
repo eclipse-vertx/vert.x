@@ -33,6 +33,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -107,6 +108,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private volatile int actualPort;
   private ContextImpl listenContext;
   private HttpServerMetrics metrics;
+  private boolean logEnabled;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
@@ -120,6 +122,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.subProtocols = options.getWebsocketSubProtocols();
+    this.logEnabled = options.getLogActivity();
   }
 
   @Override
@@ -308,10 +311,14 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .useCompression(options.isCompressionSupported())
         .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics))
+        .logEnabled(logEnabled)
         .build();
   }
 
   private void configureHttp1(ChannelPipeline pipeline) {
+    if (logEnabled) {
+      pipeline.addLast("logging", new LoggingHandler());
+    }
     if (USE_FLASH_POLICY_HANDLER) {
       pipeline.addLast("flashpolicy", new FlashPolicyHandler());
     }

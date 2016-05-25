@@ -22,6 +22,7 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -68,6 +69,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private final HandlerManager<Handler<NetSocket>> handlerManager = new HandlerManager<>(availableWorkers);
   private final Queue<Runnable> bindListeners = new LinkedList<>();
   private final NetSocketStreamImpl connectStream = new NetSocketStreamImpl();
+  private final boolean logEnabled;
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
   private volatile ServerID id;
@@ -82,6 +84,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     this.options = new NetServerOptions(options);
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.creatingContext = vertx.getContext();
+    this.logEnabled = options.getLogActivity();
     if (creatingContext != null) {
       if (creatingContext.isMultiThreadedWorkerContext()) {
         throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
@@ -167,6 +170,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
             if (sslHelper.isSSL()) {
               SslHandler sslHandler = sslHelper.createSslHandler(vertx);
               pipeline.addLast("ssl", sslHandler);
+            }
+            if (logEnabled) {
+              pipeline.addLast("logging", new LoggingHandler());
             }
             if (sslHelper.isSSL()) {
               // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.

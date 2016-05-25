@@ -60,6 +60,19 @@ upgrade to HTTP/2. It will also accept a direct `h2c` connection beginning with 
 
 WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
 
+=== Logging network server activity
+
+For debugging purposes, network activity can be logged.
+
+[source,java]
+----
+HttpServerOptions options = new HttpServerOptions().setLogActivity(true);
+
+HttpServer server = vertx.createHttpServer(options);
+----
+
+See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+
 === Start the Server Listening
 
 To tell the server to listen for incoming requests you use one of the `link:../../apidocs/io/vertx/core/http/HttpServer.html#listen--[listen]`
@@ -832,6 +845,19 @@ the same preface from the server.
 
 The http server may not support HTTP/2, the actual version can be checked
 with `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#version--[version]` when the response arrives.
+
+
+=== Logging network client activity
+
+For debugging purposes, network activity can be logged.
+
+[source,java]
+----
+HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
+HttpClient client = vertx.createHttpClient(options);
+----
+
+See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
 
 === Making requests
 

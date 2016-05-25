@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -26,6 +27,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -2209,4 +2211,45 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testNoLogging() throws Exception {
+    TestLoggerFactory factory = testLogging();
+    assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+  }
+
+  @Test
+  public void testServerLogging() throws Exception {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setLogActivity(true));
+    TestLoggerFactory factory = testLogging();
+    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+  }
+
+  @Test
+  public void testClientLogging() throws Exception {
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setLogActivity(true));
+    TestLoggerFactory factory = testLogging();
+    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+  }
+
+  private TestLoggerFactory testLogging() throws Exception {
+    InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
+    TestLoggerFactory factory = new TestLoggerFactory();
+    InternalLoggerFactory.setDefaultFactory(factory);
+    try {
+      server.connectHandler(so -> {
+        so.write("fizzbuzz").end();
+      });
+      server.listen(1234, "localhost", onSuccess(v1 -> {
+        client.connect(1234, "localhost", onSuccess(so -> {
+          so.closeHandler(v2 -> testComplete());
+        }));
+      }));
+      await();
+    } finally {
+      InternalLoggerFactory.setDefaultFactory(prev);
+    }
+    return factory;
+  }
 }

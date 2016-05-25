@@ -241,6 +241,11 @@ public class DatagramSocketOptions extends NetworkOptions {
   }
 
   @Override
+  public DatagramSocketOptions setLogActivity(boolean logEnabled) {
+    return (DatagramSocketOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof DatagramSocketOptions)) return false;
