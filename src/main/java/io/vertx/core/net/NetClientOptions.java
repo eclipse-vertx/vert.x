@@ -149,6 +149,12 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setKeyStoreOptions(KeyCertOptions options) {
+    super.setKeyStoreOptions(options);
+    return this;
+  }
+
+  @Override
   public NetClientOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
@@ -162,6 +168,12 @@ public class NetClientOptions extends ClientOptionsBase {
   @Override
   public NetClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     return (NetClientOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setTrustStoreOptions(TrustOptions options) {
+    super.setTrustStoreOptions(options);
+    return this;
   }
 
   @Override

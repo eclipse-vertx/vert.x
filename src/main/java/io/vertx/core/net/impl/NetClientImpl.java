@@ -69,7 +69,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, boolean useCreatingContext) {
     this.vertx = vertx;
     this.options = new NetClientOptions(options);
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
+    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.logEnabled = options.getLogActivity();
     this.closeHook = completionHandler -> {
       NetClientImpl.this.close();

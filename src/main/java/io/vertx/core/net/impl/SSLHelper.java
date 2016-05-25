@@ -33,8 +33,11 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.TrustOptions;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.ManagerFactoryParameters;
@@ -92,8 +95,8 @@ public class SSLHelper {
   private static final String[] DEFAULT_ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
 
   private boolean ssl;
-  private KeyStoreHelper keyStoreHelper;
-  private KeyStoreHelper trustStoreHelper;
+  private KeyCertOptions keyCertOptions;
+  private TrustOptions trustOptions;
   private boolean trustAll;
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
@@ -109,10 +112,10 @@ public class SSLHelper {
 
   private SslContext sslContext;
 
-  public SSLHelper(HttpClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+  public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     this.ssl = options.isSsl();
-    this.keyStoreHelper = keyStoreHelper;
-    this.trustStoreHelper = trustStoreHelper;
+    this.keyCertOptions = keyCertOptions;
+    this.trustOptions = trustOptions;
     this.trustAll = options.isTrustAll();
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
@@ -126,10 +129,10 @@ public class SSLHelper {
     }
   }
 
-  public SSLHelper(HttpServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+  public SSLHelper(HttpServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     this.ssl = options.isSsl();
-    this.keyStoreHelper = keyStoreHelper;
-    this.trustStoreHelper = trustStoreHelper;
+    this.keyCertOptions = keyCertOptions;
+    this.trustOptions = trustOptions;
     this.clientAuth = options.getClientAuth();
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
@@ -140,10 +143,10 @@ public class SSLHelper {
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
   }
 
-  public SSLHelper(NetClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+  public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     this.ssl = options.isSsl();
-    this.keyStoreHelper = keyStoreHelper;
-    this.trustStoreHelper = trustStoreHelper;
+    this.keyCertOptions = keyCertOptions;
+    this.trustOptions = trustOptions;
     this.trustAll = options.isTrustAll();
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
@@ -155,10 +158,10 @@ public class SSLHelper {
     this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
   }
 
-  public SSLHelper(NetServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+  public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     this.ssl = options.isSsl();
-    this.keyStoreHelper = keyStoreHelper;
-    this.trustStoreHelper = trustStoreHelper;
+    this.keyCertOptions = keyCertOptions;
+    this.trustOptions = trustOptions;
     this.clientAuth = options.getClientAuth();
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
@@ -204,8 +207,8 @@ public class SSLHelper {
         builder = SslContextBuilder.forClient();
         if (keyMgrFactory != null) {
           if (openSSL) {
-            if (keyStoreHelper instanceof KeyStoreHelper.KeyCert) {
-              KeyStoreHelper.KeyCert keyStoreHelper = (KeyStoreHelper.KeyCert) this.keyStoreHelper;
+            if (keyCertOptions instanceof PemKeyCertOptions) {
+              KeyStoreHelper.KeyCert keyStoreHelper =(KeyStoreHelper.KeyCert) KeyStoreHelper.create(vertx, keyCertOptions);
               X509Certificate[] certs = keyStoreHelper.loadCerts();
               PrivateKey privateKey = keyStoreHelper.loadPrivateKey();
               builder.keyManager(privateKey, certs);
@@ -218,8 +221,8 @@ public class SSLHelper {
         }
       } else {
         if (openSSL) {
-          if (keyStoreHelper instanceof KeyStoreHelper.KeyCert) {
-            KeyStoreHelper.KeyCert keyStoreHelper = (KeyStoreHelper.KeyCert) this.keyStoreHelper;
+          if (keyCertOptions instanceof PemKeyCertOptions) {
+            KeyStoreHelper.KeyCert keyStoreHelper =(KeyStoreHelper.KeyCert) KeyStoreHelper.create(vertx, keyCertOptions);
             X509Certificate[] certs = keyStoreHelper.loadCerts();
             PrivateKey privateKey = keyStoreHelper.loadPrivateKey();
             builder = SslContextBuilder.forServer(privateKey, certs);
@@ -266,7 +269,7 @@ public class SSLHelper {
   }
 
   private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
-    return keyStoreHelper == null ? null : keyStoreHelper.getKeyMgrFactory(vertx);
+    return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx);
   }
 
   private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
@@ -285,8 +288,8 @@ public class SSLHelper {
           return mgrs.clone();
         }
       };
-    } else if (trustStoreHelper != null) {
-      fact = trustStoreHelper.getTrustMgrFactory(vertx);
+    } else if (trustOptions != null) {
+      fact = trustOptions.getTrustManagerFactory(vertx);
     } else {
       return null;
     }

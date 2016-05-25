@@ -17,8 +17,13 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.KeyStoreHelper;
+
+import javax.net.ssl.KeyManagerFactory;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on Java Keystore files.

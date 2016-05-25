@@ -120,7 +120,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
       creatingContext.addCloseHook(this);
     }
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
+    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.subProtocols = options.getWebsocketSubProtocols();
     this.logEnabled = options.getLogActivity();
   }

@@ -15,6 +15,12 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.impl.KeyStoreHelper;
+
+import javax.net.ssl.KeyManagerFactory;
+
 /**
  * Key/cert configuration options.
  *
@@ -27,4 +33,13 @@ public interface KeyCertOptions {
    */
   KeyCertOptions clone();
 
+  /**
+   * Create and return the key manager factory for these options.
+   *
+   * @param vertx the vertx instance
+   * @return the key manager factory
+   */
+  default KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
+    return KeyStoreHelper.create((VertxInternal) vertx, this).getKeyMgrFactory((VertxInternal) vertx);
+  }
 }

@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
@@ -260,10 +261,23 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return the key cert options
+   * @return the key/cert options
    */
+  @GenIgnore
   public KeyCertOptions getKeyCertOptions() {
     return keyCertOptions;
+  }
+
+  /**
+   * Set the key/cert options.
+   *
+   * @param options the key store options
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public TCPSSLOptions setKeyStoreOptions(KeyCertOptions options) {
+    this.keyCertOptions = options;
+    return this;
   }
 
   /**
@@ -304,8 +318,18 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Set the trust options.
+   * @param options the trust soptions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTrustStoreOptions(TrustOptions options) {
+    this.trustOptions = options;
+    return this;
+  }
+
+  /**
    * Set the trust options in jks format, aka Java trustore
-   * @param options the options in jks format
+   * @param options the trust options in jks format
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
@@ -315,7 +339,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the trust options in pfx format
-   * @param options the options in pfx format
+   * @param options the trust options in pfx format
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setPfxTrustOptions(PfxOptions options) {
@@ -325,7 +349,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the trust options in pem format
-   * @param options the options in pem format
+   * @param options the trust options in pem format
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setPemTrustOptions(PemTrustOptions options) {
