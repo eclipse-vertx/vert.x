@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
@@ -42,8 +41,6 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.impl.proxy.ProxyChannelProvider;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -161,33 +158,13 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     bootstrap.group(context.nettyEventLoop());
     bootstrap.channel(NioSocketChannel.class);
 
-    bootstrap.handler(new ChannelInitializer<Channel>() {
-      @Override
-      protected void initChannel(Channel ch) throws Exception {
-        // Nothing to do
-      }
-    });
-
     applyConnectionOptions(bootstrap);
 
     ChannelProvider channelProvider;
     if (options.getProxyOptions() == null) {
-      channelProvider = new ChannelProvider() {
-        @Override
-        public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
-            Handler<AsyncResult<Channel>> channelHandler) {
-          AsyncResolveBindConnectHelper future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-          future.addListener(res -> {
-            if (res.succeeded()) {
-              channelHandler.handle(Future.succeededFuture(res.result()));
-            } else {
-              channelHandler.handle(Future.failedFuture(res.cause()));
-            }
-          });
-        }
-      };
+      channelProvider = ChannelProvider.INSTANCE;
     } else {
-      channelProvider = new ProxyChannelProvider();
+      channelProvider = ProxyChannelProvider.INSTANCE;
     }
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
@@ -228,14 +205,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       }
     };
 
-    try {
-      channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelHandler);
-    } catch (NoClassDefFoundError e) {
-      if (options.getProxyOptions() != null && e.getMessage().contains("io/netty/handler/proxy")) {
-        log.warn("Depedency io.netty:netty-handler-proxy missing - check your classpath");
-        channelHandler.handle(Future.failedFuture(e));
-      }
-    }
+    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelHandler);
   }
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {

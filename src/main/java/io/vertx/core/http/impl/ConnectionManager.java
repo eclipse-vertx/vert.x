@@ -20,7 +20,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
@@ -38,7 +37,6 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
@@ -47,11 +45,9 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.proxy.ProxyChannelProvider;
 import io.vertx.core.net.impl.ChannelProvider;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -377,26 +373,9 @@ public class ConnectionManager {
 
     ChannelProvider channelProvider;
     if (options.getProxyOptions() == null) {
-      channelProvider = new ChannelProvider() {
-        @Override
-        public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
-          bootstrap.handler(new ChannelInitializer<Channel>() {
-            @Override
-            protected void initChannel(Channel ch) throws Exception {
-            }
-          });
-          AsyncResolveBindConnectHelper future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-          future.addListener(res -> {
-            if (res.succeeded()) {
-              channelHandler.handle(Future.succeededFuture(res.result()));
-            } else {
-              channelHandler.handle(Future.failedFuture(res.cause()));
-            }
-          });
-        }
-      };
+      channelProvider = ChannelProvider.INSTANCE;
     } else {
-      channelProvider = new ProxyChannelProvider();
+      channelProvider = ProxyChannelProvider.INSTANCE;
     }
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
@@ -500,14 +479,7 @@ public class ConnectionManager {
       }
     };
 
-    try {
-      channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelHandler);
-    } catch (NoClassDefFoundError e) {
-      if (options.getProxyOptions() != null && e.getMessage().contains("io/netty/handler/proxy")) {
-        log.warn("Depedency io.netty:netty-handler-proxy missing - check your classpath");
-        channelHandler.handle(Future.failedFuture(e));
-      }
-    }
+    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelHandler);
   }
 
   void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {

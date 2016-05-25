@@ -1,10 +1,4 @@
-/**
- * 
- */
-package io.vertx.core.net.impl.proxy;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -23,28 +17,27 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.impl.ChannelProvider;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 /**
- * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
+ * A channel provider that connects via a Proxy : HTTP or Socks
  *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ProxyChannelProvider implements ChannelProvider {
+public class ProxyChannelProvider extends ChannelProvider {
 
-  // Could become a singleton as it does not hold state
+  public static final ChannelProvider INSTANCE = new ProxyChannelProvider();
 
-  private static final Logger log = LoggerFactory.getLogger(ProxyChannelProvider.class);
-
-  public ProxyChannelProvider() {
+  private ProxyChannelProvider() {
   }
 
   @Override
-  public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
-      Handler<AsyncResult<Channel>> channelHandler) {
+  protected void doConnect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
+                           Handler<AsyncResult<Channel>> channelHandler) {
 
     final String proxyHost = options.getProxyHost();
     final int proxyPort = options.getProxyPort();
@@ -61,17 +54,14 @@ public class ProxyChannelProvider implements ChannelProvider {
         switch (proxyType) {
           default:
           case HTTP:
-            log.debug("configuring http connect proxy");
             proxy = proxyUsername != null && proxyPassword != null
                 ? new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword) : new HttpProxyHandler(proxyAddr);
             break;
           case SOCKS5:
-            log.debug("configuring socks5 proxy");
             proxy = proxyUsername != null && proxyPassword != null
                 ? new Socks5ProxyHandler(proxyAddr, proxyUsername, proxyPassword) : new Socks5ProxyHandler(proxyAddr);
             break;
           case SOCKS4:
-            log.debug("configuring socks4 proxy");
             // apparently SOCKS4 only supports a username?
             proxy = proxyUsername != null ? new Socks4ProxyHandler(proxyAddr, proxyUsername)
                 : new Socks4ProxyHandler(proxyAddr);
