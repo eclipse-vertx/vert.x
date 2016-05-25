@@ -923,7 +923,7 @@ ALPN version for the JVM running it:
 
 === Using a proxy for NetClient connections
 
-The NetClient supports configuring a HTTP/1.x CONNECT method proxy or SOCKS4a/SOCKS5 proxy.
+The NetClient supports configuring a HTTP/1.x CONNECT proxy or SOCKS4a or SOCKS5 proxy.
 
 The proxy can be configured in the `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` by setting a
 `link:../../apidocs/io/vertx/core/net/ProxyOptions.html[ProxyOptions]` object containing proxy type, hostname, port and optionally username and password.

@@ -381,10 +381,6 @@ public class ConnectionManager {
       HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
 
       @Override
-      public void channelStartup(Channel ch) {
-      }
-
-      @Override
       public void pipelineSetup(ChannelPipeline pipeline) {
         pipeline.addLast("codec", codec);
       }

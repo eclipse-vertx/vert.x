@@ -89,7 +89,6 @@ public class ProxyChannelProvider implements ChannelProvider {
             ChannelPipeline pipeline = ch.pipeline();
             pipeline.addFirst("proxy", proxy);
             // set up other pipeline entries
-            addl.channelStartup(ch);
             addl.pipelineSetup(ch.pipeline());
             pipeline.addLast(new ChannelInboundHandlerAdapter() {
               @Override

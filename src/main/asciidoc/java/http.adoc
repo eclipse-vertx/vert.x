@@ -2017,7 +2017,7 @@ used with binary frames that are no split over multiple frames.
 === Using a proxy for HTTPS connections
 
 The http client supports accessing https server via a HTTPS proxy (HTTP/1.x CONNECT method), e.g. Squid or
-SOCKS4a/SOCKS5 proxy. The http proxy protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
+SOCKS4a or SOCKS5 proxy. The http proxy protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
 
 The proxy can be configured in the `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html[HttpClientOptions]` by setting a
 `link:../../apidocs/io/vertx/core/net/ProxyOptions.html[ProxyOptions]` object containing proxy type, hostname, port and optionally username and password.

@@ -14,7 +14,6 @@ import io.netty.channel.ChannelPipeline;
  *
  */
 public interface ChannelProviderAdditionalOperations {
-  void channelStartup(Channel ch);
   void pipelineSetup(ChannelPipeline pipeline);
   void pipelineDeprov(ChannelPipeline pipeline);
 }
