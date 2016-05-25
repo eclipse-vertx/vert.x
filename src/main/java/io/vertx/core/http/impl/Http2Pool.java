@@ -34,8 +34,10 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
+class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
+  // Pools must locks on the queue object to keep a single lock
+  private final ConnectionManager.ConnQueue queue;
   private Queue<Http2ClientConnection> availableConnections = new ArrayDeque<>();
   private final Set<Http2ClientConnection> allConnections = new HashSet<>();
   private final Map<Channel, ? super Http2ClientConnection> connectionMap;
@@ -46,7 +48,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
   public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client,
                    Map<Channel, ? super Http2ClientConnection> connectionMap, int maxSockets,
                    int maxConcurrency, boolean logEnabled) {
-    super(queue, maxSockets);
+    this.queue = queue;
     this.client = client;
     this.connectionMap = connectionMap;
     this.maxConcurrency = maxConcurrency;
@@ -54,12 +56,12 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  HttpVersion version() {
+  public HttpVersion version() {
     return HttpVersion.HTTP_2;
   }
 
   @Override
-  Http2ClientConnection pollConnection() {
+  public Http2ClientConnection pollConnection() {
     Http2ClientConnection conn = availableConnections.peek();
     if (conn != null) {
       conn.streamCount++;
@@ -93,7 +95,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
       allConnections.add(conn);
       conn.streamCount++;
       waiter.handleConnection(conn); // Should make same tests than in deliverRequest
-      deliverStream(conn, waiter);
+      queue.deliverStream(conn, waiter);
       checkPending(conn);
       if (canReserveStream(conn)) {
         availableConnections.add(conn);
@@ -111,7 +113,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
       Waiter waiter;
       while (canReserveStream(conn) && (waiter = queue.getNextWaiter()) != null) {
         conn.streamCount++;
-        deliverStream(conn, waiter);
+        queue.deliverStream(conn, waiter);
       }
     }
   }
@@ -125,7 +127,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  void recycle(Http2ClientConnection conn) {
+  public void recycle(Http2ClientConnection conn) {
     synchronized (queue) {
       conn.streamCount--;
       checkPending(conn);
@@ -136,12 +138,12 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  HttpClientStream createStream(Http2ClientConnection conn) throws Exception {
+  public HttpClientStream createStream(Http2ClientConnection conn) throws Exception {
     return conn.createStream();
   }
 
   @Override
-  void closeAllConnections() {
+  public void closeAllConnections() {
     List<Http2ClientConnection> toClose;
     synchronized (queue) {
       toClose = new ArrayList<>(allConnections);

@@ -194,23 +194,34 @@ public class ConnectionManager {
     private final QueueManager mgr;
     private final TargetAddress address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
-    private Pool<? extends HttpClientConnection> pool;
+    private Pool<HttpClientConnection> pool;
     private int connCount;
+    private final int maxSize;
 
     ConnQueue(HttpVersion version, QueueManager mgr, TargetAddress address) {
       this.address = address;
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
-        pool =  new Http2Pool(this, client, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency, logEnabled);
+        maxSize = http2MaxSockets;
+        pool =  (Pool)new Http2Pool(this, client, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency, logEnabled);
       } else {
-        pool = new Http1xPool(client, options, this, mgr.connectionMap, version);
+        maxSize = client.getOptions().getMaxPoolSize();
+        pool = (Pool)new Http1xPool(client, options, this, mgr.connectionMap, version);
       }
     }
 
     public synchronized void getConnection(Waiter waiter) {
-      boolean served = pool.getConnection(waiter);
-      if (!served) {
-        if (connCount == pool.maxSockets) {
+      HttpClientConnection conn = pool.pollConnection();
+      if (conn != null && conn.isValid()) {
+        ContextImpl context = waiter.context;
+        if (context == null) {
+          context = conn.getContext();
+        } else if (context != conn.getContext()) {
+          ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
+        }
+        context.runOnContext(v -> deliverStream(conn, waiter));
+      } else {
+        if (connCount == maxSize) {
           // Wait in queue
           if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
             waiters.add(waiter);
@@ -221,6 +232,31 @@ public class ConnectionManager {
           // Create a new connection
           createNewConnection(waiter);
         }
+      }
+    }
+
+    /**
+     * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
+     *
+     * @param conn the connection
+     */
+    void deliverStream(HttpClientConnection conn, Waiter waiter) {
+      if (!conn.isValid()) {
+        // The connection has been closed - closed connections can be in the pool
+        // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
+        // that is done asynchronously in the connection closeHandler()
+        getConnection(waiter);
+      } else if (waiter.isCancelled()) {
+        pool.recycle(conn);
+      } else {
+        HttpClientStream stream;
+        try {
+          stream = pool.createStream(conn);
+        } catch (Exception e) {
+          getConnection(waiter);
+          return;
+        }
+        waiter.handleStream(stream);
       }
     }
 
@@ -419,7 +455,7 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // change the pool to Http1xPool
       synchronized (this) {
-        pool = new Http1xPool(client, options, this, mgr.connectionMap, fallbackVersion);
+        pool = (Pool)new Http1xPool(client, options, this, mgr.connectionMap, fallbackVersion);
       }
       applyHttp1xConnectionOptions(ch.pipeline(), context);
       http1xConnected(fallbackVersion, context, port, host, ch, waiter);
@@ -427,14 +463,14 @@ public class ConnectionManager {
 
     private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
       context.executeFromIO(() ->
-          ((Http1xPool)pool).createConn(version, context, port, host, ch, waiter)
+          ((Http1xPool)(Pool)pool).createConn(version, context, port, host, ch, waiter)
       );
     }
 
     private void http2Connected(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {
       context.executeFromIO(() -> {
         try {
-          ((Http2Pool)pool).createConn(context, ch, waiter, upgrade);
+          ((Http2Pool)(Pool)pool).createConn(context, ch, waiter, upgrade);
         } catch (Http2Exception e) {
           connectionFailed(context, ch, waiter::handleFailure, e);
         }
@@ -500,66 +536,17 @@ public class ConnectionManager {
     }
   }
 
-  static abstract class Pool<C extends HttpClientConnection> {
+  interface Pool<C extends HttpClientConnection> {
 
-    // Pools must locks on the queue object to keep a single lock
-    final ConnQueue queue;
-    final int maxSockets;
+    HttpVersion version();
 
-    Pool(ConnQueue queue, int maxSockets) {
-      this.queue = queue;
-      this.maxSockets = maxSockets;
-    }
+    C pollConnection();
 
-    abstract HttpVersion version();
+    void closeAllConnections();
 
-    abstract C pollConnection();
+    void recycle(C conn);
 
-    boolean getConnection(Waiter waiter) {
-      C conn = pollConnection();
-      if (conn != null && conn.isValid()) {
-        ContextImpl context = waiter.context;
-        if (context == null) {
-          context = conn.getContext();
-        } else if (context != conn.getContext()) {
-          ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
-        }
-        context.runOnContext(v -> deliverStream(conn, waiter));
-        return true;
-      } else {
-        return false;
-      }
-    }
+    HttpClientStream createStream(C conn) throws Exception;
 
-    abstract void closeAllConnections();
-
-    abstract void recycle(C conn);
-
-    abstract HttpClientStream createStream(C conn) throws Exception;
-
-    /**
-     * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
-     *
-     * @param conn the connection
-     */
-    void deliverStream(C conn, Waiter waiter) {
-      if (!conn.isValid()) {
-        // The connection has been closed - closed connections can be in the pool
-        // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
-        // that is done asynchronously in the connection closeHandler()
-        queue.getConnection(waiter);
-      } else if (waiter.isCancelled()) {
-        recycle(conn);
-      } else {
-        HttpClientStream stream;
-        try {
-          stream = createStream(conn);
-        } catch (Exception e) {
-          queue.getConnection(waiter);
-          return;
-        }
-        waiter.handleStream(stream);
-      }
-    }
   }
 }

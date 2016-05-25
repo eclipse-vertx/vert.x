@@ -31,8 +31,10 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
+public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
+  // Pools must locks on the queue object to keep a single lock
+  private final ConnectionManager.ConnQueue queue;
   private final HttpClientImpl client;
   private final Map<Channel, HttpClientConnection> connectionMap;
   private final boolean pipelining;
@@ -43,7 +45,7 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
   private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
 
   public Http1xPool(HttpClientImpl client, HttpClientOptions options, ConnectionManager.ConnQueue queue, Map<Channel, HttpClientConnection> connectionMap, HttpVersion version) {
-    super(queue, client.getOptions().getMaxPoolSize());
+    this.queue = queue;
     this.version = version;
     this.client = client;
     this.pipelining = options.isPipelining();
@@ -53,23 +55,23 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
-  HttpVersion version() {
+  public HttpVersion version() {
     // Correct this
     return version;
   }
 
   @Override
-  ClientConnection pollConnection() {
+  public ClientConnection pollConnection() {
     return availableConnections.poll();
   }
 
   @Override
-  HttpClientStream createStream(ClientConnection conn) {
+  public HttpClientStream createStream(ClientConnection conn) {
     return conn;
   }
 
   // Called when the request has ended
-  void recycle(ClientConnection conn) {
+  public void recycle(ClientConnection conn) {
     synchronized (queue) {
       if (pipelining) {
         doRecycle(conn);
@@ -98,7 +100,7 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
       if (context == null) {
         context = conn.getContext();
       }
-      context.runOnContext(v -> deliverStream(conn, waiter));
+      context.runOnContext(v -> queue.deliverStream(conn, waiter));
     } else if (conn.getOutstandingRequestCount() == 0) {
       // Return to set of available from here to not return it several times
       availableConnections.add(conn);
@@ -116,7 +118,7 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
     }
     connectionMap.put(ch, conn);
     waiter.handleConnection(conn);
-    deliverStream(conn, waiter);
+    queue.deliverStream(conn, waiter);
   }
 
   // Called if the connection is actually closed, OR the connection attempt failed - in the latter case
@@ -129,7 +131,7 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
     }
   }
 
-  void closeAllConnections() {
+  public void closeAllConnections() {
     Set<ClientConnection> copy;
     synchronized (this) {
       copy = new HashSet<>(allConnections);
