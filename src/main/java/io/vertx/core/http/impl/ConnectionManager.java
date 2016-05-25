@@ -269,7 +269,7 @@ public class ConnectionManager {
 
     private void createNewConnection(Waiter waiter) {
       connCount++;
-      internalConnect(pool.version(), address.host, address.port, waiter);
+      internalConnect(this, pool.version(), address.host, address.port, waiter);
     }
 
     /**
@@ -296,176 +296,6 @@ public class ConnectionManager {
       }
     }
 
-    protected void internalConnect(HttpVersion version, String host, int port, Waiter waiter) {
-      ContextImpl context;
-      if (waiter.context == null) {
-        // Embedded
-        context = vertx.getOrCreateContext();
-      } else {
-        context = waiter.context;
-      }
-      sslHelper.validate(vertx);
-
-      Bootstrap bootstrap = new Bootstrap();
-      bootstrap.group(context.nettyEventLoop());
-      bootstrap.channel(NioSocketChannel.class);
-      applyConnectionOptions(options, bootstrap);
-
-      ChannelProviderAdditionalOperations addl = new ChannelProviderAdditionalOperations() {
-
-        HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
-
-        @Override
-        public void channelStartup(Channel ch) {
-        }
-
-        @Override
-        public void pipelineSetup(ChannelPipeline pipeline) {
-          pipeline.addLast("codec", codec);
-        }
-
-        @Override
-        public void pipelineDeprov(ChannelPipeline pipeline) {
-          pipeline.remove(codec);
-        }
-
-      };
-
-      ChannelProvider channelProvider;
-      if (options.getProxyOptions() == null) {
-        channelProvider = new ChannelProvider() {
-          @Override
-          public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
-            bootstrap.handler(new ChannelInitializer<Channel>() {
-              @Override
-              protected void initChannel(Channel ch) throws Exception {
-              }
-            });
-            AsyncResolveBindConnectHelper future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-            future.addListener(res -> {
-              if (res.succeeded()) {
-                channelHandler.handle(Future.succeededFuture(res.result()));
-              } else {
-                channelHandler.handle(Future.failedFuture(res.cause()));
-              }
-            });
-          }
-        };
-      } else {
-        channelProvider = new ProxyChannelProvider(addl);
-      }
-
-      Handler<AsyncResult<Channel>> channelHandler = res -> {
-
-        if (res.succeeded()) {
-          Channel ch = res.result();
-
-          // Configure pipeline
-          ChannelPipeline pipeline = ch.pipeline();
-          boolean useAlpn = options.isUseAlpn();
-          if (useAlpn) {
-            SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), host, port);
-            ch.pipeline().addLast(sslHandler);
-            ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
-              @Override
-              protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
-                if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-                  http2Connected(context, ch, waiter, false);
-                } else if (ApplicationProtocolNames.HTTP_1_1.equals(protocol)) {
-                  fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
-                } else {
-                  fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_0, port, host, waiter);
-                }
-              }
-            });
-          } else {
-            if (options.isSsl()) {
-              pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
-            }
-            if (version == HttpVersion.HTTP_2) {
-              if (options.isH2cUpgrade()) {
-                HttpClientCodec httpCodec = new HttpClientCodec();
-                class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
-                  @Override
-                  public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                    DefaultFullHttpRequest upgradeRequest =
-                        new DefaultFullHttpRequest(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
-                    ctx.writeAndFlush(upgradeRequest);
-                    ctx.fireChannelActive();
-                  }
-                  @Override
-                  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                    super.userEventTriggered(ctx, evt);
-                    ChannelPipeline p = ctx.pipeline();
-                    if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
-                      p.remove(this);
-                      // Upgrade handler will remove itself
-                    } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
-                      p.remove(httpCodec);
-                      p.remove(this);
-                      // Upgrade handler will remove itself
-                      fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
-                    }
-                  }
-                }
-                VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
-                  @Override
-                  public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
-                    http2Connected(context, ch, waiter, true);
-                  }
-                };
-                HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
-                ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
-              } else {
-                applyH2ConnectionOptions(pipeline);
-              }
-            } else {
-              applyHttp1xConnectionOptions(pipeline, context);
-            }
-          }
-
-          //
-          if (options.isSsl()) {
-            // TCP connected, so now we must do the SSL handshake
-            SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
-            io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-            fut.addListener(fut2 -> {
-              if (fut2.isSuccess()) {
-                if (!options.isUseAlpn()) {
-                  http1xConnected(version, context, port, host, ch, waiter);
-                }
-              } else {
-                handshakeFailure(context, ch, fut2.cause(), waiter);
-              }
-            });
-          } else {
-            if (!options.isUseAlpn()) {
-              if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
-                // Upgrade handler do nothing
-              } else {
-                if (version == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
-                  http2Connected(context, ch, waiter, false);
-                } else {
-                  http1xConnected(version, context, port, host, ch, waiter);
-                }
-              }
-            }
-          }
-        } else {
-          connectionFailed(context, null, waiter::handleFailure, res.cause());
-        }
-      };
-
-      try {
-        channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelHandler);
-      } catch (NoClassDefFoundError e) {
-        if (options.getProxyOptions() != null && e.getMessage().contains("io/netty/handler/proxy")) {
-          log.warn("Depedency io.netty:netty-handler-proxy missing - check your classpath");
-          channelHandler.handle(Future.failedFuture(e));
-        }
-      }
-    }
-
     private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, Waiter waiter) {
       SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
       if (cause != null) {
@@ -479,7 +309,7 @@ public class ConnectionManager {
       synchronized (this) {
         pool = (Pool)new Http1xPool(client, options, this, mgr.connectionMap, fallbackVersion);
       }
-      applyHttp1xConnectionOptions(ch.pipeline(), context);
+      applyHttp1xConnectionOptions(this, ch.pipeline(), context);
       http1xConnected(fallbackVersion, context, port, host, ch, waiter);
     }
 
@@ -515,47 +345,6 @@ public class ConnectionManager {
         exHandler.handle(t);
       });
     }
-
-    void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
-      bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-      if (options.getSendBufferSize() != -1) {
-        bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-      }
-      if (options.getReceiveBufferSize() != -1) {
-        bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-      }
-      if (options.getSoLinger() != -1) {
-        bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-      }
-      if (options.getTrafficClass() != -1) {
-        bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
-      }
-      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-      bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    }
-
-    void applyH2ConnectionOptions(ChannelPipeline pipeline) {
-      if (options.getIdleTimeout() > 0) {
-        pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-      }
-    }
-
-    void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
-      if (logEnabled) {
-        pipeline.addLast("logging", new LoggingHandler());
-      }
-      pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
-      if (options.isTryUseCompression()) {
-        pipeline.addLast("inflater", new HttpContentDecompressor(true));
-      }
-      if (options.getIdleTimeout() > 0) {
-        pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-      }
-      pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)mgr.connectionMap));
-    }
   }
 
   interface Pool<C extends HttpClientConnection> {
@@ -570,5 +359,216 @@ public class ConnectionManager {
 
     HttpClientStream createStream(C conn) throws Exception;
 
+  }
+
+  protected void internalConnect(ConnQueue queue, HttpVersion version, String host, int port, Waiter waiter) {
+    ContextImpl context;
+    if (waiter.context == null) {
+      // Embedded
+      context = vertx.getOrCreateContext();
+    } else {
+      context = waiter.context;
+    }
+    sslHelper.validate(vertx);
+
+    Bootstrap bootstrap = new Bootstrap();
+    bootstrap.group(context.nettyEventLoop());
+    bootstrap.channel(NioSocketChannel.class);
+    applyConnectionOptions(options, bootstrap);
+
+    ChannelProviderAdditionalOperations addl = new ChannelProviderAdditionalOperations() {
+
+      HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
+
+      @Override
+      public void channelStartup(Channel ch) {
+      }
+
+      @Override
+      public void pipelineSetup(ChannelPipeline pipeline) {
+        pipeline.addLast("codec", codec);
+      }
+
+      @Override
+      public void pipelineDeprov(ChannelPipeline pipeline) {
+        pipeline.remove(codec);
+      }
+
+    };
+
+    ChannelProvider channelProvider;
+    if (options.getProxyOptions() == null) {
+      channelProvider = new ChannelProvider() {
+        @Override
+        public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
+          bootstrap.handler(new ChannelInitializer<Channel>() {
+            @Override
+            protected void initChannel(Channel ch) throws Exception {
+            }
+          });
+          AsyncResolveBindConnectHelper future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+          future.addListener(res -> {
+            if (res.succeeded()) {
+              channelHandler.handle(Future.succeededFuture(res.result()));
+            } else {
+              channelHandler.handle(Future.failedFuture(res.cause()));
+            }
+          });
+        }
+      };
+    } else {
+      channelProvider = new ProxyChannelProvider(addl);
+    }
+
+    Handler<AsyncResult<Channel>> channelHandler = res -> {
+
+      if (res.succeeded()) {
+        Channel ch = res.result();
+
+        // Configure pipeline
+        ChannelPipeline pipeline = ch.pipeline();
+        boolean useAlpn = options.isUseAlpn();
+        if (useAlpn) {
+          SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), host, port);
+          ch.pipeline().addLast(sslHandler);
+          ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
+            @Override
+            protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
+              if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+                queue.http2Connected(context, ch, waiter, false);
+              } else if (ApplicationProtocolNames.HTTP_1_1.equals(protocol)) {
+                queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
+              } else {
+                queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_0, port, host, waiter);
+              }
+            }
+          });
+        } else {
+          if (options.isSsl()) {
+            pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
+          }
+          if (version == HttpVersion.HTTP_2) {
+            if (options.isH2cUpgrade()) {
+              HttpClientCodec httpCodec = new HttpClientCodec();
+              class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
+                @Override
+                public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                  DefaultFullHttpRequest upgradeRequest =
+                      new DefaultFullHttpRequest(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
+                  ctx.writeAndFlush(upgradeRequest);
+                  ctx.fireChannelActive();
+                }
+                @Override
+                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                  super.userEventTriggered(ctx, evt);
+                  ChannelPipeline p = ctx.pipeline();
+                  if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
+                    p.remove(this);
+                    // Upgrade handler will remove itself
+                  } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
+                    p.remove(httpCodec);
+                    p.remove(this);
+                    // Upgrade handler will remove itself
+                    queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
+                  }
+                }
+              }
+              VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
+                @Override
+                public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
+                  queue.http2Connected(context, ch, waiter, true);
+                }
+              };
+              HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
+              ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
+            } else {
+              applyH2ConnectionOptions(pipeline);
+            }
+          } else {
+            applyHttp1xConnectionOptions(queue, pipeline, context);
+          }
+        }
+
+        //
+        if (options.isSsl()) {
+          // TCP connected, so now we must do the SSL handshake
+          SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
+          io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
+          fut.addListener(fut2 -> {
+            if (fut2.isSuccess()) {
+              if (!options.isUseAlpn()) {
+                queue.http1xConnected(version, context, port, host, ch, waiter);
+              }
+            } else {
+              queue.handshakeFailure(context, ch, fut2.cause(), waiter);
+            }
+          });
+        } else {
+          if (!options.isUseAlpn()) {
+            if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
+              // Upgrade handler do nothing
+            } else {
+              if (version == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
+                queue.http2Connected(context, ch, waiter, false);
+              } else {
+                queue.http1xConnected(version, context, port, host, ch, waiter);
+              }
+            }
+          }
+        }
+      } else {
+        queue.connectionFailed(context, null, waiter::handleFailure, res.cause());
+      }
+    };
+
+    try {
+      channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelHandler);
+    } catch (NoClassDefFoundError e) {
+      if (options.getProxyOptions() != null && e.getMessage().contains("io/netty/handler/proxy")) {
+        log.warn("Depedency io.netty:netty-handler-proxy missing - check your classpath");
+        channelHandler.handle(Future.failedFuture(e));
+      }
+    }
+  }
+
+  void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
+    bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
+    if (options.getSendBufferSize() != -1) {
+      bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+    }
+    if (options.getReceiveBufferSize() != -1) {
+      bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+      bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+    }
+    if (options.getSoLinger() != -1) {
+      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    }
+    if (options.getTrafficClass() != -1) {
+      bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
+    }
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
+    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+  }
+
+  void applyH2ConnectionOptions(ChannelPipeline pipeline) {
+    if (options.getIdleTimeout() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+    }
+  }
+
+  void applyHttp1xConnectionOptions(ConnQueue queue, ChannelPipeline pipeline, ContextImpl context) {
+    if (logEnabled) {
+      pipeline.addLast("logging", new LoggingHandler());
+    }
+    pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
+    if (options.isTryUseCompression()) {
+      pipeline.addLast("inflater", new HttpContentDecompressor(true));
+    }
+    if (options.getIdleTimeout() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+    }
+    pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)queue.mgr.connectionMap));
   }
 }
