@@ -21,6 +21,7 @@ import io.vertx.core.Context;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   // Pools must locks on the queue object to keep a single lock
   private final ConnectionManager.ConnQueue queue;
   private final HttpClientImpl client;
+  private final HttpClientMetrics metrics;
   private final Map<Channel, HttpClientConnection> connectionMap;
   private final boolean pipelining;
   private final boolean keepAlive;
@@ -44,10 +46,11 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   private final Set<ClientConnection> allConnections = new HashSet<>();
   private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
 
-  public Http1xPool(HttpClientImpl client, HttpClientOptions options, ConnectionManager.ConnQueue queue, Map<Channel, HttpClientConnection> connectionMap, HttpVersion version) {
+  public Http1xPool(HttpClientImpl client, HttpClientMetrics metrics, HttpClientOptions options, ConnectionManager.ConnQueue queue, Map<Channel, HttpClientConnection> connectionMap, HttpVersion version) {
     this.queue = queue;
     this.version = version;
     this.client = client;
+    this.metrics = metrics;
     this.pipelining = options.isPipelining();
     this.keepAlive = options.isKeepAlive();
     this.ssl = options.isSsl();
@@ -109,7 +112,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
     ClientConnection conn = new ClientConnection(version, client, ch,
-        ssl, host, port, context, this, client.metrics);
+        ssl, host, port, context, this, metrics);
     conn.exceptionHandler(waiter::handleFailure);
     ClientHandler handler = ch.pipeline().get(ClientHandler.class);
     handler.conn = conn;

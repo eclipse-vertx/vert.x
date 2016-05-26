@@ -22,6 +22,7 @@ import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -42,14 +43,16 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   private final Set<Http2ClientConnection> allConnections = new HashSet<>();
   private final Map<Channel, ? super Http2ClientConnection> connectionMap;
   final HttpClientImpl client;
+  final HttpClientMetrics metrics;
   final int maxConcurrency;
   final boolean logEnabled;
 
-  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client,
+  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, HttpClientMetrics metrics,
                    Map<Channel, ? super Http2ClientConnection> connectionMap, int maxSockets,
                    int maxConcurrency, boolean logEnabled) {
     this.queue = queue;
     this.client = client;
+    this.metrics = metrics;
     this.connectionMap = connectionMap;
     this.maxConcurrency = maxConcurrency;
     this.logEnabled = logEnabled;
@@ -80,7 +83,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
           .server(false)
           .useCompression(client.getOptions().isTryUseCompression())
           .initialSettings(client.getOptions().getInitialSettings())
-          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler, client.metrics))
+          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler, metrics))
           .logEnabled(logEnabled)
           .build();
       if (upgrade) {
