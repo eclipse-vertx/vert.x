@@ -299,12 +299,6 @@ public class NetClientOptions extends ClientOptionsBase {
     return (NetClientOptions) super.setLogActivity(logEnabled);
   }
 
-  /**
-   * Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
-   *
-   * @param proxyOptions proxy options object
-   * @return a reference to this, so the API can be used fluently
-   */
   public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {
     return (NetClientOptions) super.setProxyOptions(proxyOptions);
   }

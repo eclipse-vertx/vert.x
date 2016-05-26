@@ -22,7 +22,8 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Proxy options for a NetClient or HttpClient
+ * Proxy options for a net client or a net client.
+ *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
 @DataObject(generateConverter = true)
@@ -31,31 +32,33 @@ public class ProxyOptions {
   /**
    * The default proxy type (HTTP)
    */
-  public static final ProxyType DEFAULT_PROXY_TYPE = ProxyType.HTTP;
+  public static final ProxyType DEFAULT_TYPE = ProxyType.HTTP;
+
   /**
    * The default port for proxy connect = 3128
    *
    * 3128 is the default port for e.g. Squid
    */
-  public static final int DEFAULT_PROXY_PORT = 3128;
+  public static final int DEFAULT_PORT = 3128;
+
   /**
    * The default hostname for proxy connect = "localhost"
    */
-  public static final String DEFAULT_PROXY_HOST = "localhost";
+  public static final String DEFAULT_HOST = "localhost";
 
-  private String proxyHost;
-  private int proxyPort;
-  private String proxyUsername;
-  private String proxyPassword;
-  private ProxyType proxyType;
+  private String host;
+  private int port;
+  private String username;
+  private String password;
+  private ProxyType type;
 
   /**
    * Default constructor.
    */
   public ProxyOptions() {
-    proxyHost = DEFAULT_PROXY_HOST;
-    proxyPort = DEFAULT_PROXY_PORT;
-    proxyType = DEFAULT_PROXY_TYPE;
+    host = DEFAULT_HOST;
+    port = DEFAULT_PORT;
+    type = DEFAULT_TYPE;
   }
 
   /**
@@ -64,11 +67,11 @@ public class ProxyOptions {
    * @param other  the options to copy
    */
   public ProxyOptions(ProxyOptions other) {
-    proxyHost = other.getProxyHost();
-    proxyPort = other.getProxyPort();
-    proxyUsername = other.getProxyUsername();
-    proxyPassword = other.getProxyPassword();
-    proxyType = other.getProxyType();
+    host = other.getHost();
+    port = other.getPort();
+    username = other.getUsername();
+    password = other.getPassword();
+    type = other.getType();
   }
 
   /**
@@ -86,18 +89,19 @@ public class ProxyOptions {
    *
    * @return  proxy hosts
    */
-  public String getProxyHost() {
-    return proxyHost;
+  public String getHost() {
+    return host;
   }
 
   /**
    * Set proxy host.
    *
-   * @param proxyHost the proxy host to connect to
+   * @param host the proxy host to connect to
    * @return a reference to this, so the API can be used fluently
    */
-  public ProxyOptions setProxyHost(String proxyHost) {
-    this.proxyHost = proxyHost;
+  public ProxyOptions setHost(String host) {
+    Objects.requireNonNull(host, "Proxy host may not be null");
+    this.host = host;
     return this;
   }
 
@@ -106,18 +110,21 @@ public class ProxyOptions {
    *
    * @return  proxy port
    */
-  public int getProxyPort() {
-    return proxyPort;
+  public int getPort() {
+    return port;
   }
 
   /**
    * Set proxy port.
    *
-   * @param proxyPort the proxy port to connect to
+   * @param port the proxy port to connect to
    * @return a reference to this, so the API can be used fluently
    */
-  public ProxyOptions setProxyPort(int proxyPort) {
-    this.proxyPort = proxyPort;
+  public ProxyOptions setPort(int port) {
+    if (port < 0 || port > 65535) {
+      throw new IllegalArgumentException("Invalid proxy port " + port);
+    }
+    this.port = port;
     return this;
   }
 
@@ -126,18 +133,18 @@ public class ProxyOptions {
    *
    * @return  proxy username
    */
-  public String getProxyUsername() {
-    return proxyUsername;
+  public String getUsername() {
+    return username;
   }
 
   /**
    * Set proxy username.
    *
-   * @param proxyUsername the proxy username
+   * @param username the proxy username
    * @return a reference to this, so the API can be used fluently
    */
-  public ProxyOptions setProxyUsername(String proxyUsername) {
-    this.proxyUsername = proxyUsername;
+  public ProxyOptions setUsername(String username) {
+    this.username = username;
     return this;
   }
 
@@ -146,18 +153,18 @@ public class ProxyOptions {
    *
    * @return  proxy password
    */
-  public String getProxyPassword() {
-    return proxyPassword;
+  public String getPassword() {
+    return password;
   }
 
   /**
    * Set proxy password.
    *
-   * @param proxyPassword the proxy password
+   * @param password the proxy password
    * @return a reference to this, so the API can be used fluently
    */
-  public ProxyOptions setProxyPassword(String proxyPassword) {
-    this.proxyPassword = proxyPassword;
+  public ProxyOptions setPassword(String password) {
+    this.password = password;
     return this;
   }
 
@@ -168,8 +175,8 @@ public class ProxyOptions {
    *
    * @return  proxy type
    */
-  public ProxyType getProxyType() {
-    return proxyType;
+  public ProxyType getType() {
+    return type;
   }
 
   /**
@@ -177,13 +184,40 @@ public class ProxyOptions {
    *
    * <p>ProxyType can be HTTP, SOCKS4 and SOCKS5
    *
-   * @param proxyType the proxy type to connect to
+   * @param type the proxy type to connect to
    * @return a reference to this, so the API can be used fluently
    */
-  public ProxyOptions setProxyType(ProxyType proxyType) {
-    Objects.requireNonNull(proxyType, "ProxyType may not be null");
-    this.proxyType = proxyType;
+  public ProxyOptions setType(ProxyType type) {
+    Objects.requireNonNull(type, "Proxy type may not be null");
+    this.type = type;
     return this;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ClientOptionsBase)) return false;
+    if (!super.equals(o)) return false;
+
+    ProxyOptions that = (ProxyOptions) o;
+
+    if (type != that.type) return false;
+    if (host.equals(that.host)) return false;
+    if (port != that.port) return false;
+    if (!Objects.equals(password, that.password)) return false;
+    if (!Objects.equals(username, that.username)) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + type.hashCode();
+    result = 31 * result + host.hashCode();
+    result = 31 * result + port;
+    result = 31 * result + (password != null ? password.hashCode() : 0);
+    result = 31 * result + (username != null ? username.hashCode() : 0);
+    return result;
+  }
 }

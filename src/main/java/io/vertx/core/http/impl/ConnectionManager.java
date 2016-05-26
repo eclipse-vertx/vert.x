@@ -128,10 +128,6 @@ public class ConnectionManager {
   }
 
   public void getConnectionForWebsocket(int port, String host, Waiter waiter) {
-    //    if (!keepAlive && pipelining) {
-    //      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
-    //    } else {
-    //    }
     TargetAddress address = new TargetAddress(host, port);
     ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);

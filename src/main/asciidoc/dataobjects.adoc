@@ -743,7 +743,7 @@ Set the protocol version.
 +++
 |[[proxyOptions]]`proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|
 +++
-Set proxy options for https connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
+Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
@@ -1627,7 +1627,7 @@ Set the store as a buffer
 == ProxyOptions
 
 ++++
- Proxy options for a NetClient or HttpClient
+ Proxy options for a net client or a net client.
 ++++
 '''
 
@@ -1635,25 +1635,25 @@ Set the store as a buffer
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[proxyHost]]`proxyHost`|`String`|
+|[[host]]`host`|`String`|
 +++
 Set proxy host.
 +++
-|[[proxyPassword]]`proxyPassword`|`String`|
+|[[password]]`password`|`String`|
 +++
 Set proxy password.
 +++
-|[[proxyPort]]`proxyPort`|`Number (int)`|
+|[[port]]`port`|`Number (int)`|
 +++
 Set proxy port.
 +++
-|[[proxyType]]`proxyType`|`link:enums.html#ProxyType[ProxyType]`|
+|[[type]]`type`|`link:enums.html#ProxyType[ProxyType]`|
 +++
 Set proxy type.
 
  <p>ProxyType can be HTTP, SOCKS4 and SOCKS5
 +++
-|[[proxyUsername]]`proxyUsername`|`String`|
+|[[username]]`username`|`String`|
 +++
 Set proxy username.
 +++

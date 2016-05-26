@@ -27,36 +27,36 @@ import io.vertx.core.json.JsonArray;
 public class ProxyOptionsConverter {
 
   public static void fromJson(JsonObject json, ProxyOptions obj) {
-    if (json.getValue("proxyHost") instanceof String) {
-      obj.setProxyHost((String)json.getValue("proxyHost"));
+    if (json.getValue("host") instanceof String) {
+      obj.setHost((String)json.getValue("host"));
     }
-    if (json.getValue("proxyPassword") instanceof String) {
-      obj.setProxyPassword((String)json.getValue("proxyPassword"));
+    if (json.getValue("password") instanceof String) {
+      obj.setPassword((String)json.getValue("password"));
     }
-    if (json.getValue("proxyPort") instanceof Number) {
-      obj.setProxyPort(((Number)json.getValue("proxyPort")).intValue());
+    if (json.getValue("port") instanceof Number) {
+      obj.setPort(((Number)json.getValue("port")).intValue());
     }
-    if (json.getValue("proxyType") instanceof String) {
-      obj.setProxyType(io.vertx.core.net.ProxyType.valueOf((String)json.getValue("proxyType")));
+    if (json.getValue("type") instanceof String) {
+      obj.setType(io.vertx.core.net.ProxyType.valueOf((String)json.getValue("type")));
     }
-    if (json.getValue("proxyUsername") instanceof String) {
-      obj.setProxyUsername((String)json.getValue("proxyUsername"));
+    if (json.getValue("username") instanceof String) {
+      obj.setUsername((String)json.getValue("username"));
     }
   }
 
   public static void toJson(ProxyOptions obj, JsonObject json) {
-    if (obj.getProxyHost() != null) {
-      json.put("proxyHost", obj.getProxyHost());
+    if (obj.getHost() != null) {
+      json.put("host", obj.getHost());
     }
-    if (obj.getProxyPassword() != null) {
-      json.put("proxyPassword", obj.getProxyPassword());
+    if (obj.getPassword() != null) {
+      json.put("password", obj.getPassword());
     }
-    json.put("proxyPort", obj.getProxyPort());
-    if (obj.getProxyType() != null) {
-      json.put("proxyType", obj.getProxyType().name());
+    json.put("port", obj.getPort());
+    if (obj.getType() != null) {
+      json.put("type", obj.getType().name());
     }
-    if (obj.getProxyUsername() != null) {
-      json.put("proxyUsername", obj.getProxyUsername());
+    if (obj.getUsername() != null) {
+      json.put("username", obj.getUsername());
     }
   }
 }

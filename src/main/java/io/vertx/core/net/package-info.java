@@ -677,14 +677,14 @@
  * -javaagent:/path/to/alpn/agent
  * ----
  *
- * === Using a proxy for NetClient connections
+ * === Using a proxy for client connections
  *
- * The NetClient supports configuring a HTTP/1.x CONNECT proxy or SOCKS4a or SOCKS5 proxy.
+ * The {@link io.vertx.core.net.NetClient} supports configuring an HTTP/1.x _CONNECT_ proxy or _SOCKS4a_ or _SOCKS5_ proxy.
  *
  * The proxy can be configured in the {@link io.vertx.core.net.NetClientOptions} by setting a
  * {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
  *
- * For this feature, the jar io.netty:netty-handler-proxy has to be present on the classpath.
+ * For this feature, the jar `io.netty:netty-handler-proxy` has to be present on the classpath.
  *
  * Here's an example:
  *

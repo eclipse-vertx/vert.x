@@ -47,7 +47,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private int connectTimeout;
   private boolean trustAll;
   private String metricsName;
-
   private ProxyOptions proxyOptions;
 
   /**

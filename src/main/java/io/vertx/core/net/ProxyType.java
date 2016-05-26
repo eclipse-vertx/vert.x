@@ -19,8 +19,9 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
- * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
+ * The type of a TCP proxy server.
  *
+ * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
 @VertxGen
 public enum ProxyType {

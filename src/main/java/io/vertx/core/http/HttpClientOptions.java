@@ -649,12 +649,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     return (HttpClientOptions) super.setMetricsName(metricsName);
   }
 
-  /**
-   * Set proxy options for https connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
-   *
-   * @param proxyOptions proxy options object
-   * @return a reference to this, so the API can be used fluently
-   */
   public HttpClientOptions setProxyOptions(ProxyOptions proxyOptions) {
     return (HttpClientOptions) super.setProxyOptions(proxyOptions);
   }

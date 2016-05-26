@@ -39,11 +39,11 @@ public class ProxyChannelProvider extends ChannelProvider {
   protected void doConnect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
                            Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
 
-    final String proxyHost = options.getProxyHost();
-    final int proxyPort = options.getProxyPort();
-    final String proxyUsername = options.getProxyUsername();
-    final String proxyPassword = options.getProxyPassword();
-    final ProxyType proxyType = options.getProxyType();
+    final String proxyHost = options.getHost();
+    final int proxyPort = options.getPort();
+    final String proxyUsername = options.getUsername();
+    final String proxyPassword = options.getPassword();
+    final ProxyType proxyType = options.getType();
 
     vertx.resolveAddress(proxyHost, dnsRes -> {
       if (dnsRes.succeeded()) {

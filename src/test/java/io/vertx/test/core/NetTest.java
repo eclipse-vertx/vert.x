@@ -2272,7 +2272,7 @@ public class NetTest extends VertxTestBase {
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5).setProxyPort(11080));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -2306,8 +2306,8 @@ public class NetTest extends VertxTestBase {
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5).setProxyPort(11080)
-            .setProxyUsername("username").setProxyPassword("username"));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setPort(11080)
+            .setUsername("username").setPassword("username"));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -2343,7 +2343,7 @@ public class NetTest extends VertxTestBase {
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.HTTP).setProxyPort(13128));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setPort(13128));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -2377,7 +2377,7 @@ public class NetTest extends VertxTestBase {
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS4).setProxyPort(11080));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -2411,8 +2411,8 @@ public class NetTest extends VertxTestBase {
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS4).setProxyPort(11080)
-            .setProxyUsername("username"));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080)
+            .setUsername("username"));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -2446,7 +2446,7 @@ public class NetTest extends VertxTestBase {
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS4).setProxyPort(11080));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 

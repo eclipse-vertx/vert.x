@@ -20,7 +20,6 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.net.*;
 
 /**
@@ -526,9 +525,9 @@ public class NetExamples {
 
   public void example47(Vertx vertx) {
     NetClientOptions options = new NetClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5)
-            .setProxyHost("localhost").setProxyPort(1080)
-            .setProxyUsername("username").setProxyPassword("secret"));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+            .setHost("localhost").setPort(1080)
+            .setUsername("username").setPassword("secret"));
     NetClient client = vertx.createNetClient(options);
   }
 }

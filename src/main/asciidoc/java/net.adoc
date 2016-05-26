@@ -921,14 +921,14 @@ ALPN version for the JVM running it:
 -javaagent:/path/to/alpn/agent
 ----
 
-=== Using a proxy for NetClient connections
+=== Using a proxy for client connections
 
-The NetClient supports configuring a HTTP/1.x CONNECT proxy or SOCKS4a or SOCKS5 proxy.
+The `link:../../apidocs/io/vertx/core/net/NetClient.html[NetClient]` supports configuring an HTTP/1.x _CONNECT_ proxy or _SOCKS4a_ or _SOCKS5_ proxy.
 
 The proxy can be configured in the `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` by setting a
 `link:../../apidocs/io/vertx/core/net/ProxyOptions.html[ProxyOptions]` object containing proxy type, hostname, port and optionally username and password.
 
-For this feature, the jar io.netty:netty-handler-proxy has to be present on the classpath.
+For this feature, the jar `io.netty:netty-handler-proxy` has to be present on the classpath.
 
 Here's an example:
 
@@ -936,9 +936,9 @@ Here's an example:
 
 ----
 NetClientOptions options = new NetClientOptions()
-    .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5)
-        .setProxyHost("localhost").setProxyPort(1080)
-        .setProxyUsername("username").setProxyPassword("secret"));
+    .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+        .setHost("localhost").setPort(1080)
+        .setUsername("username").setPassword("secret"));
 NetClient client = vertx.createNetClient(options);
 ----
 

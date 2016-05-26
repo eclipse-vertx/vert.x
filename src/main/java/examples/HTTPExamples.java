@@ -703,9 +703,9 @@ public class HTTPExamples {
   public void example58(Vertx vertx) {
 
     HttpClientOptions options = new HttpClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.HTTP)
-            .setProxyHost("localhost").setProxyPort(3128)
-            .setProxyUsername("username").setProxyPassword("secret"));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP)
+            .setHost("localhost").setPort(3128)
+            .setUsername("username").setPassword("secret"));
     HttpClient client = vertx.createHttpClient(options);
 
   }
@@ -713,9 +713,9 @@ public class HTTPExamples {
   public void example59(Vertx vertx) {
 
     HttpClientOptions options = new HttpClientOptions()
-        .setProxyOptions(new ProxyOptions().setProxyType(ProxyType.SOCKS5)
-            .setProxyHost("localhost").setProxyPort(1080)
-            .setProxyUsername("username").setProxyPassword("secret"));
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+            .setHost("localhost").setPort(1080)
+            .setUsername("username").setPassword("secret"));
     HttpClient client = vertx.createHttpClient(options);
 
   }

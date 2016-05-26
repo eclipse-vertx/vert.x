@@ -469,13 +469,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (useProxy) {
         ProxyOptions proxyOptions;
         if (useSocksProxy) {
-          proxyOptions = new ProxyOptions().setProxyHost("localhost").setProxyPort(11080).setProxyType(ProxyType.SOCKS5);
+          proxyOptions = new ProxyOptions().setHost("localhost").setPort(11080).setType(ProxyType.SOCKS5);
         } else {
-          proxyOptions = new ProxyOptions().setProxyHost("localhost").setProxyPort(13128).setProxyType(ProxyType.HTTP);
+          proxyOptions = new ProxyOptions().setHost("localhost").setPort(13128).setType(ProxyType.HTTP);
         }
 
         if (useProxyAuth) {
-          proxyOptions.setProxyUsername("username").setProxyPassword("username");
+          proxyOptions.setUsername("username").setPassword("username");
         }
         options.setProxyOptions(proxyOptions);
       }

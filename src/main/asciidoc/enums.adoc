@@ -150,8 +150,7 @@ ID 14, bad timestamp
 == ProxyType
 
 ++++
- @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
-
+ The type of a TCP proxy server.
 ++++
 '''
 
