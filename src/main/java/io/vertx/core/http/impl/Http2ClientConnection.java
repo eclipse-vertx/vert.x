@@ -53,10 +53,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   final Http2Pool http2Pool;
   final HttpClientMetrics metrics;
+  final Object queueMetric;
   final Object metric;
   int streamCount;
 
   public Http2ClientConnection(Http2Pool http2Pool,
+                               Object queueMetric,
                                ContextImpl context,
                                Channel channel,
                                VertxHttp2ConnectionHandler connHandler,
@@ -65,6 +67,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.http2Pool = http2Pool;
     this.metrics = metrics;
     this.metric = metrics.connected(remoteAddress(), remoteName());
+    this.queueMetric = queueMetric;
   }
 
   @Override
@@ -129,7 +132,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
           HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, method, rawMethod, uri, host, headersMap);
           if (metrics.isEnabled()) {
-            pushReq.metric(metrics.responsePushed(metric, localAddress(), remoteAddress(), pushReq));
+            pushReq.metric(metrics.responsePushed(queueMetric, metric, localAddress(), remoteAddress(), pushReq));
           }
           streams.put(promisedStreamId, pushReq.getStream());
           pushHandler.handle(pushReq);
@@ -308,7 +311,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
       if (conn.metrics.isEnabled()) {
-        request.metric(conn.metrics.requestBegin(conn.metric, conn.localAddress(), conn.remoteAddress(), request));
+        request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric, conn.localAddress(), conn.remoteAddress(), request));
       }
       writeHeaders(h, end && content == null);
       if (content != null) {

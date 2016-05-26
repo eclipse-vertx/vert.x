@@ -29,13 +29,13 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.test.fakemetrics.*;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -546,6 +546,118 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
+  public void testHttpClientMetricsQueueLength() throws Exception {
+    HttpServer server = vertx.createHttpServer();
+    List<Runnable> requests = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      requests.add(() -> {
+        vertx.runOnContext(v -> {
+          req.response().end();
+        });
+      });
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
+    awaitLatch(listenLatch);
+    HttpClient client = vertx.createHttpClient();
+    FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
+    CountDownLatch responsesLatch = new CountDownLatch(5);
+    for (int i = 0;i < 5;i++) {
+      client.getNow(8080, "localhost", "/somepath", resp -> {
+        responsesLatch.countDown();
+      });
+    }
+    waitUntil(() -> requests.size() == 5);
+    assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
+    assertEquals(0, (int)metrics.queueSize("localhost:8080"));
+    assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
+    for (int i = 0;i < 8;i++) {
+      client.getNow(8080, "localhost", "/somepath", resp -> {
+      });
+    }
+    assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
+    assertEquals(8, (int)metrics.queueSize("localhost:8080"));
+    assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
+    ArrayList<Runnable> copy = new ArrayList<>(requests);
+    requests.clear();
+    copy.forEach(Runnable::run);
+    awaitLatch(responsesLatch);
+    waitUntil(() -> requests.size() == 5);
+    copy = new ArrayList<>(requests);
+    requests.clear();
+    copy.forEach(Runnable::run);
+    assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
+    assertEquals(3, (int)metrics.queueSize("localhost:8080"));
+    assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
+    waitUntil(() -> requests.size() == 3);
+    assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
+    assertEquals(0, (int)metrics.queueSize("localhost:8080"));
+    assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
+  }
+
+  @Test
+  public void testHttpClientMetricsQueueClose() throws Exception {
+    HttpServer server = vertx.createHttpServer();
+    List<Runnable> requests = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      requests.add(() -> {
+        vertx.runOnContext(v -> {
+          req.connection().close();
+        });
+      });
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
+    awaitLatch(listenLatch);
+    HttpClient client = vertx.createHttpClient();
+    FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
+    for (int i = 0;i < 5;i++) {
+      client.getNow(8080, "localhost", "/somepath", resp -> {
+      });
+    }
+    waitUntil(() -> requests.size() == 5);
+    EndpointMetric endpoint = metrics.endpoint("localhost:8080");
+    assertEquals(5, endpoint.connectionCount.get());
+    ArrayList<Runnable> copy = new ArrayList<>(requests);
+    requests.clear();
+    copy.forEach(Runnable::run);
+    waitUntil(() -> metrics.endpoints().isEmpty());
+    assertEquals(0, endpoint.connectionCount.get());
+  }
+
+  @Test
+  public void testHttpClientConnectionCloseAfterRequestEnd() throws Exception {
+    CountDownLatch started = new CountDownLatch(1);
+    HttpClient client = vertx.createHttpClient();
+    AtomicReference<EndpointMetric> endpointMetrics = new AtomicReference<>();
+    vertx.createHttpServer().requestHandler(req -> {
+      endpointMetrics.set(((FakeHttpClientMetrics)FakeHttpClientMetrics.getMetrics(client)).endpoint("localhost:8080"));
+      req.response().end();
+    }).listen(8080, "localhost", ar -> {
+      assertTrue(ar.succeeded());
+      started.countDown();
+    });
+    awaitLatch(started);
+    CountDownLatch closed = new CountDownLatch(1);
+    HttpClientRequest req = client.get(8080, "localhost", "/somepath");
+    req.handler(resp -> {
+      resp.endHandler(v1 -> {
+        HttpConnection conn = req.connection();
+        conn.closeHandler(v2 -> {
+          closed.countDown();
+        });
+        conn.close();
+      });
+    });
+    req.end();
+    awaitLatch(closed);
+    EndpointMetric val = endpointMetrics.get();
+    waitUntil(() -> val.connectionCount.get() == 0);
+    assertEquals(0, val.queueSize.get());
+    assertEquals(0, val.requests.get());
+  }
+
+  @Test
   public void testMulti() {
     HttpServer s1 = vertx.createHttpServer();
     s1.requestHandler(req -> {
@@ -674,9 +786,9 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithExecuteBlocking() {
-    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
 
-    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-worker-thread");
+    FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
@@ -724,8 +836,8 @@ public class MetricsTest extends VertxTestBase {
   public void testThreadPoolMetricsWithInternalExecuteBlocking() {
     // Internal blocking thread pool is used by blocking file system actions.
 
-    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
-    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-internal-blocking");
+    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getInternalBlockingPoolSize()));
@@ -785,8 +897,8 @@ public class MetricsTest extends VertxTestBase {
 
   private void testWithWorkerVerticle(DeploymentOptions options) {
     AtomicInteger counter = new AtomicInteger();
-    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
-    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-worker-thread");
+    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
@@ -855,9 +967,9 @@ public class MetricsTest extends VertxTestBase {
 
     WorkerExecutor workerExec = vertx.createSharedWorkerExecutor("my-pool", 10);
 
-    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
 
-    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("my-pool");
+    FakePoolMetrics metrics = (FakePoolMetrics) all.get("my-pool");
 
     assertThat(metrics.getPoolSize(), is(10));
     assertThat(metrics.numberOfIdleThreads(), is(10));
@@ -906,9 +1018,9 @@ public class MetricsTest extends VertxTestBase {
     WorkerExecutor ex1 = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex1_ = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex2 = vertx.createSharedWorkerExecutor("ex2");
-    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
-    FakeThreadPoolMetrics metrics1 = (FakeThreadPoolMetrics) all.get("ex1");
-    FakeThreadPoolMetrics metrics2 = (FakeThreadPoolMetrics) all.get("ex2");
+    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    FakePoolMetrics metrics1 = (FakePoolMetrics) all.get("ex1");
+    FakePoolMetrics metrics2 = (FakePoolMetrics) all.get("ex2");
     assertNotNull(metrics1);
     assertNotNull(metrics2);
     assertNotSame(metrics1, metrics2);

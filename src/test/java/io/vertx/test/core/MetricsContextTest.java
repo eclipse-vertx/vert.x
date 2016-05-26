@@ -49,7 +49,7 @@ public class MetricsContextTest extends VertxTestBase {
     VertxMetricsFactory factory = (vertx, options) -> {
       metricsThread.set(Thread.currentThread());
       metricsContext.set(Vertx.currentContext());
-      return new DummyVertxMetrics();
+      return DummyVertxMetrics.INSTANCE;
     };
     vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     assertSame(Thread.currentThread(), metricsThread.get());
@@ -64,7 +64,7 @@ public class MetricsContextTest extends VertxTestBase {
     VertxMetricsFactory factory = (vertx, options) -> {
       metricsThread.set(Thread.currentThread());
       metricsContext.set(Vertx.currentContext());
-      return new DummyVertxMetrics();
+      return DummyVertxMetrics.INSTANCE;
     };
     clusteredVertx(new VertxOptions().setClustered(true).setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)), onSuccess(vertx -> {
       assertSame(testThread, metricsThread.get());
@@ -307,7 +307,7 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
           @Override
-          public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
+          public Void requestBegin(Void endpointMetric, Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
             requestBeginCalled.set(true);
             return null;
           }
@@ -416,7 +416,7 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
           @Override
-          public Void connected(Void socketMetric, WebSocket webSocket) {
+          public Void connected(Void endpointMetric, Void socketMetric, WebSocket webSocket) {
             websocketConnected.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;

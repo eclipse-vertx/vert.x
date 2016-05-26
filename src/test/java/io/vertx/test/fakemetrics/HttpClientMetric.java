@@ -25,11 +25,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class HttpClientMetric {
 
+  public final EndpointMetric endpoint;
   public final HttpClientRequest request;
   public final SocketMetric socket;
   public final AtomicBoolean failed = new AtomicBoolean();
 
-  public HttpClientMetric(HttpClientRequest request, SocketMetric socket) {
+  public HttpClientMetric(EndpointMetric endpoint, HttpClientRequest request, SocketMetric socket) {
+    this.endpoint = endpoint;
     this.request = request;
     this.socket = socket;
   }

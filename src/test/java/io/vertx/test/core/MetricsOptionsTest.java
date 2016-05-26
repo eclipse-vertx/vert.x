@@ -27,7 +27,6 @@ import io.vertx.test.fakemetrics.FakeVertxMetrics;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -88,7 +87,7 @@ public class MetricsOptionsTest extends VertxTestBase {
 
   @Test
   public void testSetMetricsInstance() {
-    DummyVertxMetrics metrics = new DummyVertxMetrics();
+    DummyVertxMetrics metrics = DummyVertxMetrics.INSTANCE;
     vertx.close();
     vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new SimpleVertxMetricsFactory<>(metrics))));
     assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
@@ -106,7 +105,7 @@ public class MetricsOptionsTest extends VertxTestBase {
 
   @Test
   public void testSetMetricsInstanceTakesPrecedenceOverServiceLoader() {
-    DummyVertxMetrics metrics = new DummyVertxMetrics();
+    DummyVertxMetrics metrics = DummyVertxMetrics.INSTANCE;
     vertx.close();
     VertxOptions options = new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new SimpleVertxMetricsFactory<>(metrics)));
     vertx = createVertxLoadingMetricsFromMetaInf(options, "io.vertx.test.fakemetrics.FakeMetricsFactory");

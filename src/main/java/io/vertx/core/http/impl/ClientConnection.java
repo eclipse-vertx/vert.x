@@ -74,6 +74,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private final String host;
   private final int port;
   private final Http1xPool pool;
+  private final Object endpointMetric;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Object metric;
@@ -89,7 +90,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(HttpVersion version, HttpClientImpl client, Channel channel, boolean ssl, String host,
+  ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context, metrics);
     this.client = client;
@@ -100,6 +101,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     this.metrics = metrics;
     this.metric = metrics.connected(remoteAddress(), remoteName());
     this.version = version;
+    this.endpointMetric = endpointMetric;
   }
 
   @Override
@@ -247,7 +249,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       handshaker.finishHandshake(channel, response);
       context.executeFromIO(() -> {
         log.debug("WebSocket handshake complete");
-        webSocket.setMetric(metrics().connected(metric(), webSocket));
+        webSocket.setMetric(metrics().connected(endpointMetric, metric(), webSocket));
         wsConnect.handle(webSocket);
       });
     }
@@ -391,8 +393,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       for (HttpClientRequestImpl req: requests) {
         metrics.requestReset(req.metric());
       }
-      if (requestForResponse != null) {
-        metrics.requestReset(requestForResponse.metric());
+      if (currentResponse != null) {
+        metrics.requestReset(currentResponse.request().metric());
       }
     }
 
@@ -504,7 +506,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       throw new IllegalStateException("Connection is already writing a request");
     }
     if (metrics.isEnabled()) {
-      Object reqMetric = client.httpClientMetrics().requestBegin(metric, localAddress(), remoteAddress(), req);
+      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric, localAddress(), remoteAddress(), req);
       req.metric(reqMetric);
     }
     this.currentRequest = req;

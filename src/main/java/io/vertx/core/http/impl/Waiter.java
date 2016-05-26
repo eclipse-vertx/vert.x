@@ -25,6 +25,7 @@ abstract class Waiter {
 
   final HttpClientRequestImpl req;
   final ContextImpl context;
+  Object metric;
 
   public Waiter(HttpClientRequestImpl req, ContextImpl context) {
     this.req = req;
