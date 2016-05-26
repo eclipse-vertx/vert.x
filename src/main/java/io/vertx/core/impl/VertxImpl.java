@@ -378,7 +378,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         return metrics;
       }
     }
-    return new DummyVertxMetrics();
+    return DummyVertxMetrics.INSTANCE;
   }
 
   private ClusterManager getClusterManager(VertxOptions options) {

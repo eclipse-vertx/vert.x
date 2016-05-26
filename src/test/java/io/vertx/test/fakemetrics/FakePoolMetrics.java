@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-public class FakeThreadPoolMetrics implements PoolMetrics<Void> {
+public class FakePoolMetrics implements PoolMetrics<Void> {
   private final static Map<String, PoolMetrics> METRICS = new ConcurrentHashMap<>();
 
   private final int poolSize;
@@ -41,7 +41,7 @@ public class FakeThreadPoolMetrics implements PoolMetrics<Void> {
   private final String name;
   private final AtomicBoolean closed = new AtomicBoolean();
 
-  public FakeThreadPoolMetrics(String name, int poolSize) {
+  public FakePoolMetrics(String name, int poolSize) {
     this.poolSize = poolSize;
     this.name = name;
     this.idle.set(this.poolSize);
@@ -116,7 +116,7 @@ public class FakeThreadPoolMetrics implements PoolMetrics<Void> {
     return running.get();
   }
 
-  public static Map<String, PoolMetrics> getThreadPoolMetrics() {
+  public static Map<String, PoolMetrics> getPoolMetrics() {
     return METRICS;
   }
 

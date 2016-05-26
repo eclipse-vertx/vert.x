@@ -136,7 +136,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
   @Override
   public <P> PoolMetrics<?> createMetrics(P pool, String poolType, String poolName, int maxPoolSize) {
-    return new FakeThreadPoolMetrics(poolName, maxPoolSize);
+    return new FakePoolMetrics(poolName, maxPoolSize);
   }
 
   public boolean isEnabled() {
