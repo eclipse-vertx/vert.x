@@ -1669,8 +1669,7 @@ public class Http1xTest extends HttpTest {
       fail();
     });
     server.listen(onSuccess(s -> {
-      vertx.createNetClient(new NetClientOptions()).connect(8080, "127.0.0.1", result -> {
-        NetSocket socket = result.result();
+      vertx.createNetClient(new NetClientOptions()).connect(8080, "127.0.0.1", onSuccess(socket -> {
         socket.closeHandler(r -> {
           testComplete();
         });
@@ -1678,7 +1677,7 @@ public class Http1xTest extends HttpTest {
 
         // trigger another write to be sure we detect that the other peer has closed the connection.
         socket.write("X-Header: test\r\n");
-      });
+      }));
     }));
     await();
   }

@@ -37,7 +37,7 @@ public class ProxyChannelProvider extends ChannelProvider {
 
   @Override
   protected void doConnect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
-                           Handler<AsyncResult<Channel>> channelHandler) {
+                           Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
 
     final String proxyHost = options.getProxyHost();
     final int proxyPort = options.getProxyPort();
@@ -82,6 +82,7 @@ public class ProxyChannelProvider extends ChannelProvider {
                 if (evt instanceof ProxyConnectionEvent) {
                   pipeline.remove(proxy);
                   pipeline.remove(this);
+                  channelInitializer.handle(ch);
                   channelHandler.handle(Future.succeededFuture(ch));
                 }
                 ctx.fireUserEventTriggered(evt);

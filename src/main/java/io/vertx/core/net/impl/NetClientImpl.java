@@ -167,6 +167,27 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       channelProvider = ProxyChannelProvider.INSTANCE;
     }
 
+    Handler<Channel> channelInitializer = ch -> {
+
+      if (sslHelper.isSSL()) {
+        SslHandler sslHandler = sslHelper.createSslHandler(vertx, host, port);
+        ch.pipeline().addLast("ssl", sslHandler);
+      }
+
+      ChannelPipeline pipeline = ch.pipeline();
+      if (logEnabled) {
+        pipeline.addLast("logging", new LoggingHandler());
+      }
+      if (sslHelper.isSSL()) {
+        // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
+        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+      }
+      if (options.getIdleTimeout() > 0) {
+        pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+      }
+      pipeline.addLast("handler", new VertxNetHandler(ch, socketMap));
+    };
+
     Handler<AsyncResult<Channel>> channelHandler = res -> {
       if (res.succeeded()) {
 
@@ -174,9 +195,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
 
         if (sslHelper.isSSL()) {
           // TCP connected, so now we must do the SSL handshake
-
-          SslHandler sslHandler = sslHelper.createSslHandler(vertx, host, port);
-          ch.pipeline().addLast("ssl", sslHandler);
+          SslHandler sslHandler = (SslHandler) ch.pipeline().get("ssl");
 
           io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
           fut.addListener(future2 -> {
@@ -205,25 +224,10 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       }
     };
 
-    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelHandler);
+    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelInitializer, channelHandler);
   }
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
-
-    // Finish pipeline config
-    ChannelPipeline pipeline = ch.pipeline();
-    if (logEnabled) {
-      pipeline.addLast("logging", new LoggingHandler());
-    }
-    if (sslHelper.isSSL()) {
-      // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
-      pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-    }
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-    }
-    pipeline.addLast("handler", new VertxNetHandler(ch, socketMap));
-
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
     NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics, null);
