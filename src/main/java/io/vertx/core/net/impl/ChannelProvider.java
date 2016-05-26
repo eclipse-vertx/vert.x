@@ -3,16 +3,7 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.handler.proxy.HttpProxyHandler;
-import io.netty.handler.proxy.ProxyConnectionEvent;
-import io.netty.handler.proxy.ProxyHandler;
-import io.netty.handler.proxy.Socks4ProxyHandler;
-import io.netty.handler.proxy.Socks5ProxyHandler;
-import io.netty.resolver.NoopAddressResolverGroup;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -20,10 +11,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 
 /**
  * The logic for connecting to an host, this implementations performs a connection
@@ -62,15 +49,16 @@ public class ChannelProvider {
                  String host,
                  int port,
                  Handler<AsyncResult<Channel>> channelHandler) {
+    bootstrap.resolver(vertx.addressResolver().nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
-      protected void initChannel(Channel ch) throws Exception {
+      protected void initChannel(Channel channel) throws Exception {
       }
     });
-    AsyncResolveBindConnectHelper future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-    future.addListener(res -> {
-      if (res.succeeded()) {
-        channelHandler.handle(Future.succeededFuture(res.result()));
+    ChannelFuture fut = bootstrap.connect(host, port);
+    fut.addListener(res -> {
+      if (res.isSuccess()) {
+        channelHandler.handle(Future.succeededFuture(fut.channel()));
       } else {
         channelHandler.handle(Future.failedFuture(res.cause()));
       }

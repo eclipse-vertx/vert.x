@@ -45,7 +45,7 @@ public class ProxyChannelProvider extends ChannelProvider {
     final String proxyPassword = options.getProxyPassword();
     final ProxyType proxyType = options.getProxyType();
 
-    vertx.resolveHostname(proxyHost, dnsRes -> {
+    vertx.resolveAddress(proxyHost, dnsRes -> {
       if (dnsRes.succeeded()) {
         InetAddress address = dnsRes.result();
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);
