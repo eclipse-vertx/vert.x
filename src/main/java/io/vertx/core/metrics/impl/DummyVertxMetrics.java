@@ -229,26 +229,9 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  public static class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void, Void> {
+  public static class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void> {
 
     public static final DummyHttpClientMetrics INSTANCE = new DummyHttpClientMetrics();
-
-    @Override
-    public Void createQueue(String host, int port) {
-      return null;
-    }
-
-    @Override
-    public void enqueue(Void queueMetric) {
-    }
-
-    @Override
-    public void dequeue(Void queueMetric) {
-    }
-
-    @Override
-    public void closeQueue(String host, int port, Void queueMetric) {
-    }
 
     @Override
     public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {

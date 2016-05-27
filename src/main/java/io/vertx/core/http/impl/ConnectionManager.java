@@ -49,7 +49,6 @@ import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.ChannelProvider;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.util.ArrayDeque;
@@ -78,9 +77,8 @@ public class ConnectionManager {
   private final int http2MaxConcurrency;
   private final boolean logEnabled;
   private final ChannelConnector connector;
-  private final HttpClientMetrics metrics;
 
-  ConnectionManager(HttpClientImpl client, HttpClientMetrics metrics) {
+  ConnectionManager(HttpClientImpl client) {
     this.client = client;
     this.sslHelper = client.getSslHelper();
     this.options = client.getOptions();
@@ -93,11 +91,6 @@ public class ConnectionManager {
     this.http2MaxConcurrency = maxStreams < 1 ? Integer.MAX_VALUE : maxStreams;
     this.logEnabled = client.getOptions().getLogActivity();
     this.connector = new ChannelConnector();
-    this.metrics = metrics;
-  }
-
-  HttpClientMetrics metrics() {
-    return metrics;
   }
 
   /**
@@ -153,7 +146,6 @@ public class ConnectionManager {
   public void close() {
     wsQM.close();
     requestQM.close();
-    metrics.close();
   }
 
   static class TargetAddress {
@@ -201,18 +193,16 @@ public class ConnectionManager {
     private Pool<HttpClientConnection> pool;
     private int connCount;
     private final int maxSize;
-    private final Object metrics;
 
     ConnQueue(HttpVersion version, QueueManager mgr, TargetAddress address) {
       this.address = address;
       this.mgr = mgr;
-      this.metrics = ConnectionManager.this.metrics.createQueue(address.host, address.port);
       if (version == HttpVersion.HTTP_2) {
         maxSize = http2MaxSockets;
-        pool =  (Pool)new Http2Pool(this, client, ConnectionManager.this.metrics, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency, logEnabled);
+        pool =  (Pool)new Http2Pool(this, client, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency, logEnabled);
       } else {
         maxSize = client.getOptions().getMaxPoolSize();
-        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version);
+        pool = (Pool)new Http1xPool(client, options, this, mgr.connectionMap, version);
       }
     }
 
@@ -230,9 +220,6 @@ public class ConnectionManager {
         if (connCount == maxSize) {
           // Wait in queue
           if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
-            if (ConnectionManager.this.metrics.isEnabled()) {
-              ConnectionManager.this.metrics.enqueue(metrics);
-            }
             waiters.add(waiter);
           } else {
             waiter.handleFailure(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
@@ -294,14 +281,8 @@ public class ConnectionManager {
      */
     Waiter getNextWaiter() {
       Waiter waiter = waiters.poll();
-      if (waiter != null && ConnectionManager.this.metrics.isEnabled()) {
-        ConnectionManager.this.metrics.dequeue(metrics);
-      }
       while (waiter != null && waiter.isCancelled()) {
         waiter = waiters.poll();
-        if (waiter != null && ConnectionManager.this.metrics.isEnabled()) {
-          ConnectionManager.this.metrics.dequeue(metrics);
-        }
       }
       return waiter;
     }
@@ -316,9 +297,6 @@ public class ConnectionManager {
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         mgr.queueMap.remove(address);
-        if (ConnectionManager.this.metrics.isEnabled()) {
-          ConnectionManager.this.metrics.closeQueue(address.host, address.port, metrics);
-        }
       }
     }
 
@@ -333,7 +311,7 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // change the pool to Http1xPool
       synchronized (this) {
-        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion);
+        pool = (Pool)new Http1xPool(client, options, this, mgr.connectionMap, fallbackVersion);
       }
       http1xConnected(fallbackVersion, context, port, host, ch, waiter);
     }

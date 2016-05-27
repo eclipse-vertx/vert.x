@@ -55,6 +55,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final ConnectionManager connectionManager;
   private final Closeable closeHook;
   private final SSLHelper sslHelper;
+  final HttpClientMetrics metrics;
   private volatile boolean closed;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
@@ -84,8 +85,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    HttpClientMetrics<?, ?, ?, ?> metrics = vertx.metricsSPI().createMetrics(this, options);
-    connectionManager = new ConnectionManager(this, metrics);
+    connectionManager = new ConnectionManager(this);
+    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -636,16 +637,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       creatingContext.removeCloseHook(closeHook);
     }
     connectionManager.close();
+    metrics.close();
   }
 
   @Override
   public boolean isMetricsEnabled() {
-    return getMetrics().isEnabled();
+    return metrics != null && metrics.isEnabled();
   }
 
   @Override
   public Metrics getMetrics() {
-    return connectionManager.metrics();
+    return metrics;
   }
 
   HttpClientOptions getOptions() {
@@ -693,7 +695,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   HttpClientMetrics httpClientMetrics() {
-    return connectionManager.metrics();
+    return metrics;
   }
 
   private URL parseUrl(String surl) {
