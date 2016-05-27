@@ -30,7 +30,7 @@ public class CustomMetricsFactory implements VertxMetricsFactory {
 
   @Override
   public VertxMetrics metrics(Vertx vertx, VertxOptions options) {
-    return DummyVertxMetrics.INSTANCE;
+    return new DummyVertxMetrics();
   }
 
   @Override

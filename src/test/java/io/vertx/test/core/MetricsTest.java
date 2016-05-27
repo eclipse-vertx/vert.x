@@ -29,6 +29,8 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.test.fakemetrics.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -672,9 +674,9 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithExecuteBlocking() {
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
 
-    FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
+    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-worker-thread");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
@@ -722,8 +724,8 @@ public class MetricsTest extends VertxTestBase {
   public void testThreadPoolMetricsWithInternalExecuteBlocking() {
     // Internal blocking thread pool is used by blocking file system actions.
 
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
-    FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-internal-blocking");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getInternalBlockingPoolSize()));
@@ -783,8 +785,8 @@ public class MetricsTest extends VertxTestBase {
 
   private void testWithWorkerVerticle(DeploymentOptions options) {
     AtomicInteger counter = new AtomicInteger();
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
-    FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-worker-thread");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
@@ -853,9 +855,9 @@ public class MetricsTest extends VertxTestBase {
 
     WorkerExecutor workerExec = vertx.createSharedWorkerExecutor("my-pool", 10);
 
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
 
-    FakePoolMetrics metrics = (FakePoolMetrics) all.get("my-pool");
+    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("my-pool");
 
     assertThat(metrics.getPoolSize(), is(10));
     assertThat(metrics.numberOfIdleThreads(), is(10));
@@ -904,9 +906,9 @@ public class MetricsTest extends VertxTestBase {
     WorkerExecutor ex1 = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex1_ = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex2 = vertx.createSharedWorkerExecutor("ex2");
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
-    FakePoolMetrics metrics1 = (FakePoolMetrics) all.get("ex1");
-    FakePoolMetrics metrics2 = (FakePoolMetrics) all.get("ex2");
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    FakeThreadPoolMetrics metrics1 = (FakeThreadPoolMetrics) all.get("ex1");
+    FakeThreadPoolMetrics metrics2 = (FakeThreadPoolMetrics) all.get("ex2");
     assertNotNull(metrics1);
     assertNotNull(metrics2);
     assertNotSame(metrics1, metrics2);
