@@ -961,7 +961,9 @@ public class WebsocketTest extends VertxTestBase {
       client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
           exceptionHandler(err -> {
             assertTrue(paused.get());
-            assertTrue(err instanceof WebSocketHandshakeException);
+            if (!(err instanceof WebSocketHandshakeException)) {
+              fail(new AssertionError("Was expecting error to be WebSocketHandshakeException", err));
+            }
             paused.set(false);
             stream.resume();
             client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
