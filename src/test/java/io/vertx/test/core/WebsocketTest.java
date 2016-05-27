@@ -981,18 +981,22 @@ public class WebsocketTest extends VertxTestBase {
   }
 
   private void connectUntilWebsocketHandshakeException(HttpClient client, int count, Handler<AsyncResult<Void>> doneHandler) {
-    client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", ws -> {
-      fail();
-    }, err -> {
-      if (err instanceof WebSocketHandshakeException) {
-        doneHandler.handle(Future.succeededFuture());
-      } else if (count < 100) {
-        vertx.runOnContext(v -> {
+    vertx.runOnContext(v -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", ws -> {
+        if (count < 100) {
           connectUntilWebsocketHandshakeException(client, count + 1, doneHandler);
-        });
-      } else {
-        doneHandler.handle(Future.failedFuture(err));
-      }
+        } else {
+          doneHandler.handle(Future.failedFuture(new AssertionError()));
+        }
+      }, err -> {
+        if (err instanceof WebSocketHandshakeException) {
+          doneHandler.handle(Future.succeededFuture());
+        } else if (count < 100) {
+          connectUntilWebsocketHandshakeException(client, count + 1, doneHandler);
+        } else {
+          doneHandler.handle(Future.failedFuture(err));
+        }
+      });
     });
   }
 
