@@ -114,7 +114,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link io.vertx.core.http.HttpClient}
    * @return the http client metrics SPI
    */
-  HttpClientMetrics<?, ?, ?> createMetrics(HttpClient client, HttpClientOptions options);
+  HttpClientMetrics<?, ?, ?, ?> createMetrics(HttpClient client, HttpClientOptions options);
 
   /**
    * Provides the net server metrics SPI when a net server is created.<p/>

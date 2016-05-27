@@ -236,6 +236,10 @@ public class TestUtils {
     return set;
   }
 
+  public static <E> E randomElement(E[] array) {
+    return array[randomPositiveInt() % array.length];
+  }
+
   /**
    * Determine if two byte arrays are equal
    * @param b1 The first byte array to compare

@@ -70,7 +70,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return new FakeHttpServerMetrics(server);
   }
 
-  public HttpClientMetrics<?, ?, ?> createMetrics(HttpClient client, HttpClientOptions options) {
+  public HttpClientMetrics<?, ?, ?, ?> createMetrics(HttpClient client, HttpClientOptions options) {
     return new FakeHttpClientMetrics(client, options.getMetricsName());
   }
 
@@ -136,7 +136,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
   @Override
   public <P> PoolMetrics<?> createMetrics(P pool, String poolType, String poolName, int maxPoolSize) {
-    return new FakeThreadPoolMetrics(poolName, maxPoolSize);
+    return new FakePoolMetrics(poolName, maxPoolSize);
   }
 
   public boolean isEnabled() {

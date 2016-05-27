@@ -17,20 +17,20 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.resolver.DefaultHostsFileEntriesResolver;
-import io.netty.resolver.HostsFileEntriesResolver;
+import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.HostsFileParser;
-import io.netty.resolver.InetNameResolver;
+import io.netty.resolver.InetSocketAddressResolver;
+import io.netty.resolver.dns.DnsNameResolver;
 import io.netty.resolver.dns.DnsNameResolverBuilder;
 import io.netty.resolver.dns.DnsServerAddresses;
 import io.netty.util.NetUtil;
+import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
-import io.vertx.core.dns.HostnameResolverOptions;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
@@ -46,12 +46,12 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HostnameResolver {
+public class AddressResolver {
 
   private final Vertx vertx;
-  private final InetNameResolver resolver;
+  private final AddressResolverGroup<InetSocketAddress> resolverGroup;
 
-  public HostnameResolver(VertxImpl vertx, HostnameResolverOptions options) {
+  public AddressResolver(VertxImpl vertx, AddressResolverOptions options) {
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder(vertx.createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
     builder.channelFactory(NioDatagramChannel::new);
     if (options != null) {
@@ -111,18 +111,32 @@ public class HostnameResolver {
       builder.maxQueriesPerResolve(options.getMaxQueries());
       builder.recursionDesired(options.getRdFlag());
     }
-    this.resolver = builder.build();
+
+    this.resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
+      @Override
+      protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
+        DnsNameResolver resolver = builder.build();
+        return new InetSocketAddressResolver(executor, resolver) {
+          @Override
+          public void close() {
+            // Workaround for bug https://github.com/netty/netty/issues/2545
+            resolver.close();
+          }
+        };
+      }
+    };
     this.vertx = vertx;
   }
 
   public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
-    Context callback = vertx.getOrCreateContext();
-    io.netty.util.concurrent.Future<InetAddress> fut = resolver.resolve(hostname);
+    ContextInternal callback = (ContextInternal) vertx.getOrCreateContext();
+    io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolverGroup.getResolver(callback.nettyEventLoop());
+    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolve(InetSocketAddress.createUnresolved(hostname, 80));
     fut.addListener(a -> {
       callback.runOnContext(v -> {
         if (a.isSuccess()) {
-          InetAddress address = fut.getNow();
-          resultHandler.handle(Future.succeededFuture(address));
+          InetSocketAddress address = fut.getNow();
+          resultHandler.handle(Future.succeededFuture(address.getAddress()));
         } else {
           resultHandler.handle(Future.failedFuture(a.cause()));
         }
@@ -130,7 +144,11 @@ public class HostnameResolver {
     });
   }
 
+  public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
+    return resolverGroup;
+  }
+
   public void close() {
-    resolver.close();
+    resolverGroup.close();
   }
 }

@@ -102,7 +102,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
-  private AsyncResolveBindConnectHelper bindFuture;
+  private AsyncResolveConnectHelper bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
   private volatile int actualPort;
@@ -253,7 +253,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         addHandlers(this, listenContext);
         try {
-          bindFuture = AsyncResolveBindConnectHelper.doBind(vertx, port, host, bootstrap);
+          bindFuture = AsyncResolveConnectHelper.doBind(vertx, port, host, bootstrap);
           bindFuture.addListener(res -> {
             if (res.failed()) {
               vertx.sharedHttpServers().remove(id);

@@ -16,7 +16,6 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.WebSocket;
@@ -25,17 +24,21 @@ import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric> {
+public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric, AtomicInteger> {
 
   private final String name;
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<HttpClientRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, AtomicInteger> queues = new ConcurrentHashMap<>();
 
   public FakeHttpClientMetrics(Measured measured, String name) {
     super(measured);
@@ -52,6 +55,37 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
 
   public String getName() {
     return name;
+  }
+
+  public Set<String> queueNames() {
+    return new HashSet<>(queues.keySet());
+  }
+
+  public Integer queue(String name) {
+    AtomicInteger queue = queues.get(name);
+    return queue != null ? queue.get() : null;
+  }
+
+  @Override
+  public AtomicInteger createQueue(String host, int port) {
+    AtomicInteger metric = new AtomicInteger();
+    queues.put(host + ":" + port, metric);
+    return metric;
+  }
+
+  @Override
+  public void enqueue(AtomicInteger queueMetric) {
+    queueMetric.incrementAndGet();
+  }
+
+  @Override
+  public void dequeue(AtomicInteger queueMetric) {
+    queueMetric.decrementAndGet();
+  }
+
+  @Override
+  public void closeQueue(String host, int port, AtomicInteger queueMetric) {
+    queues.remove(host + ":" + port);
   }
 
   @Override

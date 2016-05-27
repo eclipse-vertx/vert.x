@@ -1194,12 +1194,12 @@
  * {@link examples.CoreExamples#example18}
  * ----
  *
- * == Hostname resolution
+ * == Host name resolution
  *
- * Vert.x uses an an hostname resolver for resolving hostname into IP addresses instead of
+ * Vert.x uses an an address resolver for resolving host name into IP addresses instead of
  * the JVM built-in blocking resolver.
  *
- * An hostname are resolve to an IP address using:
+ * An host name resolves to an IP address using:
  *
  * - the _hosts_ file of the operating system
  * - otherwise DNS queries against a list of servers

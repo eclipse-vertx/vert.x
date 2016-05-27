@@ -27,6 +27,9 @@ import io.vertx.core.json.JsonArray;
 public class VertxOptionsConverter {
 
   public static void fromJson(JsonObject json, VertxOptions obj) {
+    if (json.getValue("addressResolverOptions") instanceof JsonObject) {
+      obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((JsonObject)json.getValue("addressResolverOptions")));
+    }
     if (json.getValue("blockedThreadCheckInterval") instanceof Number) {
       obj.setBlockedThreadCheckInterval(((Number)json.getValue("blockedThreadCheckInterval")).longValue());
     }
@@ -63,9 +66,6 @@ public class VertxOptionsConverter {
     if (json.getValue("haGroup") instanceof String) {
       obj.setHAGroup((String)json.getValue("haGroup"));
     }
-    if (json.getValue("hostnameResolverOptions") instanceof JsonObject) {
-      obj.setHostnameResolverOptions(new io.vertx.core.dns.HostnameResolverOptions((JsonObject)json.getValue("hostnameResolverOptions")));
-    }
     if (json.getValue("internalBlockingPoolSize") instanceof Number) {
       obj.setInternalBlockingPoolSize(((Number)json.getValue("internalBlockingPoolSize")).intValue());
     }
@@ -90,6 +90,9 @@ public class VertxOptionsConverter {
   }
 
   public static void toJson(VertxOptions obj, JsonObject json) {
+    if (obj.getAddressResolverOptions() != null) {
+      json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
+    }
     json.put("blockedThreadCheckInterval", obj.getBlockedThreadCheckInterval());
     if (obj.getClusterHost() != null) {
       json.put("clusterHost", obj.getClusterHost());
@@ -109,9 +112,6 @@ public class VertxOptionsConverter {
     json.put("haEnabled", obj.isHAEnabled());
     if (obj.getHAGroup() != null) {
       json.put("haGroup", obj.getHAGroup());
-    }
-    if (obj.getHostnameResolverOptions() != null) {
-      json.put("hostnameResolverOptions", obj.getHostnameResolverOptions().toJson());
     }
     json.put("internalBlockingPoolSize", obj.getInternalBlockingPoolSize());
     json.put("maxEventLoopExecuteTime", obj.getMaxEventLoopExecuteTime());

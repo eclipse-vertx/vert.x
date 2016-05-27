@@ -1,5 +1,74 @@
 = Cheatsheets
 
+[[AddressResolverOptions]]
+== AddressResolverOptions
+
+++++
+ Configuration options for Vert.x hostname resolver. The resolver uses the local <i>hosts</i> file and performs
+ DNS <i>A</i> and <i>AAAA</i> queries.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[cacheMaxTimeToLive]]`cacheMaxTimeToLive`|`Number (int)`|
++++
+Set the cache maximum TTL value in seconds. After successful resolution IP addresses are cached with their DNS response TTL,
+ use this to set a maximum value to all responses TTL.
++++
+|[[cacheMinTimeToLive]]`cacheMinTimeToLive`|`Number (int)`|
++++
+Set the cache minimum TTL value in seconds. After resolution successful IP addresses are cached with their DNS response TTL,
+ use this to set a minimum value to all responses TTL.
++++
+|[[cacheNegativeTimeToLive]]`cacheNegativeTimeToLive`|`Number (int)`|
++++
+Set the negative cache TTL value in seconds. After a failed hostname resolution, DNS queries won't be retried
+ for a period of time equals to the negative TTL. This allows to reduce the response time of negative replies
+ and reduce the amount of messages to DNS servers.
++++
+|[[hostsPath]]`hostsPath`|`String`|
++++
+Set the path of an alternate hosts configuration file to use instead of the one provided by the os.
+ <p/>
+ The default value is null, so the operating system hosts config is used.
++++
+|[[hostsValue]]`hostsValue`|`Buffer`|
++++
+Set an alternate hosts configuration file to use instead of the one provided by the os.
+ <p/>
+ The value should contain the hosts content literaly, for instance <i>127.0.0.1 localhost</i>
+ <p/>
+ The default value is null, so the operating system hosts config is used.
++++
+|[[maxQueries]]`maxQueries`|`Number (int)`|
++++
+Set the maximum number of queries when an hostname is resolved.
++++
+|[[optResourceEnabled]]`optResourceEnabled`|`Boolean`|
++++
+Set to true to enable the automatic inclusion in DNS queries of an optional record that hints
+ the remote DNS server about how much data the resolver can read per response.
++++
+|[[queryTimeout]]`queryTimeout`|`Number (long)`|
++++
+Set the query timeout in milliseconds, i.e the amount of time after a query is considered to be failed.
++++
+|[[rdFlag]]`rdFlag`|`Boolean`|
++++
+Set the DNS queries <i>Recursion Desired</i> flag value.
++++
+|[[servers]]`servers`|`Array of String`|
++++
+Set the list of DNS server addresses, an address is the IP  of the dns server, followed by an optional
+ colon and a port, e.g <code>8.8.8.8</code> or {code 192.168.0.1:40000}. When the list is empty, the resolver
+ will use the list of the system DNS server addresses from the environment, if that list cannot be retrieved
+ it will use Google's public DNS servers <code>"8.8.8.8"</code> and <code>"8.8.4.4"</code>.
++++
+|===
+
 [[Argument]]
 == Argument
 
@@ -108,6 +177,10 @@ Set the key/cert options in pfx format.
 |[[pfxTrustOptions]]`pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|
 +++
 Set the trust options in pfx format
++++
+|[[proxyOptions]]`proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|
++++
+Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
@@ -495,75 +568,6 @@ Set the last stream id.
 +++
 |===
 
-[[HostnameResolverOptions]]
-== HostnameResolverOptions
-
-++++
- Configuration options for Vert.x hostname resolver. The resolver uses the local <i>hosts</i> file and performs
- DNS <i>A</i> and <i>AAAA</i> queries.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[cacheMaxTimeToLive]]`cacheMaxTimeToLive`|`Number (int)`|
-+++
-Set the cache maximum TTL value in seconds. After successful resolution IP addresses are cached with their DNS response TTL,
- use this to set a maximum value to all responses TTL.
-+++
-|[[cacheMinTimeToLive]]`cacheMinTimeToLive`|`Number (int)`|
-+++
-Set the cache minimum TTL value in seconds. After resolution successful IP addresses are cached with their DNS response TTL,
- use this to set a minimum value to all responses TTL.
-+++
-|[[cacheNegativeTimeToLive]]`cacheNegativeTimeToLive`|`Number (int)`|
-+++
-Set the negative cache TTL value in seconds. After a failed hostname resolution, DNS queries won't be retried
- for a period of time equals to the negative TTL. This allows to reduce the response time of negative replies
- and reduce the amount of messages to DNS servers.
-+++
-|[[hostsPath]]`hostsPath`|`String`|
-+++
-Set the path of an alternate hosts configuration file to use instead of the one provided by the os.
- <p/>
- The default value is null, so the operating system hosts config is used.
-+++
-|[[hostsValue]]`hostsValue`|`Buffer`|
-+++
-Set an alternate hosts configuration file to use instead of the one provided by the os.
- <p/>
- The value should contain the hosts content literaly, for instance <i>127.0.0.1 localhost</i>
- <p/>
- The default value is null, so the operating system hosts config is used.
-+++
-|[[maxQueries]]`maxQueries`|`Number (int)`|
-+++
-Set the maximum number of queries when an hostname is resolved.
-+++
-|[[optResourceEnabled]]`optResourceEnabled`|`Boolean`|
-+++
-Set to true to enable the automatic inclusion in DNS queries of an optional record that hints
- the remote DNS server about how much data the resolver can read per response.
-+++
-|[[queryTimeout]]`queryTimeout`|`Number (long)`|
-+++
-Set the query timeout in milliseconds, i.e the amount of time after a query is considered to be failed.
-+++
-|[[rdFlag]]`rdFlag`|`Boolean`|
-+++
-Set the DNS queries <i>Recursion Desired</i> flag value.
-+++
-|[[servers]]`servers`|`Array of String`|
-+++
-Set the list of DNS server addresses, an address is the IP  of the dns server, followed by an optional
- colon and a port, e.g <code>8.8.8.8</code> or {code 192.168.0.1:40000}. When the list is empty, the resolver
- will use the list of the system DNS server addresses from the environment, if that list cannot be retrieved
- it will use Google's public DNS servers <code>"8.8.8.8"</code> and <code>"8.8.4.4"</code>.
-+++
-|===
-
 [[Http2Settings]]
 == Http2Settings
 
@@ -737,21 +741,9 @@ Set whether pipe-lining is enabled on the client
 +++
 Set the protocol version.
 +++
-|[[proxyHost]]`proxyHost`|`String`|
+|[[proxyOptions]]`proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|
 +++
-Set proxy hostname for ssl connections via CONNECT proxy (e.g. Squid).
-+++
-|[[proxyPassword]]`proxyPassword`|`String`|
-+++
-Set proxy password for ssl connections
-+++
-|[[proxyPort]]`proxyPort`|`Number (int)`|
-+++
-Set proxy port for ssl connections
-+++
-|[[proxyUsername]]`proxyUsername`|`String`|
-+++
-Set proxy username for ssl connections
+Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
@@ -1111,6 +1103,10 @@ Set the key/cert options in pfx format.
 |[[pfxTrustOptions]]`pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|
 +++
 Set the trust options in pfx format
++++
+|[[proxyOptions]]`proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|
++++
+Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
@@ -1627,6 +1623,42 @@ Set the store as a buffer
 +++
 |===
 
+[[ProxyOptions]]
+== ProxyOptions
+
+++++
+ Proxy options for a net client or a net client.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[host]]`host`|`String`|
++++
+Set proxy host.
++++
+|[[password]]`password`|`String`|
++++
+Set proxy password.
++++
+|[[port]]`port`|`Number (int)`|
++++
+Set proxy port.
++++
+|[[type]]`type`|`link:enums.html#ProxyType[ProxyType]`|
++++
+Set proxy type.
+
+ <p>ProxyType can be HTTP, SOCKS4 and SOCKS5
++++
+|[[username]]`username`|`String`|
++++
+Set proxy username.
++++
+|===
+
 [[TCPSSLOptions]]
 == TCPSSLOptions
 
@@ -1746,6 +1778,10 @@ Set whether Netty pooled buffers are enabled
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[addressResolverOptions]]`addressResolverOptions`|`link:dataobjects.html#AddressResolverOptions[AddressResolverOptions]`|
++++
+Sets the address resolver configuration to configure resolving DNS servers, cache TTL, etc...
++++
 |[[blockedThreadCheckInterval]]`blockedThreadCheckInterval`|`Number (long)`|
 +++
 Sets the value of blocked thread check period, in ms.
@@ -1797,10 +1833,6 @@ Set whether HA will be enabled on the Vert.x instance.
 |[[haGroup]]`haGroup`|`String`|
 +++
 Set the HA group to be used when HA is enabled.
-+++
-|[[hostnameResolverOptions]]`hostnameResolverOptions`|`link:dataobjects.html#HostnameResolverOptions[HostnameResolverOptions]`|
-+++
-Sets the hostname resolver configuration to configure resolving DNS servers, cache TTL, etc...
 +++
 |[[internalBlockingPoolSize]]`internalBlockingPoolSize`|`Number (int)`|
 +++

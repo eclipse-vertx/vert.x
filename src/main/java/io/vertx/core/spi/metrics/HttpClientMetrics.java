@@ -40,7 +40,15 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpClientMetrics<R, W, S> extends TCPMetrics<S> {
+public interface HttpClientMetrics<R, W, S, Q> extends TCPMetrics<S> {
+
+  Q createQueue(String host, int port);
+
+  void enqueue(Q queueMetric);
+
+  void dequeue(Q queueMetric);
+
+  void closeQueue(String host, int port, Q queueMetric);
 
   /**
    * Called when an http client request begins. Vert.x will invoke {@link #responseEnd} when the response has ended

@@ -16,7 +16,6 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -28,12 +27,11 @@ import io.vertx.core.impl.VertxInternal;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AsyncResolveBindConnectHelper {
+public class AsyncResolveConnectHelper {
 
   private List<Handler<AsyncResult<Channel>>> handlers = new ArrayList<>();
   private ChannelFuture future;
@@ -69,38 +67,26 @@ public class AsyncResolveBindConnectHelper {
     }
   }
 
-  public static AsyncResolveBindConnectHelper doBind(VertxInternal vertx, int port, String host,
-                                                                    ServerBootstrap bootstrap) {
-    return doBindConnect(vertx, port, host, bootstrap::bind);
-  }
-
-  public static AsyncResolveBindConnectHelper doConnect(VertxInternal vertx, int port, String host,
-                                                                       Bootstrap bootstrap) {
-    return doBindConnect(vertx, port, host, bootstrap::connect);
-  }
-
-  private static AsyncResolveBindConnectHelper doBindConnect(VertxInternal vertx, int port, String host,
-                                                                            Function<InetSocketAddress,
-                                                                            ChannelFuture> cfProducer) {
+  public static AsyncResolveConnectHelper doBind(VertxInternal vertx, int port, String host,
+                                                 ServerBootstrap bootstrap) {
     checkPort(port);
-    AsyncResolveBindConnectHelper asyncResolveBindConnectHelper = new AsyncResolveBindConnectHelper();
-    vertx.resolveHostname(host, res -> {
+    AsyncResolveConnectHelper asyncResolveConnectHelper = new AsyncResolveConnectHelper();
+    vertx.resolveAddress(host, res -> {
       if (res.succeeded()) {
         // At this point the name is an IP address so there will be no resolve hit
         InetSocketAddress t = new InetSocketAddress(res.result(), port);
-        ChannelFuture future = cfProducer.apply(t);
+        ChannelFuture future = bootstrap.bind(t);
         future.addListener(f -> {
           if (f.isSuccess()) {
-            asyncResolveBindConnectHelper.handle(future, Future.succeededFuture(future.channel()));
+            asyncResolveConnectHelper.handle(future, Future.succeededFuture(future.channel()));
           } else {
-            asyncResolveBindConnectHelper.handle(future, Future.failedFuture(f.cause()));
+            asyncResolveConnectHelper.handle(future, Future.failedFuture(f.cause()));
           }
         });
       } else {
-        asyncResolveBindConnectHelper.handle(null, Future.failedFuture(res.cause()));
+        asyncResolveConnectHelper.handle(null, Future.failedFuture(res.cause()));
       }
     });
-    return asyncResolveBindConnectHelper;
+    return asyncResolveConnectHelper;
   }
-
 }

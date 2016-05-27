@@ -102,7 +102,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final NioEventLoopGroup acceptorEventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
-  private final HostnameResolver hostnameResolver;
+  private final AddressResolver addressResolver;
   private EventBus eventBus;
   private HAManager haManager;
   private boolean closed;
@@ -149,7 +149,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
     this.fileResolver = new FileResolver(this);
-    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
+    this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
     this.haEnabled = options.isClustered() && options.isHAEnabled();
     if (options.isClustered()) {
@@ -378,7 +378,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         return metrics;
       }
     }
-    return new DummyVertxMetrics();
+    return DummyVertxMetrics.INSTANCE;
   }
 
   private ClusterManager getClusterManager(VertxOptions options) {
@@ -481,7 +481,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       if (haManager() != null) {
         haManager().stop();
       }
-      hostnameResolver.close();
+      addressResolver.close();
       eventBus.close(ar2 -> {
         closeClusterManager(ar3 -> {
           // Copy set to prevent ConcurrentModificationException
@@ -682,8 +682,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
-    hostnameResolver.resolveHostname(hostname, resultHandler);
+  public void resolveAddress(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
+    addressResolver.resolveHostname(hostname, resultHandler);
+  }
+
+  @Override
+  public AddressResolver addressResolver() {
+    return addressResolver;
   }
 
   @SuppressWarnings("unchecked")

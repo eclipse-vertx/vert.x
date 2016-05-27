@@ -1573,15 +1573,15 @@
  * When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
  * used with binary frames that are no split over multiple frames.
  *
- * === Using a HTTP proxy for HTTPS connections
+ * === Using a proxy for HTTPS connections
  *
- * The http client supports accessing https server via a HTTPS proxy (HTTP/1.x CONNECT method), e.g. Squid. The proxy protocol uses
- * HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
+ * The http client supports accessing https server via an HTTPS proxy (HTTP/1.x _CONNECT_ method), e.g. Squid or
+ * _SOCKS4a_ or _SOCKS5_ proxy. The http proxy protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
  *
- * The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting hostname, port and optionally
- * username and password. 
+ * The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting a
+ * {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
  *
- * For this feature, the jar io.netty:netty-handler-proxy has to be present on the classpath.
+ * For this feature, the jar `io.netty:netty-handler-proxy` has to be present on the classpath.
  *
  * Here's an example:
  *
@@ -1589,6 +1589,15 @@
  * ----
  * {@link examples.HTTPExamples#example58}
  * ----
+ * or using a SOCKS5 proxy
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example59}
+ * ----
+ *
+ * The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
+ * to resolve the DNS address locally.
  *
  * === Automatic clean-up in verticles
  *

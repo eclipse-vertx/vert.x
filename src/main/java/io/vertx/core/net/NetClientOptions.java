@@ -50,7 +50,6 @@ public class NetClientOptions extends ClientOptionsBase {
   private long reconnectInterval;
   private String hostnameVerificationAlgorithm;
 
-
     /**
    * The default constructor
    */
@@ -260,7 +259,7 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public NetClientOptions setReconnectInterval(long interval) {
     if (interval < 1) {
-      throw new IllegalArgumentException("reconnect interval nust be >= 1");
+      throw new IllegalArgumentException("reconnect interval must be >= 1");
     }
     this.reconnectInterval = interval;
     return this;
@@ -298,6 +297,10 @@ public class NetClientOptions extends ClientOptionsBase {
   @Override
   public NetClientOptions setLogActivity(boolean logEnabled) {
     return (NetClientOptions) super.setLogActivity(logEnabled);
+  }
+
+  public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {
+    return (NetClientOptions) super.setProxyOptions(proxyOptions);
   }
 
   @Override

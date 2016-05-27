@@ -74,7 +74,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private volatile boolean listening;
   private volatile ServerID id;
   private NetServerImpl actualServer;
-  private AsyncResolveBindConnectHelper bindFuture;
+  private AsyncResolveConnectHelper bindFuture;
   private volatile int actualPort;
   private ContextImpl listenContext;
   private TCPMetrics metrics;
@@ -192,7 +192,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
         }
 
         try {
-          bindFuture = AsyncResolveBindConnectHelper.doBind(vertx, port, host, bootstrap);
+          bindFuture = AsyncResolveConnectHelper.doBind(vertx, port, host, bootstrap);
           bindFuture.addListener(res -> {
             if (res.succeeded()) {
               Channel ch = res.result();

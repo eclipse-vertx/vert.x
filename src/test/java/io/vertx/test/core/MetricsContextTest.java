@@ -49,7 +49,7 @@ public class MetricsContextTest extends VertxTestBase {
     VertxMetricsFactory factory = (vertx, options) -> {
       metricsThread.set(Thread.currentThread());
       metricsContext.set(Vertx.currentContext());
-      return new DummyVertxMetrics();
+      return DummyVertxMetrics.INSTANCE;
     };
     vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     assertSame(Thread.currentThread(), metricsThread.get());
@@ -64,7 +64,7 @@ public class MetricsContextTest extends VertxTestBase {
     VertxMetricsFactory factory = (vertx, options) -> {
       metricsThread.set(Thread.currentThread());
       metricsContext.set(Vertx.currentContext());
-      return new DummyVertxMetrics();
+      return DummyVertxMetrics.INSTANCE;
     };
     clusteredVertx(new VertxOptions().setClustered(true).setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)), onSuccess(vertx -> {
       assertSame(testThread, metricsThread.get());

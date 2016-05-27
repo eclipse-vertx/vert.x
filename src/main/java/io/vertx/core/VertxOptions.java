@@ -17,7 +17,7 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.dns.HostnameResolverOptions;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
@@ -135,7 +135,7 @@ public class VertxOptions {
   private MetricsOptions metricsOptions = new MetricsOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
   private EventBusOptions eventBusOptions = new EventBusOptions();
-  private HostnameResolverOptions hostnameResolverOptions = new HostnameResolverOptions();
+  private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
 
   /**
    * Default constructor
@@ -162,7 +162,7 @@ public class VertxOptions {
     this.metricsOptions = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
-    this.hostnameResolverOptions = other.hostnameResolverOptions != null ? new HostnameResolverOptions() : null;
+    this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions() : null;
   }
 
   /**
@@ -631,20 +631,20 @@ public class VertxOptions {
   }
 
   /**
-   * @return the hostname resolver options to configure resolving DNS servers, cache TTL, etc...
+   * @return the address resolver options to configure resolving DNS servers, cache TTL, etc...
    */
-  public HostnameResolverOptions getHostnameResolverOptions() {
-    return hostnameResolverOptions;
+  public AddressResolverOptions getAddressResolverOptions() {
+    return addressResolverOptions;
   }
 
   /**
-   * Sets the hostname resolver configuration to configure resolving DNS servers, cache TTL, etc...
+   * Sets the address resolver configuration to configure resolving DNS servers, cache TTL, etc...
    *
-   * @param hostnameResolverOptions the hostname resolver options
+   * @param addressResolverOptions the address resolver options
    * @return a reference to this, so the API can be used fluently
    */
-  public VertxOptions setHostnameResolverOptions(HostnameResolverOptions hostnameResolverOptions) {
-    this.hostnameResolverOptions = hostnameResolverOptions;
+  public VertxOptions setAddressResolverOptions(AddressResolverOptions addressResolverOptions) {
+    this.addressResolverOptions = addressResolverOptions;
     return this;
   }
 
@@ -669,7 +669,7 @@ public class VertxOptions {
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
     if (eventBusOptions != null ? !eventBusOptions.equals(that.eventBusOptions) : that.eventBusOptions != null)
       return false;
-    if (hostnameResolverOptions != null ? !hostnameResolverOptions.equals(that.hostnameResolverOptions) : that.hostnameResolverOptions != null)
+    if (addressResolverOptions != null ? !addressResolverOptions.equals(that.addressResolverOptions) : that.addressResolverOptions != null)
       return false;
     return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
 
@@ -689,7 +689,7 @@ public class VertxOptions {
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
     result = 31 * result + (metricsOptions != null ? metricsOptions.hashCode() : 0);
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
-    result = 31 * result + (hostnameResolverOptions != null ? hostnameResolverOptions.hashCode() : 0);
+    result = 31 * result + (addressResolverOptions != null ? addressResolverOptions.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
     return result;
   }
@@ -708,7 +708,7 @@ public class VertxOptions {
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
         ", metrics=" + metricsOptions +
-        ", hostnameResolver=" + hostnameResolverOptions.toJson() +
+        ", addressResolver=" + addressResolverOptions.toJson() +
         ", eventbus=" + eventBusOptions.toJson() +
         ", warningExceptionTime=" + warningExceptionTime +
         '}';

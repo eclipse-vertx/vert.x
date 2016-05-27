@@ -20,7 +20,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
@@ -38,19 +37,19 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.proxy.ProxyChannelProvider;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.ChannelProvider;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.util.ArrayDeque;
@@ -78,8 +77,10 @@ public class ConnectionManager {
   private final int http2MaxSockets;
   private final int http2MaxConcurrency;
   private final boolean logEnabled;
+  private final ChannelConnector connector;
+  private final HttpClientMetrics metrics;
 
-  ConnectionManager(HttpClientImpl client) {
+  ConnectionManager(HttpClientImpl client, HttpClientMetrics metrics) {
     this.client = client;
     this.sslHelper = client.getSslHelper();
     this.options = client.getOptions();
@@ -91,6 +92,12 @@ public class ConnectionManager {
     this.http2MaxSockets = maxStreams < 1 ? 1 : options.getMaxPoolSize();
     this.http2MaxConcurrency = maxStreams < 1 ? Integer.MAX_VALUE : maxStreams;
     this.logEnabled = client.getOptions().getLogActivity();
+    this.connector = new ChannelConnector();
+    this.metrics = metrics;
+  }
+
+  HttpClientMetrics metrics() {
+    return metrics;
   }
 
   /**
@@ -128,10 +135,6 @@ public class ConnectionManager {
   }
 
   public void getConnectionForWebsocket(int port, String host, Waiter waiter) {
-//    if (!keepAlive && pipelining) {
-//      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
-//    } else {
-//    }
     TargetAddress address = new TargetAddress(host, port);
     ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);
@@ -150,6 +153,7 @@ public class ConnectionManager {
   public void close() {
     wsQM.close();
     requestQM.close();
+    metrics.close();
   }
 
   static class TargetAddress {
@@ -194,25 +198,41 @@ public class ConnectionManager {
     private final QueueManager mgr;
     private final TargetAddress address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
-    private Pool<? extends HttpClientConnection> pool;
+    private Pool<HttpClientConnection> pool;
     private int connCount;
+    private final int maxSize;
+    private final Object metrics;
 
     ConnQueue(HttpVersion version, QueueManager mgr, TargetAddress address) {
       this.address = address;
       this.mgr = mgr;
+      this.metrics = ConnectionManager.this.metrics.createQueue(address.host, address.port);
       if (version == HttpVersion.HTTP_2) {
-        pool =  new Http2Pool(this, client, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency, logEnabled);
+        maxSize = http2MaxSockets;
+        pool =  (Pool)new Http2Pool(this, client, ConnectionManager.this.metrics, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency, logEnabled);
       } else {
-        pool = new Http1xPool(client, options, this, mgr.connectionMap, version);
+        maxSize = client.getOptions().getMaxPoolSize();
+        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version);
       }
     }
 
     public synchronized void getConnection(Waiter waiter) {
-      boolean served = pool.getConnection(waiter);
-      if (!served) {
-        if (connCount == pool.maxSockets) {
+      HttpClientConnection conn = pool.pollConnection();
+      if (conn != null && conn.isValid()) {
+        ContextImpl context = waiter.context;
+        if (context == null) {
+          context = conn.getContext();
+        } else if (context != conn.getContext()) {
+          ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
+        }
+        context.runOnContext(v -> deliverStream(conn, waiter));
+      } else {
+        if (connCount == maxSize) {
           // Wait in queue
           if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
+            if (ConnectionManager.this.metrics.isEnabled()) {
+              ConnectionManager.this.metrics.enqueue(metrics);
+            }
             waiters.add(waiter);
           } else {
             waiter.handleFailure(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
@@ -224,13 +244,49 @@ public class ConnectionManager {
       }
     }
 
+    /**
+     * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
+     *
+     * @param conn the connection
+     */
+    void deliverStream(HttpClientConnection conn, Waiter waiter) {
+      if (!conn.isValid()) {
+        // The connection has been closed - closed connections can be in the pool
+        // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
+        // that is done asynchronously in the connection closeHandler()
+        getConnection(waiter);
+      } else if (waiter.isCancelled()) {
+        pool.recycle(conn);
+      } else {
+        HttpClientStream stream;
+        try {
+          stream = pool.createStream(conn);
+        } catch (Exception e) {
+          getConnection(waiter);
+          return;
+        }
+        waiter.handleStream(stream);
+      }
+    }
+
     void closeAllConnections() {
       pool.closeAllConnections();
     }
 
     private void createNewConnection(Waiter waiter) {
       connCount++;
-      internalConnect(pool.version(), address.host, address.port, waiter);
+      ContextImpl context;
+      if (waiter.context == null) {
+        // Embedded
+        context = vertx.getOrCreateContext();
+      } else {
+        context = waiter.context;
+      }
+      sslHelper.validate(vertx);
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.group(context.nettyEventLoop());
+      bootstrap.channel(NioSocketChannel.class);
+      connector.connect(this, bootstrap, context, pool.version(), address.host, address.port, waiter);
     }
 
     /**
@@ -238,8 +294,14 @@ public class ConnectionManager {
      */
     Waiter getNextWaiter() {
       Waiter waiter = waiters.poll();
+      if (waiter != null && ConnectionManager.this.metrics.isEnabled()) {
+        ConnectionManager.this.metrics.dequeue(metrics);
+      }
       while (waiter != null && waiter.isCancelled()) {
         waiter = waiters.poll();
+        if (waiter != null && ConnectionManager.this.metrics.isEnabled()) {
+          ConnectionManager.this.metrics.dequeue(metrics);
+        }
       }
       return waiter;
     }
@@ -254,156 +316,8 @@ public class ConnectionManager {
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         mgr.queueMap.remove(address);
-      }
-    }
-
-    protected void internalConnect(HttpVersion version, String host, int port, Waiter waiter) {
-      ContextImpl context;
-      if (waiter.context == null) {
-        // Embedded
-        context = vertx.getOrCreateContext();
-      } else {
-        context = waiter.context;
-      }
-      sslHelper.validate(vertx);
-
-      Bootstrap bootstrap = new Bootstrap();
-      bootstrap.group(context.nettyEventLoop());
-      bootstrap.channel(NioSocketChannel.class);
-      applyConnectionOptions(options, bootstrap);
-
-      //
-      ChannelProvider channelProvider;
-      if (options.getProxyHost() == null) {
-        channelProvider = new ChannelProvider() {
-          @Override
-          public void connect(VertxInternal vertx, Bootstrap bootstrap, HttpClientOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
-            bootstrap.handler(new ChannelInitializer<Channel>() {
-              @Override
-              protected void initChannel(Channel ch) throws Exception {
-              }
-            });
-            AsyncResolveBindConnectHelper future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-            future.addListener(res -> {
-              if (res.succeeded()) {
-                channelHandler.handle(Future.succeededFuture(res.result()));
-              } else {
-                channelHandler.handle(Future.failedFuture(res.cause()));
-              }
-            });
-          }
-        };
-      } else {
-        channelProvider = new ProxyChannelProvider();
-      }
-
-      Handler<AsyncResult<Channel>> channelHandler = res -> {
-
-        if (res.succeeded()) {
-          Channel ch = res.result();
-
-          // Configure pipeline
-          ChannelPipeline pipeline = ch.pipeline();
-          boolean useAlpn = options.isUseAlpn();
-          if (useAlpn) {
-            SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), host, port);
-            ch.pipeline().addLast(sslHandler);
-            ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
-              @Override
-              protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
-                if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-                  http2Connected(context, ch, waiter, false);
-                } else if (ApplicationProtocolNames.HTTP_1_1.equals(protocol)) {
-                  fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
-                } else {
-                  fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_0, port, host, waiter);
-                }
-              }
-            });
-          } else {
-            if (options.isSsl()) {
-              pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
-            }
-            if (version == HttpVersion.HTTP_2) {
-              if (options.isH2cUpgrade()) {
-                HttpClientCodec httpCodec = new HttpClientCodec();
-                class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
-                  @Override
-                  public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                    DefaultFullHttpRequest upgradeRequest =
-                        new DefaultFullHttpRequest(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
-                    ctx.writeAndFlush(upgradeRequest);
-                    ctx.fireChannelActive();
-                  }
-                  @Override
-                  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                    super.userEventTriggered(ctx, evt);
-                    ChannelPipeline p = ctx.pipeline();
-                    if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
-                      p.remove(this);
-                      // Upgrade handler will remove itself
-                    } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
-                      p.remove(httpCodec);
-                      p.remove(this);
-                      // Upgrade handler will remove itself
-                      fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
-                    }
-                  }
-                }
-                VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
-                  @Override
-                  public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
-                    http2Connected(context, ch, waiter, true);
-                  }
-                };
-                HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
-                ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
-              } else {
-                applyH2ConnectionOptions(pipeline);
-              }
-            } else {
-              applyHttp1xConnectionOptions(pipeline, context);
-            }
-          }
-
-          //
-          if (options.isSsl()) {
-            // TCP connected, so now we must do the SSL handshake
-            SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
-            io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-            fut.addListener(fut2 -> {
-              if (fut2.isSuccess()) {
-                if (!options.isUseAlpn()) {
-                  http1xConnected(version, context, port, host, ch, waiter);
-                }
-              } else {
-                handshakeFailure(context, ch, fut2.cause(), waiter);
-              }
-            });
-          } else {
-            if (!options.isUseAlpn()) {
-              if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
-                // Upgrade handler do nothing
-              } else {
-                if (version == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
-                  http2Connected(context, ch, waiter, false);
-                } else {
-                  http1xConnected(version, context, port, host, ch, waiter);
-                }
-              }
-            }
-          }
-        } else {
-          connectionFailed(context, null, waiter::handleFailure, res.cause());
-        }
-      };
-
-      try {
-        channelProvider.connect(vertx, bootstrap, options, host, port, channelHandler);
-      } catch (NoClassDefFoundError e) {
-        if (options.getProxyHost() != null && e.getMessage().contains("io/netty/handler/proxy")) {
-          log.warn("Depedency io.netty:netty-handler-proxy missing - check your classpath");
-          channelHandler.handle(Future.failedFuture(e));
+        if (ConnectionManager.this.metrics.isEnabled()) {
+          ConnectionManager.this.metrics.closeQueue(address.host, address.port, metrics);
         }
       }
     }
@@ -419,22 +333,21 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // change the pool to Http1xPool
       synchronized (this) {
-        pool = new Http1xPool(client, options, this, mgr.connectionMap, fallbackVersion);
+        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion);
       }
-      applyHttp1xConnectionOptions(ch.pipeline(), context);
       http1xConnected(fallbackVersion, context, port, host, ch, waiter);
     }
 
     private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
       context.executeFromIO(() ->
-          ((Http1xPool)pool).createConn(version, context, port, host, ch, waiter)
+          ((Http1xPool)(Pool)pool).createConn(version, context, port, host, ch, waiter)
       );
     }
 
     private void http2Connected(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {
       context.executeFromIO(() -> {
         try {
-          ((Http2Pool)pool).createConn(context, ch, waiter, upgrade);
+          ((Http2Pool)(Pool)pool).createConn(context, ch, waiter, upgrade);
         } catch (Http2Exception e) {
           connectionFailed(context, ch, waiter::handleFailure, e);
         }
@@ -442,7 +355,7 @@ public class ConnectionManager {
     }
 
     private void connectionFailed(ContextImpl context, Channel ch, Handler<Throwable> connectionExceptionHandler,
-                                  Throwable t) {
+        Throwable t) {
       // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
       // If that doesn't exist just log it
       Handler<Throwable> exHandler =
@@ -456,6 +369,157 @@ public class ConnectionManager {
         }
         exHandler.handle(t);
       });
+    }
+  }
+
+  /**
+   * The logic for the connection pool because HTTP/1 and HTTP/2 have different pooling logics.
+   */
+  interface Pool<C extends HttpClientConnection> {
+
+    HttpVersion version();
+
+    C pollConnection();
+
+    void closeAllConnections();
+
+    void recycle(C conn);
+
+    HttpClientStream createStream(C conn) throws Exception;
+
+  }
+
+  /**
+   * The ChannelConnector performs the channel configuration and connection according to the
+   * client options and the protocol version.
+   * When the channel connects or fails to connect, it calls back the ConnQueue that initiated the
+   * connection.
+   */
+  private class ChannelConnector {
+
+    protected void connect(
+        ConnQueue queue,
+        Bootstrap bootstrap,
+        ContextImpl context,
+        HttpVersion version,
+        String host,
+        int port,
+        Waiter waiter) {
+
+      applyConnectionOptions(options, bootstrap);
+
+      ChannelProvider channelProvider;
+      if (options.getProxyOptions() == null) {
+        channelProvider = ChannelProvider.INSTANCE;
+      } else {
+        channelProvider = ProxyChannelProvider.INSTANCE;
+      }
+
+      Handler<Channel> channelInitializer = ch -> {
+
+        // Configure pipeline
+        ChannelPipeline pipeline = ch.pipeline();
+        boolean useAlpn = options.isUseAlpn();
+        if (useAlpn) {
+          SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), host, port);
+          ch.pipeline().addLast(sslHandler);
+          ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
+            @Override
+            protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
+              if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+                queue.http2Connected(context, ch, waiter, false);
+              } else {
+                applyHttp1xConnectionOptions(queue, ch.pipeline(), context);
+                HttpVersion fallbackProtocol = ApplicationProtocolNames.HTTP_1_1.equals(protocol) ?
+                    HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
+                queue.fallbackToHttp1x(ch, context, fallbackProtocol, port, host, waiter);
+              }
+            }
+          });
+        } else {
+          if (options.isSsl()) {
+            pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
+          }
+          if (version == HttpVersion.HTTP_2) {
+            if (options.isH2cUpgrade()) {
+              HttpClientCodec httpCodec = new HttpClientCodec();
+              class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
+                @Override
+                public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                  DefaultFullHttpRequest upgradeRequest =
+                      new DefaultFullHttpRequest(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
+                  ctx.writeAndFlush(upgradeRequest);
+                  ctx.fireChannelActive();
+                }
+                @Override
+                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                  super.userEventTriggered(ctx, evt);
+                  ChannelPipeline p = ctx.pipeline();
+                  if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
+                    p.remove(this);
+                    // Upgrade handler will remove itself
+                  } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
+                    p.remove(httpCodec);
+                    p.remove(this);
+                    // Upgrade handler will remove itself
+                    applyHttp1xConnectionOptions(queue, ch.pipeline(), context);
+                    queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
+                  }
+                }
+              }
+              VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
+                @Override
+                public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
+                  queue.http2Connected(context, ch, waiter, true);
+                }
+              };
+              HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
+              ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
+            } else {
+              applyH2ConnectionOptions(pipeline);
+            }
+          } else {
+            applyHttp1xConnectionOptions(queue, pipeline, context);
+          }
+        }
+      };
+
+      Handler<AsyncResult<Channel>> channelHandler = res -> {
+
+        if (res.succeeded()) {
+          Channel ch = res.result();
+          if (options.isSsl()) {
+            // TCP connected, so now we must do the SSL handshake
+            SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
+            io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
+            fut.addListener(fut2 -> {
+              if (fut2.isSuccess()) {
+                if (!options.isUseAlpn()) {
+                  queue.http1xConnected(version, context, port, host, ch, waiter);
+                }
+              } else {
+                queue.handshakeFailure(context, ch, fut2.cause(), waiter);
+              }
+            });
+          } else {
+            if (!options.isUseAlpn()) {
+              if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
+                // Upgrade handler do nothing
+              } else {
+                if (version == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
+                  queue.http2Connected(context, ch, waiter, false);
+                } else {
+                  queue.http1xConnected(version, context, port, host, ch, waiter);
+                }
+              }
+            }
+          }
+        } else {
+          queue.connectionFailed(context, null, waiter::handleFailure, res.cause());
+        }
+      };
+
+      channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelInitializer, channelHandler);
     }
 
     void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
@@ -485,7 +549,7 @@ public class ConnectionManager {
       }
     }
 
-    void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
+    void applyHttp1xConnectionOptions(ConnQueue queue, ChannelPipeline pipeline, ContextImpl context) {
       if (logEnabled) {
         pipeline.addLast("logging", new LoggingHandler());
       }
@@ -496,70 +560,7 @@ public class ConnectionManager {
       if (options.getIdleTimeout() > 0) {
         pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
       }
-      pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)mgr.connectionMap));
-    }
-  }
-
-  static abstract class Pool<C extends HttpClientConnection> {
-
-    // Pools must locks on the queue object to keep a single lock
-    final ConnQueue queue;
-    final int maxSockets;
-
-    Pool(ConnQueue queue, int maxSockets) {
-      this.queue = queue;
-      this.maxSockets = maxSockets;
-    }
-
-    abstract HttpVersion version();
-
-    abstract C pollConnection();
-
-    boolean getConnection(Waiter waiter) {
-      C conn = pollConnection();
-      if (conn != null && conn.isValid()) {
-        ContextImpl context = waiter.context;
-        if (context == null) {
-          context = conn.getContext();
-        } else if (context != conn.getContext()) {
-          ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
-        }
-        context.runOnContext(v -> deliverStream(conn, waiter));
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    abstract void closeAllConnections();
-
-    abstract void recycle(C conn);
-
-    abstract HttpClientStream createStream(C conn) throws Exception;
-
-    /**
-     * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
-     *
-     * @param conn the connection
-     */
-    void deliverStream(C conn, Waiter waiter) {
-      if (!conn.isValid()) {
-        // The connection has been closed - closed connections can be in the pool
-        // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
-        // that is done asynchronously in the connection closeHandler()
-        queue.getConnection(waiter);
-      } else if (waiter.isCancelled()) {
-        recycle(conn);
-      } else {
-        HttpClientStream stream;
-        try {
-          stream = createStream(conn);
-        } catch (Exception e) {
-          queue.getConnection(waiter);
-          return;
-        }
-        waiter.handleStream(stream);
-      }
+      pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)queue.mgr.connectionMap));
     }
   }
 }

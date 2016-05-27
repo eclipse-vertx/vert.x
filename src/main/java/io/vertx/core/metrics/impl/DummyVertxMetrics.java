@@ -44,6 +44,8 @@ import io.vertx.core.net.SocketAddress;
  */
 public class DummyVertxMetrics implements VertxMetrics {
 
+  public static final DummyVertxMetrics INSTANCE = new DummyVertxMetrics();
+
   @Override
   public void verticleDeployed(Verticle verticle) {
   }
@@ -62,37 +64,37 @@ public class DummyVertxMetrics implements VertxMetrics {
 
   @Override
   public EventBusMetrics createMetrics(EventBus eventBus) {
-    return new DummyEventBusMetrics();
+    return DummyEventBusMetrics.INSTANCE;
   }
 
   @Override
   public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
-    return new DummyHttpServerMetrics();
+    return DummyHttpServerMetrics.INSTANCE;
   }
 
   @Override
   public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
-    return new DummyHttpClientMetrics();
+    return DummyHttpClientMetrics.INSTANCE;
   }
 
   @Override
   public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
-    return new DummyTCPMetrics();
+    return DummyTCPMetrics.INSTANCE;
   }
 
   @Override
   public TCPMetrics createMetrics(NetClient client, NetClientOptions options) {
-    return new DummyTCPMetrics();
+    return DummyTCPMetrics.INSTANCE;
   }
 
   @Override
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-    return new DummyDatagramMetrics();
+    return DummyDatagramMetrics.INSTANCE;
   }
 
   @Override
   public <P> PoolMetrics<?> createMetrics(P pool, String poolType, String poolName, int maxPoolSize) {
-    return new DummyWorkerPoolMetrics();
+    return DummyWorkerPoolMetrics.INSTANCE;
   }
 
   @Override
@@ -109,7 +111,9 @@ public class DummyVertxMetrics implements VertxMetrics {
     return false;
   }
 
-  protected class DummyEventBusMetrics implements EventBusMetrics<Void> {
+  public static class DummyEventBusMetrics implements EventBusMetrics<Void> {
+
+    public static final DummyEventBusMetrics INSTANCE = new DummyEventBusMetrics();
 
     @Override
     public void messageWritten(String address, int numberOfBytes) {
@@ -158,7 +162,9 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  protected class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void, Void> {
+  public static class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void, Void> {
+
+    public static final DummyHttpServerMetrics INSTANCE = new DummyHttpServerMetrics();
 
     @Override
     public Void requestBegin(Void socketMetric, HttpServerRequest request) {
@@ -223,7 +229,26 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  protected class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void> {
+  public static class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void, Void> {
+
+    public static final DummyHttpClientMetrics INSTANCE = new DummyHttpClientMetrics();
+
+    @Override
+    public Void createQueue(String host, int port) {
+      return null;
+    }
+
+    @Override
+    public void enqueue(Void queueMetric) {
+    }
+
+    @Override
+    public void dequeue(Void queueMetric) {
+    }
+
+    @Override
+    public void closeQueue(String host, int port, Void queueMetric) {
+    }
 
     @Override
     public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
@@ -283,7 +308,9 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  protected class DummyTCPMetrics implements TCPMetrics<Void> {
+  public static class DummyTCPMetrics implements TCPMetrics<Void> {
+
+    public static final DummyTCPMetrics INSTANCE = new DummyTCPMetrics();
 
     @Override
     public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -316,7 +343,9 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  protected class DummyDatagramMetrics implements DatagramSocketMetrics {
+  public static class DummyDatagramMetrics implements DatagramSocketMetrics {
+
+    public static final DummyDatagramMetrics INSTANCE = new DummyDatagramMetrics();
 
     @Override
     public void listening(String localName, SocketAddress localAddress) {
@@ -344,7 +373,9 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  private class DummyWorkerPoolMetrics implements PoolMetrics<Void> {
+  public static class DummyWorkerPoolMetrics implements PoolMetrics<Void> {
+
+    public static final DummyWorkerPoolMetrics INSTANCE = new DummyWorkerPoolMetrics();
 
     @Override
     public Void submitted() {

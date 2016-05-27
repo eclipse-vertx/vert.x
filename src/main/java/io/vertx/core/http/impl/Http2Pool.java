@@ -22,6 +22,7 @@ import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -34,32 +35,36 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
+class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
+  // Pools must locks on the queue object to keep a single lock
+  private final ConnectionManager.ConnQueue queue;
   private Queue<Http2ClientConnection> availableConnections = new ArrayDeque<>();
   private final Set<Http2ClientConnection> allConnections = new HashSet<>();
   private final Map<Channel, ? super Http2ClientConnection> connectionMap;
   final HttpClientImpl client;
+  final HttpClientMetrics metrics;
   final int maxConcurrency;
   final boolean logEnabled;
 
-  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client,
+  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, HttpClientMetrics metrics,
                    Map<Channel, ? super Http2ClientConnection> connectionMap, int maxSockets,
                    int maxConcurrency, boolean logEnabled) {
-    super(queue, maxSockets);
+    this.queue = queue;
     this.client = client;
+    this.metrics = metrics;
     this.connectionMap = connectionMap;
     this.maxConcurrency = maxConcurrency;
     this.logEnabled = logEnabled;
   }
 
   @Override
-  HttpVersion version() {
+  public HttpVersion version() {
     return HttpVersion.HTTP_2;
   }
 
   @Override
-  Http2ClientConnection pollConnection() {
+  public Http2ClientConnection pollConnection() {
     Http2ClientConnection conn = availableConnections.peek();
     if (conn != null) {
       conn.streamCount++;
@@ -78,7 +83,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
           .server(false)
           .useCompression(client.getOptions().isTryUseCompression())
           .initialSettings(client.getOptions().getInitialSettings())
-          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler, client.metrics))
+          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler, metrics))
           .logEnabled(logEnabled)
           .build();
       if (upgrade) {
@@ -93,7 +98,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
       allConnections.add(conn);
       conn.streamCount++;
       waiter.handleConnection(conn); // Should make same tests than in deliverRequest
-      deliverStream(conn, waiter);
+      queue.deliverStream(conn, waiter);
       checkPending(conn);
       if (canReserveStream(conn)) {
         availableConnections.add(conn);
@@ -111,7 +116,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
       Waiter waiter;
       while (canReserveStream(conn) && (waiter = queue.getNextWaiter()) != null) {
         conn.streamCount++;
-        deliverStream(conn, waiter);
+        queue.deliverStream(conn, waiter);
       }
     }
   }
@@ -125,7 +130,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  void recycle(Http2ClientConnection conn) {
+  public void recycle(Http2ClientConnection conn) {
     synchronized (queue) {
       conn.streamCount--;
       checkPending(conn);
@@ -136,12 +141,12 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  HttpClientStream createStream(Http2ClientConnection conn) throws Exception {
+  public HttpClientStream createStream(Http2ClientConnection conn) throws Exception {
     return conn.createStream();
   }
 
   @Override
-  void closeAllConnections() {
+  public void closeAllConnections() {
     List<Http2ClientConnection> toClose;
     synchronized (queue) {
       toClose = new ArrayList<>(allConnections);

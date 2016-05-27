@@ -677,6 +677,25 @@
  * -javaagent:/path/to/alpn/agent
  * ----
  *
+ * === Using a proxy for client connections
+ *
+ * The {@link io.vertx.core.net.NetClient} supports configuring an HTTP/1.x _CONNECT_ proxy or _SOCKS4a_ or _SOCKS5_ proxy.
+ *
+ * The proxy can be configured in the {@link io.vertx.core.net.NetClientOptions} by setting a
+ * {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
+ *
+ * For this feature, the jar `io.netty:netty-handler-proxy` has to be present on the classpath.
+ *
+ * Here's an example:
+ *
+ * [source,$lang]
+ *
+ * ----
+ * {@link examples.NetExamples#example47}
+ * ----
+ *
+ * The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
+ * to resolve the DNS address locally.
  */
 @Document(fileName = "net.adoc")
 package io.vertx.core.net;

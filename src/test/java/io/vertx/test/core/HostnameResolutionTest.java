@@ -18,22 +18,21 @@ package io.vertx.test.core;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.dns.HostnameResolverOptions;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.VertxThreadFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
-import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
 
@@ -42,7 +41,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -74,14 +72,14 @@ public class HostnameResolutionTest extends VertxTestBase {
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
-    options.getHostnameResolverOptions().addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
-    options.getHostnameResolverOptions().setOptResourceEnabled(false);
+    options.getAddressResolverOptions().addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
+    options.getAddressResolverOptions().setOptResourceEnabled(false);
     return options;
   }
 
   @Test
   public void testAsyncResolve() throws Exception {
-    ((VertxImpl)vertx).resolveHostname("vertx.io", onSuccess(resolved -> {
+    ((VertxImpl)vertx).resolveAddress("vertx.io", onSuccess(resolved -> {
       assertEquals("127.0.0.1", resolved.getHostAddress());
       testComplete();
     }));
@@ -90,7 +88,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testAsyncResolveFail() throws Exception {
-    ((VertxImpl)vertx).resolveHostname("vertx.com", onFailure(failure -> {
+    ((VertxImpl)vertx).resolveAddress("vertx.com", onFailure(failure -> {
       assertEquals(UnknownHostException.class, failure.getClass());
       testComplete();
     }));
@@ -157,15 +155,15 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testOptions() {
-    HostnameResolverOptions options = new HostnameResolverOptions();
-    assertEquals(HostnameResolverOptions.DEFAULT_OPT_RESOURCE_ENABLED, options.isOptResourceEnabled());
-    assertEquals(HostnameResolverOptions.DEFAULT_SERVERS, options.getServers());
-    assertEquals(HostnameResolverOptions.DEFAULT_CACHE_MIN_TIME_TO_LIVE, options.getCacheMinTimeToLive());
-    assertEquals(HostnameResolverOptions.DEFAULT_CACHE_MAX_TIME_TO_LIVE, options.getCacheMaxTimeToLive());
-    assertEquals(HostnameResolverOptions.DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE, options.getCacheNegativeTimeToLive());
-    assertEquals(HostnameResolverOptions.DEFAULT_QUERY_TIMEOUT, options.getQueryTimeout());
-    assertEquals(HostnameResolverOptions.DEFAULT_MAX_QUERIES, options.getMaxQueries());
-    assertEquals(HostnameResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
+    AddressResolverOptions options = new AddressResolverOptions();
+    assertEquals(AddressResolverOptions.DEFAULT_OPT_RESOURCE_ENABLED, options.isOptResourceEnabled());
+    assertEquals(AddressResolverOptions.DEFAULT_SERVERS, options.getServers());
+    assertEquals(AddressResolverOptions.DEFAULT_CACHE_MIN_TIME_TO_LIVE, options.getCacheMinTimeToLive());
+    assertEquals(AddressResolverOptions.DEFAULT_CACHE_MAX_TIME_TO_LIVE, options.getCacheMaxTimeToLive());
+    assertEquals(AddressResolverOptions.DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE, options.getCacheNegativeTimeToLive());
+    assertEquals(AddressResolverOptions.DEFAULT_QUERY_TIMEOUT, options.getQueryTimeout());
+    assertEquals(AddressResolverOptions.DEFAULT_MAX_QUERIES, options.getMaxQueries());
+    assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
 
     boolean optResourceEnabled = TestUtils.randomBoolean();
     List<String> servers = Arrays.asList("1.2.3.4", "5.6.7.8");
@@ -195,17 +193,17 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(rdFlag, options.getRdFlag());
 
     // Test copy and json copy
-    HostnameResolverOptions copy = new HostnameResolverOptions(options);
-    HostnameResolverOptions jsonCopy = new HostnameResolverOptions(options.toJson());
+    AddressResolverOptions copy = new AddressResolverOptions(options);
+    AddressResolverOptions jsonCopy = new AddressResolverOptions(options.toJson());
 
-    options.setOptResourceEnabled(HostnameResolverOptions.DEFAULT_OPT_RESOURCE_ENABLED);
+    options.setOptResourceEnabled(AddressResolverOptions.DEFAULT_OPT_RESOURCE_ENABLED);
     options.getServers().clear();
-    options.setCacheMinTimeToLive(HostnameResolverOptions.DEFAULT_CACHE_MIN_TIME_TO_LIVE);
-    options.setCacheMaxTimeToLive(HostnameResolverOptions.DEFAULT_CACHE_MAX_TIME_TO_LIVE);
-    options.setCacheNegativeTimeToLive(HostnameResolverOptions.DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE);
-    options.setQueryTimeout(HostnameResolverOptions.DEFAULT_QUERY_TIMEOUT);
-    options.setMaxQueries(HostnameResolverOptions.DEFAULT_MAX_QUERIES);
-    options.setRdFlag(HostnameResolverOptions.DEFAULT_RD_FLAG);
+    options.setCacheMinTimeToLive(AddressResolverOptions.DEFAULT_CACHE_MIN_TIME_TO_LIVE);
+    options.setCacheMaxTimeToLive(AddressResolverOptions.DEFAULT_CACHE_MAX_TIME_TO_LIVE);
+    options.setCacheNegativeTimeToLive(AddressResolverOptions.DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE);
+    options.setQueryTimeout(AddressResolverOptions.DEFAULT_QUERY_TIMEOUT);
+    options.setMaxQueries(AddressResolverOptions.DEFAULT_MAX_QUERIES);
+    options.setRdFlag(AddressResolverOptions.DEFAULT_RD_FLAG);
 
     assertEquals(optResourceEnabled, copy.isOptResourceEnabled());
     assertEquals(servers, copy.getServers());
@@ -228,15 +226,15 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testDefaultJsonOptions() {
-    HostnameResolverOptions options = new HostnameResolverOptions(new JsonObject());
-    assertEquals(HostnameResolverOptions.DEFAULT_OPT_RESOURCE_ENABLED, options.isOptResourceEnabled());
-    assertEquals(HostnameResolverOptions.DEFAULT_SERVERS, options.getServers());
-    assertEquals(HostnameResolverOptions.DEFAULT_CACHE_MIN_TIME_TO_LIVE, options.getCacheMinTimeToLive());
-    assertEquals(HostnameResolverOptions.DEFAULT_CACHE_MAX_TIME_TO_LIVE, options.getCacheMaxTimeToLive());
-    assertEquals(HostnameResolverOptions.DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE, options.getCacheNegativeTimeToLive());
-    assertEquals(HostnameResolverOptions.DEFAULT_QUERY_TIMEOUT, options.getQueryTimeout());
-    assertEquals(HostnameResolverOptions.DEFAULT_MAX_QUERIES, options.getMaxQueries());
-    assertEquals(HostnameResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
+    AddressResolverOptions options = new AddressResolverOptions(new JsonObject());
+    assertEquals(AddressResolverOptions.DEFAULT_OPT_RESOURCE_ENABLED, options.isOptResourceEnabled());
+    assertEquals(AddressResolverOptions.DEFAULT_SERVERS, options.getServers());
+    assertEquals(AddressResolverOptions.DEFAULT_CACHE_MIN_TIME_TO_LIVE, options.getCacheMinTimeToLive());
+    assertEquals(AddressResolverOptions.DEFAULT_CACHE_MAX_TIME_TO_LIVE, options.getCacheMaxTimeToLive());
+    assertEquals(AddressResolverOptions.DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE, options.getCacheNegativeTimeToLive());
+    assertEquals(AddressResolverOptions.DEFAULT_QUERY_TIMEOUT, options.getQueryTimeout());
+    assertEquals(AddressResolverOptions.DEFAULT_MAX_QUERIES, options.getMaxQueries());
+    assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
   }
 
   @Test
@@ -250,6 +248,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.channel(NioSocketChannel.class);
     bootstrap.group(vertx.nettyEventLoopGroup());
+    bootstrap.resolver(((VertxInternal)vertx).addressResolver().nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
@@ -257,20 +256,21 @@ public class HostnameResolutionTest extends VertxTestBase {
         connectLatch.countDown();
       }
     });
-    AsyncResolveBindConnectHelper h = AsyncResolveBindConnectHelper.doConnect((VertxInternal) vertx, 1234, "localhost", bootstrap);
+    ChannelFuture channelFut = bootstrap.connect("localhost", 1234);
     awaitLatch(connectLatch);
-    h.addListener(onSuccess(channel -> {
+    channelFut.addListener(v -> {
+      assertTrue(v.isSuccess());
       assertEquals(channelThread.get(), Thread.currentThread());
       testComplete();
-    }));
+    });
     await();
   }
 
   @Test
   public void testInvalidHostsConfig() {
     try {
-      HostnameResolverOptions options = new HostnameResolverOptions().setHostsPath("whatever.txt");
-      Vertx.vertx(new VertxOptions().setHostnameResolverOptions(options));
+      AddressResolverOptions options = new AddressResolverOptions().setHostsPath("whatever.txt");
+      Vertx.vertx(new VertxOptions().setAddressResolverOptions(options));
       fail();
     } catch (VertxException ignore) {
     }
@@ -278,8 +278,8 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testResolveFromClasspath() {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setHostnameResolverOptions(new HostnameResolverOptions().setHostsPath("hosts_config.txt")));
-    vertx.resolveHostname("server.net", onSuccess(addr -> {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath("hosts_config.txt")));
+    vertx.resolveAddress("server.net", onSuccess(addr -> {
       assertEquals("192.168.0.15", addr.getHostAddress());
       assertEquals("server.net", addr.getHostName());
       testComplete();
@@ -290,8 +290,8 @@ public class HostnameResolutionTest extends VertxTestBase {
   @Test
   public void testResolveFromFile() {
     File f = new File(new File(new File(new File("src"), "test"), "resources"), "hosts_config.txt");
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setHostnameResolverOptions(new HostnameResolverOptions().setHostsPath(f.getAbsolutePath())));
-    vertx.resolveHostname("server.net", onSuccess(addr -> {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath(f.getAbsolutePath())));
+    vertx.resolveAddress("server.net", onSuccess(addr -> {
       assertEquals("192.168.0.15", addr.getHostAddress());
       assertEquals("server.net", addr.getHostName());
       testComplete();
@@ -301,8 +301,8 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testResolveFromBuffer() {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setHostnameResolverOptions(new HostnameResolverOptions().setHostsValue(Buffer.buffer("192.168.0.15 server.net"))));
-    vertx.resolveHostname("server.net", onSuccess(addr -> {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("192.168.0.15 server.net"))));
+    vertx.resolveAddress("server.net", onSuccess(addr -> {
       assertEquals("192.168.0.15", addr.getHostAddress());
       assertEquals("server.net", addr.getHostName());
       testComplete();

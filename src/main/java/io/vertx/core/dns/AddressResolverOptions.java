@@ -30,7 +30,7 @@ import java.util.List;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject(generateConverter = true)
-public class HostnameResolverOptions {
+public class AddressResolverOptions {
 
   /**
    * The default list of DNS servers = null (uses system name server's list like resolve.conf otherwise Google Public DNS)
@@ -60,7 +60,7 @@ public class HostnameResolverOptions {
   private int maxQueries;
   private boolean rdFlag;
 
-  public HostnameResolverOptions() {
+  public AddressResolverOptions() {
     servers = DEFAULT_SERVERS;
     optResourceEnabled = DEFAULT_OPT_RESOURCE_ENABLED;
     cacheMinTimeToLive = DEFAULT_CACHE_MIN_TIME_TO_LIVE;
@@ -71,7 +71,7 @@ public class HostnameResolverOptions {
     rdFlag = DEFAULT_RD_FLAG;
   }
 
-  public HostnameResolverOptions(HostnameResolverOptions other) {
+  public AddressResolverOptions(AddressResolverOptions other) {
     this.hostsPath = other.hostsPath;
     this.hostsValue = other.hostsValue != null ? other.hostsValue.copy() : null;
     this.servers = other.servers != null ? new ArrayList<>(other.servers) : null;
@@ -84,9 +84,9 @@ public class HostnameResolverOptions {
     this.rdFlag = other.rdFlag;
   }
 
-  public HostnameResolverOptions(JsonObject json) {
+  public AddressResolverOptions(JsonObject json) {
     this();
-    HostnameResolverOptionsConverter.fromJson(json, this);
+    AddressResolverOptionsConverter.fromJson(json, this);
   }
 
   /**
@@ -104,7 +104,7 @@ public class HostnameResolverOptions {
    * @param hostsPath the hosts path
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setHostsPath(String hostsPath) {
+  public AddressResolverOptions setHostsPath(String hostsPath) {
     this.hostsPath = hostsPath;
     return this;
   }
@@ -126,7 +126,7 @@ public class HostnameResolverOptions {
    * @param hostsValue the hosts content
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setHostsValue(Buffer hostsValue) {
+  public AddressResolverOptions setHostsValue(Buffer hostsValue) {
     this.hostsValue = hostsValue;
     return this;
   }
@@ -147,7 +147,7 @@ public class HostnameResolverOptions {
    * @param servers the list of DNS servers
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setServers(List<String> servers) {
+  public AddressResolverOptions setServers(List<String> servers) {
     this.servers = servers;
     return this;
   }
@@ -158,7 +158,7 @@ public class HostnameResolverOptions {
    * @param server the server to add
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions addServer(String server) {
+  public AddressResolverOptions addServer(String server) {
     if (servers == null) {
       servers = new ArrayList<>();
     }
@@ -180,7 +180,7 @@ public class HostnameResolverOptions {
    * @param optResourceEnabled true to enable, false otherwise
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setOptResourceEnabled(boolean optResourceEnabled) {
+  public AddressResolverOptions setOptResourceEnabled(boolean optResourceEnabled) {
     this.optResourceEnabled = optResourceEnabled;
     return this;
   }
@@ -199,7 +199,7 @@ public class HostnameResolverOptions {
    * @param cacheMinTimeToLive the cache min TTL in seconds
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setCacheMinTimeToLive(int cacheMinTimeToLive) {
+  public AddressResolverOptions setCacheMinTimeToLive(int cacheMinTimeToLive) {
     this.cacheMinTimeToLive = cacheMinTimeToLive;
     return this;
   }
@@ -218,7 +218,7 @@ public class HostnameResolverOptions {
    * @param cacheMaxTimeToLive the cache max TTL in seconds
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setCacheMaxTimeToLive(int cacheMaxTimeToLive) {
+  public AddressResolverOptions setCacheMaxTimeToLive(int cacheMaxTimeToLive) {
     this.cacheMaxTimeToLive = cacheMaxTimeToLive;
     return this;
   }
@@ -238,7 +238,7 @@ public class HostnameResolverOptions {
    * @param cacheNegativeTimeToLive the cache negative TTL in seconds
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setCacheNegativeTimeToLive(int cacheNegativeTimeToLive) {
+  public AddressResolverOptions setCacheNegativeTimeToLive(int cacheNegativeTimeToLive) {
     this.cacheNegativeTimeToLive = cacheNegativeTimeToLive;
     return this;
   }
@@ -256,7 +256,7 @@ public class HostnameResolverOptions {
    * @param queryTimeout the query timeout in milliseconds
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setQueryTimeout(long queryTimeout) {
+  public AddressResolverOptions setQueryTimeout(long queryTimeout) {
     this.queryTimeout = queryTimeout;
     return this;
   }
@@ -274,7 +274,7 @@ public class HostnameResolverOptions {
    * @param maxQueries the max number of queries to be sent
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setMaxQueries(int maxQueries) {
+  public AddressResolverOptions setMaxQueries(int maxQueries) {
     this.maxQueries = maxQueries;
     return this;
   }
@@ -292,7 +292,7 @@ public class HostnameResolverOptions {
    * @param rdFlag the flag value
    * @return a reference to this, so the API can be used fluently
    */
-  public HostnameResolverOptions setRdFlag(boolean rdFlag) {
+  public AddressResolverOptions setRdFlag(boolean rdFlag) {
     this.rdFlag = rdFlag;
     return this;
   }
@@ -301,7 +301,7 @@ public class HostnameResolverOptions {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    HostnameResolverOptions that = (HostnameResolverOptions) o;
+    AddressResolverOptions that = (AddressResolverOptions) o;
     if (optResourceEnabled != that.optResourceEnabled) return false;
     if (cacheMinTimeToLive != that.cacheMinTimeToLive) return false;
     if (cacheMaxTimeToLive != that.cacheMaxTimeToLive) return false;
@@ -327,7 +327,7 @@ public class HostnameResolverOptions {
 
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
-    HostnameResolverOptionsConverter.toJson(this, json);
+    AddressResolverOptionsConverter.toJson(this, json);
     return json;
   }
 }

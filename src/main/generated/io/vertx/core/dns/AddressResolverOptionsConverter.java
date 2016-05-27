@@ -20,13 +20,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 
 /**
- * Converter for {@link io.vertx.core.dns.HostnameResolverOptions}.
+ * Converter for {@link io.vertx.core.dns.AddressResolverOptions}.
  *
- * NOTE: This class has been automatically generated from the {@link io.vertx.core.dns.HostnameResolverOptions} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.core.dns.AddressResolverOptions} original class using Vert.x codegen.
  */
-public class HostnameResolverOptionsConverter {
+public class AddressResolverOptionsConverter {
 
-  public static void fromJson(JsonObject json, HostnameResolverOptions obj) {
+  public static void fromJson(JsonObject json, AddressResolverOptions obj) {
     if (json.getValue("cacheMaxTimeToLive") instanceof Number) {
       obj.setCacheMaxTimeToLive(((Number)json.getValue("cacheMaxTimeToLive")).intValue());
     }
@@ -62,7 +62,7 @@ public class HostnameResolverOptionsConverter {
     }
   }
 
-  public static void toJson(HostnameResolverOptions obj, JsonObject json) {
+  public static void toJson(AddressResolverOptions obj, JsonObject json) {
     json.put("cacheMaxTimeToLive", obj.getCacheMaxTimeToLive());
     json.put("cacheMinTimeToLive", obj.getCacheMinTimeToLive());
     json.put("cacheNegativeTimeToLive", obj.getCacheNegativeTimeToLive());

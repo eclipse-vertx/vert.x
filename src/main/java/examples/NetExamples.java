@@ -522,4 +522,12 @@ public class NetExamples {
             setHostnameVerificationAlgorithm("HTTPS");
     NetClient client = vertx.createNetClient(options);
   }
+
+  public void example47(Vertx vertx) {
+    NetClientOptions options = new NetClientOptions()
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+            .setHost("localhost").setPort(1080)
+            .setUsername("username").setPassword("secret"));
+    NetClient client = vertx.createNetClient(options);
+  }
 }
