@@ -23,6 +23,12 @@ public class NetClientOptionsTest {
     NetClientOptions options1 = new NetClientOptions();
     NetClientOptions options2 = new NetClientOptions(new JsonObject("{}"));
     assertEquals(options1, options2);
+
+    options1.setHostnameVerificationAlgorithm("HTTPS");
+    options2.setHostnameVerificationAlgorithm("HTTPS");
+    assertEquals(options1, options2);
+    options2.setHostnameVerificationAlgorithm(new String("HTTPS"));
+    assertEquals(options1, options2);
   }
 
   @Test
