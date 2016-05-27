@@ -39,7 +39,7 @@ import io.vertx.core.metrics.Measured;
  * unnecessarily when there would be no benefits anyway.
  * <p>
  * The client also supports pipe-lining of requests. Pipe-lining means another request is sent on the same connection
- * before the response from the preceeding one has returned. Pipe-lining is not appropriate for all requests.
+ * before the response from the preceding one has returned. Pipe-lining is not appropriate for all requests.
  * <p>
  * To enable pipe-lining, it must be enabled on the {@link io.vertx.core.http.HttpClientOptions} (default is false).
  * <p>
@@ -668,7 +668,7 @@ public interface HttpClient extends Measured {
    * @param host  the host
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -689,7 +689,7 @@ public interface HttpClient extends Measured {
    * @param host  the host
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -714,7 +714,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -737,7 +737,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -767,7 +767,7 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -796,7 +796,7 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -829,7 +829,7 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols to use
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -860,7 +860,7 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols to use
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -880,7 +880,7 @@ public interface HttpClient extends Measured {
    * Connect a WebSocket at the relative request URI using the default host and port
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -901,7 +901,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -927,7 +927,7 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -957,7 +957,7 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols
    * @param wsConnect  handler that will be called with the websocket when connected
-   * @param failureHandler handler that will be called if websocekt connection fails
+   * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent

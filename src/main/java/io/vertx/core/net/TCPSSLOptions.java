@@ -319,7 +319,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the trust options.
-   * @param options the trust soptions
+   * @param options the trust options
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTrustStoreOptions(TrustOptions options) {
@@ -419,7 +419,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return wether to use or not Application-Layer Protocol Negotiation
+   * @return whether to use or not Application-Layer Protocol Negotiation
    */
   public boolean isUseAlpn() {
     return useAlpn;

@@ -313,7 +313,7 @@ public class NetClientOptions extends ClientOptionsBase {
 
     if (reconnectAttempts != that.reconnectAttempts) return false;
     if (reconnectInterval != that.reconnectInterval) return false;
-    if (hostnameVerificationAlgorithm != that.hostnameVerificationAlgorithm) return false;
+    if (!hostnameVerificationAlgorithm.equals(that.hostnameVerificationAlgorithm)) return false;
 
     return true;
   }
