@@ -19,8 +19,11 @@ package io.vertx.test.core;
 
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -945,7 +948,6 @@ public class WebsocketTest extends VertxTestBase {
   public void testWebsocketPauseAndResume() {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setConnectTimeout(1000));
-    String path = "/some/path";
     this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     AtomicBoolean paused = new AtomicBoolean();
     ReadStream<ServerWebSocket> stream = server.websocketStream();
@@ -958,16 +960,14 @@ public class WebsocketTest extends VertxTestBase {
       assertTrue(listenAR.succeeded());
       stream.pause();
       paused.set(true);
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
-        fail();
-      }, err -> {
-        assertTrue(paused.get());
-        if (!(err instanceof WebSocketHandshakeException)) {
-          fail(new AssertionError("Was expecting error to be WebSocketHandshakeException", err));
+      connectUntilWebsocketHandshakeException(client, 0, res -> {
+        if (!res.succeeded()) {
+          fail(new AssertionError("Was expecting error to be WebSocketHandshakeException", res.cause()));
         }
+        assertTrue(paused.get());
         paused.set(false);
         stream.resume();
-        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", ws -> {
           ws.handler(buffer -> {
             assertEquals("whatever", buffer.toString("UTF-8"));
             ws.closeHandler(v2 -> {
@@ -978,6 +978,22 @@ public class WebsocketTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  private void connectUntilWebsocketHandshakeException(HttpClient client, int count, Handler<AsyncResult<Void>> doneHandler) {
+    client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", ws -> {
+      fail();
+    }, err -> {
+      if (err instanceof WebSocketHandshakeException) {
+        doneHandler.handle(Future.succeededFuture());
+      } else if (count < 100) {
+        vertx.runOnContext(v -> {
+          connectUntilWebsocketHandshakeException(client, count + 1, doneHandler);
+        });
+      } else {
+        doneHandler.handle(Future.failedFuture(err));
+      }
+    });
   }
 
   @Test
