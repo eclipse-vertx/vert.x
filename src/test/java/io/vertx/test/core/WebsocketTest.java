@@ -958,24 +958,24 @@ public class WebsocketTest extends VertxTestBase {
       assertTrue(listenAR.succeeded());
       stream.pause();
       paused.set(true);
-      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
-          exceptionHandler(err -> {
-            assertTrue(paused.get());
-            if (!(err instanceof WebSocketHandshakeException)) {
-              fail(new AssertionError("Was expecting error to be WebSocketHandshakeException", err));
-            }
-            paused.set(false);
-            stream.resume();
-            client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
-              ws.handler(buffer -> {
-                assertEquals("whatever", buffer.toString("UTF-8"));
-                ws.closeHandler(v2 -> {
-                  testComplete();
-                });
-              });
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
+        fail();
+      }, err -> {
+        assertTrue(paused.get());
+        if (!(err instanceof WebSocketHandshakeException)) {
+          fail(new AssertionError("Was expecting error to be WebSocketHandshakeException", err));
+        }
+        paused.set(false);
+        stream.resume();
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
+          ws.handler(buffer -> {
+            assertEquals("whatever", buffer.toString("UTF-8"));
+            ws.closeHandler(v2 -> {
+              testComplete();
             });
-          }).
-          handler(ws -> fail());
+          });
+        });
+      });
     });
     await();
   }
