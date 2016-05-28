@@ -66,7 +66,8 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
   @Override
   public boolean canCreateConnection(int connCount) {
-    // We create at most one connection concurrency
+    // We create at most one connection concurrently when all others when
+    // all others are busy
     return connCount == allConnections.size() && connCount < maxSockets;
   }
 
