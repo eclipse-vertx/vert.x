@@ -44,6 +44,12 @@ public class HttpClientOptionsConverter {
     if (json.getValue("h2cUpgrade") instanceof Boolean) {
       obj.setH2cUpgrade((Boolean)json.getValue("h2cUpgrade"));
     }
+    if (json.getValue("http2MaxPoolSize") instanceof Number) {
+      obj.setHttp2MaxPoolSize(((Number)json.getValue("http2MaxPoolSize")).intValue());
+    }
+    if (json.getValue("http2MaxStreams") instanceof Number) {
+      obj.setHttp2MaxStreams(((Number)json.getValue("http2MaxStreams")).intValue());
+    }
     if (json.getValue("initialSettings") instanceof JsonObject) {
       obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
     }
@@ -55,9 +61,6 @@ public class HttpClientOptionsConverter {
     }
     if (json.getValue("maxPoolSize") instanceof Number) {
       obj.setMaxPoolSize(((Number)json.getValue("maxPoolSize")).intValue());
-    }
-    if (json.getValue("maxStreams") instanceof Number) {
-      obj.setMaxStreams(((Number)json.getValue("maxStreams")).intValue());
     }
     if (json.getValue("maxWaitQueueSize") instanceof Number) {
       obj.setMaxWaitQueueSize(((Number)json.getValue("maxWaitQueueSize")).intValue());
@@ -92,13 +95,14 @@ public class HttpClientOptionsConverter {
     }
     json.put("defaultPort", obj.getDefaultPort());
     json.put("h2cUpgrade", obj.isH2cUpgrade());
+    json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
+    json.put("http2MaxStreams", obj.getHttp2MaxStreams());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
     json.put("keepAlive", obj.isKeepAlive());
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxPoolSize", obj.getMaxPoolSize());
-    json.put("maxStreams", obj.getMaxStreams());
     json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("pipelining", obj.isPipelining());

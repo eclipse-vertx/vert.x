@@ -664,6 +664,19 @@ Add an enabled SSL/TLS protocols
 Set to <code>true</code> when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, and <code>false</code>
  when an <i>h2c</i> connection is established directly (with prior knowledge).
 +++
+|[[http2MaxPoolSize]]`http2MaxPoolSize`|`Number (int)`|
++++
+Set the maximum pool size for HTTP/2 connections
++++
+|[[http2MaxStreams]]`http2MaxStreams`|`Number (int)`|
++++
+Set a client limit of the number concurrent streams for each HTTP/2 connection, this limits the number
+ of streams the client can create for a connection. The effective number of streams for a
+ connection is the min of this value and the server's initial settings.
+ <p/>
+ Setting the value to <code>-1</code> means to use the value sent by the server's initial settings.
+ <code>-1</code> is the default value.
++++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
@@ -692,16 +705,6 @@ Set the maximum HTTP chunk size
 |[[maxPoolSize]]`maxPoolSize`|`Number (int)`|
 +++
 Set the maximum pool size for connections
-+++
-|[[maxStreams]]`maxStreams`|`Number (int)`|
-+++
-Set the maximum of concurrent streams for an HTTP/2 connection, this limits the number
- of streams the client will create for a connection. The effective number of streams for a
- connection can be lower than this value when the server has a lower limit than
- this value.
- <p/>
- Setting the maximum to <code>-1</code> means the client will not limit the concurrency and the client
- will use a single connection. <code>-1</code> is the default value.
 +++
 |[[maxWaitQueueSize]]`maxWaitQueueSize`|`Number (int)`|
 +++

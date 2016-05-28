@@ -60,6 +60,12 @@ upgrade to HTTP/2. It will also accept a direct `h2c` connection beginning with 
 
 WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
 
+When a server accepts an HTTP/2 connection, it sends to the client its `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#getInitialSettings--[initial settings]`.
+The settings define how the client can use the connection, the default initial settings for a server are:
+
+- `link:../../apidocs/io/vertx/core/http/Http2Settings.html#getMaxConcurrentStreams--[getMaxConcurrentStreams]`: `100` as recommended by the HTTP/2 RFC
+- the default HTTP/2 settings values for the others
+
 === Logging network server activity
 
 For debugging purposes, network activity can be logged.
@@ -846,6 +852,9 @@ the same preface from the server.
 The http server may not support HTTP/2, the actual version can be checked
 with `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#version--[version]` when the response arrives.
 
+When a clients connects to an HTTP/2 server, it sends to the server its `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#getInitialSettings--[initial settings]`.
+The settings define how the server can use the connection, the default initial settings for a client are the default
+values defined by the HTTP/2 RFC.
 
 === Logging network client activity
 
@@ -1567,13 +1576,18 @@ When pipe-lining is enabled requests will be written to connections without wait
 HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
 connection for each server, all the streams to the same server are multiplexed on the same connection.
 
+When the clients needs to use more than a single connection and use pooling, the `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2MaxPoolSize-int-[setHttp2MaxPoolSize]`
+shall be used.
+
 When it is desirable to limit the number of concurrent streams per server and use a connection
-pool instead of a single connection, `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxStreams-int-[setMaxStreams]`
+pool instead of a single connection, `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2MaxStreams-int-[setHttp2MaxStreams]`
 can be used.
 
 [source,java]
 ----
-HttpClientOptions clientOptions = new HttpClientOptions().setMaxStreams(10).setMaxPoolSize(3);
+HttpClientOptions clientOptions = new HttpClientOptions().
+    setHttp2MaxStreams(10).
+    setHttp2MaxPoolSize(3);
 
 // Uses up to 3 connections and up to 10 streams per connection
 HttpClient client = vertx.createHttpClient(clientOptions);

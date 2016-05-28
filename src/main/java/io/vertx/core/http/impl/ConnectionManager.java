@@ -74,7 +74,6 @@ public class ConnectionManager {
   private final boolean keepAlive;
   private final boolean pipelining;
   private final int maxWaitQueueSize;
-  private final int http2MaxSockets;
   private final int http2MaxConcurrency;
   private final boolean logEnabled;
   private final ChannelConnector connector;
@@ -88,9 +87,7 @@ public class ConnectionManager {
     this.keepAlive = client.getOptions().isKeepAlive();
     this.pipelining = client.getOptions().isPipelining();
     this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
-    int maxStreams = options.getMaxStreams();
-    this.http2MaxSockets = maxStreams < 1 ? 1 : options.getMaxPoolSize();
-    this.http2MaxConcurrency = maxStreams < 1 ? Integer.MAX_VALUE : maxStreams;
+    this.http2MaxConcurrency = options.getHttp2MaxStreams() < 1 ? Integer.MAX_VALUE : options.getHttp2MaxStreams();
     this.logEnabled = client.getOptions().getLogActivity();
     this.connector = new ChannelConnector();
     this.metrics = metrics;
@@ -207,11 +204,11 @@ public class ConnectionManager {
       this.address = address;
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
-        maxSize = http2MaxSockets;
-        pool =  (Pool)new Http2Pool(this, client, ConnectionManager.this.metrics, mgr.connectionMap, http2MaxSockets, http2MaxConcurrency, logEnabled);
+        maxSize = options.getHttp2MaxPoolSize();
+        pool =  (Pool)new Http2Pool(this, client, ConnectionManager.this.metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize());
       } else {
-        maxSize = client.getOptions().getMaxPoolSize();
-        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version);
+        maxSize = options.getMaxPoolSize();
+        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize());
       }
       this.metric = ConnectionManager.this.metrics.createEndpoint(address.host, address.port, maxSize);
     }
@@ -227,7 +224,10 @@ public class ConnectionManager {
         }
         context.runOnContext(v -> deliverStream(conn, waiter));
       } else {
-        if (connCount == maxSize) {
+        if (pool.canCreateConnection(connCount)) {
+          // Create a new connection
+          createNewConnection(waiter);
+        } else {
           // Wait in queue
           if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
             if (ConnectionManager.this.metrics.isEnabled()) {
@@ -237,9 +237,6 @@ public class ConnectionManager {
           } else {
             waiter.handleFailure(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
           }
-        } else {
-          // Create a new connection
-          createNewConnection(waiter);
         }
       }
     }
@@ -333,7 +330,7 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // change the pool to Http1xPool
       synchronized (this) {
-        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion);
+        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion, options.getMaxPoolSize());
       }
       http1xConnected(fallbackVersion, context, port, host, ch, waiter);
     }
@@ -380,6 +377,14 @@ public class ConnectionManager {
     HttpVersion version();
 
     C pollConnection();
+
+    /**
+     * Determine when a new connection should be created
+     *
+     * @param connCount the actual connection count including the one being created
+     * @return true whether or not a new connection can be created
+     */
+    boolean canCreateConnection(int connCount);
 
     void closeAllConnections();
 

@@ -70,6 +70,12 @@
  *
  * WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
  *
+ * When a server accepts an HTTP/2 connection, it sends to the client its {@link io.vertx.core.http.HttpServerOptions#getInitialSettings initial settings}.
+ * The settings define how the client can use the connection, the default initial settings for a server are:
+ *
+ * - {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: {@code 100} as recommended by the HTTP/2 RFC
+ * - the default HTTP/2 settings values for the others
+ *
  * === Logging network server activity
  *
  * For debugging purposes, network activity can be logged.
@@ -703,6 +709,9 @@
  * The http server may not support HTTP/2, the actual version can be checked
  * with {@link io.vertx.core.http.HttpClientResponse#version()} when the response arrives.
  *
+ * When a clients connects to an HTTP/2 server, it sends to the server its {@link io.vertx.core.http.HttpClientOptions#getInitialSettings initial settings}.
+ * The settings define how the server can use the connection, the default initial settings for a client are the default
+ * values defined by the HTTP/2 RFC.
  *
  * === Logging network client activity
  *
@@ -1202,8 +1211,11 @@
  * HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
  * connection for each server, all the streams to the same server are multiplexed on the same connection.
  *
+ * When the clients needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.HttpClientOptions#setHttp2MaxPoolSize(int)}
+ * shall be used.
+ *
  * When it is desirable to limit the number of concurrent streams per server and use a connection
- * pool instead of a single connection, {@link io.vertx.core.http.HttpClientOptions#setMaxStreams(int)}
+ * pool instead of a single connection, {@link io.vertx.core.http.HttpClientOptions#setHttp2MaxStreams(int)}
  * can be used.
  *
  * [source,$lang]

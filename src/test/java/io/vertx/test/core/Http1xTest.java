@@ -317,7 +317,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(SSLEngine.OPENSSL, options.getSslEngine());
 
     Http2Settings initialSettings = randomHttp2Settings();
-    assertEquals(new Http2Settings(), options.getInitialSettings());
+    assertEquals(new Http2Settings().setMaxConcurrentStreams(HttpServerOptions.DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS), options.getInitialSettings());
     assertEquals(options, options.setInitialSettings(initialSettings));
     assertEquals(initialSettings, options.getInitialSettings());
 

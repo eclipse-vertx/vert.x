@@ -63,15 +63,17 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -550,10 +552,12 @@ public class Http2ClientTest extends Http2TestBase {
   private void testQueueingRequests(int numReq, Long max) throws Exception {
     waitFor(numReq);
     String expected = TestUtils.randomAlphaString(100);
+    server.close();
+    io.vertx.core.http.Http2Settings serverSettings = new io.vertx.core.http.Http2Settings();
     if (max != null) {
-      server.close();
-      server = vertx.createHttpServer(serverOptions.setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10L)));
+      serverSettings.setMaxConcurrentStreams(max);
     }
+    server = vertx.createHttpServer(serverOptions.setInitialSettings(serverSettings));
     server.requestHandler(req -> {
       req.response().end(expected);
     });
@@ -1672,12 +1676,14 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   private void testMaxConcurrency(int poolSize, int maxConcurrency) throws Exception {
+    int rounds = 1 + poolSize;
     int maxRequests = poolSize * maxConcurrency;
     int totalRequests = maxRequests + maxConcurrency;
-    Set<HttpConnection> serverConn = new HashSet<>();
+
+    Set<HttpConnection> serverConns = new HashSet<>();
     server.connectionHandler(conn -> {
-      serverConn.add(conn);
-      assertTrue(serverConn.size() <= poolSize);
+      serverConns.add(conn);
+      assertTrue(serverConns.size() <= poolSize);
     });
     ArrayList<HttpServerRequest> requests = new ArrayList<>();
     server.requestHandler(req -> {
@@ -1695,17 +1701,59 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions(clientOptions).setMaxPoolSize(poolSize).setMaxStreams(maxConcurrency));
+    client = vertx.createHttpClient(new HttpClientOptions(clientOptions).
+        setHttp2MaxPoolSize(poolSize).
+        setHttp2MaxStreams(maxConcurrency));
     AtomicInteger respCount = new AtomicInteger();
-    for (int i = 0;i < maxRequests + maxConcurrency;i++) {
+
+    Set<HttpConnection> clientConnections = Collections.synchronizedSet(new HashSet<>());
+    for (int j = 0;j < rounds;j++) {
+      System.out.println("round " + j);
+      for (int i = 0;i < maxConcurrency;i++) {
+        client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+          resp.endHandler(v -> {
+            if (respCount.incrementAndGet() == totalRequests) {
+              testComplete();
+            }
+          });
+        }).connectionHandler(clientConnections::add).end();
+      }
+      if (j < poolSize) {
+        int threshold = j + 1;
+        waitUntil(() -> clientConnections.size() == threshold);
+      }
+    }
+
+    await();
+  }
+
+/*
+  @Test
+  public void testFillsSingleConnection() throws Exception {
+
+    Set<HttpConnection> serverConns = new HashSet<>();
+    List<HttpServerRequest> requests = new ArrayList<>();
+    server.requestHandler(req -> {
+      requests.add(req);
+      serverConns.add(req.connection());
+      if (requests.size() == 10) {
+        System.out.println("requestsPerConn = " + serverConns);
+      }
+    });
+    startServer();
+
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions(clientOptions).
+        setHttp2MaxPoolSize(2).
+        setHttp2MaxStreams(10));
+    AtomicInteger respCount = new AtomicInteger();
+    for (int i = 0;i < 10;i++) {
       client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
         resp.endHandler(v -> {
-          if (respCount.incrementAndGet() == totalRequests) {
-            testComplete();
-          }
         });
       });
     }
     await();
   }
+*/
 }

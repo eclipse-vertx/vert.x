@@ -39,23 +39,24 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
   // Pools must locks on the queue object to keep a single lock
   private final ConnectionManager.ConnQueue queue;
-  private Queue<Http2ClientConnection> availableConnections = new ArrayDeque<>();
   private final Set<Http2ClientConnection> allConnections = new HashSet<>();
   private final Map<Channel, ? super Http2ClientConnection> connectionMap;
   final HttpClientImpl client;
   final HttpClientMetrics metrics;
   final int maxConcurrency;
   final boolean logEnabled;
+  final int maxSockets;
 
   public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, HttpClientMetrics metrics,
-                   Map<Channel, ? super Http2ClientConnection> connectionMap, int maxSockets,
-                   int maxConcurrency, boolean logEnabled) {
+                   Map<Channel, ? super Http2ClientConnection> connectionMap,
+                   int maxConcurrency, boolean logEnabled, int maxSize) {
     this.queue = queue;
     this.client = client;
     this.metrics = metrics;
     this.connectionMap = connectionMap;
     this.maxConcurrency = maxConcurrency;
     this.logEnabled = logEnabled;
+    this.maxSockets = maxSize;
   }
 
   @Override
@@ -64,15 +65,20 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
+  public boolean canCreateConnection(int connCount) {
+    // We create at most one connection concurrency
+    return connCount == allConnections.size() && connCount < maxSockets;
+  }
+
+  @Override
   public Http2ClientConnection pollConnection() {
-    Http2ClientConnection conn = availableConnections.peek();
-    if (conn != null) {
-      conn.streamCount++;
-      if (!canReserveStream(conn)) {
-        availableConnections.remove();
+    for (Http2ClientConnection conn : allConnections) {
+      if (canReserveStream(conn)) {
+        conn.streamCount++;
+        return conn;
       }
     }
-    return conn;
+    return null;
   }
 
   void createConn(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) throws Http2Exception {
@@ -101,9 +107,6 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
       waiter.handleConnection(conn); // Should make same tests than in deliverRequest
       queue.deliverStream(conn, waiter);
       checkPending(conn);
-      if (canReserveStream(conn)) {
-        availableConnections.add(conn);
-      }
     }
   }
 
@@ -136,9 +139,6 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     synchronized (queue) {
       conn.streamCount--;
       checkPending(conn);
-      if (canReserveStream(conn)) {
-        availableConnections.add(conn);
-      }
     }
   }
 

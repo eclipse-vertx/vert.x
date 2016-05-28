@@ -74,6 +74,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.unmodifiableList(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
 
+  /**
+   * The default inital settings max concurrent stream for an HTTP/2 server = 100
+   */
+  public static final long DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS = 100;
+
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -130,7 +135,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
-    initialSettings = new Http2Settings();
+    initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
   }
 

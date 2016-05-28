@@ -45,8 +45,10 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   private final HttpVersion version;
   private final Set<ClientConnection> allConnections = new HashSet<>();
   private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
+  private final int maxSockets;
 
-  public Http1xPool(HttpClientImpl client, HttpClientMetrics metrics, HttpClientOptions options, ConnectionManager.ConnQueue queue, Map<Channel, HttpClientConnection> connectionMap, HttpVersion version) {
+  public Http1xPool(HttpClientImpl client, HttpClientMetrics metrics, HttpClientOptions options, ConnectionManager.ConnQueue queue,
+                    Map<Channel, HttpClientConnection> connectionMap, HttpVersion version, int maxSockets) {
     this.queue = queue;
     this.version = version;
     this.client = client;
@@ -55,6 +57,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     this.keepAlive = options.isKeepAlive();
     this.ssl = options.isSsl();
     this.connectionMap = connectionMap;
+    this.maxSockets = maxSockets;
   }
 
   @Override
@@ -66,6 +69,11 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   @Override
   public ClientConnection pollConnection() {
     return availableConnections.poll();
+  }
+
+  @Override
+  public boolean canCreateConnection(int connCount) {
+    return connCount < maxSockets;
   }
 
   @Override
