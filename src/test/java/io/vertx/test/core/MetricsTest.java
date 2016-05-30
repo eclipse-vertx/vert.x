@@ -584,12 +584,12 @@ public class MetricsTest extends VertxTestBase {
     copy.forEach(Runnable::run);
     awaitLatch(responsesLatch);
     waitUntil(() -> requests.size() == 5);
-    copy = new ArrayList<>(requests);
-    requests.clear();
-    copy.forEach(Runnable::run);
     assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
     assertEquals(3, (int)metrics.queueSize("localhost:8080"));
     assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
+    copy = new ArrayList<>(requests);
+    requests.clear();
+    copy.forEach(Runnable::run);
     waitUntil(() -> requests.size() == 3);
     assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
     assertEquals(0, (int)metrics.queueSize("localhost:8080"));
