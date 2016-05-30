@@ -92,8 +92,11 @@ public interface HttpClientMetrics<R, W, S, E, T> extends TCPMetrics<S> {
   void endpointDisconnected(E endpointMetric, S socketMetric);
 
   /**
-   * Called when an http client request begins. Vert.x will invoke {@link #responseEnd} when the response has ended
-   * or {@link #requestReset} if the request/response has failed before.
+   * Called when an http client request begins. Vert.x will invoke {@link #requestEnd} when the request
+   * has ended or {@link #requestReset} if the request/response has failed before.
+   *
+   *
+   *
    *
    * @param endpointMetric the endpoint metric
    * @param socketMetric the socket metric
@@ -103,6 +106,22 @@ public interface HttpClientMetrics<R, W, S, E, T> extends TCPMetrics<S> {
    * @return the request metric
    */
   R requestBegin(E endpointMetric, S socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request);
+
+  /**
+   * Callend when an http client request ends.
+   *
+   * @param requestMetric the request metric
+   */
+  void requestEnd(R requestMetric);
+
+  /**
+   * Called when an http client response begins. Vert.x will invoke {@link #responseEnd} when the response has ended
+   *  or {@link #requestReset} if the request/response has failed before.
+   *
+   * @param requestMetric the request metric
+   * @param response the {@link io.vertx.core.http.HttpClientResponse}
+   */
+  void responseBegin(R requestMetric, HttpClientResponse response);
 
   /**
    * Called when an http client response is pushed.

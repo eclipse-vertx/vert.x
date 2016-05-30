@@ -304,6 +304,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
+    if (metrics.isEnabled()) {
+      metrics.responseBegin(requestForResponse.metric(), nResp);
+    }
     requestForResponse.handleResponse(nResp);
     DecoderResult decoderResult = resp.decoderResult();
     if(decoderResult.isFailure()) {
@@ -516,6 +519,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   public synchronized void endRequest() {
     if (currentRequest == null) {
       throw new IllegalStateException("No write in progress");
+    }
+    if (metrics.isEnabled()) {
+      metrics.requestEnd(currentRequest.metric());
     }
     currentRequest = null;
     pool.recycle(this);

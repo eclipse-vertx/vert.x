@@ -19,9 +19,11 @@ package io.vertx.test.core;
 import io.vertx.core.Context;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
@@ -32,10 +34,9 @@ import io.vertx.test.fakemetrics.FakeMetricsBase;
 import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.HttpClientMetric;
 import io.vertx.test.fakemetrics.HttpServerMetric;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,20 +55,21 @@ public class HttpMetricsTest extends HttpTestBase {
 
   @Test
   public void testHttp1MetricsLifecycle() throws Exception {
-    testMetricsLifecycle(HttpVersion.HTTP_1_1);
+    testHttpMetricsLifecycle(HttpVersion.HTTP_1_1);
   }
 
   @Test
   public void testHttp2MetricsLifecycle() throws Exception {
-    testMetricsLifecycle(HttpVersion.HTTP_2);
+    testHttpMetricsLifecycle(HttpVersion.HTTP_2);
   }
 
-  private void testMetricsLifecycle(HttpVersion protocol) throws Exception {
+  private void testHttpMetricsLifecycle(HttpVersion protocol) throws Exception {
     waitFor(2);
     int numBuffers = 10;
     int contentLength = numBuffers * 1000;
     AtomicReference<HttpServerMetric> serverMetric = new AtomicReference<>();
     server.requestHandler(req -> {
+      assertEquals(protocol, req.version());
       FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
       assertNotNull(serverMetrics);
       serverMetric.set(serverMetrics.getMetric(req));
@@ -122,6 +124,81 @@ public class HttpMetricsTest extends HttpTestBase {
     waitUntil(() -> !clientMetric.get().socket.connected.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesRead.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesWritten.get());
+  }
+
+  @Test
+  public void testHttp1ClientLifecycle() throws Exception {
+    testHttpClientLifecycle(HttpVersion.HTTP_1_1);
+  }
+
+  @Test
+  public void testHttp2ClientLifecycle() throws Exception {
+    testHttpClientLifecycle(HttpVersion.HTTP_2);
+  }
+
+  private void testHttpClientLifecycle(HttpVersion protocol) throws Exception {
+    HttpServer server = vertx.createHttpServer();
+    CountDownLatch requestBeginLatch = new CountDownLatch(1);
+    CountDownLatch requestBodyLatch = new CountDownLatch(1);
+    CountDownLatch requestEndLatch = new CountDownLatch(1);
+    CompletableFuture<Void> beginResponse = new CompletableFuture<>();
+    CompletableFuture<Void> endResponse = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      assertEquals(protocol, req.version());
+      requestBeginLatch.countDown();
+      req.handler(buff -> {
+        requestBodyLatch.countDown();
+      });
+      req.endHandler(v -> {
+        requestEndLatch.countDown();
+      });
+      Context ctx = vertx.getOrCreateContext();
+      beginResponse.thenAccept(v1 -> {
+        ctx.runOnContext(v2 -> {
+          req.response().setChunked(true).write(TestUtils.randomAlphaString(1024));
+        });
+      });
+      endResponse.thenAccept(v1 -> {
+        ctx.runOnContext(v2 -> {
+          req.response().end();
+        });
+      });
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
+    awaitLatch(listenLatch);
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(protocol));
+    FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
+    CountDownLatch responseBeginLatch = new CountDownLatch(1);
+    CountDownLatch responseEndLatch = new CountDownLatch(1);
+    HttpClientRequest req = client.post(8080, "localhost", "/somepath", resp -> {
+      responseBeginLatch.countDown();
+      resp.endHandler(v -> {
+        responseEndLatch.countDown();
+      });
+    }).setChunked(true);
+    req.sendHead();
+    awaitLatch(requestBeginLatch);
+    HttpClientMetric reqMetric = clientMetrics.getMetric(req);
+    assertEquals(0, reqMetric.requestEnded.get());
+    assertEquals(0, reqMetric.responseBegin.get());
+    req.write(TestUtils.randomAlphaString(1024));
+    awaitLatch(requestBodyLatch);
+    assertEquals(0, reqMetric.requestEnded.get());
+    assertEquals(0, reqMetric.responseBegin.get());
+    req.end();
+    awaitLatch(requestEndLatch);
+    assertEquals(1, reqMetric.requestEnded.get());
+    assertEquals(0, reqMetric.responseBegin.get());
+    beginResponse.complete(null);
+    awaitLatch(responseBeginLatch);
+    assertEquals(1, reqMetric.requestEnded.get());
+    assertEquals(1, reqMetric.responseBegin.get());
+    endResponse.complete(null);
+    awaitLatch(responseEndLatch);
+    assertNull(clientMetrics.getMetric(req));
+    assertEquals(1, reqMetric.requestEnded.get());
+    assertEquals(1, reqMetric.responseBegin.get());
   }
 
   @Test

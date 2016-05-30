@@ -128,6 +128,16 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   }
 
   @Override
+  public void requestEnd(HttpClientMetric requestMetric) {
+    requestMetric.requestEnded.incrementAndGet();
+  }
+
+  @Override
+  public void responseBegin(HttpClientMetric requestMetric, HttpClientResponse response) {
+    requestMetric.responseBegin.incrementAndGet();
+  }
+
+  @Override
   public HttpClientMetric responsePushed(EndpointMetric endpointMetric, SocketMetric socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
     endpointMetric.requests.incrementAndGet();
     HttpClientMetric metric = new HttpClientMetric(endpointMetric, request, socketMetric);

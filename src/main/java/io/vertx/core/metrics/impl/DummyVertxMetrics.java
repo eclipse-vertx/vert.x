@@ -274,6 +274,14 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
+    public void requestEnd(Void requestMetric) {
+    }
+
+    @Override
+    public void responseBegin(Void requestMetric, HttpClientResponse response) {
+    }
+
+    @Override
     public Void responsePushed(Void endpointMetric, Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
       return null;
     }

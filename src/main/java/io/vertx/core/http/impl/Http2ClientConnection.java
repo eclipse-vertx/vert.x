@@ -255,6 +255,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
             statusMessage,
             new Http2HeadersAdaptor(headers)
         );
+        if (conn.metrics.isEnabled()) {
+          conn.metrics.responseBegin(request.metric(), response);
+        }
         request.handleResponse(response);
         if (end) {
           onEnd();
@@ -360,6 +363,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void endRequest() {
+      if (conn.metrics.isEnabled()) {
+        conn.metrics.requestEnd(request.metric());
+      }
       requestEnded = true;
     }
 
