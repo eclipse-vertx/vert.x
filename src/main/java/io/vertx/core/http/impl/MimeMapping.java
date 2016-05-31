@@ -646,6 +646,7 @@ public class MimeMapping {
     m.put("pfm", "application/x-font-type1");
     m.put("afm", "application/x-font-type1");
     m.put("woff", "application/x-font-woff");
+    m.put("woff2", "font/woff2");
     m.put("arc", "application/x-freearc");
     m.put("spl", "application/x-futuresplash");
     m.put("gca", "application/x-gca-compressed");
