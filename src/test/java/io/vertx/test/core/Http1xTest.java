@@ -148,6 +148,27 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setPipelining(true));
     assertTrue(options.isPipelining());
 
+    assertEquals(HttpClientOptions.DEFAULT_PIPELINING_LIMIT, options.getPipeliningLimit());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setPipeliningLimit(rand));
+    assertEquals(rand, options.getPipeliningLimit());
+    assertIllegalArgumentException(() -> options.setPipeliningLimit(0));
+    assertIllegalArgumentException(() -> options.setPipeliningLimit(-1));
+
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_MAX_POOL_SIZE, options.getHttp2MaxPoolSize());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2MaxPoolSize(rand));
+    assertEquals(rand, options.getHttp2MaxPoolSize());
+    assertIllegalArgumentException(() -> options.setHttp2MaxPoolSize(0));
+    assertIllegalArgumentException(() -> options.setHttp2MaxPoolSize(-1));
+
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_MULTIPLEXING_LIMIT, options.getHttp2MultiplexingLimit());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2MultiplexingLimit(rand));
+    assertEquals(rand, options.getHttp2MultiplexingLimit());
+    assertIllegalArgumentException(() -> options.setHttp2MultiplexingLimit(0));
+    assertIllegalArgumentException(() -> options.setHttp2MultiplexingLimit(-1));
+
     assertEquals(60000, options.getConnectTimeout());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setConnectTimeout(rand));
@@ -358,6 +379,9 @@ public class Http1xTest extends HttpTest {
     int maxPoolSize = TestUtils.randomPositiveInt();
     boolean keepAlive = rand.nextBoolean();
     boolean pipelining = rand.nextBoolean();
+    int pipeliningLimit = TestUtils.randomPositiveInt();
+    int http2MaxPoolSize = TestUtils.randomPositiveInt();
+    int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
@@ -388,6 +412,9 @@ public class Http1xTest extends HttpTest {
     options.setMaxPoolSize(maxPoolSize);
     options.setKeepAlive(keepAlive);
     options.setPipelining(pipelining);
+    options.setPipeliningLimit(pipeliningLimit);
+    options.setHttp2MaxPoolSize(http2MaxPoolSize);
+    options.setHttp2MultiplexingLimit(http2MultiplexingLimit);
     options.setTryUseCompression(tryUseCompression);
     options.setProtocolVersion(protocolVersion);
     options.setMaxWaitQueueSize(maxWaitQueueSize);
@@ -423,6 +450,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxPoolSize, copy.getMaxPoolSize());
     assertEquals(keepAlive, copy.isKeepAlive());
     assertEquals(pipelining, copy.isPipelining());
+    assertEquals(pipeliningLimit, copy.getPipeliningLimit());
+    assertEquals(http2MaxPoolSize, copy.getHttp2MaxPoolSize());
+    assertEquals(http2MultiplexingLimit, copy.getHttp2MultiplexingLimit());
     assertEquals(tryUseCompression, copy.isTryUseCompression());
     assertEquals(protocolVersion, copy.getProtocolVersion());
     assertEquals(maxWaitQueueSize, copy.getMaxWaitQueueSize());
@@ -440,6 +470,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getMaxPoolSize(), json.getMaxPoolSize());
     assertEquals(def.isKeepAlive(), json.isKeepAlive());
     assertEquals(def.isPipelining(), json.isPipelining());
+    assertEquals(def.getPipeliningLimit(), json.getPipeliningLimit());
+    assertEquals(def.getHttp2MaxPoolSize(), json.getHttp2MaxPoolSize());
+    assertEquals(def.getHttp2MultiplexingLimit(), json.getHttp2MultiplexingLimit());
     assertEquals(def.isVerifyHost(), json.isVerifyHost());
     assertEquals(def.isTryUseCompression(), json.isTryUseCompression());
     assertEquals(def.isTrustAll(), json.isTrustAll());
@@ -491,6 +524,9 @@ public class Http1xTest extends HttpTest {
     int maxPoolSize = TestUtils.randomPositiveInt();
     boolean keepAlive = rand.nextBoolean();
     boolean pipelining = rand.nextBoolean();
+    int pipeliningLimit = TestUtils.randomPositiveInt();
+    int http2MaxPoolSize = TestUtils.randomPositiveInt();
+    int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
@@ -521,6 +557,9 @@ public class Http1xTest extends HttpTest {
       .put("maxPoolSize", maxPoolSize)
       .put("keepAlive", keepAlive)
       .put("pipelining", pipelining)
+      .put("pipeliningLimit", pipeliningLimit)
+      .put("http2MaxPoolSize", http2MaxPoolSize)
+      .put("http2MultiplexingLimit", http2MultiplexingLimit)
       .put("tryUseCompression", tryUseCompression)
       .put("protocolVersion", protocolVersion.name())
       .put("maxWaitQueueSize", maxWaitQueueSize)
@@ -563,6 +602,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxPoolSize, options.getMaxPoolSize());
     assertEquals(keepAlive, options.isKeepAlive());
     assertEquals(pipelining, options.isPipelining());
+    assertEquals(pipeliningLimit, options.getPipeliningLimit());
+    assertEquals(http2MaxPoolSize, options.getHttp2MaxPoolSize());
+    assertEquals(http2MultiplexingLimit, options.getHttp2MultiplexingLimit());
     assertEquals(tryUseCompression, options.isTryUseCompression());
     assertEquals(protocolVersion, options.getProtocolVersion());
     assertEquals(maxWaitQueueSize, options.getMaxWaitQueueSize());

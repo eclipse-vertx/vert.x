@@ -382,11 +382,14 @@ public class HttpClientOptions extends ClientOptionsBase {
    * Setting the value to {@code -1} means to use the value sent by the server's initial settings.
    * {@code -1} is the default value.
    *
-   * @param http2MultiplexingLimit the maximum concurrent for an HTTP/2 connection
+   * @param limit the maximum concurrent for an HTTP/2 connection
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setHttp2MultiplexingLimit(int http2MultiplexingLimit) {
-    this.http2MultiplexingLimit = http2MultiplexingLimit;
+  public HttpClientOptions setHttp2MultiplexingLimit(int limit) {
+    if (limit < 1) {
+      throw new IllegalArgumentException("maxPoolSize must be > 0");
+    }
+    this.http2MultiplexingLimit = limit;
     return this;
   }
 
@@ -406,7 +409,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2MaxPoolSize(int max) {
-    if (maxPoolSize < 1) {
+    if (max < 1) {
       throw new IllegalArgumentException("http2MaxPoolSize must be > 0");
     }
     this.http2MaxPoolSize = max;
@@ -463,11 +466,14 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set the limit of pending requests a pipe-lined HTTP/1 connection can send.
    *
-   * @param pipeliningLimit the limit of pending requests
+   * @param limit the limit of pending requests
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setPipeliningLimit(int pipeliningLimit) {
-    this.pipeliningLimit = pipeliningLimit;
+  public HttpClientOptions setPipeliningLimit(int limit) {
+    if (limit < 1) {
+      throw new IllegalArgumentException("pipeliningLimit must be > 0");
+    }
+    this.pipeliningLimit = limit;
     return this;
   }
 
@@ -728,6 +734,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (http2MultiplexingLimit != that.http2MultiplexingLimit) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
     if (pipelining != that.pipelining) return false;
+    if (pipeliningLimit != that.pipeliningLimit) return false;
     if (tryUseCompression != that.tryUseCompression) return false;
     if (verifyHost != that.verifyHost) return false;
     if (!defaultHost.equals(that.defaultHost)) return false;
@@ -749,6 +756,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + http2MultiplexingLimit;
     result = 31 * result + (keepAlive ? 1 : 0);
     result = 31 * result + (pipelining ? 1 : 0);
+    result = 31 * result + pipeliningLimit;
     result = 31 * result + (tryUseCompression ? 1 : 0);
     result = 31 * result + maxWebsocketFrameSize;
     result = 31 * result + defaultHost.hashCode();
