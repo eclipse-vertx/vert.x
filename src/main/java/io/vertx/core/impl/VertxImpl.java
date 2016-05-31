@@ -365,10 +365,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (options.getMetricsOptions() != null && options.getMetricsOptions().isEnabled()) {
       VertxMetricsFactory factory = options.getMetricsOptions().getFactory();
       if (factory == null) {
-        ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
-        if (factories.iterator().hasNext()) {
-          factory = factories.iterator().next();
-        } else {
+        factory = ServiceHelper.loadFactoryOrNull(VertxMetricsFactory.class);
+        if (factory == null) {
           log.warn("Metrics has been set to enabled but no VertxMetricsFactory found on classpath");
         }
       }
@@ -392,16 +390,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
           // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
           try {
             Class<?> clazz = Class.forName(clusterManagerClassName);
-            mgr = (ClusterManager)clazz.newInstance();
+            mgr = (ClusterManager) clazz.newInstance();
           } catch (Exception e) {
             throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
           }
         } else {
-          ServiceLoader<ClusterManager> mgrs = ServiceLoader.load(ClusterManager.class);
-          if (!mgrs.iterator().hasNext()) {
+          mgr = ServiceHelper.loadFactoryOrNull(ClusterManager.class);
+          if (mgr == null) {
             throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
           }
-          mgr = mgrs.iterator().next();
         }
         return mgr;
       }
@@ -424,7 +421,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public static Context context() {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
-      return ((VertxThread)current).getContext();
+      return ((VertxThread) current).getContext();
     }
     return null;
   }
@@ -450,7 +447,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (clusterManager != null) {
       // Workaround fo Hazelcast bug https://github.com/hazelcast/hazelcast/issues/5220
       if (clusterManager instanceof ExtendedClusterManager) {
-        ExtendedClusterManager ecm = (ExtendedClusterManager)clusterManager;
+        ExtendedClusterManager ecm = (ExtendedClusterManager) clusterManager;
         ecm.beforeLeave();
       }
       clusterManager.leave(ar -> {

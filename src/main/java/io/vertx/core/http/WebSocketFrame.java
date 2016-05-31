@@ -106,5 +106,5 @@ public interface WebSocketFrame {
    */
   boolean isFinal();
 
-  static final WebSocketFrameFactory factory = ServiceHelper.loadFactory(WebSocketFrameFactory.class);
+  WebSocketFrameFactory factory = ServiceHelper.loadFactory(WebSocketFrameFactory.class);
 }
