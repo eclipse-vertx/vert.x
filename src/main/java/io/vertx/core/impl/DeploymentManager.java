@@ -52,10 +52,8 @@ public class DeploymentManager {
   }
 
   private void loadVerticleFactories() {
-    ServiceLoader<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
-    for (VerticleFactory factory: factories) {
-      registerVerticleFactory(factory);
-    }
+    Collection<VerticleFactory> factories = ServiceHelper.loadFactories(VerticleFactory.class);
+    factories.forEach(this::registerVerticleFactory);
     VerticleFactory defaultFactory = new JavaVerticleFactory();
     defaultFactory.init(vertx);
     defaultFactories.add(defaultFactory);

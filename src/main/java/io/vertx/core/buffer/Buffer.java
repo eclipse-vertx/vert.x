@@ -697,6 +697,6 @@ public interface Buffer extends ClusterSerializable {
   @GenIgnore
   ByteBuf getByteBuf();
 
-  static final BufferFactory factory = ServiceHelper.loadFactory(BufferFactory.class);
+  BufferFactory factory = ServiceHelper.loadFactory(BufferFactory.class);
 
 }

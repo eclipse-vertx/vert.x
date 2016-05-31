@@ -305,6 +305,6 @@ public interface Future<T> extends AsyncResult<T> {
     };
   }
 
-  static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
+  FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 
 }

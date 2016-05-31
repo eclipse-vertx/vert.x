@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.fail;
 
 public class ServiceCommandLoaderTest {
 
-  ServiceCommandFactoryLoader loader = new ServiceCommandFactoryLoader();
+  private ServiceCommandFactoryLoader loader = new ServiceCommandFactoryLoader();
 
   @Test
   public void testLookup() throws Exception {
@@ -56,8 +56,10 @@ public class ServiceCommandLoaderTest {
   @Test
   public void testNoCommandsWhenLoadedFromEmptyClassloader() {
     ClassLoader classLoader = new URLClassLoader(new URL[0], null);
+
+    // We see the implementation from the classpath
     loader = new ServiceCommandFactoryLoader(classLoader);
-    assertThat(loader.lookup()).isEmpty();
+    assertThat(loader.lookup()).isNotEmpty();
   }
 
 
