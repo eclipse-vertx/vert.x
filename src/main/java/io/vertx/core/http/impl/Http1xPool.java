@@ -83,38 +83,34 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
   // Called when the request has ended
   public void recycle(ClientConnection conn) {
-    synchronized (queue) {
-      if (pipelining) {
-        doRecycle(conn);
-      }
+    if (pipelining) {
+      doRecycle(conn);
     }
   }
 
   // Called when the response has ended
-  public synchronized void responseEnded(ClientConnection conn, boolean close) {
-    synchronized (queue) {
-      if ((pipelining || keepAlive) && !close) {
-        if (conn.getCurrentRequest() == null) {
-          doRecycle(conn);
-        }
-      } else {
-        // Close it now
-        conn.close();
-      }
+  public void responseEnded(ClientConnection conn, boolean close) {
+    if ((pipelining || keepAlive) && !close && conn.getCurrentRequest() == null) {
+      doRecycle(conn);
+    } else {
+      // Close it now
+      conn.close();
     }
   }
 
   private void doRecycle(ClientConnection conn) {
-    Waiter waiter = queue.getNextWaiter();
-    if (waiter != null) {
-      Context context = waiter.context;
-      if (context == null) {
-        context = conn.getContext();
+    synchronized (queue) {
+      Waiter waiter = queue.getNextWaiter();
+      if (waiter != null) {
+        Context context = waiter.context;
+        if (context == null) {
+          context = conn.getContext();
+        }
+        context.runOnContext(v -> queue.deliverStream(conn, waiter));
+      } else if (conn.getOutstandingRequestCount() == 0) {
+        // Return to set of available from here to not return it several times
+        availableConnections.add(conn);
       }
-      context.runOnContext(v -> queue.deliverStream(conn, waiter));
-    } else if (conn.getOutstandingRequestCount() == 0) {
-      // Return to set of available from here to not return it several times
-      availableConnections.add(conn);
     }
   }
 
