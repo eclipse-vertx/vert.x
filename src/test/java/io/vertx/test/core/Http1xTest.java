@@ -38,6 +38,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.*;
@@ -885,7 +886,9 @@ public class Http1xTest extends HttpTest {
         // (requests + 1 / 2) connect attempts
         if (count % 2 == 1) {
           req.setTimeout(responseDelay / 2);
-          req.exceptionHandler(ex -> latch.countDown());
+          req.exceptionHandler(ex -> {
+            latch.countDown();
+          });
         }
         req.end();
       }
@@ -946,6 +949,57 @@ public class Http1xTest extends HttpTest {
 
     awaitLatch(latch);
 
+  }
+
+  @Test
+  public void testPipeliningLimit() throws Exception {
+    int limit = 25;
+    int requests = limit * 4;
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().
+        setKeepAlive(true).
+        setPipelining(true).
+        setPipeliningLimit(limit).
+        setMaxPoolSize(1));
+    AtomicInteger count = new AtomicInteger();
+    String data = "GET /somepath HTTP/1.1\r\n" +
+        "Host: localhost:8080\r\n" +
+        "\r\n";
+    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST));
+    server.connectHandler(so -> {
+      StringBuilder total = new StringBuilder();
+      so.handler(buff -> {
+        total.append(buff);
+        while (total.indexOf(data) == 0) {
+          total.delete(0, data.length());
+          if (count.incrementAndGet() == limit) {
+            vertx.setTimer(100, timerID -> {
+              assertEquals(limit, count.get());
+              count.set(0);
+              for (int i = 0;i < limit;i++) {
+                so.write("HTTP/1.1 200 OK\r\nContent-Length : 0\r\n\r\n");
+              }
+            });
+          }
+        }
+      });
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(v -> {
+      listenLatch.countDown();
+    }));
+    awaitLatch(listenLatch);
+
+    AtomicInteger responses = new AtomicInteger();
+    for (int i = 0;i < requests;i++) {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        assertEquals(200, resp.statusCode());
+        if (responses.incrementAndGet() == requests) {
+          testComplete();
+        }
+      });
+    }
+    await();
   }
 
   @Test
@@ -1579,30 +1633,50 @@ public class Http1xTest extends HttpTest {
     awaitLatch(serverLatch);
     CountDownLatch req1Latch = new CountDownLatch(1);
     AtomicReference<Context> c = new AtomicReference<>();
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", res -> {
+    HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1");
+    req1.handler(res -> {
       c.set(Vertx.currentContext());
       res.endHandler(v -> req1Latch.countDown());
     });
+    req1.end();
+    Consumer<HttpClientRequest> checker = req -> {
+      if (req1.connection() == req.connection()) {
+        assertSame(Vertx.currentContext(), c.get());
+      } else {
+        // This may happen sometimes if the connection
+      }
+    };
     awaitLatch(req1Latch);
     CountDownLatch req2Latch = new CountDownLatch(2);
-    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", res -> {
-      assertSame(Vertx.currentContext(), c.get());
+    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2");
+    req2.handler(res -> {
+      checker.accept(req2);
       req2Latch.countDown();
-    }).exceptionHandler(this::fail).sendHead();
-    HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3", res -> {
-      assertSame(Vertx.currentContext(), c.get());
+    }).exceptionHandler(err -> {
+      fail(err);
+    }).sendHead();
+    HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3");
+    req3.handler(res -> {
+      checker.accept(req3);
       req2Latch.countDown();
-    }).exceptionHandler(this::fail);
+    }).exceptionHandler(err -> {
+      fail(err);
+    });
     req3.end();
     req2.end();
     awaitLatch(req2Latch);
     vertx.getOrCreateContext().runOnContext(v -> {
-      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4", res -> {
+      HttpClientRequest req4 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4");
+      req4.handler(res -> {
         // This should warn in the log (console) as we are called back on the connection context
         // and not on the context doing the request
-        assertSame(Vertx.currentContext(), c.get());
+        checker.accept(req4);
         testComplete();
       });
+      req4.exceptionHandler(err -> {
+        fail(err);
+      });
+      req4.end();
     });
     await();
   }

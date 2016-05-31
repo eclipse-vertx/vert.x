@@ -47,8 +47,8 @@ public class HttpClientOptionsConverter {
     if (json.getValue("http2MaxPoolSize") instanceof Number) {
       obj.setHttp2MaxPoolSize(((Number)json.getValue("http2MaxPoolSize")).intValue());
     }
-    if (json.getValue("http2MaxStreams") instanceof Number) {
-      obj.setHttp2MaxStreams(((Number)json.getValue("http2MaxStreams")).intValue());
+    if (json.getValue("http2MultiplexingLimit") instanceof Number) {
+      obj.setHttp2MultiplexingLimit(((Number)json.getValue("http2MultiplexingLimit")).intValue());
     }
     if (json.getValue("initialSettings") instanceof JsonObject) {
       obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
@@ -70,6 +70,9 @@ public class HttpClientOptionsConverter {
     }
     if (json.getValue("pipelining") instanceof Boolean) {
       obj.setPipelining((Boolean)json.getValue("pipelining"));
+    }
+    if (json.getValue("pipeliningLimit") instanceof Number) {
+      obj.setPipeliningLimit(((Number)json.getValue("pipeliningLimit")).intValue());
     }
     if (json.getValue("protocolVersion") instanceof String) {
       obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)json.getValue("protocolVersion")));
@@ -96,7 +99,7 @@ public class HttpClientOptionsConverter {
     json.put("defaultPort", obj.getDefaultPort());
     json.put("h2cUpgrade", obj.isH2cUpgrade());
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
-    json.put("http2MaxStreams", obj.getHttp2MaxStreams());
+    json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
@@ -106,6 +109,7 @@ public class HttpClientOptionsConverter {
     json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("pipelining", obj.isPipelining());
+    json.put("pipeliningLimit", obj.getPipeliningLimit());
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }

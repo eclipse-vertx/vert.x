@@ -668,7 +668,7 @@ Set to <code>true</code> when an <i>h2c</i> connection is established using an H
 +++
 Set the maximum pool size for HTTP/2 connections
 +++
-|[[http2MaxStreams]]`http2MaxStreams`|`Number (int)`|
+|[[http2MultiplexingLimit]]`http2MultiplexingLimit`|`Number (int)`|
 +++
 Set a client limit of the number concurrent streams for each HTTP/2 connection, this limits the number
  of streams the client can create for a connection. The effective number of streams for a
@@ -739,6 +739,10 @@ Set the trust options in pfx format
 |[[pipelining]]`pipelining`|`Boolean`|
 +++
 Set whether pipe-lining is enabled on the client
++++
+|[[pipeliningLimit]]`pipeliningLimit`|`Number (int)`|
++++
+Set the limit of pending requests a pipe-lined HTTP/1 connection can send.
 +++
 |[[protocolVersion]]`protocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|
 +++
