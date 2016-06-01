@@ -1682,11 +1682,8 @@ public class Http1xTest extends HttpTest {
     });
     req1.end();
     Consumer<HttpClientRequest> checker = req -> {
-      if (req1.connection() == req.connection()) {
-        assertSame(Vertx.currentContext(), c.get());
-      } else {
-        // This may happen sometimes if the connection
-      }
+      assertSame(Vertx.currentContext(), c.get());
+      assertSame(req1.connection(), req.connection());
     };
     awaitLatch(req1Latch);
     CountDownLatch req2Latch = new CountDownLatch(2);
