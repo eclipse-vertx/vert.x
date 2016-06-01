@@ -15,13 +15,13 @@
  */
 package io.vertx.core.impl.launcher;
 
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.spi.launcher.CommandFactory;
 import io.vertx.core.spi.launcher.CommandFactoryLookup;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ServiceLoader;
 
 /**
  * Looks for command factories using a service loader.
@@ -30,28 +30,28 @@ import java.util.ServiceLoader;
  */
 public class ServiceCommandFactoryLoader implements CommandFactoryLookup {
 
-  private ServiceLoader<CommandFactory> loader;
+  private Collection<CommandFactory> commands;
 
   /**
    * Creates a new instance of {@link ServiceCommandFactoryLoader} using the classloader having loaded the
    * {@link ServiceCommandFactoryLoader} class.
    */
   public ServiceCommandFactoryLoader() {
-    this.loader = ServiceLoader.load(CommandFactory.class, getClass().getClassLoader());
+    this.commands = ServiceHelper.loadFactories(CommandFactory.class, getClass().getClassLoader());
   }
 
   /**
    * Creates a new instance of {@link ServiceCommandFactoryLoader} using specified classloader.
    */
   public ServiceCommandFactoryLoader(ClassLoader loader) {
-    this.loader = ServiceLoader.load(CommandFactory.class, loader);
+    this.commands = ServiceHelper.loadFactories(CommandFactory.class, loader);
   }
 
   @Override
   public Collection<CommandFactory<?>> lookup() {
-    List<CommandFactory<?>> commands = new ArrayList<>();
-    loader.forEach(commands::add);
-    return commands;
+    List<CommandFactory<?>> list = new ArrayList<>();
+    commands.stream().forEach(list::add);
+    return list;
   }
 
 }

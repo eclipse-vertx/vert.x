@@ -41,6 +41,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   private final Map<Channel, HttpClientConnection> connectionMap;
   private final boolean pipelining;
   private final boolean keepAlive;
+  private final int pipeliningLimit;
   private final boolean ssl;
   private final HttpVersion version;
   private final Set<ClientConnection> allConnections = new HashSet<>();
@@ -55,6 +56,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     this.metrics = metrics;
     this.pipelining = options.isPipelining();
     this.keepAlive = options.isKeepAlive();
+    this.pipeliningLimit = options.getPipeliningLimit();
     this.ssl = options.isSsl();
     this.connectionMap = connectionMap;
     this.maxSockets = maxSockets;
@@ -81,32 +83,11 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     return conn;
   }
 
-  // Called when the request has ended
   public void recycle(ClientConnection conn) {
-    if (pipelining) {
-      doRecycle(conn);
-    }
-  }
-
-  // Called when the response has ended
-  public void responseEnded(ClientConnection conn, boolean close) {
-    if ((pipelining || keepAlive) && !close && conn.getCurrentRequest() == null) {
-      doRecycle(conn);
-    } else {
-      // Close it now
-      conn.close();
-    }
-  }
-
-  private void doRecycle(ClientConnection conn) {
     synchronized (queue) {
       Waiter waiter = queue.getNextWaiter();
       if (waiter != null) {
-        Context context = waiter.context;
-        if (context == null) {
-          context = conn.getContext();
-        }
-        context.runOnContext(v -> queue.deliverStream(conn, waiter));
+        queue.deliverStream(conn, waiter);
       } else if (conn.getOutstandingRequestCount() == 0) {
         // Return to set of available from here to not return it several times
         availableConnections.add(conn);
@@ -114,10 +95,31 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     }
   }
 
+  void requestEnded(ClientConnection conn) {
+    ContextImpl context = conn.getContext();
+    context.runOnContext(v -> {
+      if (pipelining && conn.getOutstandingRequestCount() < pipeliningLimit) {
+        recycle(conn);
+      }
+    });
+  }
+
+  void responseEnded(ClientConnection conn, boolean close) {
+    if (!keepAlive || close) {
+      conn.close();
+    } else {
+      ContextImpl ctx = conn.getContext();
+      ctx.runOnContext(v -> {
+        if (conn.getCurrentRequest() == null) {
+          recycle(conn);
+        }
+      });
+    }
+  }
+
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
     ClientConnection conn = new ClientConnection(version, client, queue.metric, ch,
         ssl, host, port, context, this, metrics);
-    conn.exceptionHandler(waiter::handleFailure);
     metrics.endpointConnected(queue.metric, conn.metric());
     ClientHandler handler = ch.pipeline().get(ClientHandler.class);
     handler.conn = conn;

@@ -101,7 +101,7 @@ public interface Pump {
    */
   int numberPumped();
 
-  static final PumpFactory factory = ServiceHelper.loadFactory(PumpFactory.class);
+  PumpFactory factory = ServiceHelper.loadFactory(PumpFactory.class);
 
 
 }

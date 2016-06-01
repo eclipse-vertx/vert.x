@@ -308,13 +308,6 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       metrics.responseBegin(requestForResponse.metric(), nResp);
     }
     requestForResponse.handleResponse(nResp);
-    DecoderResult decoderResult = resp.decoderResult();
-    if(decoderResult.isFailure()) {
-      handleException(decoderResult.cause());
-      // Close the connection as Netty's HttpResponseDecoder will not try further processing
-      // see https://github.com/netty/netty/issues/3362
-      close();
-    }
   }
 
   public void doPause() {
@@ -499,8 +492,13 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     super.handleException(e);
     if (currentRequest != null) {
       currentRequest.handleException(e);
-    } else if (currentResponse != null) {
-      currentResponse.handleException(e);
+    } else {
+      HttpClientRequestImpl req = requests.poll();
+      if (req != null) {
+        req.handleException(e);
+      } else if (currentResponse != null) {
+        currentResponse.handleException(e);
+      }
     }
   }
 
@@ -524,7 +522,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       metrics.requestEnd(currentRequest.metric());
     }
     currentRequest = null;
-    pool.recycle(this);
+    pool.requestEnded(this);
   }
 
   @Override

@@ -87,7 +87,7 @@ public class ConnectionManager {
     this.keepAlive = client.getOptions().isKeepAlive();
     this.pipelining = client.getOptions().isPipelining();
     this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
-    this.http2MaxConcurrency = options.getHttp2MaxStreams() < 1 ? Integer.MAX_VALUE : options.getHttp2MaxStreams();
+    this.http2MaxConcurrency = options.getHttp2MultiplexingLimit() < 1 ? Integer.MAX_VALUE : options.getHttp2MultiplexingLimit();
     this.logEnabled = client.getOptions().getLogActivity();
     this.connector = new ChannelConnector();
     this.metrics = metrics;

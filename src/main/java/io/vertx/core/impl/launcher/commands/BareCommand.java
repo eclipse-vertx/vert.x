@@ -15,10 +15,7 @@
  */
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
 import io.vertx.core.metrics.MetricsOptions;
@@ -32,7 +29,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.Properties;
-import java.util.ServiceLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -231,9 +227,8 @@ public class BareCommand extends ClasspathHandler {
    */
   protected MetricsOptions getMetricsOptions() {
     MetricsOptions metricsOptions;
-    ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
-    if (factories.iterator().hasNext()) {
-      VertxMetricsFactory factory = factories.iterator().next();
+    VertxMetricsFactory factory = ServiceHelper.loadFactoryOrNull(VertxMetricsFactory.class);
+    if (factory != null) {
       metricsOptions = factory.newOptions();
     } else {
       metricsOptions = new MetricsOptions();
