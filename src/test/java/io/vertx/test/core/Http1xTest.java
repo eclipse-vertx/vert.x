@@ -2090,16 +2090,16 @@ public class Http1xTest extends HttpTest {
           content.delete(0, match.length());
           switch (count.getAndIncrement()) {
             case 0:
-              // Send an invalid response
               sendResp.thenAccept(v -> {
-                so.write(Buffer.buffer(TestUtils.randomAlphaString(40) + "\r\n"));
               });
               break;
             case 1:
+              // Send an invalid response
+              Buffer resp1 = Buffer.buffer(TestUtils.randomAlphaString(40) + "\r\n");
               // Send a valid response even though it will be ignored by Netty decoder
-              sendResp.thenAccept(v -> {
-                so.write(Buffer.buffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"));
-              });
+              Buffer resp2 = Buffer.buffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+              // Send at once
+              so.write(Buffer.buffer().appendBuffer(resp1).appendBuffer(resp2));
               break;
             default:
               fail();
@@ -2114,13 +2114,12 @@ public class Http1xTest extends HttpTest {
 
       AtomicBoolean fail1 = new AtomicBoolean();
       HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        assertEquals(999, resp.statusCode()); // Netty specific for invalid responses
-        resp.exceptionHandler(err -> {
-          if (fail1.compareAndSet(false, true)) {
-            assertEquals(IllegalArgumentException.class, err.getClass()); // invalid version format
-            complete();
-          }
-        });
+        fail();
+      }).exceptionHandler(err -> {
+        if (fail1.compareAndSet(false, true)) {
+          assertEquals(IllegalArgumentException.class, err.getClass()); // invalid version format
+          complete();
+        }
       });
 
       AtomicBoolean fail2 = new AtomicBoolean();
@@ -2138,12 +2137,35 @@ public class Http1xTest extends HttpTest {
 
       req1.end();
       req2.end();
-      sendResp.complete(null);
     }));
 
     await();
   }
 
+  @Test
+  public void testHandleInvalid204Response() throws Exception {
+    int numReq = 3;
+    waitFor(3);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setKeepAlive(true).setMaxPoolSize(1));
+    List<HttpServerRequest> received = new ArrayList<>();
+    vertx.createHttpServer().requestHandler(r -> {
+      // Generate an invalid response for the pipe-lined
+      r.response().setChunked(true).setStatusCode(204).end();
+    }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
+      for (int i = 0;i < numReq;i++) {
+        HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+        post.handler(r -> {
+          r.endHandler(v2 -> {
+            complete();
+          });
+        }).exceptionHandler(err -> {
+          complete();
+        }).end();
+      }
+    }));
+    await();
+  }
 
   @Test
   public void testConnectionCloseHttp_1_0_NoClose() throws Exception {

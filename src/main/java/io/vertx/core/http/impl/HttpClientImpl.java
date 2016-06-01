@@ -756,9 +756,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         this.handler = handler;
         checkClosed();
         ContextImpl context = vertx.getOrCreateContext();
-        Handler<Throwable> connectionExceptionHandler = exceptionHandler;
-        if (connectionExceptionHandler == null) {
+        Handler<Throwable> connectionExceptionHandler;
+        if (exceptionHandler == null) {
           connectionExceptionHandler = log::error;
+        } else {
+          connectionExceptionHandler = exceptionHandler;
         }
         Handler<WebSocket> wsConnect;
         if (endHandler != null) {
@@ -771,6 +773,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           wsConnect = handler;
         }
         getConnectionForWebsocket(port, host, conn -> {
+          conn.exceptionHandler(connectionExceptionHandler);
           if (conn.isValid()) {
             conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
           } else {
