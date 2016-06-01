@@ -53,7 +53,7 @@ public class AddressResolver {
 
   public AddressResolver(VertxImpl vertx, AddressResolverOptions options) {
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder(vertx.createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
-    builder.channelFactory(NioDatagramChannel::new);
+    builder.channelType(NioDatagramChannel.class);
     if (options != null) {
       List<String> dnsServers = options.getServers();
       if (dnsServers != null && dnsServers.size() > 0) {
