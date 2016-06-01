@@ -524,7 +524,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       metrics.requestEnd(currentRequest.metric());
     }
     currentRequest = null;
-    pool.recycle(this);
+    pool.requestEnded(this);
   }
 
   @Override

@@ -285,7 +285,7 @@ public class HTTP2Examples {
   public void useMaxStreams(Vertx vertx) {
 
     HttpClientOptions clientOptions = new HttpClientOptions().
-        setHttp2MaxStreams(10).
+        setHttp2MultiplexingLimit(10).
         setHttp2MaxPoolSize(3);
 
     // Uses up to 3 connections and up to 10 streams per connection

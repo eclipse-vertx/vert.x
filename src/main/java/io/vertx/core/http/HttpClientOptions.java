@@ -42,7 +42,7 @@ import java.util.List;
 public class HttpClientOptions extends ClientOptionsBase {
 
   /**
-   * The default maximum number of connections a client will pool = 5
+   * The default maximum number of HTTP/1 connections a client will pool = 5
    */
   public static final int DEFAULT_MAX_POOL_SIZE = 5;
 
@@ -52,9 +52,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_HTTP2_MAX_POOL_SIZE = 1;
 
   /**
-   * The default maximum number of concurrent stream per connection for HTTP/2 = -1
+   * The default maximum number of concurrent streams per connection for HTTP/2 = -1
    */
-  public static final int DEFAULT_HTTP2_MAX_STREAMS = -1;
+  public static final int DEFAULT_HTTP2_MULTIPLEXING_LIMIT = -1;
 
   /**
    * Default value of whether keep-alive is enabled = true
@@ -65,6 +65,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    * Default value of whether pipe-lining is enabled = false
    */
   public static final boolean DEFAULT_PIPELINING = false;
+
+  /**
+   * The default maximum number of requests an HTTP/1.1 pipe-lined connection can send = 10
+   */
+  public static final int DEFAULT_PIPELINING_LIMIT = 10;
 
   /**
    * Default value of whether the client will attempt to use compression = false
@@ -119,9 +124,10 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
+  private int pipeliningLimit;
   private boolean pipelining;
   private int http2MaxPoolSize;
-  private int http2MaxStreams;
+  private int http2MultiplexingLimit;
 
   private boolean tryUseCompression;
   private int maxWebsocketFrameSize;
@@ -153,8 +159,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
     this.pipelining = other.isPipelining();
+    this.pipeliningLimit = other.getPipeliningLimit();
     this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
-    this.http2MaxStreams = other.http2MaxStreams;
+    this.http2MultiplexingLimit = other.http2MultiplexingLimit;
     this.tryUseCompression = other.isTryUseCompression();
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
     this.defaultHost = other.defaultHost;
@@ -183,7 +190,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
     pipelining = DEFAULT_PIPELINING;
-    http2MaxStreams = DEFAULT_HTTP2_MAX_STREAMS;
+    pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
+    http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
     http2MaxPoolSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
@@ -362,8 +370,8 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the maximum number of concurrent streams for an HTTP/2 connection, {@code -1} means
    * the value sent by the server
    */
-  public int getHttp2MaxStreams() {
-    return http2MaxStreams;
+  public int getHttp2MultiplexingLimit() {
+    return http2MultiplexingLimit;
   }
 
   /**
@@ -374,11 +382,14 @@ public class HttpClientOptions extends ClientOptionsBase {
    * Setting the value to {@code -1} means to use the value sent by the server's initial settings.
    * {@code -1} is the default value.
    *
-   * @param http2MaxStreams the maximum concurrent for an HTTP/2 connection
+   * @param limit the maximum concurrent for an HTTP/2 connection
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setHttp2MaxStreams(int http2MaxStreams) {
-    this.http2MaxStreams = http2MaxStreams;
+  public HttpClientOptions setHttp2MultiplexingLimit(int limit) {
+    if (limit < 1) {
+      throw new IllegalArgumentException("maxPoolSize must be > 0");
+    }
+    this.http2MultiplexingLimit = limit;
     return this;
   }
 
@@ -398,7 +409,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2MaxPoolSize(int max) {
-    if (maxPoolSize < 1) {
+    if (max < 1) {
       throw new IllegalArgumentException("http2MaxPoolSize must be > 0");
     }
     this.http2MaxPoolSize = max;
@@ -442,6 +453,27 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setPipelining(boolean pipelining) {
     this.pipelining = pipelining;
+    return this;
+  }
+
+  /**
+   * @return the limit of pending requests a pipe-lined HTTP/1 connection can send
+   */
+  public int getPipeliningLimit() {
+    return pipeliningLimit;
+  }
+
+  /**
+   * Set the limit of pending requests a pipe-lined HTTP/1 connection can send.
+   *
+   * @param limit the limit of pending requests
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setPipeliningLimit(int limit) {
+    if (limit < 1) {
+      throw new IllegalArgumentException("pipeliningLimit must be > 0");
+    }
+    this.pipeliningLimit = limit;
     return this;
   }
 
@@ -699,9 +731,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (defaultPort != that.defaultPort) return false;
     if (keepAlive != that.keepAlive) return false;
     if (maxPoolSize != that.maxPoolSize) return false;
-    if (http2MaxStreams != that.http2MaxStreams) return false;
+    if (http2MultiplexingLimit != that.http2MultiplexingLimit) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
     if (pipelining != that.pipelining) return false;
+    if (pipeliningLimit != that.pipeliningLimit) return false;
     if (tryUseCompression != that.tryUseCompression) return false;
     if (verifyHost != that.verifyHost) return false;
     if (!defaultHost.equals(that.defaultHost)) return false;
@@ -720,9 +753,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     int result = super.hashCode();
     result = 31 * result + (verifyHost ? 1 : 0);
     result = 31 * result + maxPoolSize;
-    result = 31 * result + http2MaxStreams;
+    result = 31 * result + http2MultiplexingLimit;
     result = 31 * result + (keepAlive ? 1 : 0);
     result = 31 * result + (pipelining ? 1 : 0);
+    result = 31 * result + pipeliningLimit;
     result = 31 * result + (tryUseCompression ? 1 : 0);
     result = 31 * result + maxWebsocketFrameSize;
     result = 31 * result + defaultHost.hashCode();

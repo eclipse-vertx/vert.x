@@ -70,10 +70,8 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -1703,7 +1701,7 @@ public class Http2ClientTest extends Http2TestBase {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions(clientOptions).
         setHttp2MaxPoolSize(poolSize).
-        setHttp2MaxStreams(maxConcurrency));
+        setHttp2MultiplexingLimit(maxConcurrency));
     AtomicInteger respCount = new AtomicInteger();
 
     Set<HttpConnection> clientConnections = Collections.synchronizedSet(new HashSet<>());

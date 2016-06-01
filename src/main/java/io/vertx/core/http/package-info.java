@@ -1206,16 +1206,20 @@
  *
  * When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
  *
+ * The number of pipe-lined requests over a single connection is limited by {@link io.vertx.core.http.HttpClientOptions#setPipeliningLimit}.
+ * This option defines the maximum number of http requests sent to the server awaiting for a response. This limit ensures the
+ * fairness of the distribution of the client requests over the connections to the same server.
+ * 
  * === HTTP/2 multiplexing
  *
  * HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
- * connection for each server, all the streams to the same server are multiplexed on the same connection.
+ * connection for each server, all the streams to the same server are multiplexed over the same connection.
  *
  * When the clients needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.HttpClientOptions#setHttp2MaxPoolSize(int)}
  * shall be used.
  *
- * When it is desirable to limit the number of concurrent streams per server and use a connection
- * pool instead of a single connection, {@link io.vertx.core.http.HttpClientOptions#setHttp2MaxStreams(int)}
+ * When it is desirable to limit the number of multiplexed streams per connection and use a connection
+ * pool instead of a single connection, {@link io.vertx.core.http.HttpClientOptions#setHttp2MultiplexingLimit(int)}
  * can be used.
  *
  * [source,$lang]
@@ -1223,7 +1227,7 @@
  * {@link examples.HTTP2Examples#useMaxStreams}
  * ----
  *
- * The maximum streams for a connection is a setting set on the client that limits the streams
+ * The multiplexing limit for a connection is a setting set on the client that limits the number of streams
  * of a single connection. The effective value can be even lower if the server sets a lower limit
  * with the {@link io.vertx.core.http.Http2Settings#setMaxConcurrentStreams SETTINGS_MAX_CONCURRENT_STREAMS} setting.
  *
