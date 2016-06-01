@@ -120,7 +120,6 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
     ClientConnection conn = new ClientConnection(version, client, queue.metric, ch,
         ssl, host, port, context, this, metrics);
-    conn.exceptionHandler(waiter::handleFailure);
     metrics.endpointConnected(queue.metric, conn.metric());
     ClientHandler handler = ch.pipeline().get(ClientHandler.class);
     handler.conn = conn;
