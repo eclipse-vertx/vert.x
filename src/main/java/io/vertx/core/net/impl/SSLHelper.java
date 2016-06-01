@@ -17,12 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.handler.ssl.ApplicationProtocolConfig;
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
@@ -39,13 +34,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.TrustOptions;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.ManagerFactoryParameters;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -56,8 +45,6 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.net.ssl.SSLContext;
 
 /**
  *
@@ -111,6 +98,7 @@ public class SSLHelper {
   private String endpointIdentificationAlgorithm = "";
 
   private SslContext sslContext;
+  private boolean openSslSessionCacheEnabled = true;
 
   public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     this.ssl = options.isSsl();
@@ -141,6 +129,7 @@ public class SSLHelper {
     this.client = false;
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
+    this.openSslSessionCacheEnabled = options.isOpenSslSessionCacheEnabled();
   }
 
   public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -420,6 +409,12 @@ public class SSLHelper {
   public SslContext getContext(VertxInternal vertx) {
     if (sslContext == null) {
       sslContext = createContext(vertx);
+      if (sslContext instanceof OpenSslServerContext){
+        SSLSessionContext sslSessionContext = sslContext.sessionContext();
+        if (sslSessionContext instanceof OpenSslServerSessionContext){
+          ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(openSslSessionCacheEnabled);
+        }
+      }
     }
     return sslContext;
   }
