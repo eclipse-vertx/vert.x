@@ -396,17 +396,17 @@ public class HttpServerOptions extends NetServerOptions {
     return maxChunkSize;
   }
 
-  
+
   /**
    * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    */
   public int getMaxInitialLineLength() {
     return maxInitialLineLength;
   }
-	
+
   /**
    * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
-   * 
+   *
    * @param maxInitialLineLength the new maximum initial length
    * @return a reference to this, so the API can be used fluently
    */
@@ -414,14 +414,14 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxInitialLineLength = maxInitialLineLength;
     return this;
   }
-	
+
   /**
    * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
     return maxHeaderSize;
   }
-	
+
   /**
    * Set the maximum length of all headers for HTTP/1.x .
    *
