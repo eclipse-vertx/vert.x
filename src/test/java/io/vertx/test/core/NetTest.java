@@ -198,6 +198,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSslEngine(SSLEngine.OPENSSL));
     assertEquals(SSLEngine.OPENSSL, options.getSslEngine());
 
+    assertEquals(true, options.isOpenSslSessionCacheEnabled());
+    assertEquals(options, options.setOpenSslSessionCacheEnabled(false));
+    assertEquals(false, options.isOpenSslSessionCacheEnabled());
+
     testComplete();
   }
 
@@ -301,6 +305,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSslEngine(SSLEngine.OPENSSL));
     assertEquals(SSLEngine.OPENSSL, options.getSslEngine());
 
+    assertEquals(true, options.isOpenSslSessionCacheEnabled());
+    assertEquals(options, options.setOpenSslSessionCacheEnabled(false));
+    assertEquals(false, options.isOpenSslSessionCacheEnabled());
+
     testComplete();
   }
 
@@ -333,6 +341,8 @@ public class NetTest extends VertxTestBase {
     int reconnectAttempts = TestUtils.randomPositiveInt();
     long reconnectInterval = TestUtils.randomPositiveInt();
     boolean useAlpn = TestUtils.randomBoolean();
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
+
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -356,6 +366,8 @@ public class NetTest extends VertxTestBase {
     options.setUseAlpn(useAlpn);
     options.setSslEngine(sslEngine);
     options.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm);
+    options.setOpenSslSessionCacheEnabled(openSslSessionCacheEnabled);
+
     NetClientOptions copy = new NetClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -384,6 +396,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngine());
     assertEquals(hostnameVerificationAlgorithm, copy.getHostnameVerificationAlgorithm());
+    assertEquals(openSslSessionCacheEnabled, copy.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -404,6 +417,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngine(), json.getSslEngine());
     assertEquals(def.getHostnameVerificationAlgorithm(), json.getHostnameVerificationAlgorithm());
+    assertEquals(def.isOpenSslSessionCacheEnabled(), json.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -438,6 +452,7 @@ public class NetTest extends VertxTestBase {
     boolean useAlpn = TestUtils.randomBoolean();
     String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -460,7 +475,8 @@ public class NetTest extends VertxTestBase {
         .put("reconnectInterval", reconnectInterval)
         .put("useAlpn", useAlpn)
         .put("sslEngine", sslEngine.name())
-        .put("hostnameVerificationAlgorithm", hostnameVerificationAlgorithm);
+        .put("hostnameVerificationAlgorithm", hostnameVerificationAlgorithm)
+        .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
 
     NetClientOptions options = new NetClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -490,6 +506,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(useAlpn, options.isUseAlpn());
     assertEquals(sslEngine, options.getSslEngine());
     assertEquals(hostnameVerificationAlgorithm, options.getHostnameVerificationAlgorithm());
+    assertEquals(openSslSessionCacheEnabled, options.isOpenSslSessionCacheEnabled());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -536,7 +553,9 @@ public class NetTest extends VertxTestBase {
     String host = TestUtils.randomAlphaString(100);
     int acceptBacklog = TestUtils.randomPortInt();
     boolean useAlpn = TestUtils.randomBoolean();
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
+
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
     options.setReuseAddress(reuseAddress);
@@ -557,6 +576,8 @@ public class NetTest extends VertxTestBase {
     options.setAcceptBacklog(acceptBacklog);
     options.setUseAlpn(useAlpn);
     options.setSslEngine(sslEngine);
+    options.setOpenSslSessionCacheEnabled(openSslSessionCacheEnabled);
+
     NetServerOptions copy = new NetServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -583,6 +604,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(acceptBacklog, copy.getAcceptBacklog());
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngine());
+    assertEquals(openSslSessionCacheEnabled, copy.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -608,6 +630,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngine(), json.getSslEngine());
+    assertEquals(def.isOpenSslSessionCacheEnabled(), json.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -639,6 +662,7 @@ public class NetTest extends VertxTestBase {
     String host = TestUtils.randomAlphaString(100);
     int acceptBacklog = TestUtils.randomPortInt();
     boolean useAlpn = TestUtils.randomBoolean();
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
 
     JsonObject json = new JsonObject();
@@ -660,7 +684,8 @@ public class NetTest extends VertxTestBase {
       .put("host", host)
       .put("acceptBacklog", acceptBacklog)
       .put("useAlpn", useAlpn)
-      .put("sslEngine", sslEngine.name());
+      .put("sslEngine", sslEngine.name())
+      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
 
     NetServerOptions options = new NetServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -688,6 +713,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(acceptBacklog, options.getAcceptBacklog());
     assertEquals(useAlpn, options.isUseAlpn());
     assertEquals(sslEngine, options.getSslEngine());
+    assertEquals(openSslSessionCacheEnabled, options.isOpenSslSessionCacheEnabled());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

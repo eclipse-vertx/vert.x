@@ -79,11 +79,6 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final long DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS = 100;
 
-  /**
-   * Default value of whether session cache is enabled in open SSL session server context
-   */
-  public static final boolean DEFAULT_OPEN_SSL_SESSION_CACHE_ENABLED = true;
-
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -93,7 +88,6 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxHeaderSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
-  private boolean openSslSessionCacheEnabled;
 
   /**
    * Default constructor
@@ -120,7 +114,6 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
-    this.openSslSessionCacheEnabled = other.isOpenSslSessionCacheEnabled();
   }
 
   /**
@@ -144,7 +137,6 @@ public class HttpServerOptions extends NetServerOptions {
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
-    openSslSessionCacheEnabled = DEFAULT_OPEN_SSL_SESSION_CACHE_ENABLED;
   }
 
   @Override
@@ -334,26 +326,6 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * Set whether session cache is enabled in open SSL session server context
-   *
-   * @param sessionCacheEnabled true if session cache is enabled
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpServerOptions setOpenSslSessionCacheEnabled(boolean sessionCacheEnabled) {
-    this.openSslSessionCacheEnabled = sessionCacheEnabled;
-    return this;
-  }
-
-  /**
-  * Whether session cache is enabled in open SSL session server context
-  *
-  * @return true if session cache is enabled
-  */
-  public boolean isOpenSslSessionCacheEnabled() {
-    return openSslSessionCacheEnabled;
-  }
-
-    /**
    * @return  the maximum websocket framesize
    */
   public int getMaxWebsocketFrameSize() {
@@ -424,17 +396,17 @@ public class HttpServerOptions extends NetServerOptions {
     return maxChunkSize;
   }
 
-  
+
   /**
    * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    */
   public int getMaxInitialLineLength() {
     return maxInitialLineLength;
   }
-	
+
   /**
    * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
-   * 
+   *
    * @param maxInitialLineLength the new maximum initial length
    * @return a reference to this, so the API can be used fluently
    */
@@ -442,14 +414,14 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxInitialLineLength = maxInitialLineLength;
     return this;
   }
-	
+
   /**
    * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
     return maxHeaderSize;
   }
-	
+
   /**
    * Set the maximum length of all headers for HTTP/1.x .
    *
@@ -518,7 +490,6 @@ public class HttpServerOptions extends NetServerOptions {
     if (maxHeaderSize != that.maxHeaderSize) return false;
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
-    if (openSslSessionCacheEnabled != that.openSslSessionCacheEnabled) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
   }
 
@@ -534,7 +505,6 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + maxInitialLineLength;
     result = 31 * result + maxHeaderSize;
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
-    result = 31 * result + (openSslSessionCacheEnabled ? 1 : 0);
     return result;
   }
 }

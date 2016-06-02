@@ -115,6 +115,7 @@ public class SSLHelper {
     if (options.isVerifyHost()) {
       this.endpointIdentificationAlgorithm = "HTTPS";
     }
+    this.openSslSessionCacheEnabled = options.isOpenSslSessionCacheEnabled();
   }
 
   public SSLHelper(HttpServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -145,6 +146,7 @@ public class SSLHelper {
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
+    this.openSslSessionCacheEnabled = options.isOpenSslSessionCacheEnabled();
   }
 
   public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -159,6 +161,7 @@ public class SSLHelper {
     this.client = false;
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
+    this.openSslSessionCacheEnabled = options.isOpenSslSessionCacheEnabled();
   }
 
   public boolean isSSL() {

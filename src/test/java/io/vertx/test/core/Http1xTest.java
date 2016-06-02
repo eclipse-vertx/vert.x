@@ -394,6 +394,7 @@ public class Http1xTest extends HttpTest {
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean h2cUpgrade = TestUtils.randomBoolean();
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -427,6 +428,8 @@ public class Http1xTest extends HttpTest {
     options.setSslEngine(sslEngine);
     options.setAlpnVersions(alpnVersions);
     options.setH2cUpgrade(h2cUpgrade);
+    options.setOpenSslSessionCacheEnabled(openSslSessionCacheEnabled);
+
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -465,6 +468,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(sslEngine, copy.getSslEngine());
     assertEquals(alpnVersions, copy.getAlpnVersions());
     assertEquals(h2cUpgrade, copy.isH2cUpgrade());
+    assertEquals(openSslSessionCacheEnabled, copy.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -495,6 +499,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getSslEngine(), json.getSslEngine());
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
     assertEquals(def.isH2cUpgrade(), json.isH2cUpgrade());
+    assertEquals(def.isOpenSslSessionCacheEnabled(), json.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -539,6 +544,7 @@ public class Http1xTest extends HttpTest {
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean h2cUpgrade = rand.nextBoolean();
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -577,7 +583,8 @@ public class Http1xTest extends HttpTest {
       .put("useAlpn", useAlpn)
       .put("sslEngine", sslEngine.name())
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
-      .put("h2cUpgrade", h2cUpgrade);
+      .put("h2cUpgrade", h2cUpgrade)
+      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -617,6 +624,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(sslEngine, options.getSslEngine());
     assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(h2cUpgrade, options.isH2cUpgrade());
+    assertEquals(openSslSessionCacheEnabled, options.isOpenSslSessionCacheEnabled());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
