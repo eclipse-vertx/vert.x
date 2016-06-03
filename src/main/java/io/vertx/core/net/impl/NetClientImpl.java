@@ -164,7 +164,13 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     if (options.getProxyOptions() == null) {
       channelProvider = ChannelProvider.INSTANCE;
     } else {
-      channelProvider = ProxyChannelProvider.INSTANCE;
+      try {
+        channelProvider = ProxyChannelProvider.INSTANCE;
+      } catch (NoClassDefFoundError ex) {
+        log.warn("Dependency io.netty:netty-handler-proxy missing - check your classpath");
+        failed(context, null, ex, connectHandler);
+        return;
+      }
     }
 
     Handler<Channel> channelInitializer = ch -> {
