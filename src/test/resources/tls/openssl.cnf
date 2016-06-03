@@ -1,14 +1,14 @@
 [ ca ]
-default_ca      = CA_default
+default_ca      = CA_root
 
-[ CA_default ]
-new_certs_dir    = ca
-database         = ca/index.txt
+[ CA_root ]
+new_certs_dir    = root-ca
+database         = root-ca/index.txt
 default_md       = sha1
 policy           = policy_match
-serial           = ca/serial
+serial           = root-ca/serial
 default_days     = 365
-crlnumber        = ca/crlnumber
+crlnumber        = root-ca/crlnumber
 default_crl_days = 365
 
 [ policy_match ]
