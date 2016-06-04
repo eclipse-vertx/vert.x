@@ -42,8 +42,6 @@ openssl pkcs12 -in server-keystore.p12 -nokeys -out server-cert.pem
 
 
 
-
-
 # Signed by root CA server->client
 
 ## PEM signed by root CA
@@ -106,6 +104,35 @@ openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert r
 
 
 
+# Signed by intermediate CA server-client (i.e chain)
+
+## PEM signed by intermediate CA
+
+1) Create an intermediate CA database
+
+mkdir int-ca
+openssl req -x509 -newkey rsa:2048 -subj "/CN=localhost" -keyout int-ca/ca-key.pem -out int-ca/ca-cert.pem
+touch int-ca/index.txt
+echo 01 > int-ca/serial
+echo 1000 > int-ca/crlnumber
+echo "unique_subject = no" > int-ca/index.txt.attr
+
+2) Generate a Certificate Signing Request for the intermediate CA cert
+
+openssl req -new -sha256 -subj "/CN=localhost" -key int-ca/ca-key.pem -out int-ca/ca-csr.pem
+
+3) Sign the int CA cert with the root CA and convert it to the X.509 format
+
+openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -in int-ca/ca-csr.pem | openssl x509 -out int-ca/ca-cert-root-ca.pem -outform PEM
+
+3) Sign the server cert with the intermediate CA and convert it to the X.509 format
+
+openssl ca -config openssl.cnf -name CA_int -keyfile int-ca/ca-key.pem -cert int-ca/ca-cert.pem -in server-csr.pem | openssl x509 -out server-cert-int-ca.pem -outform PEM
+
+4) Create the server cert chain with the intermediate CA
+
+cat server-cert-int-ca.pem int-ca/ca-cert-root-ca.pem >server-cert-ca-chain.pem
+
 
 
 # Self signed client->server
@@ -145,7 +172,6 @@ openssl pkcs12 -in client-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM
 2) Extract the X.509 certificate from the PCS12 store
 
 openssl pkcs12 -in client-keystore.p12 -nokeys -out client-cert.pem
-
 
 
 

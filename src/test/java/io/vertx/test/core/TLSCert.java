@@ -15,6 +15,7 @@
  */
 package io.vertx.test.core;
 
+import io.netty.handler.codec.UnsupportedMessageTypeException;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -163,6 +164,46 @@ enum TLSCert {
     @Override
     KeyCertOptions getClientKeyCertOptions() {
       return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert-root-ca.pem");
+    }
+  },
+
+  // Signed by an intermediate CA
+  PEM_CA() {
+    @Override
+    KeyCertOptions getServerKeyCertOptions() {
+      return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-int-ca.pem");
+    }
+    @Override
+    TrustOptions getServerTrustOptions() {
+      return new PemTrustOptions().addCertPath("tls/int-ca/ca-cert.pem");
+    }
+    @Override
+    TrustOptions getClientTrustOptions() {
+      return new PemTrustOptions().addCertPath("tls/int-ca/ca-cert.pem");
+    }
+    @Override
+    KeyCertOptions getClientKeyCertOptions() {
+      throw new UnsupportedMessageTypeException();
+    }
+  },
+
+  // Signed by an intermediate CA using a chain
+  PEM_CA_CHAIN() {
+    @Override
+    KeyCertOptions getServerKeyCertOptions() {
+      return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-ca-chain.pem");
+    }
+    @Override
+    TrustOptions getServerTrustOptions() {
+      return new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
+    }
+    @Override
+    TrustOptions getClientTrustOptions() {
+      return new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
+    }
+    @Override
+    KeyCertOptions getClientKeyCertOptions() {
+      throw new UnsupportedMessageTypeException();
     }
   },
 

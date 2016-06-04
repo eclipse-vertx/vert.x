@@ -140,6 +140,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  // Server specifies cert chain that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEMRootCAWithPEMCAChain() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_CA_CHAIN, TLSCert.NONE).pass();
+  }
+
+  @Test
+  // Server specifies intermediate cert that the client doesn't trust because it is missing the intermediate CA signed by the root CA
+  public void testTLSClientUntrustedServerCertPEMRootCAWithPEMCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_CA, TLSCert.NONE).fail();
+  }
+
+  @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPKCS12ServerCert() throws Exception {
     testTLS(TLSCert.NONE, TLSCert.PKCS12, TLSCert.JKS, TLSCert.NONE).pass();
