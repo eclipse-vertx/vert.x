@@ -2040,8 +2040,6 @@ _SOCKS4a_ or _SOCKS5_ proxy. The http proxy protocol uses HTTP/1.x but can conne
 The proxy can be configured in the `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html[HttpClientOptions]` by setting a
 `link:../../apidocs/io/vertx/core/net/ProxyOptions.html[ProxyOptions]` object containing proxy type, hostname, port and optionally username and password.
 
-For this feature, the jar `io.netty:netty-handler-proxy` has to be present on the classpath.
-
 Here's an example:
 
 [source,java]

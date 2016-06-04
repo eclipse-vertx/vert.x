@@ -684,8 +684,6 @@
  * The proxy can be configured in the {@link io.vertx.core.net.NetClientOptions} by setting a
  * {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
  *
- * For this feature, the jar `io.netty:netty-handler-proxy` has to be present on the classpath.
- *
  * Here's an example:
  *
  * [source,$lang]
