@@ -8,8 +8,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 
 /**
@@ -27,31 +25,8 @@ public class ChannelProvider {
   protected ChannelProvider() {
   }
 
-  static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
-
-  public void connect(VertxInternal vertx,
-                      Bootstrap bootstrap,
-                      ProxyOptions options,
-                      String host,
-                      int port,
-                      Handler<Channel> channelInitializer,
-                      Handler<AsyncResult<Channel>> channelHandler) {
-    try {
-      doConnect(vertx, bootstrap, options, host, port, channelInitializer, channelHandler);
-    } catch (NoClassDefFoundError e) {
-      if (e.getMessage().contains("io/netty/handler/proxy")) {
-        log.warn("Dependency io.netty:netty-handler-proxy missing - check your classpath");
-        channelHandler.handle(Future.failedFuture(e));
-      }
-    }
-  }
-
-  protected void doConnect(VertxInternal vertx,
-                           Bootstrap bootstrap,
-                           ProxyOptions options,
-                           String host,
-                           int port,
-                           Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
+  protected void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
+      Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
     bootstrap.resolver(vertx.addressResolver().nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override

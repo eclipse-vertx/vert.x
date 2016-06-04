@@ -24,7 +24,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 /**
- * A channel provider that connects via a Proxy : HTTP or Socks
+ * A channel provider that connects via a Proxy : HTTP or SOCKS
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -36,7 +36,7 @@ public class ProxyChannelProvider extends ChannelProvider {
   }
 
   @Override
-  protected void doConnect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
+  protected void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
                            Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
 
     final String proxyHost = options.getHost();
@@ -62,7 +62,7 @@ public class ProxyChannelProvider extends ChannelProvider {
                 ? new Socks5ProxyHandler(proxyAddr, proxyUsername, proxyPassword) : new Socks5ProxyHandler(proxyAddr);
             break;
           case SOCKS4:
-            // apparently SOCKS4 only supports a username?
+            // SOCKS4 only supports a username and could authenticate the user via Ident
             proxy = proxyUsername != null ? new Socks4ProxyHandler(proxyAddr, proxyUsername)
                 : new Socks4ProxyHandler(proxyAddr);
             break;
