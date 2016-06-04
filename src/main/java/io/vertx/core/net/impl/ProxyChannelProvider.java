@@ -36,7 +36,7 @@ public class ProxyChannelProvider extends ChannelProvider {
   }
 
   @Override
-  protected void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
+  public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
                            Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
 
     final String proxyHost = options.getHost();

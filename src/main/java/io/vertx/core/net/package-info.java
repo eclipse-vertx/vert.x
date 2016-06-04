@@ -679,7 +679,7 @@
  *
  * === Using a proxy for client connections
  *
- * The {@link io.vertx.core.net.NetClient} supports configuring an HTTP/1.x _CONNECT_ proxy or _SOCKS4a_ or _SOCKS5_ proxy.
+ * The {@link io.vertx.core.net.NetClient} supports either a HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.
  *
  * The proxy can be configured in the {@link io.vertx.core.net.NetClientOptions} by setting a
  * {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
