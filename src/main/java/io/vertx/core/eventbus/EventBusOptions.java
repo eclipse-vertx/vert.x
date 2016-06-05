@@ -316,8 +316,8 @@ public class EventBusOptions extends TCPSSLOptions {
 
   @Override
   @GenIgnore
-  public EventBusOptions setKeyStoreOptions(KeyCertOptions options) {
-    super.setKeyStoreOptions(options);
+  public EventBusOptions setKeyCertOptions(KeyCertOptions options) {
+    super.setKeyCertOptions(options);
     return this;
   }
 
@@ -376,8 +376,8 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
-  public EventBusOptions setTrustStoreOptions(TrustOptions options) {
-    super.setTrustStoreOptions(options);
+  public EventBusOptions setTrustOptions(TrustOptions options) {
+    super.setTrustOptions(options);
     return this;
   }
 

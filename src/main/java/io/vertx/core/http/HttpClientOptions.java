@@ -266,8 +266,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setKeyStoreOptions(KeyCertOptions options) {
-    super.setKeyStoreOptions(options);
+  public HttpClientOptions setKeyCertOptions(KeyCertOptions options) {
+    super.setKeyCertOptions(options);
     return this;
   }
 
@@ -283,8 +283,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setTrustStoreOptions(TrustOptions options) {
-    super.setTrustStoreOptions(options);
+  public HttpClientOptions setTrustOptions(TrustOptions options) {
+    super.setTrustOptions(options);
     return this;
   }
 

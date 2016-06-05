@@ -206,8 +206,8 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setKeyStoreOptions(KeyCertOptions options) {
-    super.setKeyStoreOptions(options);
+  public HttpServerOptions setKeyCertOptions(KeyCertOptions options) {
+    super.setKeyCertOptions(options);
     return this;
   }
 
@@ -228,8 +228,8 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setTrustStoreOptions(TrustOptions options) {
-    super.setTrustStoreOptions(options);
+  public HttpServerOptions setTrustOptions(TrustOptions options) {
+    super.setTrustOptions(options);
     return this;
   }
 

@@ -275,7 +275,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public TCPSSLOptions setKeyStoreOptions(KeyCertOptions options) {
+  public TCPSSLOptions setKeyCertOptions(KeyCertOptions options) {
     this.keyCertOptions = options;
     return this;
   }
@@ -322,7 +322,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param options the trust options
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions setTrustStoreOptions(TrustOptions options) {
+  public TCPSSLOptions setTrustOptions(TrustOptions options) {
     this.trustOptions = options;
     return this;
   }

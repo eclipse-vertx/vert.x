@@ -161,8 +161,8 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setKeyStoreOptions(KeyCertOptions options) {
-    super.setKeyStoreOptions(options);
+  public NetServerOptions setKeyCertOptions(KeyCertOptions options) {
+    super.setKeyCertOptions(options);
     return this;
   }
 
@@ -183,8 +183,8 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setTrustStoreOptions(TrustOptions options) {
-    super.setTrustStoreOptions(options);
+  public NetServerOptions setTrustOptions(TrustOptions options) {
+    super.setTrustOptions(options);
     return this;
   }
 

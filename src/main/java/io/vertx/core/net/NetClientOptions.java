@@ -148,8 +148,8 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setKeyStoreOptions(KeyCertOptions options) {
-    super.setKeyStoreOptions(options);
+  public NetClientOptions setKeyCertOptions(KeyCertOptions options) {
+    super.setKeyCertOptions(options);
     return this;
   }
 
@@ -170,8 +170,8 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setTrustStoreOptions(TrustOptions options) {
-    super.setTrustStoreOptions(options);
+  public NetClientOptions setTrustOptions(TrustOptions options) {
+    super.setTrustOptions(options);
     return this;
   }
 
