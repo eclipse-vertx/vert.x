@@ -38,6 +38,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.*;
@@ -146,6 +147,27 @@ public class Http1xTest extends HttpTest {
     assertFalse(options.isPipelining());
     assertEquals(options, options.setPipelining(true));
     assertTrue(options.isPipelining());
+
+    assertEquals(HttpClientOptions.DEFAULT_PIPELINING_LIMIT, options.getPipeliningLimit());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setPipeliningLimit(rand));
+    assertEquals(rand, options.getPipeliningLimit());
+    assertIllegalArgumentException(() -> options.setPipeliningLimit(0));
+    assertIllegalArgumentException(() -> options.setPipeliningLimit(-1));
+
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_MAX_POOL_SIZE, options.getHttp2MaxPoolSize());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2MaxPoolSize(rand));
+    assertEquals(rand, options.getHttp2MaxPoolSize());
+    assertIllegalArgumentException(() -> options.setHttp2MaxPoolSize(0));
+    assertIllegalArgumentException(() -> options.setHttp2MaxPoolSize(-1));
+
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_MULTIPLEXING_LIMIT, options.getHttp2MultiplexingLimit());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2MultiplexingLimit(rand));
+    assertEquals(rand, options.getHttp2MultiplexingLimit());
+    assertIllegalArgumentException(() -> options.setHttp2MultiplexingLimit(0));
+    assertIllegalArgumentException(() -> options.setHttp2MultiplexingLimit(-1));
 
     assertEquals(60000, options.getConnectTimeout());
     rand = TestUtils.randomPositiveInt();
@@ -316,6 +338,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setSslEngine(SSLEngine.OPENSSL));
     assertEquals(SSLEngine.OPENSSL, options.getSslEngine());
 
+    assertEquals(true, options.isOpenSslSessionCacheEnabled());
+    assertEquals(options, options.setOpenSslSessionCacheEnabled(false));
+    assertEquals(false, options.isOpenSslSessionCacheEnabled());
+
     Http2Settings initialSettings = randomHttp2Settings();
     assertEquals(new Http2Settings().setMaxConcurrentStreams(HttpServerOptions.DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS), options.getInitialSettings());
     assertEquals(options, options.setInitialSettings(initialSettings));
@@ -357,6 +383,9 @@ public class Http1xTest extends HttpTest {
     int maxPoolSize = TestUtils.randomPositiveInt();
     boolean keepAlive = rand.nextBoolean();
     boolean pipelining = rand.nextBoolean();
+    int pipeliningLimit = TestUtils.randomPositiveInt();
+    int http2MaxPoolSize = TestUtils.randomPositiveInt();
+    int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
@@ -365,6 +394,7 @@ public class Http1xTest extends HttpTest {
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean h2cUpgrade = TestUtils.randomBoolean();
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -387,6 +417,9 @@ public class Http1xTest extends HttpTest {
     options.setMaxPoolSize(maxPoolSize);
     options.setKeepAlive(keepAlive);
     options.setPipelining(pipelining);
+    options.setPipeliningLimit(pipeliningLimit);
+    options.setHttp2MaxPoolSize(http2MaxPoolSize);
+    options.setHttp2MultiplexingLimit(http2MultiplexingLimit);
     options.setTryUseCompression(tryUseCompression);
     options.setProtocolVersion(protocolVersion);
     options.setMaxWaitQueueSize(maxWaitQueueSize);
@@ -395,6 +428,8 @@ public class Http1xTest extends HttpTest {
     options.setSslEngine(sslEngine);
     options.setAlpnVersions(alpnVersions);
     options.setH2cUpgrade(h2cUpgrade);
+    options.setOpenSslSessionCacheEnabled(openSslSessionCacheEnabled);
+
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -422,6 +457,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxPoolSize, copy.getMaxPoolSize());
     assertEquals(keepAlive, copy.isKeepAlive());
     assertEquals(pipelining, copy.isPipelining());
+    assertEquals(pipeliningLimit, copy.getPipeliningLimit());
+    assertEquals(http2MaxPoolSize, copy.getHttp2MaxPoolSize());
+    assertEquals(http2MultiplexingLimit, copy.getHttp2MultiplexingLimit());
     assertEquals(tryUseCompression, copy.isTryUseCompression());
     assertEquals(protocolVersion, copy.getProtocolVersion());
     assertEquals(maxWaitQueueSize, copy.getMaxWaitQueueSize());
@@ -430,6 +468,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(sslEngine, copy.getSslEngine());
     assertEquals(alpnVersions, copy.getAlpnVersions());
     assertEquals(h2cUpgrade, copy.isH2cUpgrade());
+    assertEquals(openSslSessionCacheEnabled, copy.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -439,6 +478,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getMaxPoolSize(), json.getMaxPoolSize());
     assertEquals(def.isKeepAlive(), json.isKeepAlive());
     assertEquals(def.isPipelining(), json.isPipelining());
+    assertEquals(def.getPipeliningLimit(), json.getPipeliningLimit());
+    assertEquals(def.getHttp2MaxPoolSize(), json.getHttp2MaxPoolSize());
+    assertEquals(def.getHttp2MultiplexingLimit(), json.getHttp2MultiplexingLimit());
     assertEquals(def.isVerifyHost(), json.isVerifyHost());
     assertEquals(def.isTryUseCompression(), json.isTryUseCompression());
     assertEquals(def.isTrustAll(), json.isTrustAll());
@@ -457,6 +499,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getSslEngine(), json.getSslEngine());
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
     assertEquals(def.isH2cUpgrade(), json.isH2cUpgrade());
+    assertEquals(def.isOpenSslSessionCacheEnabled(), json.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -490,6 +533,9 @@ public class Http1xTest extends HttpTest {
     int maxPoolSize = TestUtils.randomPositiveInt();
     boolean keepAlive = rand.nextBoolean();
     boolean pipelining = rand.nextBoolean();
+    int pipeliningLimit = TestUtils.randomPositiveInt();
+    int http2MaxPoolSize = TestUtils.randomPositiveInt();
+    int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
@@ -498,6 +544,7 @@ public class Http1xTest extends HttpTest {
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean h2cUpgrade = rand.nextBoolean();
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -520,6 +567,9 @@ public class Http1xTest extends HttpTest {
       .put("maxPoolSize", maxPoolSize)
       .put("keepAlive", keepAlive)
       .put("pipelining", pipelining)
+      .put("pipeliningLimit", pipeliningLimit)
+      .put("http2MaxPoolSize", http2MaxPoolSize)
+      .put("http2MultiplexingLimit", http2MultiplexingLimit)
       .put("tryUseCompression", tryUseCompression)
       .put("protocolVersion", protocolVersion.name())
       .put("maxWaitQueueSize", maxWaitQueueSize)
@@ -533,7 +583,8 @@ public class Http1xTest extends HttpTest {
       .put("useAlpn", useAlpn)
       .put("sslEngine", sslEngine.name())
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
-      .put("h2cUpgrade", h2cUpgrade);
+      .put("h2cUpgrade", h2cUpgrade)
+      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -562,6 +613,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxPoolSize, options.getMaxPoolSize());
     assertEquals(keepAlive, options.isKeepAlive());
     assertEquals(pipelining, options.isPipelining());
+    assertEquals(pipeliningLimit, options.getPipeliningLimit());
+    assertEquals(http2MaxPoolSize, options.getHttp2MaxPoolSize());
+    assertEquals(http2MultiplexingLimit, options.getHttp2MultiplexingLimit());
     assertEquals(tryUseCompression, options.isTryUseCompression());
     assertEquals(protocolVersion, options.getProtocolVersion());
     assertEquals(maxWaitQueueSize, options.getMaxWaitQueueSize());
@@ -570,6 +624,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(sslEngine, options.getSslEngine());
     assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(h2cUpgrade, options.isH2cUpgrade());
+    assertEquals(openSslSessionCacheEnabled, options.isOpenSslSessionCacheEnabled());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -626,6 +681,7 @@ public class Http1xTest extends HttpTest {
     int maxChunkSize = rand.nextInt(10000);
     Http2Settings initialSettings = randomHttp2Settings();
     boolean useAlpn = TestUtils.randomBoolean();
+    boolean openSslSessionCacheEnabled = rand.nextBoolean();
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     options.setSendBufferSize(sendBufferSize);
@@ -655,6 +711,7 @@ public class Http1xTest extends HttpTest {
     options.setSslEngine(sslEngine);
     options.setInitialSettings(initialSettings);
     options.setAlpnVersions(alpnVersions);
+    options.setOpenSslSessionCacheEnabled(openSslSessionCacheEnabled);
     HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -688,6 +745,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngine());
     assertEquals(alpnVersions, copy.getAlpnVersions());
+    assertEquals(openSslSessionCacheEnabled, copy.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -716,6 +774,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngine(), json.getSslEngine());
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
+    assertEquals(def.isOpenSslSessionCacheEnabled(), json.isOpenSslSessionCacheEnabled());
   }
 
   @Test
@@ -758,6 +817,7 @@ public class Http1xTest extends HttpTest {
     boolean useAlpn = TestUtils.randomBoolean();
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
+    boolean openSslSessionCacheEnabled = TestUtils.randomBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -794,7 +854,8 @@ public class Http1xTest extends HttpTest {
           .put("maxFrameSize", initialSettings.getMaxFrameSize()))
       .put("useAlpn", useAlpn)
       .put("sslEngine", sslEngine.name())
-      .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()));
+      .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
+      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -830,6 +891,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(initialSettings, options.getInitialSettings());
     assertEquals(useAlpn, options.isUseAlpn());
     assertEquals(sslEngine, options.getSslEngine());
+    assertEquals(openSslSessionCacheEnabled, options.isOpenSslSessionCacheEnabled());
     assertEquals(alpnVersions, options.getAlpnVersions());
 
     // Test other keystore/truststore types
@@ -885,7 +947,9 @@ public class Http1xTest extends HttpTest {
         // (requests + 1 / 2) connect attempts
         if (count % 2 == 1) {
           req.setTimeout(responseDelay / 2);
-          req.exceptionHandler(ex -> latch.countDown());
+          req.exceptionHandler(ex -> {
+            latch.countDown();
+          });
         }
         req.end();
       }
@@ -946,6 +1010,57 @@ public class Http1xTest extends HttpTest {
 
     awaitLatch(latch);
 
+  }
+
+  @Test
+  public void testPipeliningLimit() throws Exception {
+    int limit = 25;
+    int requests = limit * 4;
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().
+        setKeepAlive(true).
+        setPipelining(true).
+        setPipeliningLimit(limit).
+        setMaxPoolSize(1));
+    AtomicInteger count = new AtomicInteger();
+    String data = "GET /somepath HTTP/1.1\r\n" +
+        "Host: localhost:8080\r\n" +
+        "\r\n";
+    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST));
+    server.connectHandler(so -> {
+      StringBuilder total = new StringBuilder();
+      so.handler(buff -> {
+        total.append(buff);
+        while (total.indexOf(data) == 0) {
+          total.delete(0, data.length());
+          if (count.incrementAndGet() == limit) {
+            vertx.setTimer(100, timerID -> {
+              assertEquals(limit, count.get());
+              count.set(0);
+              for (int i = 0;i < limit;i++) {
+                so.write("HTTP/1.1 200 OK\r\nContent-Length : 0\r\n\r\n");
+              }
+            });
+          }
+        }
+      });
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(v -> {
+      listenLatch.countDown();
+    }));
+    awaitLatch(listenLatch);
+
+    AtomicInteger responses = new AtomicInteger();
+    for (int i = 0;i < requests;i++) {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        assertEquals(200, resp.statusCode());
+        if (responses.incrementAndGet() == requests) {
+          testComplete();
+        }
+      });
+    }
+    await();
   }
 
   @Test
@@ -1579,30 +1694,47 @@ public class Http1xTest extends HttpTest {
     awaitLatch(serverLatch);
     CountDownLatch req1Latch = new CountDownLatch(1);
     AtomicReference<Context> c = new AtomicReference<>();
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", res -> {
+    HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1");
+    req1.handler(res -> {
       c.set(Vertx.currentContext());
       res.endHandler(v -> req1Latch.countDown());
     });
+    req1.end();
+    Consumer<HttpClientRequest> checker = req -> {
+      assertSame(Vertx.currentContext(), c.get());
+      assertSame(req1.connection(), req.connection());
+    };
     awaitLatch(req1Latch);
     CountDownLatch req2Latch = new CountDownLatch(2);
-    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", res -> {
-      assertSame(Vertx.currentContext(), c.get());
+    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2");
+    req2.handler(res -> {
+      checker.accept(req2);
       req2Latch.countDown();
-    }).exceptionHandler(this::fail).sendHead();
-    HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3", res -> {
-      assertSame(Vertx.currentContext(), c.get());
+    }).exceptionHandler(err -> {
+      fail(err);
+    }).sendHead();
+    HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3");
+    req3.handler(res -> {
+      checker.accept(req3);
       req2Latch.countDown();
-    }).exceptionHandler(this::fail);
+    }).exceptionHandler(err -> {
+      fail(err);
+    });
     req3.end();
     req2.end();
     awaitLatch(req2Latch);
     vertx.getOrCreateContext().runOnContext(v -> {
-      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4", res -> {
+      HttpClientRequest req4 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4");
+      req4.handler(res -> {
         // This should warn in the log (console) as we are called back on the connection context
         // and not on the context doing the request
-        assertSame(Vertx.currentContext(), c.get());
+        checker.accept(req4);
         testComplete();
       });
+      req4.exceptionHandler(err -> {
+        fail(err);
+      });
+      req4.end();
     });
     await();
   }
@@ -1977,16 +2109,16 @@ public class Http1xTest extends HttpTest {
           content.delete(0, match.length());
           switch (count.getAndIncrement()) {
             case 0:
-              // Send an invalid response
               sendResp.thenAccept(v -> {
-                so.write(Buffer.buffer(TestUtils.randomAlphaString(40) + "\r\n"));
               });
               break;
             case 1:
+              // Send an invalid response
+              Buffer resp1 = Buffer.buffer(TestUtils.randomAlphaString(40) + "\r\n");
               // Send a valid response even though it will be ignored by Netty decoder
-              sendResp.thenAccept(v -> {
-                so.write(Buffer.buffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"));
-              });
+              Buffer resp2 = Buffer.buffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+              // Send at once
+              so.write(Buffer.buffer().appendBuffer(resp1).appendBuffer(resp2));
               break;
             default:
               fail();
@@ -2001,13 +2133,12 @@ public class Http1xTest extends HttpTest {
 
       AtomicBoolean fail1 = new AtomicBoolean();
       HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        assertEquals(999, resp.statusCode()); // Netty specific for invalid responses
-        resp.exceptionHandler(err -> {
-          if (fail1.compareAndSet(false, true)) {
-            assertEquals(IllegalArgumentException.class, err.getClass()); // invalid version format
-            complete();
-          }
-        });
+        fail();
+      }).exceptionHandler(err -> {
+        if (fail1.compareAndSet(false, true)) {
+          assertEquals(IllegalArgumentException.class, err.getClass()); // invalid version format
+          complete();
+        }
       });
 
       AtomicBoolean fail2 = new AtomicBoolean();
@@ -2025,12 +2156,35 @@ public class Http1xTest extends HttpTest {
 
       req1.end();
       req2.end();
-      sendResp.complete(null);
     }));
 
     await();
   }
 
+  @Test
+  public void testHandleInvalid204Response() throws Exception {
+    int numReq = 3;
+    waitFor(3);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setKeepAlive(true).setMaxPoolSize(1));
+    List<HttpServerRequest> received = new ArrayList<>();
+    vertx.createHttpServer().requestHandler(r -> {
+      // Generate an invalid response for the pipe-lined
+      r.response().setChunked(true).setStatusCode(204).end();
+    }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
+      for (int i = 0;i < numReq;i++) {
+        HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+        post.handler(r -> {
+          r.endHandler(v2 -> {
+            complete();
+          });
+        }).exceptionHandler(err -> {
+          complete();
+        }).end();
+      }
+    }));
+    await();
+  }
 
   @Test
   public void testConnectionCloseHttp_1_0_NoClose() throws Exception {
