@@ -17,8 +17,11 @@
 package io.vertx.test.core;
 
 import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.OpenSslServerContext;
+import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
@@ -26,6 +29,7 @@ import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSessionContext;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -57,5 +61,37 @@ public class SSLHelperTest extends VertxTestBase {
         TLSCert.PEM.getClientTrustOptions());
     SslContext ctx = helper.getContext((VertxInternal) vertx);
     assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
+  }
+
+  @Test
+  public void testDefaultOpenSslServerSessionContext() throws Exception {
+    testOpenSslServerSessionContext(true);
+  }
+
+  @Test
+  public void testUserSetOpenSslServerSessionContext() throws Exception {
+    testOpenSslServerSessionContext(false);
+  }
+
+  private void testOpenSslServerSessionContext(boolean testDefault){
+    HttpServerOptions httpServerOptions = new HttpServerOptions().setSslEngine(io.vertx.core.net.SSLEngine.OPENSSL);
+
+    if(!testDefault) {
+      httpServerOptions.setOpenSslSessionCacheEnabled(false);
+    }
+
+    SSLHelper defaultHelper = new SSLHelper(httpServerOptions,
+            TLSCert.PEM.getServerKeyCertOptions(),
+            TLSCert.PEM.getServerTrustOptions());
+
+    SslContext ctx = defaultHelper.getContext((VertxInternal) vertx);
+    assertTrue(ctx instanceof OpenSslServerContext);
+
+    SSLSessionContext sslSessionContext = ctx.sessionContext();
+    assertTrue(sslSessionContext instanceof OpenSslServerSessionContext);
+
+    if (sslSessionContext instanceof OpenSslServerSessionContext) {
+      assertEquals(testDefault, ((OpenSslServerSessionContext) sslSessionContext).isSessionCacheEnabled());
+    }
   }
 }
