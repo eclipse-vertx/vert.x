@@ -17,9 +17,9 @@ package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.Launcher;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -74,6 +74,88 @@ public class RedeployTest extends CommandTestBase {
         return false;
       }
     });
+  }
+
+  @Test
+  public void testStartingApplicationInRedeployModeWithInlineConf() throws IOException {
+    int random = (int) (Math.random() * 100);
+    cli.dispatch(new Launcher(), new String[]{"run",
+        HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
+        "--launcher-class=" + Launcher.class.getName(),
+        "--conf", "{\"random\":" + random + "}"
+    });
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    JsonObject conf = RunCommandTest.getContent().getJsonObject("conf");
+    assertThat(conf).isNotNull().isNotEmpty();
+    assertThat(conf.getInteger("random")).isEqualTo(random);
+  }
+
+  @Test
+  public void testStartingApplicationInRedeployModeWithInlineConf2() throws IOException {
+    int random = (int) (Math.random() * 100);
+    cli.dispatch(new Launcher(), new String[]{"run",
+        HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
+        "--launcher-class=" + Launcher.class.getName(),
+        "--conf={\"random\":" + random + "}"
+    });
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    JsonObject conf = RunCommandTest.getContent().getJsonObject("conf");
+    assertThat(conf).isNotNull().isNotEmpty();
+    assertThat(conf.getInteger("random")).isEqualTo(random);
+  }
+
+  @Test
+  public void testStartingApplicationInRedeployModeWithFileConf() throws IOException {
+    cli.dispatch(new Launcher(), new String[]{"run",
+        HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
+        "--launcher-class=" + Launcher.class.getName(),
+        "--conf", new File("src/test/resources/conf.json").getAbsolutePath()
+    });
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    JsonObject conf = RunCommandTest.getContent().getJsonObject("conf");
+    assertThat(conf).isNotNull().isNotEmpty();
+    assertThat(conf.getString("name")).isEqualTo("vertx");
+  }
+
+  @Test
+  public void testStartingApplicationInRedeployModeWithFileConf2() throws IOException {
+    cli.dispatch(new Launcher(), new String[]{"run",
+        HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
+        "--launcher-class=" + Launcher.class.getName(),
+        "--conf=" + new File("src/test/resources/conf.json").getAbsolutePath()
+    });
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    JsonObject conf = RunCommandTest.getContent().getJsonObject("conf");
+    assertThat(conf).isNotNull().isNotEmpty();
+    assertThat(conf.getString("name")).isEqualTo("vertx");
   }
 
   @Test

@@ -118,7 +118,14 @@ public class RunCommand extends BareCommand {
   @Description("Specifies configuration that should be provided to the verticle. <config> should reference either a " +
       "text file containing a valid JSON object which represents the configuration OR be a JSON string.")
   public void setConfig(String configuration) {
-    this.config = configuration;
+    if (configuration != null) {
+      // For inlined configuration remove first and end single and double quotes if any
+      this.config = configuration.trim()
+          .replaceAll("^\"|\"$", "")
+          .replaceAll("^'|'$", "");
+    } else {
+      this.config = null;
+    }
   }
 
   /**
@@ -142,6 +149,7 @@ public class RunCommand extends BareCommand {
 
   /**
    * Sets the user command executed during redeployment.
+   *
    * @param command the on redeploy command
    * @deprecated Use 'on-redeploy' instead. It will be removed in vert.x 3.3
    */
@@ -350,7 +358,9 @@ public class RunCommand extends BareCommand {
       args.add("--classpath=" + classpath.stream().collect(Collectors.joining(File.pathSeparator)));
     }
     if (config != null) {
-      args.add("--conf=" + config);
+      // Pass the configuration in 2 steps to quote correctly the configuration if it's an inlined json string
+      args.add("--conf");
+      args.add(config);
     }
     if (instances != 1) {
       args.add("--instances=" + instances);
@@ -405,6 +415,7 @@ public class RunCommand extends BareCommand {
         } catch (DecodeException e2) {
           // The configuration is not printed for security purpose, it can contain sensitive data.
           log.error("The -conf option does not point to an existing file or is not a valid JSON object");
+          e2.printStackTrace();
           return null;
         }
       }
