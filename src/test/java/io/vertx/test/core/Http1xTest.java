@@ -167,7 +167,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHttp2MultiplexingLimit(rand));
     assertEquals(rand, options.getHttp2MultiplexingLimit());
     assertIllegalArgumentException(() -> options.setHttp2MultiplexingLimit(0));
-    assertIllegalArgumentException(() -> options.setHttp2MultiplexingLimit(-1));
+    assertEquals(options, options.setHttp2MultiplexingLimit(-1));
+    assertEquals(-1, options.getHttp2MultiplexingLimit());
 
     assertEquals(60000, options.getConnectTimeout());
     rand = TestUtils.randomPositiveInt();

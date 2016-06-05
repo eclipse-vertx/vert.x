@@ -386,8 +386,8 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2MultiplexingLimit(int limit) {
-    if (limit < 1) {
-      throw new IllegalArgumentException("maxPoolSize must be > 0");
+    if (limit == 0 || limit < -1) {
+      throw new IllegalArgumentException("maxPoolSize must be > 0 or -1 (disabled)");
     }
     this.http2MultiplexingLimit = limit;
     return this;
