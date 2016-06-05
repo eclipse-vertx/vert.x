@@ -71,6 +71,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     */
   public static final SSLEngine DEFAULT_SSL_ENGINE = SSLEngine.JDK;
 
+  /**
+   * Default value of whether session cache is enabled in open SSL session server context
+   */
+  public static final boolean DEFAULT_OPEN_SSL_SESSION_CACHE_ENABLED = true;
+
 
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
@@ -86,6 +91,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean useAlpn;
   private SSLEngine sslEngine;
   private Set<String> enabledSecureTransportProtocols = new HashSet<>();
+  private boolean openSslSessionCacheEnabled;
 
   /**
    * Default constructor
@@ -116,6 +122,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.useAlpn = other.useAlpn;
     this.sslEngine = other.sslEngine;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new HashSet<>() : new HashSet<>(other.getEnabledSecureTransportProtocols());
+    this.openSslSessionCacheEnabled = other.isOpenSslSessionCacheEnabled();
   }
 
   /**
@@ -140,6 +147,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
     sslEngine = DEFAULT_SSL_ENGINE;
+    openSslSessionCacheEnabled = DEFAULT_OPEN_SSL_SESSION_CACHE_ENABLED;
   }
 
   /**
@@ -477,6 +485,26 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return (TCPSSLOptions) super.setLogActivity(logEnabled);
   }
 
+  /**
+   * Set whether session cache is enabled in open SSL session server context
+   *
+   * @param sessionCacheEnabled true if session cache is enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setOpenSslSessionCacheEnabled(boolean sessionCacheEnabled) {
+    this.openSslSessionCacheEnabled = sessionCacheEnabled;
+    return this;
+  }
+
+  /**
+   * Whether session cache is enabled in open SSL session server context
+   *
+   * @return true if session cache is enabled
+   */
+  public boolean isOpenSslSessionCacheEnabled() {
+    return openSslSessionCacheEnabled;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -499,6 +527,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (trustOptions != null ? !trustOptions.equals(that.trustOptions) : that.trustOptions != null) return false;
     if (useAlpn != that.useAlpn) return false;
     if (sslEngine != that.sslEngine) return false;
+    if (openSslSessionCacheEnabled != that.openSslSessionCacheEnabled) return false;
     if (!enabledSecureTransportProtocols.equals(that.enabledSecureTransportProtocols)) return false;
 
     return true;
@@ -522,6 +551,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + (sslEngine != null ? sslEngine.hashCode() : 0);
     result = 31 * result + (enabledSecureTransportProtocols != null ? enabledSecureTransportProtocols
         .hashCode() : 0);
+    result = 31 * result + (openSslSessionCacheEnabled ? 1 : 0);
     return result;
   }
 }
