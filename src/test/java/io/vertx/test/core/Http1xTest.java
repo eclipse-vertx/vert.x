@@ -170,6 +170,13 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHttp2MultiplexingLimit(-1));
     assertEquals(-1, options.getHttp2MultiplexingLimit());
 
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE, options.getHttp2ConnectionWindowSize());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2ConnectionWindowSize(rand));
+    assertEquals(rand, options.getHttp2ConnectionWindowSize());
+    assertEquals(options, options.setHttp2ConnectionWindowSize(-1));
+    assertEquals(-1, options.getHttp2ConnectionWindowSize());
+
     assertEquals(60000, options.getConnectTimeout());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setConnectTimeout(rand));
@@ -348,6 +355,13 @@ public class Http1xTest extends HttpTest {
     assertEquals(HttpServerOptions.DEFAULT_ALPN_VERSIONS, options.getAlpnVersions());
     assertEquals(options, options.setAlpnVersions(alpnVersions));
     assertEquals(alpnVersions, options.getAlpnVersions());
+
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE, options.getHttp2ConnectionWindowSize());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2ConnectionWindowSize(rand));
+    assertEquals(rand, options.getHttp2ConnectionWindowSize());
+    assertEquals(options, options.setHttp2ConnectionWindowSize(-1));
+    assertEquals(-1, options.getHttp2ConnectionWindowSize());
   }
 
   @Test
@@ -383,6 +397,7 @@ public class Http1xTest extends HttpTest {
     int pipeliningLimit = TestUtils.randomPositiveInt();
     int http2MaxPoolSize = TestUtils.randomPositiveInt();
     int http2MultiplexingLimit = TestUtils.randomPositiveInt();
+    int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
@@ -416,6 +431,7 @@ public class Http1xTest extends HttpTest {
     options.setPipeliningLimit(pipeliningLimit);
     options.setHttp2MaxPoolSize(http2MaxPoolSize);
     options.setHttp2MultiplexingLimit(http2MultiplexingLimit);
+    options.setHttp2ConnectionWindowSize(http2ConnectionWindowSize);
     options.setTryUseCompression(tryUseCompression);
     options.setProtocolVersion(protocolVersion);
     options.setMaxWaitQueueSize(maxWaitQueueSize);
@@ -454,6 +470,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(pipeliningLimit, copy.getPipeliningLimit());
     assertEquals(http2MaxPoolSize, copy.getHttp2MaxPoolSize());
     assertEquals(http2MultiplexingLimit, copy.getHttp2MultiplexingLimit());
+    assertEquals(http2ConnectionWindowSize, copy.getHttp2ConnectionWindowSize());
     assertEquals(tryUseCompression, copy.isTryUseCompression());
     assertEquals(protocolVersion, copy.getProtocolVersion());
     assertEquals(maxWaitQueueSize, copy.getMaxWaitQueueSize());
@@ -474,6 +491,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getPipeliningLimit(), json.getPipeliningLimit());
     assertEquals(def.getHttp2MaxPoolSize(), json.getHttp2MaxPoolSize());
     assertEquals(def.getHttp2MultiplexingLimit(), json.getHttp2MultiplexingLimit());
+    assertEquals(def.getHttp2ConnectionWindowSize(), json.getHttp2ConnectionWindowSize());
     assertEquals(def.isVerifyHost(), json.isVerifyHost());
     assertEquals(def.isTryUseCompression(), json.isTryUseCompression());
     assertEquals(def.isTrustAll(), json.isTrustAll());
@@ -528,6 +546,7 @@ public class Http1xTest extends HttpTest {
     int pipeliningLimit = TestUtils.randomPositiveInt();
     int http2MaxPoolSize = TestUtils.randomPositiveInt();
     int http2MultiplexingLimit = TestUtils.randomPositiveInt();
+    int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
@@ -561,6 +580,7 @@ public class Http1xTest extends HttpTest {
       .put("pipeliningLimit", pipeliningLimit)
       .put("http2MaxPoolSize", http2MaxPoolSize)
       .put("http2MultiplexingLimit", http2MultiplexingLimit)
+      .put("http2ConnectionWindowSize", http2ConnectionWindowSize)
       .put("tryUseCompression", tryUseCompression)
       .put("protocolVersion", protocolVersion.name())
       .put("maxWaitQueueSize", maxWaitQueueSize)
@@ -606,6 +626,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(pipeliningLimit, options.getPipeliningLimit());
     assertEquals(http2MaxPoolSize, options.getHttp2MaxPoolSize());
     assertEquals(http2MultiplexingLimit, options.getHttp2MultiplexingLimit());
+    assertEquals(http2ConnectionWindowSize, options.getHttp2ConnectionWindowSize());
     assertEquals(tryUseCompression, options.isTryUseCompression());
     assertEquals(protocolVersion, options.getProtocolVersion());
     assertEquals(maxWaitQueueSize, options.getMaxWaitQueueSize());
@@ -670,6 +691,7 @@ public class Http1xTest extends HttpTest {
     int maxChunkSize = rand.nextInt(10000);
     Http2Settings initialSettings = randomHttp2Settings();
     boolean useAlpn = TestUtils.randomBoolean();
+    int http2ConnectionWindowSize = TestUtils.randomInt();
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     options.setSendBufferSize(sendBufferSize);
@@ -696,6 +718,7 @@ public class Http1xTest extends HttpTest {
     options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
     options.setMaxChunkSize(maxChunkSize);
     options.setUseAlpn(useAlpn);
+    options.setHttp2ConnectionWindowSize(http2ConnectionWindowSize);
     options.setSslEngine(sslEngine);
     options.setInitialSettings(initialSettings);
     options.setAlpnVersions(alpnVersions);
@@ -730,6 +753,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxChunkSize, copy.getMaxChunkSize());
     assertEquals(initialSettings, copy.getInitialSettings());
     assertEquals(useAlpn, copy.isUseAlpn());
+    assertEquals(http2ConnectionWindowSize, copy.getHttp2ConnectionWindowSize());
     assertEquals(sslEngine, copy.getSslEngine());
     assertEquals(alpnVersions, copy.getAlpnVersions());
   }
@@ -760,6 +784,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngine(), json.getSslEngine());
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
+    assertEquals(def.getHttp2ConnectionWindowSize(), json.getHttp2ConnectionWindowSize());
   }
 
   @Test
@@ -800,6 +825,7 @@ public class Http1xTest extends HttpTest {
     HttpVersion enabledProtocol = HttpVersion.values()[rand.nextInt(HttpVersion.values().length)];
     Http2Settings initialSettings = TestUtils.randomHttp2Settings();
     boolean useAlpn = TestUtils.randomBoolean();
+    int http2ConnectionWindowSize = TestUtils.randomInt();
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
 
@@ -837,6 +863,7 @@ public class Http1xTest extends HttpTest {
           .put("initialWindowSize", initialSettings.getInitialWindowSize())
           .put("maxFrameSize", initialSettings.getMaxFrameSize()))
       .put("useAlpn", useAlpn)
+      .put("http2ConnectionWindowSize", http2ConnectionWindowSize)
       .put("sslEngine", sslEngine.name())
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()));
 
@@ -873,6 +900,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxHeaderSize, options.getMaxHeaderSize());
     assertEquals(initialSettings, options.getInitialSettings());
     assertEquals(useAlpn, options.isUseAlpn());
+    assertEquals(http2ConnectionWindowSize, options.getHttp2ConnectionWindowSize());
     assertEquals(sslEngine, options.getSslEngine());
     assertEquals(alpnVersions, options.getAlpnVersions());
 

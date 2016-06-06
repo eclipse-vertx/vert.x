@@ -37,6 +37,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpConnection;
@@ -91,12 +92,14 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
   private boolean closed;
+  private int windowSize;
 
   public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler handler, TCPMetrics metrics) {
     super((VertxInternal) context.owner(), channel, context, metrics);
     this.channel = channel;
     this.handlerContext = channel.pipeline().context(handler);
     this.handler = handler;
+    this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
   }
 
   void setHandlerContext(ChannelHandlerContext handlerContext) {
@@ -293,6 +296,24 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       }
     }
     return consumed[0];
+  }
+
+  @Override
+  public int getWindowSize() {
+    return windowSize;
+  }
+
+  @Override
+  public HttpConnection setWindowSize(int windowSize) {
+    try {
+      Http2Stream stream = handler.encoder().connection().connectionStream();
+      int delta = windowSize - this.windowSize;
+      handler.decoder().flowController().incrementWindowSize(stream, delta);
+      this.windowSize = windowSize;
+      return this;
+    } catch (Http2Exception e) {
+      throw new VertxException(e);
+    }
   }
 
   @Override

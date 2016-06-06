@@ -79,6 +79,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final long DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS = 100;
 
+  /**
+   *
+   */
+  public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
+
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -88,6 +93,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxHeaderSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
+  private int http2ConnectionWindowSize;
 
   /**
    * Default constructor
@@ -114,6 +120,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
+    this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
   }
 
   /**
@@ -137,6 +144,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
+    http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
   }
 
   @Override
@@ -469,6 +477,28 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * @return the default HTTP/2 connection window size
+   */
+  public int getHttp2ConnectionWindowSize() {
+    return http2ConnectionWindowSize;
+  }
+
+  /**
+   * Set the default HTTP/2 connection window size. It overrides the initial window
+   * size set by {@link Http2Settings#getInitialWindowSize}, so the connection window size
+   * is greater than for its streams, in order the data throughput.
+   * <p/>
+   * A value of {@code -1} reuses the initial window size setting.
+   *
+   * @param http2ConnectionWindowSize the window size applied to the connection
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setHttp2ConnectionWindowSize(int http2ConnectionWindowSize) {
+    this.http2ConnectionWindowSize = http2ConnectionWindowSize;
+    return this;
+  }
+
   @Override
   public HttpServerOptions setLogActivity(boolean logEnabled) {
     return (HttpServerOptions) super.setLogActivity(logEnabled);
@@ -490,6 +520,7 @@ public class HttpServerOptions extends NetServerOptions {
     if (maxHeaderSize != that.maxHeaderSize) return false;
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
+    if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
   }
 
@@ -505,6 +536,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + maxInitialLineLength;
     result = 31 * result + maxHeaderSize;
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
+    result = 31 * result + http2ConnectionWindowSize;
     return result;
   }
 }

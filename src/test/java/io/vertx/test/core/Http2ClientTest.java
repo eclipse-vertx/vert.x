@@ -1706,7 +1706,6 @@ public class Http2ClientTest extends Http2TestBase {
 
     Set<HttpConnection> clientConnections = Collections.synchronizedSet(new HashSet<>());
     for (int j = 0;j < rounds;j++) {
-      System.out.println("round " + j);
       for (int i = 0;i < maxConcurrency;i++) {
         client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
           resp.endHandler(v -> {
@@ -1722,6 +1721,48 @@ public class Http2ClientTest extends Http2TestBase {
       }
     }
 
+    await();
+  }
+
+  @Test
+  public void testConnectionWindowSize() throws Exception {
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          assertEquals(65535, windowSizeIncrement);
+          testComplete();
+        });
+      }
+    });
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions(clientOptions).setHttp2ConnectionWindowSize(65535 * 2));
+    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+    }).end();
+    await();
+  }
+
+  @Test
+  public void testUpdateConnectionWindowSize() throws Exception {
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          assertEquals(65535, windowSizeIncrement);
+          testComplete();
+        });
+      }
+    });
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+    }).connectionHandler(conn -> {
+      assertEquals(65535, conn.getWindowSize());
+      conn.setWindowSize(65535 + 10000);
+      assertEquals(65535 + 10000, conn.getWindowSize());
+      conn.setWindowSize(65535 + 65535);
+      assertEquals(65535 + 65535, conn.getWindowSize());
+    }).end();
     await();
   }
 

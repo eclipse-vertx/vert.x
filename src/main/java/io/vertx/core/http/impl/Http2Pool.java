@@ -46,10 +46,11 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   final int maxConcurrency;
   final boolean logEnabled;
   final int maxSockets;
+  final int windowSize;
 
   public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, HttpClientMetrics metrics,
                    Map<Channel, ? super Http2ClientConnection> connectionMap,
-                   int maxConcurrency, boolean logEnabled, int maxSize) {
+                   int maxConcurrency, boolean logEnabled, int maxSize, int windowSize) {
     this.queue = queue;
     this.client = client;
     this.metrics = metrics;
@@ -57,6 +58,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     this.maxConcurrency = maxConcurrency;
     this.logEnabled = logEnabled;
     this.maxSockets = maxSize;
+    this.windowSize = windowSize;
   }
 
   @Override
@@ -104,6 +106,9 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
       }
       p.addLast(handler);
       allConnections.add(conn);
+      if (windowSize > 0) {
+        conn.setWindowSize(windowSize);
+      }
       conn.streamCount++;
       waiter.handleConnection(conn); // Should make same tests than in deliverRequest
       queue.deliverStream(conn, waiter);

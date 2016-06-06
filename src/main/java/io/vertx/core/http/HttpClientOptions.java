@@ -57,6 +57,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_HTTP2_MULTIPLEXING_LIMIT = -1;
 
   /**
+   * The default connection window size for HTTP/2 = -1
+   */
+  public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
+
+  /**
    * Default value of whether keep-alive is enabled = true
    */
   public static final boolean DEFAULT_KEEP_ALIVE = true;
@@ -128,6 +133,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean pipelining;
   private int http2MaxPoolSize;
   private int http2MultiplexingLimit;
+  private int http2ConnectionWindowSize;
 
   private boolean tryUseCompression;
   private int maxWebsocketFrameSize;
@@ -162,6 +168,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.pipeliningLimit = other.getPipeliningLimit();
     this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
     this.http2MultiplexingLimit = other.http2MultiplexingLimit;
+    this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.tryUseCompression = other.isTryUseCompression();
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
     this.defaultHost = other.defaultHost;
@@ -193,6 +200,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
     http2MaxPoolSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
+    http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     defaultHost = DEFAULT_DEFAULT_HOST;
@@ -413,6 +421,28 @@ public class HttpClientOptions extends ClientOptionsBase {
       throw new IllegalArgumentException("http2MaxPoolSize must be > 0");
     }
     this.http2MaxPoolSize = max;
+    return this;
+  }
+
+  /**
+   * @return the default HTTP/2 connection window size
+   */
+  public int getHttp2ConnectionWindowSize() {
+    return http2ConnectionWindowSize;
+  }
+
+  /**
+   * Set the default HTTP/2 connection window size. It overrides the initial window
+   * size set by {@link Http2Settings#getInitialWindowSize}, so the connection window size
+   * is greater than for its streams, in order the data throughput.
+   * <p/>
+   * A value of {@code -1} reuses the initial window size setting.
+   *
+   * @param http2ConnectionWindowSize the window size applied to the connection
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setHttp2ConnectionWindowSize(int http2ConnectionWindowSize) {
+    this.http2ConnectionWindowSize = http2ConnectionWindowSize;
     return this;
   }
 
@@ -744,6 +774,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (h2cUpgrade != that.h2cUpgrade) return false;
+    if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
 
     return true;
   }
@@ -767,6 +798,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + (h2cUpgrade ? 1 : 0);
+    result = 31 * result + http2ConnectionWindowSize;
     return result;
   }
 }

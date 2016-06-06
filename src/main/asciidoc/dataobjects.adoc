@@ -664,6 +664,14 @@ Add an enabled SSL/TLS protocols
 Set to <code>true</code> when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, and <code>false</code>
  when an <i>h2c</i> connection is established directly (with prior knowledge).
 +++
+|[[http2ConnectionWindowSize]]`http2ConnectionWindowSize`|`Number (int)`|
++++
+Set the default HTTP/2 connection window size. It overrides the initial window
+ size set by link, so the connection window size
+ is greater than for its streams, in order the data throughput.
+ <p/>
+ A value of <code>-1</code> reuses the initial window size setting.
++++
 |[[http2MaxPoolSize]]`http2MaxPoolSize`|`Number (int)`|
 +++
 Set the maximum pool size for HTTP/2 connections
@@ -869,6 +877,14 @@ Set whether 100 Continue should be handled automatically
 |[[host]]`host`|`String`|
 +++
 Set the host
++++
+|[[http2ConnectionWindowSize]]`http2ConnectionWindowSize`|`Number (int)`|
++++
+Set the default HTTP/2 connection window size. It overrides the initial window
+ size set by link, so the connection window size
+ is greater than for its streams, in order the data throughput.
+ <p/>
+ A value of <code>-1</code> reuses the initial window size setting.
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++

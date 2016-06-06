@@ -44,6 +44,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("h2cUpgrade") instanceof Boolean) {
       obj.setH2cUpgrade((Boolean)json.getValue("h2cUpgrade"));
     }
+    if (json.getValue("http2ConnectionWindowSize") instanceof Number) {
+      obj.setHttp2ConnectionWindowSize(((Number)json.getValue("http2ConnectionWindowSize")).intValue());
+    }
     if (json.getValue("http2MaxPoolSize") instanceof Number) {
       obj.setHttp2MaxPoolSize(((Number)json.getValue("http2MaxPoolSize")).intValue());
     }
@@ -98,6 +101,7 @@ public class HttpClientOptionsConverter {
     }
     json.put("defaultPort", obj.getDefaultPort());
     json.put("h2cUpgrade", obj.isH2cUpgrade());
+    json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
     json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
     if (obj.getInitialSettings() != null) {

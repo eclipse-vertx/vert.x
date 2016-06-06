@@ -39,6 +39,28 @@ import io.vertx.core.buffer.Buffer;
 public interface HttpConnection {
 
   /**
+   * @return the current connection window size or {@code -1} for HTTP/1.x
+   */
+  default int getWindowSize() {
+    return -1;
+  }
+
+  /**
+   * Update the current connection wide window size to a new size.
+   * <p/>
+   * Increasing this value, gives better performance when several data streams are multiplexed
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param windowSize the new window size
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default HttpConnection setWindowSize(int windowSize) {
+    return this;
+  }
+
+  /**
    * Like {@link #goAway(long, int)} with a last stream id {@code 2^31-1}.
    */
   @Fluent

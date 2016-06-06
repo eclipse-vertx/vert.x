@@ -354,6 +354,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
     }
     pipeline.addLast("handler", handler);
+    if (options.getHttp2ConnectionWindowSize() > 0) {
+      handler.connection.setWindowSize(options.getHttp2ConnectionWindowSize());
+    }
   }
 
   @Override

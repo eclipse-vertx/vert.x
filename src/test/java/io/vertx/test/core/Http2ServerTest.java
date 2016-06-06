@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -2765,6 +2766,58 @@ public class Http2ServerTest extends Http2TestBase {
       int id = request.nextStreamId();
       request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testConnectionWindowSize() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).setHttp2ConnectionWindowSize(65535 + 65535));
+    server.requestHandler(req  -> {
+      req.response().end();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(65535, windowSizeIncrement);
+            testComplete();
+          });
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testUpdateConnectionWindowSize() throws Exception {
+    server.connectionHandler(conn -> {
+      assertEquals(65535, conn.getWindowSize());
+      conn.setWindowSize(65535 + 10000);
+      assertEquals(65535 + 10000, conn.getWindowSize());
+      conn.setWindowSize(65535 + 65535);
+      assertEquals(65535 + 65535, conn.getWindowSize());
+    }).requestHandler(req  -> {
+      req.response().end();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(65535, windowSizeIncrement);
+            testComplete();
+          });
+        }
+      });
     });
     fut.sync();
     await();
