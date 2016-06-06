@@ -1506,7 +1506,7 @@ public class Http2ClientTest extends Http2TestBase {
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT).sync();
     try {
       client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setH2cUpgrade(upgrade));
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setHttp2ClearTextUpgrade(upgrade));
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
         assertEquals(HttpVersion.HTTP_2, resp.version());
         testComplete();

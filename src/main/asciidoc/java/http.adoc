@@ -845,7 +845,7 @@ HttpClient client = vertx.createHttpClient(options);
 ----
 
 `h2c` connections can also be established directly, i.e connection started with a prior knowledge, when
-`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setH2cUpgrade-boolean-[setH2cUpgrade]` options is set to false: after the
+`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2ClearTextUpgrade-boolean-[setHttp2ClearTextUpgrade]` options is set to false: after the
 connection is established, the client will send the HTTP/2 connection preface and expect to receive
 the same preface from the server.
 

@@ -702,7 +702,7 @@
  * ----
  *
  * `h2c` connections can also be established directly, i.e connection started with a prior knowledge, when
- * {@link io.vertx.core.http.HttpClientOptions#setH2cUpgrade(boolean)} options is set to false: after the
+ * {@link io.vertx.core.http.HttpClientOptions#setHttp2ClearTextUpgrade(boolean)} options is set to false: after the
  * connection is established, the client will send the HTTP/2 connection preface and expect to receive
  * the same preface from the server.
  *

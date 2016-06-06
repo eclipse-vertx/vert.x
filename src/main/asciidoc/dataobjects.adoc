@@ -659,7 +659,7 @@ Add an enabled cipher suite
 +++
 Add an enabled SSL/TLS protocols
 +++
-|[[h2cUpgrade]]`h2cUpgrade`|`Boolean`|
+|[[http2ClearTextUpgrade]]`http2ClearTextUpgrade`|`Boolean`|
 +++
 Set to <code>true</code> when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, and <code>false</code>
  when an <i>h2c</i> connection is established directly (with prior knowledge).

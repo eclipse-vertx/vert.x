@@ -446,7 +446,7 @@ public class ConnectionManager {
             pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
           }
           if (version == HttpVersion.HTTP_2) {
-            if (options.isH2cUpgrade()) {
+            if (options.isHttp2ClearTextUpgrade()) {
               HttpClientCodec httpCodec = new HttpClientCodec();
               class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
                 @Override
@@ -511,7 +511,7 @@ public class ConnectionManager {
               if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
                 // Upgrade handler do nothing
               } else {
-                if (version == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
+                if (version == HttpVersion.HTTP_2 && !options.isHttp2ClearTextUpgrade()) {
                   queue.http2Connected(context, ch, waiter, false);
                 } else {
                   queue.http1xConnected(version, context, port, host, ch, waiter);

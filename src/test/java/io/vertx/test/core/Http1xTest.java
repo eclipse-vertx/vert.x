@@ -221,9 +221,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setAlpnVersions(alpnVersions));
     assertEquals(alpnVersions, options.getAlpnVersions());
 
-    assertEquals(true, options.isH2cUpgrade());
-    assertEquals(options, options.setH2cUpgrade(false));
-    assertEquals(false, options.isH2cUpgrade());
+    assertEquals(true, options.isHttp2ClearTextUpgrade());
+    assertEquals(options, options.setHttp2ClearTextUpgrade(false));
+    assertEquals(false, options.isHttp2ClearTextUpgrade());
   }
 
 
@@ -439,7 +439,7 @@ public class Http1xTest extends HttpTest {
     options.setUseAlpn(useAlpn);
     options.setSslEngine(sslEngine);
     options.setAlpnVersions(alpnVersions);
-    options.setH2cUpgrade(h2cUpgrade);
+    options.setHttp2ClearTextUpgrade(h2cUpgrade);
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -478,7 +478,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngine());
     assertEquals(alpnVersions, copy.getAlpnVersions());
-    assertEquals(h2cUpgrade, copy.isH2cUpgrade());
+    assertEquals(h2cUpgrade, copy.isHttp2ClearTextUpgrade());
   }
 
   @Test
@@ -509,7 +509,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngine(), json.getSslEngine());
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
-    assertEquals(def.isH2cUpgrade(), json.isH2cUpgrade());
+    assertEquals(def.isHttp2ClearTextUpgrade(), json.isHttp2ClearTextUpgrade());
   }
 
   @Test
@@ -594,7 +594,7 @@ public class Http1xTest extends HttpTest {
       .put("useAlpn", useAlpn)
       .put("sslEngine", sslEngine.name())
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
-      .put("h2cUpgrade", h2cUpgrade);
+      .put("http2ClearTextUpgrade", h2cUpgrade);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -634,7 +634,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(useAlpn, options.isUseAlpn());
     assertEquals(sslEngine, options.getSslEngine());
     assertEquals(alpnVersions, options.getAlpnVersions());
-    assertEquals(h2cUpgrade, options.isH2cUpgrade());
+    assertEquals(h2cUpgrade, options.isHttp2ClearTextUpgrade());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
