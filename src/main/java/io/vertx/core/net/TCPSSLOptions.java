@@ -66,17 +66,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final boolean DEFAULT_USE_ALPN = false;
 
-   /**
-    * Default SSL engine = JDK
-    */
-  public static final SSLEngine DEFAULT_SSL_ENGINE = SSLEngine.JDK;
-
-  /**
-   * Default value of whether session cache is enabled in open SSL session server context
-   */
-  public static final boolean DEFAULT_OPEN_SSL_SESSION_CACHE_ENABLED = true;
-
-
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
@@ -89,9 +78,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
   private boolean useAlpn;
-  private SSLEngine sslEngine;
+  private SSLEngineOptions sslEngineOptions;
   private Set<String> enabledSecureTransportProtocols = new HashSet<>();
-  private boolean openSslSessionCacheEnabled;
 
   /**
    * Default constructor
@@ -120,9 +108,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
-    this.sslEngine = other.sslEngine;
+    this.sslEngineOptions = other.sslEngineOptions;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new HashSet<>() : new HashSet<>(other.getEnabledSecureTransportProtocols());
-    this.openSslSessionCacheEnabled = other.isOpenSslSessionCacheEnabled();
   }
 
   /**
@@ -146,8 +133,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
-    sslEngine = DEFAULT_SSL_ENGINE;
-    openSslSessionCacheEnabled = DEFAULT_OPEN_SSL_SESSION_CACHE_ENABLED;
+    sslEngineOptions = new JdkSSLEngineOptions();
   }
 
   /**
@@ -446,19 +432,27 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * @return the SSL engine implementation to use
    */
-  public SSLEngine getSslEngine() {
-    return sslEngine;
+  public SSLEngineOptions getSslEngineOptions() {
+    return sslEngineOptions;
   }
 
   /**
    * Set to use SSL engine implementation to use.
    *
-   * @param sslEngine the ssl engine to use
+   * @param sslEngineOptions the ssl engine to use
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions setSslEngine(SSLEngine sslEngine) {
-    this.sslEngine = sslEngine;
+  public TCPSSLOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    this.sslEngineOptions = sslEngineOptions;
     return this;
+  }
+
+  public TCPSSLOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
+    return setSslEngineOptions(sslEngineOptions);
+  }
+
+  public TCPSSLOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
+    return setSslEngineOptions(sslEngineOptions);
   }
 
   /**
@@ -485,26 +479,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return (TCPSSLOptions) super.setLogActivity(logEnabled);
   }
 
-  /**
-   * Set whether session cache is enabled in open SSL session server context
-   *
-   * @param sessionCacheEnabled true if session cache is enabled
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setOpenSslSessionCacheEnabled(boolean sessionCacheEnabled) {
-    this.openSslSessionCacheEnabled = sessionCacheEnabled;
-    return this;
-  }
-
-  /**
-   * Whether session cache is enabled in open SSL session server context
-   *
-   * @return true if session cache is enabled
-   */
-  public boolean isOpenSslSessionCacheEnabled() {
-    return openSslSessionCacheEnabled;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -526,8 +500,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (keyCertOptions != null ? !keyCertOptions.equals(that.keyCertOptions) : that.keyCertOptions != null) return false;
     if (trustOptions != null ? !trustOptions.equals(that.trustOptions) : that.trustOptions != null) return false;
     if (useAlpn != that.useAlpn) return false;
-    if (sslEngine != that.sslEngine) return false;
-    if (openSslSessionCacheEnabled != that.openSslSessionCacheEnabled) return false;
+    if (sslEngineOptions != null ? !sslEngineOptions.equals(that.sslEngineOptions) : that.sslEngineOptions != null) return false;
     if (!enabledSecureTransportProtocols.equals(that.enabledSecureTransportProtocols)) return false;
 
     return true;
@@ -548,10 +521,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + (crlPaths != null ? crlPaths.hashCode() : 0);
     result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);
     result = 31 * result + (useAlpn ? 1 : 0);
-    result = 31 * result + (sslEngine != null ? sslEngine.hashCode() : 0);
+    result = 31 * result + (sslEngineOptions != null ? sslEngineOptions.hashCode() : 0);
     result = 31 * result + (enabledSecureTransportProtocols != null ? enabledSecureTransportProtocols
         .hashCode() : 0);
-    result = 31 * result + (openSslSessionCacheEnabled ? 1 : 0);
     return result;
   }
 }

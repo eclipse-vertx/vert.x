@@ -634,7 +634,7 @@
  * The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead. OpenSSL provides
  * better performances and CPU usage than the JDK engine, as well as JDK version independence.
  *
- * OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setSslEngine} to {@link io.vertx.core.net.SSLEngine#OPENSSL}
+ * OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setOpenSslEngineOptions(OpenSSLEngineOptions)}
  * and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
  * OpenSSL to be installed on your OS depending on the tcnative implementation.
  *

@@ -16,24 +16,12 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.VertxGen;
-
 /**
  * The SSL engine implementation to use in a Vert.x server or client.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@VertxGen
-public enum SSLEngine {
+public abstract class SSLEngineOptions {
 
-  /**
-   * Use the engine provided by the JDK.
-   */
-  JDK,
-
-  /**
-   * Use an OpenSSL based engine.
-   */
-  OPENSSL,
 
 }

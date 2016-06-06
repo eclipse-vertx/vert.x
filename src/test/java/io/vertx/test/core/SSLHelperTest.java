@@ -23,7 +23,7 @@ import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
 
@@ -56,7 +56,7 @@ public class SSLHelperTest extends VertxTestBase {
   public void testUseOpenSSLCiphersWhenNotSpecified() throws Exception {
     Set<String> expected = OpenSsl.availableCipherSuites();
     SSLHelper helper = new SSLHelper(
-        new HttpClientOptions().setSslEngine(io.vertx.core.net.SSLEngine.OPENSSL),
+        new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()),
         TLSCert.PEM.getClientKeyCertOptions(),
         TLSCert.PEM.getClientTrustOptions());
     SslContext ctx = helper.getContext((VertxInternal) vertx);
@@ -74,10 +74,10 @@ public class SSLHelperTest extends VertxTestBase {
   }
 
   private void testOpenSslServerSessionContext(boolean testDefault){
-    HttpServerOptions httpServerOptions = new HttpServerOptions().setSslEngine(io.vertx.core.net.SSLEngine.OPENSSL);
+    HttpServerOptions httpServerOptions = new HttpServerOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions());
 
     if(!testDefault) {
-      httpServerOptions.setOpenSslSessionCacheEnabled(false);
+      httpServerOptions.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false));
     }
 
     SSLHelper defaultHelper = new SSLHelper(httpServerOptions,

@@ -452,7 +452,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         options.addCrlPath("tls/ca/crl.pem");
       }
       if (clientOpenSSL) {
-        options.setSslEngine(SSLEngine.OPENSSL);
+        options.setOpenSslEngineOptions(new OpenSSLEngineOptions());
       }
       if (clientUsesAlpn) {
         options.setUseAlpn(true);
@@ -491,7 +491,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         serverOptions.addCrlPath("tls/ca/crl.pem");
       }
       if (serverOpenSSL) {
-        serverOptions.setSslEngine(SSLEngine.OPENSSL);
+        serverOptions.setOpenSslEngineOptions(new OpenSSLEngineOptions());
       }
       if (serverUsesAlpn) {
         serverOptions.setUseAlpn(true);
@@ -566,14 +566,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testJKSOpenSSL() {
-    HttpServerOptions serverOptions = new HttpServerOptions().setSslEngine(SSLEngine.OPENSSL);
+    HttpServerOptions serverOptions = new HttpServerOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions());
     setOptions(serverOptions, TLSCert.JKS.getServerKeyCertOptions());
     testStore(serverOptions, Collections.singletonList("OpenSSL server key/certificate must be configured with .pem format"), null);
   }
 
   @Test
   public void testPKCS12OpenSSL() {
-    HttpServerOptions serverOptions = new HttpServerOptions().setSslEngine(SSLEngine.OPENSSL);
+    HttpServerOptions serverOptions = new HttpServerOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions());
     setOptions(serverOptions, TLSCert.JKS.getServerKeyCertOptions());
     testStore(serverOptions, Collections.singletonList("OpenSSL server key/certificate must be configured with .pem format"), null);
   }

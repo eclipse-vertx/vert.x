@@ -310,9 +310,19 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setSslEngine(SSLEngine sslEngine) {
-    super.setSslEngine(sslEngine);
+  public HttpServerOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    super.setSslEngineOptions(sslEngineOptions);
     return this;
+  }
+
+  @Override
+  public HttpServerOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
+    return (HttpServerOptions) super.setSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public HttpServerOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
+    return (HttpServerOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
   /**

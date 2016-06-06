@@ -20,13 +20,15 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptionsBase;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.SSLEngine;
+import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrustOptions;
 
 import java.util.ArrayList;
@@ -689,8 +691,18 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setSslEngine(SSLEngine sslEngine) {
-    return (HttpClientOptions) super.setSslEngine(sslEngine);
+  public HttpClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public HttpClientOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
+    return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public HttpClientOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
+    return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
   /**

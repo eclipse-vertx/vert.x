@@ -23,8 +23,8 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.SSLEngine;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -130,7 +130,7 @@ public class Http2Test extends HttpTest {
         .setUseAlpn(true)
         .setSsl(true)
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-        .setPemKeyCertOptions((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setSslEngine(SSLEngine.OPENSSL);
+        .setPemKeyCertOptions((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setSslEngineOptions(new OpenSSLEngineOptions());
     server.close();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions());

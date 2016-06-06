@@ -81,11 +81,17 @@ public class EventBusOptionsConverter {
     if (json.getValue("idleTimeout") instanceof Number) {
       obj.setIdleTimeout(((Number)json.getValue("idleTimeout")).intValue());
     }
+    if (json.getValue("jdkSslEngineOptions") instanceof JsonObject) {
+      obj.setJdkSslEngineOptions(new io.vertx.core.net.JdkSSLEngineOptions((JsonObject)json.getValue("jdkSslEngineOptions")));
+    }
     if (json.getValue("keyStoreOptions") instanceof JsonObject) {
       obj.setKeyStoreOptions(new io.vertx.core.net.JksOptions((JsonObject)json.getValue("keyStoreOptions")));
     }
     if (json.getValue("logActivity") instanceof Boolean) {
       obj.setLogActivity((Boolean)json.getValue("logActivity"));
+    }
+    if (json.getValue("openSslEngineOptions") instanceof JsonObject) {
+      obj.setOpenSslEngineOptions(new io.vertx.core.net.OpenSSLEngineOptions((JsonObject)json.getValue("openSslEngineOptions")));
     }
     if (json.getValue("pemKeyCertOptions") instanceof JsonObject) {
       obj.setPemKeyCertOptions(new io.vertx.core.net.PemKeyCertOptions((JsonObject)json.getValue("pemKeyCertOptions")));
@@ -122,9 +128,6 @@ public class EventBusOptionsConverter {
     }
     if (json.getValue("ssl") instanceof Boolean) {
       obj.setSsl((Boolean)json.getValue("ssl"));
-    }
-    if (json.getValue("sslEngine") instanceof String) {
-      obj.setSslEngine(io.vertx.core.net.SSLEngine.valueOf((String)json.getValue("sslEngine")));
     }
     if (json.getValue("tcpKeepAlive") instanceof Boolean) {
       obj.setTcpKeepAlive((Boolean)json.getValue("tcpKeepAlive"));
@@ -203,9 +206,6 @@ public class EventBusOptionsConverter {
     json.put("sendBufferSize", obj.getSendBufferSize());
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
-    if (obj.getSslEngine() != null) {
-      json.put("sslEngine", obj.getSslEngine().name());
-    }
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("trafficClass", obj.getTrafficClass());
