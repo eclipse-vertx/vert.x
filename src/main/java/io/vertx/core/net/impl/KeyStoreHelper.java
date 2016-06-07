@@ -38,7 +38,9 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -207,7 +209,7 @@ public abstract class KeyStoreHelper {
       if (keyValue == null) {
         throw new RuntimeException("Missing private key path");
       }
-      byte[] value = loadPem(keyValue.get(), "PRIVATE KEY");
+      byte[] value = loadPems(keyValue.get(), "PRIVATE KEY").get(0);
       KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
       return rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(value));
     }
@@ -241,33 +243,48 @@ public abstract class KeyStoreHelper {
     }
   }
 
-  private static byte[] loadPem(Buffer data, String delimiter) throws IOException {
+  private static List<byte[]> loadPems(Buffer data, String delimiter) throws IOException {
     String pem = data.toString();
     String beginDelimiter = "-----BEGIN " + delimiter + "-----";
     String endDelimiter = "-----END " + delimiter + "-----";
-    int begin = pem.indexOf(beginDelimiter);
-    if (begin == -1) {
+    List<byte[]> pems = new ArrayList<>();
+    int index = 0;
+    while (true) {
+      index = pem.indexOf(beginDelimiter, index);
+      if (index == -1) {
+        break;
+      }
+      index += beginDelimiter.length();
+      int end = pem.indexOf(endDelimiter, index);
+      if (end == -1) {
+        throw new RuntimeException("Missing " + endDelimiter + " delimiter");
+      }
+      String content = pem.substring(index, end);
+      content = content.replaceAll("\\s", "");
+      if (content.length() == 0) {
+        throw new RuntimeException("Empty pem file");
+      }
+      index = end + 1;
+      pems.add(Base64.getDecoder().decode(content));
+    }
+    if (pems.isEmpty()) {
       throw new RuntimeException("Missing " + beginDelimiter + " delimiter");
     }
-    begin += beginDelimiter.length();
-    int end = pem.indexOf(endDelimiter, begin);
-    if (end == -1) {
-      throw new RuntimeException("Missing " + endDelimiter + " delimiter");
-    }
-    String content = pem.substring(begin, end);
-    content = content.replaceAll("\\s", "");
-    if (content.length() == 0) {
-      throw new RuntimeException("Empty pem file");
-    }
-    return Base64.getDecoder().decode(content);
+    return pems;
   }
 
-  private static X509Certificate[] loadCerts(Buffer cert) throws Exception {
-    if (cert == null) {
+  private static X509Certificate[] loadCerts(Buffer buffer) throws Exception {
+    if (buffer == null) {
       throw new RuntimeException("Missing X.509 certificate path");
     }
-    byte[] value = loadPem(cert, "CERTIFICATE");
+    List<byte[]> pems = loadPems(buffer, "CERTIFICATE");
     CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-    return certFactory.generateCertificates(new ByteArrayInputStream(value)).toArray(new X509Certificate[0]);
+    List<X509Certificate> certs = new ArrayList<>(pems.size());
+    for (byte[] pem : pems) {
+      for (Certificate cert : certFactory.generateCertificates(new ByteArrayInputStream(pem))) {
+        certs.add((X509Certificate) cert);
+      }
+    }
+    return certs.toArray(new X509Certificate[certs.size()]);
   }
 }

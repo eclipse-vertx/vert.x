@@ -15,6 +15,7 @@
  */
 package io.vertx.test.core;
 
+import io.netty.handler.codec.UnsupportedMessageTypeException;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -106,11 +107,11 @@ enum TLSCert {
     }
   },
 
-  // Signed by CA
-  JKS_CA() {
+  // Signed by root CA
+  JKS_ROOT_CA() {
     @Override
     KeyCertOptions getServerKeyCertOptions() {
-      return new JksOptions().setPath("tls/server-keystore-ca.jks").setPassword("wibble");
+      return new JksOptions().setPath("tls/server-keystore-root-ca.jks").setPassword("wibble");
     }
     @Override
     TrustOptions getServerTrustOptions() {
@@ -118,7 +119,7 @@ enum TLSCert {
     }
     @Override
     TrustOptions getClientTrustOptions() {
-      return new JksOptions().setPath("tls/client-truststore-ca.jks").setPassword("wibble");
+      return new JksOptions().setPath("tls/client-truststore-root-ca.jks").setPassword("wibble");
     }
     @Override
     KeyCertOptions getClientKeyCertOptions() {
@@ -126,11 +127,11 @@ enum TLSCert {
     }
   },
 
-  // Signed by CA
-  PKCS12_CA() {
+  // Signed by root CA
+  PKCS12_ROOT_CA() {
     @Override
     KeyCertOptions getServerKeyCertOptions() {
-      return new PfxOptions().setPath("tls/server-keystore-ca.p12").setPassword("wibble");
+      return new PfxOptions().setPath("tls/server-keystore-root-ca.p12").setPassword("wibble");
     }
     @Override
     TrustOptions getServerTrustOptions() {
@@ -138,7 +139,7 @@ enum TLSCert {
     }
     @Override
     TrustOptions getClientTrustOptions() {
-      return new PfxOptions().setPath("tls/client-truststore-ca.p12").setPassword("wibble");
+      return new PfxOptions().setPath("tls/client-truststore-root-ca.p12").setPassword("wibble");
     }
     @Override
     KeyCertOptions getClientKeyCertOptions() {
@@ -146,23 +147,63 @@ enum TLSCert {
     }
   },
 
-  // Signed by CA
+  // Signed by root CA
+  PEM_ROOT_CA() {
+    @Override
+    KeyCertOptions getServerKeyCertOptions() {
+      return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-root-ca.pem");
+    }
+    @Override
+    TrustOptions getServerTrustOptions() {
+      return new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
+    }
+    @Override
+    TrustOptions getClientTrustOptions() {
+      return new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
+    }
+    @Override
+    KeyCertOptions getClientKeyCertOptions() {
+      return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert-root-ca.pem");
+    }
+  },
+
+  // Signed by an intermediate CA
   PEM_CA() {
     @Override
     KeyCertOptions getServerKeyCertOptions() {
-      return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-ca.pem");
+      return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-int-ca.pem");
     }
     @Override
     TrustOptions getServerTrustOptions() {
-      return new PemTrustOptions().addCertPath("tls/ca/ca-cert.pem");
+      return new PemTrustOptions().addCertPath("tls/int-ca/ca-cert.pem");
     }
     @Override
     TrustOptions getClientTrustOptions() {
-      return new PemTrustOptions().addCertPath("tls/ca/ca-cert.pem");
+      return new PemTrustOptions().addCertPath("tls/int-ca/ca-cert.pem");
     }
     @Override
     KeyCertOptions getClientKeyCertOptions() {
-      return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert-ca.pem");
+      throw new UnsupportedMessageTypeException();
+    }
+  },
+
+  // Signed by an intermediate CA using a chain
+  PEM_CA_CHAIN() {
+    @Override
+    KeyCertOptions getServerKeyCertOptions() {
+      return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-ca-chain.pem");
+    }
+    @Override
+    TrustOptions getServerTrustOptions() {
+      return new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
+    }
+    @Override
+    TrustOptions getClientTrustOptions() {
+      return new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
+    }
+    @Override
+    KeyCertOptions getClientKeyCertOptions() {
+      throw new UnsupportedMessageTypeException();
     }
   },
 

@@ -1,2 +1,0 @@
-R	160706133704Z	150707133749Z	01	unknown	/CN=localhost
-V	160706134009Z		02	unknown	/CN=localhost

@@ -50,7 +50,7 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
       options.setTrustAll(true);
     }
     if (useCrl) {
-      options.addCrlPath("tls/ca/crl.pem");
+      options.addCrlPath("tls/root-ca/crl.pem");
     }
 
     setOptions(options, trust.getClientTrustOptions());
@@ -76,9 +76,9 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
         {TLSCert.JKS, TLSCert.JKS, false, false, true, Collections.emptyList()},
         {TLSCert.PKCS12, TLSCert.JKS, false, false, false, Collections.emptyList()},
         {TLSCert.PEM, TLSCert.JKS, false, false, false, Collections.emptyList()},
-        {TLSCert.PKCS12_CA, TLSCert.JKS_CA, false, false, false, Collections.emptyList()},
-        {TLSCert.PEM_CA, TLSCert.PKCS12_CA, false, false, false, Collections.emptyList()},
-        {TLSCert.JKS, TLSCert.PEM_CA, false, true, false, Arrays.asList(Http1xTest.ENABLED_CIPHER_SUITES)},
+        {TLSCert.PKCS12_ROOT_CA, TLSCert.JKS_ROOT_CA, false, false, false, Collections.emptyList()},
+        {TLSCert.PEM_ROOT_CA, TLSCert.PKCS12_ROOT_CA, false, false, false, Collections.emptyList()},
+        {TLSCert.JKS, TLSCert.PEM_ROOT_CA, false, true, false, Arrays.asList(Http1xTest.ENABLED_CIPHER_SUITES)},
     });
   }
 

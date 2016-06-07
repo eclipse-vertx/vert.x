@@ -86,57 +86,69 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertJKS_CAWithJKS_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS_CA, TLSCert.JKS_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertJKSRootCAWithJKSRootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.JKS_ROOT_CA, TLSCert.JKS_ROOT_CA, TLSCert.NONE).pass();
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertJKS_CAWithPKCS12_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PKCS12_CA, TLSCert.JKS_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertJKSRootCAWithPKCS12RootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PKCS12_ROOT_CA, TLSCert.JKS_ROOT_CA, TLSCert.NONE).pass();
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertJKS_CAWithPEM_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_CA, TLSCert.JKS_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertJKSRootRootCAWithPEMRootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.JKS_ROOT_CA, TLSCert.NONE).pass();
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertPKCS12_CAWithJKS_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS_CA, TLSCert.PKCS12_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12RootCAWithJKSRootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.JKS_ROOT_CA, TLSCert.PKCS12_ROOT_CA, TLSCert.NONE).pass();
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertPKCS12_CAWithPKCS12_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PKCS12_CA, TLSCert.PKCS12_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12RootCAWithPKCS12RootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PKCS12_ROOT_CA, TLSCert.PKCS12_ROOT_CA, TLSCert.NONE).pass();
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertPKCS12_CAWithPEM_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_CA, TLSCert.PKCS12_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12RootCAWithPEMRootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PKCS12_ROOT_CA, TLSCert.NONE).pass();
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertPEM_CAWithJKS_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS_CA, TLSCert.PEM_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertPEMRootCAWithJKSRootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.JKS_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE).pass();
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertPEM_CAWithPKCS12_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PKCS12_CA, TLSCert.PEM_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertPEMRootCAWithPKCS12RootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PKCS12_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE).pass();
   }
 
   @Test
-  // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertPEM_CAWithPEM_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_CA, TLSCert.PEM_CA, TLSCert.NONE).pass();
+  // Server specifies cert that the client trusts via a root CA (not trust all)
+  public void testTLSClientTrustServerCertPEMRootCAWithPEMRootCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE).pass();
+  }
+
+  @Test
+  // Server specifies cert chain that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEMRootCAWithPEMCAChain() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_CA_CHAIN, TLSCert.NONE).pass();
+  }
+
+  @Test
+  // Server specifies intermediate cert that the client doesn't trust because it is missing the intermediate CA signed by the root CA
+  public void testTLSClientUntrustedServerCertPEMRootCAWithPEMCA() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_CA, TLSCert.NONE).fail();
   }
 
   @Test
@@ -208,7 +220,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Client specifies cert by CA and it is required
   public void testTLSClientCertPEM_CARequired() throws Exception {
-    testTLS(TLSCert.PEM_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_CA).requiresClientAuth().pass();
+    testTLS(TLSCert.PEM_ROOT_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_ROOT_CA).requiresClientAuth().pass();
   }
 
   @Test
@@ -226,13 +238,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Server specifies cert that the client does not trust via a revoked certificate of the CA
   public void testTLSClientRevokedServerCert() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_CA, TLSCert.PEM_CA, TLSCert.NONE).clientUsesCrl().fail();
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE).clientUsesCrl().fail();
   }
 
   @Test
   // Client specifies cert that the server does not trust via a revoked certificate of the CA
   public void testTLSRevokedClientCertServer() throws Exception {
-    testTLS(TLSCert.PEM_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_CA).requiresClientAuth().clientUsesCrl().fail();
+    testTLS(TLSCert.PEM_ROOT_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_ROOT_CA).requiresClientAuth().clientUsesCrl().fail();
   }
 
   @Test
@@ -449,7 +461,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         options.setTrustAll(true);
       }
       if (clientUsesCrl) {
-        options.addCrlPath("tls/ca/crl.pem");
+        options.addCrlPath("tls/root-ca/crl.pem");
       }
       if (clientOpenSSL) {
         options.setOpenSslEngineOptions(new OpenSSLEngineOptions());
@@ -488,7 +500,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         serverOptions.setClientAuth(ClientAuth.REQUIRED);
       }
       if (serverUsesCrl) {
-        serverOptions.addCrlPath("tls/ca/crl.pem");
+        serverOptions.addCrlPath("tls/root-ca/crl.pem");
       }
       if (serverOpenSSL) {
         serverOptions.setOpenSslEngineOptions(new OpenSSLEngineOptions());
@@ -722,7 +734,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   public void testCrlInvalidPath() throws Exception {
     HttpClientOptions clientOptions = new HttpClientOptions();
-    setOptions(clientOptions, TLSCert.PEM_CA.getClientTrustOptions());
+    setOptions(clientOptions, TLSCert.PEM_ROOT_CA.getClientTrustOptions());
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);

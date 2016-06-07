@@ -217,7 +217,7 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   // Server specifies cert that the client trusts via a CA (not trust all)
   public void testTLSClientTrustServerCertPEM_CA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_CA, TLSCert.PEM_CA, TLSCert.NONE, false, false, false, false, true);
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE, false, false, false, false, true);
   }
 
   @Test
@@ -277,7 +277,7 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   //Client specifies cert signed by CA and it is required
   public void testTLSClientCertPEM_CARequired() throws Exception {
-    testTLS(TLSCert.PEM_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_CA, true, false, false, false, true);
+    testTLS(TLSCert.PEM_ROOT_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_ROOT_CA, true, false, false, false, true);
   }
 
   @Test
@@ -295,13 +295,13 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   // Server specifies cert that the client does not trust via a revoked certificate of the CA
   public void testTLSClientRevokedServerCert() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_CA, TLSCert.PEM_CA, TLSCert.NONE, false, false, false, true, false);
+    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE, false, false, false, true, false);
   }
 
   @Test
   //Client specifies cert that the server does not trust via a revoked certificate of the CA
   public void testTLSRevokedClientCertServer() throws Exception {
-    testTLS(TLSCert.PEM_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_CA, true, true, false, false, false);
+    testTLS(TLSCert.PEM_ROOT_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_ROOT_CA, true, true, false, false, false);
   }
 
   @Test
@@ -321,7 +321,7 @@ public class WebsocketTest extends VertxTestBase {
       options.setTrustAll(true);
     }
     if (clientUsesCrl) {
-      options.addCrlPath("tls/ca/crl.pem");
+      options.addCrlPath("tls/root-ca/crl.pem");
     }
     setOptions(options, clientTrust.getClientTrustOptions());
     setOptions(options, clientCert.getClientKeyCertOptions());
@@ -337,7 +337,7 @@ public class WebsocketTest extends VertxTestBase {
       serverOptions.setClientAuth(ClientAuth.REQUIRED);
     }
     if (serverUsesCrl) {
-      serverOptions.addCrlPath("tls/ca/crl.pem");
+      serverOptions.addCrlPath("tls/root-ca/crl.pem");
     }
     for (String suite: enabledCipherSuites) {
       serverOptions.addEnabledCipherSuite(suite);
