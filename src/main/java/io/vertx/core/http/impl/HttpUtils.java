@@ -203,7 +203,7 @@ public final class HttpUtils {
   static Http2Settings decodeSettings(String base64Settings) {
     try {
       Http2Settings settings = new Http2Settings();
-      Buffer buffer = Buffer.buffer(Base64.getDecoder().decode(base64Settings));
+      Buffer buffer = Buffer.buffer(Base64.getUrlDecoder().decode(base64Settings));
       int pos = 0;
       int len = buffer.length();
       while (pos < len) {
