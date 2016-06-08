@@ -53,7 +53,7 @@
 
   <properties>
 
-    <netty.version>4.1.0.Final</netty.version>
+    <netty.version>4.1.1.Final</netty.version>
     <jackson.version>2.7.4</jackson.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
