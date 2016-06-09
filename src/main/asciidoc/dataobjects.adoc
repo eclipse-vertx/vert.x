@@ -307,6 +307,13 @@ Set the value of traffic class
 +++
 Set the codec name.
 +++
+|[[headers]]`headers`|`String`|
++++
+Add a message header.
+ <p>
+ Message headers can be sent with any message and will be accessible with link
+ at the recipient.
++++
 |[[sendTimeout]]`sendTimeout`|`Number (long)`|
 +++
 Set the send timeout.
