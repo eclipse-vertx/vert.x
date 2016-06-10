@@ -28,11 +28,14 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
 
 import javax.net.ssl.*;
@@ -54,6 +57,38 @@ import java.util.stream.Stream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SSLHelper {
+
+  /**
+   * Resolve the ssl engine options to use for properly running the configured options.
+   */
+  public static SSLEngineOptions resolveEngineOptions(TCPSSLOptions options) {
+    SSLEngineOptions engineOptions = options.getSslEngineOptions();
+    if (engineOptions == null) {
+      if (options.isUseAlpn()) {
+        if (JdkSSLEngineOptions.isAlpnAvailable()) {
+          engineOptions = new JdkSSLEngineOptions();
+        } else if (OpenSSLEngineOptions.isAlpnAvailable()) {
+          engineOptions = new OpenSSLEngineOptions();
+        }
+      }
+    }
+    if (engineOptions == null) {
+      engineOptions = new JdkSSLEngineOptions();
+    }
+    if (options.isUseAlpn()) {
+      if (engineOptions instanceof JdkSSLEngineOptions) {
+        if (!JdkSSLEngineOptions.isAlpnAvailable()) {
+          throw new VertxException("ALPN is not available");
+        }
+      }
+      if (engineOptions instanceof OpenSSLEngineOptions) {
+        if (!OpenSSLEngineOptions.isAlpnAvailable()) {
+          throw new VertxException("ALPN is not available");
+        }
+      }
+    }
+    return engineOptions;
+  }
 
   private static final Map<HttpVersion, String> PROTOCOL_NAME_MAPPING = new EnumMap<>(HttpVersion.class);
   private static final List<String> DEFAULT_JDK_CIPHER_SUITE;
@@ -102,6 +137,7 @@ public class SSLHelper {
   private boolean openSslSessionCacheEnabled = true;
 
   public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
+    SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
@@ -109,17 +145,18 @@ public class SSLHelper {
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.openSsl = options.getSslEngineOptions() instanceof OpenSSLEngineOptions;
+    this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
     this.client = true;
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     if (options.isVerifyHost()) {
       this.endpointIdentificationAlgorithm = "HTTPS";
     }
-    this.openSslSessionCacheEnabled = (options.getSslEngineOptions() instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) options.getSslEngineOptions()).isSessionCacheEnabled();
+    this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
   }
 
   public SSLHelper(HttpServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
+    SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
@@ -127,14 +164,15 @@ public class SSLHelper {
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.openSsl = options.getSslEngineOptions() instanceof OpenSSLEngineOptions;
+    this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
     this.client = false;
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
-    this.openSslSessionCacheEnabled = (options.getSslEngineOptions() instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) options.getSslEngineOptions()).isSessionCacheEnabled();
+    this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
   }
 
   public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
+    SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
@@ -142,15 +180,16 @@ public class SSLHelper {
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.openSsl = options.getSslEngineOptions() instanceof OpenSSLEngineOptions;
+    this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
     this.client = true;
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
-    this.openSslSessionCacheEnabled = (options.getSslEngineOptions() instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) options.getSslEngineOptions()).isSessionCacheEnabled();
+    this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
   }
 
   public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
+    SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
@@ -158,7 +197,7 @@ public class SSLHelper {
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.openSsl = options.getSslEngineOptions() instanceof OpenSSLEngineOptions;
+    this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
     this.client = false;
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();

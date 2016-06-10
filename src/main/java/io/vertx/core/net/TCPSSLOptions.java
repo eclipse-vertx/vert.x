@@ -66,6 +66,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final boolean DEFAULT_USE_ALPN = false;
 
+  /**
+   * The default SSL engine options = null (autoguess)
+   */
+  public static final SSLEngineOptions DEFAULT_SSL_ENGINE = null;
+
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
@@ -108,7 +113,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
-    this.sslEngineOptions = other.sslEngineOptions;
+    this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.clone() : null;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new HashSet<>() : new HashSet<>(other.getEnabledSecureTransportProtocols());
   }
 
@@ -133,7 +138,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
-    sslEngineOptions = new JdkSSLEngineOptions();
+    sslEngineOptions = null;
   }
 
   /**

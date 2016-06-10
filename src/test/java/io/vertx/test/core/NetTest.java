@@ -194,9 +194,9 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
+    assertNull(options.getSslEngineOptions());
+    assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
-    assertEquals(options, options.setSslEngineOptions(new OpenSSLEngineOptions()));
-    assertTrue(options.getSslEngineOptions() instanceof OpenSSLEngineOptions);
 
     testComplete();
   }
@@ -297,9 +297,9 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setUseAlpn(false));
     assertEquals(false, options.isUseAlpn());
 
+    assertNull(options.getSslEngineOptions());
+    assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
-    assertEquals(options, options.setSslEngineOptions(new OpenSSLEngineOptions()));
-    assertTrue(options.getSslEngineOptions() instanceof OpenSSLEngineOptions);
 
     testComplete();
   }

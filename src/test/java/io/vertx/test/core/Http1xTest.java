@@ -212,9 +212,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
+    assertNull(options.getSslEngineOptions());
+    assertEquals(options, options.setJdkSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
-    assertEquals(options, options.setOpenSslEngineOptions(new OpenSSLEngineOptions()));
-    assertTrue(options.getSslEngineOptions() instanceof OpenSSLEngineOptions);
 
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.HTTP_1_1);
     assertEquals(HttpClientOptions.DEFAULT_ALPN_VERSIONS, options.getAlpnVersions());
@@ -342,9 +342,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
+    assertNull(options.getSslEngineOptions());
+    assertEquals(options, options.setJdkSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
-    assertEquals(options, options.setOpenSslEngineOptions(new OpenSSLEngineOptions()));
-    assertTrue(options.getSslEngineOptions() instanceof OpenSSLEngineOptions);
 
     Http2Settings initialSettings = randomHttp2Settings();
     assertEquals(new Http2Settings().setMaxConcurrentStreams(HttpServerOptions.DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS), options.getInitialSettings());

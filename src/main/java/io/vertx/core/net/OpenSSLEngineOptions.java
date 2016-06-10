@@ -1,5 +1,6 @@
 package io.vertx.core.net;
 
+import io.netty.handler.ssl.OpenSsl;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
@@ -10,6 +11,20 @@ import io.vertx.core.json.JsonObject;
  */
 @DataObject(generateConverter = true)
 public class OpenSSLEngineOptions extends SSLEngineOptions {
+
+  /**
+   * @return when OpenSSL is available
+   */
+  public static boolean isAvailable() {
+    return OpenSsl.isAvailable();
+  }
+
+  /**
+   * @return when alpn support is available via OpenSSL engine
+   */
+  public static boolean isAlpnAvailable() {
+    return OpenSsl.isAlpnSupported();
+  }
 
   /**
    * Default value of whether session cache is enabled in open SSL session server context = true
@@ -71,5 +86,10 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
     JsonObject json = new JsonObject();
     OpenSSLEngineOptionsConverter.toJson(this, json);
     return json;
+  }
+
+  @Override
+  public OpenSSLEngineOptions clone() {
+    return new OpenSSLEngineOptions(this);
   }
 }

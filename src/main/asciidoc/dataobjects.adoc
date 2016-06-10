@@ -1004,6 +1004,10 @@ Set the websocket subprotocols supported by the server.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[alpnAvailable]]`alpnAvailable`|`Boolean`|
++++
+@return if alpn support is available via the JDK SSL engine
++++
 |===
 
 [[JksOptions]]
@@ -1429,6 +1433,14 @@ Set whether the file is to be opened for writing
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[alpnAvailable]]`alpnAvailable`|`Boolean`|
++++
+@return when alpn support is available via OpenSSL engine
++++
+|[[available]]`available`|`Boolean`|
++++
+@return when OpenSSL is available
++++
 |[[sessionCacheEnabled]]`sessionCacheEnabled`|`Boolean`|
 +++
 Set whether session cache is enabled in open SSL session server context

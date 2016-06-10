@@ -436,7 +436,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return metrics != null && metrics.isEnabled();
   }
 
-  SSLHelper getSslHelper() {
+  public SSLHelper getSslHelper() {
     return sslHelper;
   }
 

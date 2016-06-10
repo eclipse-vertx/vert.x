@@ -23,5 +23,6 @@ package io.vertx.core.net;
  */
 public abstract class SSLEngineOptions {
 
+  public abstract SSLEngineOptions clone();
 
 }

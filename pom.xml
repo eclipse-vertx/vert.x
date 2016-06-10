@@ -205,7 +205,6 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
-      <!--<artifactId>netty-tcnative</artifactId>-->
       <artifactId>netty-tcnative-boringssl-static</artifactId>
       <classifier>${tcnative.classifier}</classifier>
       <version>1.1.33.Fork17</version>
@@ -281,6 +280,9 @@
             <argLine>-Xmx1200M -javaagent:${jetty.alpnAgent.path}</argLine>
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>
+            <excludes>
+              <exclude>io/vertx/test/it/**</exclude>
+            </excludes>
           </configuration>
         </plugin>
         <plugin>
@@ -331,10 +333,95 @@
             </execution>
           </executions>
         </plugin>
+
+
       </plugins>
     </pluginManagement>
     <plugins>
 
+      <!-- Tests that require to run with different JVM settings -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>2.19.1</version>
+        <executions>
+          <execution>
+            <id>no-alpn</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/test/it/AlpnTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>openssl-alpn</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/test/it/AlpnTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
+                <vertx-test-sslcontext>openssl</vertx-test-sslcontext>
+              </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jdk-alpn</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <argLine>-javaagent:${jetty.alpnAgent.path}</argLine>
+              <includes>
+                <include>io/vertx/test/it/AlpnTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>true</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+                <vertx-test-sslcontext>jdk</vertx-test-sslcontext>
+              </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jdk-openssl-alpn</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <argLine>-javaagent:${jetty.alpnAgent.path}</argLine>
+              <includes>
+                <include>io/vertx/test/it/AlpnTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>true</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
+                <vertx-test-sslcontext>jdk</vertx-test-sslcontext>
+              </systemProperties>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
       <!-- Transform the Asciidoctor to html -->
       <plugin>
