@@ -627,19 +627,20 @@
  *
  * Protocol versions can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
  *
- * ==== OpenSSL engine
+ * ==== SSL engine
  *
- * The default SSL/TLS engine implementation is provided by the JDK.
+ * The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead of the JDK implementation.
+ * OpenSSL provides better performances and CPU usage than the JDK engine, as well as JDK version independence.
  *
- * The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead. OpenSSL provides
- * better performances and CPU usage than the JDK engine, as well as JDK version independence.
+ * The engine options to use is
  *
- * OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setOpenSslEngineOptions(OpenSSLEngineOptions)}
- * and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
- * OpenSSL to be installed on your OS depending on the tcnative implementation.
+ * - the {@link io.vertx.core.net.TCPSSLOptions#getSslEngineOptions()} options when it is set
+ * - otherwise {@link io.vertx.core.net.JdkSSLEngineOptions}
  *
- * OpenSSL restricts the key/certificate configuration to `.pem` files. However it is still possible to use any trust
- * configuration.
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#exampleSSLEngine}
+ * ----
  *
  * ==== Application-Layer Protocol Negotiation
  *
@@ -651,9 +652,23 @@
  * - _OpenSSL_ support
  * - _Jetty-ALPN_ support
  *
+ * The engine options to use is
+ *
+ * - the {@link io.vertx.core.net.TCPSSLOptions#getSslEngineOptions()} options when it is set
+ * - {@link io.vertx.core.net.JdkSSLEngineOptions} when ALPN is available for JDK
+ * - {@link io.vertx.core.net.OpenSSLEngineOptions} when ALPN is available for OpenSSL
+ * - otherwise it fails
+ *
  * ===== OpenSSL ALPN support
  *
  * OpenSSL provides native ALPN support.
+ *
+ * OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setOpenSslEngineOptions(OpenSSLEngineOptions)}
+ * and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
+ * OpenSSL to be installed on your OS depending on the tcnative implementation.
+ *
+ * OpenSSL restricts the key/certificate configuration to `.pem` files. However it is still possible to use any trust
+ * configuration.
  *
  * ===== Jetty-ALPN support
  *

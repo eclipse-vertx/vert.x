@@ -516,6 +516,26 @@ public class NetExamples {
         NetServer server = vertx.createNetServer(options);
     }
 
+  public void exampleSSLEngine(Vertx vertx, JksOptions keyStoreOptions) {
+
+    // Use JDK SSL engine
+    NetServerOptions options = new NetServerOptions().
+        setSsl(true).
+        setKeyStoreOptions(keyStoreOptions);
+
+    // Use JDK SSL engine explicitly
+    options = new NetServerOptions().
+        setSsl(true).
+        setKeyStoreOptions(keyStoreOptions).
+        setJdkSslEngineOptions(new JdkSSLEngineOptions());
+
+    // Use OpenSSL engine
+    options = new NetServerOptions().
+        setSsl(true).
+        setKeyStoreOptions(keyStoreOptions).
+        setOpenSslEngineOptions(new OpenSSLEngineOptions());
+  }
+
   public void example46(Vertx vertx, JksOptions keyStoreOptions) {
     NetClientOptions options = new NetClientOptions().
             setSsl(true).

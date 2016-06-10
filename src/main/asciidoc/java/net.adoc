@@ -871,19 +871,34 @@ NetServerOptions options = new NetServerOptions().
 
 Protocol versions can be specified on the `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` or `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` configuration.
 
-==== OpenSSL engine
+==== SSL engine
 
-The default SSL/TLS engine implementation is provided by the JDK.
+The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead of the JDK implementation.
+OpenSSL provides better performances and CPU usage than the JDK engine, as well as JDK version independence.
 
-The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead. OpenSSL provides
-better performances and CPU usage than the JDK engine, as well as JDK version independence.
+The engine options to use is
 
-OpenSSL requires to configure `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#setOpenSslEngineOptions-io.vertx.core.net.OpenSSLEngineOptions-[setOpenSslEngineOptions]`
-and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
-OpenSSL to be installed on your OS depending on the tcnative implementation.
+- the `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#getSslEngineOptions--[getSslEngineOptions]` options when it is set
+- otherwise `link:../../apidocs/io/vertx/core/net/JdkSSLEngineOptions.html[JdkSSLEngineOptions]`
 
-OpenSSL restricts the key/certificate configuration to `.pem` files. However it is still possible to use any trust
-configuration.
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setKeyStoreOptions(keyStoreOptions);
+
+// Use JDK SSL engine explicitly
+options = new NetServerOptions().
+    setSsl(true).
+    setKeyStoreOptions(keyStoreOptions).
+    setJdkSslEngineOptions(new JdkSSLEngineOptions());
+
+// Use OpenSSL engine
+options = new NetServerOptions().
+    setSsl(true).
+    setKeyStoreOptions(keyStoreOptions).
+    setOpenSslEngineOptions(new OpenSSLEngineOptions());
+----
 
 ==== Application-Layer Protocol Negotiation
 
@@ -895,9 +910,23 @@ Java 8 does not supports ALPN out of the box, so ALPN should be enabled by other
 - _OpenSSL_ support
 - _Jetty-ALPN_ support
 
+The engine options to use is
+
+- the `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#getSslEngineOptions--[getSslEngineOptions]` options when it is set
+- `link:../../apidocs/io/vertx/core/net/JdkSSLEngineOptions.html[JdkSSLEngineOptions]` when ALPN is available for JDK
+- `link:../../apidocs/io/vertx/core/net/OpenSSLEngineOptions.html[OpenSSLEngineOptions]` when ALPN is available for OpenSSL
+- otherwise it fails
+
 ===== OpenSSL ALPN support
 
 OpenSSL provides native ALPN support.
+
+OpenSSL requires to configure `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#setOpenSslEngineOptions-io.vertx.core.net.OpenSSLEngineOptions-[setOpenSslEngineOptions]`
+and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
+OpenSSL to be installed on your OS depending on the tcnative implementation.
+
+OpenSSL restricts the key/certificate configuration to `.pem` files. However it is still possible to use any trust
+configuration.
 
 ===== Jetty-ALPN support
 
