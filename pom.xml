@@ -353,7 +353,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/AlpnTest.java</include>
+                <include>io/vertx/test/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
@@ -372,7 +372,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/AlpnTest.java</include>
+                <include>io/vertx/test/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
@@ -390,7 +390,7 @@
             <configuration>
               <argLine>-javaagent:${jetty.alpnAgent.path}</argLine>
               <includes>
-                <include>io/vertx/test/it/AlpnTest.java</include>
+                <include>io/vertx/test/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>true</vertx-test-alpn-jdk>
@@ -411,7 +411,7 @@
             <configuration>
               <argLine>-javaagent:${jetty.alpnAgent.path}</argLine>
               <includes>
-                <include>io/vertx/test/it/AlpnTest.java</include>
+                <include>io/vertx/test/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>true</vertx-test-alpn-jdk>

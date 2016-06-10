@@ -74,16 +74,21 @@ public class SSLHelper {
     }
     if (engineOptions == null) {
       engineOptions = new JdkSSLEngineOptions();
+    } else if (engineOptions instanceof OpenSSLEngineOptions) {
+      if (!OpenSSLEngineOptions.isAvailable()) {
+        throw new VertxException("OpenSSL is not available");
+      }
     }
+
     if (options.isUseAlpn()) {
       if (engineOptions instanceof JdkSSLEngineOptions) {
         if (!JdkSSLEngineOptions.isAlpnAvailable()) {
-          throw new VertxException("ALPN is not available");
+          throw new VertxException("ALPN not available for JDK SSL/TLS engine");
         }
       }
       if (engineOptions instanceof OpenSSLEngineOptions) {
         if (!OpenSSLEngineOptions.isAlpnAvailable()) {
-          throw new VertxException("ALPN is not available");
+          throw new VertxException("ALPN is not available for OpenSSL SSL/TLS engine");
         }
       }
     }
