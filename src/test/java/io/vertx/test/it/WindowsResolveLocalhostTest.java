@@ -5,15 +5,16 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
 
-import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
 
 /**
  * Integration test that tricks Vert.x to make it behave like on Windows 10
@@ -30,24 +31,14 @@ public class WindowsResolveLocalhostTest {
   @Test
   public void testResolveLocalhostOnWindows() throws Exception {
 
-    String old = System.getProperty("os.name");
-    System.setProperty("os.name", "Windows 10");
-    Class<?> utils;
-    Boolean isWindows;
-    try {
-      utils = Vertx.class.getClassLoader().loadClass("io.vertx.core.impl.Utils");
-      Method m = utils.getDeclaredMethod("isWindows");
-      isWindows = (Boolean) m.invoke(null);
-    } finally {
-      System.setProperty("os.name", old);
-    }
-    assertTrue(isWindows);
+    InetAddress localhost = InetAddress.getLocalHost();
 
     // Set a dns resolver that won't resolve localhost
     dnsServer = FakeDNSServer.testResolveASameServer("127.0.0.1");
     dnsServer.start();
     dnsServerAddress = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
 
+    // Test using the resolver API
     VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             setHostsValue(Buffer.buffer("")).
@@ -57,12 +48,42 @@ public class WindowsResolveLocalhostTest {
     CompletableFuture<Void> test = new CompletableFuture<>();
     vertx.resolveAddress("localhost", ar -> {
       if (ar.succeeded()) {
-        test.complete(null);
+        InetAddress resolved = ar.result();
+        if (resolved.equals(localhost)) {
+          test.complete(null);
+        } else {
+          test.completeExceptionally(new AssertionError("Unexpected localhost value " + resolved));
+        }
       } else {
         test.completeExceptionally(ar.cause());
       }
     });
     test.get(10, TimeUnit.SECONDS);
-  }
 
+    // Test using bootstrap
+    CompletableFuture<Void> test2 = new CompletableFuture<>();
+    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost(localhost.getHostAddress()));
+    server.connectHandler(so -> {
+      so.write("hello").end();
+    });
+    server.listen(ar -> {
+      if (ar.succeeded()) {
+        test2.complete(null);
+      } else {
+        test2.completeExceptionally(ar.cause());
+      }
+    });
+    test2.get(10, TimeUnit.SECONDS);
+
+    CompletableFuture<Void> test3 = new CompletableFuture<>();
+    NetClient client = vertx.createNetClient();
+    client.connect(1234, "localhost", ar -> {
+      if (ar.succeeded()) {
+        test3.complete(null);
+      } else {
+        test3.completeExceptionally(ar.cause());
+      }
+    });
+    test3.get(10, TimeUnit.SECONDS);
+  }
 }

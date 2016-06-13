@@ -40,6 +40,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,8 +48,6 @@ import java.util.Map;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class AddressResolver {
-
-  private static final InetAddress LOOPBACK_ADDRESS = InetSocketAddress.createUnresolved("127.0.0.1", 0).getAddress();
 
   private final Vertx vertx;
   private final AddressResolverGroup<InetSocketAddress> resolverGroup;
@@ -102,9 +101,18 @@ public class AddressResolver {
       } else {
         entries = null;
       }
-      if (entries != null) {
-        builder.hostsFileEntriesResolver(entries::get);
+
+      // When localhost is missing we just resolve it and add it
+      if (entries == null) {
+        entries = new HashMap<>();
       }
+      try {
+        if (!entries.containsKey("localhost")) {
+          entries.put("localhost", InetAddress.getLocalHost());
+        }
+      } catch (UnknownHostException ignore) {
+      }
+      builder.hostsFileEntriesResolver(entries::get);
 
       builder.optResourceEnabled(options.isOptResourceEnabled());
       builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
@@ -140,11 +148,7 @@ public class AddressResolver {
           InetSocketAddress address = fut.getNow();
           resultHandler.handle(Future.succeededFuture(address.getAddress()));
         } else {
-          if (Utils.isWindows() && hostname.equals("localhost")) {
-            resultHandler.handle(Future.succeededFuture(LOOPBACK_ADDRESS));
-          } else {
-            resultHandler.handle(Future.failedFuture(a.cause()));
-          }
+          resultHandler.handle(Future.failedFuture(a.cause()));
         }
       });
     });
