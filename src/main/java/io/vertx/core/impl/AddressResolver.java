@@ -20,8 +20,6 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.InetSocketAddressResolver;
-import io.netty.resolver.dns.DnsNameResolver;
-import io.netty.resolver.dns.DnsNameResolverBuilder;
 import io.netty.resolver.dns.DnsServerAddresses;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -31,6 +29,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.dns.impl.fix.DnsNameResolver;
+import io.vertx.core.dns.impl.fix.DnsNameResolverBuilder;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
