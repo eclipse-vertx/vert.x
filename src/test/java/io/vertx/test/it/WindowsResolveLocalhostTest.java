@@ -43,7 +43,7 @@ public class WindowsResolveLocalhostTest {
     }
     assertTrue(isWindows);
 
-    // Give
+    // Set a dns resolver that won't resolve localhost
     dnsServer = FakeDNSServer.testResolveASameServer("127.0.0.1");
     dnsServer.start();
     dnsServerAddress = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
