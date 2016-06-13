@@ -421,7 +421,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>window-resolve-localhost</id>
+            <id>windows-resolve-localhost</id>
             <goals>
               <goal>integration-test</goal>
             </goals>

@@ -310,22 +310,4 @@ public class HostnameResolutionTest extends VertxTestBase {
     }));
     await();
   }
-
-/*
-  @Test
-  public void testResolveLocalhostOnWindows() {
-    String old = System.getProperty("os.name");
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer())));
-    try {
-      System.setProperty("os.name", "Windows 10");
-      assertTrue(Utils.isWindows());
-      vertx.resolveAddress("localhost", onSuccess(addr -> {
-        assertEquals("127.0.0.1", addr.getHostAddress());
-        testComplete();
-      }));
-    } finally {
-      System.setProperty("os.name", old);
-    }
-  }
-*/
 }
