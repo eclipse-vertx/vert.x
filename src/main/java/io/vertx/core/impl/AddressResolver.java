@@ -99,16 +99,13 @@ public class AddressResolver {
           throw new VertxException("Cannot read hosts config ", e);
         }
       } else {
-        entries = null;
+        entries = HostsFileParser.parseSilently();
       }
 
       // When localhost is missing we just resolve it and add it
-      if (entries == null) {
-        entries = new HashMap<>();
-      }
       try {
         if (!entries.containsKey("localhost")) {
-          entries.put("localhost", InetAddress.getLocalHost());
+          entries.put("localhost", InetAddress.getByName("localhost"));
         }
       } catch (UnknownHostException ignore) {
       }

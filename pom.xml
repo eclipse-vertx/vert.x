@@ -345,7 +345,6 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>2.19.1</version>
         <executions>
-<!--
           <execution>
             <id>no-alpn</id>
             <goals>
@@ -419,20 +418,6 @@
                 <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
                 <vertx-test-sslcontext>jdk</vertx-test-sslcontext>
               </systemProperties>
-            </configuration>
-          </execution>
--->
-          <execution>
-            <id>windows-resolve-localhost</id>
-            <goals>
-              <goal>integration-test</goal>
-            </goals>
-            <!--<phase>integration-test</phase>-->
-            <phase>process-test-classes</phase>
-            <configuration>
-              <includes>
-                <include>io/vertx/test/it/WindowsResolveLocalhostTest.java</include>
-              </includes>
             </configuration>
           </execution>
         </executions>
