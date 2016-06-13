@@ -48,6 +48,8 @@ import java.util.Map;
  */
 public class AddressResolver {
 
+  private static final InetAddress LOOPBACK_ADDRESS = InetSocketAddress.createUnresolved("127.0.0.1", 0).getAddress();
+
   private final Vertx vertx;
   private final AddressResolverGroup<InetSocketAddress> resolverGroup;
 
@@ -131,14 +133,18 @@ public class AddressResolver {
   public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
     ContextInternal callback = (ContextInternal) vertx.getOrCreateContext();
     io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolverGroup.getResolver(callback.nettyEventLoop());
-    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolve(InetSocketAddress.createUnresolved(hostname, 80));
+    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolve(InetSocketAddress.createUnresolved(hostname, 0));
     fut.addListener(a -> {
       callback.runOnContext(v -> {
         if (a.isSuccess()) {
           InetSocketAddress address = fut.getNow();
           resultHandler.handle(Future.succeededFuture(address.getAddress()));
         } else {
-          resultHandler.handle(Future.failedFuture(a.cause()));
+          if (Utils.isWindows() && hostname.equals("localhost")) {
+            resultHandler.handle(Future.succeededFuture(LOOPBACK_ADDRESS));
+          } else {
+            resultHandler.handle(Future.failedFuture(a.cause()));
+          }
         }
       });
     });

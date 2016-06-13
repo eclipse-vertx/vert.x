@@ -28,6 +28,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -309,4 +310,22 @@ public class HostnameResolutionTest extends VertxTestBase {
     }));
     await();
   }
+
+/*
+  @Test
+  public void testResolveLocalhostOnWindows() {
+    String old = System.getProperty("os.name");
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer())));
+    try {
+      System.setProperty("os.name", "Windows 10");
+      assertTrue(Utils.isWindows());
+      vertx.resolveAddress("localhost", onSuccess(addr -> {
+        assertEquals("127.0.0.1", addr.getHostAddress());
+        testComplete();
+      }));
+    } finally {
+      System.setProperty("os.name", old);
+    }
+  }
+*/
 }
