@@ -33,16 +33,20 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -308,5 +312,64 @@ public class HostnameResolutionTest extends VertxTestBase {
       testComplete();
     }));
     await();
+  }
+
+  @Test
+  public void testResolveMissingLocalhost() throws Exception {
+
+    InetAddress localhost = InetAddress.getByName("localhost");
+
+    // Set a dns resolver that won't resolve localhost
+    dnsServer = FakeDNSServer.testResolveASameServer("127.0.0.1");
+    dnsServer.start();
+    dnsServerAddress = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
+
+    // Test using the resolver API
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(
+        new AddressResolverOptions().
+            setHostsValue(Buffer.buffer("")).
+            addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
+            setOptResourceEnabled(false)
+    ));
+    CompletableFuture<Void> test = new CompletableFuture<>();
+    vertx.resolveAddress("localhost", ar -> {
+      if (ar.succeeded()) {
+        InetAddress resolved = ar.result();
+        if (resolved.equals(localhost)) {
+          test.complete(null);
+        } else {
+          test.completeExceptionally(new AssertionError("Unexpected localhost value " + resolved));
+        }
+      } else {
+        test.completeExceptionally(ar.cause());
+      }
+    });
+    test.get(10, TimeUnit.SECONDS);
+
+    // Test using bootstrap
+    CompletableFuture<Void> test2 = new CompletableFuture<>();
+    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost(localhost.getHostAddress()));
+    server.connectHandler(so -> {
+      so.write("hello").end();
+    });
+    server.listen(ar -> {
+      if (ar.succeeded()) {
+        test2.complete(null);
+      } else {
+        test2.completeExceptionally(ar.cause());
+      }
+    });
+    test2.get(10, TimeUnit.SECONDS);
+
+    CompletableFuture<Void> test3 = new CompletableFuture<>();
+    NetClient client = vertx.createNetClient();
+    client.connect(1234, "localhost", ar -> {
+      if (ar.succeeded()) {
+        test3.complete(null);
+      } else {
+        test3.completeExceptionally(ar.cause());
+      }
+    });
+    test3.get(10, TimeUnit.SECONDS);
   }
 }

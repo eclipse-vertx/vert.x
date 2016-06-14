@@ -20,8 +20,6 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.InetSocketAddressResolver;
-import io.netty.resolver.dns.DnsNameResolver;
-import io.netty.resolver.dns.DnsNameResolverBuilder;
 import io.netty.resolver.dns.DnsServerAddresses;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -31,6 +29,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.dns.impl.fix.DnsNameResolver;
+import io.vertx.core.dns.impl.fix.DnsNameResolverBuilder;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
@@ -40,6 +40,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -98,11 +99,17 @@ public class AddressResolver {
           throw new VertxException("Cannot read hosts config ", e);
         }
       } else {
-        entries = null;
+        entries = HostsFileParser.parseSilently();
       }
-      if (entries != null) {
-        builder.hostsFileEntriesResolver(entries::get);
+
+      // When localhost is missing we just resolve it and add it
+      try {
+        if (!entries.containsKey("localhost")) {
+          entries.put("localhost", InetAddress.getByName("localhost"));
+        }
+      } catch (UnknownHostException ignore) {
       }
+      builder.hostsFileEntriesResolver(entries::get);
 
       builder.optResourceEnabled(options.isOptResourceEnabled());
       builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
@@ -131,7 +138,7 @@ public class AddressResolver {
   public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
     ContextInternal callback = (ContextInternal) vertx.getOrCreateContext();
     io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolverGroup.getResolver(callback.nettyEventLoop());
-    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolve(InetSocketAddress.createUnresolved(hostname, 80));
+    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolve(InetSocketAddress.createUnresolved(hostname, 0));
     fut.addListener(a -> {
       callback.runOnContext(v -> {
         if (a.isSuccess()) {
