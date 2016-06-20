@@ -274,7 +274,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   public void testInvalidHostsConfig() {
     try {
       AddressResolverOptions options = new AddressResolverOptions().setHostsPath("whatever.txt");
-      Vertx.vertx(new VertxOptions().setAddressResolverOptions(options));
+      vertx(new VertxOptions().setAddressResolverOptions(options));
       fail();
     } catch (VertxException ignore) {
     }
@@ -282,7 +282,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testResolveFromClasspath() {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath("hosts_config.txt")));
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath("hosts_config.txt")));
     vertx.resolveAddress("server.net", onSuccess(addr -> {
       assertEquals("192.168.0.15", addr.getHostAddress());
       assertEquals("server.net", addr.getHostName());
@@ -294,7 +294,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   @Test
   public void testResolveFromFile() {
     File f = new File(new File(new File(new File("src"), "test"), "resources"), "hosts_config.txt");
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath(f.getAbsolutePath())));
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath(f.getAbsolutePath())));
     vertx.resolveAddress("server.net", onSuccess(addr -> {
       assertEquals("192.168.0.15", addr.getHostAddress());
       assertEquals("server.net", addr.getHostName());
@@ -305,7 +305,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testResolveFromBuffer() {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("192.168.0.15 server.net"))));
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("192.168.0.15 server.net"))));
     vertx.resolveAddress("server.net", onSuccess(addr -> {
       assertEquals("192.168.0.15", addr.getHostAddress());
       assertEquals("server.net", addr.getHostName());
@@ -325,7 +325,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     dnsServerAddress = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
 
     // Test using the resolver API
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setAddressResolverOptions(
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             setHostsValue(Buffer.buffer("")).
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
