@@ -45,10 +45,10 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.impl.ChannelProvider;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.ChannelProvider;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -109,15 +109,7 @@ public class ConnectionManager {
     private final Map<TargetAddress, ConnQueue> queueMap = new ConcurrentHashMap<>();
 
     ConnQueue getConnQueue(TargetAddress address, HttpVersion version) {
-      ConnQueue connQueue = queueMap.get(address);
-      if (connQueue == null) {
-        connQueue = new ConnQueue(version, this, address);
-        ConnQueue prev = queueMap.putIfAbsent(address, connQueue);
-        if (prev != null) {
-          connQueue = prev;
-        }
-      }
-      return connQueue;
+      return queueMap.computeIfAbsent(address, targetAddress -> new ConnQueue(version, this, targetAddress));
     }
 
     public void close() {
