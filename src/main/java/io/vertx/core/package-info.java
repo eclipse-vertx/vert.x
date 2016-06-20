@@ -336,6 +336,13 @@
  * {@link examples.CoreExamples#exampleFuture1}
  * ----
  *
+ * A list of futures can be used also:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#exampleFuture2}
+ * ----
+ *
  * The handler returned by {@link io.vertx.core.Future#completer()} completes the future.
  *
  * {@link io.vertx.core.CompositeFuture#any} takes several futures arguments (up to 6) and returns a future that is
@@ -343,14 +350,21 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.CoreExamples#exampleFuture2}
+ * {@link examples.CoreExamples#exampleFuture3}
+ * ----
+ *
+ * A list of futures can be used also:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#exampleFuture4}
  * ----
  *
  * {@link io.vertx.core.Future#compose} can be used for chaining futures:
  *
  * [source,$lang]
  * ----
- * {@link examples.CoreExamples#exampleFuture3}
+ * {@link examples.CoreExamples#exampleFuture5}
  * ----
  *
  * == Verticles

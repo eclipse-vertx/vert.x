@@ -28,7 +28,9 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetServer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by tim on 08/01/15.
@@ -129,7 +131,11 @@ public class CoreExamples {
     });
   }
 
-  public void exampleFuture2() {
+  public void exampleFuture2(Future f1, Future f2, Future f3) {
+    CompositeFuture.all(Arrays.asList(f1, f2, f3));
+  }
+
+  public void exampleFuture3() {
     Future<String> future1 = Future.future();
     Future<String> future2 = Future.future();
     CompositeFuture.any(future1, future2).setHandler(ar -> {
@@ -141,7 +147,11 @@ public class CoreExamples {
     });
   }
 
-  public void exampleFuture3(Vertx vertx, Future<Void> startFuture) {
+  public void exampleFuture4(Future f1, Future f2, Future f3) {
+    CompositeFuture.any(Arrays.asList(f1, f2, f3));
+  }
+
+  public void exampleFuture5(Vertx vertx, Future<Void> startFuture) {
 
     FileSystem fs = vertx.fileSystem();
 

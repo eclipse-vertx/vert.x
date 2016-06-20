@@ -358,6 +358,13 @@ CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
 });
 ----
 
+A list of futures can be used also:
+
+[source,java]
+----
+CompositeFuture.all(Arrays.asList(f1, f2, f3));
+----
+
 The handler returned by `link:../../apidocs/io/vertx/core/Future.html#completer--[completer]` completes the future.
 
 `link:../../apidocs/io/vertx/core/CompositeFuture.html#any-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.any]` takes several futures arguments (up to 6) and returns a future that is
@@ -374,6 +381,13 @@ CompositeFuture.any(future1, future2).setHandler(ar -> {
     // All failed
   }
 });
+----
+
+A list of futures can be used also:
+
+[source,java]
+----
+CompositeFuture.any(Arrays.asList(f1, f2, f3));
 ----
 
 `link:../../apidocs/io/vertx/core/Future.html#compose-io.vertx.core.Handler-io.vertx.core.Future-[compose]` can be used for chaining futures:
