@@ -818,6 +818,33 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testWriteFromConnectHandlerFromAnotherThread() {
+    Buffer expected = Buffer.buffer("AAA");
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.websocketHandler(ws -> {
+      Thread t = new Thread() {
+        @Override
+        public void run() {
+          ws.writeFrame(WebSocketFrame.binaryFrame(expected, true));
+        }
+      };
+      t.start();
+      while (t.getState() != Thread.State.BLOCKED) {
+        Thread.yield();
+      }
+    });
+    server.listen(onSuccess(server -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+        ws.handler(buff -> {
+          assertEquals(buff, expected);
+          testComplete();
+        });
+      });
+    }));
+    await();
+  }
+
   private void testValidSubProtocol(WebsocketVersion version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
@@ -1319,5 +1346,4 @@ public class WebsocketTest extends VertxTestBase {
     }));
     await();
   }
-
 }
