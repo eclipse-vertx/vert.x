@@ -18,11 +18,15 @@ package io.vertx.test.core;
 
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -59,9 +63,19 @@ public class HttpTestBase extends VertxTestBase {
         assertTrue(asyncResult.succeeded());
         latch.countDown();
       });
-      awaitLatch(latch);
+      if (!latch.await(10, TimeUnit.SECONDS)) {
+        System.err.println("Could not close HttpServer in time / thread dump:");
+        ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
+        for(final ThreadInfo info : threads) {
+          System.err.print(info);
+        }
+      }
     }
     super.tearDown();
+  }
+
+  private void close(Vertx vertx) {
+
   }
 
   @SuppressWarnings("unchecked")
