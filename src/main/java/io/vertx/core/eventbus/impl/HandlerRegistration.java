@@ -219,7 +219,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     }
   }
 
-  private void checkNextTick() {
+  private synchronized void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!pending.isEmpty()) {
       handlerContext.runOnContext(v -> {
