@@ -25,7 +25,10 @@ import io.netty.resolver.dns.*;
 import io.netty.util.internal.InternalThreadLocalMap;
 import io.netty.util.internal.UnstableApi;
 
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
@@ -36,6 +39,25 @@ import static io.netty.util.internal.ObjectUtil.intValue;
  */
 @UnstableApi
 public final class DnsNameResolverBuilder {
+
+  private static final List<String> DEFAULT_SEACH_DOMAINS;
+
+  static {
+    ArrayList<String> searchDomains = new ArrayList<>();
+    try {
+      Class<?> configClass = Class.forName("sun.net.dns.ResolverConfiguration");
+      Method open = configClass.getMethod("open");
+      Method nameservers = configClass.getMethod("searchlist");
+      Object instance = open.invoke(null);
+
+      @SuppressWarnings("unchecked")
+      List<String> list = (List<String>) nameservers.invoke(instance);
+      searchDomains.addAll(list);
+    } catch (Exception ignore) {
+      // Failed to get the system name search domain list.
+    }
+    DEFAULT_SEACH_DOMAINS = Collections.unmodifiableList(searchDomains);
+  }
 
   private final EventLoop eventLoop;
   private ChannelFactory<? extends DatagramChannel> channelFactory;
@@ -53,6 +75,8 @@ public final class DnsNameResolverBuilder {
   private int maxPayloadSize = 4096;
   private boolean optResourceEnabled = true;
   private HostsFileEntriesResolver hostsFileEntriesResolver = HostsFileEntriesResolver.DEFAULT;
+  private List<String> searchDomains = DEFAULT_SEACH_DOMAINS;
+  private int ndots = 1;
 
   /**
    * Creates a new builder.
@@ -301,6 +325,24 @@ public final class DnsNameResolverBuilder {
     return this;
   }
 
+  public List<String> searchDomains() {
+    return searchDomains;
+  }
+
+  public DnsNameResolverBuilder searchDomains(List<String> searchDomains) {
+    this.searchDomains = searchDomains;
+    return this;
+  }
+
+  public int ndots() {
+    return ndots;
+  }
+
+  public DnsNameResolverBuilder ndots(int ndots) {
+    this.ndots = ndots;
+    return this;
+  }
+
   /**
    * Returns a new {@link DnsNameResolver} instance.
    *
@@ -328,6 +370,8 @@ public final class DnsNameResolverBuilder {
         traceEnabled,
         maxPayloadSize,
         optResourceEnabled,
-        hostsFileEntriesResolver);
+        hostsFileEntriesResolver,
+        searchDomains,
+        ndots);
   }
 }

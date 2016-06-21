@@ -1343,6 +1343,20 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
 );
 ----
 
+By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
+list can be provided:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+    setAddressResolverOptions(
+        new AddressResolverOptions().addSearchDomain("foo.com").addSearchDomain("bar.com"))
+);
+----
+
+When a search domain list is used, the threshold for the number of dots is `1`, it can be configured with
+`link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setNdots-int-[setNdots]`.
+
 == High Availability and Fail-Over
 
 Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x

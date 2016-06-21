@@ -42,8 +42,11 @@ import org.apache.mina.transport.socket.DatagramAcceptor;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -61,19 +64,22 @@ public final class FakeDNSServer extends DnsServer {
   }
 
   public static FakeDNSServer testResolveA(final String ipAddress) {
+    return testResolveA(Collections.singletonMap("dns.vertx.io", ipAddress));
+  }
+
+  public static FakeDNSServer testResolveA(Map<String, String> entries) {
     return new FakeDNSServer(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.A);
-        rm.put(DnsAttribute.IP_ADDRESS, ipAddress);
-        set.add(rm.getEntry());
-        return set;
+        return entries.entrySet().stream().map(entry -> {
+          ResourceRecordModifier rm = new ResourceRecordModifier();
+          rm.setDnsClass(RecordClass.IN);
+          rm.setDnsName(entry.getKey());
+          rm.setDnsTtl(100);
+          rm.setDnsType(RecordType.A);
+          rm.put(DnsAttribute.IP_ADDRESS, entry.getValue());
+          return rm.getEntry();
+        }).collect(Collectors.toSet());
       }
     });
   }

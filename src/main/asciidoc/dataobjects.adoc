@@ -47,6 +47,10 @@ Set an alternate hosts configuration file to use instead of the one provided by 
 +++
 Set the maximum number of queries when an hostname is resolved.
 +++
+|[[ndots]]`ndots`|`Number (int)`|
++++
+Set the ndots value used when resolving using search domains, the default value is <code>1</code>.
++++
 |[[optResourceEnabled]]`optResourceEnabled`|`Boolean`|
 +++
 Set to true to enable the automatic inclusion in DNS queries of an optional record that hints
@@ -59,6 +63,13 @@ Set the query timeout in milliseconds, i.e the amount of time after a query is c
 |[[rdFlag]]`rdFlag`|`Boolean`|
 +++
 Set the DNS queries <i>Recursion Desired</i> flag value.
++++
+|[[searchDomains]]`searchDomains`|`Array of String`|
++++
+Set the lists of DNS search domains.
+ <p/>
+ When the search domain list is null, the effective search domain list will be populated using
+ the system DNS search domains.
 +++
 |[[servers]]`servers`|`Array of String`|
 +++

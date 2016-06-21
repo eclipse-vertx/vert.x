@@ -45,6 +45,9 @@ public class AddressResolverOptionsConverter {
     if (json.getValue("maxQueries") instanceof Number) {
       obj.setMaxQueries(((Number)json.getValue("maxQueries")).intValue());
     }
+    if (json.getValue("ndots") instanceof Number) {
+      obj.setNdots(((Number)json.getValue("ndots")).intValue());
+    }
     if (json.getValue("optResourceEnabled") instanceof Boolean) {
       obj.setOptResourceEnabled((Boolean)json.getValue("optResourceEnabled"));
     }
@@ -53,6 +56,12 @@ public class AddressResolverOptionsConverter {
     }
     if (json.getValue("rdFlag") instanceof Boolean) {
       obj.setRdFlag((Boolean)json.getValue("rdFlag"));
+    }
+    if (json.getValue("searchDomains") instanceof JsonArray) {
+      json.getJsonArray("searchDomains").forEach(item -> {
+        if (item instanceof String)
+          obj.addSearchDomain((String)item);
+      });
     }
     if (json.getValue("servers") instanceof JsonArray) {
       json.getJsonArray("servers").forEach(item -> {
@@ -73,9 +82,17 @@ public class AddressResolverOptionsConverter {
       json.put("hostsValue", obj.getHostsValue().getBytes());
     }
     json.put("maxQueries", obj.getMaxQueries());
+    json.put("ndots", obj.getNdots());
     json.put("optResourceEnabled", obj.isOptResourceEnabled());
     json.put("queryTimeout", obj.getQueryTimeout());
     json.put("rdFlag", obj.getRdFlag());
+    if (obj.getSearchDomains() != null) {
+      json.put("searchDomains", new JsonArray(
+          obj.getSearchDomains().
+              stream().
+              map(item -> item).
+              collect(java.util.stream.Collectors.toList())));
+    }
     if (obj.getServers() != null) {
       json.put("servers", new JsonArray(
           obj.getServers().

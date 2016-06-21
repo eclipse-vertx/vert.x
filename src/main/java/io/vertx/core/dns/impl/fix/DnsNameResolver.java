@@ -38,8 +38,10 @@ import io.netty.resolver.InetNameResolver;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.UnstableApi;
 import io.netty.util.internal.logging.InternalLogger;
@@ -48,6 +50,7 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import java.net.IDN;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -115,6 +118,8 @@ public class DnsNameResolver extends InetNameResolver {
   private final int maxPayloadSize;
   private final boolean optResourceEnabled;
   private final HostsFileEntriesResolver hostsFileEntriesResolver;
+  private final List<String> searchDomains;
+  private final int ndots;
 
   /**
    * Creates a new DNS-based name resolver that communicates with the specified list of DNS servers.
@@ -134,6 +139,8 @@ public class DnsNameResolver extends InetNameResolver {
    * @param maxPayloadSize the capacity of the datagram packet buffer
    * @param optResourceEnabled if automatic inclusion of a optional records is enabled
    * @param hostsFileEntriesResolver the {@link HostsFileEntriesResolver} used to check for local aliases
+   * @param searchDomains TODO
+   * @param ndots TODO
    */
   public DnsNameResolver(
       EventLoop eventLoop,
@@ -148,7 +155,9 @@ public class DnsNameResolver extends InetNameResolver {
       boolean traceEnabled,
       int maxPayloadSize,
       boolean optResourceEnabled,
-      HostsFileEntriesResolver hostsFileEntriesResolver) {
+      HostsFileEntriesResolver hostsFileEntriesResolver,
+      List<String> searchDomains,
+      int ndots) {
 
     super(eventLoop);
     checkNotNull(channelFactory, "channelFactory");
@@ -163,6 +172,8 @@ public class DnsNameResolver extends InetNameResolver {
     this.optResourceEnabled = optResourceEnabled;
     this.hostsFileEntriesResolver = checkNotNull(hostsFileEntriesResolver, "hostsFileEntriesResolver");
     this.resolveCache = resolveCache;
+    this.searchDomains = checkNotNull(searchDomains, "searchDomains");
+    this.ndots = checkPositive(ndots, "ndots");
 
     bindFuture = newChannel(channelFactory, localAddress);
     ch = (DatagramChannel) bindFuture.channel();
@@ -369,28 +380,87 @@ public class DnsNameResolver extends InetNameResolver {
     }
   }
 
+  private boolean searchDomains(String hostname) {
+    if (searchDomains.isEmpty() || (hostname.length() > 0 && hostname.charAt(hostname.length() - 1) == '.')) {
+      return false;
+    } else {
+      int idx = hostname.length();
+      int dots = 0;
+      while (idx-- > 0) {
+        if (hostname.charAt(idx) == '.') {
+          dots++;
+        }
+        if (dots >= ndots) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
   private void doResolveUncached(String hostname,
                                  Promise<InetAddress> promise,
                                  DnsCache resolveCache) {
-    final DnsNameResolverContext<InetAddress> ctx =
-        new DnsNameResolverContext<InetAddress>(this, hostname, promise, resolveCache) {
-          @Override
-          protected boolean finishResolve(
-              Class<? extends InetAddress> addressType, List<DnsCacheEntry> resolvedEntries) {
+    doResolveUncached(hostname, promise, resolveCache, searchDomains.size() > 0 && !hostname.endsWith("."));
 
-            final int numEntries = resolvedEntries.size();
-            for (int i = 0; i < numEntries; i++) {
-              final InetAddress a = resolvedEntries.get(i).address();
-              if (addressType.isInstance(a)) {
-                setSuccess(promise(), a);
-                return true;
+  }
+  private void doResolveUncached(String hostname,
+                                 Promise<InetAddress> promise,
+                                 DnsCache resolveCache, boolean trySearchDomain) {
+    if (trySearchDomain) {
+      Promise<InetAddress> original = promise;
+      promise = new DefaultPromise<>(executor());
+      FutureListener<InetAddress> globalListener = future -> {
+        if (future.isSuccess()) {
+          original.setSuccess(future.getNow());
+        } else {
+          FutureListener<InetAddress> sdListener = new FutureListener<InetAddress>() {
+            int count;
+            @Override
+            public void operationComplete(Future<InetAddress> future) throws Exception {
+              if (future.isSuccess()) {
+                original.trySuccess(future.getNow());
+              } else {
+                if (count < searchDomains.size()) {
+                  String searchDomain = searchDomains.get(count++);
+                  Promise<InetAddress> p = new DefaultPromise<>(executor());
+                  doResolveUncached(hostname + "." + searchDomain, p, resolveCache, false);
+                  p.addListener(this);
+                } else {
+                  original.tryFailure(future.cause());
+                }
               }
             }
-            return false;
-          }
-        };
+          };
+          future.addListener(sdListener);
+        }
+      };
+      promise.addListener(globalListener);
+    }
+    if (searchDomains(hostname)) {
+      promise.tryFailure(new UnknownHostException(hostname));
+    } else {
+      final DnsNameResolverContext<InetAddress> ctx =
+          new DnsNameResolverContext<InetAddress>(this, hostname, promise, resolveCache) {
+            @Override
+            protected boolean finishResolve(
+                Class<? extends InetAddress> addressType, List<DnsCacheEntry> resolvedEntries) {
 
-    ctx.resolve();
+              final int numEntries = resolvedEntries.size();
+              for (int i = 0; i < numEntries; i++) {
+                final InetAddress a = resolvedEntries.get(i).address();
+                if (addressType.isInstance(a)) {
+                  setSuccess(promise(), a);
+                  return true;
+                }
+              }
+              return false;
+            }
+          };
+
+
+      ctx.resolve();
+    }
   }
 
   @Override

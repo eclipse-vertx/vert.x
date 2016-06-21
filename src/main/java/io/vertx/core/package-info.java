@@ -1238,6 +1238,17 @@
  * {@link examples.CoreExamples#configureHosts}
  * ----
  *
+ * By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
+ * list can be provided:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#configureSearchDomains()}
+ * ----
+ *
+ * When a search domain list is used, the threshold for the number of dots is {@code 1}, it can be configured with
+ * {@link io.vertx.core.dns.AddressResolverOptions#setNdots(int)}.
+ *
  * == High Availability and Fail-Over
  *
  * Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x

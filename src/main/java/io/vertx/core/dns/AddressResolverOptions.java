@@ -22,6 +22,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Configuration options for Vert.x hostname resolver. The resolver uses the local <i>hosts</i> file and performs
@@ -48,6 +49,8 @@ public class AddressResolverOptions {
   public static final int DEFAULT_QUERY_TIMEOUT = 5000;
   public static final int DEFAULT_MAX_QUERIES = 3;
   public static final boolean DEFAULT_RD_FLAG = true;
+  public static final List<String> DEFAULT_SEACH_DOMAINS = null;
+  public static final int DEFAULT_NDOTS = 1;
 
   private String hostsPath;
   private Buffer hostsValue;
@@ -59,6 +62,8 @@ public class AddressResolverOptions {
   private long queryTimeout;
   private int maxQueries;
   private boolean rdFlag;
+  private List<String> searchDomains;
+  private int ndots;
 
   public AddressResolverOptions() {
     servers = DEFAULT_SERVERS;
@@ -69,6 +74,8 @@ public class AddressResolverOptions {
     queryTimeout = DEFAULT_QUERY_TIMEOUT;
     maxQueries = DEFAULT_MAX_QUERIES;
     rdFlag = DEFAULT_RD_FLAG;
+    searchDomains = null;
+    ndots = DEFAULT_NDOTS;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
@@ -82,6 +89,8 @@ public class AddressResolverOptions {
     this.queryTimeout = other.queryTimeout;
     this.maxQueries = other.maxQueries;
     this.rdFlag = other.rdFlag;
+    this.searchDomains = other.searchDomains != null ? new ArrayList<>(other.searchDomains) : null;
+    this.ndots = other.ndots;
   }
 
   public AddressResolverOptions(JsonObject json) {
@@ -297,6 +306,58 @@ public class AddressResolverOptions {
     return this;
   }
 
+  /**
+   * @return the list of search domains
+   */
+  public List<String> getSearchDomains() {
+    return searchDomains;
+  }
+
+  /**
+   * Set the lists of DNS search domains.
+   * <p/>
+   * When the search domain list is null, the effective search domain list will be populated using
+   * the system DNS search domains.
+   *
+   * @param searchDomains the search domains
+   */
+  public AddressResolverOptions setSearchDomains(List<String> searchDomains) {
+    this.searchDomains = searchDomains;
+    return this;
+  }
+
+  /**
+   * Add a DNS search domain.
+   *
+   * @param searchDomain the search domain to add
+   * @return a reference to this, so the API can be used fluently
+   */
+  public AddressResolverOptions addSearchDomain(String searchDomain) {
+    if (searchDomains == null) {
+      searchDomains = new ArrayList<>();
+    }
+    searchDomains.add(searchDomain);
+    return this;
+  }
+
+  /**
+   * @return the ndots value
+   */
+  public int getNdots() {
+    return ndots;
+  }
+
+  /**
+   * Set the ndots value used when resolving using search domains, the default value is {@code 1}.
+   *
+   * @param ndots the new ndots value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public AddressResolverOptions setNdots(int ndots) {
+    this.ndots = ndots;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -309,6 +370,8 @@ public class AddressResolverOptions {
     if (queryTimeout != that.queryTimeout) return false;
     if (maxQueries != that.maxQueries) return false;
     if (rdFlag != that.rdFlag) return false;
+    if (!Objects.equals(searchDomains, that.searchDomains)) return false;
+    if (ndots != that.ndots) return false;
     return servers != null ? servers.equals(that.servers) : that.servers == null;
   }
 
@@ -321,6 +384,8 @@ public class AddressResolverOptions {
     result = 31 * result + cacheNegativeTimeToLive;
     result = 31 * result + Long.hashCode(queryTimeout);
     result = 31 * result + maxQueries;
+    result = 31 * result + (searchDomains != null ? searchDomains.hashCode() : 0);
+    result = 31 * result + ndots;
     result = 31 * result + Boolean.hashCode(rdFlag);
     return result;
   }

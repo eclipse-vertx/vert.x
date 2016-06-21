@@ -328,6 +328,13 @@ public class CoreExamples {
     );
   }
 
+  public void configureSearchDomains() {
+    Vertx vertx = Vertx.vertx(new VertxOptions().
+        setAddressResolverOptions(
+            new AddressResolverOptions().addSearchDomain("foo.com").addSearchDomain("bar.com"))
+    );
+  }
+
   public void deployVerticleWithDifferentWorkerPool(Vertx vertx) {
     vertx.deployVerticle("the-verticle", new DeploymentOptions().setWorkerPoolName("the-specific-pool"));
   }

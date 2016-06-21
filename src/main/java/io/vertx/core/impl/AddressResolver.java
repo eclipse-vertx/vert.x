@@ -117,6 +117,11 @@ public class AddressResolver {
       builder.queryTimeoutMillis(options.getQueryTimeout());
       builder.maxQueriesPerResolve(options.getMaxQueries());
       builder.recursionDesired(options.getRdFlag());
+
+      if (options.getSearchDomains() != null) {
+        builder.searchDomains(options.getSearchDomains());
+        builder.ndots(options.getNdots());
+      }
     }
 
     this.resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
