@@ -209,6 +209,9 @@ public class AddressResolverOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public AddressResolverOptions setCacheMinTimeToLive(int cacheMinTimeToLive) {
+    if (cacheMinTimeToLive < 0) {
+      throw new IllegalArgumentException("cacheMinTimeToLive must be >= 0");
+    }
     this.cacheMinTimeToLive = cacheMinTimeToLive;
     return this;
   }
@@ -228,6 +231,9 @@ public class AddressResolverOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public AddressResolverOptions setCacheMaxTimeToLive(int cacheMaxTimeToLive) {
+    if (cacheMaxTimeToLive < 0) {
+      throw new IllegalArgumentException("cacheMaxTimeToLive must be >= 0");
+    }
     this.cacheMaxTimeToLive = cacheMaxTimeToLive;
     return this;
   }
@@ -248,6 +254,9 @@ public class AddressResolverOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public AddressResolverOptions setCacheNegativeTimeToLive(int cacheNegativeTimeToLive) {
+    if (cacheNegativeTimeToLive < 0) {
+      throw new IllegalArgumentException("cacheNegativeTimeToLive must be >= 0");
+    }
     this.cacheNegativeTimeToLive = cacheNegativeTimeToLive;
     return this;
   }
@@ -266,6 +275,9 @@ public class AddressResolverOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public AddressResolverOptions setQueryTimeout(long queryTimeout) {
+    if (queryTimeout < 1) {
+      throw new IllegalArgumentException("queryTimeout must be > 0");
+    }
     this.queryTimeout = queryTimeout;
     return this;
   }
@@ -284,6 +296,9 @@ public class AddressResolverOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public AddressResolverOptions setMaxQueries(int maxQueries) {
+    if (maxQueries < 1) {
+      throw new IllegalArgumentException("maxQueries must be > 0");
+    }
     this.maxQueries = maxQueries;
     return this;
   }
@@ -354,6 +369,9 @@ public class AddressResolverOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public AddressResolverOptions setNdots(int ndots) {
+    if (ndots < 1) {
+      throw new IllegalArgumentException("ndots must be > 0");
+    }
     this.ndots = ndots;
     return this;
   }

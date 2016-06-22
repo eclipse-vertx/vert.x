@@ -175,24 +175,72 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(AddressResolverOptions.DEFAULT_QUERY_TIMEOUT, options.getQueryTimeout());
     assertEquals(AddressResolverOptions.DEFAULT_MAX_QUERIES, options.getMaxQueries());
     assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
+    assertEquals(AddressResolverOptions.DEFAULT_NDOTS, options.getNdots());
+    assertEquals(AddressResolverOptions.DEFAULT_SEACH_DOMAINS, options.getSearchDomains());
 
     boolean optResourceEnabled = TestUtils.randomBoolean();
     List<String> servers = Arrays.asList("1.2.3.4", "5.6.7.8");
     int minTTL = TestUtils.randomPositiveInt();
-    int maxTTL = minTTL + TestUtils.randomPositiveInt();
+    int maxTTL = minTTL + 1000;
     int negativeTTL = TestUtils.randomPositiveInt();
     int queryTimeout = 1 + TestUtils.randomPositiveInt();
     int maxQueries = 1 + TestUtils.randomPositiveInt();
     boolean rdFlag = TestUtils.randomBoolean();
+    int ndots = TestUtils.randomPositiveInt();
+    List<String> searchDomains = new ArrayList<>();
+    for (int i = 0;i < 2;i++) {
+      searchDomains.add(TestUtils.randomAlphaString(15));
+    }
 
     assertSame(options, options.setOptResourceEnabled(optResourceEnabled));
     assertSame(options, options.setServers(new ArrayList<>(servers)));
+    assertSame(options, options.setCacheMinTimeToLive(0));
     assertSame(options, options.setCacheMinTimeToLive(minTTL));
+    try {
+      options.setCacheMinTimeToLive(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    assertSame(options, options.setCacheMaxTimeToLive(0));
     assertSame(options, options.setCacheMaxTimeToLive(maxTTL));
+    try {
+      options.setCacheMaxTimeToLive(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    assertSame(options, options.setCacheNegativeTimeToLive(0));
     assertSame(options, options.setCacheNegativeTimeToLive(negativeTTL));
+    try {
+      options.setCacheNegativeTimeToLive(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
     assertSame(options, options.setQueryTimeout(queryTimeout));
+    try {
+      options.setQueryTimeout(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
     assertSame(options, options.setMaxQueries(maxQueries));
+    try {
+      options.setMaxQueries(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
     assertSame(options, options.setRdFlag(rdFlag));
+    assertSame(options, options.setSearchDomains(searchDomains));
+    assertSame(options, options.setNdots(ndots));
+    try {
+      options.setNdots(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
 
     assertEquals(optResourceEnabled, options.isOptResourceEnabled());
     assertEquals(servers, options.getServers());
@@ -202,6 +250,8 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(queryTimeout, options.getQueryTimeout());
     assertEquals(maxQueries, options.getMaxQueries());
     assertEquals(rdFlag, options.getRdFlag());
+    assertEquals(ndots, options.getNdots());
+    assertEquals(searchDomains, options.getSearchDomains());
 
     // Test copy and json copy
     AddressResolverOptions copy = new AddressResolverOptions(options);
@@ -215,6 +265,8 @@ public class HostnameResolutionTest extends VertxTestBase {
     options.setQueryTimeout(AddressResolverOptions.DEFAULT_QUERY_TIMEOUT);
     options.setMaxQueries(AddressResolverOptions.DEFAULT_MAX_QUERIES);
     options.setRdFlag(AddressResolverOptions.DEFAULT_RD_FLAG);
+    options.setNdots(AddressResolverOptions.DEFAULT_NDOTS);
+    options.setSearchDomains(AddressResolverOptions.DEFAULT_SEACH_DOMAINS);
 
     assertEquals(optResourceEnabled, copy.isOptResourceEnabled());
     assertEquals(servers, copy.getServers());
@@ -224,6 +276,8 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(queryTimeout, copy.getQueryTimeout());
     assertEquals(maxQueries, copy.getMaxQueries());
     assertEquals(rdFlag, copy.getRdFlag());
+    assertEquals(ndots, copy.getNdots());
+    assertEquals(searchDomains, copy.getSearchDomains());
 
     assertEquals(optResourceEnabled, jsonCopy.isOptResourceEnabled());
     assertEquals(servers, jsonCopy.getServers());
@@ -233,6 +287,8 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(queryTimeout, jsonCopy.getQueryTimeout());
     assertEquals(maxQueries, jsonCopy.getMaxQueries());
     assertEquals(rdFlag, jsonCopy.getRdFlag());
+    assertEquals(ndots, jsonCopy.getNdots());
+    assertEquals(searchDomains, jsonCopy.getSearchDomains());
   }
 
   @Test
