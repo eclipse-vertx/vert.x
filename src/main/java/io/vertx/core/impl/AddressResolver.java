@@ -18,6 +18,7 @@ package io.vertx.core.impl;
 
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.AddressResolverGroup;
+import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.InetSocketAddressResolver;
 import io.netty.resolver.dns.DnsServerAddresses;
@@ -49,94 +50,103 @@ import java.util.Map;
  */
 public class AddressResolver {
 
+  private static final String DISABLE_DNS_RESOLVER_PROP_NAME = "vertx.disableDnsResolver";
+  private static final boolean DISABLE_DNS_RESOLVER = Boolean.getBoolean(DISABLE_DNS_RESOLVER_PROP_NAME);
+
   private final Vertx vertx;
   private final AddressResolverGroup<InetSocketAddress> resolverGroup;
 
   public AddressResolver(VertxImpl vertx, AddressResolverOptions options) {
-    DnsNameResolverBuilder builder = new DnsNameResolverBuilder(vertx.createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
-    builder.channelType(NioDatagramChannel.class);
-    if (options != null) {
-      List<String> dnsServers = options.getServers();
-      if (dnsServers != null && dnsServers.size() > 0) {
-        List<InetSocketAddress> serverList = new ArrayList<>();
-        for (String dnsServer : dnsServers) {
-          int sep = dnsServer.indexOf(':');
-          String ipAddress;
-          int port;
-          if (sep != -1) {
-            ipAddress = dnsServer.substring(0, sep);
-            port = Integer.parseInt(dnsServer.substring(sep + 1));
-          } else {
-            ipAddress = dnsServer;
-            port = 53;
+
+    if (!DISABLE_DNS_RESOLVER) {
+      DnsNameResolverBuilder builder = new DnsNameResolverBuilder(vertx.createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
+      builder.channelType(NioDatagramChannel.class);
+      if (options != null) {
+        List<String> dnsServers = options.getServers();
+        if (dnsServers != null && dnsServers.size() > 0) {
+          List<InetSocketAddress> serverList = new ArrayList<>();
+          for (String dnsServer : dnsServers) {
+            int sep = dnsServer.indexOf(':');
+            String ipAddress;
+            int port;
+            if (sep != -1) {
+              ipAddress = dnsServer.substring(0, sep);
+              port = Integer.parseInt(dnsServer.substring(sep + 1));
+            } else {
+              ipAddress = dnsServer;
+              port = 53;
+            }
+            try {
+              serverList.add(new InetSocketAddress(InetAddress.getByAddress(NetUtil.createByteArrayFromIpAddressString(ipAddress)), port));
+            } catch (UnknownHostException e) {
+              throw new VertxException(e);
+            }
           }
+          DnsServerAddresses nameServerAddresses = DnsServerAddresses.sequential(serverList);
+          builder.nameServerAddresses(nameServerAddresses);
+        }
+
+
+        Map<String, InetAddress> entries;
+        if (options.getHostsPath() != null) {
+          File file = vertx.resolveFile(options.getHostsPath()).getAbsoluteFile();
           try {
-            serverList.add(new InetSocketAddress(InetAddress.getByAddress(NetUtil.createByteArrayFromIpAddressString(ipAddress)), port));
-          } catch (UnknownHostException e) {
-            throw new VertxException(e);
+            if (!file.exists() || !file.isFile()) {
+              throw new IOException();
+            }
+            entries = HostsFileParser.parse(file);
+          } catch (IOException e) {
+            throw new VertxException("Cannot read hosts file " + file.getAbsolutePath());
           }
-        }
-        DnsServerAddresses nameServerAddresses = DnsServerAddresses.sequential(serverList);
-        builder.nameServerAddresses(nameServerAddresses);
-      }
-
-
-      Map<String, InetAddress> entries;
-      if (options.getHostsPath() != null) {
-        File file = vertx.resolveFile(options.getHostsPath()).getAbsoluteFile();
-        try {
-          if (!file.exists() || !file.isFile()) {
-            throw new IOException();
+        } else if (options.getHostsValue() != null) {
+          try {
+            entries = HostsFileParser.parse(new StringReader(options.getHostsValue().toString()));
+          } catch (IOException e) {
+            throw new VertxException("Cannot read hosts config ", e);
           }
-          entries = HostsFileParser.parse(file);
-        } catch (IOException e) {
-          throw new VertxException("Cannot read hosts file " + file.getAbsolutePath());
+        } else {
+          entries = HostsFileParser.parseSilently();
         }
-      } else if (options.getHostsValue() != null) {
+
+        // When localhost is missing we just resolve it and add it
         try {
-          entries = HostsFileParser.parse(new StringReader(options.getHostsValue().toString()));
-        } catch (IOException e) {
-          throw new VertxException("Cannot read hosts config ", e);
+          if (!entries.containsKey("localhost")) {
+            entries.put("localhost", InetAddress.getByName("localhost"));
+          }
+        } catch (UnknownHostException ignore) {
         }
-      } else {
-        entries = HostsFileParser.parseSilently();
-      }
+        builder.hostsFileEntriesResolver(entries::get);
 
-      // When localhost is missing we just resolve it and add it
-      try {
-        if (!entries.containsKey("localhost")) {
-          entries.put("localhost", InetAddress.getByName("localhost"));
+        builder.optResourceEnabled(options.isOptResourceEnabled());
+        builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
+        builder.negativeTtl(options.getCacheNegativeTimeToLive());
+        builder.queryTimeoutMillis(options.getQueryTimeout());
+        builder.maxQueriesPerResolve(options.getMaxQueries());
+        builder.recursionDesired(options.getRdFlag());
+
+        if (options.getSearchDomains() != null) {
+          builder.searchDomains(options.getSearchDomains());
+          builder.ndots(options.getNdots());
         }
-      } catch (UnknownHostException ignore) {
       }
-      builder.hostsFileEntriesResolver(entries::get);
 
-      builder.optResourceEnabled(options.isOptResourceEnabled());
-      builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
-      builder.negativeTtl(options.getCacheNegativeTimeToLive());
-      builder.queryTimeoutMillis(options.getQueryTimeout());
-      builder.maxQueriesPerResolve(options.getMaxQueries());
-      builder.recursionDesired(options.getRdFlag());
-
-      if (options.getSearchDomains() != null) {
-        builder.searchDomains(options.getSearchDomains());
-        builder.ndots(options.getNdots());
-      }
+      resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
+        @Override
+        protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
+          DnsNameResolver resolver = builder.build();
+          return new InetSocketAddressResolver(executor, resolver) {
+            @Override
+            public void close() {
+              // Workaround for bug https://github.com/netty/netty/issues/2545
+              resolver.close();
+            }
+          };
+        }
+      };
+    } else {
+      resolverGroup = DefaultAddressResolverGroup.INSTANCE;
     }
 
-    this.resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
-      @Override
-      protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
-        DnsNameResolver resolver = builder.build();
-        return new InetSocketAddressResolver(executor, resolver) {
-          @Override
-          public void close() {
-            // Workaround for bug https://github.com/netty/netty/issues/2545
-            resolver.close();
-          }
-        };
-      }
-    };
     this.vertx = vertx;
   }
 
