@@ -89,6 +89,13 @@ public final class DnsNameResolverBuilder {
   }
 
   /**
+   * Convenience method added for Vert.x
+   */
+  public DnsNameResolverBuilder() {
+    this.eventLoop = null;
+  }
+
+  /**
    * Sets the {@link ChannelFactory} that will create a {@link DatagramChannel}.
    *
    * @param channelFactory the {@link ChannelFactory}
@@ -349,6 +356,15 @@ public final class DnsNameResolverBuilder {
    * @return a {@link DnsNameResolver}
    */
   public DnsNameResolver build() {
+    return build(eventLoop);
+  }
+
+  /**
+   * Convenience method added for Vert.x
+   *
+   * @return a {@link DnsNameResolver}
+   */
+  public DnsNameResolver build(EventLoop eventLoop) {
 
     if (resolveCache != null && (minTtl != null || maxTtl != null || negativeTtl != null)) {
       throw new IllegalStateException("resolveCache and TTLs are mutually exclusive");

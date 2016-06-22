@@ -16,6 +16,7 @@
 
 package io.vertx.core.impl;
 
+import io.netty.channel.EventLoop;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.DefaultAddressResolverGroup;
@@ -32,7 +33,6 @@ import io.vertx.core.VertxException;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.dns.impl.fix.DnsNameResolver;
 import io.vertx.core.dns.impl.fix.DnsNameResolverBuilder;
-import io.vertx.core.json.JsonObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +41,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +58,7 @@ public class AddressResolver {
   public AddressResolver(VertxImpl vertx, AddressResolverOptions options) {
 
     if (!DISABLE_DNS_RESOLVER) {
-      DnsNameResolverBuilder builder = new DnsNameResolverBuilder(vertx.createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
+      DnsNameResolverBuilder builder = new DnsNameResolverBuilder(null);
       builder.channelType(NioDatagramChannel.class);
       if (options != null) {
         List<String> dnsServers = options.getServers();
@@ -133,7 +132,7 @@ public class AddressResolver {
       resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
         @Override
         protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
-          DnsNameResolver resolver = builder.build();
+          DnsNameResolver resolver = builder.build((EventLoop) executor);
           return new InetSocketAddressResolver(executor, resolver) {
             @Override
             public void close() {
