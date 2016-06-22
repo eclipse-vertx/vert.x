@@ -380,6 +380,17 @@ public class HostnameResolutionTest extends VertxTestBase {
   }
 
   @Test
+  public void testCaseInsensitiveResolveFromHosts() {
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath("hosts_config.txt")));
+    vertx.resolveAddress("SERVER.NET", onSuccess(addr -> {
+      assertEquals("192.168.0.15", addr.getHostAddress());
+      assertEquals("server.net", addr.getHostName());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
   public void testResolveMissingLocalhost() throws Exception {
 
     InetAddress localhost = InetAddress.getByName("localhost");
@@ -397,39 +408,43 @@ public class HostnameResolutionTest extends VertxTestBase {
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
             setOptResourceEnabled(false)
     ));
-    CompletableFuture<Void> test = new CompletableFuture<>();
+    CompletableFuture<Void> test1 = new CompletableFuture<>();
     vertx.resolveAddress("localhost", ar -> {
       if (ar.succeeded()) {
         InetAddress resolved = ar.result();
         if (resolved.equals(localhost)) {
-          test.complete(null);
+          test1.complete(null);
         } else {
-          test.completeExceptionally(new AssertionError("Unexpected localhost value " + resolved));
+          test1.completeExceptionally(new AssertionError("Unexpected localhost value " + resolved));
         }
       } else {
-        test.completeExceptionally(ar.cause());
+        test1.completeExceptionally(ar.cause());
       }
     });
-    test.get(10, TimeUnit.SECONDS);
+    test1.get(10, TimeUnit.SECONDS);
 
-    // Test using bootstrap
     CompletableFuture<Void> test2 = new CompletableFuture<>();
-    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost(localhost.getHostAddress()));
-    server.connectHandler(so -> {
-      so.write("hello").end();
-    });
-    server.listen(ar -> {
+    vertx.resolveAddress("LOCALHOST", ar -> {
       if (ar.succeeded()) {
-        test2.complete(null);
+        InetAddress resolved = ar.result();
+        if (resolved.equals(localhost)) {
+          test2.complete(null);
+        } else {
+          test2.completeExceptionally(new AssertionError("Unexpected localhost value " + resolved));
+        }
       } else {
         test2.completeExceptionally(ar.cause());
       }
     });
     test2.get(10, TimeUnit.SECONDS);
 
+    // Test using bootstrap
     CompletableFuture<Void> test3 = new CompletableFuture<>();
-    NetClient client = vertx.createNetClient();
-    client.connect(1234, "localhost", ar -> {
+    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost(localhost.getHostAddress()));
+    server.connectHandler(so -> {
+      so.write("hello").end();
+    });
+    server.listen(ar -> {
       if (ar.succeeded()) {
         test3.complete(null);
       } else {
@@ -437,6 +452,17 @@ public class HostnameResolutionTest extends VertxTestBase {
       }
     });
     test3.get(10, TimeUnit.SECONDS);
+
+    CompletableFuture<Void> test4 = new CompletableFuture<>();
+    NetClient client = vertx.createNetClient();
+    client.connect(1234, "localhost", ar -> {
+      if (ar.succeeded()) {
+        test4.complete(null);
+      } else {
+        test4.completeExceptionally(ar.cause());
+      }
+    });
+    test4.get(10, TimeUnit.SECONDS);
   }
 
   @Test

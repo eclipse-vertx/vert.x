@@ -20,6 +20,7 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.DefaultAddressResolverGroup;
+import io.netty.resolver.HostsFileEntriesResolver;
 import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.InetSocketAddressResolver;
 import io.netty.resolver.dns.DnsServerAddresses;
@@ -42,6 +43,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -114,7 +116,13 @@ public class AddressResolver {
           }
         } catch (UnknownHostException ignore) {
         }
-        builder.hostsFileEntriesResolver(entries::get);
+        builder.hostsFileEntriesResolver(inetHost -> {
+          InetAddress addr = entries.get(inetHost);
+          if (addr == null) {
+            addr = entries.get(inetHost.toLowerCase(Locale.ENGLISH));
+          }
+          return addr;
+        });
 
         builder.optResourceEnabled(options.isOptResourceEnabled());
         builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
