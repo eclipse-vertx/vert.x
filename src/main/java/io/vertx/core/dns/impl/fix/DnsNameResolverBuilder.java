@@ -61,7 +61,6 @@ public final class DnsNameResolverBuilder {
 
   private final EventLoop eventLoop;
   private ChannelFactory<? extends DatagramChannel> channelFactory;
-  private InetSocketAddress localAddress = DnsNameResolver.ANY_LOCAL_ADDR;
   private DnsServerAddresses nameServerAddresses = DnsServerAddresses.defaultAddresses();
   private DnsCache resolveCache;
   private Integer minTtl;
@@ -115,17 +114,6 @@ public final class DnsNameResolverBuilder {
    */
   public DnsNameResolverBuilder channelType(Class<? extends DatagramChannel> channelType) {
     return channelFactory(new ReflectiveChannelFactory<DatagramChannel>(channelType));
-  }
-
-  /**
-   * Sets the local address of the {@link DatagramChannel}
-   *
-   * @param localAddress the local address
-   * @return {@code this}
-   */
-  public DnsNameResolverBuilder localAddress(InetSocketAddress localAddress) {
-    this.localAddress = localAddress;
-    return this;
   }
 
   /**
@@ -376,7 +364,6 @@ public final class DnsNameResolverBuilder {
     return new DnsNameResolver(
         eventLoop,
         channelFactory,
-        localAddress,
         nameServerAddresses,
         cache,
         queryTimeoutMillis,
