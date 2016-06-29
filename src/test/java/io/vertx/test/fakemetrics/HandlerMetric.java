@@ -25,6 +25,7 @@ public class HandlerMetric {
 
   public final String address;
   public final String repliedAddress;
+  public final AtomicInteger scheduleCount = new AtomicInteger();
   public final AtomicInteger beginCount = new AtomicInteger();
   public final AtomicInteger endCount = new AtomicInteger();
   public final AtomicInteger failureCount = new AtomicInteger();

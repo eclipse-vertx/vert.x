@@ -45,6 +45,15 @@ public interface EventBusMetrics<H> extends Metrics {
   void handlerUnregistered(H handler);
 
   /**
+   * Schedule a message for processing.<p/>
+   *
+   * No specific thread and context can be expected when this method is called.
+   *
+   * @param handler the handler processing the message
+   */
+  void scheduleMessage(H handler);
+
+  /**
    * Called when an handler begin to process a message.<p/>
    *
    * The thread model depends on the actual context thats registered the handler.<p/>
