@@ -491,7 +491,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     @SuppressWarnings("unchecked")
     Message<T> copied = msg.copyBeforeReceive();
 
-    metrics.scheduleMessage(holder.getHandler().getMetric());
+    if (metrics.isEnabled()) {
+      metrics.scheduleMessage(holder.getHandler().getMetric(), msg.isLocal());
+    }
 
     holder.getContext().runOnContext((v) -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but

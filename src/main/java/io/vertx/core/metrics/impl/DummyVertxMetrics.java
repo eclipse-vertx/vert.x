@@ -137,7 +137,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void scheduleMessage(Void handler) {
+    public void scheduleMessage(Void handler, boolean local) {
     }
 
     @Override

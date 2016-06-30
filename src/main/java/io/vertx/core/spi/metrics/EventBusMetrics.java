@@ -50,8 +50,9 @@ public interface EventBusMetrics<H> extends Metrics {
    * No specific thread and context can be expected when this method is called.
    *
    * @param handler the handler processing the message
+   * @param local when the scheduled message is local
    */
-  void scheduleMessage(H handler);
+  void scheduleMessage(H handler, boolean local);
 
   /**
    * Called when an handler begin to process a message.<p/>
@@ -67,7 +68,7 @@ public interface EventBusMetrics<H> extends Metrics {
    * This method is invoked with a worker thread.
    *
    * @param handler the handler processing the message
-   * @param local when the received message is local
+   * @param local when the handled message is local
    */
   void beginHandleMessage(H handler, boolean local);
 

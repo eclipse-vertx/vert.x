@@ -94,7 +94,7 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   @Override
-  public void scheduleMessage(HandlerMetric handler) {
+  public void scheduleMessage(HandlerMetric handler, boolean local) {
     handler.scheduleCount.incrementAndGet();
   }
 
