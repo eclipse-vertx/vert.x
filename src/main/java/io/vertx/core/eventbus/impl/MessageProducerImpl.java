@@ -62,6 +62,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   @Override
   public synchronized MessageProducer<T> deliveryOptions(DeliveryOptions options) {
     if (creditConsumer != null) {
+      options = new DeliveryOptions(options);
       options.addHeader(CREDIT_ADDRESS_HEADER_NAME, this.options.getHeaders().get(CREDIT_ADDRESS_HEADER_NAME));
     }
     this.options = options;
