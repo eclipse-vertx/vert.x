@@ -571,7 +571,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     }));
     awaitLatch(latch1);
 
-    // "host3" resolves via the "bar.com" search path
+    // "host2" resolves via the "bar.com" search path
     CountDownLatch latch2 = new CountDownLatch(1);
     vertx.resolveAddress("host2", onSuccess(resolved -> {
       assertEquals("127.0.0.2", resolved.getHostAddress());
@@ -612,7 +612,6 @@ public class HostnameResolutionTest extends VertxTestBase {
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
             setOptResourceEnabled(false).
             addSearchDomain("foo.com").
-            addSearchDomain("bar.com").
             setNdots(2)
     ));
 
