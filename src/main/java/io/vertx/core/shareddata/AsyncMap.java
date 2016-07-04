@@ -49,8 +49,8 @@ public interface AsyncMap<K, V> {
   void put(K k, V v, Handler<AsyncResult<Void>> completionHandler);
 
   /**
-   * Like {@link #put} but specifying a timeout. If the value cannot be put within the timeout a
-   * failure will be passed to the handler
+   * Like {@link #put} but specifying a time to live for the entry. Entry will expire and get evicted after the
+   * ttl.
    *
    * @param k  the key
    * @param v  the value
@@ -70,8 +70,8 @@ public interface AsyncMap<K, V> {
   void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler);
 
   /**
-   * Link {@link #putIfAbsent} but specifying a timeout. If the value cannot be put within the timeout a
-   * failure will be passed to the handler
+   * Link {@link #putIfAbsent} but specifying a time to live for the entry. Entry will expire and get evicted
+   * after the ttl.
    *
    * @param k  the key
    * @param v  the value
