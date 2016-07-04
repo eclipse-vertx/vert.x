@@ -421,7 +421,7 @@ public class SSLHelper {
       engine.setEnabledCipherSuites(toUse);
     }
     engine.setUseClientMode(client);
-    Set<String> protocols = new HashSet<>(Arrays.asList(DEFAULT_ENABLED_PROTOCOLS));
+    Set<String> protocols = new LinkedHashSet<>(Arrays.asList(DEFAULT_ENABLED_PROTOCOLS));
     protocols.retainAll(Arrays.asList(engine.getEnabledProtocols()));
     if (enabledProtocols != null && !enabledProtocols.isEmpty() && !protocols.isEmpty()) {
       protocols.retainAll(enabledProtocols);

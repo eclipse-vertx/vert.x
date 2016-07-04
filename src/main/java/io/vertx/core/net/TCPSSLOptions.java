@@ -79,12 +79,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean ssl;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
-  private Set<String> enabledCipherSuites = new HashSet<>();
+  private Set<String> enabledCipherSuites = new LinkedHashSet<>();
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
   private boolean useAlpn;
   private SSLEngineOptions sslEngineOptions;
-  private Set<String> enabledSecureTransportProtocols = new HashSet<>();
+  private Set<String> enabledSecureTransportProtocols = new LinkedHashSet<>();
 
   /**
    * Default constructor
@@ -109,12 +109,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.ssl = other.isSsl();
     this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
     this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
-    this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new HashSet<>() : new HashSet<>(other.getEnabledCipherSuites());
+    this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.clone() : null;
-    this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new HashSet<>() : new HashSet<>(other.getEnabledSecureTransportProtocols());
+    this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
   }
 
   /**
