@@ -19,7 +19,6 @@ public class EventBusFlowControlTest extends VertxTestBase {
 
   @Test
   public void testFlowControl() {
-
     MessageProducer<String> prod = eb.sender("some-address");
     int numBatches = 1000;
     int wqms = 2000;
