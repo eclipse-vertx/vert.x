@@ -36,6 +36,8 @@ public class ConnectHttpProxy extends TestProxyBase {
 
   private HttpServer server;
 
+  private int error = 0;
+
   public ConnectHttpProxy(String username) {
     super(username);
   }
@@ -64,7 +66,10 @@ public class ConnectHttpProxy extends TestProxyBase {
           return;
         }
       }
-      if (method != HttpMethod.CONNECT || !uri.contains(":")) {
+      if (error != 0) {
+        log.info("sending error " + error);
+        request.response().setStatusCode(error).end("proxy request failed");
+      } else if (method != HttpMethod.CONNECT || !uri.contains(":")) {
         request.response().setStatusCode(405).end("method not allowed");
       } else {
         lastUri = uri;
@@ -118,5 +123,10 @@ public class ConnectHttpProxy extends TestProxyBase {
   @Override
   public int getPort() {
     return PORT;
+  }
+
+  public ConnectHttpProxy setError(int error) {
+    this.error  = error;
+    return this;
   }
 }
