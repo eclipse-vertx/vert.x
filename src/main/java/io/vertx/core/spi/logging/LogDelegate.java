@@ -72,4 +72,15 @@ public interface LogDelegate {
   void trace(Object message, Throwable t);
 
   void trace(Object message, Throwable t, Object... params);
+
+  /**
+   * Give access to a typed instance of the underlying framework logger object.
+   *
+   * @param cls the expected type, or an interface the logger object implements
+   * @return a typed logger instance, null in the default implementation
+   * @throws ClassCastException if the logger object is not assignable to {@code cls}
+   */
+  default <T> T unwrap(Class<T> cls) {
+    return null;
+  }
 }

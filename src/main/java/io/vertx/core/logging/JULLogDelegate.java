@@ -170,4 +170,9 @@ public class JULLogDelegate implements LogDelegate {
   private void log(Level level, Object message, Throwable t) {
     log(level, message, t, (Object[]) null);
   }
+
+  @Override
+  public <T> T unwrap(Class<T> cls) {
+    return cls.cast(logger);
+  }
 }

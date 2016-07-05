@@ -158,4 +158,9 @@ public class Log4j2LogDelegate implements LogDelegate {
   private void log(Level level, String message, Throwable t, Object... params) {
     logger.log(level, new FormattedMessage(message, params), t);
   }
+
+  @Override
+  public <T> T unwrap(Class<T> cls) {
+    return cls.cast(logger);
+  }
 }

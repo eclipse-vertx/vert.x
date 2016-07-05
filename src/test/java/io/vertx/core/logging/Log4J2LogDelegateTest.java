@@ -16,13 +16,14 @@
 
 package io.vertx.core.logging;
 
+import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Theses test checks the Log4J 2 log delegate.
@@ -45,6 +46,19 @@ public class Log4J2LogDelegateTest {
   public static void terminate() {
     System.clearProperty("vertx.logger-delegate-factory-class-name");
     recording.terminate();
+  }
+
+  @Test
+  public void testDelegateUnwrap() {
+    Logger logger = LoggerFactory.getLogger("my-log4j2-logger");
+    LogDelegate delegate = logger.getDelegate();
+    assertNotNull("Delegate is null", delegate);
+    try {
+      org.apache.logging.log4j.Logger unwrapped = delegate.unwrap(org.apache.logging.log4j.Logger.class);
+      assertNotNull("Unwrapped is null", unwrapped);
+    } catch (ClassCastException e) {
+      fail("Unexpected unwrapped type: " + e.getMessage());
+    }
   }
 
   @Test

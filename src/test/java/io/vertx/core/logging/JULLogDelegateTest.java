@@ -16,13 +16,14 @@
 
 package io.vertx.core.logging;
 
+import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * These tests check the JUL log delegate. It analyses the output, so any change in the configuration may break the
@@ -40,7 +41,21 @@ public class JULLogDelegateTest {
   public static void initialize() throws IOException {
     // Clear value.
     System.clearProperty("vertx.logger-delegate-factory-class-name");
+    LoggerFactory.initialise();
     recording = new Recording();
+  }
+
+  @Test
+  public void testDelegateUnwrap() {
+    Logger logger = LoggerFactory.getLogger("my-jul-logger");
+    LogDelegate delegate = logger.getDelegate();
+    assertNotNull("Delegate is null", delegate);
+    try {
+      java.util.logging.Logger unwrapped = delegate.unwrap(java.util.logging.Logger.class);
+      assertNotNull("Unwrapped is null", unwrapped);
+    } catch (ClassCastException e) {
+      fail("Unexpected unwrapped type: " + e.getMessage());
+    }
   }
 
   @Test

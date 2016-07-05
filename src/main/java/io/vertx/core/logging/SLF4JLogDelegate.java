@@ -22,8 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LocationAwareLogger;
 
-import java.util.Arrays;
-
 import static org.slf4j.spi.LocationAwareLogger.*;
 
 /**
@@ -194,5 +192,10 @@ public class SLF4JLogDelegate implements LogDelegate {
           throw new IllegalArgumentException("Unknown log level " + level);
       }
     }
+  }
+
+  @Override
+  public <T> T unwrap(Class<T> cls) {
+    return cls.cast(logger);
   }
 }

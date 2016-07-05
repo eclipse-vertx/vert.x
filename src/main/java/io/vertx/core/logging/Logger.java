@@ -141,4 +141,11 @@ public class Logger {
   public void trace(final Object message, final Throwable t, final Object... objects) {
     delegate.trace(message, t, objects);
   }
+
+  /**
+   * @return the delegate instance sending operations to the underlying logging framework
+   */
+  public LogDelegate getDelegate() {
+    return delegate;
+  }
 }
