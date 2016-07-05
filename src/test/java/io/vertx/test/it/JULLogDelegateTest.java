@@ -14,11 +14,12 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging;
+package io.vertx.test.it;
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -59,7 +60,6 @@ public class JULLogDelegateTest {
   }
 
   @Test
-  @Ignore
   public void testInfo() {
     String result = recording.execute(() -> {
       Logger logger = LoggerFactory.getLogger("my-jul-logger");
@@ -114,7 +114,6 @@ public class JULLogDelegateTest {
   }
 
   @Test
-  @Ignore
   public void testError() {
     String result = recording.execute(() -> {
       Logger logger = LoggerFactory.getLogger("my-jul-logger");
@@ -168,7 +167,6 @@ public class JULLogDelegateTest {
   }
 
   @Test
-  @Ignore
   public void testWarning() {
     String result = recording.execute(() -> {
       Logger logger = LoggerFactory.getLogger("my-jul-logger");
