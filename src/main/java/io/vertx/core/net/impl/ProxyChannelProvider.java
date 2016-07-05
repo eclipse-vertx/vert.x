@@ -87,6 +87,12 @@ public class ProxyChannelProvider extends ChannelProvider {
                 }
                 ctx.fireUserEventTriggered(evt);
               }
+
+              @Override
+              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+                      throws Exception {
+                channelHandler.handle(Future.failedFuture(cause));
+              }
             });
           }
         });
