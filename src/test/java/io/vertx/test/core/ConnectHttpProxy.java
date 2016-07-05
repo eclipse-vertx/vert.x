@@ -48,7 +48,7 @@ public class ConnectHttpProxy extends TestProxyBase {
    * @param vertx
    *          Vertx instance to use for creating the server and client
    * @param finishedHandler
-   *          will be called when the start has started
+   *          will be called when the server has started
    */
   @Override
   public void start(Vertx vertx, Handler<Void> finishedHandler) {
@@ -67,7 +67,6 @@ public class ConnectHttpProxy extends TestProxyBase {
         }
       }
       if (error != 0) {
-        log.info("sending error " + error);
         request.response().setStatusCode(error).end("proxy request failed");
       } else if (method != HttpMethod.CONNECT || !uri.contains(":")) {
         request.response().setStatusCode(405).end("method not allowed");
