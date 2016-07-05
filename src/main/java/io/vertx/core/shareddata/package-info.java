@@ -23,6 +23,10 @@
  * Shared data includes local shared maps, distributed, cluster-wide maps, asynchronous cluster-wide locks and
  * asynchronous cluster-wide counters.
  *
+ * IMPORTANT: The behavior of the distributed data structure depends on the cluster manager you use. Backup
+ * (replication) and behavior when a network partition is faced are defined by the cluster manager and its
+ * configuration. Refer to the cluster manager documentation as well as to the underlying framework manual.
+ *
  * === Local shared maps
  *
  * {@link io.vertx.core.shareddata.LocalMap Local shared maps} allow you to share data safely between different event
