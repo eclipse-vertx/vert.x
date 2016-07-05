@@ -55,6 +55,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
@@ -1542,7 +1543,25 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testIdleTimeout() throws Exception {
+    testIdleTimeout(serverOptions, clientOptions.setDefaultPort(DEFAULT_HTTPS_PORT));
+  }
+
+  @Test
+  public void testIdleTimeoutClearText() throws Exception {
+    testIdleTimeout(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST),
+        clientOptions.setDefaultPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(true));
+  }
+
+  @Test
+  public void testIdleTimeoutClearTextDirect() throws Exception {
+    testIdleTimeout(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST),
+        clientOptions.setDefaultPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(false));
+  }
+
+  private void testIdleTimeout(HttpServerOptions serverOptions, HttpClientOptions clientOptions) throws Exception {
     waitFor(4);
+    server.close();
+    server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
       req.connection().closeHandler(v -> {
         complete();
@@ -1552,7 +1571,7 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.close();
     client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
-    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+    HttpClientRequest req = client.get("/somepath", resp -> {
       Context ctx = Vertx.currentContext();
       resp.exceptionHandler(err -> {
         assertOnIOContext(ctx);

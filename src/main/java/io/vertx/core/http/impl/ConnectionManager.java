@@ -424,6 +424,7 @@ public class ConnectionManager {
             @Override
             protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
               if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+                applyHttp2ConnectionOptions(pipeline);
                 queue.http2Connected(context, ch, waiter, false);
               } else {
                 applyHttp1xConnectionOptions(queue, ch.pipeline(), context);
@@ -467,13 +468,14 @@ public class ConnectionManager {
               VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
                 @Override
                 public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
+                  applyHttp2ConnectionOptions(pipeline);
                   queue.http2Connected(context, ch, waiter, true);
                 }
               };
               HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
               ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
             } else {
-              applyH2ConnectionOptions(pipeline);
+              applyHttp2ConnectionOptions(pipeline);
             }
           } else {
             applyHttp1xConnectionOptions(queue, pipeline, context);
@@ -540,7 +542,7 @@ public class ConnectionManager {
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
     }
 
-    void applyH2ConnectionOptions(ChannelPipeline pipeline) {
+    void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
       if (options.getIdleTimeout() > 0) {
         pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
       }

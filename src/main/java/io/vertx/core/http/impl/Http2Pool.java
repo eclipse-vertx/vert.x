@@ -100,10 +100,6 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
       }
       Http2ClientConnection conn = handler.connection;
       metrics.endpointConnected(queue.metric, conn.metric());
-      int idleTimeout = client.getOptions().getIdleTimeout();
-      if (idleTimeout > 0) {
-        p.addLast("idle", new IdleStateHandler(0, 0, idleTimeout));
-      }
       p.addLast(handler);
       allConnections.add(conn);
       if (windowSize > 0) {
