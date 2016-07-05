@@ -23,7 +23,7 @@
  * Shared data includes local shared maps, distributed, cluster-wide maps, asynchronous cluster-wide locks and
  * asynchronous cluster-wide counters.
  *
- * IMPORTANT: The behavior of the distributed data structure depends of the cluster manager you use. Backup
+ * IMPORTANT: The behavior of the distributed data structure depends on the cluster manager you use. Backup
  * (replication) and behavior when a network partition is faced are defined by the cluster manager and its
  * configuration. Refer to the cluster manager documentation as well as to the underlying framework manual.
  *
