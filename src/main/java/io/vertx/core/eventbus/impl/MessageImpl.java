@@ -160,7 +160,7 @@ public class MessageImpl<U, V> implements Message<V> {
     }
   }
 
-  boolean isLocal() {
+  protected boolean isLocal() {
     return true;
   }
 }

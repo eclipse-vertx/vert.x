@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -278,10 +277,11 @@ public class MetricsTest extends VertxTestBase {
         assertEquals(ADDRESS1, registration.address);
         assertEquals(null, registration.repliedAddress);
         assertEquals(1, registration.scheduleCount.get());
+        assertEquals(expectedLocalCount, registration.localScheduleCount.get());
         assertEquals(1, registration.beginCount.get());
         assertEquals(0, registration.endCount.get());
         assertEquals(0, registration.failureCount.get());
-        assertEquals(expectedLocalCount, registration.localCount.get());
+        assertEquals(expectedLocalCount, registration.localBeginCount.get());
         msg.reply("pong");
       }).completionHandler(onSuccess(v2 -> {
         to.runOnContext(v3 -> {
@@ -309,7 +309,7 @@ public class MetricsTest extends VertxTestBase {
       // This might take a little time
       waitUntil(() -> 1 == registration.endCount.get());
       assertEquals(0, registration.failureCount.get());
-      assertEquals(expectedLocalCount, registration.localCount.get());
+      assertEquals(expectedLocalCount, registration.localBeginCount.get());
       testComplete();
     });
     waitUntil(() -> registration.scheduleCount.get() == 1);
@@ -361,7 +361,7 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(0, registration.scheduleCount.get());
       assertEquals(0, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
-      assertEquals(0, registration.localCount.get());
+      assertEquals(0, registration.localBeginCount.get());
       msg.reply("pong");
     }).completionHandler(ar -> {
       assertTrue(ar.succeeded());
@@ -375,14 +375,14 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(1, registration.scheduleCount.get());
       assertEquals(1, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
-      assertEquals(1, registration.localCount.get());
+      assertEquals(1, registration.localBeginCount.get());
       vertx.runOnContext(v -> {
         assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
         assertEquals(ADDRESS1, registration.repliedAddress);
         assertEquals(1, registration.scheduleCount.get());
         assertEquals(1, registration.beginCount.get());
         assertEquals(1, registration.endCount.get());
-        assertEquals(1, registration.localCount.get());
+        assertEquals(1, registration.localBeginCount.get());
       });
       testComplete();
     });
