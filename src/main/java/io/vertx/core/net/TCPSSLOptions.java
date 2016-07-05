@@ -357,7 +357,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * Add an enabled cipher suite
+   * Add an enabled cipher suite, appended to the ordered suites.
    *
    * @param suite  the suite
    * @return a reference to this, so the API can be used fluently
@@ -461,7 +461,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * Add an enabled SSL/TLS protocols
+   * Add an enabled SSL/TLS protocols, appended to the ordered protocols.
    *
    * @param protocol  the SSL/TLS protocol do enabled
    * @return a reference to this, so the API can be used fluently
