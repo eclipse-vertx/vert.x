@@ -160,7 +160,7 @@ public class Log4j2LogDelegate implements LogDelegate {
   }
 
   @Override
-  public <T> T unwrap(Class<T> cls) {
-    return cls.cast(logger);
+  public Object unwrap() {
+    return logger;
   }
 }

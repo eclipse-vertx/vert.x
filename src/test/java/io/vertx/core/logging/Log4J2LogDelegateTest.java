@@ -54,7 +54,7 @@ public class Log4J2LogDelegateTest {
     LogDelegate delegate = logger.getDelegate();
     assertNotNull("Delegate is null", delegate);
     try {
-      org.apache.logging.log4j.Logger unwrapped = delegate.unwrap(org.apache.logging.log4j.Logger.class);
+      org.apache.logging.log4j.Logger unwrapped = (org.apache.logging.log4j.Logger) delegate.unwrap();
       assertNotNull("Unwrapped is null", unwrapped);
     } catch (ClassCastException e) {
       fail("Unexpected unwrapped type: " + e.getMessage());

@@ -156,7 +156,7 @@ public class Log4jLogDelegate implements LogDelegate {
   }
 
   @Override
-  public <T> T unwrap(Class<T> cls) {
-    return cls.cast(logger);
+  public Object unwrap() {
+    return logger;
   }
 }

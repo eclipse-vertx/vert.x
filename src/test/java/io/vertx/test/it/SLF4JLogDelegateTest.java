@@ -60,7 +60,7 @@ public class SLF4JLogDelegateTest {
     LogDelegate delegate = logger.getDelegate();
     assertNotNull("Delegate is null", delegate);
     try {
-      org.slf4j.Logger unwrapped = delegate.unwrap(org.slf4j.Logger.class);
+      org.slf4j.Logger unwrapped = (org.slf4j.Logger) delegate.unwrap();
       assertNotNull("Unwrapped is null", unwrapped);
     } catch (ClassCastException e) {
       fail("Unexpected unwrapped type: " + e.getMessage());

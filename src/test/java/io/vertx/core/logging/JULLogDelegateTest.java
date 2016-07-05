@@ -51,7 +51,7 @@ public class JULLogDelegateTest {
     LogDelegate delegate = logger.getDelegate();
     assertNotNull("Delegate is null", delegate);
     try {
-      java.util.logging.Logger unwrapped = delegate.unwrap(java.util.logging.Logger.class);
+      java.util.logging.Logger unwrapped = (java.util.logging.Logger) delegate.unwrap();
       assertNotNull("Unwrapped is null", unwrapped);
     } catch (ClassCastException e) {
       fail("Unexpected unwrapped type: " + e.getMessage());
