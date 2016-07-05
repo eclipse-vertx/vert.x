@@ -25,10 +25,12 @@ public class HandlerMetric {
 
   public final String address;
   public final String repliedAddress;
+  public final AtomicInteger scheduleCount = new AtomicInteger();
+  public final AtomicInteger localScheduleCount = new AtomicInteger();
   public final AtomicInteger beginCount = new AtomicInteger();
   public final AtomicInteger endCount = new AtomicInteger();
   public final AtomicInteger failureCount = new AtomicInteger();
-  public final AtomicInteger localCount = new AtomicInteger();
+  public final AtomicInteger localBeginCount = new AtomicInteger();
 
   public HandlerMetric(String address, String repliedAddress) {
     this.address = address;
@@ -38,6 +40,6 @@ public class HandlerMetric {
   @Override
   public String toString() {
     return "HandlerRegistration[address=" + address + ",repliedAddress=" + repliedAddress + ",beginCount=" + beginCount.get() +
-        ",endCount=" + endCount.get() + ",failureCount=" + failureCount + ",localCount=" + localCount.get() + "]";
+        ",endCount=" + endCount.get() + ",failureCount=" + failureCount + ",localCount=" + localBeginCount.get() + "]";
   }
 }

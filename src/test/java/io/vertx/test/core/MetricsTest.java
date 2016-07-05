@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -270,28 +269,52 @@ public class MetricsTest extends VertxTestBase {
 
   private void testHandlerProcessMessage(Vertx from, Vertx to, int expectedLocalCount) {
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(to.eventBus());
-    to.eventBus().consumer(ADDRESS1, msg -> {
-      HandlerMetric registration = assertRegistration(metrics);
-      assertEquals(ADDRESS1, registration.address);
-      assertEquals(null, registration.repliedAddress);
-      assertEquals(1, registration.beginCount.get());
-      assertEquals(0, registration.endCount.get());
-      assertEquals(0, registration.failureCount.get());
-      assertEquals(expectedLocalCount, registration.localCount.get());
-      msg.reply("pong");
-    }).completionHandler(onSuccess(v -> {
-      from.eventBus().send(ADDRESS1, "ping", reply -> {
+    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    to.runOnContext(v -> {
+      to.eventBus().consumer(ADDRESS1, msg -> {
         HandlerMetric registration = assertRegistration(metrics);
         assertEquals(ADDRESS1, registration.address);
         assertEquals(null, registration.repliedAddress);
+        assertEquals(1, registration.scheduleCount.get());
+        assertEquals(expectedLocalCount, registration.localScheduleCount.get());
         assertEquals(1, registration.beginCount.get());
-        // This might take a little time
-        waitUntil(() -> 1 == registration.endCount.get());
+        assertEquals(0, registration.endCount.get());
         assertEquals(0, registration.failureCount.get());
-        assertEquals(expectedLocalCount, registration.localCount.get());
-        testComplete();
-      });
-    }));
+        assertEquals(expectedLocalCount, registration.localBeginCount.get());
+        msg.reply("pong");
+      }).completionHandler(onSuccess(v2 -> {
+        to.runOnContext(v3 -> {
+          latch1.countDown();
+          try {
+            awaitLatch(latch2);
+          } catch (InterruptedException e) {
+            fail(e);
+          }
+        });
+      }));
+    });
+    try {
+      awaitLatch(latch1);
+    } catch (InterruptedException e) {
+      fail(e);
+      return;
+    }
+    HandlerMetric registration = assertRegistration(metrics);
+    assertEquals(ADDRESS1, registration.address);
+    assertEquals(null, registration.repliedAddress);
+    from.eventBus().send(ADDRESS1, "ping", reply -> {
+      assertEquals(1, registration.scheduleCount.get());
+      assertEquals(1, registration.beginCount.get());
+      // This might take a little time
+      waitUntil(() -> 1 == registration.endCount.get());
+      assertEquals(0, registration.failureCount.get());
+      assertEquals(expectedLocalCount, registration.localBeginCount.get());
+      testComplete();
+    });
+    waitUntil(() -> registration.scheduleCount.get() == 1);
+    assertEquals(0, registration.beginCount.get());
+    latch2.countDown();
     await();
   }
 
@@ -301,6 +324,7 @@ public class MetricsTest extends VertxTestBase {
     MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1, msg -> {
       assertEquals(1, metrics.getReceivedMessages().size());
       HandlerMetric registration = metrics.getRegistrations().get(0);
+      assertEquals(1, registration.scheduleCount.get());
       assertEquals(1, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
       assertEquals(0, registration.failureCount.get());
@@ -319,6 +343,7 @@ public class MetricsTest extends VertxTestBase {
     while (registration.failureCount.get() < 1 && (System.currentTimeMillis() - now) < 10 * 1000) {
       Thread.sleep(10);
     }
+    assertEquals(1, registration.scheduleCount.get());
     assertEquals(1, registration.beginCount.get());
     assertEquals(1, registration.endCount.get());
     assertEquals(1, registration.failureCount.get());
@@ -333,9 +358,10 @@ public class MetricsTest extends VertxTestBase {
       waitUntil(() -> metrics.getRegistrations().size() == 2);
       HandlerMetric registration = metrics.getRegistrations().get(1);
       assertEquals(ADDRESS1, registration.repliedAddress);
+      assertEquals(0, registration.scheduleCount.get());
       assertEquals(0, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
-      assertEquals(0, registration.localCount.get());
+      assertEquals(0, registration.localBeginCount.get());
       msg.reply("pong");
     }).completionHandler(ar -> {
       assertTrue(ar.succeeded());
@@ -346,15 +372,17 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       HandlerMetric registration = metrics.getRegistrations().get(1);
       assertEquals(ADDRESS1, registration.repliedAddress);
+      assertEquals(1, registration.scheduleCount.get());
       assertEquals(1, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
-      assertEquals(1, registration.localCount.get());
+      assertEquals(1, registration.localBeginCount.get());
       vertx.runOnContext(v -> {
         assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
         assertEquals(ADDRESS1, registration.repliedAddress);
+        assertEquals(1, registration.scheduleCount.get());
         assertEquals(1, registration.beginCount.get());
         assertEquals(1, registration.endCount.get());
-        assertEquals(1, registration.localCount.get());
+        assertEquals(1, registration.localBeginCount.get());
       });
       testComplete();
     });

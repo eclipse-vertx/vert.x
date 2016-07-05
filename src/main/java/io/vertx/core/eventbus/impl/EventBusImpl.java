@@ -363,8 +363,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (msg.send()) {
         //Choose one
         HandlerHolder holder = handlers.choose();
+        metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), holder != null ? 1 : 0);
         if (holder != null) {
-          metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), 1);
           deliverToHandler(msg, holder);
         }
       } else {
@@ -490,6 +490,10 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     // Each handler gets a fresh copy
     @SuppressWarnings("unchecked")
     Message<T> copied = msg.copyBeforeReceive();
+
+    if (metrics.isEnabled()) {
+      metrics.scheduleMessage(holder.getHandler().getMetric(), msg.isLocal());
+    }
 
     holder.getContext().runOnContext((v) -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but

@@ -245,4 +245,8 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   public boolean isFromWire() {
     return fromWire;
   }
+
+  protected boolean isLocal() {
+    return !isFromWire();
+  }
 }
