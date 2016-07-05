@@ -17,6 +17,7 @@ package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
+import io.vertx.core.logging.JULLogDelegateFactory;
 import org.junit.After;
 import org.junit.Before;
 
@@ -51,7 +52,7 @@ public class CommandTestBase {
     // We need to reset the log configuration to recreate the logger
     // Indeed print stream may have been cached.
     LogManager.getLogManager().reset();
-    LogManager.getLogManager().readConfiguration();
+    JULLogDelegateFactory.loadConfig();
   }
 
   @After
