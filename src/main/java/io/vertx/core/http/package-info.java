@@ -1613,6 +1613,9 @@
  * The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
  * to resolve the DNS address locally.
  *
+ * Please note: When using ProxyType.HTTP currently http requests are sent as CONNECT requests to the proxy, which will almost
+ * certainly not work since a properly configured proxy will deny connections to non-secure ports.
+ *
  * === Automatic clean-up in verticles
  *
  * If you're creating http servers and clients from inside verticles, those servers and clients will be automatically closed
