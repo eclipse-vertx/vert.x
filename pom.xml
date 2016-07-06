@@ -412,7 +412,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>slf4h</id>
+            <id>slf4j</id>
             <goals>
               <goal>integration-test</goal>
             </goals>
@@ -420,6 +420,30 @@
             <configuration>
               <includes>
                 <include>io/vertx/test/it/SLF4JLogDelegateTest.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jul</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/test/it/JULLogDelegateTest.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>log4j2</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/test/it/Log4J2LogDelegateTest.java</include>
               </includes>
             </configuration>
           </execution>

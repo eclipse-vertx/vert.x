@@ -19,6 +19,7 @@ package io.vertx.test.it;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.logging.SLF4JLogDelegateFactory;
+import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,9 +31,7 @@ import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
 
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * Theses test checks the SLF4J log delegate. It assumes the binding used by SLF4J is slf4j-simple with the default
@@ -53,6 +52,19 @@ public class SLF4JLogDelegateTest {
   @AfterClass
   public static void terminate() {
     System.clearProperty("vertx.logger-delegate-factory-class-name");
+  }
+
+  @Test
+  public void testDelegateUnwrap() {
+    Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
+    LogDelegate delegate = logger.getDelegate();
+    assertNotNull("Delegate is null", delegate);
+    try {
+      org.slf4j.Logger unwrapped = (org.slf4j.Logger) delegate.unwrap();
+      assertNotNull("Unwrapped is null", unwrapped);
+    } catch (ClassCastException e) {
+      fail("Unexpected unwrapped type: " + e.getMessage());
+    }
   }
 
   @Test

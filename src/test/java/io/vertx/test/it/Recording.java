@@ -14,60 +14,53 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging;
+package io.vertx.test.it;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.util.logging.Handler;
 import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 /**
  * A helper class registering "error" output.
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-public class StreamRecording {
-  private static final PrintStream ORIGINAL_ERR = System.err;
+public class Recording {
 
   private ByteArrayOutputStream error = new ByteArrayOutputStream();
+  private Handler handler = new StreamHandler(error, new SimpleFormatter());
+  private Logger logger = LogManager.getLogManager().getLogger("");
 
-  public StreamRecording() throws IOException {
-    // Clear and reload as the stream may have been cached.
-    LogManager.getLogManager().reset();
-    LogManager.getLogManager().readConfiguration();
+  public Recording() throws IOException {
   }
 
-  public void start() {
+  private void start() {
     error.reset();
-    System.setErr(new PrintStream(error));
+    logger.addHandler(handler);
   }
 
   public void stop() {
-    if (System.err != ORIGINAL_ERR) {
-      System.setErr(ORIGINAL_ERR);
-    }
+    logger.removeHandler(handler);
   }
 
   public String get() {
-    try {
-      error.flush();
-    } catch (IOException e) {
-      // Ignore it.
-    }
+    handler.flush();
     return error.toString();
-  }
-
-  public void terminate() {
-    if (System.err != ORIGINAL_ERR) {
-      System.setErr(ORIGINAL_ERR);
-    }
   }
 
   public String execute(Runnable runnable) {
     start();
-    runnable.run();
-    String result = get();
-    stop();
+    String result;
+    try {
+      runnable.run();
+      result = get();
+    } finally {
+      stop();
+    }
     return result;
   }
 

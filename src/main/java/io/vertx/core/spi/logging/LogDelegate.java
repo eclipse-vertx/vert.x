@@ -72,4 +72,11 @@ public interface LogDelegate {
   void trace(Object message, Throwable t);
 
   void trace(Object message, Throwable t, Object... params);
+
+  /**
+   * @return the underlying framework logger object, null in the default implementation
+   */
+  default Object unwrap() {
+    return null;
+  }
 }

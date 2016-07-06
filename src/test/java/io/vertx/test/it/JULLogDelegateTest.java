@@ -14,80 +14,100 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging;
+package io.vertx.test.it;
 
-import org.junit.AfterClass;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
- * Theses test checks the Log4J 2 log delegate.
+ * These tests check the JUL log delegate. It analyses the output, so any change in the configuration may break the
+ * tests.
+ *
+ * TODO Ignore these tests for now, they break the CI, because the logging has already been initialized.
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-public class Log4J2LogDelegateTest {
+public class JULLogDelegateTest {
 
-  private static StreamRecording recording;
+  private static Recording recording;
 
   @BeforeClass
   public static void initialize() throws IOException {
     // Clear value.
-    System.setProperty("vertx.logger-delegate-factory-class-name", Log4j2LogDelegateFactory.class.getName());
+    System.clearProperty("vertx.logger-delegate-factory-class-name");
     LoggerFactory.initialise();
-    recording = new StreamRecording();
+    recording = new Recording();
   }
 
-  @AfterClass
-  public static void terminate() {
-    System.clearProperty("vertx.logger-delegate-factory-class-name");
-    recording.terminate();
+  @Test
+  public void testDelegateUnwrap() {
+    Logger logger = LoggerFactory.getLogger("my-jul-logger");
+    LogDelegate delegate = logger.getDelegate();
+    assertNotNull("Delegate is null", delegate);
+    try {
+      java.util.logging.Logger unwrapped = (java.util.logging.Logger) delegate.unwrap();
+      assertNotNull("Unwrapped is null", unwrapped);
+    } catch (ClassCastException e) {
+      fail("Unexpected unwrapped type: " + e.getMessage());
+    }
   }
 
   @Test
   public void testInfo() {
-    Logger logger = LoggerFactory.getLogger("my-log4j2-logger");
     String result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
       logger.info("hello");
     });
     assertTrue(result.contains("hello"));
     result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
       logger.info("exception", new NullPointerException());
     });
+
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
 
     result = recording.execute(() -> {
-      logger.info("hello {} and {}", "Paulo", "Julien");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.info("hello {0} and {1}", "Paulo", "Julien");
     });
     assertTrue(result.contains("hello Paulo and Julien"));
 
     result = recording.execute(() -> {
-      logger.info("hello {}", "vert.x");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.info("hello {0}", "vert.x");
     });
     assertTrue(result.contains("hello vert.x"));
 
     result = recording.execute(() -> {
-      logger.info("hello {} - {}", "vert.x");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.info("hello {0} - {1}", "vert.x");
     });
-    assertTrue(result.contains("hello vert.x - {}"));
+    assertTrue(result.contains("hello vert.x - {1}"));
 
     result = recording.execute(() -> {
-      logger.info("hello {}", "vert.x", "foo");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.info("hello {0}", "vert.x", "foo");
     });
-    assertTrue(result.contains("hello [vert.x, foo]"));
+    assertTrue(result.contains("hello vert.x"));
 
     result = recording.execute(() -> {
-      logger.info("{}, an exception has been thrown", new IllegalStateException(), "Luke");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.info("{0}, an exception has been thrown", new IllegalStateException(), "Luke");
     });
     assertTrue(result.contains("Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
 
     result = recording.execute(() -> {
-      logger.info("{}, an exception has been thrown", "Luke", new IllegalStateException());
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.info("{0}, an exception has been thrown", "Luke", new IllegalStateException());
     });
     assertTrue(result.contains("Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
@@ -95,45 +115,52 @@ public class Log4J2LogDelegateTest {
 
   @Test
   public void testError() {
-    Logger logger = LoggerFactory.getLogger("my-log4j2-logger");
     String result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
       logger.error("hello");
     });
     assertTrue(result.contains("hello"));
     result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
       logger.error("exception", new NullPointerException());
     });
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
 
     result = recording.execute(() -> {
-      logger.error("hello {} and {}", "Paulo", "Julien");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.error("hello {0} and {1}", "Paulo", "Julien");
     });
     assertTrue(result.contains("hello Paulo and Julien"));
 
     result = recording.execute(() -> {
-      logger.error("hello {}", "vert.x");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.error("hello {0}", "vert.x");
     });
     assertTrue(result.contains("hello vert.x"));
 
     result = recording.execute(() -> {
-      logger.error("hello {} - {}", "vert.x");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.error("hello {0} - {1}", "vert.x");
     });
-    assertTrue(result.contains("hello vert.x - {}"));
+    assertTrue(result.contains("hello vert.x - {1}"));
 
     result = recording.execute(() -> {
-      logger.error("hello {}", "vert.x", "foo");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.error("hello {0}", "vert.x", "foo");
     });
-    assertTrue(result.contains("hello [vert.x, foo]"));
+    assertTrue(result.contains("hello vert.x"));
 
     result = recording.execute(() -> {
-      logger.error("{}, an exception has been thrown", new IllegalStateException(), "Luke");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.error("{0}, an exception has been thrown", new IllegalStateException(), "Luke");
     });
     assertTrue(result.contains("Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
 
     result = recording.execute(() -> {
-      logger.error("{}, an exception has been thrown", "Luke", new IllegalStateException());
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.error("{0}, an exception has been thrown", "Luke", new IllegalStateException());
     });
     assertTrue(result.contains("Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
@@ -141,48 +168,54 @@ public class Log4J2LogDelegateTest {
 
   @Test
   public void testWarning() {
-    Logger logger = LoggerFactory.getLogger("my-log4j2-logger");
     String result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
       logger.warn("hello");
     });
     assertTrue(result.contains("hello"));
     result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
       logger.warn("exception", new NullPointerException());
     });
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
 
     result = recording.execute(() -> {
-      logger.warn("hello {} and {}", "Paulo", "Julien");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn("hello {0} and {1}", "Paulo", "Julien");
     });
     assertTrue(result.contains("hello Paulo and Julien"));
 
     result = recording.execute(() -> {
-      logger.warn("hello {}", "vert.x");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn("hello {0}", "vert.x");
     });
     assertTrue(result.contains("hello vert.x"));
 
     result = recording.execute(() -> {
-      logger.warn("hello {} - {}", "vert.x");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn("hello {0} - {1}", "vert.x");
     });
-    assertTrue(result.contains("hello vert.x - {}"));
+    assertTrue(result.contains("hello vert.x - {1}"));
 
     result = recording.execute(() -> {
-      logger.warn("hello {}", "vert.x", "foo");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn("hello {0}", "vert.x", "foo");
     });
-    assertTrue(result.contains("hello [vert.x, foo]"));
+    assertTrue(result.contains("hello vert.x"));
 
     result = recording.execute(() -> {
-      logger.warn("{}, an exception has been thrown", new IllegalStateException(), "Luke");
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn("{0}, an exception has been thrown", new IllegalStateException(), "Luke");
     });
     assertTrue(result.contains("Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
 
     result = recording.execute(() -> {
-      logger.warn("{}, an exception has been thrown", "Luke", new IllegalStateException());
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn("{0}, an exception has been thrown", "Luke", new IllegalStateException());
     });
     assertTrue(result.contains("Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
   }
-
 }

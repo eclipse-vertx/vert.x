@@ -154,4 +154,9 @@ public class Log4jLogDelegate implements LogDelegate {
   private void throwUnsupportedOperationException() {
     throw new UnsupportedOperationException("Log4j version used in Vertx doesn't support parameterized logging.");
   }
+
+  @Override
+  public Object unwrap() {
+    return logger;
+  }
 }
