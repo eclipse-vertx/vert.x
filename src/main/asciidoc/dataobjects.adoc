@@ -149,11 +149,11 @@ Add a CRL value
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols
+Add an enabled SSL/TLS protocols, appended to the ordered protocols.
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
@@ -453,11 +453,11 @@ Add a CRL value
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols
+Add an enabled SSL/TLS protocols, appended to the ordered protocols.
 +++
 |[[host]]`host`|`String`|
 +++
@@ -667,11 +667,11 @@ Set the default port to be used by this client in requests if none is provided w
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols
+Add an enabled SSL/TLS protocols, appended to the ordered protocols.
 +++
 |[[http2ClearTextUpgrade]]`http2ClearTextUpgrade`|`Boolean`|
 +++
@@ -876,11 +876,11 @@ Add a CRL value
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols
+Add an enabled SSL/TLS protocols, appended to the ordered protocols.
 +++
 |[[handle100ContinueAutomatically]]`handle100ContinueAutomatically`|`Boolean`|
 +++
@@ -1110,11 +1110,11 @@ Add a CRL value
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols
+Add an enabled SSL/TLS protocols, appended to the ordered protocols.
 +++
 |[[hostnameVerificationAlgorithm]]`hostnameVerificationAlgorithm`|`String`|
 +++
@@ -1253,11 +1253,11 @@ Add a CRL value
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols
+Add an enabled SSL/TLS protocols, appended to the ordered protocols.
 +++
 |[[host]]`host`|`String`|
 +++
@@ -1754,11 +1754,11 @@ Add a CRL value
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols
+Add an enabled SSL/TLS protocols, appended to the ordered protocols.
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++

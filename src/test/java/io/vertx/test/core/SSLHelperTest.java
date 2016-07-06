@@ -22,16 +22,25 @@ import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerOptionsConverter;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetServerOptionsConverter;
+import io.vertx.core.net.NetworkOptionsConverter;
 import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.net.TCPSSLOptionsConverter;
 import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSessionContext;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -93,5 +102,48 @@ public class SSLHelperTest extends VertxTestBase {
     if (sslSessionContext instanceof OpenSslServerSessionContext) {
       assertEquals(testDefault, ((OpenSslServerSessionContext) sslSessionContext).isSessionCacheEnabled());
     }
+  }
+
+  @Test
+  public void testPreserveEnabledCipherSuitesOrder() throws Exception {
+    SSLContext context = SSLContext.getInstance("TLS");
+    context.init(null, null, null);
+    SSLEngine engine = context.createSSLEngine();
+    HttpServerOptions options = new HttpServerOptions();
+    for (String suite : engine.getEnabledCipherSuites()) {
+      options.addEnabledCipherSuite(suite);
+    }
+    assertEquals(new ArrayList<>(options.getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
+    assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
+    JsonObject json = new JsonObject();
+    NetworkOptionsConverter.toJson(options, json);
+    TCPSSLOptionsConverter.toJson(options, json);
+    NetServerOptionsConverter.toJson(options, json);
+    HttpServerOptionsConverter.toJson(options, json);
+    assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
+    SSLHelper helper = new SSLHelper(options, TLSCert.JKS.getServerKeyCertOptions(), null);
+    assertEquals(Arrays.asList(helper.createSslHandler((VertxInternal) vertx).engine().getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
+  }
+
+  @Test
+  public void testPreserveEnabledSecureTransportProtocolOrder() throws Exception {
+    String[] protocols = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
+    HttpServerOptions options = new HttpServerOptions();
+    for (String protocol : protocols) {
+      options.addEnabledSecureTransportProtocol(protocol);
+    }
+    assertEquals(new ArrayList<>(options.getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
+    assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
+    JsonObject json = new JsonObject();
+    NetworkOptionsConverter.toJson(options, json);
+    TCPSSLOptionsConverter.toJson(options, json);
+    NetServerOptionsConverter.toJson(options, json);
+    HttpServerOptionsConverter.toJson(options, json);
+    assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
+    SSLHelper helper = new SSLHelper(options, TLSCert.JKS.getServerKeyCertOptions(), null);
+    List<String> engineProtocols = Arrays.asList(helper.createSslHandler((VertxInternal) vertx).engine().getEnabledProtocols());
+    List<String> expectedProtocols = new ArrayList<>(Arrays.asList(protocols));
+    expectedProtocols.retainAll(engineProtocols);
+    assertEquals(engineProtocols, expectedProtocols);
   }
 }
