@@ -1613,8 +1613,17 @@
  * The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
  * to resolve the DNS address locally.
  *
- * Please note: When using ProxyType.HTTP currently http requests are sent as CONNECT requests to the proxy, which will almost
+ * Please note: When using {@link ProxyType.HTTP} currently http requests are sent as CONNECT requests to the proxy, which will almost
  * certainly not work since a properly configured proxy will deny connections to non-secure ports.
+ *
+ * This feature will be implemented differently in next version, allowing for a normal proxy request for non-http requests 
+ *
+ * As a workaround, a http proxy request can be executed like this:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example60}
+ * ----
  *
  * === Automatic clean-up in verticles
  *
