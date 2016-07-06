@@ -720,6 +720,12 @@ public class HTTPExamples {
 
   }
 
+  public void example60(HttpClient client) {
+
+    client.get(80, "the-proxy", "http://www.google.com", resp -> {});
+
+  }
+
   public void serversharing(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       request.response().end("Hello from server " + this);
