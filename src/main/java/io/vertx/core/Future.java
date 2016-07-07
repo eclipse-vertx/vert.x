@@ -173,8 +173,8 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Compose this future with a provided {@code next} future.<p>
    *
-   * When this future succeeds, the {@code handler} will be called with the completed value, this handler
-   * should complete the next future.<p>
+   * When this (the one on which {@code compose} is called) future succeeds, the {@code handler} will be called with
+   * the completed value, this handler should complete the next future.<p>
    *
    * If the {@code handler} throws an exception, the returned future will be failed with this exception.<p>
    *
@@ -182,32 +182,33 @@ public interface Future<T> extends AsyncResult<T> {
    * will not be called.
    *
    * @param handler the handler
-   * @param composed the composed future
-   * @return the composed future, used for chaining
+   * @param next the next future
+   * @return the next future, used for chaining
    */
-  default <U> Future<U> compose(Handler<T> handler, Future<U> composed) {
+  default <U> Future<U> compose(Handler<T> handler, Future<U> next) {
     setHandler(ar -> {
       if (ar.succeeded()) {
         try {
           handler.handle(ar.result());
         } catch (Throwable err) {
-          if (composed.isComplete()) {
+          if (next.isComplete()) {
             throw err;
           }
-          composed.fail(err);
+          next.fail(err);
         }
       } else {
-        composed.fail(ar.cause());
+        next.fail(ar.cause());
       }
     });
-    return composed;
+    return next;
   }
 
   /**
    * Compose this future with a {@code mapper} function.<p>
    *
-   * When this future succeeds, the {@code mapper} will be called with the completed value and this mapper
-   * returns a future. This returned future completion will trigger the future returned by this method call.<p>
+   * When this future (the one on which {@code compose} is called) succeeds, the {@code mapper} will be called with
+   * the completed value and this mapper returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
    *
    * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
    *
