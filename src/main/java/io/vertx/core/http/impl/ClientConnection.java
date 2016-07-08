@@ -318,6 +318,15 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   public void doResume() {
     super.doResume();
     paused = false;
+    if (pausedChunk != null) {
+      vertx.runOnContext(v -> {
+        if (pausedChunk != null) {
+          Buffer chunk = pausedChunk;
+          pausedChunk = null;
+          currentResponse.handleChunk(chunk);
+        }
+      });
+    }
   }
 
   void handleResponseChunk(Buffer buff) {
@@ -346,7 +355,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         metrics.responseEnd(reqMetric, currentResponse);
       }
     }
-    currentResponse.handleEnd(pausedChunk, new HeadersAdaptor(trailer.trailingHeaders()));
+    Buffer last = pausedChunk;
+    pausedChunk = null;
+    currentResponse.handleEnd(last, new HeadersAdaptor(trailer.trailingHeaders()));
 
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT

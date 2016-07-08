@@ -56,10 +56,12 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -2275,6 +2277,73 @@ public abstract class HttpTest extends HttpTestBase {
 
     server.listen(onSuccess(s -> clientRequest.end()));
 
+    await();
+  }
+
+  @Test
+  public void testDeliverPausedBufferWhenResume() throws Exception {
+    Buffer data = TestUtils.randomBuffer(20);
+    int num = 10;
+    waitFor(num);
+    List<CompletableFuture<Void>> resumes = Collections.synchronizedList(new ArrayList<>());
+    for (int i = 0;i < num;i++) {
+      resumes.add(new CompletableFuture<>());
+    }
+    server.requestHandler(req -> {
+      int idx = Integer.parseInt(req.path().substring(1));
+      HttpServerResponse resp = req.response();
+      resumes.get(idx).thenAccept(v -> {
+        resp.end();
+      });
+      resp.setChunked(true).write(data);
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(true));
+    for (int i = 0;i < num;i++) {
+      int idx = i;
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/" + i, resp -> {
+        Buffer body = Buffer.buffer();
+        resp.handler(buff -> {
+          resumes.get(idx).complete(null);
+          body.appendBuffer(buff);
+        });
+        resp.endHandler(v -> {
+          assertEquals(data, body);
+          complete();
+        });
+        resp.pause();
+        vertx.setTimer(10, id -> {
+          resp.resume();
+        });
+      }).end();
+    }
+    await();
+  }
+
+  @Test
+  public void testClearPausedBuffersWhenResponseEnds() throws Exception {
+    Buffer data = TestUtils.randomBuffer(20);
+    int num = 10;
+    waitFor(num);
+    server.requestHandler(req -> {
+      req.response().end(data);
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(true));
+    for (int i = 0;i < num;i++) {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals(data, buff);
+          complete();
+        });
+        resp.pause();
+        vertx.setTimer(10, id -> {
+          resp.resume();
+        });
+      }).end();
+    }
     await();
   }
 
