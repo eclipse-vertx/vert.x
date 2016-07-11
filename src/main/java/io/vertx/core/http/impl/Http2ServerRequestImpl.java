@@ -20,13 +20,16 @@ import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.codec.http2.HttpConversionUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -61,6 +64,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private final String serverOrigin;
   private final Http2ServerResponseImpl response;
   private final Http2Headers headers;
+  
+  private HttpHeaders headersLegacy;
+  
   private MultiMap headersMap;
   private MultiMap params;
   private HttpMethod method;
@@ -89,6 +95,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     super(conn, stream, writable);
 
     this.serverOrigin = serverOrigin;
+    this.headersLegacy = null;
+      try {
+          HttpRequest translated = HttpConversionUtil.toHttpRequest(stream.id(), headers, true);
+          this.headersLegacy = translated.headers();
+      } catch (Http2Exception ex) {
+          
+      }
     this.headers = headers;
 
     String host = host();
@@ -327,7 +340,11 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   public MultiMap headers() {
     synchronized (conn) {
       if (headersMap == null) {
-        headersMap = new Http2HeadersAdaptor(headers);
+          if (this.headersLegacy!=null){
+             headersMap = new HeadersAdaptor(headersLegacy);
+          }else{
+            headersMap = new Http2HeadersAdaptor(headers);
+          }
       }
       return headersMap;
     }
