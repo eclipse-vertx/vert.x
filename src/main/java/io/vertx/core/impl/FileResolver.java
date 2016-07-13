@@ -52,12 +52,12 @@ public class FileResolver {
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
 
-  private static final String DEFAULT_CACHE_DIR_BASE = ".vertx";
-  private static final String FILE_SEP = System.getProperty("file.separator");
-  private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
-  private static final boolean ENABLE_CACHING = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
-  private static final boolean ENABLE_CP_RESOLVING = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
-  private static final String CACHE_DIR_BASE = System.getProperty(CACHE_DIR_BASE_PROP_NAME, DEFAULT_CACHE_DIR_BASE);
+  private final String DEFAULT_CACHE_DIR_BASE = ".vertx";
+  private final String FILE_SEP = System.getProperty("file.separator");
+  private final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
+  private final boolean ENABLE_CACHING = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
+  private final boolean ENABLE_CP_RESOLVING = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
+  private final String CACHE_DIR_BASE = System.getProperty(CACHE_DIR_BASE_PROP_NAME, DEFAULT_CACHE_DIR_BASE);
 
   private final Vertx vertx;
   private final File cwd;
