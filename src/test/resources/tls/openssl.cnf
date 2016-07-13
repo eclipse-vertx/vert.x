@@ -28,3 +28,8 @@ organizationName        = optional
 organizationalUnitName  = optional
 commonName              = optional
 emailAddress            = optional
+
+[ req_ext ]
+subjectAltName    = @alt_names
+[ alt_names ]
+DNS.1    = localhost
