@@ -27,7 +27,7 @@ public class NetClientTLSConnectTest extends VertxTestBase {
 
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
-    serverOptions.setKeyCertOptions(new JksOptions().setPath("tls/server-altname.jks").setPassword("password"));
+    serverOptions.setKeyCertOptions(new JksOptions().setPath("tls/server-keystore-root-ca.jks").setPassword("wibble"));
     server = vertx.createHttpServer(serverOptions.setPort(4043));
     server.requestHandler(req -> {
       req.bodyHandler(buffer -> {
@@ -48,7 +48,7 @@ public class NetClientTLSConnectTest extends VertxTestBase {
     NetClientOptions options = new NetClientOptions();
     options.setHostnameVerificationAlgorithm("HTTPS");
 
-    options.setTrustStoreOptions(new JksOptions().setPath("tls/server-altname.jks").setPassword("password"));
+    options.setTrustStoreOptions(new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble"));
 
     NetClient client = vertx.createNetClient(options);
 
