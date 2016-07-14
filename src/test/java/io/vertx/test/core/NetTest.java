@@ -2220,6 +2220,9 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  // TODO: this test probably doesn't make sense since it sets HostnameVerification
+  // but also trustAll, which turns off the whole ssl cert checking
+
   @Test
   public void testHostVerificationHttpsMatching() {
     server.close();
@@ -2498,4 +2501,67 @@ public class NetTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testTLSHostnameCertCheckCorrect() {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+        .setKeyCertOptions(new JksOptions().setPath("tls/server-keystore-root-ca.jks").setPassword("wibble")));
+    server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
+
+      NetClientOptions options = new NetClientOptions()
+          .setHostnameVerificationAlgorithm("HTTPS")
+          .setTrustStoreOptions(new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble"));
+
+      NetClient client = vertx.createNetClient(options);
+
+      client.connect(4043, "localhost", arSocket -> {
+        if (arSocket.succeeded()) {
+          NetSocket ns = arSocket.result();
+          ns.exceptionHandler(th -> {
+            fail(th);
+          });
+          ns.upgradeToSsl(v -> {
+            testComplete();
+          });
+        } else {
+          fail(ar.cause());
+        }
+      });
+    });
+
+    await();
+  }
+
+  @Test
+  public void testTLSHostnameCertCheckIncorrect() {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+        .setKeyCertOptions(new JksOptions().setPath("tls/server-keystore-root-ca.jks").setPassword("wibble")));
+    server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
+
+      NetClientOptions options = new NetClientOptions()
+          .setHostnameVerificationAlgorithm("HTTPS")
+          .setTrustStoreOptions(new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble"));
+
+      NetClient client = vertx.createNetClient(options);
+
+      client.connect(4043, "127.0.0.1", arSocket -> {
+        if (arSocket.succeeded()) {
+          NetSocket ns = arSocket.result();
+          ns.exceptionHandler(th -> {
+            testComplete();
+          });
+          ns.upgradeToSsl(v -> {
+            fail("this test should fail");
+          });
+        } else {
+          fail(ar.cause());
+        }
+      });
+    });
+
+    await();
+  }
+
 }
