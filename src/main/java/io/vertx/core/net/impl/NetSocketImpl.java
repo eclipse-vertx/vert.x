@@ -247,7 +247,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
 
-      sslHandler = helper.createSslHandler(vertx, this.remoteAddress().host(), this.remoteAddress().port());
+      sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
       channel.pipeline().addFirst("ssl", sslHandler);
     }
     sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {
