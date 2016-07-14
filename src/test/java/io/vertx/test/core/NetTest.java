@@ -2506,12 +2506,12 @@ public class NetTest extends VertxTestBase {
   public void testTLSHostnameCertCheckCorrect() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
-        .setKeyCertOptions(new JksOptions().setPath("tls/server-keystore-root-ca.jks").setPassword("wibble")));
+        .setKeyCertOptions(TLSCert.JKS_ROOT_CA.getServerKeyCertOptions()));
     server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
 
       NetClientOptions options = new NetClientOptions()
           .setHostnameVerificationAlgorithm("HTTPS")
-          .setTrustStoreOptions(new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble"));
+          .setTrustOptions(TLSCert.JKS_ROOT_CA.getClientTrustOptions());
 
       NetClient client = vertx.createNetClient(options);
 
@@ -2537,12 +2537,12 @@ public class NetTest extends VertxTestBase {
   public void testTLSHostnameCertCheckIncorrect() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
-        .setKeyCertOptions(new JksOptions().setPath("tls/server-keystore-root-ca.jks").setPassword("wibble")));
+        .setKeyCertOptions(TLSCert.JKS_ROOT_CA.getServerKeyCertOptions()));
     server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
 
       NetClientOptions options = new NetClientOptions()
           .setHostnameVerificationAlgorithm("HTTPS")
-          .setTrustStoreOptions(new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble"));
+          .setTrustOptions(TLSCert.JKS_ROOT_CA.getClientTrustOptions());
 
       NetClient client = vertx.createNetClient(options);
 
