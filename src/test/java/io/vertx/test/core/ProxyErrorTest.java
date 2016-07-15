@@ -42,6 +42,7 @@ public class ProxyErrorTest extends VertxTestBase {
     startProxy(403, null);
 
     final HttpClientOptions options = new HttpClientOptions()
+        .setSsl(true)
         .setProxyOptions(new ProxyOptions()
             .setType(ProxyType.HTTP)
             .setHost("localhost")
@@ -63,6 +64,7 @@ public class ProxyErrorTest extends VertxTestBase {
     startProxy(0, "user");
 
     final HttpClientOptions options = new HttpClientOptions()
+        .setSsl(true)
         .setProxyOptions(new ProxyOptions()
             .setType(ProxyType.HTTP)
             .setHost("localhost")
@@ -84,6 +86,7 @@ public class ProxyErrorTest extends VertxTestBase {
     startProxy(0, null);
 
     final HttpClientOptions options = new HttpClientOptions()
+        .setSsl(true)
         .setProxyOptions(new ProxyOptions()
             .setType(ProxyType.HTTP)
             .setHost("localhost")
