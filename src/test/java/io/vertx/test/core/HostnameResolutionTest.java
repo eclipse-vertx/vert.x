@@ -639,6 +639,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     dnsServer.stop();
     dnsServer = FakeDNSServer.testResolveA(records);
     dnsServer.start();
+    vertx.close();
     vertx = vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
