@@ -27,6 +27,8 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -710,6 +712,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
+    ProxyOptions proxyOptions = options.getProxyOptions();
+    if (!options.isSsl() && proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP) {
+      relativeURI = "http://" + host + (port != 80 ? ":" + port : "") + relativeURI;
+      host = proxyOptions.getHost();
+      port = proxyOptions.getPort();
+      log.debug("changing request to proxy request " + relativeURI);
+    }
     HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, options.isSsl(), relativeURI, vertx);
     if (headers != null) {
       req.headers().setAll(headers);

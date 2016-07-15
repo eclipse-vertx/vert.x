@@ -4,6 +4,8 @@ import java.util.Base64;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -58,7 +60,7 @@ public class ConnectHttpProxy extends TestProxyBase {
     server.requestHandler(request -> {
       HttpMethod method = request.method();
       String uri = request.uri();
-      if (username  != null) {
+      if (username != null) {
         String auth = request.getHeader("Proxy-Authorization");
         String expected = "Basic " + Base64.getEncoder().encodeToString((username + ":" + username).getBytes());
         if (auth == null || !auth.equals(expected)) {
@@ -68,37 +70,63 @@ public class ConnectHttpProxy extends TestProxyBase {
       }
       if (error != 0) {
         request.response().setStatusCode(error).end("proxy request failed");
-      } else if (method != HttpMethod.CONNECT || !uri.contains(":")) {
-        request.response().setStatusCode(405).end("method not allowed");
-      } else {
-        lastUri = uri;
-        if (forceUri != null) {
-          uri = forceUri;
-        }
-        String[] split = uri.split(":");
-        String host = split[0];
-        int port;
-        try {
-          port = Integer.parseInt(split[1]);
-        } catch (NumberFormatException ex) {
-          port = 443;
-        }
-        NetSocket serverSocket = request.netSocket();
-        NetClientOptions netOptions = new NetClientOptions();
-        NetClient netClient = vertx.createNetClient(netOptions);
-        netClient.connect(port, host, result -> {
-          if (result.succeeded()) {
-            NetSocket clientSocket = result.result();
-            serverSocket.write("HTTP/1.0 200 Connection established\n\n");
-            serverSocket.closeHandler(v -> clientSocket.close());
-            clientSocket.closeHandler(v -> serverSocket.close());
-            Pump.pump(serverSocket, clientSocket).start();
-            Pump.pump(clientSocket, serverSocket).start();
-          } else {
-            log.error("connect() failed", result.cause());
-            request.response().setStatusCode(403).end("request failed");
+      } else if (method == HttpMethod.CONNECT) {
+        if (!uri.contains(":")) {
+          request.response().setStatusCode(403).end("invalid request");
+        } else {
+          lastUri = uri;
+          log.info("uri: " + uri);
+          if (forceUri != null) {
+            uri = forceUri;
           }
+          String[] split = uri.split(":");
+          String host = split[0];
+          int port;
+          try {
+            port = Integer.parseInt(split[1]);
+          } catch (NumberFormatException ex) {
+            port = 443;
+          }
+          // deny ports not considered safe to connect
+          // this will deny access to e.g. smtp port 25 to avoid spammers
+          if (port == 8080 || port < 1024 && port != 443) {
+            request.response().setStatusCode(403).end("access to port denied");
+            return;
+          }
+          NetSocket serverSocket = request.netSocket();
+          NetClientOptions netOptions = new NetClientOptions();
+          NetClient netClient = vertx.createNetClient(netOptions);
+          netClient.connect(port, host, result -> {
+            if (result.succeeded()) {
+              NetSocket clientSocket = result.result();
+              serverSocket.write("HTTP/1.0 200 Connection established\n\n");
+              serverSocket.closeHandler(v -> clientSocket.close());
+              clientSocket.closeHandler(v -> serverSocket.close());
+              Pump.pump(serverSocket, clientSocket).start();
+              Pump.pump(clientSocket, serverSocket).start();
+            } else {
+              log.error("connect() failed", result.cause());
+              request.response().setStatusCode(403).end("request failed");
+            }
+          });
+        }
+      } else if (method == HttpMethod.GET) {
+        lastUri = request.uri();
+        HttpClient client = vertx.createHttpClient();
+        HttpClientRequest clientRequest = client.getAbs(request.uri(), resp -> {
+          for (String name : resp.headers().names()) {
+            request.response().putHeader(name, resp.headers().getAll(name));
+          }
+          resp.bodyHandler(body -> {
+            request.response().end(body);
+          });
         });
+        for (String name : request.headers().names()) {
+          clientRequest.putHeader(name, request.headers().getAll(name));
+        }
+        clientRequest.end();
+      } else {
+        request.response().setStatusCode(405).end("method not supported");
       }
     });
     server.listen(server -> {
@@ -125,7 +153,7 @@ public class ConnectHttpProxy extends TestProxyBase {
   }
 
   public ConnectHttpProxy setError(int error) {
-    this.error  = error;
+    this.error = error;
     return this;
   }
 }

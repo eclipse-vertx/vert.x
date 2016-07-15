@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.net.ProxyType;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -39,6 +40,7 @@ public class HttpTestBase extends VertxTestBase {
 
   protected HttpServer server;
   protected HttpClient client;
+  protected TestProxyBase proxy;
 
   public void setUp() throws Exception {
     super.setUp();
@@ -81,6 +83,17 @@ public class HttpTestBase extends VertxTestBase {
     context.runOnContext(v -> {
       server.listen(onSuccess(s -> latch.countDown()));
     });
+    awaitLatch(latch);
+  }
+
+  protected void startProxy(String username, ProxyType proxyType) throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    if (proxyType == ProxyType.HTTP) {
+      proxy = new ConnectHttpProxy(username);
+    } else {
+      proxy = new SocksProxy(username);
+    }
+    proxy.start(vertx, v -> latch.countDown());
     awaitLatch(latch);
   }
 }
