@@ -27,6 +27,8 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -35,6 +37,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -710,6 +713,24 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
+    ProxyOptions proxyOptions = options.getProxyOptions();
+    if (!options.isSsl() && proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP) {
+      if (headers == null) {
+        headers = MultiMap.caseInsensitiveMultiMap();
+      }
+      relativeURI = "http://" + host + (port != 80 ? ":" + port : "") + relativeURI;
+      host = proxyOptions.getHost();
+      port = proxyOptions.getPort();
+      log.debug("changing request to proxy request " + relativeURI);
+      log.debug("username "+proxyOptions.getUsername()+" password "+proxyOptions.getPassword());
+      if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
+        log.debug("adding authorization header");
+        headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
+            .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
+      }
+      // TODO: setting the host here does not work yet
+      headers.add("Host", host + (port != 80 ? ":" + port : ""));
+    }
     HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, options.isSsl(), relativeURI, vertx);
     if (headers != null) {
       req.headers().setAll(headers);
