@@ -1,5 +1,6 @@
 package io.vertx.test.core;
 
+import java.net.UnknownHostException;
 import java.util.Base64;
 
 import io.vertx.core.Handler;
@@ -58,6 +59,7 @@ public class ConnectHttpProxy extends TestProxyBase {
     options.setHost("localhost").setPort(PORT);
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
+      log.debug("request "+request.absoluteURI());
       HttpMethod method = request.method();
       String uri = request.uri();
       if (username != null) {
@@ -105,7 +107,7 @@ public class ConnectHttpProxy extends TestProxyBase {
               Pump.pump(serverSocket, clientSocket).start();
               Pump.pump(clientSocket, serverSocket).start();
             } else {
-              log.error("connect() failed", result.cause());
+              log.debug("connect() failed", result.cause());
               request.response().setStatusCode(403).end("request failed");
             }
           });
@@ -124,6 +126,16 @@ public class ConnectHttpProxy extends TestProxyBase {
         for (String name : request.headers().names()) {
           clientRequest.putHeader(name, request.headers().getAll(name));
         }
+        clientRequest.exceptionHandler(e -> {
+          log.debug("exception", e);
+          int status;
+          if (e instanceof UnknownHostException) {
+            status = 504;
+          } else {
+            status = 400;
+          }
+          request.response().setStatusCode(status).end(e.toString()+" on client request");
+        });
         clientRequest.end();
       } else {
         request.response().setStatusCode(405).end("method not supported");

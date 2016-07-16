@@ -4,22 +4,30 @@ import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
 
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.test.core.ConnectHttpProxy;
 import io.vertx.test.core.VertxTestBase;
 
 /**
+ * Test all kinds of errors raised by the proxy
+ *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  *
  */
 public class ProxyErrorTest extends VertxTestBase {
 
+  private static final Logger log = LoggerFactory.getLogger(ProxyErrorTest.class);
+
   private ConnectHttpProxy proxy = null;
 
-  // we don't start a https server, due to the error, it will not be queried 
+  // we don't start servers, due to the error, it will not be queried 
 
   private void startProxy(int error, String username) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
@@ -38,66 +46,74 @@ public class ProxyErrorTest extends VertxTestBase {
   }
 
   @Test
+  public void testProxyHttpsError() throws Exception {
+    expectProxyException(403, null, "https://localhost/");
+  }
+
+  @Test
+  public void testProxyHttpsAuthFail() throws Exception {
+    expectProxyException(0, "user", "https://localhost/");
+  }
+
+  @Test
+  public void testProxyHttpsHostUnknown() throws Exception {
+    expectProxyException(0, null, "https://unknown.hostname/");
+  }
+
+  @Test
   public void testProxyError() throws Exception {
-    startProxy(403, null);
-
-    final HttpClientOptions options = new HttpClientOptions()
-        .setSsl(true)
-        .setProxyOptions(new ProxyOptions()
-            .setType(ProxyType.HTTP)
-            .setHost("localhost")
-            .setPort(proxy.getPort()));
-    HttpClient client = vertx.createHttpClient(options);
-
-    client.getAbs("https://localhost/", resp -> {
-      // request is supposed to fail
-      fail();
-    })
-    .exceptionHandler(e -> testComplete())
-    .end();
-
-    await();
+    expectStatusError(403, 403, null, "http://localhost/");
   }
 
   @Test
   public void testProxyAuthFail() throws Exception {
-    startProxy(0, "user");
-
-    final HttpClientOptions options = new HttpClientOptions()
-        .setSsl(true)
-        .setProxyOptions(new ProxyOptions()
-            .setType(ProxyType.HTTP)
-            .setHost("localhost")
-            .setPort(proxy.getPort()));
-    HttpClient client = vertx.createHttpClient(options);
-
-    client.getAbs("https://localhost/", resp -> {
-      // request is supposed to fail
-      fail();
-    })
-    .exceptionHandler(e -> testComplete())
-    .end();
-
-    await();
+    expectStatusError(0, 407, "user", "http://localhost/");
   }
 
   @Test
   public void testProxyHostUnknown() throws Exception {
-    startProxy(0, null);
+    expectStatusError(0, 504, null, "http://unknown.hostname/");
+  }
+
+  // we expect the request to fail with a ProxyConnectException if we use https
+  // so we fail the test when it succeeds
+  public void expectProxyException(int error, String username, String url) throws Exception {
+    proxyTest(error, username, url, resp -> {
+      log.info("request is supposed to fail but response is " + resp.statusCode() + " " + resp.statusMessage());
+      fail("request is supposed to fail");
+    }, true);
+  }
+
+  public void expectStatusError(int error, String username, String url) throws Exception {
+    expectStatusError(error, error, username, url);
+  }
+  // we expect the request to fail with a http status error if we use http
+  public void expectStatusError(int error, int responseStatus, String username, String url) throws Exception {
+    proxyTest(error, username, url, resp -> {
+      assertEquals(responseStatus, resp.statusCode());
+      testComplete();
+    }, false);
+  }
+
+  public void proxyTest(int error, String username, String url, Handler<HttpClientResponse> assertResponse, boolean completeOnException) throws Exception {
+    startProxy(error, username);
 
     final HttpClientOptions options = new HttpClientOptions()
-        .setSsl(true)
+        .setSsl(url.startsWith("https"))
         .setProxyOptions(new ProxyOptions()
             .setType(ProxyType.HTTP)
             .setHost("localhost")
             .setPort(proxy.getPort()));
     HttpClient client = vertx.createHttpClient(options);
 
-    client.getAbs("https://unknown.hostname/", resp -> {
-      // request is supposed to fail
-      fail();
+    client.getAbs(url, assertResponse)
+    .exceptionHandler(e -> {
+      if (completeOnException) {
+        testComplete(); 
+      } else {
+        fail(e);
+      }
     })
-    .exceptionHandler(e -> testComplete())
     .end();
 
     await();
