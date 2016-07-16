@@ -404,7 +404,6 @@ public class HostnameResolutionTest extends VertxTestBase {
     // Test using the resolver API
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
-            setHostsValue(Buffer.buffer("")).
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
             setOptResourceEnabled(false)
     ));
