@@ -63,6 +63,9 @@ public class HttpTestBase extends VertxTestBase {
       });
       awaitLatch(latch);
     }
+    if (proxy != null) {
+      proxy.stop();
+    }
     super.tearDown();
   }
 

@@ -5,6 +5,7 @@ import java.util.Base64;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
@@ -60,12 +61,14 @@ public class ConnectHttpProxy extends TestProxyBase {
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
       log.debug("request "+request.absoluteURI());
+      log.debug("headers "+new CaseInsensitiveHeaders().addAll(request.headers()).toString());
       HttpMethod method = request.method();
       String uri = request.uri();
       if (username != null) {
         String auth = request.getHeader("Proxy-Authorization");
         String expected = "Basic " + Base64.getEncoder().encodeToString((username + ":" + username).getBytes());
         if (auth == null || !auth.equals(expected)) {
+          log.debug("auth failed "+auth+"/"+expected);
           request.response().setStatusCode(407).end("proxy authentication failed");
           return;
         }
@@ -124,8 +127,11 @@ public class ConnectHttpProxy extends TestProxyBase {
           });
         });
         for (String name : request.headers().names()) {
-          clientRequest.putHeader(name, request.headers().getAll(name));
+          if (!name.equals("Proxy-Authorization")) {
+            clientRequest.putHeader(name, request.headers().getAll(name));
+          }
         }
+        log.debug("client request headers " + clientRequest.headers().toString());
         clientRequest.exceptionHandler(e -> {
           log.debug("exception", e);
           int status;
