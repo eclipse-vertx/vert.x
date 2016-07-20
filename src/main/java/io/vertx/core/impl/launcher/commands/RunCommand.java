@@ -245,6 +245,9 @@ public class RunCommand extends BareCommand {
   public void run() {
     if (redeploy == null || redeploy.isEmpty()) {
       JsonObject conf = getConfiguration();
+      if (conf == null) {
+        conf = new JsonObject();
+      }
       afterConfigParsed(conf);
 
       super.run();
