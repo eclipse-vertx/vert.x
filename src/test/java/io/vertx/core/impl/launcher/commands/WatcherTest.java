@@ -38,10 +38,10 @@ public class WatcherTest extends CommandTestBase {
   // Note about sleep time - the watcher is configured with a short scan period to avoid that this tests take too
   // much time.
 
-  private Watcher watcher;
-  private AtomicInteger deploy;
-  private AtomicInteger undeploy;
-  private File root;
+  protected Watcher watcher;
+  protected AtomicInteger deploy;
+  protected AtomicInteger undeploy;
+  protected File root;
 
   @Before
   public void prepare() {
@@ -103,20 +103,22 @@ public class WatcherTest extends CommandTestBase {
   @Test
   public void testFileModification() throws IOException, InterruptedException {
     File file = new File(root, "foo.txt");
-    file.createNewFile();
-
     watcher.watch();
 
     // Initial deployment
     waitUntil(() -> deploy.get() == 1);
 
-    // Wait until the file monitoring is set up (ugly, but I don't know any way to detect this).
-    Thread.sleep(500);
-    // Simulate a 'touch'
+    file.createNewFile();
+
+    waitUntil(() -> deploy.get() == 2);
+
+    // Simulate a 'touch', we wait more than a second to avoid being in the same second as the creation. This is because
+    // some FS return the last modified date with a second of precision.
+    Thread.sleep(1500);
     file.setLastModified(System.currentTimeMillis());
 
     // undeployment followed by redeployment
-    waitUntil(() -> undeploy.get() == 1 && deploy.get() == 2);
+    waitUntil(() -> undeploy.get() == 2 && deploy.get() == 3);
   }
 
   @Test

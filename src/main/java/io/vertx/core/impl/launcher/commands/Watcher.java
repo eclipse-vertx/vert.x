@@ -91,7 +91,7 @@ public class Watcher implements Runnable {
       return p.replace('\\', File.separatorChar);
     }).collect(Collectors.toList());
   }
-  
+
   private void addFileToWatch(File file) {
     filesToWatch.add(file);
     Map<File, FileInfo> map = new HashMap<>();
@@ -206,7 +206,9 @@ public class Watcher implements Runnable {
     String rel = file.getAbsolutePath().substring(root.getAbsolutePath().length() + 1);
     for (String include : includes) {
       // Windows files are not case sensitive
-      if (FileSelector.matchPath(include, rel, !ExecUtils.isWindows())) {
+      // 2 checks: one for the relative file, and one taking the absolute path, for pattern using absolute path
+      if (FileSelector.matchPath(include, rel, !ExecUtils.isWindows())
+          || FileSelector.matchPath(include, file.getAbsolutePath(), !ExecUtils.isWindows())) {
         return true;
       }
     }
@@ -291,10 +293,9 @@ public class Watcher implements Runnable {
             .start();
 
         int status = process.waitFor();
-        System.out.println("User command terminated with status " + status);
+        LOGGER.info("User command terminated with status " + status);
       } catch (Throwable e) {
-        System.err.println("Error while executing the on-redeploy command : '" + cmd + "'");
-        e.printStackTrace();
+        LOGGER.error("Error while executing the on-redeploy command : '" + cmd + "'", e);
       }
     }
     onCompletion.handle(null);
