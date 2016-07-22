@@ -142,6 +142,7 @@ public class BareCommand extends ClasspathHandler {
     MetricsOptions metricsOptions = getMetricsOptions();
     options = new VertxOptions().setMetricsOptions(metricsOptions);
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
+    beforeStartingVertx(options);
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
@@ -168,7 +169,6 @@ public class BareCommand extends ClasspathHandler {
         }
       }
 
-      beforeStartingVertx(options);
       create(options, ar -> {
         result.set(ar);
         latch.countDown();
@@ -190,7 +190,6 @@ public class BareCommand extends ClasspathHandler {
       }
       instance = result.get().result();
     } else {
-      beforeStartingVertx(options);
       instance = create(options);
     }
     addShutdownHook();

@@ -30,7 +30,7 @@ public interface VertxLifecycleHooks {
   /**
    * Hook for sub-classes of the starter class before the vertx instance is started. Options can still be updated.
    *
-   * @param config the json config file passed via -conf on the command line
+   * @param config the json config file passed via -conf on the command line, an empty json object is not set.
    */
   void afterConfigParsed(JsonObject config);
 

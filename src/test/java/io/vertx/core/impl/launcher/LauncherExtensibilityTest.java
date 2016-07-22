@@ -18,11 +18,13 @@ package io.vertx.core.impl.launcher;
 
 import io.vertx.core.Launcher;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.annotations.Name;
 import io.vertx.core.impl.launcher.commands.CommandTestBase;
 import io.vertx.core.impl.launcher.commands.HttpTestVerticle;
 import io.vertx.core.impl.launcher.commands.RunCommandTest;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.launcher.CommandFactory;
 import io.vertx.core.spi.launcher.DefaultCommand;
 import io.vertx.core.spi.launcher.DefaultCommandFactory;
@@ -39,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class LauncherExtensibilityTest extends CommandTestBase {
 
-  static AtomicReference<Boolean> spy = new AtomicReference<>();
+  private static AtomicReference<Boolean> spy = new AtomicReference<>();
 
   private Vertx vertx;
 
@@ -106,6 +108,101 @@ public class LauncherExtensibilityTest extends CommandTestBase {
     stop();
     assertThat(output.toString()).contains("The command 'start' is not a valid command.");
     assertThat(myLauncher.getCommandNames()).doesNotContain("start");
+  }
+
+  @Test
+  public void testThatCustomLauncherCanCustomizeTheClusteredOption() {
+    Launcher myLauncher = new Launcher() {
+      @Override
+      protected String getMainVerticle() {
+        return HttpTestVerticle.class.getName();
+      }
+
+      @Override
+      public void afterStartingVertx(Vertx vertx) {
+        LauncherExtensibilityTest.this.vertx = vertx;
+      }
+
+      @Override
+      public void beforeStartingVertx(VertxOptions options) {
+        options.setClustered(true);
+      }
+    };
+
+    myLauncher.dispatch(new String[0]);
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    assertThat(this.vertx.isClustered()).isTrue();
+  }
+
+  @Test
+  public void testThatCustomLauncherCanUpdateConfigurationWhenNoneArePassed() throws IOException {
+    long time = System.nanoTime();
+    Launcher myLauncher = new Launcher() {
+      @Override
+      protected String getMainVerticle() {
+        return HttpTestVerticle.class.getName();
+      }
+
+      @Override
+      public void afterStartingVertx(Vertx vertx) {
+        LauncherExtensibilityTest.this.vertx = vertx;
+      }
+
+      @Override
+      public void afterConfigParsed(JsonObject config) {
+        config.put("time", time);
+      }
+    };
+
+    myLauncher.dispatch(new String[0]);
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    assertThat(RunCommandTest.getContent().getJsonObject("conf").getLong("time")).isEqualTo(time);
+  }
+
+  @Test
+  public void testThatCustomLauncherCanUpdateConfiguration() throws IOException {
+    long time = System.nanoTime();
+    Launcher myLauncher = new Launcher() {
+      @Override
+      protected String getMainVerticle() {
+        return HttpTestVerticle.class.getName();
+      }
+
+      @Override
+      public void afterStartingVertx(Vertx vertx) {
+        LauncherExtensibilityTest.this.vertx = vertx;
+      }
+
+      @Override
+      public void afterConfigParsed(JsonObject config) {
+        config.put("time", time);
+      }
+    };
+
+    myLauncher.dispatch(new String[] {"-conf=\"{\"time\":345667}"});
+    waitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    assertThat(RunCommandTest.getContent().getJsonObject("conf").getLong("time")).isEqualTo(time);
   }
 
   @Name("foo")

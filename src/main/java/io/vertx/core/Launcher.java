@@ -60,14 +60,17 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
   }
 
   /**
-   *
    * Hook for sub-classes of {@link Launcher} after the config has been parsed.
+   *
+   * @param config the read config, empty if none are provided.
    */
   public void afterConfigParsed(JsonObject config) {
   }
 
   /**
    * Hook for sub-classes of {@link Launcher} before the vertx instance is started.
+   *
+   * @param options the configured Vert.x options. Modify them to customize the Vert.x instance.
    */
   public void beforeStartingVertx(VertxOptions options) {
 
@@ -75,6 +78,8 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
 
   /**
    * Hook for sub-classes of {@link Launcher} after the vertx instance is started.
+   *
+   * @param vertx the created Vert.x instance
    */
   public void afterStartingVertx(Vertx vertx) {
 
@@ -82,6 +87,8 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
 
   /**
    * Hook for sub-classes of {@link Launcher} before the verticle is deployed.
+   *
+   * @param deploymentOptions the current deployment options. Modify them to customize the deployment.
    */
   public void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
 
@@ -90,6 +97,11 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
   /**
    * A deployment failure has been encountered. You can override this method to customize the behavior.
    * By default it closes the `vertx` instance.
+   *
+   * @param vertx             the vert.x instance
+   * @param mainVerticle      the verticle
+   * @param deploymentOptions the verticle deployment options
+   * @param cause             the cause of the failure
    */
   public void handleDeployFailed(Vertx vertx, String mainVerticle, DeploymentOptions deploymentOptions, Throwable cause) {
     // Default behaviour is to close Vert.x if the deploy failed

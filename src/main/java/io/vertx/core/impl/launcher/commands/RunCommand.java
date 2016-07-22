@@ -225,11 +225,12 @@ public class RunCommand extends BareCommand {
   }
 
   /**
-   * @return whether the {@code cluster} option or the {@code ha} option are enabled.
+   * @return whether the {@code cluster} option or the {@code ha} option are enabled. Also {@code true} when a custom
+   * launcher modifies the Vert.x options to set `clustered` to {@code true}
    */
   @Override
   public boolean isClustered() {
-    return cluster || ha;
+    return cluster || ha || (options != null  && options.isClustered());
   }
 
   @Override
@@ -244,6 +245,9 @@ public class RunCommand extends BareCommand {
   public void run() {
     if (redeploy == null || redeploy.isEmpty()) {
       JsonObject conf = getConfiguration();
+      if (conf == null) {
+        conf = new JsonObject();
+      }
       afterConfigParsed(conf);
 
       super.run();
