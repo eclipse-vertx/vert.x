@@ -120,6 +120,13 @@ public class ExecUtils {
   }
 
   /**
+   * @return {@code true} if the current operating system belongs to the "linux" family.
+   */
+  public static boolean isLinux() {
+    return osName.contains("nux");
+  }
+
+  /**
    * Exits the JVM with the given exit code.
    *
    * @param code the code, {@code 0} for success. By convention a non zero value if return to denotes an

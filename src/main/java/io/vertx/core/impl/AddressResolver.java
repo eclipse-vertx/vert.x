@@ -34,6 +34,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.impl.launcher.commands.ExecUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,18 +42,38 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class AddressResolver {
 
+  static {
+    int ndots = 1;
+    if (ExecUtils.isLinux()) {
+      File f = new File("/etc/resolv.conf");
+      if (f.exists() && f.isFile()) {
+        try {
+          String conf = new String(Files.readAllBytes(f.toPath()));
+          ndots = parseNdotsFromResolvConf(conf);
+        } catch (IOException ignore) {
+        }
+      }
+    }
+    DEFAULT_NDOTS = ndots;
+  }
+
+  private static final int DEFAULT_NDOTS;
+  private static final Pattern NDOTS_OPTIONS_PATTERN = Pattern.compile("^[ \\t\\f]*options[ \\t\\f]+ndots:[ \\t\\f]*(\\d)+(?=$|\\s)", Pattern.MULTILINE);
   private static final String DISABLE_DNS_RESOLVER_PROP_NAME = "vertx.disableDnsResolver";
   private static final boolean DISABLE_DNS_RESOLVER = Boolean.getBoolean(DISABLE_DNS_RESOLVER_PROP_NAME);
 
@@ -134,7 +155,11 @@ public class AddressResolver {
           builder.recursionDesired(options.getRdFlag());
           if (options.getSearchDomains() != null) {
             builder.searchDomains(options.getSearchDomains());
-            builder.ndots(options.getNdots());
+            int ndots = options.getNdots();
+            if (ndots == -1) {
+              ndots = DEFAULT_NDOTS;
+            }
+            builder.ndots(ndots);
           }
           DnsNameResolver resolver = builder.build();
           resolvers.add(new ResolverRegistration(resolver, (EventLoop) executor));
@@ -217,5 +242,14 @@ public class AddressResolver {
       resolverGroup.close();
       doneHandler.handle(null);
     }
+  }
+
+  public static int parseNdotsFromResolvConf(String s) {
+    int ndots = -1;
+    Matcher matcher = NDOTS_OPTIONS_PATTERN.matcher(s);
+    while (matcher.find()) {
+      ndots = Integer.parseInt(matcher.group(1));
+    }
+    return ndots;
   }
 }

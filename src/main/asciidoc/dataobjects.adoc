@@ -49,7 +49,8 @@ Set the maximum number of queries when an hostname is resolved.
 +++
 |[[ndots]]`ndots`|`Number (int)`|
 +++
-Set the ndots value used when resolving using search domains, the default value is <code>1</code>.
+Set the ndots value used when resolving using search domains, the default value is <code>-1</code> which
+ determines the value from the OS on Linux or uses the value <code>1</code>.
 +++
 |[[optResourceEnabled]]`optResourceEnabled`|`Boolean`|
 +++

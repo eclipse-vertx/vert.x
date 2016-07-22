@@ -1384,8 +1384,8 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
 );
 ----
 
-When a search domain list is used, the threshold for the number of dots is `1`, it can be configured with
-`link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setNdots-int-[setNdots]`.
+When a search domain list is used, the threshold for the number of dots is `1` or loaded from `/etc/resolv.conf`
+on Linux, it can be configured to a specific value with `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setNdots-int-[setNdots]`.
 
 NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
 _-Dvertx.disableDnsResolver=true_ activates this behavior
