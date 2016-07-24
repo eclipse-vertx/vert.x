@@ -22,13 +22,13 @@ import io.vertx.core.impl.CompositeFutureImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
  * needs to be coordinated.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="https://github.com/aschrijver/">Arnold Schrijver</a>
  */
 @VertxGen
 public interface CompositeFuture extends Future<CompositeFuture> {
