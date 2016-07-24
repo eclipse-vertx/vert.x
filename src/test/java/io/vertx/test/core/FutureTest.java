@@ -214,6 +214,16 @@ public class FutureTest extends VertxTestBase {
     testAllSucceeded((f1, f2) -> CompositeFuture.all(Arrays.asList(f1, f2)));
   }
 
+  @Test
+  public void testAllSucceededCollectResults() {
+    testAllSucceeded((f1, f2) -> CompositeFuture.all(true, f1, f2));
+  }
+
+  @Test
+  public void testAllSucceededCollectResultsWithList() {
+    testAllSucceeded((f1, f2) -> CompositeFuture.all(true, Arrays.asList(f1, f2)));
+  }
+
   private void testAllSucceeded(BiFunction<Future<String>, Future<Integer>, CompositeFuture> all) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
@@ -239,6 +249,12 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testAllCollectResultsWithEmptyList() {
+    CompositeFuture composite = CompositeFuture.all(true, Collections.emptyList());
+    assertTrue(composite.isComplete());
+  }
+
+  @Test
   public void testAllFailed() {
     testAllFailed(CompositeFuture::all);
   }
@@ -246,6 +262,16 @@ public class FutureTest extends VertxTestBase {
   @Test
   public void testAllFailedWithList() {
     testAllFailed((f1, f2) -> CompositeFuture.all(Arrays.asList(f1, f2)));
+  }
+
+  @Test
+  public void testAllFailedCollectResults() {
+    testAllFailedCollectResults((f1, f2) -> CompositeFuture.all(true, f1, f2));
+  }
+
+  @Test
+  public void testAllFailedCollectResultsWithList() {
+    testAllFailedCollectResults((f1, f2) -> CompositeFuture.all(true, Arrays.asList(f1, f2)));
   }
 
   private void testAllFailed(BiFunction<Future<String>, Future<Integer>, CompositeFuture> all) {
@@ -261,20 +287,86 @@ public class FutureTest extends VertxTestBase {
     assertEquals(null, composite.<Integer>result(1));
   }
 
-  @Test
-  public void testAllLargeList() {
-    testAllLargeList(63);
-    testAllLargeList(64);
-    testAllLargeList(65);
-    testAllLargeList(100);
+
+  private void testAllFailedCollectResults(BiFunction<Future<Integer>, Future<String>, CompositeFuture> all) {
+    Future<Integer> f1 = Future.future();
+    Future<String> f2 = Future.future();
+    CompositeFuture composite = all.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    Exception cause = new Exception();
+    f1.fail(cause);
+    checker.assertNotCompleted();
+    assertEquals(null, composite.<Integer>result(0));
+    f2.complete("s");
+    checker.assertFailed(cause);
+    assertEquals(cause, composite.cause(0));
+    assertEquals("s", composite.result(1));
   }
 
-  private void testAllLargeList(int size) {
+  @Test
+  public void testAllFailedCollectResults3Futures1() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    Future<String> f3 = Future.future();
+    CompositeFuture composite = CompositeFuture.all(true, f1, f2, f3);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    Exception cause1 = new Exception();
+    f1.fail(cause1);
+    checker.assertNotCompleted();
+    Exception cause2 = new Exception();
+    f2.fail(cause2);
+    checker.assertNotCompleted();
+    f3.complete("s");
+    checker.assertFailed(cause2);
+    assertEquals(cause1, composite.cause(0));
+    assertEquals(cause2, composite.cause(1));
+    assertEquals("s", composite.result(2));
+  }
+
+
+  @Test
+  public void testAllFailedCollectResults3Futures2() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    Future<String> f3 = Future.future();
+    CompositeFuture composite = CompositeFuture.all(true, f1, f2, f3);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    Exception cause1 = new Exception();
+    f1.fail(cause1);
+    checker.assertNotCompleted();
+    Exception cause2 = new Exception();
+    f2.fail(cause2);
+    checker.assertNotCompleted();
+    Exception cause3 = new Exception();
+    f3.fail(cause3);
+    checker.assertFailed(cause3);
+    assertEquals(cause1, composite.cause(0));
+    assertEquals(cause2, composite.cause(1));
+    assertEquals(cause3, composite.cause(2));
+  }
+
+  @Test
+  public void testAllLargeList() {
+    testAllLargeList(false, 63);
+    testAllLargeList(false, 64);
+    testAllLargeList(false, 65);
+    testAllLargeList(false, 100);
+  }
+
+  @Test
+  public void testAllCollectResultsLargeList() {
+    testAllLargeList(true, 63);
+    testAllLargeList(true, 64);
+    testAllLargeList(true, 65);
+    testAllLargeList(true, 100);
+  }
+
+  private void testAllLargeList(boolean collectResults, int size) {
     List<Future> list = new ArrayList<>();
     for (int i = 0;i < size;i++) {
       list.add(Future.succeededFuture());
     }
-    CompositeFuture composite = CompositeFuture.all(list);
+    CompositeFuture composite = CompositeFuture.all(collectResults, list);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertSucceeded(composite);
     for (int i = 0;i < size;i++) {
@@ -306,6 +398,16 @@ public class FutureTest extends VertxTestBase {
     testAnySucceeded1((f1, f2) -> CompositeFuture.any(Arrays.asList(f1, f2)));
   }
 
+  @Test
+  public void testAnySucceeded1CollectResults() {
+    // TODO
+  }
+
+  @Test
+  public void testAnySucceeded1CollectResultsWithList() {
+    // TODO
+  }
+
   private void testAnySucceeded1(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
@@ -327,6 +429,11 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testAnyCollectResultsWithEmptyList() {
+
+  }
+
+  @Test
   public void testAnySucceeded2() {
     testAnySucceeded2(CompositeFuture::any);
   }
@@ -334,6 +441,16 @@ public class FutureTest extends VertxTestBase {
   @Test
   public void testAnySucceeded2WithList() {
     testAnySucceeded2(CompositeFuture::any);
+  }
+
+  @Test
+  public void testAnySucceeded2CollectResults() {
+    // TODO
+  }
+
+  @Test
+  public void testAnySucceeded2CollectResultsWithList() {
+    // TODO
   }
 
   private void testAnySucceeded2(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
@@ -357,6 +474,17 @@ public class FutureTest extends VertxTestBase {
     testAnyFailed((f1, f2) -> CompositeFuture.any(Arrays.asList(f1, f2)));
   }
 
+
+  @Test
+  public void testAnyFailedCollectResults() {
+    // TODO
+  }
+
+  @Test
+  public void testAnyFailedCollectResultsWithList() {
+    // TODO
+  }
+
   private void testAnyFailed(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
@@ -375,6 +503,11 @@ public class FutureTest extends VertxTestBase {
     testAnyLargeList(64);
     testAnyLargeList(65);
     testAnyLargeList(100);
+  }
+
+  @Test
+  public void testAnyCollectResultsLargeList() {
+    // TODO
   }
 
   private void testAnyLargeList(int size) {
