@@ -26,7 +26,7 @@ import io.vertx.core.Handler;
  */
 public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult<CompositeFuture>> {
 
-  public static CompositeFuture all(Future<?>... results) {
+  public static CompositeFuture all(boolean collectResults, Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
     int len = results.length;
     for (int i = 0; i < len; i++) {
@@ -36,13 +36,28 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
           synchronized (composite) {
             composite.count++;
             if (!composite.isComplete() && composite.count == len) {
-              handler = composite.setSucceeded();
+              if (!collectResults) {
+                handler = composite.setSucceeded();
+              } else {
+                for (int j = len; j > 0; j--) {
+                  if (results[j - 1].failed()) {
+                    handler = composite.setFailed(results[j - 1].cause());
+                    break;
+                  }
+                }
+                if (handler == null) {
+                  handler = composite.setSucceeded();
+                }
+              }
             }
           }
         } else {
           synchronized (composite) {
+            composite.count++;
             if (!composite.isComplete()) {
-              handler = composite.setFailed(ar.cause());
+              if (!collectResults || composite.count == len) {
+                handler = composite.setFailed(ar.cause());
+              }
             }
           }
         }
@@ -57,7 +72,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
     return composite;
   }
 
-  public static CompositeFuture any(Future<?>... results) {
+  public static CompositeFuture any(boolean collectResults, Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
     int len = results.length;
     for (int i = 0;i < len;i++) {
