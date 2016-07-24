@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="https://github.com/aschrijver/">Arnold Schrijver</a>
  */
 public class FutureTest extends VertxTestBase {
 
@@ -400,12 +401,12 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAnySucceeded1CollectResults() {
-    // TODO
+    testAnySucceeded1CollectResults((f1, f2) -> CompositeFuture.any(true, f1, f2));
   }
 
   @Test
   public void testAnySucceeded1CollectResultsWithList() {
-    // TODO
+    testAnySucceeded1CollectResults((f1, f2) -> CompositeFuture.any(true, Arrays.asList(f1, f2)));
   }
 
   private void testAnySucceeded1(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
@@ -422,6 +423,20 @@ public class FutureTest extends VertxTestBase {
     checker.assertSucceeded(composite);
   }
 
+  private void testAnySucceeded1CollectResults(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = any.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    assertEquals(null, composite.<String>result(0));
+    assertEquals(null, composite.<Integer>result(1));
+    f1.complete("something");
+    checker.assertNotCompleted();
+    f2.complete(3);
+    checker.assertSucceeded(composite);
+  }
+
   @Test
   public void testAnyWithEmptyList() {
     CompositeFuture composite = CompositeFuture.any(Collections.emptyList());
@@ -430,7 +445,8 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAnyCollectResultsWithEmptyList() {
-
+    CompositeFuture composite = CompositeFuture.any(true, Collections.emptyList());
+    assertTrue(composite.isComplete());
   }
 
   @Test
@@ -445,12 +461,12 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAnySucceeded2CollectResults() {
-    // TODO
+    testAnySucceeded2((f1, f2) -> CompositeFuture.any(true, f1, f2));
   }
 
   @Test
   public void testAnySucceeded2CollectResultsWithList() {
-    // TODO
+    testAnySucceeded2((f1, f2) -> CompositeFuture.any(true, Arrays.asList(f1, f2)));
   }
 
   private void testAnySucceeded2(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
@@ -462,6 +478,24 @@ public class FutureTest extends VertxTestBase {
     checker.assertNotCompleted();
     f2.complete(3);
     checker.assertSucceeded(composite);
+  }
+
+  @Test
+  public void testAnySucceeded3CollectResults() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    Future<String> f3 = Future.future();
+    CompositeFuture composite = CompositeFuture.any(true, f1, f2, f3);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    f1.fail("failure");
+    checker.assertNotCompleted();
+    f2.fail("failure");
+    checker.assertNotCompleted();
+    f3.complete("something");
+    checker.assertSucceeded(composite);
+    assertNull(composite.result(0));
+    assertNull(composite.result(1));
+    assertEquals("something", composite.result(2));
   }
 
   @Test
@@ -477,12 +511,12 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAnyFailedCollectResults() {
-    // TODO
+    testAnyFailed((f1, f2) -> CompositeFuture.any(true, f1, f2));
   }
 
   @Test
   public void testAnyFailedCollectResultsWithList() {
-    // TODO
+    testAnyFailed((f1, f2) -> CompositeFuture.any(true, Arrays.asList(f1, f2)));
   }
 
   private void testAnyFailed(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
@@ -498,24 +532,43 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testAnyFailedCollectResults2() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    Future<String> f3 = Future.future();
+    CompositeFuture composite = CompositeFuture.any(true, f1, f2, f3);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    RuntimeException cause1 = new RuntimeException();
+    f1.fail(cause1);
+    RuntimeException cause2 = new RuntimeException();
+    f2.fail(cause2);
+    RuntimeException cause3 = new RuntimeException();
+    f3.fail(cause3);
+    checker.assertFailed(cause3);
+  }
+
+  @Test
   public void testAnyLargeList() {
-    testAnyLargeList(63);
-    testAnyLargeList(64);
-    testAnyLargeList(65);
-    testAnyLargeList(100);
+    testAnyLargeList(false, 63);
+    testAnyLargeList(false, 64);
+    testAnyLargeList(false, 65);
+    testAnyLargeList(false, 100);
   }
 
   @Test
   public void testAnyCollectResultsLargeList() {
-    // TODO
+    testAnyLargeList(true, 63);
+    testAnyLargeList(true, 64);
+    testAnyLargeList(true, 65);
+    testAnyLargeList(true, 100);
   }
 
-  private void testAnyLargeList(int size) {
+  private void testAnyLargeList(boolean collectResults, int size) {
     List<Future> list = new ArrayList<>();
     for (int i = 0;i < size;i++) {
       list.add(Future.failedFuture(new Exception()));
     }
-    CompositeFuture composite = CompositeFuture.any(list);
+    CompositeFuture composite = CompositeFuture.any(collectResults, list);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertFailed();
     for (int i = 0;i < size;i++) {
@@ -538,9 +591,18 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testCompositeFutureToList() {
+    testCompositeFutureToList(false);
+  }
+
+  @Test
+  public void testCompositeFutureToListCollectResults() {
+    testCompositeFutureToList(true);
+  }
+
+  private void testCompositeFutureToList(boolean collectResults) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    CompositeFuture composite = CompositeFuture.all(collectResults, f1, f2);
     assertEquals(Arrays.asList(null, null), composite.list());
     f1.complete("foo");
     assertEquals(Arrays.asList("foo", null), composite.list());
