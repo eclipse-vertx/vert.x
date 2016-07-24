@@ -106,35 +106,35 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Like {@link #all(boolean, Future, Future, Future)} but with 3 futures.
+   * Like {@link #all(boolean, Future, Future)} but with 3 futures.
    */
   static <T1, T2, T3> CompositeFuture all(boolean collectResults, Future<T1> f1, Future<T2> f2, Future<T3> f3) {
     return CompositeFutureImpl.all(collectResults, f1, f2, f3);
   }
 
   /**
-   * Like {@link #all(boolean, Future, Future, Future)} but with 4 futures.
+   * Like {@link #all(boolean, Future, Future)} but with 4 futures.
    */
   static <T1, T2, T3, T4> CompositeFuture all(boolean collectResults, Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4) {
     return CompositeFutureImpl.all(collectResults, f1, f2, f3, f4);
   }
 
   /**
-   * Like {@link #all(boolean, Future, Future, Future)} but with 5 futures.
+   * Like {@link #all(boolean, Future, Future)} but with 5 futures.
    */
   static <T1, T2, T3, T4, T5> CompositeFuture all(boolean collectResults, Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5) {
     return CompositeFutureImpl.all(collectResults, f1, f2, f3, f4, f5);
   }
 
   /**
-   * Like {@link #all(boolean, Future, Future, Future)} but with 6 futures.
+   * Like {@link #all(boolean, Future, Future)} but with 6 futures.
    */
   static <T1, T2, T3, T4, T5, T6> CompositeFuture all(boolean collectResults, Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5, Future<T6> f6) {
     return CompositeFutureImpl.all(collectResults, f1, f2, f3, f4, f5, f6);
   }
 
   /**
-   * Like {@link #all(boolean, Future, Future, Future)} but with a list of futures.<p>
+   * Like {@link #all(boolean, Future, Future)} but with a list of futures.<p>
    *
    * When the list is empty, the returned future will be already completed.
    */
