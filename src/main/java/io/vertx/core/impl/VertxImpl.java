@@ -19,6 +19,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
@@ -63,6 +64,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -686,6 +688,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public AddressResolver addressResolver() {
     return addressResolver;
+  }
+
+  @Override
+  public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
+    return addressResolver.nettyAddressResolverGroup();
   }
 
   @SuppressWarnings("unchecked")

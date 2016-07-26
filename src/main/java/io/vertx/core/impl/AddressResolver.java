@@ -173,7 +173,7 @@ public class AddressResolver {
     });
   }
 
-  public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
+  AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return resolverGroup;
   }
 

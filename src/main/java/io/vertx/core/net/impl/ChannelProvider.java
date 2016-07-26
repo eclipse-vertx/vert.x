@@ -27,7 +27,7 @@ public class ChannelProvider {
 
   public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
       Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
-    bootstrap.resolver(vertx.addressResolver().nettyAddressResolverGroup());
+    bootstrap.resolver(vertx.nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel channel) throws Exception {

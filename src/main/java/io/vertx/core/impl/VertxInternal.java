@@ -18,6 +18,7 @@ package io.vertx.core.impl;
 
 
 import io.netty.channel.EventLoopGroup;
+import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -30,6 +31,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -112,5 +114,10 @@ public interface VertxInternal extends Vertx {
    * @return the address resolver
    */
   AddressResolver addressResolver();
+
+  /**
+   * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
+   */
+  AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
 
 }

@@ -317,7 +317,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.channel(NioSocketChannel.class);
     bootstrap.group(vertx.nettyEventLoopGroup());
-    bootstrap.resolver(((VertxInternal)vertx).addressResolver().nettyAddressResolverGroup());
+    bootstrap.resolver(((VertxInternal)vertx).nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
