@@ -22,6 +22,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.FunctionHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -370,6 +371,19 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   HttpServerResponse bodyEndHandler(@Nullable Handler<Void> handler);
+
+  /**
+   * Provide a handler that will be called just before the last part of the body is written to the wire
+   * and the response is ended.<p>
+   * This provides a hook allowing you to do any more operations before this occurs.
+   * This version provides the existing bodyEndHandler if it exists allowing you to chain the two handlers
+   * as you see fit.
+   *
+   * @param composingHandler  a function to compose the handlers
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse bodyEndHandler(FunctionHandler<Void> composingHandler);
 
   /**
    * @return the total number of bytes written for the body of the response.

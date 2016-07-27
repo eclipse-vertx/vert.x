@@ -69,6 +69,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
@@ -496,6 +497,35 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(content.length(), req.response().bytesWritten());
         assertEquals(1, cnt.getAndIncrement());
         complete();
+      });
+      req.response().end(content);
+    }).listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        assertEquals(200, res.statusCode());
+        assertEquals("wibble", res.headers().get("extraheader"));
+        res.bodyHandler(buff -> {
+          assertEquals(Buffer.buffer(content), buff);
+          complete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testMultipleResponseEndHandlers() {
+    waitFor(2);
+    AtomicInteger cnt = new AtomicInteger();
+    String content = "blah";
+    server.requestHandler(req -> {
+      req.response().bodyEndHandler(v -> {
+        assertEquals(content.length(), req.response().bytesWritten());
+        assertEquals(1, cnt.getAndIncrement());
+        complete();
+      });
+      req.response().bodyEndHandler(voidHandler -> event -> {
+        cnt.getAndIncrement();
+        voidHandler.handle(event);
       });
       req.response().end(content);
     }).listen(onSuccess(server -> {
