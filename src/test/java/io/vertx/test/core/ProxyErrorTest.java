@@ -27,7 +27,7 @@ public class ProxyErrorTest extends VertxTestBase {
 
   private ConnectHttpProxy proxy = null;
 
-  // we don't start servers, due to the error, it will not be queried 
+  // we don't start http/https servers, due to the error, they will not be queried
 
   private void startProxy(int error, String username) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
@@ -77,25 +77,22 @@ public class ProxyErrorTest extends VertxTestBase {
 
   // we expect the request to fail with a ProxyConnectException if we use https
   // so we fail the test when it succeeds
-  public void expectProxyException(int error, String username, String url) throws Exception {
+  private void expectProxyException(int error, String username, String url) throws Exception {
     proxyTest(error, username, url, resp -> {
       log.info("request is supposed to fail but response is " + resp.statusCode() + " " + resp.statusMessage());
       fail("request is supposed to fail");
     }, true);
   }
 
-  public void expectStatusError(int error, String username, String url) throws Exception {
-    expectStatusError(error, error, username, url);
-  }
-  // we expect the request to fail with a http status error if we use http
-  public void expectStatusError(int error, int responseStatus, String username, String url) throws Exception {
+  // we expect the request to fail with a http status error if we use http (behaviour is similar to Squid)
+  private void expectStatusError(int error, int responseStatus, String username, String url) throws Exception {
     proxyTest(error, username, url, resp -> {
       assertEquals(responseStatus, resp.statusCode());
       testComplete();
     }, false);
   }
 
-  public void proxyTest(int error, String username, String url, Handler<HttpClientResponse> assertResponse, boolean completeOnException) throws Exception {
+  private void proxyTest(int error, String username, String url, Handler<HttpClientResponse> assertResponse, boolean completeOnException) throws Exception {
     startProxy(error, username);
 
     final HttpClientOptions options = new HttpClientOptions()
