@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -709,5 +710,35 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4_"));
 
     assertEquals(2, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\noptions ndots:2"));
+  }
+
+  @Test
+  public void testResolveLocalhost() {
+    AddressResolver resolver = new AddressResolver((VertxImpl) vertx, new AddressResolverOptions());
+
+    resolver.resolveHostname("LOCALHOST", res -> {
+      if (res.succeeded()) {
+        assertEquals("localhost", res.result().getHostName().toLowerCase(Locale.ENGLISH));
+        resolver.resolveHostname("LocalHost", res2 -> {
+          if (res2.succeeded()) {
+            assertEquals("localhost", res2.result().getHostName().toLowerCase(Locale.ENGLISH));
+            resolver.resolveHostname("localhost", res3 -> {
+              if (res3.succeeded()) {
+                assertEquals("localhost", res3.result().getHostName().toLowerCase(Locale.ENGLISH));
+                testComplete();
+              } else {
+                fail(res3.cause());
+              }
+            });
+          } else {
+            fail(res2.cause());
+          }
+        });
+      } else {
+        fail(res.cause());
+      }
+    });
+
+    await();
   }
 }
