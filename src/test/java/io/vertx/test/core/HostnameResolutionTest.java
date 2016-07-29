@@ -683,31 +683,31 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testParseResolvConf() {
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots: 4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("\noptions ndots: 4"));
-    assertEquals(-1, AddressResolver.parseNdotsFromResolvConf("boptions ndots: 4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf(" options ndots: 4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("\toptions ndots: 4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("\foptions ndots: 4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("\n options ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\noptions ndots: 4"));
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("boptions ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf(" options ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\toptions ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\foptions ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\n options ndots: 4"));
 
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options\tndots: 4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options\fndots: 4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options  ndots: 4"));
-    assertEquals(-1, AddressResolver.parseNdotsFromResolvConf("options\nndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options\tndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options\fndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options  ndots: 4"));
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options\nndots: 4"));
 
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots:4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots:\t4"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots:  4"));
-    assertEquals(-1, AddressResolver.parseNdotsFromResolvConf("options ndots:\n4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:\t4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:  4"));
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:\n4"));
 
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots:4 "));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots:4\t"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots:4\f"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots:4\n"));
-    assertEquals(4, AddressResolver.parseNdotsFromResolvConf("options ndots:4\r"));
-    assertEquals(-1, AddressResolver.parseNdotsFromResolvConf("options ndots:4_"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4 "));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\t"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\f"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\n"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\r"));
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4_"));
 
-    assertEquals(2, AddressResolver.parseNdotsFromResolvConf("options ndots:4\noptions ndots:2"));
+    assertEquals(2, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\noptions ndots:2"));
   }
 }

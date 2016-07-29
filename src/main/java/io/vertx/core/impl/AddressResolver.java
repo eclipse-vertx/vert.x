@@ -69,7 +69,10 @@ public class AddressResolver {
       if (f.exists() && f.isFile()) {
         try {
           String conf = new String(Files.readAllBytes(f.toPath()));
-          ndots = parseNdotsFromResolvConf(conf);
+          int ndotsOption = parseNdotsOptionFromResolvConf(conf);
+          if (ndotsOption == -1) {
+            ndots = ndotsOption;
+          }
         } catch (IOException ignore) {
         }
       }
@@ -244,7 +247,7 @@ public class AddressResolver {
     }
   }
 
-  public static int parseNdotsFromResolvConf(String s) {
+  public static int parseNdotsOptionFromResolvConf(String s) {
     int ndots = -1;
     Matcher matcher = NDOTS_OPTIONS_PATTERN.matcher(s);
     while (matcher.find()) {
