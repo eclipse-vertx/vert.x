@@ -17,18 +17,19 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="https://github.com/aschrijver/">Arnold Schrijver</a>
  */
 public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult<CompositeFuture>> {
 
-  public static CompositeFuture all(Future<?>... results) {
+  public static CompositeFuture all(boolean collectResults, Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
-    int len = results.length;
+    final int len = results.length;
     for (int i = 0; i < len; i++) {
       results[i].setHandler(ar -> {
         Handler<AsyncResult<CompositeFuture>> handler = null;
@@ -36,12 +37,13 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
           synchronized (composite) {
             composite.count++;
             if (!composite.isComplete() && composite.count == len) {
-              handler = composite.setSucceeded();
+              handler = collectResultsAll(composite, collectResults, results);
             }
           }
         } else {
           synchronized (composite) {
-            if (!composite.isComplete()) {
+            composite.count++;
+            if (!composite.isComplete() && (!collectResults || composite.count == len)) {
               handler = composite.setFailed(ar.cause());
             }
           }
@@ -57,23 +59,38 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
     return composite;
   }
 
-  public static CompositeFuture any(Future<?>... results) {
+  private static Handler<AsyncResult<CompositeFuture>> collectResultsAll(
+          CompositeFutureImpl composite, boolean collectResults, Future<?>... results) {
+    if (!collectResults) {
+      return composite.setSucceeded();
+    } else {
+      for (int j = results.length; j > 0; j--) {
+        if (results[j - 1].failed()) {
+          return composite.setFailed(results[j - 1].cause());
+        }
+      }
+      return composite.setSucceeded();
+    }
+  }
+
+  public static CompositeFuture any(boolean collectResults, Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
-    int len = results.length;
+    final int len = results.length;
     for (int i = 0;i < len;i++) {
       results[i].setHandler(ar -> {
         Handler<AsyncResult<CompositeFuture>> handler = null;
         if (ar.succeeded()) {
           synchronized (composite) {
-            if (!composite.isComplete()) {
-              handler = composite.setSucceeded();
+            composite.count++;
+            if (!composite.isComplete() && (!collectResults || composite.count == len)) {
+                handler = composite.setSucceeded();
             }
           }
         } else {
           synchronized (composite) {
             composite.count++;
             if (!composite.isComplete() && composite.count == len) {
-              handler = composite.setFailed(ar.cause());
+              handler = collectResultsAny(composite, collectResults, ar.cause(), results);
             }
           }
         }
@@ -82,10 +99,25 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
         }
       });
     }
-    if (results.length == 0) {
+    if (len == 0) {
       composite.setSucceeded();
     }
     return composite;
+  }
+
+  private static Handler<AsyncResult<CompositeFuture>> collectResultsAny(
+          CompositeFutureImpl composite, boolean collectResults, Throwable cause, Future<?>... results) {
+    if (!collectResults) {
+      return composite.setFailed(cause);
+    } else {
+      for (int j = results.length; j > 0; j--) {
+        if (results[j - 1].succeeded()) {
+          return composite.setSucceeded();
+        }
+      }
+      return composite.setFailed(cause);
+    }
+
   }
 
   private final Future[] results;
