@@ -70,6 +70,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> bodyEndHandler;
   private Handler<Void> closeHandler;
   private long bytesWritten;
+  private int numPush;
+  private boolean inHandler;
 
   public Http2ServerResponseImpl(Http2ServerConnection conn, VertxHttp2Stream stream, Object metric, boolean push, String contentEncoding, String host) {
 
@@ -103,6 +105,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
 
     this.metric = conn.metrics().responsePushed(conn.metric(), method, path, this);
+  }
+
+  synchronized void beginRequest() {
+    inHandler = true;
+  }
+
+  synchronized boolean endRequest() {
+    inHandler = false;
+    return numPush > 0;
   }
 
   void callReset(long code) {
@@ -613,6 +624,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       checkEnded();
       conn.sendPush(stream.id(), host, method, headers, path, handler);
+      if (!inHandler) {
+        ctx.flush();
+      }
+      numPush++;
       return this;
     }
   }
