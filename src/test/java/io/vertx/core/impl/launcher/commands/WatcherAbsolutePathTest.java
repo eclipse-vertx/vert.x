@@ -33,13 +33,16 @@ public class WatcherAbsolutePathTest extends WatcherTest {
   @Before
   public void prepare() {
     root = new File("target/junk/watcher");
+    File otherRoot = new File(root.getParentFile(), "abs-test");
+    deleteRecursive(otherRoot);
     deleteRecursive(root);
+    otherRoot.mkdirs();
     root.mkdirs();
 
     deploy = new AtomicInteger();
     undeploy = new AtomicInteger();
 
-    watcher = new Watcher(root, Collections.unmodifiableList(
+    watcher = new Watcher(otherRoot, Collections.unmodifiableList(
         Arrays.asList(
             root.getAbsolutePath() + File.separator + "**" + File.separator + "*.txt",
             root.getAbsolutePath() + File.separator + "windows\\*.win",
