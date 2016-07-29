@@ -70,7 +70,7 @@ public class AddressResolver {
         try {
           String conf = new String(Files.readAllBytes(f.toPath()));
           int ndotsOption = parseNdotsOptionFromResolvConf(conf);
-          if (ndotsOption == -1) {
+          if (ndotsOption != -1) {
             ndots = ndotsOption;
           }
         } catch (IOException ignore) {
