@@ -406,7 +406,7 @@ public class ConnectionManager {
       applyConnectionOptions(options, bootstrap);
 
       ChannelProvider channelProvider;
-      if (options.getProxyOptions() == null) {
+      if (!options.isSsl() || options.getProxyOptions() == null) {
         channelProvider = ChannelProvider.INSTANCE;
       } else {
         channelProvider = ProxyChannelProvider.INSTANCE;
