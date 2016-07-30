@@ -112,6 +112,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Map<String, SharedWorkerPool> namedWorkerPools;
   private final int defaultWorkerPoolSize;
   private final long defaultWorkerMaxExecTime;
+  private final CloseHooks closeHooks;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -126,6 +127,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
+    closeHooks = new CloseHooks(log);
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getWarningExceptionTime());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, options.getMaxEventLoopExecuteTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory);
@@ -476,41 +478,43 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     closed = true;
 
-    deploymentManager.undeployAll(ar -> {
-      if (haManager() != null) {
-        haManager().stop();
-      }
-      addressResolver.close(ar1 -> {
-        eventBus.close(ar2 -> {
-          closeClusterManager(ar3 -> {
-            // Copy set to prevent ConcurrentModificationException
-            Set<HttpServer> httpServers = new HashSet<>(sharedHttpServers.values());
-            Set<NetServer> netServers = new HashSet<>(sharedNetServers.values());
-            sharedHttpServers.clear();
-            sharedNetServers.clear();
+    closeHooks.run(ar -> {
+      deploymentManager.undeployAll(ar1 -> {
+        if (haManager() != null) {
+          haManager().stop();
+        }
+        addressResolver.close(ar2 -> {
+          eventBus.close(ar3 -> {
+            closeClusterManager(ar4 -> {
+              // Copy set to prevent ConcurrentModificationException
+              Set<HttpServer> httpServers = new HashSet<>(sharedHttpServers.values());
+              Set<NetServer> netServers = new HashSet<>(sharedNetServers.values());
+              sharedHttpServers.clear();
+              sharedNetServers.clear();
 
-            int serverCount = httpServers.size() + netServers.size();
+              int serverCount = httpServers.size() + netServers.size();
 
-            AtomicInteger serverCloseCount = new AtomicInteger();
+              AtomicInteger serverCloseCount = new AtomicInteger();
 
-            Handler<AsyncResult<Void>> serverCloseHandler = res -> {
-              if (res.failed()) {
-                log.error("Failure in shutting down server", res.cause());
+              Handler<AsyncResult<Void>> serverCloseHandler = res -> {
+                if (res.failed()) {
+                  log.error("Failure in shutting down server", res.cause());
+                }
+                if (serverCloseCount.incrementAndGet() == serverCount) {
+                  deleteCacheDirAndShutdown(completionHandler);
+                }
+              };
+
+              for (HttpServer server : httpServers) {
+                server.close(serverCloseHandler);
               }
-              if (serverCloseCount.incrementAndGet() == serverCount) {
+              for (NetServer server : netServers) {
+                server.close(serverCloseHandler);
+              }
+              if (serverCount == 0) {
                 deleteCacheDirAndShutdown(completionHandler);
               }
-            };
-
-            for (HttpServer server : httpServers) {
-              server.close(serverCloseHandler);
-            }
-            for (NetServer server : netServers) {
-              server.close(serverCloseHandler);
-            }
-            if (serverCount == 0) {
-              deleteCacheDirAndShutdown(completionHandler);
-            }
+            });
           });
         });
       });
@@ -951,5 +955,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public Handler<Throwable> exceptionHandler() {
     return exceptionHandler;
+  }
+
+  @Override
+  public void addCloseHook(Closeable hook) {
+    closeHooks.add(hook);
+  }
+
+  @Override
+  public void removeCloseHook(Closeable hook) {
+    closeHooks.remove(hook);
   }
 }
