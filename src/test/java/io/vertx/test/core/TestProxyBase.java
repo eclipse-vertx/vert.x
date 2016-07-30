@@ -4,6 +4,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 
 /**
@@ -35,6 +36,10 @@ public abstract class TestProxyBase {
    */
   public void setForceUri(String uri) {
     forceUri = uri;
+  }
+
+  public MultiMap getLastRequestHeaders() {
+    throw new UnsupportedOperationException();
   }
 
   public abstract int getPort();

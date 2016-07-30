@@ -3,6 +3,7 @@ package io.vertx.test.core;
 import java.util.Base64;
 
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -37,6 +38,16 @@ public class ConnectHttpProxy extends TestProxyBase {
   private HttpServer server;
 
   private int error = 0;
+
+  private MultiMap lastRequestHeaders = null;
+
+  /**
+   * @return the lastRequestHeaders
+   */
+  @Override
+  public MultiMap getLastRequestHeaders() {
+    return lastRequestHeaders;
+  }
 
   public ConnectHttpProxy(String username) {
     super(username);
@@ -75,6 +86,7 @@ public class ConnectHttpProxy extends TestProxyBase {
         if (forceUri != null) {
           uri = forceUri;
         }
+        lastRequestHeaders = MultiMap.caseInsensitiveMultiMap().addAll(request.headers());
         String[] split = uri.split(":");
         String host = split[0];
         int port;
