@@ -2476,6 +2476,7 @@ public class Http1xTest extends HttpTest {
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
+        assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
       }).exceptionHandler(th -> fail(th)).end();
     }));
@@ -2499,6 +2500,7 @@ public class Http1xTest extends HttpTest {
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
+        assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
       }).exceptionHandler(th -> fail(th)).end();
     }));

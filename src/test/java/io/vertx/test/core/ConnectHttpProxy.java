@@ -80,6 +80,7 @@ public class ConnectHttpProxy extends TestProxyBase {
           return;
         }
       }
+      lastRequestHeaders = MultiMap.caseInsensitiveMultiMap().addAll(request.headers());
       if (error != 0) {
         request.response().setStatusCode(error).end("proxy request failed");
       } else if (method == HttpMethod.CONNECT) {
@@ -87,7 +88,6 @@ public class ConnectHttpProxy extends TestProxyBase {
           request.response().setStatusCode(403).end("invalid request");
         } else {
           lastUri = uri;
-          lastRequestHeaders = MultiMap.caseInsensitiveMultiMap().addAll(request.headers());
           if (forceUri != null) {
             uri = forceUri;
           }
