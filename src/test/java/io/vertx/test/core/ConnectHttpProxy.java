@@ -19,17 +19,21 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
 
 /**
- * Http Connect Proxy
+ * Http Proxy for testing
  *
  * <p>
- * A simple Http CONNECT proxy for testing https proxy functionality. HTTP server running on localhost allowing CONNECT
- * requests only. This is basically a socket forwarding protocol allowing to use the proxy server to connect to the
- * internet.
- *
+ * A simple Http proxy for testing http proxy functionality. HTTP server running on localhost allowing CONNECT and GET
+ * requests only.
+ * CONNECT is basically a socket forwarding protocol allowing to use the proxy server to connect to the internet,
+ * e.g. CONNECT www.google.com:443 HTTP/1.1.
+ * GET accepts an absolute url and gets the url from the origin server, e.g. GET http://www.google.de/ HTTP/1.1.
  * <p>
  * Usually the server will be started in @Before and stopped in @After for a unit test using HttpClient with the
  * setProxyXXX methods.
- *
+ * <p>
+ * The proxy is not useful for anything except testing, since it lacks most security checks like client acls, however in a
+ * test scenario it will bind to localhost only.
+ * <p>
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
 public class ConnectHttpProxy extends TestProxyBase {
@@ -43,14 +47,6 @@ public class ConnectHttpProxy extends TestProxyBase {
   private int error = 0;
 
   private MultiMap lastRequestHeaders = null;
-
-  /**
-   * @return the lastRequestHeaders
-   */
-  @Override
-  public MultiMap getLastRequestHeaders() {
-    return lastRequestHeaders;
-  }
 
   public ConnectHttpProxy(String username) {
     super(username);
@@ -145,7 +141,7 @@ public class ConnectHttpProxy extends TestProxyBase {
           } else {
             status = 400;
           }
-          request.response().setStatusCode(status).end(e.toString()+" on client request");
+          request.response().setStatusCode(status).end(e.toString() + " on client request");
         });
         clientRequest.end();
       } else {
@@ -173,6 +169,11 @@ public class ConnectHttpProxy extends TestProxyBase {
   @Override
   public int getPort() {
     return PORT;
+  }
+
+  @Override
+  public MultiMap getLastRequestHeaders() {
+    return lastRequestHeaders;
   }
 
   public ConnectHttpProxy setError(int error) {
