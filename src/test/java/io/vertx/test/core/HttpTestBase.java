@@ -92,7 +92,7 @@ public class HttpTestBase extends VertxTestBase {
   protected void startProxy(String username, ProxyType proxyType) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
     if (proxyType == ProxyType.HTTP) {
-      proxy = new ConnectHttpProxy(username);
+      proxy = new HttpProxy(username);
     } else {
       proxy = new SocksProxy(username);
     }

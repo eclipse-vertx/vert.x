@@ -12,7 +12,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.test.core.ConnectHttpProxy;
+import io.vertx.test.core.HttpProxy;
 import io.vertx.test.core.VertxTestBase;
 
 /**
@@ -25,13 +25,13 @@ public class ProxyErrorTest extends VertxTestBase {
 
   private static final Logger log = LoggerFactory.getLogger(ProxyErrorTest.class);
 
-  private ConnectHttpProxy proxy = null;
+  private HttpProxy proxy = null;
 
   // we don't start http/https servers, due to the error, they will not be queried
 
   private void startProxy(int error, String username) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
-    proxy = new ConnectHttpProxy(username);
+    proxy = new HttpProxy(username);
     proxy.setError(error);
     proxy.start(vertx, v -> latch.countDown());
     latch.await();

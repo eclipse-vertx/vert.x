@@ -36,11 +36,11 @@ import io.vertx.core.streams.Pump;
  * <p>
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-public class ConnectHttpProxy extends TestProxyBase {
+public class HttpProxy extends TestProxyBase {
 
   private static final int PORT = 13128;
 
-  private static final Logger log = LoggerFactory.getLogger(ConnectHttpProxy.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpProxy.class);
 
   private HttpServer server;
 
@@ -48,7 +48,7 @@ public class ConnectHttpProxy extends TestProxyBase {
 
   private MultiMap lastRequestHeaders = null;
 
-  public ConnectHttpProxy(String username) {
+  public HttpProxy(String username) {
     super(username);
   }
 
@@ -176,7 +176,7 @@ public class ConnectHttpProxy extends TestProxyBase {
     return lastRequestHeaders;
   }
 
-  public ConnectHttpProxy setError(int error) {
+  public HttpProxy setError(int error) {
     this.error = error;
     return this;
   }
