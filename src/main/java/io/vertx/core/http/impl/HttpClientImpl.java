@@ -713,25 +713,30 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
+    String connectHost;
+    int connectPort;
     ProxyOptions proxyOptions = options.getProxyOptions();
-    if (!options.isSsl() && proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP) {
-      if (headers == null) {
-        headers = MultiMap.caseInsensitiveMultiMap();
-      }
+    final boolean useProxy = !options.isSsl() && proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP;
+    if (useProxy) {
       relativeURI = "http://" + host + (port != 80 ? ":" + port : "") + relativeURI;
-      host = proxyOptions.getHost();
-      port = proxyOptions.getPort();
-      log.debug("changing request to proxy request " + relativeURI);
-      log.debug("username "+proxyOptions.getUsername()+" password "+proxyOptions.getPassword());
+      connectHost = proxyOptions.getHost();
+      connectPort = proxyOptions.getPort();
       if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
-        log.debug("adding authorization header");
+        if (headers == null) {
+          headers = MultiMap.caseInsensitiveMultiMap();
+        }
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-      // TODO: setting the host here does not work yet
-      headers.add("Host", host + (port != 80 ? ":" + port : ""));
+    } else {
+      connectHost = host;
+      connectPort = port;
     }
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, options.isSsl(), relativeURI, vertx);
+    HttpClientRequest req = new HttpClientRequestImpl(this, method, connectHost, connectPort, options.isSsl(),
+        relativeURI, vertx);
+    if (useProxy) {
+      req.setHost(host + (port != 80 ? ":" + port : ""));
+    }
     if (headers != null) {
       req.headers().setAll(headers);
     }
