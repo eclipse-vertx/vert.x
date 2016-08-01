@@ -83,7 +83,7 @@ public class Watcher implements Runnable {
     this.undeploy = undeploy;
     this.cmd = onRedeployCommand;
     this.scanPeriod = scanPeriod;
-    addFileToWatch(roots);
+    addFilesToWatchedList(roots);
   }
 
   static List<File> extractRoots(File root, List<String> includes) {
@@ -112,11 +112,11 @@ public class Watcher implements Runnable {
     }).collect(Collectors.toList());
   }
 
-  private void addFileToWatch(List<File> roots) {
-    roots.forEach(this::addFileToWatch);
+  private void addFilesToWatchedList(List<File> roots) {
+    roots.forEach(this::addFileToWatchedList);
   }
 
-  private void addFileToWatch(File file) {
+  private void addFileToWatchedList(File file) {
     filesToWatch.add(file);
     Map<File, FileInfo> map = new HashMap<>();
     if (file.isDirectory()) {
@@ -126,7 +126,7 @@ public class Watcher implements Runnable {
         for (File child : children) {
           map.put(child, new FileInfo(child.lastModified(), child.length()));
           if (child.isDirectory()) {
-            addFileToWatch(child);
+            addFileToWatchedList(child);
           }
         }
       }
@@ -137,6 +137,13 @@ public class Watcher implements Runnable {
     fileMap.put(file, map);
   }
 
+  /**
+   * Checks whether or not a change has occurred in one of the watched file that match one of the given include pattern
+   * . Are detected: new files, modified file and deleted files. File modification is detected using
+   * {@link File#lastModified()}, so the behavior depends on the file system precision.
+   *
+   * @return {@code true} if a change occurred requiring the redeployment.
+   */
   private boolean changesHaveOccurred() {
     boolean changed = false;
     for (File toWatch : new HashSet<>(filesToWatch)) {
@@ -191,7 +198,7 @@ public class Watcher implements Runnable {
           // Add new file
           currentFileMap.put(newFile, new FileInfo(newFile.lastModified(), newFile.length()));
           if (newFile.isDirectory()) {
-            addFileToWatch(newFile);
+            addFileToWatchedList(newFile);
           }
           LOGGER.trace("File was added: " + newFile);
           if (match(newFile)) {
