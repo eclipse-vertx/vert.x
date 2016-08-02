@@ -57,6 +57,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final ContextImpl creatingContext;
   private final ConnectionManager connectionManager;
   private final Closeable closeHook;
+  private final boolean useProxy;
   private final SSLHelper sslHelper;
   private volatile boolean closed;
 
@@ -89,6 +90,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
     HttpClientMetrics metrics = vertx.metricsSPI().createMetrics(this, options);
     connectionManager = new ConnectionManager(this, metrics);
+    ProxyOptions proxyOptions = options.getProxyOptions();
+    useProxy = !options.isSsl() && proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP;
   }
 
   @Override
@@ -713,14 +716,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
-    String connectHost;
-    int connectPort;
-    ProxyOptions proxyOptions = options.getProxyOptions();
-    final boolean useProxy = !options.isSsl() && proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP;
+    HttpClientRequest req;
     if (useProxy) {
       relativeURI = "http://" + host + (port != 80 ? ":" + port : "") + relativeURI;
-      connectHost = proxyOptions.getHost();
-      connectPort = proxyOptions.getPort();
+      ProxyOptions proxyOptions = options.getProxyOptions();
       if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
         if (headers == null) {
           headers = MultiMap.caseInsensitiveMultiMap();
@@ -728,14 +727,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-    } else {
-      connectHost = host;
-      connectPort = port;
-    }
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, connectHost, connectPort, options.isSsl(),
-        relativeURI, vertx);
-    if (useProxy) {
+      req = new HttpClientRequestImpl(this, method, proxyOptions.getHost(), proxyOptions.getPort(), options.isSsl(),
+          relativeURI, vertx);
       req.setHost(host + (port != 80 ? ":" + port : ""));
+    } else {
+      req = new HttpClientRequestImpl(this, method, host, port, options.isSsl(), relativeURI, vertx);
     }
     if (headers != null) {
       req.headers().setAll(headers);
