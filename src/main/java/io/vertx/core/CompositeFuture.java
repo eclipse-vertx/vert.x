@@ -22,7 +22,6 @@ import io.vertx.core.impl.CompositeFutureImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
@@ -131,6 +130,56 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    */
   static CompositeFuture any(List<Future> futures) {
     return CompositeFutureImpl.any(futures.toArray(new Future[futures.size()]));
+  }
+
+  /**
+   * Return a composite future completed when all the futures are completed.
+   * <p/>
+   * Succeeded when all futures are succeeded, failed when any future is failed.
+   *
+   * @param f1 future
+   * @param f2 future
+   * @return the composite future
+   */
+  static <T1, T2> CompositeFuture join(Future<T1> f1, Future<T2> f2) {
+    return CompositeFutureImpl.join(f1, f2);
+  }
+
+  /**
+   * Like {@link #join(Future, Future)} but with 3 futures.
+   */
+  static <T1, T2, T3> CompositeFuture join(Future<T1> f1, Future<T2> f2, Future<T3> f3) {
+    return CompositeFutureImpl.join(f1, f2, f3);
+  }
+
+  /**
+   * Like {@link #join(Future, Future)} but with 4 futures.
+   */
+  static <T1, T2, T3, T4> CompositeFuture join(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4) {
+    return CompositeFutureImpl.join(f1, f2, f3, f4);
+  }
+
+  /**
+   * Like {@link #join(Future, Future)} but with 5 futures.
+   */
+  static <T1, T2, T3, T4, T5> CompositeFuture join(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5) {
+    return CompositeFutureImpl.join(f1, f2, f3, f4, f5);
+  }
+
+  /**
+   * Like {@link #join(Future, Future)} but with 6 futures.
+   */
+  static <T1, T2, T3, T4, T5, T6> CompositeFuture join(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5, Future<T6> f6) {
+    return CompositeFutureImpl.join(f1, f2, f3, f4, f5, f6);
+  }
+
+  /**
+   * Like {@link #join(Future, Future)} but with a list of futures.<p>
+   *
+   * When the list is empty, the returned future will be already completed.
+   */
+  static CompositeFuture join(List<Future> futures) {
+    return CompositeFutureImpl.join(futures.toArray(new Future[futures.size()]));
   }
 
   @Override

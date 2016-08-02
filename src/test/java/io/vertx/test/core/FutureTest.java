@@ -404,6 +404,100 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testJoinSucceeded() {
+    testJoinSucceeded(CompositeFuture::join);
+  }
+
+  @Test
+  public void testJoinSucceededWithList() {
+    testJoinSucceeded((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+  }
+
+  private void testJoinSucceeded(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = join.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    f1.complete("foo");
+    checker.assertNotCompleted();
+    f2.complete();
+    checker.assertSucceeded(composite);
+  }
+
+  @Test
+  public void testJoinFailed1() {
+    testJoinFailed1(CompositeFuture::join);
+  }
+
+  @Test
+  public void testJoinFailed1WithList() {
+    testJoinFailed1((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+  }
+
+  private void testJoinFailed1(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = join.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    f1.complete("foo");
+    checker.assertNotCompleted();
+    f2.fail(new Throwable());
+    checker.assertFailed();
+  }
+
+  @Test
+  public void testJoinFailed2() {
+    testJoinFailed2(CompositeFuture::join);
+  }
+
+  @Test
+  public void testJoinFailed2WithList() {
+    testJoinFailed2((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+  }
+
+  private void testJoinFailed2(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = join.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    f1.fail(new Throwable());
+    checker.assertNotCompleted();
+    f2.complete(10);
+    checker.assertFailed();
+  }
+
+  @Test
+  public void testJoinFailed3() {
+    testJoinFailed3(CompositeFuture::join);
+  }
+
+  @Test
+  public void testJoinFailed3WithList() {
+    testJoinFailed3((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+  }
+
+  private void testJoinFailed3(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = join.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    f1.fail(new Throwable());
+    checker.assertNotCompleted();
+    f2.fail(new Throwable());
+    checker.assertFailed();
+  }
+
+  @Test
+  public void testJoinWithEmptyList() {
+    CompositeFuture composite = CompositeFuture.join(Collections.emptyList());
+    assertTrue(composite.isComplete());
+  }
+
+  @Test
   public void testCompositeFutureToList() {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
