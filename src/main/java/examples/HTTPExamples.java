@@ -689,7 +689,6 @@ public class HTTPExamples {
 
     websocket.writeFinalBinaryFrame(buff);
 
-
   }
 
   public void example57(WebSocket websocket) {
@@ -717,12 +716,6 @@ public class HTTPExamples {
             .setHost("localhost").setPort(1080)
             .setUsername("username").setPassword("secret"));
     HttpClient client = vertx.createHttpClient(options);
-
-  }
-
-  public void example60(HttpClient client) {
-
-    client.get(80, "the-proxy", "http://www.google.com", resp -> {});
 
   }
 

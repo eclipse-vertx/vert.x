@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -40,7 +39,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
-  private TestProxyBase proxy;
 
   @Override
   protected void tearDown() throws Exception {
@@ -48,17 +46,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       proxy.stop();
     }
     super.tearDown();
-  }
-
-  private void startProxy(String username, ProxyType proxyType) throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(1);
-    if (proxyType == ProxyType.HTTP) {
-      proxy = new ConnectHttpProxy(username);
-    } else {
-      proxy = new SocksProxy(username);
-    }
-    proxy.start(vertx, v -> latch.countDown());
-    awaitLatch(latch);
   }
 
   @Test

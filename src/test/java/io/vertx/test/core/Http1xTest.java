@@ -2459,4 +2459,52 @@ public class Http1xTest extends HttpTest {
     req.sendHead();
     await();
   }
+
+  @Test
+  public void testHttpProxyRequest() throws Exception {
+    startProxy(null, ProxyType.HTTP);
+
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+
+    server.listen(onSuccess(s -> {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+        assertEquals(200, resp.statusCode());
+        assertNotNull("request did not go through proxy", proxy.getLastUri());
+        assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
+        testComplete();
+      }).exceptionHandler(th -> fail(th)).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testHttpProxyRequestAuth() throws Exception {
+    startProxy("user", ProxyType.HTTP);
+
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())
+            .setUsername("user").setPassword("user")));
+
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+
+    server.listen(onSuccess(s -> {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+        assertEquals(200, resp.statusCode());
+        assertNotNull("request did not go through proxy", proxy.getLastUri());
+        assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
+        testComplete();
+      }).exceptionHandler(th -> fail(th)).end();
+    }));
+    await();
+  }
+
 }
