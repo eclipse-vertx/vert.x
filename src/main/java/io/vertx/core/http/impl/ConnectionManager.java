@@ -45,6 +45,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.ChannelProvider;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.ProxyChannelProvider;
@@ -406,7 +407,8 @@ public class ConnectionManager {
       applyConnectionOptions(options, bootstrap);
 
       ChannelProvider channelProvider;
-      if (!options.isSsl() || options.getProxyOptions() == null) {
+      // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
+      if (options.getProxyOptions() == null || !options.isSsl() && options.getProxyOptions().getType()==ProxyType.HTTP ) {
         channelProvider = ChannelProvider.INSTANCE;
       } else {
         channelProvider = ProxyChannelProvider.INSTANCE;
