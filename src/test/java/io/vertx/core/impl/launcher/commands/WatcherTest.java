@@ -22,8 +22,9 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,16 +55,16 @@ public class WatcherTest extends CommandTestBase {
 
     watcher = new Watcher(root, Collections.unmodifiableList(
         Arrays.asList("**" + File.separator + "*.txt", "windows\\*.win", "unix/*.nix", "FOO.bar")), next -> {
-          deploy.incrementAndGet();
-          if (next != null) {
-            next.handle(null);
-          }
-        }, next -> {
-          undeploy.incrementAndGet();
-          if (next != null) {
-            next.handle(null);
-          }
-        }, null, 10, 10);
+      deploy.incrementAndGet();
+      if (next != null) {
+        next.handle(null);
+      }
+    }, next -> {
+      undeploy.incrementAndGet();
+      if (next != null) {
+        next.handle(null);
+      }
+    }, null, 10, 10);
   }
 
   @After
@@ -173,7 +174,7 @@ public class WatcherTest extends CommandTestBase {
 
     waitUntil(() -> undeploy.get() == 3 && deploy.get() == 4);
   }
-  
+
   @Test
   public void testOSSpecificIncludePaths() throws IOException, InterruptedException {
     watcher.watch();
@@ -198,31 +199,27 @@ public class WatcherTest extends CommandTestBase {
     Thread.sleep(500);
     File nixFile = new File(nixDir, "foo.nix");
     nixFile.createNewFile();
-    
+
     // undeployment followed by redeployment
     waitUntil(() -> undeploy.get() == 2 && deploy.get() == 3);
   }
-  
+
   @Test
   public void testCaseSensitivity() throws IOException, InterruptedException {
     watcher.watch();
 
     // Initial deployment
     waitUntil(() -> deploy.get() == 1);
-    
+
     // create a file to be matched against "FOO.bar" pattern
     File file = new File(root, "fOo.BAr");
     file.createNewFile();
-    
-    if(ExecUtils.isWindows()) {      
+
+    if (ExecUtils.isWindows()) {
       // undeployment followed by redeployment. Windows is not case sensitive
       waitUntil(() -> undeploy.get() == 1 && deploy.get() == 2);
-    }
-    else {
-      Thread.sleep(500);
-      // fOo.BAr != FOO.bar on *nix 
-      assertThat(undeploy.get()).isEqualTo(0);
-      assertThat(deploy.get()).isEqualTo(1);
+    } else {
+      // It depends on the file system, we can't really test anything in a reliable way.
     }
   }
 
@@ -240,6 +237,101 @@ public class WatcherTest extends CommandTestBase {
       }
     }
     return ret && path.delete();
+  }
+
+  @Test
+  public void testWatcherPerformances() throws IOException, InterruptedException {
+    List<File> files = new ArrayList<>();
+    // Create structure - 3 sub-dir with each 10 sub dir, wich another level of directory with each 50 files
+    for (int i = 0; i < 3; i++) {
+      File dir = new File(root, Integer.toString(i));
+      dir.mkdirs();
+      for (int j = 0; j < 10; j++) {
+        File sub = new File(root, Integer.toString(j));
+        sub.mkdirs();
+        File subsub = new File(sub, "sub");
+        subsub.mkdirs();
+
+        for (int k = 0; k < 1000; k++) {
+          File txt = new File(subsub, k + ".txt");
+          files.add(txt);
+          Files.write(txt.toPath(), Integer.toString(k).getBytes());
+
+          File java = new File(subsub, k + ".java");
+          Files.write(java.toPath(), Integer.toString(k).getBytes());
+        }
+      }
+    }
+
+    System.out.println("Environment setup");
+    watcher.watch();
+    waitUntil(() -> deploy.get() == 1);
+
+    long begin = System.currentTimeMillis();
+    Path path = files.get(0).toPath();
+    Thread.sleep(1000); // Need to wait to be sure we are not in the same second as the previous write
+    Files.write(path, "booooo".getBytes());
+    waitUntil(() -> undeploy.get() == 1);
+    waitUntil(() -> deploy.get() == 2);
+    long end = System.currentTimeMillis();
+    System.out.println("Update change applied in " + (end - begin) + " ms");
+
+    begin = System.currentTimeMillis();
+    files.get(1).delete();
+    waitUntil(() -> undeploy.get() == 2);
+    waitUntil(() -> deploy.get() == 3);
+    end = System.currentTimeMillis();
+    System.out.println("Deletion change applied in " + (end - begin) + " ms");
+
+    begin = System.currentTimeMillis();
+    files.get(1).delete();
+    File newFile = new File(root, "test.txt");
+    Files.write(newFile.toPath(), "I'm a new file".getBytes());
+    waitUntil(() -> undeploy.get() == 3);
+    waitUntil(() -> deploy.get() == 4);
+    end = System.currentTimeMillis();
+    System.out.println("Creation change applied in " + (end - begin) + " ms");
+  }
+
+  @Test
+  public void testRootExtraction() {
+    List<String> patterns = new ArrayList<>();
+    patterns.add("src/main/java/**/*.java");
+    List<File> results = Watcher.extractRoots(root, patterns);
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getAbsolutePath()).contains(root.getAbsolutePath());
+
+
+    patterns.clear();
+    patterns.add(root.getParentFile().getAbsolutePath());
+    results = Watcher.extractRoots(root, patterns);
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getAbsolutePath()).contains(root.getParentFile().getAbsolutePath());
+
+    patterns.clear();
+    patterns.add("**/*.java");
+    results = Watcher.extractRoots(root, patterns);
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getAbsolutePath()).contains(root.getAbsolutePath());
+
+    patterns.clear();
+    patterns.add(root.getParentFile().getAbsolutePath() + "/**/*.java");
+    results = Watcher.extractRoots(root, patterns);
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getAbsolutePath()).contains(root.getParentFile().getAbsolutePath());
+
+    patterns.clear();
+    patterns.add(root.getParentFile().getAbsolutePath() + "/foo.txt");
+    results = Watcher.extractRoots(root, patterns);
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getAbsolutePath()).contains(root.getParentFile().getAbsolutePath());
+
+    patterns.clear();
+    patterns.add("foo.txt");
+    results = Watcher.extractRoots(root, patterns);
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getAbsolutePath()).contains(root.getParentFile().getAbsolutePath());
+
   }
 
 }
