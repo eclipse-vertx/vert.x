@@ -24,29 +24,34 @@ class CloseHooks {
     this.log = log;
   }
 
-  void add(Closeable hook) {
+  synchronized void add(Closeable hook) {
     if (closeHooks == null) {
       // Has to be concurrent as can be removed from non context thread
-      closeHooks = new ConcurrentHashSet<>();
+      closeHooks = new HashSet<>();
     }
     closeHooks.add(hook);
   }
 
-  void remove(Closeable hook) {
+  synchronized void remove(Closeable hook) {
     if (closeHooks != null) {
       closeHooks.remove(hook);
     }
   }
 
   void run(Handler<AsyncResult<Void>> completionHandler) {
-    if (closeHooksRun) {
-      // Sanity check
-      throw new IllegalStateException("Close hooks already run");
+    Set<Closeable> copy = null;
+    synchronized (this) {
+      if (closeHooksRun) {
+        // Sanity check
+        throw new IllegalStateException("Close hooks already run");
+      }
+      closeHooksRun = true;
+      if (closeHooks != null && !closeHooks.isEmpty()) {
+        // Must copy before looping as can be removed during loop otherwise
+        copy = new HashSet<>(closeHooks);
+      }
     }
-    closeHooksRun = true;
-    if (closeHooks != null && !closeHooks.isEmpty()) {
-      // Must copy before looping as can be removed during loop otherwise
-      Set<Closeable> copy = new HashSet<>(closeHooks);
+    if (copy != null && !closeHooks.isEmpty()) {
       int num = copy.size();
       if (num != 0) {
         AtomicInteger count = new AtomicInteger();
