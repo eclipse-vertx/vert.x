@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 class CloseHooks {
 
   private final Logger log;
-  private volatile boolean closeHooksRun;
+  private boolean closeHooksRun;
   private Set<Closeable> closeHooks;
 
   CloseHooks(Logger log) {
@@ -51,7 +51,7 @@ class CloseHooks {
         copy = new HashSet<>(closeHooks);
       }
     }
-    if (copy != null && !closeHooks.isEmpty()) {
+    if (copy != null && !copy.isEmpty()) {
       int num = copy.size();
       if (num != 0) {
         AtomicInteger count = new AtomicInteger();
