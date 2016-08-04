@@ -24,6 +24,11 @@ class CloseHooks {
     this.log = log;
   }
 
+  /**
+   * Add a close hook, notified when the {@link #run(Handler)} method is called.
+   *
+   * @param hook the hook to add
+   */
   synchronized void add(Closeable hook) {
     if (closeHooks == null) {
       // Has to be concurrent as can be removed from non context thread
@@ -32,12 +37,22 @@ class CloseHooks {
     closeHooks.add(hook);
   }
 
+  /**
+   * Remove an existing hook.
+   *
+   * @param hook the hook to remove
+   */
   synchronized void remove(Closeable hook) {
     if (closeHooks != null) {
       closeHooks.remove(hook);
     }
   }
 
+  /**
+   * Run the close hooks.
+   *
+   * @param completionHandler called when all hooks have beene executed
+   */
   void run(Handler<AsyncResult<Void>> completionHandler) {
     Set<Closeable> copy = null;
     synchronized (this) {
