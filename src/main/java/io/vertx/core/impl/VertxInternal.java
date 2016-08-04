@@ -19,7 +19,9 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.HttpServerImpl;
@@ -120,4 +122,9 @@ public interface VertxInternal extends Vertx {
    */
   AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
 
+  @GenIgnore
+  void addCloseHook(Closeable hook);
+
+  @GenIgnore
+  void removeCloseHook(Closeable hook);
 }
