@@ -33,7 +33,6 @@ import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
@@ -41,7 +40,6 @@ import io.vertx.core.net.TrustOptions;
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
-import java.security.PrivateKey;
 import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -242,41 +240,19 @@ public class SSLHelper {
       if (client) {
         builder = SslContextBuilder.forClient();
         if (keyMgrFactory != null) {
-          if (openSsl) {
-            if (keyCertOptions instanceof PemKeyCertOptions) {
-              KeyStoreHelper.KeyCert keyStoreHelper =(KeyStoreHelper.KeyCert) KeyStoreHelper.create(vertx, keyCertOptions);
-              X509Certificate[] certs = keyStoreHelper.loadCerts();
-              PrivateKey privateKey = keyStoreHelper.loadPrivateKey();
-              builder.keyManager(privateKey, certs);
-            } else {
-              throw new VertxException("OpenSSL server key/certificate must be configured with .pem format");
-            }
-          } else {
-            builder.keyManager(keyMgrFactory);
-          }
+          builder.keyManager(keyMgrFactory);
         }
       } else {
-        if (openSsl) {
-          if (keyCertOptions instanceof PemKeyCertOptions) {
-            KeyStoreHelper.KeyCert keyStoreHelper =(KeyStoreHelper.KeyCert) KeyStoreHelper.create(vertx, keyCertOptions);
-            X509Certificate[] certs = keyStoreHelper.loadCerts();
-            PrivateKey privateKey = keyStoreHelper.loadPrivateKey();
-            builder = SslContextBuilder.forServer(privateKey, certs);
-          } else {
-            throw new VertxException("OpenSSL server key/certificate must be configured with .pem format");
-          }
-        } else {
-          if (keyMgrFactory == null) {
-            throw new VertxException("Key/certificate is mandatory for SSL");
-          }
-          builder = SslContextBuilder.forServer(keyMgrFactory);
+        if (keyMgrFactory == null) {
+          throw new VertxException("Key/certificate is mandatory for SSL");
         }
+        builder = SslContextBuilder.forServer(keyMgrFactory);
       }
       Collection<String> cipherSuites = enabledCipherSuites;
       if (openSsl) {
         builder.sslProvider(SslProvider.OPENSSL);
         if (cipherSuites == null || cipherSuites.isEmpty()) {
-          cipherSuites = OpenSsl.availableCipherSuites();
+          cipherSuites = OpenSsl.availableOpenSslCipherSuites();
         }
       } else {
         builder.sslProvider(SslProvider.JDK);

@@ -276,7 +276,19 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.MIM, TLSCert.NONE).clientTrustAll().clientVerifyHost().fail();
   }
 
-    // OpenSSL tests
+  // OpenSSL tests
+
+  @Test
+  // Server uses OpenSSL with JKS
+  public void testTLSClientTrustServerCertJKSOpenSSL() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).serverOpenSSL().pass();
+  }
+
+  @Test
+  // Server uses OpenSSL with PKCS12
+  public void testTLSClientTrustServerCertPKCS12OpenSSL() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.PKCS12, TLSCert.NONE).serverOpenSSL().pass();
+  }
 
   @Test
   // Server uses OpenSSL with PEM
@@ -300,6 +312,24 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithPEMOpenSSL() throws Exception {
     testTLS(TLSCert.NONE, TLSCert.PEM, TLSCert.JKS, TLSCert.NONE).clientOpenSSL().pass();
+  }
+
+  @Test
+  // Client specifies cert and it is required
+  public void testTLSClientCertRequiredOpenSSL() throws Exception {
+    testTLS(TLSCert.JKS, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).clientOpenSSL().requiresClientAuth().pass();
+  }
+
+  @Test
+  // Client specifies cert and it is required
+  public void testTLSClientCertPKCS12RequiredOpenSSL() throws Exception {
+    testTLS(TLSCert.PKCS12, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).clientOpenSSL().requiresClientAuth().pass();
+  }
+
+  @Test
+  // Client specifies cert and it is required
+  public void testTLSClientCertPEMRequiredOpenSSL() throws Exception {
+    testTLS(TLSCert.PEM, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).clientOpenSSL().requiresClientAuth().pass();
   }
 
   class TLSTest {
@@ -561,20 +591,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   public void testJKSInvalidPassword() {
     testInvalidKeyStore(((JksOptions) TLSCert.JKS.getServerKeyCertOptions()).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect", null);
-  }
-
-  @Test
-  public void testJKSOpenSSL() {
-    HttpServerOptions serverOptions = new HttpServerOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions());
-    setOptions(serverOptions, TLSCert.JKS.getServerKeyCertOptions());
-    testStore(serverOptions, Collections.singletonList("OpenSSL server key/certificate must be configured with .pem format"), null);
-  }
-
-  @Test
-  public void testPKCS12OpenSSL() {
-    HttpServerOptions serverOptions = new HttpServerOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions());
-    setOptions(serverOptions, TLSCert.JKS.getServerKeyCertOptions());
-    testStore(serverOptions, Collections.singletonList("OpenSSL server key/certificate must be configured with .pem format"), null);
   }
 
   @Test
