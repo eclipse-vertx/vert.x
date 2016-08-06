@@ -361,9 +361,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse headersEndHandler(@Nullable Handler<Void> handler);
 
   /**
-   * Provide a handler that will be called just before the last part of the body is written to the wire
-   * and the response is ended.<p>
-   * This provides a hook allowing you to do any more operations before this occurs.
+   * Provides a handler that will be called after the last part of the body is written to the wire.
+   * The handler is called asynchronously of when the response has been received by the client.
+   * This provides a hook allowing you to do more operations once the request has been sent over the wire
+   * such as resource cleanup.
    *
    * @param handler  the handler
    * @return a reference to this, so the API can be used fluently

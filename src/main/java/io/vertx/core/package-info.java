@@ -1275,8 +1275,8 @@
  * {@link examples.CoreExamples#configureSearchDomains()}
  * ----
  *
- * When a search domain list is used, the threshold for the number of dots is {@code 1}, it can be configured with
- * {@link io.vertx.core.dns.AddressResolverOptions#setNdots(int)}.
+ * When a search domain list is used, the threshold for the number of dots is {@code 1} or loaded from `/etc/resolv.conf`
+ * on Linux, it can be configured to a specific value with {@link io.vertx.core.dns.AddressResolverOptions#setNdots(int)}.
  *
  * NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
  * _-Dvertx.disableDnsResolver=true_ activates this behavior

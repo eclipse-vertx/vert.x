@@ -322,7 +322,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     }
   }
 
-  void _writePushPromise(int streamId, int promisedStreamId, Http2Headers headers, ChannelPromise promise) {
+  private void _writePushPromise(int streamId, int promisedStreamId, Http2Headers headers, ChannelPromise promise) {
     encoder().writePushPromise(ctx, streamId, promisedStreamId, headers, 0, promise);
   }
 }

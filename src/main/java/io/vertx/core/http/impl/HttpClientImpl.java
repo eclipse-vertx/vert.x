@@ -27,6 +27,8 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -35,6 +37,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -54,6 +57,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final ContextImpl creatingContext;
   private final ConnectionManager connectionManager;
   private final Closeable closeHook;
+  private final boolean useProxy;
   private final SSLHelper sslHelper;
   private volatile boolean closed;
 
@@ -86,6 +90,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
     HttpClientMetrics metrics = vertx.metricsSPI().createMetrics(this, options);
     connectionManager = new ConnectionManager(this, metrics);
+    ProxyOptions proxyOptions = options.getProxyOptions();
+    useProxy = !options.isSsl() && proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP;
   }
 
   @Override
@@ -710,7 +716,23 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, options.isSsl(), relativeURI, vertx);
+    HttpClientRequest req;
+    if (useProxy) {
+      relativeURI = "http://" + host + (port != 80 ? ":" + port : "") + relativeURI;
+      ProxyOptions proxyOptions = options.getProxyOptions();
+      if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
+        if (headers == null) {
+          headers = MultiMap.caseInsensitiveMultiMap();
+        }
+        headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
+            .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
+      }
+      req = new HttpClientRequestImpl(this, method, proxyOptions.getHost(), proxyOptions.getPort(), options.isSsl(),
+          relativeURI, vertx);
+      req.setHost(host + (port != 80 ? ":" + port : ""));
+    } else {
+      req = new HttpClientRequestImpl(this, method, host, port, options.isSsl(), relativeURI, vertx);
+    }
     if (headers != null) {
       req.headers().setAll(headers);
     }

@@ -50,7 +50,11 @@ public class AddressResolverOptions {
   public static final int DEFAULT_MAX_QUERIES = 3;
   public static final boolean DEFAULT_RD_FLAG = true;
   public static final List<String> DEFAULT_SEACH_DOMAINS = null;
-  public static final int DEFAULT_NDOTS = 1;
+
+  /**
+   * The default ndots value = -1 (loads the value from the OS on Linux otherwise use the value 1)
+   */
+  public static final int DEFAULT_NDOTS = -1;
 
   private String hostsPath;
   private Buffer hostsValue;
@@ -363,14 +367,15 @@ public class AddressResolverOptions {
   }
 
   /**
-   * Set the ndots value used when resolving using search domains, the default value is {@code 1}.
+   * Set the ndots value used when resolving using search domains, the default value is {@code -1} which
+   * determines the value from the OS on Linux or uses the value {@code 1}.
    *
    * @param ndots the new ndots value
    * @return a reference to this, so the API can be used fluently
    */
   public AddressResolverOptions setNdots(int ndots) {
-    if (ndots < 1) {
-      throw new IllegalArgumentException("ndots must be > 0");
+    if (ndots < -1) {
+      throw new IllegalArgumentException("ndots must be >= -1");
     }
     this.ndots = ndots;
     return this;

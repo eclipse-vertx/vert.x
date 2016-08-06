@@ -2381,7 +2381,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new ConnectHttpProxy(null);
+    proxy = new HttpProxy(null);
     proxy.start(vertx, v -> {
       server.listen(ar -> {
         assertTrue(ar.succeeded());

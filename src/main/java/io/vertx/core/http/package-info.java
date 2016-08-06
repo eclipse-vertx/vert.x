@@ -1589,21 +1589,31 @@
  * When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
  * used with binary frames that are no split over multiple frames.
  *
- * === Using a proxy for HTTPS connections
+ * === Using a proxy for HTTP/HTTPS connections
  *
- * The http client supports accessing https servers via a HTTPS proxy (HTTP/1.x _CONNECT_ method, e.g. Squid) or
- * _SOCKS4a_ or _SOCKS5_ proxy. The http proxy protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
+ * The http client supports accessing http/https URLs via a HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
+ * The CONNECT protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
+ *
+ * Connecting to h2c (unencrypted HTTP/2 servers) is likely not supported by http proxies since they will support
+ * HTTP/1.1 only.
  *
  * The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting a
  * {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
  *
- * Here's an example:
+ * Here's an example of using an HTTP proxy:
  *
  * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example58}
  * ----
- * or using SOCKS5 proxy
+ *
+ * When the client connects to an http URL, it connects to the proxy server and provides the full URL in the
+ * HTTP request ("GET http://www.somehost.com/path/file.html HTTP/1.1").
+ *
+ * When the client connects to an https URL, it asks the proxy to create a tunnel to the remote host with
+ * the CONNECT method.
+ *
+ * For a SOCKS5 proxy:
  *
  * [source,$lang]
  * ----
@@ -1612,18 +1622,6 @@
  *
  * The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
  * to resolve the DNS address locally.
- *
- * Please note: When using {@link io.vertx.core.net.ProxyType#HTTP} currently http requests are sent as CONNECT requests to the proxy, which will almost
- * certainly not work since a properly configured proxy will deny connections to non-secure ports.
- *
- * This feature will be implemented differently in next version, allowing for a normal proxy request for non-http requests 
- *
- * As a workaround, a http proxy request can be executed like this:
- *
- * [source,$lang]
- * ----
- * {@link examples.HTTPExamples#example60}
- * ----
  *
  * === Automatic clean-up in verticles
  *

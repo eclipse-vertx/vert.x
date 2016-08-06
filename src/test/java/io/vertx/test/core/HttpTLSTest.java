@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -40,7 +39,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
-  private TestProxyBase proxy;
 
   @Override
   protected void tearDown() throws Exception {
@@ -48,17 +46,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       proxy.stop();
     }
     super.tearDown();
-  }
-
-  private void startProxy(String username, ProxyType proxyType) throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(1);
-    if (proxyType == ProxyType.HTTP) {
-      proxy = new ConnectHttpProxy(username);
-    } else {
-      proxy = new SocksProxy(username);
-    }
-    proxy.start(vertx, v -> latch.countDown());
-    awaitLatch(latch);
   }
 
   @Test
@@ -755,6 +742,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
+    assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
   }
 
   @Test
@@ -771,6 +759,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
+    assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
   }
 
   @Test
@@ -780,10 +769,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testHttpsProxyUnknownHost() throws Exception {
     startProxy(null, ProxyType.HTTP);
     proxy.setForceUri("localhost:4043");
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth()
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy()
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
+    assertEquals("Host header doesn't contain target host", "doesnt-resolve.host-name:4043", proxy.getLastRequestHeaders().get("Host"));
   }
 
   @Test

@@ -97,7 +97,7 @@ public class CommandTestBase {
   }
 
   protected void waitUntil(BooleanSupplier supplier) {
-    waitUntil(supplier, 10000);
+    waitUntil(supplier, 20000);
   }
 
   protected void waitUntil(BooleanSupplier supplier, long timeout) {

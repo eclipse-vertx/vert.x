@@ -29,8 +29,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -50,11 +48,10 @@ public abstract class ContextImpl implements ContextInternal {
   protected final String deploymentID;
   protected final JsonObject config;
   private Deployment deployment;
-  private Set<Closeable> closeHooks;
+  private CloseHooks closeHooks;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
   protected VertxThread contextThread;
-  private volatile boolean closeHooksRun;
   private Map<String, Object> contextData;
   private volatile Handler<Throwable> exceptionHandler;
   protected final WorkerPool workerPool;
@@ -81,6 +78,7 @@ public abstract class ContextImpl implements ContextInternal {
     this.internalBlockingPool = internalBlockingPool;
     this.orderedInternalPoolExec = internalBlockingPool.createOrderedExecutor();
     this.workerExec = workerPool.createOrderedExecutor();
+    this.closeHooks = new CloseHooks(log);
   }
 
   public static void setContext(ContextImpl context) {
@@ -112,17 +110,11 @@ public abstract class ContextImpl implements ContextInternal {
   }
 
   public void addCloseHook(Closeable hook) {
-    if (closeHooks == null) {
-      // Has to be concurrent as can be removed from non context thread
-      closeHooks = new ConcurrentHashSet<>();
-    }
     closeHooks.add(hook);
   }
 
   public void removeCloseHook(Closeable hook) {
-    if (closeHooks != null) {
-      closeHooks.remove(hook);
-    }
+    closeHooks.remove(hook);
   }
 
   @Override
@@ -131,43 +123,7 @@ public abstract class ContextImpl implements ContextInternal {
   }
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
-    if (closeHooksRun) {
-      // Sanity check
-      throw new IllegalStateException("Close hooks already run");
-    }
-    closeHooksRun = true;
-    if (closeHooks != null && !closeHooks.isEmpty()) {
-      // Must copy before looping as can be removed during loop otherwise
-      Set<Closeable> copy = new HashSet<>(closeHooks);
-      int num = copy.size();
-      if (num != 0) {
-        AtomicInteger count = new AtomicInteger();
-        AtomicBoolean failed = new AtomicBoolean();
-        for (Closeable hook : copy) {
-          try {
-            hook.close(ar -> {
-              if (ar.failed()) {
-                if (failed.compareAndSet(false, true)) {
-                  // Only report one failure
-                  completionHandler.handle(Future.failedFuture(ar.cause()));
-                }
-              } else {
-                if (count.incrementAndGet() == num) {
-                  // closeHooksRun = true;
-                  completionHandler.handle(Future.succeededFuture());
-                }
-              }
-            });
-          } catch (Throwable t) {
-            log.warn("Failed to run close hooks", t);
-          }
-        }
-      } else {
-        completionHandler.handle(Future.succeededFuture());
-      }
-    } else {
-      completionHandler.handle(Future.succeededFuture());
-    }
+    closeHooks.run(completionHandler);
     // Now remove context references from threads
     VertxThreadFactory.unsetContext(this);
   }

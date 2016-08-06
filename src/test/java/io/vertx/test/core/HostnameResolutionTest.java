@@ -21,13 +21,13 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -35,7 +35,6 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.fakedns.FakeDNSServer;
-import org.apache.directory.server.dns.DnsServer;
 import org.junit.Test;
 
 import java.io.File;
@@ -46,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -186,7 +186,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     int queryTimeout = 1 + TestUtils.randomPositiveInt();
     int maxQueries = 1 + TestUtils.randomPositiveInt();
     boolean rdFlag = TestUtils.randomBoolean();
-    int ndots = TestUtils.randomPositiveInt();
+    int ndots = TestUtils.randomPositiveInt() - 2;
     List<String> searchDomains = new ArrayList<>();
     for (int i = 0;i < 2;i++) {
       searchDomains.add(TestUtils.randomAlphaString(15));
@@ -236,7 +236,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertSame(options, options.setSearchDomains(searchDomains));
     assertSame(options, options.setNdots(ndots));
     try {
-      options.setNdots(0);
+      options.setNdots(-2);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -404,7 +404,6 @@ public class HostnameResolutionTest extends VertxTestBase {
     // Test using the resolver API
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
-            setHostsValue(Buffer.buffer("")).
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
             setOptResourceEnabled(false)
     ));
@@ -629,7 +628,41 @@ public class HostnameResolutionTest extends VertxTestBase {
       latch2.countDown();
     }));
     awaitLatch(latch2);
+  }
 
+  @Test
+  public void testSearchDomainWithNdots0() throws Exception {
+
+    Map<String, String> records = new HashMap<>();
+    records.put("host1", "127.0.0.2");
+    records.put("host1.foo.com", "127.0.0.3");
+
+    dnsServer.stop();
+    dnsServer = FakeDNSServer.testResolveA(records);
+    dnsServer.start();
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
+        new AddressResolverOptions().
+            addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
+            setOptResourceEnabled(false).
+            addSearchDomain("foo.com").
+            setNdots(0)
+    ));
+
+    // "host1" resolves directly as ndots = 0
+    CountDownLatch latch1 = new CountDownLatch(1);
+    vertx.resolveAddress("host1", onSuccess(resolved -> {
+      assertEquals("127.0.0.2", resolved.getHostAddress());
+      latch1.countDown();
+    }));
+    awaitLatch(latch1);
+
+    // "host1.foo.com" resolves to host1.foo.com
+    CountDownLatch latch2 = new CountDownLatch(1);
+    vertx.resolveAddress("host1.foo.com", onSuccess(resolved -> {
+      assertEquals("127.0.0.3", resolved.getHostAddress());
+      latch2.countDown();
+    }));
+    awaitLatch(latch2);
   }
 
   @Test
@@ -639,6 +672,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     dnsServer.stop();
     dnsServer = FakeDNSServer.testResolveA(records);
     dnsServer.start();
+    vertx.close();
     vertx = vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
@@ -646,5 +680,65 @@ public class HostnameResolutionTest extends VertxTestBase {
             addSearchDomain("foo.com")
     ));
     testNet("host1");
+  }
+
+  @Test
+  public void testParseResolvConf() {
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\noptions ndots: 4"));
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("boptions ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf(" options ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\toptions ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\foptions ndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\n options ndots: 4"));
+
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options\tndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options\fndots: 4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options  ndots: 4"));
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options\nndots: 4"));
+
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:\t4"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:  4"));
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:\n4"));
+
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4 "));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\t"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\f"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\n"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\r"));
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4_"));
+
+    assertEquals(2, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\noptions ndots:2"));
+  }
+
+  @Test
+  public void testResolveLocalhost() {
+    AddressResolver resolver = new AddressResolver((VertxImpl) vertx, new AddressResolverOptions());
+
+    resolver.resolveHostname("LOCALHOST", res -> {
+      if (res.succeeded()) {
+        assertEquals("localhost", res.result().getHostName().toLowerCase(Locale.ENGLISH));
+        resolver.resolveHostname("LocalHost", res2 -> {
+          if (res2.succeeded()) {
+            assertEquals("localhost", res2.result().getHostName().toLowerCase(Locale.ENGLISH));
+            resolver.resolveHostname("localhost", res3 -> {
+              if (res3.succeeded()) {
+                assertEquals("localhost", res3.result().getHostName().toLowerCase(Locale.ENGLISH));
+                testComplete();
+              } else {
+                fail(res3.cause());
+              }
+            });
+          } else {
+            fail(res2.cause());
+          }
+        });
+      } else {
+        fail(res.cause());
+      }
+    });
+
+    await();
   }
 }

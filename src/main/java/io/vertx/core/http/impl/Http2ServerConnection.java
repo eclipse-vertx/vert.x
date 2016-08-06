@@ -129,7 +129,13 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       }
       streams.put(streamId, req);
       context.executeFromIO(() -> {
+        Http2ServerResponseImpl resp = req.response();
+        resp.beginRequest();
         requestHandler.handle(req);
+        boolean hasPush = resp.endRequest();
+        if (hasPush) {
+          ctx.flush();
+        }
       });
     } else {
       // Http server request trailer - not implemented yet (in api)

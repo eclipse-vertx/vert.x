@@ -2,6 +2,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.MessageProducer;
@@ -12,6 +13,7 @@ import java.util.LinkedList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,6 +44,27 @@ public class EventBusFlowControlTest extends VertxTestBase {
 
     sendBatch(prod, wqms, numBatches, 0);
     await();
+  }
+
+  @Test
+  public void testFlowControlWithOptions() {
+    MessageProducer<String> prod = eb.sender("some-address");
+    prod.deliveryOptions(new DeliveryOptions().addHeader("foo", "bar"));
+    int numBatches = 1000;
+    int wqms = 2000;
+    prod.setWriteQueueMaxSize(wqms);
+
+    MessageConsumer<String> consumer = eb.consumer("some-address");
+    AtomicInteger cnt = new AtomicInteger();
+    consumer.handler(msg -> {
+      int c = cnt.incrementAndGet();
+      if (c == numBatches * wqms) {
+        testComplete();
+      }
+    });
+
+    sendBatch(prod, wqms, numBatches, 0);
+    await(10, TimeUnit.SECONDS);
   }
 
   private void sendBatch(MessageProducer<String> prod, int batchSize, int numBatches, int batchNumber) {
