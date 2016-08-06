@@ -151,12 +151,12 @@ public class CoreExamples {
     CompositeFuture.any(Arrays.asList(f1, f2, f3));
   }
 
-  public void exampleFuture5(Vertx vertx, Future<Void> startFuture) {
+  public void exampleFuture5(Vertx vertx) {
 
     FileSystem fs = vertx.fileSystem();
+    Future<Void> startFuture = Future.future();
 
     Future<Void> fut1 = Future.future();
-
     fs.createFile("/foo", fut1.completer());
 
     fut1.compose(v -> {
@@ -165,12 +165,13 @@ public class CoreExamples {
       fs.writeFile("/foo", Buffer.buffer(), fut2.completer());
       return fut2;
     }).compose(v -> {
-      // When the file is written (fut2), execute this:
-      fs.move("/foo", "/bar", startFuture.completer());
-    },
-        // mark the start future as completed when all the chain has been completed,
-        // or mark it as failed if any step fails.
-        startFuture);
+              // When the file is written (fut2), execute this:
+              Future<Void> fut3 = Future.future();
+              fs.move("/foo", "/bar", fut3.completer());
+            },
+            // mark the start future as completed when all the chain has been completed,
+            // or mark it as failed if any step fails.
+            startFuture);
   }
 
   public void example7_1(Vertx vertx) {
