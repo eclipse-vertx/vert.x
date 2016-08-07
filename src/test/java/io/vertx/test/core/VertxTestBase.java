@@ -153,12 +153,16 @@ public class VertxTestBase extends AsyncTestBase {
       int index = i;
       clusteredVertx(options.setClusterHost("localhost").setClusterPort(0).setClustered(true)
         .setClusterManager(getClusterManager()), ar -> {
-        if (ar.failed()) {
-          ar.cause().printStackTrace();
-        }
-        assertTrue("Failed to start node", ar.succeeded());
-        vertices[index] = ar.result();
-        latch.countDown();
+          try {
+            if (ar.failed()) {
+              ar.cause().printStackTrace();
+            }
+            assertTrue("Failed to start node", ar.succeeded());
+            vertices[index] = ar.result();
+          }
+          finally {
+            latch.countDown();
+          }
       });
     }
     try {
