@@ -667,9 +667,6 @@
  * and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
  * OpenSSL to be installed on your OS depending on the tcnative implementation.
  *
- * OpenSSL restricts the key/certificate configuration to `.pem` files. However it is still possible to use any trust
- * configuration.
- *
  * ===== Jetty-ALPN support
  *
  * Jetty-ALPN is a small jar that overrides a few classes of Java 8 distribution to support ALPN.
