@@ -453,6 +453,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(2, req.headers().getAll("juu_request").size());
       assertEquals("juu_request_value_1", req.headers().getAll("juu_request").get(0));
       assertEquals("juu_request_value_2", req.headers().getAll("juu_request").get(1));
+      assertEquals(Collections.singletonList("cookie_1; cookie_2; cookie_3"), req.headers().getAll("cookie"));
       resp.putHeader("content-type", "text/plain");
       resp.putHeader("Foo_response", "foo_response_value");
       resp.putHeader("bar_response", "bar_response_value");
@@ -494,6 +495,7 @@ public class Http2ServerTest extends Http2TestBase {
       headers.set("foo_request", "foo_request_value");
       headers.set("bar_request", "bar_request_value");
       headers.set("juu_request", "juu_request_value_1", "juu_request_value_2");
+      headers.set("cookie", Arrays.asList("cookie_1", "cookie_2", "cookie_3"));
       request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       request.context.flush();
     });
