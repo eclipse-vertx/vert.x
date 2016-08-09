@@ -21,6 +21,9 @@ import io.vertx.core.Future;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Handler;
 
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -83,6 +86,49 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
       });
     }
     if (results.length == 0) {
+      composite.setSucceeded();
+    }
+    return composite;
+  }
+
+  private static final Predicate<CompositeFuture> ALL = cf -> {
+    int size = cf.size();
+    for (int i = 0;i < size;i++) {
+      if (!cf.succeeded(i)) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  public static CompositeFuture join(Future<?>... results) {
+    return join(ALL, results);
+  }
+
+  private  static CompositeFuture join(Predicate<CompositeFuture> pred, Future<?>... results) {
+    CompositeFutureImpl composite = new CompositeFutureImpl(results);
+    int len = results.length;
+    for (int i = 0; i < len; i++) {
+      results[i].setHandler(ar -> {
+        Handler<AsyncResult<CompositeFuture>> handler = null;
+        synchronized (composite) {
+          composite.count++;
+          if (!composite.isComplete() && composite.count == len) {
+            // Take decision here
+            boolean completed = pred.test(composite);
+            if (completed) {
+              handler = composite.setSucceeded();
+            } else {
+              handler = composite.setFailed(new NoStackTraceThrowable("failed"));
+            }
+          }
+        }
+        if (handler != null) {
+          handler.handle(composite);
+        }
+      });
+    }
+    if (len == 0) {
       composite.setSucceeded();
     }
     return composite;

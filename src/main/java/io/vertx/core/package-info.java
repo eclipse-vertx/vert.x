@@ -327,51 +327,73 @@
  * == Async coordination
  *
  * Coordination of multiple asynchronous results can be achieved with Vert.x {@link io.vertx.core.Future futures}. It
- * supports concurrent composition (run several async operations in parallel and join) and sequential composition
+ * supports concurrent composition (run several async operations in parallel) and sequential composition
  * (chain async operations).
  *
+ * === Concurrent composition
+ *
  * {@link io.vertx.core.CompositeFuture#all} takes several futures arguments (up to 6) and returns a future that is
- * _succeeded_ when all the futures are and _failed_ otherwise:
+ * _succeeded_ when all the futures are and _failed_ when at least one of the futures is failed:
  *
  * [source,$lang]
  * ----
- * {@link examples.CoreExamples#exampleFuture1}
+ * {@link examples.CoreExamples#exampleFutureAll1}
  * ----
  *
- * The operations run concurrently, and are joined. The {@link io.vertx.core.Handler} attached to the returned future is
- * invoked upon completion of the composition. If one of the operation fails (one of the passed future is marked
- * as a failure), the resulting future is marked as failed too. If all the operations succeed, the resulting future
- * is completed with a success.
+ * The operations run concurrently, the {@link io.vertx.core.Handler} attached to the returned future is invoked upon
+ * completion of the composition. When one of the operation fails (one of the passed future is marked as a failure),
+ * the resulting future is marked as failed too. When all the operations succeed, the resulting future is completed
+ * with a success.
  *
  * Alternatively, you can pass a list (potentially empty) of futures:
  *
  * [source,$lang]
  * ----
- * {@link examples.CoreExamples#exampleFuture2}
+ * {@link examples.CoreExamples#exampleFutureAll2}
  * ----
  *
- * While the `all` composition _waits_ until all futures are completed (or one fails), the `any` composition
- * _waits_ for the first completed future. {@link io.vertx.core.CompositeFuture#any} takes several futures arguments
- * (up to 6) and returns a future that is _succeeded_ if one of the futures is, and _failed_ otherwise:
+ * While the `all` composition _waits_ until all futures are successful (or one fails), the `any` composition
+ * _waits_ for the first succeeded future. {@link io.vertx.core.CompositeFuture#any} takes several futures
+ * arguments (up to 6) and returns a future that is succeeded when one of the futures is, and failed when
+ * all the futures are failed:
  *
  * [source,$lang]
  * ----
- * {@link examples.CoreExamples#exampleFuture3}
+ * {@link examples.CoreExamples#exampleFutureAny1}
  * ----
  *
  * A list of futures can be used also:
  *
  * [source,$lang]
  * ----
- * {@link examples.CoreExamples#exampleFuture4}
+ * {@link examples.CoreExamples#exampleFutureAny2}
  * ----
+ *
+ * The `join` composition _waits_ until all futures are completed, either with a success or a failure.
+ * {@link io.vertx.core.CompositeFuture#join} takes several futures arguments (up to 6) and returns a future that is
+ * succeeded when all the futures are succeeded, and failed when all the futures are completed and at least one of
+ * them is failed:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#exampleFutureJoin1}
+ * ----
+ *
+ * A list of futures can be used also:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#exampleFutureJoin2}
+ * ----
+ *
+ * === Sequential composition
  *
  * While `all` and `any` are implementing concurrent composition, {@link io.vertx.core.Future#compose} can be used
  * for chaining futures (so sequential composition).
  *
  * [source,$lang]
  * ----
- * {@link examples.CoreExamples#exampleFuture5}
+ * {@link examples.CoreExamples#exampleFuture6}
  * ----
  *
  * In this example, 3 operations are chained:

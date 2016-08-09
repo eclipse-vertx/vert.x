@@ -115,7 +115,7 @@ public class CoreExamples {
     }
   }
 
-  public void exampleFuture1(HttpServer httpServer, NetServer netServer) {
+  public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
     Future<HttpServer> httpServerFuture = Future.future();
     httpServer.listen(httpServerFuture.completer());
 
@@ -131,13 +131,11 @@ public class CoreExamples {
     });
   }
 
-  public void exampleFuture2(Future f1, Future f2, Future f3) {
-    CompositeFuture.all(Arrays.asList(f1, f2, f3));
+  public void exampleFutureAll2(Future future1, Future future2, Future future3) {
+    CompositeFuture.all(Arrays.asList(future1, future2, future3));
   }
 
-  public void exampleFuture3() {
-    Future<String> future1 = Future.future();
-    Future<String> future2 = Future.future();
+  public void exampleFutureAny1(Future<String> future1, Future<String> future2) {
     CompositeFuture.any(future1, future2).setHandler(ar -> {
       if (ar.succeeded()) {
         // At least one is succeeded
@@ -147,11 +145,25 @@ public class CoreExamples {
     });
   }
 
-  public void exampleFuture4(Future f1, Future f2, Future f3) {
+  public void exampleFutureAny2(Future f1, Future f2, Future f3) {
     CompositeFuture.any(Arrays.asList(f1, f2, f3));
   }
 
-  public void exampleFuture5(Vertx vertx) {
+  public void exampleFutureJoin1(Future future1, Future future2, Future future3) {
+    CompositeFuture.join(future1, future2, future3).setHandler(ar -> {
+      if (ar.succeeded()) {
+        // All succeeded
+      } else {
+        // All completed and at least one failed
+      }
+    });
+  }
+
+  public void exampleFutureJoin2(Future future1, Future future2, Future future3) {
+    CompositeFuture.join(Arrays.asList(future1, future2, future3));
+  }
+
+  public void exampleFuture6(Vertx vertx) {
 
     FileSystem fs = vertx.fileSystem();
     Future<Void> startFuture = Future.future();
