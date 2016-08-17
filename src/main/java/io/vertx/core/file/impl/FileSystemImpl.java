@@ -25,9 +25,9 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.core.impl.Action;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.Action;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -733,8 +733,8 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(p);
     Objects.requireNonNull(options);
     return new BlockingAction<AsyncFile>(handler) {
-      String path = vertx.resolveFile(p).getAbsolutePath();
       public AsyncFile perform() {
+        String path = vertx.resolveFile(p).getAbsolutePath();
         return doOpen(path, options, context);
       }
     };
