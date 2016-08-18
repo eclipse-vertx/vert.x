@@ -575,7 +575,7 @@ Set the additional debug data
 +++
 |[[errorCode]]`errorCode`|`Number (long)`|
 +++
-@return the  error code
+
 +++
 |[[lastStreamId]]`lastStreamId`|`Number (int)`|
 +++
@@ -1018,7 +1018,7 @@ Set the websocket subprotocols supported by the server.
 ^|Name | Type ^| Description
 |[[alpnAvailable]]`alpnAvailable`|`Boolean`|
 +++
-@return if alpn support is available via the JDK SSL engine
+
 +++
 |===
 
@@ -1349,7 +1349,6 @@ Set whether Netty pooled buffers are enabled
 == NetworkOptions
 
 ++++
- @author <a href="http://tfox.org">Tim Fox</a>
 ++++
 '''
 
@@ -1447,11 +1446,11 @@ Set whether the file is to be opened for writing
 ^|Name | Type ^| Description
 |[[alpnAvailable]]`alpnAvailable`|`Boolean`|
 +++
-@return when alpn support is available via OpenSSL engine
+
 +++
 |[[available]]`available`|`Boolean`|
 +++
-@return when OpenSSL is available
+
 +++
 |[[sessionCacheEnabled]]`sessionCacheEnabled`|`Boolean`|
 +++
@@ -1517,7 +1516,7 @@ Sets whether or not this option can receive several values.
 +++
 |[[name]]`name`|`String`|
 +++
-@return the option name. It returns the long name if set, the short name otherwise. It cannot return <code>null</code> for valid option
+
 +++
 |[[required]]`required`|`Boolean`|
 +++
