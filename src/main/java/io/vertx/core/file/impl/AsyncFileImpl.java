@@ -459,16 +459,15 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
-    Future<Void> res = Future.future();
-    try {
-      ch.close();
-      res.complete(null);
-    } catch (IOException e) {
-      res.fail(e);
-    }
-    if (handler != null) {
-      vertx.runOnContext(v -> handler.handle(res));
-    }
+    ContextImpl handlerContext = vertx.getOrCreateContext();
+    handlerContext.executeBlocking(res -> {
+      try {
+        ch.close();
+        res.complete(null);
+      } catch (IOException e) {
+        res.fail(e);
+      }
+    }, handler);
   }
 
   private synchronized void closeInternal(Handler<AsyncResult<Void>> handler) {
