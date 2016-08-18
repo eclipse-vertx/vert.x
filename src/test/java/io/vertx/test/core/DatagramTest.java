@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
@@ -104,7 +105,13 @@ public class DatagramTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       Buffer buffer = TestUtils.randomBuffer(128);
       peer2.handler(packet -> {
-        assertEquals(buffer, packet.data());
+        Buffer data = packet.data();
+        ByteBuf buff = data.getByteBuf();
+        while (buff != buff.unwrap() && buff.unwrap() != null) {
+          buff = buff.unwrap();
+        }
+        assertTrue("Was expecting an unpooled buffer instead of " + buff.getClass().getSimpleName(), buff.getClass().getSimpleName().contains("Unpooled"));
+        assertEquals(buffer, data);
         testComplete();
       });
       peer1.send(buffer, 1234, "127.0.0.1", ar2 -> assertTrue(ar2.succeeded()));
