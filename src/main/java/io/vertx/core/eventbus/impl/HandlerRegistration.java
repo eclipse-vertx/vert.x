@@ -138,7 +138,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     } else {
       callCompletionHandlerAsync(completionHandler);
     }
-    registered = false;
   }
 
   private void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {

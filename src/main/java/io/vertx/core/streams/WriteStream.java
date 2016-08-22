@@ -70,8 +70,12 @@ public interface WriteStream<T> extends StreamBase {
 
   /**
    * Set the maximum size of the write queue to {@code maxSize}. You will still be able to write to the stream even
-   * if there is more than {@code maxSize} bytes in the write queue. This is used as an indicator by classes such as
+   * if there is more than {@code maxSize} items in the write queue. This is used as an indicator by classes such as
    * {@code Pump} to provide flow control.
+   * <p/>
+   * The value is defined by the implementation of the stream, e.g in bytes for a
+   * {@link io.vertx.core.net.NetSocket}, the number of {@link io.vertx.core.eventbus.Message} for a
+   * {@link io.vertx.core.eventbus.MessageProducer}, etc...
    *
    * @param maxSize  the max size of the write stream
    * @return a reference to this, so the API can be used fluently
@@ -89,9 +93,12 @@ public interface WriteStream<T> extends StreamBase {
 
   /**
    * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
-   * queue has been reduced to maxSize / 2. See {@link Pump} for an example of this being used.
+   * queue is ready to accept buffers again. See {@link Pump} for an example of this being used.
+   * <p/>
+   * The stream implementation defines when the drain handler, for example it could be when the queue size has been
+   * reduced to {@code maxSize / 2}.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent

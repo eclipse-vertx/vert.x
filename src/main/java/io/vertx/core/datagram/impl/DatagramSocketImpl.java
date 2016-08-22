@@ -36,6 +36,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -66,6 +67,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     }
     channel.pipeline().addLast("handler", new DatagramServerHandler(this));
     channel().config().setMaxMessagesPerRead(1);
+    channel().config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
   }
 
   @Override
