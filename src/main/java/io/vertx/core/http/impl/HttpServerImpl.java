@@ -326,7 +326,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
     if (options.isCompressionSupported()) {
-      pipeline.addLast("deflater", new HttpChunkContentCompressor());
+      pipeline.addLast("deflater", new HttpChunkContentCompressor(options.getCompressionLevel()));
     }
     if (sslHelper.isSSL() || options.isCompressionSupported()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.

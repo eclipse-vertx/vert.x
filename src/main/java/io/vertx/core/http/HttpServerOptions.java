@@ -43,6 +43,11 @@ public class HttpServerOptions extends NetServerOptions {
    * Default value of whether compression is supported = false
    */
   public static final boolean DEFAULT_COMPRESSION_SUPPORTED = false;
+  
+  /**
+   * Default gzip compression level = 1, fastest
+   */
+  public static final int DEFAULT_COMPRESSION_LEVEL = 1;
 
   /**
    * Default max websocket framesize = 65536
@@ -85,6 +90,7 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
 
   private boolean compressionSupported;
+  private int compressionLevel;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
   private boolean handle100ContinueAutomatically;
@@ -112,6 +118,7 @@ public class HttpServerOptions extends NetServerOptions {
   public HttpServerOptions(HttpServerOptions other) {
     super(other);
     this.compressionSupported = other.isCompressionSupported();
+    this.compressionLevel = other.getCompressionLevel();
     this.maxWebsocketFrameSize = other.getMaxWebsocketFrameSize();
     this.websocketSubProtocols = other.getWebsocketSubProtocols();
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
@@ -137,6 +144,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   private void init() {
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
+    compressionLevel = DEFAULT_COMPRESSION_LEVEL;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
@@ -343,6 +351,24 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * @return the server gzip compression level
+   */
+  public int getCompressionLevel() {
+    return this.compressionLevel;
+  }
+  
+  /**
+   * Set whether the server supports compression
+   *
+   * @param compressionSupported gzip compression level (1-9) - 1 is fastest, 9 the slower but size reducing savings
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setCompressionLevel(int compressionLevel) {
+    this.compressionLevel = compressionLevel;
+    return this;
+  }
+  
   /**
    * @return  the maximum websocket framesize
    */
