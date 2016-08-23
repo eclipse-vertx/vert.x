@@ -352,16 +352,17 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return the server gzip compression level
+   * @return the server gzip/deflate compression level
    */
   public int getCompressionLevel() {
     return this.compressionLevel;
   }
   
   /**
-   * Set whether the server supports compression
+   * Set the gzip/deflate compression level
    *
-   * @param compressionSupported gzip compression level (1-9) - 1 is fastest, 9 the slower but size reducing savings
+   * @param compressionSupported  compression level (valid range: 1-9)  
+   * 1 fastest, less compression - 9 slower, stronger compression
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setCompressionLevel(int compressionLevel) {
