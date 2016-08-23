@@ -271,11 +271,12 @@ public abstract class ContextImpl implements ContextInternal {
           runOnContext(v -> res.setHandler(resultHandler));
         }
       });
-    } catch (RejectedExecutionException ignore) {
+    } catch (RejectedExecutionException e) {
       // Pool is already shut down
       if (metrics != null) {
         metrics.rejected(queueMetric);
       }
+      throw e;
     }
   }
 
