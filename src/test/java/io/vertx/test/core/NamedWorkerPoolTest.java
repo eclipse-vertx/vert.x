@@ -231,13 +231,21 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   @Test
   public void testCloseWorkerPoolsWhenVertxCloses() {
     Vertx vertx = Vertx.vertx();
+    WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-123");
     vertx.close(v -> {
       try {
         vertx.executeBlocking(fut -> fail(), ar -> fail());
         fail();
       } catch (RejectedExecutionException ignore) {
-        testComplete();
       }
+      try {
+        exec.executeBlocking(fut -> fail(), ar -> fail());
+        fail();
+      } catch (RejectedExecutionException ignore) {
+      }
+      // Check we can still close
+      exec.close();
+      testComplete();
     });
     await();
   }

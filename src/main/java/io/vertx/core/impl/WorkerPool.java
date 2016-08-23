@@ -30,7 +30,7 @@ class WorkerPool {
   private final ExecutorService pool;
   private final PoolMetrics metrics;
 
-  public WorkerPool(ExecutorService pool, PoolMetrics metrics) {
+  WorkerPool(ExecutorService pool, PoolMetrics metrics) {
     this.orderedFact = new OrderedExecutorFactory(pool);
     this.pool = pool;
     this.metrics = metrics;
