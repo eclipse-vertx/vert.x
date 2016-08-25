@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import org.junit.Test;
 
@@ -27,8 +28,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -223,5 +226,27 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       }
     }, new DeploymentOptions().setWorker(true).setWorkerPoolName(poolName), onSuccess(deployment::set));
     waitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
+  }
+
+  @Test
+  public void testCloseWorkerPoolsWhenVertxCloses() {
+    Vertx vertx = Vertx.vertx();
+    WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-123");
+    vertx.close(v -> {
+      try {
+        vertx.executeBlocking(fut -> fail(), ar -> fail());
+        fail();
+      } catch (RejectedExecutionException ignore) {
+      }
+      try {
+        exec.executeBlocking(fut -> fail(), ar -> fail());
+        fail();
+      } catch (RejectedExecutionException ignore) {
+      }
+      // Check we can still close
+      exec.close();
+      testComplete();
+    });
+    await();
   }
 }

@@ -706,6 +706,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
       workerPool.close();
       internalBlockingPool.close();
+      new ArrayList<>(namedWorkerPools.values()).forEach(WorkerPool::close);
 
       acceptorEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
         @Override
@@ -889,22 +890,29 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   class SharedWorkerPool extends WorkerPool {
 
-    private final ExecutorService workerExec;
     private final String name;
     private int refCount = 1;
 
-    public SharedWorkerPool(String name, ExecutorService workerExec, PoolMetrics workerMetrics) {
+    SharedWorkerPool(String name, ExecutorService workerExec, PoolMetrics workerMetrics) {
       super(workerExec, workerMetrics);
-      this.workerExec = workerExec;
       this.name = name;
+    }
+
+    @Override
+    void close() {
+      synchronized (VertxImpl.this) {
+        if (refCount > 0) {
+          refCount = 0;
+          super.close();
+        }
+      }
     }
 
     void release() {
       synchronized (VertxImpl.this) {
         if (--refCount == 0) {
           releaseWorkerExecutor(name);
-          close();
-          workerExec.shutdownNow();
+          super.close();
         }
       }
     }
