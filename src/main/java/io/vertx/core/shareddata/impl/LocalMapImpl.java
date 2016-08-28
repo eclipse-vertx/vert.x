@@ -33,11 +33,11 @@ import static io.vertx.core.shareddata.impl.Checker.*;
  */
 class LocalMapImpl<K, V> implements LocalMap<K, V> {
 
-  private final ConcurrentMap<Object, LocalMap<?, ?>> maps;
+  private final ConcurrentMap<String, LocalMap<?, ?>> maps;
   private final String name;
   private final ConcurrentMap<K, V> map = new ConcurrentHashMap<>();
 
-  LocalMapImpl(String name, ConcurrentMap<Object, LocalMap<?, ?>> maps) {
+  LocalMapImpl(String name, ConcurrentMap<String, LocalMap<?, ?>> maps) {
     this.name = name;
     this.maps = maps;
   }
