@@ -45,7 +45,7 @@ public class SharedDataImpl implements SharedData {
   private final ClusterManager clusterManager;
   private final ConcurrentMap<String, AsynchronousLock> localLocks = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Counter> localCounters = new ConcurrentHashMap<>();
-  private final ConcurrentMap<Object, LocalMap<?, ?>> localMaps = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, LocalMap<?, ?>> localMaps = new ConcurrentHashMap<>();
 
   public SharedDataImpl(VertxInternal vertx, ClusterManager clusterManager) {
     this.vertx = vertx;
@@ -105,36 +105,19 @@ public class SharedDataImpl implements SharedData {
    */
   @SuppressWarnings("unchecked")
   public <K, V> LocalMap<K, V> getLocalMap(String name) {
-    LocalMap<K, V> map = (LocalMap<K, V>) localMaps.get(name);
-    if (map == null) {
-      map = new LocalMapImpl<>(name, localMaps);
-      LocalMap prev = localMaps.putIfAbsent(name, map);
-      if (prev != null) {
-        map = prev;
-      }
-    }
-    return map;
+    return (LocalMap<K, V>) localMaps.computeIfAbsent(name, n -> new LocalMapImpl<>(n, localMaps));
   }
 
 
   private void getLocalLock(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-    AsynchronousLock lock = new AsynchronousLock(vertx);
-    AsynchronousLock prev = localLocks.putIfAbsent(name, lock);
-    if (prev != null) {
-      lock = prev;
-    }
+    AsynchronousLock lock = localLocks.computeIfAbsent(name, n -> new AsynchronousLock(vertx));
     lock.acquire(timeout, resultHandler);
   }
 
   private void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
-    Counter counter = new AsynchronousCounter(vertx);
-    Counter prev = localCounters.putIfAbsent(name, counter);
-    if (prev != null) {
-      counter = prev;
-    }
-    Counter theCounter = counter;
+    Counter counter = localCounters.computeIfAbsent(name, n -> new AsynchronousCounter(vertx));
     Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(theCounter)));
+    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter)));
   }
 
   private static void checkType(Object obj) {
