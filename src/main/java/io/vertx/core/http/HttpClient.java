@@ -235,6 +235,8 @@ public interface HttpClient extends Measured {
   @Fluent
   HttpClient getNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
+  HttpClientRequestBuilder createGet(int port, String host, String requestURI);
+
   /**
    * Create an HTTP POST request to send to the server at the specified host and port.
    * @param port  the port

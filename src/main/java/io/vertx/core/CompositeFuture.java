@@ -213,6 +213,11 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    */
   boolean isComplete(int index);
 
+  // Needed for now
+  @GenIgnore
+  @Override
+  CompositeFuture result();
+
   /**
    * Returns the result of a wrapped future
    *

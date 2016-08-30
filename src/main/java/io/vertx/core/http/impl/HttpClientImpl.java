@@ -399,6 +399,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClientRequestBuilder createGet(int port, String host, String requestURI) {
+    HttpClientRequestBuilderImpl get = new HttpClientRequestBuilderImpl(this, HttpMethod.GET);
+    get.port = port;
+    get.host = host;
+    get.requestURI = requestURI;
+    return get;
+  }
+
+  @Override
   public HttpClientRequest post(int port, String host, String requestURI) {
     return request(HttpMethod.POST, port, host, requestURI);
   }
