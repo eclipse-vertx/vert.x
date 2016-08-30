@@ -21,6 +21,11 @@ import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -632,6 +637,36 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     String encoded = buffer.getString(start, start + length);
     fromJson(encoded);
     return pos + length + 4;
+  }
+
+  /**
+   * Reduce / collects a stream's values into a JsonArray
+   *
+   * @param <T> the type of the elements in the collected stream
+   * @return a Collector, ready to use in Stream.collect(...)
+   */
+  public static<T> Collector<T, JsonArray, JsonArray> collector() {
+    return new Collector<T, JsonArray, JsonArray>() {
+      @Override public Supplier<JsonArray> supplier() {
+        return JsonArray::new;
+      }
+
+      @Override public BiConsumer<JsonArray, T> accumulator() {
+        return JsonArray::add;
+      }
+
+      @Override public BinaryOperator<JsonArray> combiner() {
+        return JsonArray::addAll;
+      }
+
+      @Override public Function<JsonArray, JsonArray> finisher() {
+        return Function.identity();
+      }
+
+      @Override public Set<Characteristics> characteristics() {
+        return EnumSet.of(Characteristics.IDENTITY_FINISH);
+      }
+    };
   }
 
   private void fromJson(String json) {
