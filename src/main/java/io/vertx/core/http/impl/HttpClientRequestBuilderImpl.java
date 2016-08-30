@@ -91,6 +91,9 @@ public class HttpClientRequestBuilderImpl implements HttpClientRequestBuilder {
   private void perform(ReadStream<Buffer> stream, Handler<AsyncResult<HttpClientResponse>> handler) {
     Future<HttpClientResponse> fut = Future.future();
     HttpClientRequest req = client.request(method, port, host, requestURI);
+    if (headers != null) {
+      req.headers().addAll(headers);
+    }
     req.exceptionHandler(err -> {
       if (!fut.isComplete()) {
         fut.fail(err);
@@ -105,11 +108,12 @@ public class HttpClientRequestBuilderImpl implements HttpClientRequestBuilder {
       Pump pump = Pump.pump(stream, req);
       pump.start();
       stream.endHandler(v -> {
+        pump.stop();
         req.end();
       });
     } else {
       req.end();
     }
-    handler.handle(fut);
+    fut.setHandler(handler);
   }
 }
