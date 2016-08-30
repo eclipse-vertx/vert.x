@@ -166,7 +166,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
           // Provide a memory barrier as we are setting from a different thread
           synchronized (VertxImpl.this) {
             haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(),
-                                      options.getHAGroup(), haEnabled);
+                                      options.getHAGroup(), haEnabled, options.isHFTEnabled(), options.getHFTInterval());
             createAndStartEventBus(options, resultHandler);
           }
         }

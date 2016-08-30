@@ -114,6 +114,16 @@ public class VertxOptions {
   public static final boolean DEFAULT_HA_ENABLED = false;
 
   /**
+   * The default value of HFT enabled = false
+   */
+  public static final boolean DEFAULT_HFT_ENABLED = false;
+  
+  /**
+   * The default value of the HFT messages when HFT is enabled, in millis
+   */
+  public static final long DEFAULT_HFT_INTERVAL = 10000;
+
+  /**
    * The default value of warning exception time 5000000000 ns (5 seconds)
    * If a thread is blocked longer than this threshold, the warning log
    * contains a stack trace
@@ -523,6 +533,48 @@ public class VertxOptions {
    */
   public VertxOptions setHAEnabled(boolean haEnabled) {
     this.haEnabled = haEnabled;
+    return this;
+  }
+  
+  /**
+   * Will HFT (High Fault Tolerance) be enabled on the Vert.x instance?
+   *
+   * @return true if HFT enabled, false otherwise
+   */
+  public boolean isHFTEnabled() {
+    return eventBusOptions.isHFTEnabled();
+  }
+  
+  /**
+   * Set whether HFT (High Fault Tolerance) will be enabled on the Vert.x instance.
+   *
+   * @param hftEnabled true if enabled, false if not.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setHFTEnabled(boolean hftEnabled) {
+	  eventBusOptions.setHFTEnabled(hftEnabled);
+	  return this;
+  }
+  
+  /**
+   * Get the value of cluster HFT (High Fault Tolerance) messages interval, in ms.
+   * <p>
+   * In order to guarantee consistency of vertx internal maps (HFT enabled), cluster map and subscribers map need to be constantly resynchronized, at each interval
+   *
+   * @return the value of cluster ping reply interval
+   */
+  public long getHFTInterval() {
+	  return eventBusOptions.getHFTInterval();
+  }
+  
+  /**
+   * When HFT (High Fault Tolerance) is enabled, set the interval between internal vertx synchronization
+   *
+   * @param hftInterval interval in miliis
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setHFTInterval(long hftInterval) {
+    eventBusOptions.setHFTInterval(hftInterval);
     return this;
   }
 
