@@ -53,7 +53,8 @@
 
   <properties>
 
-    <netty.version>4.1.4.Final</netty.version>
+    <netty.version>4.1.5.Final</netty.version>
+    <tcnative.version>1.1.33.Fork21</tcnative.version>
     <jackson.version>2.7.4</jackson.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
@@ -205,7 +206,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>1.1.33.Fork19</version>
+      <version>${tcnative.version}</version>
       <scope>test</scope>
     </dependency>
 

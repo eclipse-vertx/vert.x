@@ -68,6 +68,7 @@ import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -624,7 +625,7 @@ public class Http2ClientTest extends Http2TestBase {
     }).exceptionHandler(err -> {
       Context ctx = Vertx.currentContext();
       assertOnIOContext(ctx);
-      assertEquals(err.getClass(), java.net.ConnectException.class);
+      assertTrue(err instanceof ConnectException);
       testComplete();
     }).end();
     await();
