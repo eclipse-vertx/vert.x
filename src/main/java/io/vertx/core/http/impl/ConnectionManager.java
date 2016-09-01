@@ -313,7 +313,6 @@ public class ConnectionManager {
     }
 
     private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, Waiter waiter) {
-      cause.printStackTrace();
       SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
       if (cause != null) {
         sslException.initCause(cause);
