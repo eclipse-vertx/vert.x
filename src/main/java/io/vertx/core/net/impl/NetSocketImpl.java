@@ -306,6 +306,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
     if (pendingData != null) {
       data = pendingData.appendBuffer(data);
+      pendingData = null;
     }
     reportBytesRead(data.length());
     if (dataHandler != null) {
