@@ -200,13 +200,13 @@ public class NetClientImpl implements NetClient, MetricsProvider {
           io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
           fut.addListener(future2 -> {
             if (future2.isSuccess()) {
-              connected(context, ch, connectHandler);
+              connected(context, ch, connectHandler, host, port);
             } else {
               failed(context, ch, future2.cause(), connectHandler);
             }
           });
         } else {
-          connected(context, ch, connectHandler);
+          connected(context, ch, connectHandler, host, port);
         }
 
       } else {
@@ -227,10 +227,12 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelInitializer, channelHandler);
   }
 
-  private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
+  private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, String host, int port) {
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
     NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics, null);
+    // remember host and port in case upgradeToSsl needs it
+    sock.setHostPort(host, port);
     VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
     handler.conn = sock;
     socketMap.put(ch, sock);

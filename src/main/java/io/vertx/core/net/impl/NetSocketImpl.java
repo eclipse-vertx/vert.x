@@ -64,6 +64,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private final SSLHelper helper;
   private final boolean client;
   private Object metric;
+  private String host;
+  private int port;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
@@ -79,6 +81,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     this.metric = metric;
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
+  }
+
+  protected void setHostPort(String host, int port) {
+    this.host = host;
+    this.port = port;
   }
 
   protected synchronized void setMetric(Object metric) {
@@ -246,8 +253,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   public synchronized NetSocket upgradeToSsl(final Handler<Void> handler) {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
-
-      sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
+      if (host != null) {
+        sslHandler = helper.createSslHandler(vertx, host, port);
+      } else {
+        sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
+      }
       channel.pipeline().addFirst("ssl", sslHandler);
     }
     sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {
