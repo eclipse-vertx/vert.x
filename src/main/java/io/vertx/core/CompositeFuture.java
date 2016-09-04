@@ -243,7 +243,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
     int size = size();
     ArrayList<T> list = new ArrayList<>(size);
     for (int index = 0;index < size;index++) {
-      list.add(result(index));
+      list.add(resultAt(index));
     }
     return list;
   }
