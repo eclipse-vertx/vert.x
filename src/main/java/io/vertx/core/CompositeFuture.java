@@ -218,7 +218,16 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * @param index the wrapped future index
    */
+  @GenIgnore
+  @Deprecated
   <T> T result(int index);
+
+  /**
+   * Returns the result of a wrapped future
+   *
+   * @param index the wrapped future index
+   */
+  <T> T resultAt(int index);
 
   /**
    * @return the number of wrapped future
@@ -234,7 +243,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
     int size = size();
     ArrayList<T> list = new ArrayList<>(size);
     for (int index = 0;index < size;index++) {
-      list.add(result(index));
+      list.add(resultAt(index));
     }
     return list;
   }

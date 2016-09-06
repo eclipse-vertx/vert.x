@@ -281,7 +281,9 @@ public class HAManager {
 
       for (Map.Entry<String, String> entry: clusterMap.entrySet()) {
         if (!leftNodeID.equals(entry.getKey()) && !nodes.contains(entry.getKey())) {
-          checkFailover(entry.getKey(), new JsonObject(entry.getValue()));
+          JsonObject haInfo = new JsonObject(entry.getValue());
+          checkRemoveSubs(entry.getKey(), haInfo);
+          checkFailover(entry.getKey(), haInfo);
         }
       }
     }
