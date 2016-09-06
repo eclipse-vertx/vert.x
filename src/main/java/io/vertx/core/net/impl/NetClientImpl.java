@@ -230,9 +230,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, String host, int port) {
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
-    NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics, null);
-    // remember host and port in case upgradeToSsl needs it
-    sock.setHostPort(host, port);
+    NetSocketImpl sock = new NetSocketImpl(vertx, ch, host, port, context, sslHelper, metrics, null);
     VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
     handler.conn = sock;
     socketMap.put(ch, sock);
