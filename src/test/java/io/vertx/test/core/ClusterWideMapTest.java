@@ -111,6 +111,23 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapPutTtl() {
+    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+      map.put("pipo", "molo", 10, onSuccess(vd -> {
+        vertx.setTimer(10, l -> {
+          getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map2 -> {
+            map2.get("pipo", onSuccess(res -> {
+              assertNull(res);
+              testComplete();
+            }));
+          }));
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testMapPutIfAbsentGetByte() {
     testMapPutIfAbsentGet((byte)1, (byte)2);
   }
@@ -170,7 +187,23 @@ public class ClusterWideMapTest extends VertxTestBase {
     testMapPutIfAbsentGet(new SomeSerializableObject("bar"), new SomeSerializableObject("bar"));
   }
 
-
+  @Test
+  public void testMapPutIfAbsentTtl() {
+    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+      map.putIfAbsent("pipo", "molo", 10, onSuccess(vd -> {
+        assertNull(vd);
+        vertx.setTimer(10, l -> {
+          getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map2 -> {
+            map2.get("pipo", onSuccess(res -> {
+              assertNull(res);
+              testComplete();
+            }));
+          }));
+        });
+      }));
+    }));
+    await();
+  }
 
   @Test
   public void testMapRemoveByte() {

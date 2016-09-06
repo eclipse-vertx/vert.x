@@ -16,7 +16,11 @@
 
 package io.vertx.test.fakecluster;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -28,7 +32,13 @@ import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -257,7 +267,12 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
-      putIfAbsent(k, v, completionHandler);
+      Future<V> future = Future.future();
+      putIfAbsent(k, v, future.completer());
+      future.map(vv -> {
+        if (vv == null) vertx.setTimer(timeout, tid -> map.remove(k));
+        return vv;
+      }).setHandler(completionHandler);
     }
 
     @Override
