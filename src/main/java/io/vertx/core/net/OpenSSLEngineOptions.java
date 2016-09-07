@@ -16,7 +16,6 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
    * @return when OpenSSL is available
    */
   public static boolean isAvailable() {
-    OpenSsl.unavailabilityCause();
     return OpenSsl.isAvailable();
   }
 
