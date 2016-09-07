@@ -14,7 +14,7 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.HttpTestBase;
-import io.vertx.test.core.TLSCert;
+import io.vertx.test.core.tls.Cert;
 import org.junit.Test;
 
 /**
@@ -66,7 +66,7 @@ public class SSLEngineTest extends HttpTestBase {
         .setSslEngineOptions(engine)
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
-        .setKeyCertOptions(TLSCert.PEM.getServerKeyCertOptions())
+        .setKeyCertOptions(Cert.SERVER_PEM.get())
         .setSsl(true)
         .setUseAlpn(useAlpn);
     try {

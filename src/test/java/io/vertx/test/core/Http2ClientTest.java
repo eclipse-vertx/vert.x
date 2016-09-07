@@ -65,6 +65,8 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -108,7 +110,7 @@ public class Http2ClientTest extends Http2TestBase {
     super.setUp();
     clientOptions = new HttpClientOptions().
         setUseAlpn(true).
-        setTrustStoreOptions((JksOptions) TLSCert.JKS.getClientTrustOptions()).
+        setTrustStoreOptions(Trust.SERVER_JKS.get()).
         setProtocolVersion(HttpVersion.HTTP_2);
     client = vertx.createHttpClient(clientOptions);
   }
@@ -1068,7 +1070,7 @@ public class Http2ClientTest extends Http2TestBase {
     bootstrap.childHandler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        SSLHelper sslHelper = new SSLHelper(serverOptions, TLSCert.JKS.getServerKeyCertOptions(), null);
+        SSLHelper sslHelper = new SSLHelper(serverOptions, Cert.SERVER_JKS.get(), null);
         SslHandler sslHandler = sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createSslHandler((VertxInternal) vertx, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
         ch.pipeline().addLast(sslHandler);
         ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {

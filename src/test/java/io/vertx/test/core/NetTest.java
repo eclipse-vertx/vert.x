@@ -29,6 +29,8 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -2358,14 +2360,14 @@ public class NetTest extends VertxTestBase {
         .setPort(1234)
         .setHost("localhost")
         .setSsl(true)
-        .setKeyCertOptions(TLSCert.JKS_ROOT_CA.getServerKeyCertOptions());
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get());
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
         .setHostnameVerificationAlgorithm("HTTPS")
         .setSsl(true)
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("127.0.0.1").setPort(11080))
-        .setTrustOptions(TLSCert.JKS_ROOT_CA.getClientTrustOptions());
+        .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -2394,13 +2396,13 @@ public class NetTest extends VertxTestBase {
         .setPort(1234)
         .setHost("localhost")
         .setSsl(true)
-        .setKeyCertOptions(TLSCert.JKS_ROOT_CA.getServerKeyCertOptions());
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get());
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
         .setHostnameVerificationAlgorithm("HTTPS")
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("127.0.0.1").setPort(11080))
-        .setTrustOptions(TLSCert.JKS_ROOT_CA.getClientTrustOptions());
+        .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -2548,12 +2550,12 @@ public class NetTest extends VertxTestBase {
   public void testTLSHostnameCertCheckCorrect() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
-        .setKeyCertOptions(TLSCert.JKS_ROOT_CA.getServerKeyCertOptions()));
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
     server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
 
       NetClientOptions options = new NetClientOptions()
           .setHostnameVerificationAlgorithm("HTTPS")
-          .setTrustOptions(TLSCert.JKS_ROOT_CA.getClientTrustOptions());
+          .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
 
       NetClient client = vertx.createNetClient(options);
 
@@ -2579,12 +2581,12 @@ public class NetTest extends VertxTestBase {
   public void testTLSHostnameCertCheckIncorrect() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
-        .setKeyCertOptions(TLSCert.JKS_ROOT_CA.getServerKeyCertOptions()));
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
     server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
 
       NetClientOptions options = new NetClientOptions()
           .setHostnameVerificationAlgorithm("HTTPS")
-          .setTrustOptions(TLSCert.JKS_ROOT_CA.getClientTrustOptions());
+          .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
 
       NetClient client = vertx.createNetClient(options);
 
