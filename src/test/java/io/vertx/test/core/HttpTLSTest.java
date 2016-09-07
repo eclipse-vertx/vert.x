@@ -128,6 +128,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA, Cert.SERVER_PEM_ROOT_CA, Trust.NONE).pass();
   }
 
+  // These two tests should be grouped in same method - todo later
+  @Test
+  // Server specifies cert that the client trusts via a root CA that is in a multi pem store (not trust all)
+  public void testTLSClientTrustServerCertMultiPemWithPEMRootCA() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA_AND_OTHER_CA, Cert.SERVER_PEM_ROOT_CA, Trust.NONE).pass();
+  }
+  @Test
+  // Server specifies cert that the client trusts via a other CA that is in a multi pem store (not trust all)
+  public void testTLSClientTrustServerCertMultiPemWithPEMOtherCA() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA_AND_OTHER_CA, Cert.SERVER_PEM_OTHER_CA, Trust.NONE).pass();
+  }
+
   @Test
   // Server specifies cert chain that the client trusts via a CA (not trust all)
   public void testTLSClientTrustServerCertPEMRootCAWithPEMCAChain() throws Exception {

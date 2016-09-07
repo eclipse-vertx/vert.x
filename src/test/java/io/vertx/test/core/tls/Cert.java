@@ -25,6 +25,7 @@ public interface Cert<K extends KeyCertOptions> extends Supplier<K> {
   Cert<PemKeyCertOptions> CLIENT_PEM_ROOT_CA = () -> new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert-root-ca.pem");
   Cert<PemKeyCertOptions> SERVER_PEM_INT_CA = () -> new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-int-ca.pem");
   Cert<PemKeyCertOptions> SERVER_PEM_CA_CHAIN = () -> new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-ca-chain.pem");
+  Cert<PemKeyCertOptions> SERVER_PEM_OTHER_CA = () -> new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-other-ca.pem");
   Cert<JksOptions> SERVER_MIM = () -> new JksOptions().setPath("tls/mim-server-keystore.jks").setPassword("wibble");
 
 }

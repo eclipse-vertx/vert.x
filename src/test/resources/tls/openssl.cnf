@@ -11,6 +11,16 @@ default_days     = 365
 crlnumber        = root-ca/crlnumber
 default_crl_days = 365
 
+[ CA_other ]
+new_certs_dir    = other-ca
+database         = other-ca/index.txt
+default_md       = sha1
+policy           = policy_match
+serial           = other-ca/serial
+default_days     = 365
+crlnumber        = other-ca/crlnumber
+default_crl_days = 365
+
 [ CA_int ]
 new_certs_dir    = int-ca
 database         = int-ca/index.txt
