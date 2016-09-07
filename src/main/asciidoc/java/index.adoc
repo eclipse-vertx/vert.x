@@ -1118,7 +1118,7 @@ dies. To create a _bare_ instance, launch:
 
 [source]
 ----
-vertx -ha
+vertx bare
 ----
 
 Depending on your cluster configuration, you may have to append the `cluster-host` and `cluster-port` parameters.
