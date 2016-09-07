@@ -31,36 +31,36 @@ public class SSLEngineTest extends HttpTestBase {
 
   @Test
   public void testDefaultEngineWithAlpn() throws Exception {
-    doTest(null, true, HttpVersion.HTTP_2, JDK | OPEN_SSL ? "ALPN is not available" : null, EXPECTED_SSL_CONTEXT);
+    doTest(null, true, HttpVersion.HTTP_2, JDK | OPEN_SSL ? "ALPN is not available" : null, EXPECTED_SSL_CONTEXT, false);
   }
 
   @Test
   public void testJdkEngineWithAlpn() throws Exception {
-    doTest(new JdkSSLEngineOptions(), true, HttpVersion.HTTP_2, JDK ? "ALPN not available for JDK SSL/TLS engine" : null, "jdk");
+    doTest(new JdkSSLEngineOptions(), true, HttpVersion.HTTP_2, JDK ? "ALPN not available for JDK SSL/TLS engine" : null, "jdk", false);
   }
 
   @Test
   public void testOpenSSLEngineWithAlpn() throws Exception {
-    doTest(new OpenSSLEngineOptions(), true, HttpVersion.HTTP_2, OPEN_SSL ? "OpenSSL is not available" : null, "openssl");
+    doTest(new OpenSSLEngineOptions(), true, HttpVersion.HTTP_2, OPEN_SSL ? "OpenSSL is not available" : null, "openssl", true);
   }
 
   @Test
   public void testDefaultEngine() throws Exception {
-    doTest(null, false, HttpVersion.HTTP_1_1, null, "jdk");
+    doTest(null, false, HttpVersion.HTTP_1_1, null, "jdk", false);
   }
 
   @Test
   public void testJdkEngine() throws Exception {
-    doTest(new JdkSSLEngineOptions(), false, HttpVersion.HTTP_1_1, null, "jdk");
+    doTest(new JdkSSLEngineOptions(), false, HttpVersion.HTTP_1_1, null, "jdk", false);
   }
 
   @Test
   public void testOpenSSLEngine() throws Exception {
-    doTest(new OpenSSLEngineOptions(), false, HttpVersion.HTTP_1_1, "OpenSSL is not available", "openssl");
+    doTest(new OpenSSLEngineOptions(), false, HttpVersion.HTTP_1_1, "OpenSSL is not available", "openssl", true);
   }
 
   private void doTest(SSLEngineOptions engine,
-                      boolean useAlpn, HttpVersion version, String error, String expectedSslContext) {
+                      boolean useAlpn, HttpVersion version, String error, String expectedSslContext, boolean expectCause) {
     server.close();
     HttpServerOptions options = new HttpServerOptions()
         .setSslEngineOptions(engine)
@@ -77,6 +77,9 @@ public class SSLEngineTest extends HttpTestBase {
         fail(e);
       } else {
         assertEquals(error, e.getMessage());
+        if (expectCause) {
+          assertNotSame(e, e.getCause());
+        }
       }
       return;
     }
