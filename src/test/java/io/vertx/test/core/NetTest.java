@@ -2222,8 +2222,8 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
-  // TODO: this test probably doesn't make sense since it sets HostnameVerification
-  // but also trustAll, which turns off the whole ssl cert checking
+  // this test sets HostnameVerification but also trustAll, it fails if hostname is
+  // incorrect but does not verify the certificate validity
 
   @Test
   public void testHostVerificationHttpsMatching() {
