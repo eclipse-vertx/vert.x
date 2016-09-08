@@ -765,10 +765,10 @@
  *
  * Keep in mind that the timer will fire on a periodic basis. If your periodic treatment takes a long amount of time to proceed,
  * your timer events could run continuously or even worse : stack up.
- * 
+ *
  * In this case, you should consider using {@link io.vertx.core.Vertx#setTimer} instead. Once your treatment has
  * finished, you can set the next timer.
- * 
+ *
  * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example16}
@@ -1019,7 +1019,7 @@
  *
  * [source]
  * ----
- * vertx -ha
+ * vertx bare
  * ----
  *
  * Depending on your cluster configuration, you may have to append the `cluster-host` and `cluster-port` parameters.
