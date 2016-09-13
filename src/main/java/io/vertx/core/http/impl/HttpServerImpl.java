@@ -284,6 +284,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                   pipeline.addLast(new Http1xOrHttp2Handler());
                 }
               }
+              HttpServerImpl.this.onChannelInitialized(ch);
             }
         });
 
@@ -338,6 +339,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       });
     }
     return this;
+  }
+
+  // Visible for testing
+  protected void onChannelInitialized(Channel ch) {
   }
 
   private VertxHttp2ConnectionHandler<Http2ServerConnection> createHttp2Handler(HandlerHolder<HttpHandler> holder, Channel ch) {
