@@ -145,6 +145,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private ContextImpl listenContext;
   private HttpServerMetrics metrics;
   private boolean logEnabled;
+  private Handler<Throwable> connectionExceptionHandler;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
@@ -159,6 +160,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.subProtocols = options.getWebsocketSubProtocols();
     this.logEnabled = options.getLogActivity();
+    connectionExceptionHandler = t -> {log.trace("Connection failure", t);};
   }
 
   @Override
@@ -341,10 +343,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   // Visible for testing
-  protected void handleConnectionException(ChannelHandlerContext ctx, Throwable cause) {
-    Channel channel = ctx.channel();
-    log.trace("Connection failure", cause);
-    channel.close();
+  public HttpServerImpl setConnectionExceptionHandler(Handler<Throwable> connectionExceptionHandler) {
+    this.connectionExceptionHandler = connectionExceptionHandler;
+    return this;
   }
 
   private VertxHttp2ConnectionHandler<Http2ServerConnection> createHttp2Handler(HandlerHolder<HttpHandler> holder, Channel ch) {
@@ -1065,7 +1066,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      HttpServerImpl.this.handleConnectionException(ctx, cause);
+      ctx.channel().close();
+      HttpServerImpl.this.connectionExceptionHandler.handle(cause);
     }
   }
 }

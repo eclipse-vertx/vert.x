@@ -16,11 +16,8 @@
 
 package io.vertx.test.core;
 
-import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import org.junit.Test;
@@ -47,14 +44,13 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     CountDownLatch listenLatch = new CountDownLatch(1);
-    httpServer = new HttpServerImpl((VertxInternal) vertx, new HttpServerOptions()) {
-      @Override
-      protected void handleConnectionException(ChannelHandlerContext ctx, Throwable cause) {
-        super.handleConnectionException(ctx, cause);
-        caught.set(cause);
-        resetLatch.countDown();
-      }
-    }.requestHandler(request -> {}).listen(8080, onSuccess(server -> listenLatch.countDown()));
+    httpServer = vertx.createHttpServer()
+      .requestHandler(request -> {})
+      .listen(8080, onSuccess(server -> listenLatch.countDown()));
+    ((HttpServerImpl) httpServer).setConnectionExceptionHandler(t -> {
+      caught.set(t);
+      resetLatch.countDown();
+    });
     awaitLatch(listenLatch);
   }
 
