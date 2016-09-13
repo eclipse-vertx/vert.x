@@ -16,9 +16,7 @@
 
 package io.vertx.test.core;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
@@ -27,8 +25,11 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * Make sure that the Netty pipeline has a handler catching the {@link java.io.IOException} if the connection is reset
@@ -48,8 +49,10 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     httpServer = new HttpServerImpl((VertxInternal) vertx, new HttpServerOptions()) {
       @Override
-      protected void onChannelInitialized(Channel ch) {
-        ch.pipeline().addFirst(new ResetLatchCountDown()).addLast(new ThrowableRecorder());
+      protected void handleConnectionException(ChannelHandlerContext ctx, Throwable cause) {
+        super.handleConnectionException(ctx, cause);
+        caught.set(cause);
+        resetLatch.countDown();
       }
     }.requestHandler(request -> {}).listen(8080, onSuccess(server -> listenLatch.countDown()));
     awaitLatch(listenLatch);
@@ -59,7 +62,7 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
   public void testExceptionCaught() throws Exception {
     vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(8080, "localhost", onSuccess(NetSocket::close));
     awaitLatch(resetLatch);
-    assertNull(caught.get());
+    assertThat(caught.get(), instanceOf(IOException.class));
   }
 
   @Override
@@ -70,39 +73,5 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
       awaitLatch(closeLatch);
     }
     super.tearDown();
-  }
-
-  private class ResetLatchCountDown extends SimpleChannelInboundHandler<Object> {
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-    }
-
-    @Override
-    public boolean acceptInboundMessage(Object msg) throws Exception {
-      return false;
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      super.exceptionCaught(ctx, cause);
-      ctx.executor().submit(resetLatch::countDown);
-    }
-  }
-
-  private class ThrowableRecorder extends SimpleChannelInboundHandler<Object> {
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-    }
-
-    @Override
-    public boolean acceptInboundMessage(Object msg) throws Exception {
-      return false;
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      super.exceptionCaught(ctx, cause);
-      caught.set(cause);
-    }
   }
 }

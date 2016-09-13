@@ -284,7 +284,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                   pipeline.addLast(new Http1xOrHttp2Handler());
                 }
               }
-              HttpServerImpl.this.onChannelInitialized(ch);
             }
         });
 
@@ -342,7 +341,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   // Visible for testing
-  protected void onChannelInitialized(Channel ch) {
+  protected void handleConnectionException(ChannelHandlerContext ctx, Throwable cause) {
+    Channel channel = ctx.channel();
+    log.trace("Connection failure", cause);
+    channel.close();
   }
 
   private VertxHttp2ConnectionHandler<Http2ServerConnection> createHttp2Handler(HandlerHolder<HttpHandler> holder, Channel ch) {
@@ -1062,10 +1064,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext chctx, Throwable cause) throws Exception {
-      Channel channel = chctx.channel();
-      log.trace("Connection failure", cause);
-      channel.close();
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+      HttpServerImpl.this.handleConnectionException(ctx, cause);
     }
   }
 }
