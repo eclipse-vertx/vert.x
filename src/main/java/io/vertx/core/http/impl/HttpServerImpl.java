@@ -1069,9 +1069,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       Channel channel = ctx.channel();
+      channel.close();
       HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(channel.eventLoop());
-      reqHandler.context.executeFromIO(channel::close);
-      HttpServerImpl.this.connectionExceptionHandler.handle(cause);
+      reqHandler.context.executeFromIO(() -> HttpServerImpl.this.connectionExceptionHandler.handle(cause));
     }
   }
 }
