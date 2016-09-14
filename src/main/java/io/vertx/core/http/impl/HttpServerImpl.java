@@ -98,6 +98,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -344,6 +345,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   // Visible for testing
   public HttpServerImpl setConnectionExceptionHandler(Handler<Throwable> connectionExceptionHandler) {
+    Objects.requireNonNull(connectionExceptionHandler, "connectionExceptionHandler");
     this.connectionExceptionHandler = connectionExceptionHandler;
     return this;
   }
@@ -1066,7 +1068,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      ctx.channel().close();
+      Channel channel = ctx.channel();
+      HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(channel.eventLoop());
+      reqHandler.context.executeFromIO(channel::close);
       HttpServerImpl.this.connectionExceptionHandler.handle(cause);
     }
   }
