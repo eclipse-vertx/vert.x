@@ -176,6 +176,25 @@ openssl pkcs12 -in client-keystore.p12 -nokeys -out client-cert.pem
 
 
 
+# Signed by other CA server->client
+(cert contains alt subject name "localhost" as required by Java for hostname verification)
+
+## PEM signed by other CA
+
+1) Create a other CA database
+
+mkdir other-ca
+openssl req -x509 -newkey rsa:2048 -subj "/CN=localhost" -keyout other-ca/ca-key.pem -out other-ca/ca-cert.pem
+touch other-ca/index.txt
+echo 01 > other-ca/serial
+echo 1000 > other-ca/crlnumber
+echo "unique_subject = no" > other-ca/index.txt.attr
+
+3) Sign the server cert with the other CA and convert it to the X.509 format
+
+openssl ca -config openssl.cnf -name CA_other -keyfile other-ca/ca-key.pem -cert other-ca/ca-cert.pem -in server-csr.pem  -extensions req_ext -extfile openssl.cnf | openssl x509 -out server-cert-other-ca.pem -outform PEM
+
+
 
 # PEM signed by root CA client-server (not sure this is useful)
 

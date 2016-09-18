@@ -20,6 +20,8 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
 /**
@@ -43,6 +45,6 @@ public class Http1xTLSTest extends HttpTLSTest {
   @Test
   // Client and server uses ALPN
   public void testAlpn() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).serverUsesAlpn().clientUsesAlpn().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverUsesAlpn().clientUsesAlpn().pass();
   }
 }

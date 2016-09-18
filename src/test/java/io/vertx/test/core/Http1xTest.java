@@ -1372,9 +1372,12 @@ public class Http1xTest extends HttpTest {
         requestCount.put(theServer, icnt);
         latchConns.countDown();
         req.response().end();
-      }).listen(onSuccess(s -> latchListen.countDown()));
+      }).listen(onSuccess(s -> {
+          assertEquals(DEFAULT_HTTP_PORT, s.actualPort());
+          latchListen.countDown();
+      }));
     }
-    assertTrue(latchListen.await(10, TimeUnit.SECONDS));
+    awaitLatch(latchListen);
 
 
     // Create a bunch of connections
@@ -2552,4 +2555,25 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
+  @Test
+  public void testRandomPorts() throws Exception {
+    int numServers = 10;
+    Set<Integer> ports = new HashSet<>();
+    AtomicInteger count = new AtomicInteger();
+    for (int i = 0;i < numServers;i++) {
+      vertx.createHttpServer().requestHandler(req -> {
+        req.response().end();
+      }).listen(0, DEFAULT_HTTP_HOST, onSuccess(s -> {
+        int port = s.actualPort();
+        ports.add(port);
+        client.getNow(port, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+          if (count.incrementAndGet() == numServers) {
+            assertEquals(numServers, ports.size());
+            testComplete();
+          }
+        });
+      }));
+    }
+    await();
+  }
 }

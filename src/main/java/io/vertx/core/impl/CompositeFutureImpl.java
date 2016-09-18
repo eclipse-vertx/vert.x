@@ -182,6 +182,11 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
     return this.<T>future(index).result();
   }
 
+  @Override
+  public <T> T resultAt(int index) {
+    return result(index);
+  }
+
   private <T> Future<T> future(int index) {
     if (index < 0 || index > results.length) {
       throw new IndexOutOfBoundsException();

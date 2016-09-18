@@ -62,7 +62,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private final String writeHandlerID;
   private final MessageConsumer registration;
   private final SSLHelper helper;
-  private final boolean client;
+  private final String host;
+  private final int port;
   private Object metric;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -71,12 +72,19 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private boolean paused = false;
   private ChannelFuture writeFuture;
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, TCPMetrics metrics, Object metric) {
+  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context,
+                       SSLHelper helper, TCPMetrics metrics, Object metric) {
+    this(vertx, channel, null, 0, context, helper, metrics, metric);
+  }
+
+  public NetSocketImpl(VertxInternal vertx, Channel channel, String host, int port, ContextImpl context,
+                       SSLHelper helper, TCPMetrics metrics, Object metric) {
     super(vertx, channel, context, metrics);
     this.helper = helper;
-    this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
     this.metric = metric;
+    this.host = host;
+    this.port = port;
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
   }
@@ -246,8 +254,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   public synchronized NetSocket upgradeToSsl(final Handler<Void> handler) {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
-
-      sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
+      if (host != null) {
+        sslHandler = helper.createSslHandler(vertx, host, port);
+      } else {
+        sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
+      }
       channel.pipeline().addFirst("ssl", sslHandler);
     }
     sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {
@@ -306,6 +317,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
     if (pendingData != null) {
       data = pendingData.appendBuffer(data);
+      pendingData = null;
     }
     reportBytesRead(data.length());
     if (dataHandler != null) {

@@ -765,10 +765,10 @@
  *
  * Keep in mind that the timer will fire on a periodic basis. If your periodic treatment takes a long amount of time to proceed,
  * your timer events could run continuously or even worse : stack up.
- * 
+ *
  * In this case, you should consider using {@link io.vertx.core.Vertx#setTimer} instead. Once your treatment has
  * finished, you can set the next timer.
- * 
+ *
  * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example16}
@@ -1019,7 +1019,7 @@
  *
  * [source]
  * ----
- * vertx -ha
+ * vertx bare
  * ----
  *
  * Depending on your cluster configuration, you may have to append the `cluster-host` and `cluster-port` parameters.
@@ -1577,6 +1577,37 @@
  * * {@code 14} if the system configuration is not meeting the system requirement (shc as java not found)
  * * {@code 15} if the main verticle cannot be deployed
  *
+ * == Configuring Vert.x cache
+ *
+ * When Vert.x needs to read a file from the classpath (embedded in a fat jar, in a jar form the classpath or a file
+ * that is on the classpath), it copies it to a cache directory. The reason behind this is simple: reading a file
+ * from a jar or from an input stream is blocking. So to avoid to pay the price every time, Vert.x copies the file to
+ * its cache directory and reads it from there every subsequent read. This behavior can be configured.
+ *
+ * First, by default, Vert.x uses `$CWD/.vertx` as cache directory. It creates a unique directory inside this one to
+ * avoid conflicts. This location can be configured by using the `vertx.cacheDirBase` system property. For instance
+ * if the current working directory is not writable (such as in an immutable container context), launch your
+ * application with:
+ *
+ * [source]
+ * ----
+ * vertx run my.Verticle -Dvertx.cacheDirBase=/tmp/vertx-cache
+ * # or
+ * java -jar my-fat.jar vertx.cacheDirBase=/tmp/vertx-cache
+ * ----
+ *
+ * IMPORTANT: the directory must be **writable**.
+ *
+ * When you are editing resources such as HTML, CSS or JavaScript, this cache mechanism can be annoying as it serves
+ * only the first version of the file (and so you won't see your edits if you reload your page). To avoid this
+ * behavior, launch your application with `-Dvertx.disableFileCaching=true`. With this setting, Vert.x still uses
+ * the cache, but always refresh the version stored in the cache with the original source. So if you edit a file
+ * served from the classpath and refresh your browser, Vert.x reads it from the classpath, copies it to the cache
+ * directory and serves it from there. Do not use this setting in production, it can kill your performances.
+ *
+ * Finally, you can disable completely the cache by using `-Dvertx.disableFileCPResolving=true`. This setting is not
+ * without consequences. Vert.x would be unable to read any files from the classpath (only from the file system). Be
+ * very careful when using this settings.
  *
  */
 @Document(fileName = "index.adoc")

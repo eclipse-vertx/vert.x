@@ -26,6 +26,8 @@ import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
 import javax.net.ssl.KeyManager;
@@ -281,12 +283,12 @@ public class KeyStoreTest extends VertxTestBase {
 
   @Test
   public void testJKSPath() throws Exception {
-    testKeyStore(TLSCert.JKS.getServerKeyCertOptions());
+    testKeyStore(Cert.SERVER_JKS.get());
   }
 
   @Test
   public void testJKSValue() throws Exception {
-    JksOptions options = (JksOptions) TLSCert.JKS.getServerKeyCertOptions();
+    JksOptions options = Cert.SERVER_JKS.get();
     Buffer store = vertx.fileSystem().readFileBlocking(options.getPath());
     options.setPath(null).setValue(store);
     testKeyStore(options);
@@ -294,12 +296,12 @@ public class KeyStoreTest extends VertxTestBase {
 
   @Test
   public void testPKCS12Path() throws Exception {
-    testKeyStore(TLSCert.PKCS12.getServerKeyCertOptions());
+    testKeyStore(Cert.SERVER_PKCS12.get());
   }
 
   @Test
   public void testPKCS12Value() throws Exception {
-    PfxOptions options = (PfxOptions) TLSCert.PKCS12.getServerKeyCertOptions();
+    PfxOptions options = Cert.SERVER_PKCS12.get();
     Buffer store = vertx.fileSystem().readFileBlocking(options.getPath());
     options.setPath(null).setValue(store);
     testKeyStore(options);
@@ -307,12 +309,12 @@ public class KeyStoreTest extends VertxTestBase {
 
   @Test
   public void testKeyCertPath() throws Exception {
-    testKeyStore(TLSCert.PEM.getServerKeyCertOptions());
+    testKeyStore(Cert.SERVER_PEM.get());
   }
 
   @Test
   public void testKeyCertValue() throws Exception {
-    PemKeyCertOptions options = (PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions();
+    PemKeyCertOptions options = Cert.SERVER_PEM.get();
     Buffer key = vertx.fileSystem().readFileBlocking(options.getKeyPath());
     options.setKeyValue(null).setKeyValue(key);
     Buffer cert = vertx.fileSystem().readFileBlocking(options.getCertPath());
@@ -322,12 +324,12 @@ public class KeyStoreTest extends VertxTestBase {
 
   @Test
   public void testCaPath() throws Exception {
-    testTrustStore(TLSCert.PEM.getServerTrustOptions());
+    testTrustStore(Trust.SERVER_PEM.get());
   }
 
   @Test
   public void testCaPathValue() throws Exception {
-    PemTrustOptions options = (PemTrustOptions) TLSCert.PEM.getServerTrustOptions();
+    PemTrustOptions options = Trust.SERVER_PEM.get();
     options.getCertPaths().
         stream().
         map(vertx.fileSystem()::readFileBlocking).
@@ -338,13 +340,13 @@ public class KeyStoreTest extends VertxTestBase {
 
   @Test
   public void testKeyOptionsEquality() {
-    JksOptions jksOptions = (JksOptions) TLSCert.JKS.getServerKeyCertOptions();
+    JksOptions jksOptions = Cert.SERVER_JKS.get();
     JksOptions jksOptionsCopy = new JksOptions(jksOptions);
 
-    PfxOptions pfxOptions = (PfxOptions) TLSCert.PKCS12.getServerKeyCertOptions();
+    PfxOptions pfxOptions = Cert.SERVER_PKCS12.get();
     PfxOptions pfxOptionsCopy = new PfxOptions(pfxOptions);
 
-    PemKeyCertOptions pemKeyCertOptions = (PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions();
+    PemKeyCertOptions pemKeyCertOptions = Cert.SERVER_PEM.get();
     PemKeyCertOptions pemKeyCertOptionsCopy = new PemKeyCertOptions(pemKeyCertOptions);
 
     assertEquals(jksOptions, jksOptionsCopy);

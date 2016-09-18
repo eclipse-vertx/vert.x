@@ -21,6 +21,10 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.TrustOptions;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -38,7 +42,7 @@ public class Http2TLSTest extends HttpTLSTest {
   }
 
   @Override
-  protected TLSTest testTLS(TLSCert clientCert, TLSCert clientTrust, TLSCert serverCert, TLSCert serverTrust) throws Exception {
+  protected TLSTest testTLS(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) throws Exception {
     return super.testTLS(clientCert, clientTrust, serverCert, serverTrust).version(HttpVersion.HTTP_2);
   }
 }

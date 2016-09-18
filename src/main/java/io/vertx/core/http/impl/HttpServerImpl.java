@@ -210,7 +210,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       this.actualPort = port; // Will be updated on bind for a wildcard port
       id = new ServerID(port, host);
       HttpServerImpl shared = vertx.sharedHttpServers().get(id);
-      if (shared == null) {
+      if (shared == null || port == 0) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);

@@ -220,16 +220,16 @@ public class FutureTest extends VertxTestBase {
     CompositeFuture composite = all.apply(f1, f2);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertNotCompleted();
-    assertEquals(null, composite.<String>result(0));
-    assertEquals(null, composite.<Integer>result(1));
+    assertEquals(null, composite.<String>resultAt(0));
+    assertEquals(null, composite.<Integer>resultAt(1));
     f1.complete("something");
     checker.assertNotCompleted();
-    assertEquals("something", composite.result(0));
-    assertEquals(null, composite.<Integer>result(1));
+    assertEquals("something", composite.resultAt(0));
+    assertEquals(null, composite.<Integer>resultAt(1));
     f2.complete(3);
     checker.assertSucceeded(composite);
-    assertEquals("something", composite.result(0));
-    assertEquals(3, (int)composite.result(1));
+    assertEquals("something", composite.resultAt(0));
+    assertEquals(3, (int)composite.resultAt(1));
   }
 
   @Test
@@ -257,8 +257,8 @@ public class FutureTest extends VertxTestBase {
     Exception cause = new Exception();
     f2.fail(cause);
     checker.assertFailed(cause);
-    assertEquals("s", composite.result(0));
-    assertEquals(null, composite.<Integer>result(1));
+    assertEquals("s", composite.resultAt(0));
+    assertEquals(null, composite.<Integer>resultAt(1));
   }
 
   @Test
@@ -312,8 +312,8 @@ public class FutureTest extends VertxTestBase {
     CompositeFuture composite = any.apply(f1, f2);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertNotCompleted();
-    assertEquals(null, composite.<String>result(0));
-    assertEquals(null, composite.<Integer>result(1));
+    assertEquals(null, composite.<String>resultAt(0));
+    assertEquals(null, composite.<Integer>resultAt(1));
     f1.complete("something");
     checker.assertSucceeded(composite);
     f2.complete(3);

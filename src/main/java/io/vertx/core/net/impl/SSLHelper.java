@@ -73,8 +73,13 @@ public class SSLHelper {
     if (engineOptions == null) {
       engineOptions = new JdkSSLEngineOptions();
     } else if (engineOptions instanceof OpenSSLEngineOptions) {
-      if (!OpenSSLEngineOptions.isAvailable()) {
-        throw new VertxException("OpenSSL is not available");
+      if (!OpenSsl.isAvailable()) {
+        VertxException ex = new VertxException("OpenSSL is not available");
+        Throwable cause = OpenSsl.unavailabilityCause();
+        if (cause != null) {
+          ex.initCause(cause);
+        }
+        throw ex;
       }
     }
 

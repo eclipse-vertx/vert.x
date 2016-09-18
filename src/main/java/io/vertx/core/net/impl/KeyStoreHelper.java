@@ -236,7 +236,7 @@ public abstract class KeyStoreHelper {
       Iterable<Buffer> iterable = certValues::iterator;
       for (Buffer certValue : iterable) {
         for (Certificate cert : loadCerts(certValue)) {
-          keyStore.setCertificateEntry("cert-" + count, cert);
+          keyStore.setCertificateEntry("cert-" + count++, cert);
         }
       }
       return keyStore;
