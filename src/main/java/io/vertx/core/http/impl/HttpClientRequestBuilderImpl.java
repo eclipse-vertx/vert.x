@@ -10,7 +10,9 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientRequestBuilder;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 
@@ -105,12 +107,21 @@ public class HttpClientRequestBuilderImpl implements HttpClientRequestBuilder {
       }
     });
     if (stream != null) {
+      if (headers == null || !headers.contains("Content-Length")) {
+        req.setChunked(true);
+      }
       Pump pump = Pump.pump(stream, req);
-      pump.start();
+      stream.exceptionHandler(err -> {
+        req.reset();
+        if (!fut.isComplete()) {
+          fut.fail(err);
+        }
+      });
       stream.endHandler(v -> {
         pump.stop();
         req.end();
       });
+      pump.start();
     } else {
       req.end();
     }
