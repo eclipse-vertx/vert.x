@@ -61,9 +61,33 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     vertxOptions.setMaxWorkerExecuteTime(1000000000);
     vertxOptions.setWarningExceptionTime(1000000000);
     Vertx newVertx = vertx(vertxOptions);
-    DeploymentOptions depolymentOptions = new DeploymentOptions();
-    depolymentOptions.setWorker(true);
-    newVertx.deployVerticle(verticle, depolymentOptions);
+    DeploymentOptions deploymentOptions = new DeploymentOptions();
+    deploymentOptions.setWorker(true);
+    newVertx.deployVerticle(verticle, deploymentOptions);
+    await();
+  }
+
+  @Test
+  public void testBlockCheckExecuteBlocking() throws Exception {
+    Verticle verticle = new AbstractVerticle() {
+      @Override
+      public void start() throws InterruptedException {
+        vertx.executeBlocking(fut -> {
+          try {
+            Thread.sleep(2000);
+          } catch (InterruptedException e) {
+            fail();
+          }
+          testComplete();
+        }, ar -> {});
+      }
+    };
+    // set warning threshold to 1s and the exception threshold as well
+    VertxOptions vertxOptions = new VertxOptions();
+    vertxOptions.setMaxWorkerExecuteTime(1000000000);
+    vertxOptions.setWarningExceptionTime(1000000000);
+    Vertx newVertx = vertx(vertxOptions);
+    newVertx.deployVerticle(verticle);
     await();
   }
 }

@@ -248,9 +248,13 @@ public abstract class ContextImpl implements ContextInternal {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     try {
       exec.execute(() -> {
+        VertxThread current = (VertxThread) Thread.currentThread();
         Object execMetric = null;
         if (metrics != null) {
           execMetric = metrics.begin(queueMetric);
+        }
+        if (!DISABLE_TIMINGS) {
+          current.executeStart();
         }
         Future<T> res = Future.future();
         try {
@@ -263,6 +267,10 @@ public abstract class ContextImpl implements ContextInternal {
           }
         } catch (Throwable e) {
           res.fail(e);
+        } finally {
+          if (!DISABLE_TIMINGS) {
+            current.executeEnd();
+          }
         }
         if (metrics != null) {
           metrics.end(execMetric, res.succeeded());
