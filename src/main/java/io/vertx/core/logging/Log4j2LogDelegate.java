@@ -19,6 +19,7 @@ package io.vertx.core.logging;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.message.FormattedMessage;
+import org.apache.logging.log4j.spi.ExtendedLogger;
 
 /**
  * A {@link LogDelegate} which delegates to Apache Log4j 2
@@ -27,10 +28,11 @@ import org.apache.logging.log4j.message.FormattedMessage;
  */
 public class Log4j2LogDelegate implements LogDelegate {
 
-  final org.apache.logging.log4j.Logger logger;
+  final ExtendedLogger logger;
+  final static String FQCN = Logger.class.getCanonicalName();
 
   Log4j2LogDelegate(final String name) {
-    logger = org.apache.logging.log4j.LogManager.getLogger(name);
+    logger = (ExtendedLogger) org.apache.logging.log4j.LogManager.getLogger(name);
   }
 
   public boolean isInfoEnabled() {
@@ -148,15 +150,15 @@ public class Log4j2LogDelegate implements LogDelegate {
   }
 
   private void log(Level level, Object message, Throwable t) {
-    logger.log(level, message, t);
+    logger.logIfEnabled(FQCN, level, null, message, t);
   }
 
   private void log(Level level, String message, Object... params) {
-    logger.log(level, message, params);
+    logger.logIfEnabled(FQCN, level, null, message, params);
   }
 
   private void log(Level level, String message, Throwable t, Object... params) {
-    logger.log(level, new FormattedMessage(message, params), t);
+    logger.logIfEnabled(FQCN, level, null, new FormattedMessage(message, params), t);
   }
 
   @Override
