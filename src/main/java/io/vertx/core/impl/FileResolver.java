@@ -204,8 +204,8 @@ public class FileResolver {
       while (entries.hasMoreElements()) {
         ZipEntry entry = entries.nextElement();
         String name = entry.getName();
-        if (name.startsWith(prefix + fileName)) {
-          File file = new File(cacheDir, name.substring(prefix.length()));
+        if (name.startsWith(prefix.isEmpty() ? fileName : prefix + fileName)) {
+          File file = new File(cacheDir, prefix.isEmpty() ? name : name.substring(prefix.length()));
           if (name.endsWith("/")) {
             // Directory
             file.mkdirs();
