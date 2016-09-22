@@ -142,7 +142,7 @@ public class Log4j2LogDelegate implements LogDelegate {
 
   @Override
   public void trace(Object message, Throwable t, Object... params) {
-    log(Level.INFO, message.toString(), t, params);
+    log(Level.TRACE, message.toString(), t, params);
   }
 
   private void log(Level level, Object message) {
