@@ -42,6 +42,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import java.util.Iterator;
 import java.util.Map;
 
 import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
@@ -305,8 +306,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           h.authority(hostHeader);
         }
       }
-      if (headers != null && headers.size() > 0) {
-        for (Map.Entry<String, String> header : headers) {
+      if (headers != null && !headers.isEmpty()) {
+        for (Iterator<Map.Entry<CharSequence, CharSequence>> it = headers.iteratorCharSequence(); it.hasNext(); ) {
+          Map.Entry<CharSequence, CharSequence> header = it.next();
+          // Todo : multi valued headers
           h.add(Http2HeadersAdaptor.toLowerCase(header.getKey()), header.getValue());
         }
       }

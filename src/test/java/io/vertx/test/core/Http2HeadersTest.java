@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -96,14 +97,41 @@ public class Http2HeadersTest {
   @Test
   public void testEntries() {
     map.set("foo", Arrays.<String>asList("foo_value_1", "foo_value_2"));
-    List<Map.Entry<String, String>> entries = map.entries();
-    assertEquals(entries.size(), 1);
-    assertEquals("foo", entries.get(0).getKey());
-    assertEquals("foo_value_1", entries.get(0).getValue());
+    List<Map.Entry<String, String>> entries1 = map.entries();
+    assertEquals(entries1.size(), 1);
+    assertEquals("foo", entries1.get(0).getKey());
+    assertEquals("foo_value_1", entries1.get(0).getValue());
     map.set("bar", "bar_value");
-    Map<String, String> collected = map.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    List<Map.Entry<String, String>> entries2 = map.entries();
+    assertEquals(entries2.size(), 2);
+    Map<String, String> collected = entries2.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     assertEquals("foo_value_1", collected.get("foo"));
     assertEquals("bar_value", collected.get("bar"));
+    map.remove("foo");
+    map.remove("bar");
+    List<Map.Entry<String, String>> entries3 = map.entries();
+    assertEquals(entries3.size(), 0);
+  }
+
+  @Test
+  public void testMultipleValues() {
+    List<String> ts = Arrays.asList("1", "2", "3");
+    map.set("foo", ts);
+    Set<String> names = map.names();
+    assertEquals(1, names.size());
+    assertTrue(names.contains("foo"));
+    assertEquals(1, map.size());
+    map.set("bar", "1");
+    Set<String> names2 = map.names();
+    assertEquals(2, names2.size());
+    assertTrue(names2.contains("foo"));
+    assertTrue(names2.contains("bar"));
+    assertEquals(2, map.size());
+    map.remove("foo");
+    map.remove("bar");
+    Set<String> names3 = map.names();
+    assertEquals(0, names3.size());
+    assertEquals(0, map.size());
   }
 
   private void assertHeaderNames(String... expected) {

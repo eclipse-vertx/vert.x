@@ -19,11 +19,11 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
@@ -36,7 +36,7 @@ import io.vertx.core.net.NetSocket;
 import java.util.List;
 import java.util.Objects;
 
-import static io.vertx.core.http.HttpHeaders.*;
+import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -70,7 +70,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean connecting;
   private boolean writeHead;
   private long written;
-  private CaseInsensitiveHeaders headers;
+  private MultiMap headers;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
                         boolean ssl, String relativeURI, VertxInternal vertx) {
@@ -178,7 +178,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public MultiMap headers() {
     synchronized (getLock()) {
       if (headers == null) {
-        headers = new CaseInsensitiveHeaders();
+        // defer the name/value validation until the write occurs.
+        headers = new HeadersAdaptor(new DefaultHttpHeaders(false));
       }
       return headers;
     }

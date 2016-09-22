@@ -930,4 +930,14 @@ public class CaseInsensitiveHeadersTest {
       me.setValue(null);
     }
   }
+
+  @Test
+  public void testMultipleValues() {
+    MultiMap map = new CaseInsensitiveHeaders();
+    List<String> ts = Arrays.asList("1", "2", "3");
+    map.set("foo", ts);
+    assertEquals(1, map.size());
+    map.set("bar", "1");
+    assertEquals(2, map.size());
+  }
 }

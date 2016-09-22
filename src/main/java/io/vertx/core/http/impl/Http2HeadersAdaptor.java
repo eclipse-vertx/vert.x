@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
 
 import java.util.AbstractList;
@@ -35,26 +36,24 @@ import java.util.stream.Collectors;
 public class Http2HeadersAdaptor implements MultiMap {
 
   static CharSequence toLowerCase(CharSequence s) {
-    StringBuilder buffer = null;
-    int len = s.length();
-    for (int index = 0; index < len; index++) {
-      char c = s.charAt(index);
-      if (c >= 'A' && c <= 'Z') {
-        if (buffer == null) {
-          buffer = new StringBuilder(s);
-        }
-        buffer.setCharAt(index, (char)(c + ('a' - 'A')));
-      }
-    }
-    if (buffer != null) {
-      return buffer.toString();
+    if (s instanceof AsciiString) {
+      return ((AsciiString) s).toLowerCase();
     } else {
-      return s;
+      byte[] bytes = new byte[s.length()];
+      int len = s.length();
+      for (int index = 0; index < len; index++) {
+        char c = s.charAt(index);
+        if (AsciiString.isUpperCase(c)) {
+          bytes[index] = AsciiString.c2b((char)(c + ('a' - 'A')));
+        } else {
+          bytes[index] = AsciiString.c2b(c);
+        }
+      }
+      return new AsciiString(bytes);
     }
   }
 
   private final Http2Headers headers;
-  private Set<String> names;
 
   public Http2HeadersAdaptor(Http2Headers headers) {
 
@@ -113,29 +112,27 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public Set<String> names() {
-    if (names == null) {
-      names = new AbstractSet<String>() {
-        @Override
-        public Iterator<String> iterator() {
-          Iterator<CharSequence> it = headers.names().iterator();
-          return new Iterator<String>() {
-            @Override
-            public boolean hasNext() {
-              return it.hasNext();
-            }
-            @Override
-            public String next() {
-              return it.next().toString();
-            }
-          };
-        }
-        @Override
-        public int size() {
-          return headers.size();
-        }
-      };
-    }
-    return names;
+    Set<CharSequence> nameSet = headers.names();
+    return new AbstractSet<String>() {
+      @Override
+      public Iterator<String> iterator() {
+        Iterator<CharSequence> it = nameSet.iterator();
+        return new Iterator<String>() {
+          @Override
+          public boolean hasNext() {
+            return it.hasNext();
+          }
+          @Override
+          public String next() {
+            return it.next().toString();
+          }
+        };
+      }
+      @Override
+      public int size() {
+        return nameSet.size();
+      }
+    };
   }
 
   @Override
@@ -202,6 +199,11 @@ public class Http2HeadersAdaptor implements MultiMap {
   @Override
   public Iterator<Map.Entry<String, String>> iterator() {
     return entries().iterator();
+  }
+
+  @Override
+  public Iterator<Map.Entry<CharSequence, CharSequence>> iteratorCharSequence() {
+    return headers.iterator();
   }
 
   @Override

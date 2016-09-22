@@ -22,6 +22,7 @@ import io.vertx.core.MultiMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -36,11 +37,13 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public String get(String name) {
+    Objects.requireNonNull(name, "name");
     return headers.get(name);
   }
 
   @Override
   public List<String> getAll(String name) {
+    Objects.requireNonNull(name, "name");
     return headers.getAll(name);
   }
 
@@ -66,12 +69,14 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap add(String name, String value) {
+    Objects.requireNonNull(name, "name");
     headers.add(name, value);
     return this;
   }
 
   @Override
   public MultiMap add(String name, Iterable<String> values) {
+    Objects.requireNonNull(name, "name");
     headers.add(name, values);
     return this;
   }
@@ -94,12 +99,14 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap set(String name, String value) {
+    Objects.requireNonNull(name, "name");
     headers.set(name, value);
     return this;
   }
 
   @Override
   public MultiMap set(String name, Iterable<String> values) {
+    Objects.requireNonNull(name, "name");
     headers.set(name, values);
     return this;
   }
@@ -115,6 +122,7 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap remove(String name) {
+    Objects.requireNonNull(name, "name");
     headers.remove(name);
     return this;
   }
@@ -128,6 +136,11 @@ public class HeadersAdaptor implements MultiMap {
   @Override
   public Iterator<Map.Entry<String, String>> iterator() {
     return headers.iterator();
+  }
+
+  @Override
+  public Iterator<Map.Entry<CharSequence, CharSequence>> iteratorCharSequence() {
+    return headers.iteratorCharSequence();
   }
 
   @Override
@@ -145,6 +158,7 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public String get(CharSequence name) {
+    Objects.requireNonNull(name, "name");
     return headers.get(name);
   }
 
@@ -155,35 +169,41 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public boolean contains(CharSequence name) {
+    Objects.requireNonNull(name, "name");
     return headers.contains(name);
   }
 
   @Override
   public MultiMap add(CharSequence name, CharSequence value) {
+    Objects.requireNonNull(name, "name");
     headers.add(name, value);
     return this;
   }
 
   @Override
   public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+    Objects.requireNonNull(name, "name");
     headers.add(name, values);
     return this;
   }
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
+    Objects.requireNonNull(name, "name");
     headers.set(name, value);
     return this;
   }
 
   @Override
   public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+    Objects.requireNonNull(name, "name");
     headers.set(name, values);
     return this;
   }
 
   @Override
   public MultiMap remove(CharSequence name) {
+    Objects.requireNonNull(name, "name");
     headers.remove(name);
     return this;
   }

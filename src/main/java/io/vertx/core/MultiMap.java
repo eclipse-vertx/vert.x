@@ -22,6 +22,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,6 +83,61 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    */
   @GenIgnore
   List<Map.Entry<String, String>> entries();
+
+  /**
+   * Returns an iterator for all entries in the multi-map.
+   *
+   * @return A immutable {@link java.util.List} of the name-value entries, which will be
+   *         empty if no pairs are found
+   */
+  @GenIgnore
+  default Iterator<Map.Entry<CharSequence, CharSequence>> iteratorCharSequence() {
+
+    class EntryAdapter implements Map.Entry<CharSequence, CharSequence> {
+
+      private final Map.Entry<String, String> entry;
+
+      EntryAdapter(Map.Entry<String, String> entry) {
+        this.entry = entry;
+      }
+
+      @Override
+      public CharSequence getKey() {
+        return entry.getKey();
+      }
+
+      @Override
+      public CharSequence getValue() {
+        return entry.getValue();
+      }
+
+      @Override
+      public CharSequence setValue(CharSequence value) {
+        return entry.setValue(value == null ? null : value.toString());
+      }
+    }
+
+    class IteratorAdapter implements Iterator<Map.Entry<CharSequence, CharSequence>> {
+
+      private final Iterator<Map.Entry<String, String>> iterator;
+
+      IteratorAdapter(Iterator<Map.Entry<String, String>> iterator){
+        this.iterator = iterator;
+      }
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public Map.Entry<CharSequence, CharSequence> next() {
+        return new EntryAdapter(iterator.next());
+      }
+    }
+
+    return new IteratorAdapter(iterator());
+  }
 
   /**
    * Checks to see if there is a value with the specified name
