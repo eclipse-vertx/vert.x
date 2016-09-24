@@ -178,13 +178,8 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   }
 
   @Override
-  public <T> T result(int index) {
-    return this.<T>future(index).result();
-  }
-
-  @Override
   public <T> T resultAt(int index) {
-    return result(index);
+    return this.<T>future(index).result();
   }
 
   private <T> Future<T> future(int index) {
