@@ -1090,8 +1090,8 @@ public class JsonArrayTest {
     JsonArray json = list.stream().collect(JsonArray.collector());
     assertEquals(json.size(), 3);
     assertEquals(json.getString(0), "test");
-    assertEquals(json.getInteger(1), 3);
-    assertEquals(json.getDouble(2), 2.0);
+    assertEquals(json.getInteger(1), (Integer)3);
+    assertEquals(json.getDouble(2), (Double)2.0);
   }
 
 }
