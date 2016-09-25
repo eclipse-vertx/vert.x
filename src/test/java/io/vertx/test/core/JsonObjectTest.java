@@ -1669,18 +1669,6 @@ public class JsonObjectTest {
     assertEquals(filtered.getString("foo"), "bar");
   }
 
-  @Test
-  public void testCollectorMerge() {
-    JsonObject json = new JsonObject().put("foo", "bar").put("int", 50);
-    JsonObject result = new JsonObject().put("original", "value");
-    JsonObject filtered = json.stream().filter(e -> !"int".equals(e.getKey())).collect(JsonObject.collector(result));
-    assertEquals(2, filtered.size());
-    assertNull("Filtered entry should not be collected", filtered.getInteger("int"));
-    assertEquals(filtered.getString("foo"), "bar");
-    assertEquals(filtered.getString("original"), "value");
-    assertEquals(filtered, result);
-  }
-
   private void testStreamCorrectTypes(JsonObject object) {
     object.stream().forEach(entry -> {
       String key = entry.getKey();
