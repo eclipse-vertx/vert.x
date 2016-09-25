@@ -1660,6 +1660,15 @@ public class JsonObjectTest {
     assertEquals(((JsonArray) removed).getDouble(0), 1.0, 0.0);
   }
 
+  @Test
+  public void testCollector() {
+    JsonObject json = new JsonObject().put("foo", "bar").put("int", 50);
+    JsonObject filtered = json.stream().filter(e -> !"age".equals(e.getKey())).collect(JsonObject.entryCollector());
+    assertEquals(filtered.size(), 1);
+    assertNull("Filtered entry should not be collected", filtered.getInteger("int"));
+    assertEquals(filtered.getString("foo"), "bar");
+  }
+
   private void testStreamCorrectTypes(JsonObject object) {
     object.stream().forEach(entry -> {
       String key = entry.getKey();
