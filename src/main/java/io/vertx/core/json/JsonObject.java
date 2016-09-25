@@ -751,33 +751,21 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   /**
    * Reduce / collect map entries into a JsonObject
-   * @param <T> the type of map values
-   * @return a Collector, ready to use in Stream<Map.Entry<String, T>>.collect()
+   * @return a Collector, ready to use in Stream<Map.Entry<String, ?>>.collect()
    */
-  public static <T> Collector<Map.Entry<String, T>, JsonObject, JsonObject> collector() {
-    return new Collector<Map.Entry<String, T>, JsonObject, JsonObject>() {
-      @Override public Supplier<JsonObject> supplier() {
-        return JsonObject::new;
-      }
-
-      @Override public BiConsumer<JsonObject, Map.Entry<String, T>> accumulator() {
-        return JsonObject::put;
-      }
-
-      @Override public BinaryOperator<JsonObject> combiner() {
-        return JsonObject::mergeIn;
-      }
-
-      @Override public Function<JsonObject, JsonObject> finisher() {
-        return Function.identity();
-      }
-
-      @Override public Set<Characteristics> characteristics() {
-        return EnumSet.of(Characteristics.IDENTITY_FINISH);
-      }
-    };
+  public static Collector<Map.Entry<String, ?>, JsonObject, JsonObject> collector() {
+    return new JsonObjectCollector();
   }
 
+  /**
+   * Reduce / collect map entries into an existing JsonObject
+   * The method will mutate the original object by adding the map entries and return it
+   *
+   * @return a Collector, ready to use in Stream<Map.Entry<String, ?>>.collect()
+   */
+  public static Collector<Map.Entry<String, ?>, JsonObject, JsonObject> collector(JsonObject original) {
+    return new JsonObjectCollector(original);
+  }
 
   /**
    * Get the number of entries in the JSON object
@@ -952,4 +940,40 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       throw new UnsupportedOperationException();
     }
   }
+
+  private static final class JsonObjectCollector implements Collector<Map.Entry<String, ?>, JsonObject, JsonObject> {
+
+    private JsonObject original;
+
+    public JsonObjectCollector(JsonObject original) {
+      this.original = original;
+    }
+
+    public JsonObjectCollector() {
+      this(new JsonObject());
+    }
+
+    @Override
+    public Supplier<JsonObject> supplier() {
+      return () -> original;
+    }
+
+    @Override public BiConsumer<JsonObject, Map.Entry<String, ?>> accumulator() {
+      return JsonObject::put;
+    }
+
+    @Override public BinaryOperator<JsonObject> combiner() {
+      return JsonObject::mergeIn;
+    }
+
+    @Override public Function<JsonObject, JsonObject> finisher() {
+      return Function.identity();
+    }
+
+    @Override public Set<Characteristics> characteristics() {
+      return EnumSet.of(Characteristics.IDENTITY_FINISH);
+    }
+
+  }
+
 }

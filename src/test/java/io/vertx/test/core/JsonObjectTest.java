@@ -1663,10 +1663,22 @@ public class JsonObjectTest {
   @Test
   public void testCollector() {
     JsonObject json = new JsonObject().put("foo", "bar").put("int", 50);
-    JsonObject filtered = json.stream().filter(e -> !"age".equals(e.getKey())).collect(JsonObject.collector());
-    assertEquals(filtered.size(), 1);
+    JsonObject filtered = json.stream().filter(e -> !"int".equals(e.getKey())).collect(JsonObject.collector());
+    assertEquals(1, filtered.size());
     assertNull("Filtered entry should not be collected", filtered.getInteger("int"));
     assertEquals(filtered.getString("foo"), "bar");
+  }
+
+  @Test
+  public void testCollectorMerge() {
+    JsonObject json = new JsonObject().put("foo", "bar").put("int", 50);
+    JsonObject result = new JsonObject().put("original", "value");
+    JsonObject filtered = json.stream().filter(e -> !"int".equals(e.getKey())).collect(JsonObject.collector(result));
+    assertEquals(2, filtered.size());
+    assertNull("Filtered entry should not be collected", filtered.getInteger("int"));
+    assertEquals(filtered.getString("foo"), "bar");
+    assertEquals(filtered.getString("original"), "value");
+    assertEquals(filtered, result);
   }
 
   private void testStreamCorrectTypes(JsonObject object) {
