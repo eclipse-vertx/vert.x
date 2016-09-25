@@ -658,7 +658,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param entry  the entry
    * @return  a reference to this, so the API can be used fluently
    */
-  public<T> JsonObject put(Map.Entry<String, T> entry) {
+  public JsonObject put(Map.Entry<String, ?> entry) {
     Objects.requireNonNull(entry);
     return put(entry.getKey(), entry.getValue());
   }
