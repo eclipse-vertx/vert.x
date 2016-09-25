@@ -178,7 +178,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   }
 
   @Override
-  public <T> T result(int index) {
+  public <T> T resultAt(int index) {
     return this.<T>future(index).result();
   }
 

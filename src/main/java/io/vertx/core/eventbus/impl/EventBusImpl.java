@@ -337,7 +337,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   protected void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
     if (completionHandler != null) {
-      vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+      vertx.runOnContext(v -> {
+        completionHandler.handle(Future.succeededFuture());
+      });
     }
   }
 
@@ -540,7 +542,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     // Called by context on undeploy
     public void close(Handler<AsyncResult<Void>> completionHandler) {
       handler.unregister(completionHandler);
-      completionHandler.handle(Future.succeededFuture());
     }
 
   }

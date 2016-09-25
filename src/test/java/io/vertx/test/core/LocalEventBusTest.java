@@ -133,6 +133,29 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testMessageConsumerCloseHookIsClosedCorrectly() {
+    Vertx vertx = Vertx.vertx();
+    EventBus eb = vertx.eventBus();
+    vertx.deployVerticle(new AbstractVerticle() {
+      MessageConsumer consumer;
+      @Override
+      public void start() throws Exception {
+        context.exceptionHandler(err -> {
+          fail("Unexpected exception");
+        });
+        consumer = eb.<String>consumer(ADDRESS1).handler(msg -> {});
+      }
+    }, onSuccess(deploymentID -> {
+      vertx.undeploy(deploymentID, onSuccess(v -> {
+        vertx.setTimer(10, id -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testRegisterLocal1() {
     String str = TestUtils.randomUnicodeString(100);
     eb.<String>localConsumer(ADDRESS1).handler((Message<String> msg) -> {

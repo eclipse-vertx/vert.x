@@ -19,6 +19,8 @@ package io.vertx.test.core;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -38,7 +40,7 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
   private final EventBusOptions options;
 
 
-  public ClusteredEventBusWithSSLTest(TLSCert cert, TLSCert trust,
+  public ClusteredEventBusWithSSLTest(Cert<?> cert, Trust<?> trust,
                                       boolean requireClientAuth,
                                       boolean clientTrustAll,
                                       boolean useCrl,
@@ -53,8 +55,8 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
       options.addCrlPath("tls/root-ca/crl.pem");
     }
 
-    setOptions(options, trust.getClientTrustOptions());
-    setOptions(options, cert.getServerKeyCertOptions());
+    setOptions(options, trust.get());
+    setOptions(options, cert.get());
 
     if (enabledCipherSuites != null) {
       enabledCipherSuites.forEach(options::addEnabledCipherSuite);
@@ -72,13 +74,13 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
     //KeyCert, Trust, requireClientAuth, clientTrustAll, useCrl, enabledCipherSuites
 
     return Arrays.asList(new Object[][]{
-        {TLSCert.JKS, TLSCert.NONE, false, true, false, Collections.emptyList()}, // trusts all server certs
-        {TLSCert.JKS, TLSCert.JKS, false, false, true, Collections.emptyList()},
-        {TLSCert.PKCS12, TLSCert.JKS, false, false, false, Collections.emptyList()},
-        {TLSCert.PEM, TLSCert.JKS, false, false, false, Collections.emptyList()},
-        {TLSCert.PKCS12_ROOT_CA, TLSCert.JKS_ROOT_CA, false, false, false, Collections.emptyList()},
-        {TLSCert.PEM_ROOT_CA, TLSCert.PKCS12_ROOT_CA, false, false, false, Collections.emptyList()},
-        {TLSCert.JKS, TLSCert.PEM_ROOT_CA, false, true, false, Arrays.asList(Http1xTest.ENABLED_CIPHER_SUITES)},
+        {Cert.SERVER_JKS, Trust.NONE, false, true, false, Collections.emptyList()}, // trusts all server certs
+        {Cert.SERVER_JKS, Trust.SERVER_JKS, false, false, true, Collections.emptyList()},
+        {Cert.SERVER_PKCS12, Trust.SERVER_JKS, false, false, false, Collections.emptyList()},
+        {Cert.SERVER_PEM, Trust.SERVER_JKS, false, false, false, Collections.emptyList()},
+        {Cert.SERVER_PKCS12_ROOT_CA, Trust.SERVER_JKS_ROOT_CA, false, false, false, Collections.emptyList()},
+        {Cert.SERVER_PEM_ROOT_CA, Trust.SERVER_PKCS12_ROOT_CA, false, false, false, Collections.emptyList()},
+        {Cert.SERVER_JKS, Trust.SERVER_PEM_ROOT_CA, false, true, false, Arrays.asList(Http1xTest.ENABLED_CIPHER_SUITES)},
     });
   }
 

@@ -550,7 +550,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   public NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics, metric);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), metrics, metric);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 

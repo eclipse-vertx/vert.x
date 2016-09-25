@@ -218,7 +218,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics, metric);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics, metric);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 

@@ -55,7 +55,6 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   private final Http2Headers headers;
   private Set<String> names;
-  private List<Map.Entry<String, String>> entries;
 
   public Http2HeadersAdaptor(Http2Headers headers) {
 
@@ -96,13 +95,10 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public List<Map.Entry<String, String>> entries() {
-    if (entries == null) {
-      entries = headers.names()
-          .stream()
-          .map(name -> new AbstractMap.SimpleEntry<>(name.toString(), headers.get(name).toString()))
-          .collect(Collectors.toList());
-    }
-    return entries;
+    return headers.names()
+        .stream()
+        .map(name -> new AbstractMap.SimpleEntry<>(name.toString(), headers.get(name).toString()))
+        .collect(Collectors.toList());
   }
 
   @Override

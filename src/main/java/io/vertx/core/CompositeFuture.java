@@ -133,9 +133,9 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Return a composite future completed when all the futures are completed.
+   * Return a composite future, succeeded when all futures are succeeded, failed when any future is failed.
    * <p/>
-   * Succeeded when all futures are succeeded, failed when any future is failed.
+   * It always wait until all its futures are completed and will not fail as soon as one of {@code f1} or {@code f2} fails.
    *
    * @param f1 future
    * @param f2 future
@@ -218,7 +218,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * @param index the wrapped future index
    */
-  <T> T result(int index);
+  <T> T resultAt(int index);
 
   /**
    * @return the number of wrapped future
@@ -234,7 +234,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
     int size = size();
     ArrayList<T> list = new ArrayList<>(size);
     for (int index = 0;index < size;index++) {
-      list.add(result(index));
+      list.add(resultAt(index));
     }
     return list;
   }

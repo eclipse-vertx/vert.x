@@ -70,6 +70,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -214,7 +215,7 @@ public class Http2ServerTest extends Http2TestBase {
       return new ChannelInitializer<Channel>() {
         @Override
         protected void initChannel(Channel ch) throws Exception {
-          SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true), null, TLSCert.JKS.getClientTrustOptions());
+          SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true), null, Trust.SERVER_JKS.get());
           SslHandler sslHandler = sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createSslHandler((VertxInternal) vertx, host, port);
           ch.pipeline().addLast(sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
