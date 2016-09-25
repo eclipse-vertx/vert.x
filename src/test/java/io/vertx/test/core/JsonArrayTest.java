@@ -26,14 +26,7 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -1086,6 +1079,19 @@ public class JsonArrayTest {
     object.getJsonArray("object1").stream().forEach(innerMap -> {
       assertTrue("Expecting JsonObject, found: " + innerMap.getClass().getCanonicalName(), innerMap instanceof JsonObject);
     });
+  }
+
+  @Test
+  public void testCollector() {
+    Collection<Object> list = new ArrayList<>(3);
+    list.add("test");
+    list.add(3);
+    list.add(2.0);
+    JsonArray json = list.stream().collect(JsonArray.collector());
+    assertEquals(json.size(), 3);
+    assertEquals(json.getString(0), "test");
+    assertEquals(json.getInteger(1), (Integer)3);
+    assertEquals(json.getDouble(2), (Double)2.0);
   }
 
 }

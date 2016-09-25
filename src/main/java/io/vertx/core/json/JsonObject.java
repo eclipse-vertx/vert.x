@@ -23,6 +23,11 @@ import io.vertx.core.shareddata.impl.ClusterSerializable;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -648,6 +653,17 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Put an Entry into the JSON object (puts the entry value under the entry key)
+   *
+   * @param entry  the entry
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public JsonObject put(Map.Entry<String, ?> entry) {
+    Objects.requireNonNull(entry);
+    return put(entry.getKey(), entry.getValue());
+  }
+
+  /**
    * Remove an entry from this object.
    *
    * @param key  the key
@@ -732,6 +748,36 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public Iterator<Map.Entry<String, Object>> iterator() {
     return new Iter(map.entrySet().iterator());
   }
+
+  /**
+   * Reduce / collect map entries into a JsonObject
+   * @param <T> the type of map values
+   * @return a Collector, ready to use in Stream<Map.Entry<String, T>>.collect()
+   */
+  public static <T> Collector<Map.Entry<String, T>, JsonObject, JsonObject> entryCollector() {
+    return new Collector<Map.Entry<String, T>, JsonObject, JsonObject>() {
+      @Override public Supplier<JsonObject> supplier() {
+        return JsonObject::new;
+      }
+
+      @Override public BiConsumer<JsonObject, Map.Entry<String, T>> accumulator() {
+        return JsonObject::put;
+      }
+
+      @Override public BinaryOperator<JsonObject> combiner() {
+        return JsonObject::mergeIn;
+      }
+
+      @Override public Function<JsonObject, JsonObject> finisher() {
+        return Function.identity();
+      }
+
+      @Override public Set<Characteristics> characteristics() {
+        return EnumSet.of(Characteristics.IDENTITY_FINISH);
+      }
+    };
+  }
+
 
   /**
    * Get the number of entries in the JSON object
