@@ -1663,7 +1663,7 @@ public class JsonObjectTest {
   @Test
   public void testCollector() {
     JsonObject json = new JsonObject().put("foo", "bar").put("int", 50);
-    JsonObject filtered = json.stream().filter(e -> !"age".equals(e.getKey())).collect(JsonObject.entryCollector());
+    JsonObject filtered = json.stream().filter(e -> !"age".equals(e.getKey())).collect(JsonObject.collector());
     assertEquals(filtered.size(), 1);
     assertNull("Filtered entry should not be collected", filtered.getInteger("int"));
     assertEquals(filtered.getString("foo"), "bar");

@@ -754,7 +754,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param <T> the type of map values
    * @return a Collector, ready to use in Stream<Map.Entry<String, T>>.collect()
    */
-  public static <T> Collector<Map.Entry<String, T>, JsonObject, JsonObject> entryCollector() {
+  public static <T> Collector<Map.Entry<String, T>, JsonObject, JsonObject> collector() {
     return new Collector<Map.Entry<String, T>, JsonObject, JsonObject>() {
       @Override public Supplier<JsonObject> supplier() {
         return JsonObject::new;
