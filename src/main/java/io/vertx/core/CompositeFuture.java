@@ -133,9 +133,9 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Return a composite future completed when all the futures are completed.
+   * Return a composite future, succeeded when all futures are succeeded, failed when any future is failed.
    * <p/>
-   * Succeeded when all futures are succeeded, failed when any future is failed.
+   * It always wait until all its futures are completed and will not fail as soon as one of {@code f1} or {@code f2} fails.
    *
    * @param f1 future
    * @param f2 future
@@ -212,15 +212,6 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    * @param index the wrapped future index
    */
   boolean isComplete(int index);
-
-  /**
-   * Returns the result of a wrapped future
-   *
-   * @param index the wrapped future index
-   */
-  @GenIgnore
-  @Deprecated
-  <T> T result(int index);
 
   /**
    * Returns the result of a wrapped future
