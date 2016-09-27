@@ -224,6 +224,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(true, options.isHttp2ClearTextUpgrade());
     assertEquals(options, options.setHttp2ClearTextUpgrade(false));
     assertEquals(false, options.isHttp2ClearTextUpgrade());
+
+    assertEquals(null, options.getLocalAddress());
   }
 
 
@@ -407,6 +409,7 @@ public class Http1xTest extends HttpTest {
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean h2cUpgrade = TestUtils.randomBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
+    String localAddress = TestUtils.randomAlphaString(10);
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -441,6 +444,7 @@ public class Http1xTest extends HttpTest {
     options.setSslEngineOptions(sslEngine);
     options.setAlpnVersions(alpnVersions);
     options.setHttp2ClearTextUpgrade(h2cUpgrade);
+    options.setLocalAddress(localAddress);
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -480,6 +484,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(sslEngine, copy.getSslEngineOptions());
     assertEquals(alpnVersions, copy.getAlpnVersions());
     assertEquals(h2cUpgrade, copy.isHttp2ClearTextUpgrade());
+    assertEquals(localAddress, copy.getLocalAddress());
   }
 
   @Test
@@ -511,6 +516,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
     assertEquals(def.isHttp2ClearTextUpgrade(), json.isHttp2ClearTextUpgrade());
+    assertEquals(def.getLocalAddress(), json.getLocalAddress());
   }
 
   @Test
@@ -557,6 +563,7 @@ public class Http1xTest extends HttpTest {
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean h2cUpgrade = rand.nextBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
+    String localAddress = TestUtils.randomAlphaString(10);
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -597,7 +604,8 @@ public class Http1xTest extends HttpTest {
       .put(sslEngine, new JsonObject())
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
       .put("http2ClearTextUpgrade", h2cUpgrade)
-      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
+      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
+      .put("localAddress", localAddress);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -648,6 +656,7 @@ public class Http1xTest extends HttpTest {
     }
     assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(h2cUpgrade, options.isHttp2ClearTextUpgrade());
+    assertEquals(localAddress, options.getLocalAddress());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

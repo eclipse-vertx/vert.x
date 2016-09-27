@@ -758,6 +758,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setLocalAddress(String localAddress) {
+    return (HttpClientOptions) super.setLocalAddress(localAddress);
+  }
+
+  @Override
   public HttpClientOptions setLogActivity(boolean logEnabled) {
     return (HttpClientOptions) super.setLogActivity(logEnabled);
   }
