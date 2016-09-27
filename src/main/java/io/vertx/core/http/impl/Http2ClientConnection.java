@@ -44,7 +44,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.Map;
 
-import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
+import static io.vertx.core.http.HttpHeaders.GZIP_DEFLATE;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -311,7 +311,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
       }
       if (conn.http2Pool.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
-        h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
+        h.set(HttpHeaderNames.ACCEPT_ENCODING, GZIP_DEFLATE);
       }
       if (conn.metrics.isEnabled()) {
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric, conn.localAddress(), conn.remoteAddress(), request));
