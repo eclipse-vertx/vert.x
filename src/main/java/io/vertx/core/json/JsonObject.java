@@ -694,7 +694,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a copy of the object
    */
   public JsonObject copy() {
-    Map<String, Object> copiedMap = new HashMap<>(map.size());
+    Map<String, Object> copiedMap;
+    if (map instanceof LinkedHashMap) {
+      copiedMap = new LinkedHashMap<>(map.size());
+    } else {
+      copiedMap = new HashMap<>(map.size());
+    }
     for (Map.Entry<String, Object> entry: map.entrySet()) {
       Object val = entry.getValue();
       val = Json.checkAndCopy(val, true);
