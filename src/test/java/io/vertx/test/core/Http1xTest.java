@@ -362,6 +362,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(rand, options.getHttp2ConnectionWindowSize());
     assertEquals(options, options.setHttp2ConnectionWindowSize(-1));
     assertEquals(-1, options.getHttp2ConnectionWindowSize());
+
+    assertFalse(options.isDecompressionSupported());
+    assertEquals(options, options.setDecompressionSupported(true));
+    assertTrue(options.isDecompressionSupported());
   }
 
   @Test
@@ -708,6 +712,7 @@ public class Http1xTest extends HttpTest {
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     SSLEngineOptions sslEngine = TestUtils.randomBoolean() ? new JdkSSLEngineOptions() : new OpenSSLEngineOptions();
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
+    boolean decompressionSupported = rand.nextBoolean();
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
     options.setReuseAddress(reuseAddress);
@@ -736,6 +741,7 @@ public class Http1xTest extends HttpTest {
     options.setSslEngineOptions(sslEngine);
     options.setInitialSettings(initialSettings);
     options.setAlpnVersions(alpnVersions);
+    options.setDecompressionSupported(decompressionSupported);
     HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -770,6 +776,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(http2ConnectionWindowSize, copy.getHttp2ConnectionWindowSize());
     assertEquals(sslEngine, copy.getSslEngineOptions());
     assertEquals(alpnVersions, copy.getAlpnVersions());
+    assertEquals(decompressionSupported, copy.isDecompressionSupported());
   }
 
   @Test
@@ -799,6 +806,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
     assertEquals(def.getHttp2ConnectionWindowSize(), json.getHttp2ConnectionWindowSize());
+    assertEquals(def.isDecompressionSupported(), json.isDecompressionSupported());
   }
 
   @Test
@@ -843,6 +851,7 @@ public class Http1xTest extends HttpTest {
     String sslEngine = TestUtils.randomBoolean() ? "jdkSslEngineOptions" : "openSslEngineOptions";
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean openSslSessionCacheEnabled = TestUtils.randomBoolean();
+    boolean decompressionSupported = TestUtils.randomBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -881,7 +890,8 @@ public class Http1xTest extends HttpTest {
       .put("http2ConnectionWindowSize", http2ConnectionWindowSize)
       .put(sslEngine, new JsonObject())
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
-      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
+      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
+      .put("decompressionSupported", decompressionSupported);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -929,6 +939,7 @@ public class Http1xTest extends HttpTest {
         break;
     }
     assertEquals(alpnVersions, options.getAlpnVersions());
+    assertEquals(decompressionSupported, options.isDecompressionSupported());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

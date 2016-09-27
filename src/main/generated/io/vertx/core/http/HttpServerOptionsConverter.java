@@ -62,6 +62,9 @@ public class HttpServerOptionsConverter {
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
     }
+    if (json.getValue("decompressionSupported") instanceof Boolean) {
+      obj.setDecompressionSupported((Boolean)json.getValue("decompressionSupported"));
+    }
   }
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
@@ -85,5 +88,6 @@ public class HttpServerOptionsConverter {
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());
     }
+    json.put("decompressionSupported", obj.isDecompressionSupported());
   }
 }
