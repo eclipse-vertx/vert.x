@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -619,6 +620,8 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { return true; }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> AsyncResult<U> map(Function<Object, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> AsyncResult<V> map(V value) { throw new UnsupportedOperationException(); }
     };
 
     AsyncResult<Object> failedAsyncResult = new AsyncResult<Object>() {
@@ -627,6 +630,8 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { return cause; }
       public boolean succeeded() { return false; }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> AsyncResult<U> map(Function<Object, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> AsyncResult<V> map(V value) { throw new UnsupportedOperationException(); }
     };
 
     class DefaultCompleterTestFuture<T> implements Future<T> {
