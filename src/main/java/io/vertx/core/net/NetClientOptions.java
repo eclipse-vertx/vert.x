@@ -304,6 +304,11 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setLocalAddress(String localAddress) {
+    return (NetClientOptions) super.setLocalAddress(localAddress);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof NetClientOptions)) return false;

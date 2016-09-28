@@ -166,6 +166,11 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[localAddress]]`localAddress`|`String`|
++++
+Set the local interface to bind for network connections. When the local address is null,
+ it will pick any local address, the default local address is null.
++++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -718,6 +723,11 @@ Set whether keep alive is enabled on the client
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[localAddress]]`localAddress`|`String`|
++++
+Set the local interface to bind for network connections. When the local address is null,
+ it will pick any local address, the default local address is null.
++++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -1131,6 +1141,11 @@ Set the idle timeout, in seconds. zero means don't timeout.
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
 Set the key/cert options in jks format, aka Java keystore.
++++
+|[[localAddress]]`localAddress`|`String`|
++++
+Set the local interface to bind for network connections. When the local address is null,
+ it will pick any local address, the default local address is null.
 +++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++

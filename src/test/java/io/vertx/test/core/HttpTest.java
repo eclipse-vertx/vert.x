@@ -54,6 +54,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -3104,6 +3105,23 @@ public abstract class HttpTest extends HttpTestBase {
     } else {
       assertTrue(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
     }
+  }
+
+  @Test
+  public void testClientLocalAddress() throws Exception {
+    String expectedAddress = InetAddress.getLocalHost().getHostAddress();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setLocalAddress(expectedAddress));
+    server.requestHandler(req -> {
+      assertEquals(expectedAddress, req.remoteAddress().host());
+      req.response().end();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    });
+    await();
   }
 
   private TestLoggerFactory testLogging() throws Exception {
