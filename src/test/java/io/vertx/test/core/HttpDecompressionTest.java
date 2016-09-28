@@ -39,12 +39,12 @@ public class HttpDecompressionTest extends HttpTestBase {
 
   @Test
   public void testDefaultRequestHeaders() throws Exception {
-    String data = "1234567890123456789012345678901234567890";
-    byte[] dataGzipped = gzip(data);
+    String expected = TestUtils.randomAlphaString(1000);
+    byte[] dataGzipped = TestUtils.compressGzip(expected);
     server.requestHandler(req -> {
       assertEquals("localhost:" + DEFAULT_HTTP_PORT, req.headers().get("host"));
       req.bodyHandler(buffer -> {
-        assertEquals(data, buffer.toString());
+        assertEquals(expected, buffer.toString());
         req.response().end();
       });
     });
@@ -57,13 +57,5 @@ public class HttpDecompressionTest extends HttpTestBase {
     }));
 
     await();
-  }
-  
-  byte[] gzip(String source) throws Exception {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    GZIPOutputStream gos = new GZIPOutputStream(baos);
-    gos.write(source.getBytes());
-    gos.close();
-    return baos.toByteArray();
   }
 }
