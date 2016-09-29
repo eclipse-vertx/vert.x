@@ -74,7 +74,33 @@ public interface AsyncResult<T> {
    * @param mapper the mapper function
    * @return the mapped async result
    */
-  <U> AsyncResult<U> map(Function<T, U> mapper);
+  default <U> AsyncResult<U> map(Function<T, U> mapper) {
+    return new AsyncResult<U>() {
+      @Override
+      public U result() {
+        if (succeeded()) {
+          return mapper.apply(AsyncResult.this.result());
+        } else {
+          return null;
+        }
+      }
+
+      @Override
+      public Throwable cause() {
+        return AsyncResult.this.cause();
+      }
+
+      @Override
+      public boolean succeeded() {
+        return AsyncResult.this.succeeded();
+      }
+
+      @Override
+      public boolean failed() {
+        return AsyncResult.this.failed();
+      }
+    };
+  }
 
   /**
    * Map the result of this async result to a specific {@code value}.<p>
@@ -86,6 +112,31 @@ public interface AsyncResult<T> {
    * @param value the value that eventually completes the mapped async result
    * @return the mapped async result
    */
-  <V> AsyncResult<V> map(V value);
+  default <V> AsyncResult<V> map(V value) {
+    return new AsyncResult<V>() {
+      @Override
+      public V result() {
+        if (succeeded()) {
+          return value;
+        } else {
+          return null;
+        }
+      }
 
+      @Override
+      public Throwable cause() {
+        return AsyncResult.this.cause();
+      }
+
+      @Override
+      public boolean succeeded() {
+        return AsyncResult.this.succeeded();
+      }
+
+      @Override
+      public boolean failed() {
+        return AsyncResult.this.failed();
+      }
+    };
+  }
 }

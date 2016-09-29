@@ -745,4 +745,67 @@ public class FutureTest extends VertxTestBase {
     assertNull(future.result());
   }
 */
+
+  @Test
+  public void testUncompletedAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    assertNull(map1.result());
+    assertNull(map1.cause());
+    assertNull(map2.result());
+    assertNull(map2.cause());
+  }
+
+  @Test
+  public void testSucceededAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    f.complete("foobar");
+    assertEquals(6, (int)map1.result());
+    assertNull(map1.cause());
+    assertEquals(17, (int)map2.result());
+    assertNull(map2.cause());
+  }
+
+  @Test
+  public void testFailedAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    Throwable cause = new Throwable();
+    f.fail(cause);
+    assertNull(map1.result());
+    assertSame(cause, map1.cause());
+    assertNull(map2.result());
+    assertSame(cause, map2.cause());
+  }
+
+  private <T> AsyncResult<T> asyncResult(Future<T> fut) {
+    return new AsyncResult<T>() {
+      @Override
+      public T result() {
+        return fut.result();
+      }
+
+      @Override
+      public Throwable cause() {
+        return fut.cause();
+      }
+
+      @Override
+      public boolean succeeded() {
+        return fut.succeeded();
+      }
+
+      @Override
+      public boolean failed() {
+        return fut.failed();
+      }
+    };
+  }
 }
