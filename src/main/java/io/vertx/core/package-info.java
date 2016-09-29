@@ -400,10 +400,10 @@
  *
  * 1. a file is created (`fut1`)
  * 2. something is written in the file (`fut2`)
- * 3. the file is moved (`fut3`)
+ * 3. the file is moved (`startFuture`)
  *
- * When these 3 steps are successful, the final future (`startFuture`) is completed with a success. However, if one
- * of the steps fails, the final future is completed with a failure.
+ * When these 3 steps are successful, the final future (`startFuture`) is succeeded. However, if one
+ * of the steps fails, the final future is failed.
  *
  * This example uses:
  *
