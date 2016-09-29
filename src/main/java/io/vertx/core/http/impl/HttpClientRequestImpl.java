@@ -362,13 +362,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public void reset(long code) {
+  public boolean reset(long code) {
     synchronized (getLock()) {
-      if (stream == null) {
-        throw new IllegalStateException("Cannot reset the request that is not yet connected");
+      if (completed) {
+        throw new IllegalStateException("Request already completed");
       }
+      exceptionOccurred = true;
       completed = true;
-      stream.reset(code);
+      if (stream != null) {
+        stream.reset(code);
+        return true;
+      } else {
+        return false;
+      }
     }
   }
 
