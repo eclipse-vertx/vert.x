@@ -393,24 +393,18 @@ public class HAManager {
           ContextImpl ctx = vertx.getContext();
           try {
             ContextImpl.setContext(null);
-            deploymentManager.undeployVerticle(deploymentID, new AsyncResultHandler<Void>() {
-              @Override
-              public void handle(AsyncResult<Void> result) {
-                if (result.succeeded()) {
-                  log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
-                  addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), new AsyncResultHandler<String>() {
-                    @Override
-                    public void handle(AsyncResult<String> result) {
-                      if (result.succeeded()) {
-                        log.info("Successfully redeployed verticle " + dep.verticleIdentifier() + " after quorum was re-attained");
-                      } else {
-                        log.error("Failed to redeploy verticle " + dep.verticleIdentifier() + " after quorum was re-attained", result.cause());
-                      }
-                    }
-                  });
-                } else {
-                  log.error("Failed to undeploy deployment on lost quorum", result.cause());
-                }
+            deploymentManager.undeployVerticle(deploymentID, result -> {
+              if (result.succeeded()) {
+                log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
+                addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), result1 -> {
+                  if (result1.succeeded()) {
+                    log.info("Successfully redeployed verticle " + dep.verticleIdentifier() + " after quorum was re-attained");
+                  } else {
+                    log.error("Failed to redeploy verticle " + dep.verticleIdentifier() + " after quorum was re-attained", result1.cause());
+                  }
+                });
+              } else {
+                log.error("Failed to undeploy deployment on lost quorum", result.cause());
               }
             });
           } finally {

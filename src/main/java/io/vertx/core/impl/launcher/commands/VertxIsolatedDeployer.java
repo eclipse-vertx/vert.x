@@ -64,7 +64,7 @@ public class VertxIsolatedDeployer {
   }
 
 
-  private AsyncResultHandler<String> createHandler(final String message,
+  private Handler<AsyncResult<String>> createHandler(final String message,
                                                    final Handler<AsyncResult<String>>
                                                        completionHandler) {
     return res -> {

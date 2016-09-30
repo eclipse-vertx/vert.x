@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -647,7 +648,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void testProps(String fileName, boolean link, boolean shouldPass,
                          Handler<FileProps> afterOK) throws Exception {
-    AsyncResultHandler<FileProps> handler = ar -> {
+    Handler<AsyncResult<FileProps>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
           fail(ar.cause().getMessage());
@@ -869,7 +870,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void testMkdir(String dirName, String perms, boolean createParents,
                          boolean shouldPass, Handler<Void> afterOK) throws Exception {
-    AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
+    Handler<AsyncResult<Void>> handler = createHandler(shouldPass, afterOK);
     if (createParents) {
       if (perms != null) {
         vertx.fileSystem().mkdirs(testDir + pathSep + dirName, perms, handler);
@@ -948,7 +949,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void testReadDir(String dirName, String filter, boolean shouldPass,
                            Handler<List<String>> afterOK) throws Exception {
-    AsyncResultHandler<List<String>> handler = ar -> {
+    Handler<AsyncResult<List<String>>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
           fail(ar.cause().getMessage());
@@ -1396,7 +1397,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void testCreateFile(String perms, boolean shouldPass) throws Exception {
     String fileName = "some-file.dat";
-    AsyncResultHandler<Void> handler = ar -> {
+    Handler<AsyncResult<Void>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
           fail(ar.cause().getMessage());
@@ -1546,7 +1547,7 @@ public class FileSystemTest extends VertxTestBase {
     await();
   }
 
-  private AsyncResultHandler<Void> createHandler(boolean shouldPass, Handler<Void> afterOK) {
+  private Handler<AsyncResult<Void>> createHandler(boolean shouldPass, Handler<Void> afterOK) {
     return ar -> {
       if (ar.failed()) {
         if (shouldPass) {

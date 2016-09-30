@@ -816,7 +816,7 @@ public class NetTest extends VertxTestBase {
       final int numConnections = 100;
       final AtomicInteger connCount = new AtomicInteger(0);
       for (int i = 0; i < numConnections; i++) {
-        AsyncResultHandler<NetSocket> handler = res -> {
+        Handler<AsyncResult<NetSocket>> handler = res -> {
           if (res.succeeded()) {
             res.result().close();
             if (connCount.incrementAndGet() == numConnections) {

@@ -30,7 +30,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
@@ -439,19 +438,17 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
       sentCheck = true;
-      vertx.runOnContext(new VoidHandler() {
-        public void handle() {
-          sentCheck = false;
-          if (!paused) {
-            Object msg = pending.poll();
-            if (msg != null) {
-              processMessage(msg);
-            }
-            if (channelPaused && pending.isEmpty()) {
-              //Resume the actual channel
-              ServerConnection.super.doResume();
-              channelPaused = false;
-            }
+      vertx.runOnContext(v -> {
+        sentCheck = false;
+        if (!paused) {
+          Object msg = pending.poll();
+          if (msg != null) {
+            processMessage(msg);
+          }
+          if (channelPaused && pending.isEmpty()) {
+            //Resume the actual channel
+            ServerConnection.super.doResume();
+            channelPaused = false;
           }
         }
       });

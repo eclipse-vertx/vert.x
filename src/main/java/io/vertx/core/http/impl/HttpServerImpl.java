@@ -372,20 +372,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       Handler<Void> requestEndHandler = requestStream.endHandler();
       requestStream.endHandler(null);
       Handler<AsyncResult<Void>> next = done;
-      done = new AsyncResultHandler<Void>() {
-        @Override
-        public void handle(AsyncResult<Void> event) {
-          if (event.succeeded()) {
-            if (wsEndHandler != null) {
-              wsEndHandler.handle(event.result());
-            }
-            if (requestEndHandler != null) {
-              requestEndHandler.handle(event.result());
-            }
+      done = event -> {
+        if (event.succeeded()) {
+          if (wsEndHandler != null) {
+            wsEndHandler.handle(event.result());
           }
-          if (next != null) {
-            next.handle(event);
+          if (requestEndHandler != null) {
+            requestEndHandler.handle(event.result());
           }
+        }
+        if (next != null) {
+          next.handle(event);
         }
       };
     }

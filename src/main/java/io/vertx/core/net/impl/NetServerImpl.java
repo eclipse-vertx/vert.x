@@ -267,15 +267,12 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       Handler<Void> endHandler = connectStream.endHandler;
       connectStream.endHandler = null;
       Handler<AsyncResult<Void>> next = done;
-      done = new AsyncResultHandler<Void>() {
-        @Override
-        public void handle(AsyncResult<Void> event) {
-          if (event.succeeded()) {
-            endHandler.handle(event.result());
-          }
-          if (next != null) {
-            next.handle(event);
-          }
+      done = event -> {
+        if (event.succeeded()) {
+          endHandler.handle(event.result());
+        }
+        if (next != null) {
+          next.handle(event);
         }
       };
     }
