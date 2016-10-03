@@ -47,18 +47,20 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   final boolean logEnabled;
   final int maxSockets;
   final int windowSize;
+  int idleTimeout;
 
   public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, HttpClientMetrics metrics,
                    Map<Channel, ? super Http2ClientConnection> connectionMap,
-                   int maxConcurrency, boolean logEnabled, int maxSize, int windowSize) {
+                   int maxConcurrency, int maxSize, int windowSize) {
     this.queue = queue;
     this.client = client;
     this.metrics = metrics;
     this.connectionMap = connectionMap;
     this.maxConcurrency = maxConcurrency;
-    this.logEnabled = logEnabled;
+    this.logEnabled = client.getOptions().getLogActivity();
     this.maxSockets = maxSize;
     this.windowSize = windowSize;
+    this.idleTimeout = client.getOptions().getIdleTimeout();
   }
 
   @Override
@@ -87,6 +89,9 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   void createConn(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) throws Http2Exception {
     ChannelPipeline p = ch.pipeline();
     synchronized (queue) {
+      if (idleTimeout > 0) {
+        p.addLast("idle", new IdleStateHandler(0, 0, idleTimeout));
+      }
       VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
           .connectionMap(connectionMap)
           .server(false)

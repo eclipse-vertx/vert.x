@@ -28,14 +28,11 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
-import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
@@ -78,7 +75,6 @@ public class ConnectionManager {
   private final boolean pipelining;
   private final int maxWaitQueueSize;
   private final int http2MaxConcurrency;
-  private final boolean logEnabled;
   private final ChannelConnector connector;
   private final HttpClientMetrics metrics;
 
@@ -91,7 +87,6 @@ public class ConnectionManager {
     this.pipelining = client.getOptions().isPipelining();
     this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
     this.http2MaxConcurrency = options.getHttp2MultiplexingLimit() < 1 ? Integer.MAX_VALUE : options.getHttp2MultiplexingLimit();
-    this.logEnabled = client.getOptions().getLogActivity();
     this.connector = new ChannelConnector();
     this.metrics = metrics;
   }
@@ -173,7 +168,7 @@ public class ConnectionManager {
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
         maxSize = options.getHttp2MaxPoolSize();
-        pool =  (Pool)new Http2Pool(this, client, ConnectionManager.this.metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize());
+        pool =  (Pool)new Http2Pool(this, client, ConnectionManager.this.metrics, mgr.connectionMap, http2MaxConcurrency, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize());
       } else {
         maxSize = options.getMaxPoolSize();
         pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize());
@@ -401,10 +396,8 @@ public class ConnectionManager {
             @Override
             protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
               if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-                applyHttp2ConnectionOptions(pipeline);
                 queue.http2Connected(context, ch, waiter, false);
               } else {
-                applyHttp1xConnectionOptions(queue, ch.pipeline(), context);
                 HttpVersion fallbackProtocol = ApplicationProtocolNames.HTTP_1_1.equals(protocol) ?
                     HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
                 queue.fallbackToHttp1x(ch, context, fallbackProtocol, port, host, waiter);
@@ -437,7 +430,6 @@ public class ConnectionManager {
                     p.remove(httpCodec);
                     p.remove(this);
                     // Upgrade handler will remove itself
-                    applyHttp1xConnectionOptions(queue, ch.pipeline(), context);
                     queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
                   }
                 }
@@ -445,17 +437,12 @@ public class ConnectionManager {
               VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
                 @Override
                 public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
-                  applyHttp2ConnectionOptions(pipeline);
                   queue.http2Connected(context, ch, waiter, true);
                 }
               };
               HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
               ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
-            } else {
-              applyHttp2ConnectionOptions(pipeline);
             }
-          } else {
-            applyHttp1xConnectionOptions(queue, pipeline, context);
           }
         }
       };
@@ -520,26 +507,6 @@ public class ConnectionManager {
       bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
       bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    }
-
-    void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
-      if (options.getIdleTimeout() > 0) {
-        pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-      }
-    }
-
-    void applyHttp1xConnectionOptions(ConnQueue queue, ChannelPipeline pipeline, ContextImpl context) {
-      if (logEnabled) {
-        pipeline.addLast("logging", new LoggingHandler());
-      }
-      pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
-      if (options.isTryUseCompression()) {
-        pipeline.addLast("inflater", new HttpContentDecompressor(true));
-      }
-      if (options.getIdleTimeout() > 0) {
-        pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-      }
-      pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)queue.mgr.connectionMap));
     }
   }
 }
