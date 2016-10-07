@@ -17,11 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Context;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
@@ -48,18 +43,12 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   private final boolean keepAlive;
   private final int pipeliningLimit;
   private final boolean ssl;
-  private final boolean logEnabled;
-  private final int maxChunkSize;
-  private final boolean tryUseCompression;
-  private final int idleTimeout;
   private final HttpVersion version;
   private final Set<ClientConnection> allConnections = new HashSet<>();
   private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
   private final int maxSockets;
 
-  public Http1xPool(HttpClientImpl client,
-                    HttpClientMetrics metrics,
-                    HttpClientOptions options, ConnectionManager.ConnQueue queue,
+  public Http1xPool(HttpClientImpl client, HttpClientMetrics metrics, HttpClientOptions options, ConnectionManager.ConnQueue queue,
                     Map<Channel, HttpClientConnection> connectionMap, HttpVersion version, int maxSockets) {
     this.queue = queue;
     this.version = version;
@@ -71,10 +60,6 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     this.ssl = options.isSsl();
     this.connectionMap = connectionMap;
     this.maxSockets = maxSockets;
-    this.logEnabled = client.getOptions().getLogActivity();
-    this.maxChunkSize = client.getOptions().getMaxChunkSize();
-    this.tryUseCompression = client.getOptions().isTryUseCompression();
-    this.idleTimeout = client.getOptions().getIdleTimeout();
   }
 
   @Override
@@ -132,22 +117,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     }
   }
 
-  private void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
-    if (logEnabled) {
-      pipeline.addLast("logging", new LoggingHandler());
-    }
-    pipeline.addLast("codec", new HttpClientCodec(4096, 8192, maxChunkSize, false, false));
-    if (tryUseCompression) {
-      pipeline.addLast("inflater", new HttpContentDecompressor(true));
-    }
-    if (idleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, idleTimeout));
-    }
-    pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)connectionMap));
-  }
-
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-    applyHttp1xConnectionOptions(ch.pipeline(), context);
     ClientConnection conn = new ClientConnection(version, client, queue.metric, ch,
         ssl, host, port, context, this, metrics);
     metrics.endpointConnected(queue.metric, conn.metric());
