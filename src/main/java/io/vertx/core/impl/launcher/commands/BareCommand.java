@@ -123,6 +123,14 @@ public class BareCommand extends ClasspathHandler {
   public boolean getHA() {
     return true;
   }
+  
+  /**
+   * @return whether or not the vert.x instance should be launched in high fault tolerance mode. This
+   * implementation returns {@code true}.
+   */
+  public boolean getHft() {
+	return true;
+}
 
   /**
    * Starts the vert.x instance.
@@ -167,6 +175,9 @@ public class BareCommand extends ClasspathHandler {
         if (quorum != -1) {
           options.setQuorumSize(quorum);
         }
+      }
+      if (getHft()) {
+    	  options.setHFTEnabled(true);
       }
 
       create(options, ar -> {

@@ -16,19 +16,28 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.vertx.core.AsyncResult;
+import io.vertx.core.AsyncResultHandler;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
@@ -98,6 +107,7 @@ public class HAManager {
 
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
   private static final long QUORUM_CHECK_PERIOD = 1000;
+  private static final int HFT_CLUSTER_MAP_SNAPSHOTS = 3;
 
   private final VertxInternal vertx;
   private final DeploymentManager deploymentManager;
@@ -111,6 +121,9 @@ public class HAManager {
   private final boolean enabled;
 
   private long quorumTimerID;
+  private SnapshotsClusterMap snapshotClusterMap;
+  private boolean hftEnabled;
+  private long hftInterval;
   private volatile boolean attainedQuorum;
   private volatile FailoverCompleteHandler failoverCompleteHandler;
   private volatile FailoverCompleteHandler nodeCrashedHandler;
@@ -119,7 +132,7 @@ public class HAManager {
   private volatile boolean killed;
 
   public HAManager(VertxInternal vertx, DeploymentManager deploymentManager,
-                   ClusterManager clusterManager, int quorumSize, String group, boolean enabled) {
+                   ClusterManager clusterManager, int quorumSize, String group, boolean enabled, boolean hftEnabled, long hftInterval) {
     this.vertx = vertx;
     this.deploymentManager = deploymentManager;
     this.clusterManager = clusterManager;
@@ -144,6 +157,19 @@ public class HAManager {
     });
     clusterMap.put(nodeID, haInfo.encode());
     quorumTimerID = vertx.setPeriodic(QUORUM_CHECK_PERIOD, tid -> checkHADeployments());
+    
+    this.hftEnabled = hftEnabled;
+    this.hftInterval = hftInterval;
+    if (hftEnabled) {
+	    snapshotClusterMap = new SnapshotsClusterMap(vertx, () -> {
+			final Map<String, String> freshClusterMap = new HashMap<String, String>();
+	    	for (Map.Entry<String, String> entry: clusterMap.entrySet()) {
+	    		freshClusterMap.put(entry.getKey(), entry.getValue());
+	        }
+	    	return freshClusterMap;
+	    }, HFT_CLUSTER_MAP_SNAPSHOTS, hftInterval);
+    }
+    
     // Call check quorum to compute whether we have an initial quorum
     synchronized (this) {
       checkQuorum();
@@ -173,7 +199,20 @@ public class HAManager {
   public void addDataToAHAInfo(String key, JsonObject value) {
     synchronized (haInfo) {
       haInfo.put(key, value);
-      clusterMap.put(nodeID, haInfo.encode());
+      final String encoded = haInfo.encode();
+      clusterMap.put(nodeID, encoded);
+      
+      if (hftEnabled) {
+    	  // Honor the High Fault Tolerance: put in clusterMap at every HFTInterval the description of this node
+    	  vertx.setPeriodic(hftInterval, handler -> {
+    		  vertx.executeBlocking(blocking -> {
+    			  try {
+        			  clusterMap.put(nodeID, encoded);
+        		  } catch (final Throwable t) {
+        		  }
+    		  }, r -> {});
+    	  });
+      }
     }
   }
   // Deploy an HA verticle
@@ -260,13 +299,17 @@ public class HAManager {
   // A node has left the cluster
   // synchronize this in case the cluster manager is naughty and calls it concurrently
   private synchronized void nodeLeft(String leftNodeID) {
-
     checkQuorum();
     if (attainedQuorum) {
 
       // Check for failover
       String sclusterInfo = clusterMap.get(leftNodeID);
 
+      // If not found in current clusterMap, try to see if we can find it in previous snapshots
+      if (sclusterInfo == null && snapshotClusterMap != null) {
+    	  sclusterInfo = snapshotClusterMap.getValueFromAllSnapshots(leftNodeID);
+      }
+      
       if (sclusterInfo == null) {
         // Clean close - do nothing
       } else {
@@ -285,6 +328,17 @@ public class HAManager {
           checkRemoveSubs(entry.getKey(), haInfo);
           checkFailover(entry.getKey(), haInfo);
         }
+      }
+      
+      // make sure that previously seen server ids have been cleanup
+      if (snapshotClusterMap != null) {
+    	  for(final Map<String, String> snapshot : snapshotClusterMap.getAllSnapshots()) {
+    		  for (Map.Entry<String, String> entry: snapshot.entrySet()) {
+    			  if (!leftNodeID.equals(entry.getKey()) && !nodes.contains(entry.getKey())) {
+    				  checkFailover(entry.getKey(), new JsonObject(entry.getValue()));
+    			  }
+    		  }
+    	  }
       }
     }
   }
@@ -456,10 +510,8 @@ public class HAManager {
   }
 
   private void checkRemoveSubs(String failedNodeID, JsonObject theHAInfo) {
-    String chosen = chooseHashedNode(null, failedNodeID.hashCode());
-    if (chosen != null && chosen.equals(this.nodeID)) {
+	  // Each node need to callback the crash handler, and not only a specific node since it can crashes itself
       callFailoverCompleteHandler(nodeCrashedHandler, failedNodeID, theHAInfo, true);
-    }
   }
 
   private void callFailoverCompleteHandler(String nodeID, JsonObject haInfo, boolean result) {

@@ -16,27 +16,52 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+
+import org.mvel2.optimizers.impl.refl.nodes.ArrayLength;
+
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.*;
+import io.vertx.core.eventbus.impl.CodecManager;
+import io.vertx.core.eventbus.impl.EventBusImpl;
+import io.vertx.core.eventbus.impl.HandlerHolder;
+import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.impl.HAManager;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.*;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
-
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * An event bus implementation that clusters with other Vert.x nodes
@@ -58,9 +83,9 @@ public class ClusteredEventBus extends EventBusImpl {
   private final HAManager haManager;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final Context sendNoContext;
-
+  private final Map<String, Handler<AsyncResult<Void>>> hftPending = new ConcurrentSkipListMap<>();
   private EventBusOptions options;
-  private AsyncMultiMap<String, ServerID> subs;
+  private volatile AsyncMultiMap<String, ServerID> subs;
   private ServerID serverID;
   private NetServer server;
 
@@ -74,6 +99,22 @@ public class ClusteredEventBus extends EventBusImpl {
     this.haManager = haManager;
     this.sendNoContext = vertx.getOrCreateContext();
     setNodeCrashedHandler(haManager);
+    
+    if (options.isHFTEnabled()) {
+    	// Honor the High Fault Tolerance: put in subs at every HFTInterval the address to the current node for the registered service
+    	  vertx.setPeriodic(options.getHFTInterval(), handler -> {
+    		  if (serverID != null) {
+    			  vertx.executeBlocking(blockingCodeHandler -> {
+    				  for(final Map.Entry<String, Handler<AsyncResult<Void>>> entry: hftPending.entrySet()) {
+    					  try {
+    		    			  subs.add(entry.getKey(), serverID, entry.getValue());
+    		    		  } catch (final Throwable t) {
+    		    		  }
+    				  }
+    			  }, resultHandler -> {});
+    		  }
+    	  });
+      }
   }
 
   private NetServerOptions getServerOptions() {
@@ -188,6 +229,9 @@ public class ClusteredEventBus extends EventBusImpl {
     if (newAddress && subs != null && !replyHandler && !localOnly) {
       // Propagate the information
       subs.add(address, serverID, completionHandler);
+      if (options.isHFTEnabled()) {
+    	  hftPending.put(address, completionHandler);
+      }
     } else {
       completionHandler.handle(Future.succeededFuture());
     }
@@ -253,6 +297,16 @@ public class ClusteredEventBus extends EventBusImpl {
         ServerID sid = new ServerID(jsid.getInteger("port"), jsid.getString("host"));
         if (subs != null) {
           subs.removeAllForValue(sid, res -> {
+        	  log.warn("Remove sub for crashed node: "+ failedNodeID + " "+sid);
+        	  
+        	  if (options.isHFTEnabled()) {
+	        	  // After node crashed handled, refresh subs in local memory since it can be corrupted
+	              clusterManager.<String, ServerID>getAsyncMultiMap(SUBS_MAP_NAME, r -> {
+	            	  if (r.succeeded()) {
+	            		  subs = r.result();
+	            	  }
+	              });
+        	  }
           });
         }
       }
@@ -373,6 +427,9 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private void removeSub(String subName, ServerID theServerID, Handler<AsyncResult<Void>> completionHandler) {
+    if (options.isHFTEnabled()) {
+	  hftPending.remove(subName);
+    }
     subs.remove(subName, theServerID, ar -> {
       if (!ar.succeeded()) {
         log.error("Failed to remove sub", ar.cause());

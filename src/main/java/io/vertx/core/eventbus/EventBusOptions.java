@@ -37,6 +37,8 @@ public class EventBusOptions extends TCPSSLOptions {
   private int clusterPublicPort = VertxOptions.DEFAULT_CLUSTER_PUBLIC_PORT;
   private long clusterPingInterval = VertxOptions.DEFAULT_CLUSTER_PING_INTERVAL;
   private long clusterPingReplyInterval = VertxOptions.DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
+  private boolean hftEnabled = VertxOptions.DEFAULT_HFT_ENABLED;
+  private long hftInterval = VertxOptions.DEFAULT_HFT_INTERVAL;
 
   // Attributes used to configure the server of the event bus when the event bus is clustered.
 
@@ -126,6 +128,9 @@ public class EventBusOptions extends TCPSSLOptions {
     this.clusterPublicPort = other.clusterPublicPort;
     this.clusterPingInterval = other.clusterPingInterval;
     this.clusterPingReplyInterval = other.clusterPingReplyInterval;
+    
+    this.hftEnabled = other.hftEnabled;
+    this.hftInterval = other.hftInterval;
 
     this.port = other.port;
     this.host = other.host;
@@ -579,6 +584,48 @@ public class EventBusOptions extends TCPSSLOptions {
       throw new IllegalArgumentException("clusterPublicPort p must be in range 0 <= p <= 65535");
     }
     this.clusterPublicPort = clusterPublicPort;
+    return this;
+  }
+
+  /**
+   * Will HFT (High Fault Tolerance) be enabled on the Vert.x instance?
+   *
+   * @return true if HFT enabled, false otherwise
+   */
+  public boolean isHFTEnabled() {
+    return hftEnabled;
+  }
+  
+  /**
+   * Set whether HFT (High Fault Tolerance) will be enabled on the Vert.x instance.
+   *
+   * @param hftEnabled true if enabled, false if not.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public EventBusOptions setHFTEnabled(boolean hftEnabled) {
+    this.hftEnabled = hftEnabled;
+    return this;
+  }
+  
+  /**
+   * Get the value of cluster HFT (High Fault Tolerance) messages interval, in ms.
+   * <p>
+   * In order to guarantee consistency of vertx internal maps (HFT enabled), cluster map and subscribers map need to be constantly resynchronized, at each interval
+   *
+   * @return the value of cluster ping reply interval
+   */
+  public long getHFTInterval() {
+	  return hftInterval;
+  }
+  
+  /**
+   * When HFT (High Fault Tolerance) is enabled, set the interval between internal vertx synchronization
+   *
+   * @param hftInterval interval in miliis
+   * @return a reference to this, so the API can be used fluently
+   */
+  public EventBusOptions setHFTInterval(long hftInterval) {
+    this.hftInterval = hftInterval;
     return this;
   }
 }

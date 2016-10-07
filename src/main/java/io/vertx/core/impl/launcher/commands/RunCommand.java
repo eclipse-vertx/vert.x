@@ -46,6 +46,7 @@ public class RunCommand extends BareCommand {
 
   protected boolean cluster;
   protected boolean ha;
+  protected boolean hft;
 
   protected int instances;
   protected String config;
@@ -72,6 +73,18 @@ public class RunCommand extends BareCommand {
       "fail over to any other nodes in the cluster started with the same HA group.")
   public void setHighAvailability(boolean ha) {
     this.ha = ha;
+  }
+  
+  /**
+   * Enables / disables the high fault tolerance
+   *
+   * @param hft whether or not to enable the HFT.
+   */
+  @Option(longName = "hft", acceptValue = false, flag = true)
+  @Description("If specified the verticle will be deployed as a high availability (HA) deployment. This means it can " +
+      "fail over to any other nodes in the cluster started with the same HA group.")
+  public void setHighFaultTolerance(boolean hft) {
+    this.hft = hft;
   }
 
   /**
@@ -237,6 +250,11 @@ public class RunCommand extends BareCommand {
   public boolean getHA() {
     return ha;
   }
+  
+  @Override
+  public boolean getHft() {
+	return hft;
+}
 
   /**
    * Starts vert.x and deploy the verticle.
@@ -357,6 +375,9 @@ public class RunCommand extends BareCommand {
     }
     if (quorum != -1) {
       args.add("--quorum=" + quorum);
+    }
+    if (hft) {
+        args.add("--hft");
     }
     if (classpath != null && !classpath.isEmpty()) {
       args.add("--classpath=" + classpath.stream().collect(Collectors.joining(File.pathSeparator)));
