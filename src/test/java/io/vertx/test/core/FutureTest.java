@@ -444,8 +444,9 @@ public class FutureTest extends VertxTestBase {
     checker.assertNotCompleted();
     f1.complete("foo");
     checker.assertNotCompleted();
-    f2.fail(new Throwable());
-    checker.assertFailed();
+    Throwable cause = new Throwable();
+    f2.fail(cause);
+    assertSame(checker.assertFailed(), cause);
   }
 
   @Test
@@ -464,10 +465,11 @@ public class FutureTest extends VertxTestBase {
     CompositeFuture composite = join.apply(f1, f2);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertNotCompleted();
-    f1.fail(new Throwable());
+    Throwable cause = new Throwable();
+    f1.fail(cause);
     checker.assertNotCompleted();
     f2.complete(10);
-    checker.assertFailed();
+    assertSame(cause, checker.assertFailed());
   }
 
   @Test
@@ -486,10 +488,12 @@ public class FutureTest extends VertxTestBase {
     CompositeFuture composite = join.apply(f1, f2);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertNotCompleted();
-    f1.fail(new Throwable());
+    Throwable cause1 = new Throwable();
+    f1.fail(cause1);
     checker.assertNotCompleted();
-    f2.fail(new Throwable());
-    checker.assertFailed();
+    Throwable cause2 = new Throwable();
+    f2.fail(cause2);
+    assertSame(cause1, checker.assertFailed());
   }
 
   @Test
