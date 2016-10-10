@@ -659,7 +659,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public synchronized void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
     if (haManager() != null) {
-      haManager.setFailoverCompleteHandler(failoverCompleteHandler);
+      haManager().setFailoverCompleteHandler(failoverCompleteHandler);
     }
   }
 
