@@ -99,7 +99,9 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   @Override
   public WebSocket closeHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkClosed();
+      if (handler != null) {
+        checkClosed();
+      }
       this.closeHandler = handler;
       return this;
     }
@@ -108,7 +110,9 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   @Override
   public WebSocket frameHandler(Handler<WebSocketFrame> handler) {
     synchronized (conn) {
-      checkClosed();
+      if (handler != null) {
+        checkClosed();
+      }
       this.frameHandler = handler;
       return this;
     }
@@ -150,7 +154,9 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   @Override
   public WebSocket drainHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkClosed();
+      if (handler != null) {
+        checkClosed();
+      }
       this.drainHandler = handler;
       return this;
     }
