@@ -16,7 +16,10 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -24,7 +27,11 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -202,12 +209,20 @@ public class HAManager {
   public void simulateKill() {
     if (!stopped) {
       killed = true;
+      CountDownLatch latch = new CountDownLatch(1);
       clusterManager.leave(ar -> {
         if (ar.failed()) {
           log.error("Failed to leave cluster", ar.cause());
         }
+        latch.countDown();
       });
       vertx.cancelTimer(quorumTimerID);
+      try {
+        latch.await(1, TimeUnit.MINUTES);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException(e);
+      }
       stopped = true;
     }
   }
