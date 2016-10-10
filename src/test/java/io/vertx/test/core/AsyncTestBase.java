@@ -158,7 +158,7 @@ public class AsyncTestBase {
   protected void afterAsyncTestBase() {
     if (throwable != null && thrownThread != Thread.currentThread() && !awaitCalled) {
       // Throwable caught from non main thread
-      throw new IllegalStateException("Assert or failure from non main thread but no await() on main thread");
+      throw new IllegalStateException("Assert or failure from non main thread but no await() on main thread", throwable);
     }
     for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {
       if (!entry.getKey().equals(mainThreadName)) {
