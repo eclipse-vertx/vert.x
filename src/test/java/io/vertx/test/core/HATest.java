@@ -418,8 +418,12 @@ public class HATest extends VertxTestBase {
   protected void kill(int pos) {
     VertxInternal v = (VertxInternal)vertices[pos];
     v.executeBlocking(fut -> {
-      v.simulateKill();
-      fut.complete();
+      try {
+        v.simulateKill();
+        fut.complete();
+      } catch (Exception e) {
+        fut.fail(e);
+      }
     }, ar -> {
       assertTrue(ar.succeeded());
     });

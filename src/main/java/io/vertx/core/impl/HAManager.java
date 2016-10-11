@@ -37,6 +37,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.concurrent.TimeUnit.*;
+
 /**
  *
  * Handles HA
@@ -217,12 +219,27 @@ public class HAManager {
         latch.countDown();
       });
       vertx.cancelTimer(quorumTimerID);
+
+      boolean interrupted = false;
       try {
-        latch.await(1, TimeUnit.MINUTES);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new RuntimeException(e);
+        long remainingNanos = MINUTES.toNanos(1);
+        long end = System.nanoTime() + remainingNanos;
+
+        while (true) {
+          try {
+            latch.await(remainingNanos, NANOSECONDS);
+            break;
+          } catch (InterruptedException e) {
+            interrupted = true;
+            remainingNanos = end - System.nanoTime();
+          }
+        }
+      } finally {
+        if (interrupted) {
+          Thread.currentThread().interrupt();
+        }
       }
+
       stopped = true;
     }
   }
