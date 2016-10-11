@@ -425,7 +425,9 @@ public class HATest extends VertxTestBase {
         fut.fail(e);
       }
     }, ar -> {
-      assertTrue(ar.succeeded());
+      if (!ar.succeeded()) {
+        fail(ar.cause());
+      }
     });
   }
 
