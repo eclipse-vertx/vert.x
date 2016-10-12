@@ -1660,6 +1660,29 @@ public class JsonObjectTest {
     assertEquals(((JsonArray) removed).getDouble(0), 1.0, 0.0);
   }
 
+  @Test
+  public void testOrder() {
+    List<String> expectedKeys = new ArrayList<>();
+    int size = 100;
+    StringBuilder sb = new StringBuilder("{");
+    for (int i = 0;i < size;i++) {
+      sb.append("\"key-").append(i).append("\":").append(i).append(",");
+      expectedKeys.add("key-" + i);
+    }
+    sb.setCharAt(sb.length() - 1, '}');
+    JsonObject obj = new JsonObject(sb.toString());
+    List<String> keys = new ArrayList<>();
+
+    // ordered because of Jackson uses a LinkedHashMap
+    obj.forEach(e -> keys.add(e.getKey()));
+    assertEquals(expectedKeys, keys);
+    keys.clear();
+
+    // Ordered because we preserve the LinkedHashMap
+    obj.copy().forEach(e -> keys.add(e.getKey()));
+    assertEquals(expectedKeys, keys);
+  }
+
   private void testStreamCorrectTypes(JsonObject object) {
     object.stream().forEach(entry -> {
       String key = entry.getKey();
