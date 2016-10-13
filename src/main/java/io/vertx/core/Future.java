@@ -110,6 +110,32 @@ public interface Future<T> extends AsyncResult<T> {
   Future<T> setHandler(Handler<AsyncResult<T>> handler);
 
   /**
+   * Set a handler for the future that has succeeded.
+   * <p>
+   * If the future has already been completed successfully it will be called immediately. Otherwise it will be called when the
+   * future has completed successfully.
+   *
+   * @param successHandler  the Handler that will be called if the future has succeeded with the result
+   * @return a reference to this, so it can be used fluently
+   *
+   */
+  @Fluent
+  Future<T> setSuccessHandler(Handler<T> successHandler);
+
+  /**
+   * Set a handler for future that has failed.
+   * <p>
+   * If the future has already been completed but failed it will be called immediately. Otherwise it will be called when the
+   * future has failed.
+   *
+   * @param failureHandler  the Handler that will be called if the future has failed with the cause of the failure
+   * @return a reference to this, so it can be used fluently
+   *
+   */
+  @Fluent
+  Future<T> setFailureHandler(Handler<Throwable> failureHandler);
+
+  /**
    * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.
    *
    * @param result  the result

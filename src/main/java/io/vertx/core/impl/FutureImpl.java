@@ -24,6 +24,8 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   private boolean failed;
   private boolean succeeded;
   private Handler<AsyncResult<T>> handler;
+  private Handler<T> successHandler;
+  private Handler<Throwable> failureHandler;
   private T result;
   private Throwable throwable;
 
@@ -35,6 +37,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
 
   /**
    * Create a future that has already failed
+   *
    * @param t the throwable
    */
   FutureImpl(Throwable t) {
@@ -43,6 +46,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
 
   /**
    * Create a future that has already failed
+   *
    * @param failureMessage the failure message
    */
   FutureImpl(String failureMessage) {
@@ -51,6 +55,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
 
   /**
    * Create a future that has already succeeded
+   *
    * @param result the result
    */
   FutureImpl(T result) {
@@ -101,6 +106,20 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
     return this;
   }
 
+  @Override
+  public Future<T> setSuccessHandler(Handler<T> successHandler) {
+    this.successHandler = successHandler;
+    checkCallSuccessHandler();
+    return this;
+  }
+
+  @Override
+  public Future<T> setFailureHandler(Handler<Throwable> failureHandler) {
+    this.failureHandler = failureHandler;
+    checkCallFailureHandler();
+    return this;
+  }
+
   /**
    * Set the result. Any handler will be called, if there is one
    */
@@ -108,7 +127,12 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
     checkComplete();
     this.result = result;
     succeeded = true;
-    checkCallHandler();
+
+    checkCallHandlerOnComplete();
+
+    if (successHandler != null) {
+      successHandler.handle(result);
+    }
   }
 
   @Override
@@ -145,7 +169,12 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
     checkComplete();
     this.throwable = throwable != null ? throwable : new NoStackTraceThrowable(null);
     failed = true;
-    checkCallHandler();
+
+    checkCallHandlerOnComplete();
+
+    if (failureHandler != null) {
+      failureHandler.handle(this.throwable);
+    }
   }
 
   @Override
@@ -153,9 +182,27 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
     fail(new NoStackTraceThrowable(failureMessage));
   }
 
+  private void checkCallHandlerOnComplete() {
+    if (handler != null) {
+      handler.handle(this);
+    }
+  }
+
   private void checkCallHandler() {
     if (handler != null && isComplete()) {
       handler.handle(this);
+    }
+  }
+
+  private void checkCallSuccessHandler() {
+    if (successHandler != null && succeeded) {
+      successHandler.handle(result);
+    }
+  }
+
+  private void checkCallFailureHandler() {
+    if (failureHandler != null && failed) {
+      failureHandler.handle(throwable);
     }
   }
 
