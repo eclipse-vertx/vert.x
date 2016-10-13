@@ -103,9 +103,10 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public void reset(long code) {
+  public boolean reset(long code) {
     synchronized (conn) {
       stream.reset(code);
+      return true;
     }
   }
 

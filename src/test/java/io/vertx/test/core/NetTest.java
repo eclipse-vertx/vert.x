@@ -43,6 +43,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -815,7 +816,7 @@ public class NetTest extends VertxTestBase {
       final int numConnections = 100;
       final AtomicInteger connCount = new AtomicInteger(0);
       for (int i = 0; i < numConnections; i++) {
-        AsyncResultHandler<NetSocket> handler = res -> {
+        Handler<AsyncResult<NetSocket>> handler = res -> {
           if (res.succeeded()) {
             res.result().close();
             if (connCount.incrementAndGet() == numConnections) {
@@ -2608,4 +2609,23 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testClientLocalAddress() throws Exception {
+    String expectedAddress = InetAddress.getLocalHost().getHostAddress();
+    NetClientOptions clientOptions = new NetClientOptions().setLocalAddress(expectedAddress);
+    client.close();
+    client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+      assertEquals(expectedAddress, sock.remoteAddress().host());
+      sock.close();
+    });
+    server.listen(1234, "localhost", onSuccess(v -> {
+      client.connect(1234, "localhost", onSuccess(socket -> {
+        socket.closeHandler(v2 -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
 }

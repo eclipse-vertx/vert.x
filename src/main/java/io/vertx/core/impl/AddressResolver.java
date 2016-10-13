@@ -16,13 +16,15 @@
 
 package io.vertx.core.impl;
 
+import io.netty.channel.ChannelFactory;
 import io.netty.channel.EventLoop;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.resolver.HostsFileParser;
-import io.netty.resolver.InetSocketAddressResolver;
-import io.netty.resolver.dns.DnsNameResolver;
+import io.netty.resolver.NameResolver;
+import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.resolver.dns.DnsNameResolverBuilder;
 import io.netty.resolver.dns.DnsServerAddresses;
 import io.netty.util.NetUtil;
@@ -140,38 +142,42 @@ public class AddressResolver {
 
         @Override
         protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
-          DnsNameResolverBuilder builder = new DnsNameResolverBuilder((EventLoop) executor);
-          builder.hostsFileEntriesResolver(inetHost -> {
-            InetAddress addr = entries.get(inetHost);
-            if (addr == null) {
-              addr = entries.get(inetHost.toLowerCase(Locale.ENGLISH));
-            }
-            return addr;
-          });
-          builder.channelType(NioDatagramChannel.class);
-          builder.nameServerAddresses(nameServerAddresses);
-          builder.optResourceEnabled(options.isOptResourceEnabled());
-          builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
-          builder.negativeTtl(options.getCacheNegativeTimeToLive());
-          builder.queryTimeoutMillis(options.getQueryTimeout());
-          builder.maxQueriesPerResolve(options.getMaxQueries());
-          builder.recursionDesired(options.getRdFlag());
-          if (options.getSearchDomains() != null) {
-            builder.searchDomains(options.getSearchDomains());
-            int ndots = options.getNdots();
-            if (ndots == -1) {
-              ndots = DEFAULT_NDOTS;
-            }
-            builder.ndots(ndots);
-          }
-          DnsNameResolver resolver = builder.build();
-          resolvers.add(new ResolverRegistration(resolver, (EventLoop) executor));
-          return new InetSocketAddressResolver(executor, resolver) {
+
+          DnsAddressResolverGroup group = new DnsAddressResolverGroup(NioDatagramChannel.class, nameServerAddresses) {
             @Override
-            public void close() {
-              // Closed before by the AddressResolver.close
+            protected NameResolver<InetAddress> newNameResolver(EventLoop eventLoop, ChannelFactory<? extends DatagramChannel> channelFactory, DnsServerAddresses nameServerAddresses) throws Exception {
+              DnsNameResolverBuilder builder = new DnsNameResolverBuilder((EventLoop) executor);
+              builder.hostsFileEntriesResolver(inetHost -> {
+                InetAddress addr = entries.get(inetHost);
+                if (addr == null) {
+                  addr = entries.get(inetHost.toLowerCase(Locale.ENGLISH));
+                }
+                return addr;
+              });
+              builder.channelType(NioDatagramChannel.class);
+              builder.nameServerAddresses(nameServerAddresses);
+              builder.optResourceEnabled(options.isOptResourceEnabled());
+              builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
+              builder.negativeTtl(options.getCacheNegativeTimeToLive());
+              builder.queryTimeoutMillis(options.getQueryTimeout());
+              builder.maxQueriesPerResolve(options.getMaxQueries());
+              builder.recursionDesired(options.getRdFlag());
+              if (options.getSearchDomains() != null) {
+                builder.searchDomains(options.getSearchDomains());
+                int ndots = options.getNdots();
+                if (ndots == -1) {
+                  ndots = DEFAULT_NDOTS;
+                }
+                builder.ndots(ndots);
+              }
+              return builder.build();
             }
           };
+
+          io.netty.resolver.AddressResolver<InetSocketAddress> resolver = group.getResolver(executor);
+          resolvers.add(new ResolverRegistration(resolver, (EventLoop) executor));
+
+          return resolver;
         }
 
         @Override
@@ -206,9 +212,9 @@ public class AddressResolver {
   }
 
   private static class ResolverRegistration {
-    private final DnsNameResolver resolver;
+    private final io.netty.resolver.AddressResolver<InetSocketAddress> resolver;
     private final EventLoop executor;
-    ResolverRegistration(DnsNameResolver resolver, EventLoop executor) {
+    ResolverRegistration(io.netty.resolver.AddressResolver<InetSocketAddress> resolver, EventLoop executor) {
       this.resolver = resolver;
       this.executor = executor;
     }

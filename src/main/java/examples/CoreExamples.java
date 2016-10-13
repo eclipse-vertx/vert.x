@@ -178,11 +178,9 @@ public class CoreExamples {
       return fut2;
     }).compose(v -> {
               // When the file is written (fut2), execute this:
-              Future<Void> fut3 = Future.future();
-              fs.move("/foo", "/bar", fut3.completer());
+              fs.move("/foo", "/bar", startFuture.completer());
             },
-            // mark the start future as completed when all the chain has been completed,
-            // or mark it as failed if any step fails.
+            // mark startFuture it as failed if any step fails.
             startFuture);
   }
 

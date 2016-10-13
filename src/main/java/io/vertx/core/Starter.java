@@ -338,7 +338,7 @@ public class Starter {
     }));
   }
 
-  private <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
+  private <T> Handler<AsyncResult<T>> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
     return res -> {
       if (res.failed()) {
         Throwable cause = res.cause();

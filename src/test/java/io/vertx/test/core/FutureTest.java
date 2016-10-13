@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -443,8 +444,9 @@ public class FutureTest extends VertxTestBase {
     checker.assertNotCompleted();
     f1.complete("foo");
     checker.assertNotCompleted();
-    f2.fail(new Throwable());
-    checker.assertFailed();
+    Throwable cause = new Throwable();
+    f2.fail(cause);
+    assertSame(checker.assertFailed(), cause);
   }
 
   @Test
@@ -463,10 +465,11 @@ public class FutureTest extends VertxTestBase {
     CompositeFuture composite = join.apply(f1, f2);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertNotCompleted();
-    f1.fail(new Throwable());
+    Throwable cause = new Throwable();
+    f1.fail(cause);
     checker.assertNotCompleted();
     f2.complete(10);
-    checker.assertFailed();
+    assertSame(cause, checker.assertFailed());
   }
 
   @Test
@@ -485,10 +488,12 @@ public class FutureTest extends VertxTestBase {
     CompositeFuture composite = join.apply(f1, f2);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertNotCompleted();
-    f1.fail(new Throwable());
+    Throwable cause1 = new Throwable();
+    f1.fail(cause1);
     checker.assertNotCompleted();
-    f2.fail(new Throwable());
-    checker.assertFailed();
+    Throwable cause2 = new Throwable();
+    f2.fail(cause2);
+    assertSame(cause1, checker.assertFailed());
   }
 
   @Test
@@ -619,6 +624,8 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { return true; }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> AsyncResult<U> map(Function<Object, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> AsyncResult<V> map(V value) { throw new UnsupportedOperationException(); }
     };
 
     AsyncResult<Object> failedAsyncResult = new AsyncResult<Object>() {
@@ -627,6 +634,8 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { return cause; }
       public boolean succeeded() { return false; }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> AsyncResult<U> map(Function<Object, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> AsyncResult<V> map(V value) { throw new UnsupportedOperationException(); }
     };
 
     class DefaultCompleterTestFuture<T> implements Future<T> {
@@ -740,4 +749,67 @@ public class FutureTest extends VertxTestBase {
     assertNull(future.result());
   }
 */
+
+  @Test
+  public void testUncompletedAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    assertNull(map1.result());
+    assertNull(map1.cause());
+    assertNull(map2.result());
+    assertNull(map2.cause());
+  }
+
+  @Test
+  public void testSucceededAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    f.complete("foobar");
+    assertEquals(6, (int)map1.result());
+    assertNull(map1.cause());
+    assertEquals(17, (int)map2.result());
+    assertNull(map2.cause());
+  }
+
+  @Test
+  public void testFailedAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    Throwable cause = new Throwable();
+    f.fail(cause);
+    assertNull(map1.result());
+    assertSame(cause, map1.cause());
+    assertNull(map2.result());
+    assertSame(cause, map2.cause());
+  }
+
+  private <T> AsyncResult<T> asyncResult(Future<T> fut) {
+    return new AsyncResult<T>() {
+      @Override
+      public T result() {
+        return fut.result();
+      }
+
+      @Override
+      public Throwable cause() {
+        return fut.cause();
+      }
+
+      @Override
+      public boolean succeeded() {
+        return fut.succeeded();
+      }
+
+      @Override
+      public boolean failed() {
+        return fut.failed();
+      }
+    };
+  }
 }

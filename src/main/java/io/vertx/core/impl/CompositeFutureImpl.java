@@ -91,21 +91,21 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
     return composite;
   }
 
-  private static final Predicate<CompositeFuture> ALL = cf -> {
+  private static final Function<CompositeFuture, Throwable> ALL = cf -> {
     int size = cf.size();
     for (int i = 0;i < size;i++) {
       if (!cf.succeeded(i)) {
-        return false;
+        return cf.cause(i);
       }
     }
-    return true;
+    return null;
   };
 
   public static CompositeFuture join(Future<?>... results) {
     return join(ALL, results);
   }
 
-  private  static CompositeFuture join(Predicate<CompositeFuture> pred, Future<?>... results) {
+  private  static CompositeFuture join(Function<CompositeFuture, Throwable> pred, Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
     int len = results.length;
     for (int i = 0; i < len; i++) {
@@ -115,11 +115,11 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
           composite.count++;
           if (!composite.isComplete() && composite.count == len) {
             // Take decision here
-            boolean completed = pred.test(composite);
-            if (completed) {
+            Throwable failure = pred.apply(composite);
+            if (failure == null) {
               handler = composite.setSucceeded();
             } else {
-              handler = composite.setFailed(new NoStackTraceThrowable("failed"));
+              handler = composite.setFailed(failure);
             }
           }
         }

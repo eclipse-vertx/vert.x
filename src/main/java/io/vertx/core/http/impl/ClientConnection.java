@@ -44,6 +44,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.net.URI;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -76,7 +77,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private final Http1xPool pool;
   private final Object endpointMetric;
   // Requests can be pipelined so we need a queue to keep track of requests
-  private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
+  private final Deque<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Object metric;
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
@@ -87,6 +88,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
+  private boolean reset;
   private boolean paused;
   private Buffer pausedChunk;
 
@@ -377,7 +379,18 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         // currently Vertx forces the Connection header if keepalive is enabled for 1.0
         close = true;
       }
-      pool.responseEnded(this, close);
+
+      if (close) {
+        pool.responseEnded(this, true);
+      } else {
+        if (reset) {
+          if (requests.isEmpty()) {
+            pool.responseEnded(this, true);
+          }
+        } else {
+          pool.responseEnded(this, false);
+        }
+      }
     }
     currentResponse = null;
   }
@@ -426,7 +439,17 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   public void reset(long code) {
-    throw new UnsupportedOperationException("HTTP/1.x request cannot be reset");
+    if (currentRequest == null) {
+      throw new IllegalStateException();
+    }
+    if (!reset) {
+      currentRequest = null;
+      reset = true;
+      requests.removeLast();
+      if (requests.size() == 0) {
+        pool.responseEnded(this, true);
+      }
+    }
   }
 
   private HttpRequest createRequest(HttpVersion version, HttpMethod method, String rawMethod, String uri, MultiMap headers) {

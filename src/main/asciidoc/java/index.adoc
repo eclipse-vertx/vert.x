@@ -440,11 +440,9 @@ fut1.compose(v -> {
   return fut2;
 }).compose(v -> {
           // When the file is written (fut2), execute this:
-          Future<Void> fut3 = Future.future();
-          fs.move("/foo", "/bar", fut3.completer());
+          fs.move("/foo", "/bar", startFuture.completer());
         },
-        // mark the start future as completed when all the chain has been completed,
-        // or mark it as failed if any step fails.
+        // mark startFuture it as failed if any step fails.
         startFuture);
 ----
 
@@ -452,10 +450,10 @@ In this example, 3 operations are chained:
 
 1. a file is created (`fut1`)
 2. something is written in the file (`fut2`)
-3. the file is moved (`fut3`)
+3. the file is moved (`startFuture`)
 
-When these 3 steps are successful, the final future (`startFuture`) is completed with a success. However, if one
-of the steps fails, the final future is completed with a failure.
+When these 3 steps are successful, the final future (`startFuture`) is succeeded. However, if one
+of the steps fails, the final future is failed.
 
 This example uses:
 

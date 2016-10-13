@@ -21,6 +21,7 @@ package io.vertx.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Deprecated
 public abstract class VoidHandler implements Handler<Void> {
 
   public final void handle(Void event) {

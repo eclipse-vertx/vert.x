@@ -16,7 +16,10 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -24,11 +27,17 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  *
@@ -202,12 +211,35 @@ public class HAManager {
   public void simulateKill() {
     if (!stopped) {
       killed = true;
+      CountDownLatch latch = new CountDownLatch(1);
       clusterManager.leave(ar -> {
         if (ar.failed()) {
           log.error("Failed to leave cluster", ar.cause());
         }
+        latch.countDown();
       });
       vertx.cancelTimer(quorumTimerID);
+
+      boolean interrupted = false;
+      try {
+        long remainingNanos = MINUTES.toNanos(1);
+        long end = System.nanoTime() + remainingNanos;
+
+        while (true) {
+          try {
+            latch.await(remainingNanos, NANOSECONDS);
+            break;
+          } catch (InterruptedException e) {
+            interrupted = true;
+            remainingNanos = end - System.nanoTime();
+          }
+        }
+      } finally {
+        if (interrupted) {
+          Thread.currentThread().interrupt();
+        }
+      }
+
       stopped = true;
     }
   }
@@ -393,24 +425,18 @@ public class HAManager {
           ContextImpl ctx = vertx.getContext();
           try {
             ContextImpl.setContext(null);
-            deploymentManager.undeployVerticle(deploymentID, new AsyncResultHandler<Void>() {
-              @Override
-              public void handle(AsyncResult<Void> result) {
-                if (result.succeeded()) {
-                  log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
-                  addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), new AsyncResultHandler<String>() {
-                    @Override
-                    public void handle(AsyncResult<String> result) {
-                      if (result.succeeded()) {
-                        log.info("Successfully redeployed verticle " + dep.verticleIdentifier() + " after quorum was re-attained");
-                      } else {
-                        log.error("Failed to redeploy verticle " + dep.verticleIdentifier() + " after quorum was re-attained", result.cause());
-                      }
-                    }
-                  });
-                } else {
-                  log.error("Failed to undeploy deployment on lost quorum", result.cause());
-                }
+            deploymentManager.undeployVerticle(deploymentID, result -> {
+              if (result.succeeded()) {
+                log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
+                addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), result1 -> {
+                  if (result1.succeeded()) {
+                    log.info("Successfully redeployed verticle " + dep.verticleIdentifier() + " after quorum was re-attained");
+                  } else {
+                    log.error("Failed to redeploy verticle " + dep.verticleIdentifier() + " after quorum was re-attained", result1.cause());
+                  }
+                });
+              } else {
+                log.error("Failed to undeploy deployment on lost quorum", result.cause());
               }
             });
           } finally {

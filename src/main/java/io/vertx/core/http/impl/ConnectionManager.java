@@ -46,10 +46,12 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -107,9 +109,9 @@ public class ConnectionManager {
   private class QueueManager {
 
     private final Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<>();
-    private final Map<TargetAddress, ConnQueue> queueMap = new ConcurrentHashMap<>();
+    private final Map<SocketAddress, ConnQueue> queueMap = new ConcurrentHashMap<>();
 
-    ConnQueue getConnQueue(TargetAddress address, HttpVersion version) {
+    ConnQueue getConnQueue(SocketAddress address, HttpVersion version) {
       return queueMap.computeIfAbsent(address, targetAddress -> new ConnQueue(version, this, targetAddress));
     }
 
@@ -125,7 +127,7 @@ public class ConnectionManager {
   }
 
   public void getConnectionForWebsocket(int port, String host, Waiter waiter) {
-    TargetAddress address = new TargetAddress(host, port);
+    SocketAddress address = new SocketAddressImpl(port, host);
     ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);
   }
@@ -134,7 +136,7 @@ public class ConnectionManager {
     if (!keepAlive && pipelining) {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
-      TargetAddress address = new TargetAddress(host, port);
+      SocketAddress address = new SocketAddressImpl(port, host);
       ConnQueue connQueue = requestQM.getConnQueue(address, version);
       connQueue.getConnection(waiter);
     }
@@ -144,33 +146,6 @@ public class ConnectionManager {
     wsQM.close();
     requestQM.close();
     metrics.close();
-  }
-
-  static class TargetAddress {
-    final String host;
-    final int port;
-
-    TargetAddress(String host, int port) {
-      this.host = host;
-      this.port = port;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      TargetAddress that = (TargetAddress) o;
-      if (port != that.port) return false;
-      if (host != null ? !host.equals(that.host) : that.host != null) return false;
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = host != null ? host.hashCode() : 0;
-      result = 31 * result + port;
-      return result;
-    }
   }
 
   /**
@@ -186,14 +161,14 @@ public class ConnectionManager {
   public class ConnQueue {
 
     private final QueueManager mgr;
-    private final TargetAddress address;
+    private final SocketAddress address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
     private Pool<HttpClientConnection> pool;
     private int connCount;
     private final int maxSize;
     final Object metric;
 
-    ConnQueue(HttpVersion version, QueueManager mgr, TargetAddress address) {
+    ConnQueue(HttpVersion version, QueueManager mgr, SocketAddress address) {
       this.address = address;
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
@@ -203,7 +178,7 @@ public class ConnectionManager {
         maxSize = options.getMaxPoolSize();
         pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize());
       }
-      this.metric = ConnectionManager.this.metrics.createEndpoint(address.host, address.port, maxSize);
+      this.metric = ConnectionManager.this.metrics.createEndpoint(address.host(), address.port(), maxSize);
     }
 
     public synchronized void getConnection(Waiter waiter) {
@@ -276,7 +251,7 @@ public class ConnectionManager {
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
       bootstrap.channel(NioSocketChannel.class);
-      connector.connect(this, bootstrap, context, pool.version(), address.host, address.port, waiter);
+      connector.connect(this, bootstrap, context, pool.version(), address.host(), address.port(), waiter);
     }
 
     /**
@@ -307,7 +282,7 @@ public class ConnectionManager {
         // No waiters and no connections - remove the ConnQueue
         mgr.queueMap.remove(address);
         if (ConnectionManager.this.metrics.isEnabled()) {
-          ConnectionManager.this.metrics.closeEndpoint(address.host, address.port, metric);
+          ConnectionManager.this.metrics.closeEndpoint(address.host(), address.port(), metric);
         }
       }
     }
@@ -524,6 +499,9 @@ public class ConnectionManager {
     }
 
     void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
+      if (options.getLocalAddress() != null) {
+        bootstrap.localAddress(options.getLocalAddress(), 0);
+      }
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
       if (options.getSendBufferSize() != -1) {
         bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());

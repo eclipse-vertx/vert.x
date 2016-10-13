@@ -129,6 +129,9 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   }
 
   private void applyConnectionOptions(Bootstrap bootstrap) {
+    if (options.getLocalAddress() != null) {
+      bootstrap.localAddress(options.getLocalAddress(), 0);
+    }
     bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
       bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());

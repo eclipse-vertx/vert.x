@@ -137,13 +137,13 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   /**
    * Set the request host.<p/>
    *
-   * For HTTP2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header
+   * For HTTP/2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header
    */
   @Fluent
   HttpClientRequest setHost(String host);
 
   /**
-   * @return the request host. For HTTP2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
+   * @return the request host. For HTTP/2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
    */
   String getHost();
 
@@ -308,17 +308,28 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
 
   /**
    * Reset this stream with the error code {@code 0}.
+   *
+   * @see #reset(long)
    */
-  default void reset() {
-    reset(0L);
+  default boolean reset() {
+    return reset(0L);
   }
 
   /**
-   * Reset this stream with the error {@code code}.
+   * Reset this request:
+   * <p/>
+   * <ul>
+   *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the specified error {@code code}</li>
+   *   <li>for HTTP/1.x, this closes the connection after the current in-flight requests are ended</li>
+   * </ul>
+   * <p/>
+   * When the request has not yet been sent, the request will be aborted and false is returned as indicator.
+   * <p/>
    *
    * @param code the error code
+   * @return true when reset has been performed
    */
-  void reset(long code);
+  boolean reset(long code);
 
   /**
    * @return the {@link HttpConnection} associated with this request
