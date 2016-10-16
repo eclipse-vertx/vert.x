@@ -157,60 +157,6 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testCallSetHandlerBeforeCallSetSuccessHandlerBeforeCompletion() {
-    AtomicBoolean called = new AtomicBoolean();
-    Future<Object> future = Future.future();
-    Object foo = new Object();
-    future.setSuccessHandler(result -> {
-      assertEquals(foo, result);
-      assertTrue(called.get());
-    });
-    future.setHandler(result -> {
-      assertEquals(foo, result.result());
-      called.set(true);
-    });
-    future.complete(foo);
-    future = Future.future();
-    called.set(false);
-    future.setHandler(result -> {
-      assertEquals(foo, result.result());
-      called.set(true);
-    });
-    future.setSuccessHandler(result -> {
-      assertEquals(foo, result);
-      assertTrue(called.get());
-    });
-    future.complete(foo);
-  }
-
-  @Test
-  public void testCallSetHandlerBeforeCallSetFailureHandlerBeforeCompletion() {
-    AtomicBoolean called = new AtomicBoolean();
-    Exception cause = new Exception();
-    Future<Object> future = Future.future();
-    future.setFailureHandler(throwable -> {
-      assertEquals(cause, throwable);
-      assertTrue(called.get());
-    });
-    future.setHandler(result -> {
-      assertEquals(cause, result.cause());
-      called.set(true);
-    });
-    future.fail(cause);
-    future = Future.future();
-    called.set(false);
-    future.setHandler(result -> {
-      assertEquals(cause, result.cause());
-      called.set(true);
-    });
-    future.setFailureHandler(throwable -> {
-      assertEquals(cause, throwable);
-      assertTrue(called.get());
-    });
-    future.fail(cause);
-  }
-
-  @Test
   public void testCallSetFailureHandlerBeforeCompletion() {
     AtomicBoolean called = new AtomicBoolean();
     Future<Object> future = Future.future();
@@ -299,31 +245,6 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testCallSetHandlerAndCallSetSuccessHandlerInOrderOfAssignmentAfterCompletion() {
-    AtomicBoolean called = new AtomicBoolean();
-    Object foo = new Object();
-    Future<Object> future = Future.succeededFuture(foo);
-    future.setSuccessHandler(result -> {
-      assertEquals(foo, result);
-      called.set(true);
-    });
-    future.setHandler(result -> {
-      assertEquals(foo, result.result());
-      assertTrue(called.get());
-    });
-    future = Future.succeededFuture(foo);
-    called.set(false);
-    future.setHandler(result -> {
-      assertEquals(foo, result.result());
-      called.set(true);
-    });
-    future.setSuccessHandler(result -> {
-      assertEquals(foo, result);
-      assertTrue(called.get());
-    });
-  }
-
-  @Test
   public void testCallSetFailureHandlerAfterCompletion() {
     AtomicBoolean called = new AtomicBoolean();
     Future<Object> future = Future.succeededFuture();
@@ -342,31 +263,6 @@ public class FutureTest extends VertxTestBase {
       called.set(true);
     });
     assertTrue(called.get());
-  }
-
-  @Test
-  public void testCallSetHandlerAndCallSetFailureHandlerInOrderOfAssignmentAfterCompletion() {
-    AtomicBoolean called = new AtomicBoolean();
-    Exception cause = new Exception();
-    Future<Object> future = Future.failedFuture(cause);
-    future.setFailureHandler(throwable -> {
-      assertEquals(cause, throwable);
-      called.set(true);
-    });
-    future.setHandler(result -> {
-      assertEquals(cause, result.cause());
-      assertTrue(called.get());
-    });
-    future = Future.failedFuture(cause);
-    called.set(false);
-    future.setHandler(result -> {
-      assertEquals(cause, result.cause());
-      called.set(true);
-    });
-    future.setFailureHandler(throwable -> {
-      assertEquals(cause, throwable);
-      assertTrue(called.get());
-    });
   }
 
   @Test

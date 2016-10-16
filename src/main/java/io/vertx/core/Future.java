@@ -120,7 +120,13 @@ public interface Future<T> extends AsyncResult<T> {
    *
    */
   @Fluent
-  Future<T> setSuccessHandler(Handler<T> successHandler);
+  default Future<T> setSuccessHandler(Handler<T> successHandler) {
+    return setHandler(ar -> {
+      if (ar.succeeded()) {
+        successHandler.handle(ar.result());
+      }
+    });
+  }
 
   /**
    * Set a handler for future that has failed.
@@ -133,7 +139,13 @@ public interface Future<T> extends AsyncResult<T> {
    *
    */
   @Fluent
-  Future<T> setFailureHandler(Handler<Throwable> failureHandler);
+  default Future<T> setFailureHandler(Handler<Throwable> failureHandler) {
+    return setHandler(ar -> {
+      if (ar.failed()) {
+        failureHandler.handle(ar.cause());
+      }
+    });
+  }
 
   /**
    * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.
