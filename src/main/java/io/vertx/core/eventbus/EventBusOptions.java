@@ -204,7 +204,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return the host, which can be configured from the {@link VertxOptions#getClusterHost()}, or using
+   * @return the host, which can be configured from the {@link VertxOptions#setClusterHost(String)}, or using
    * the {@code --cluster-host} command line option.
    * @see NetServerOptions#getHost()
    */
@@ -225,7 +225,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return the post, which can be configured from the {@link VertxOptions#getClusterPort()} ()}, or
+   * @return the port, which can be configured from the {@link VertxOptions#setClusterPort(int)}, or
    * using the {@code --cluster-port} command line option.
    * @see NetServerOptions#getPort()
    */
