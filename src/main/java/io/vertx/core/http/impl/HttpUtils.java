@@ -139,7 +139,7 @@ public final class HttpUtils {
         nettySettings.maxFrameSize(vertxSettings.getMaxFrameSize());
       }
       if (vertxSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
-        nettySettings.maxHeaderListSize((int)(long) vertxSettings.getMaxHeaderListSize());
+        nettySettings.maxHeaderListSize(vertxSettings.getMaxHeaderListSize());
       }
       Map<Integer, Long> extraSettings = vertxSettings.getExtraSettings();
       if (extraSettings != null) {
@@ -155,7 +155,7 @@ public final class HttpUtils {
     converted.pushEnabled(settings.isPushEnabled());
     converted.maxFrameSize(settings.getMaxFrameSize());
     converted.initialWindowSize(settings.getInitialWindowSize());
-    converted.headerTableSize((int)(long)settings.getHeaderTableSize());
+    converted.headerTableSize(settings.getHeaderTableSize());
     converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
     converted.maxHeaderListSize(settings.getMaxHeaderListSize());
     if (settings.getExtraSettings() != null) {
@@ -176,7 +176,7 @@ public final class HttpUtils {
     if (maxConcurrentStreams != null) {
       converted.setMaxConcurrentStreams(maxConcurrentStreams);
     }
-    Integer maxHeaderListSize = settings.maxHeaderListSize();
+    Long maxHeaderListSize = settings.maxHeaderListSize();
     if (maxHeaderListSize != null) {
       converted.setMaxHeaderListSize(maxHeaderListSize);
     }
@@ -190,7 +190,7 @@ public final class HttpUtils {
     }
     Long headerTableSize = settings.headerTableSize();
     if (headerTableSize != null) {
-      converted.setHeaderTableSize((int)(long) headerTableSize);
+      converted.setHeaderTableSize(headerTableSize);
     }
     settings.forEach((key, value) -> {
       if (key > 6) {

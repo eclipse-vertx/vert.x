@@ -293,18 +293,7 @@ public class SSLHelper {
     TrustManagerFactory fact;
     if (trustAll) {
       TrustManager[] mgrs = new TrustManager[]{createTrustAllTrustManager()};
-      fact = new SimpleTrustManagerFactory() {
-        @Override
-        protected void engineInit(KeyStore keyStore) throws Exception {}
-
-        @Override
-        protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {}
-
-        @Override
-        protected TrustManager[] engineGetTrustManagers() {
-          return mgrs.clone();
-        }
-      };
+      fact = new VertxTrustManagerFactory(mgrs);
     } else if (trustOptions != null) {
       fact = trustOptions.getTrustManagerFactory(vertx);
     } else {
@@ -322,18 +311,7 @@ public class SSLHelper {
         crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
       }
       TrustManager[] mgrs = createUntrustRevokedCertTrustManager(fact.getTrustManagers(), crls);
-      fact = new SimpleTrustManagerFactory() {
-        @Override
-        protected void engineInit(KeyStore keyStore) throws Exception {}
-
-        @Override
-        protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {}
-
-        @Override
-        protected TrustManager[] engineGetTrustManagers() {
-          return mgrs.clone();
-        }
-      };
+      fact = new VertxTrustManagerFactory(mgrs);
     }
     return fact;
   }

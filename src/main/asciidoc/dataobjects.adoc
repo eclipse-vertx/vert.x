@@ -619,7 +619,7 @@ Set the  HTTP/2 setting
 +++
 Set the  HTTP/2 setting
 +++
-|[[maxHeaderListSize]]`maxHeaderListSize`|`Number (int)`|
+|[[maxHeaderListSize]]`maxHeaderListSize`|`Number (long)`|
 +++
 Set the  HTTP/2 setting
 +++

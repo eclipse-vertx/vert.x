@@ -40,7 +40,7 @@ public class Http2SettingsConverter {
       obj.setMaxFrameSize(((Number)json.getValue("maxFrameSize")).intValue());
     }
     if (json.getValue("maxHeaderListSize") instanceof Number) {
-      obj.setMaxHeaderListSize(((Number)json.getValue("maxHeaderListSize")).intValue());
+      obj.setMaxHeaderListSize(((Number)json.getValue("maxHeaderListSize")).longValue());
     }
     if (json.getValue("pushEnabled") instanceof Boolean) {
       obj.setPushEnabled((Boolean)json.getValue("pushEnabled"));

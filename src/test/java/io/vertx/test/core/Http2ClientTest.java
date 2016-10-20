@@ -161,9 +161,11 @@ public class Http2ClientTest extends Http2TestBase {
     client = vertx.createHttpClient(clientOptions.setInitialSettings(initialSettings));
     client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       complete();
-    }).connectionHandler(conn -> {
-      conn.updateSettings(updatedSettings, ar -> {
-        end.complete();
+    }).exceptionHandler(this::fail).connectionHandler(conn -> {
+      vertx.runOnContext(v -> {
+        conn.updateSettings(updatedSettings, ar -> {
+          end.complete();
+        });
       });
     }).end();
     await();
@@ -1120,7 +1122,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testStreamError() throws Exception {
-    waitFor(2);
+    waitFor(3);
     ServerBootstrap bootstrap = createH2Server((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -1144,19 +1146,24 @@ public class Http2ClientTest extends Http2TestBase {
         client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
           resp.exceptionHandler(err -> {
             assertOnIOContext(ctx);
-            if (err instanceof Http2Exception.StreamException) {
+            if (err instanceof Http2Exception) {
               complete();
             }
           });
         }).connectionHandler(conn -> {
           conn.exceptionHandler(err -> {
-            fail();
+            assertOnIOContext(ctx);
+            if (err instanceof Http2Exception) {
+              complete();
+            }
           });
         }).exceptionHandler(err -> {
           assertOnIOContext(ctx);
-          if (err instanceof Http2Exception.StreamException) {
+          if (err instanceof Http2Exception) {
             complete();
           }
+/*
+*/
         }).sendHead();
       });
       await();

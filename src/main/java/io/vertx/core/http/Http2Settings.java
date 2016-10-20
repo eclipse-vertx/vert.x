@@ -76,7 +76,7 @@ public class Http2Settings {
   private long maxConcurrentStreams;
   private int initialWindowSize;
   private int maxFrameSize;
-  private int maxHeaderListSize;
+  private long maxHeaderListSize;
   private Map<Integer, Long> extraSettings;
 
   /**
@@ -224,7 +224,7 @@ public class Http2Settings {
   /**
    * @return the {@literal SETTINGS_MAX_HEADER_LIST_SIZE} HTTP/2 setting
    */
-  public int getMaxHeaderListSize() {
+  public long getMaxHeaderListSize() {
     return maxHeaderListSize;
   }
 
@@ -234,7 +234,8 @@ public class Http2Settings {
    * @param maxHeaderListSize the new value
    * @return a reference to this, so the API can be used fluently
    */
-  public Http2Settings setMaxHeaderListSize(int maxHeaderListSize) {
+  public Http2Settings setMaxHeaderListSize(long maxHeaderListSize) {
+    Arguments.require(maxHeaderListSize >= 0, "maxHeaderListSize must be >= 0");
     Arguments.require(maxHeaderListSize >= Http2CodecUtil.MIN_HEADER_LIST_SIZE,
         "maxHeaderListSize must be >= " + Http2CodecUtil.MIN_HEADER_LIST_SIZE);
     this.maxHeaderListSize = maxHeaderListSize;
