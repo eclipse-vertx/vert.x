@@ -95,11 +95,15 @@ keytool -importkeystore -srckeystore client-truststore-root-ca.jks -destkeystore
 
 # Certificate Revocation List
 
-1) Revoke the cert
+1) Revoke the server cert
 
 openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -revoke root-ca/01.pem
 
-2) Generate the Certificate Revocation List
+2) Revoke the client cert
+
+openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -revoke root-ca/03.pem
+
+3) Generate the Certificate Revocation List
 
 openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -gencrl -out root-ca/crl.pem
 
