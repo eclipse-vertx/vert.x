@@ -564,9 +564,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
           httpHost = DEFAULT_HTTP_HOST;
         }
         HttpClientRequest req = client.request(HttpMethod.GET, 4043, httpHost, DEFAULT_TEST_URI, response -> {
-          response.version();
-          response.bodyHandler(data -> assertEquals("bar", data.toString()));
-          testComplete();
+          if (shouldPass) {
+            response.version();
+            response.bodyHandler(data -> assertEquals("bar", data.toString()));
+            testComplete();
+          } else {
+            fail();
+          }
         });
         req.exceptionHandler(t -> {
           if (shouldPass) {
