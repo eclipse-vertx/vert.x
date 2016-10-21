@@ -119,6 +119,25 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapPutTtlThenPut() {
+    getVertx().sharedData().getAsyncMap("foo", onSuccess(map -> {
+      map.put("pipo", "molo", 10, onSuccess(vd -> {
+        map.put("pipo", "mili", onSuccess(vd2 -> {
+          vertx.setTimer(20, l -> {
+            getVertx().sharedData().getAsyncMap("foo", onSuccess(map2 -> {
+              map2.get("pipo", onSuccess(res -> {
+                assertEquals("mili", res);
+                testComplete();
+              }));
+            }));
+          });
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testMapPutIfAbsentGetByte() {
     testMapPutIfAbsentGet((byte)1, (byte)2);
   }
