@@ -82,7 +82,7 @@ Commiters should help mentor/on-board new contributors. The workflow should roug
 * suggest progress reporting
 * assist with creating an Eclipse user id and ECA sign.
 
-# Technical Process
+# Technical Conflict Process
 
 The Vert.x project uses a "consensus seeking" process for issues that are escalated to the [commiters group](https://github.com/orgs/vert-x3/people). The group tries to find a resolution that has no open objections among the members. If a consensus cannot be reached that has no objections then a majority wins vote is called. It is also expected that the majority of decisions made by the group are via 
 a consensus seeking process and that voting is only used as a last-resort.
