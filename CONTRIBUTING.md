@@ -18,28 +18,30 @@ The goal of this document is to create a contribution process that:
 
 # Logging Issues
 
-Log an issue for any problem you might have. When in doubt, log an issue, any additional policies about what to include will be provided in the responses. The only exception is security dislosures which should be sent privately.
+Log an issue for any problem you might have. When in doubt, log an issue, any additional policies about what to include will be provided in the responses. The only exception is security dislosures which should be sent [privately](vertx-enquiries@googlegroups.com).
 
 Committers may direct you to another repository, ask for additional clarifications, and add appropriate info before the issue is addressed.
 
-For questions that are not an issue with the code per se, it is recommended that you refer to the [community group](https://groups.google.com/forum/#!forum/vertx) since it allows the whole community to help instead of just the contributors and commiters.
+For questions that are not an issue with the code, e.g.: questions related to usage of the project, it is recommended that they are sent to the [community group](https://groups.google.com/forum/#!forum/vertx). This exposes the question to the whole community, which increases the chance of getting faster responses than just from contributors and commiters.
 
 
 # Contributions
 
-Any change to resources in this repository must be through pull requests. This applies to all changes to documentation, code, binary files, etc. Even long term committers must use pull requests.
+Any change that would roughly be more than 10 lines (non trivial change) to resources in this repository must be through pull requests. This applies to all changes to documentation, code, binary files, etc. Even long term committers must use pull requests. Changes less than 10 lines or so (e.g.: correcting typos, small changes to configuration and such-like) can be make directly on a master branch. For a more detailed development process, please consult the article [Development Process](https://github.com/vert-x3/wiki/wiki/Development-Process) in the [wiki](https://github.com/vert-x3/wiki/wiki). 
 
 No pull request can be merged without being reviewed.
 
 It is expected that all contributors to Eclipse Vert.x organization sign the [Eclipse Contributor Agreement](http://www.eclipse.org/legal/ECA.php). In order to sign the ECA a contributor is required to have an Eclipse Foundation user id and read and digitally sign the following [document](http://www.eclipse.org/contribute/cla). Digitally signing is as simple as read the document and submit the "I agree" button.
 
-For non-trivial contributions, pull requests should sit for at least 36 hours to ensure that contributors in other timezones have time to review. Consideration should also be given to  weekends and other holiday periods to ensure active committers all have reasonable time to become involved in the discussion and review process if they wish.
-
-The default for each contribution is that it is accepted once no committer has an objection. During review committers may also request that a specific contributor who is most versed in a  particular area gives a "LGTM" before the PR can be merged. There is an additional "sign off" process for contributions to land. All commits to code in the Eclipse Vert.x organization **MUST** be signed off. This is done when commiting from git passing the extra argument `-s` e.g.:
+There is an additional "sign off" process for contributions to land. All commits to code in the Eclipse Vert.x organization **MUST** be signed off. This is done when commiting from git passing the extra argument `-s` e.g.:
 
 ```
 git commit -s -m "Shave the yak some more"
 ```
+
+For non-trivial contributions, pull requests should sit for at least 36 hours to ensure that contributors in other timezones have time to review. Consideration should also be given to  weekends and other holiday periods to ensure active committers all have reasonable time to become involved in the discussion and review process if they wish.
+
+The default for each contribution is that it is accepted once no committer has an objection. During review committers may also request that a specific contributor who is most versed in a  particular area gives a "LGTM" before the PR can be merged.
 
 For more info, see [here](http://wiki.eclipse.org/Development_Resources/Contributing_via_Git). Once all issues brought by committers are addressed it can be landed by any committer.
 
@@ -72,16 +74,15 @@ Commiters should help mentor/on-board new contributors. The workflow should roug
 * suggest the new contributor to join the [development group](https://groups.google.com/forum/#!forum/vertx-dev)
 * ask for participation on github issue discussions
 * suggest to keep in touch with on the dev group on periodic way (e.g.: weekly)
-* help finding a good mentor if one is not well versed in a specific are of the project
+* help finding a good mentor if one is not well versed in a specific area of the project
 * suggest progress reporting
 * assist with creating an Eclipse user id and ECA sign
 
 
 # Technical Conflict Process
 
-The Vert.x project uses a "consensus seeking" process for issues that are escalated to the [commiters group](https://github.com/orgs/vert-x3/people). The group tries to find a resolution that has no open objections among the members. If a consensus cannot be reached that has no objections then a majority wins vote is called. It is also expected that the majority of decisions made by the group are via a consensus seeking process and that voting is only used as a last-resort.
+The Vert.x project uses a "consensus seeking" process for issues that are escalated to the [commiters group](https://github.com/orgs/vert-x3/people). The group tries to find a resolution that has no open objections among the members. If a consensus cannot be reached that has no objections then the Project Lead should decide on which approach to take. It is also expected that the majority of decisions made by the group are via a consensus seeking process and that voting is only used as a last-resort.
 
-Resolution may involve returning the issue to committers with suggestions on how to move forward towards a consensus. It is not expected that a meeting of the group will resolve all issues on its agenda during that meeting and may prefer to continue
-the discussion happening among the committers.
+Resolution may involve returning the issue to committers with suggestions on how to move forward towards a consensus. It is not expected that a meeting of the group will resolve all issues on its agenda during that meeting and may prefer to continue the discussion happening among the committers.
 
 Members can be added to the group at any time. Any committer can nominate another committer to the group and the group uses its standard consensus seeking process to evaluate whether or not to add this new member. Members who do not participate consistently at the level of a majority of the other members are expected to resign.
