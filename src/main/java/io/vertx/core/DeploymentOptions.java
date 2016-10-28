@@ -337,7 +337,7 @@ public class DeploymentOptions {
    * This can be used to detect where the user is blocking a worker thread for too long. Although worker threads
    * can be blocked longer than event loop threads, they shouldn't be blocked for long periods of time.
    *
-   * @return The value of max worker execute time, in ms.
+   * @return The value of max worker execute time, in ns.
    */
   public long getMaxWorkerExecuteTime() {
     return maxWorkerExecuteTime;
@@ -346,7 +346,7 @@ public class DeploymentOptions {
   /**
    * Sets the value of max worker execute time, in ns.
    *
-   * @param maxWorkerExecuteTime the value of max worker execute time, in ms.
+   * @param maxWorkerExecuteTime the value of max worker execute time, in ns.
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
