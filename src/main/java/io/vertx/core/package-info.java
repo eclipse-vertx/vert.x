@@ -1363,7 +1363,7 @@
  *
  * [source]
  * ----
- * vertx run my-verticle.js -ha -ha-group my-group
+ * vertx run my-verticle.js -ha -hagroup my-group
  * ----
  *
  * Let's look at an example:

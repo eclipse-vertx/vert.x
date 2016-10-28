@@ -28,7 +28,6 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Closeable;
@@ -45,9 +44,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.net.InetSocketAddress;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -67,7 +64,6 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<Handler<NetSocket>> handlerManager = new HandlerManager<>(availableWorkers);
-  private final Queue<Runnable> bindListeners = new LinkedList<>();
   private final NetSocketStreamImpl connectStream = new NetSocketStreamImpl();
   private final boolean logEnabled;
   private ChannelGroup serverChannelGroup;
