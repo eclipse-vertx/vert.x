@@ -27,6 +27,7 @@ import io.netty.handler.codec.http2.Http2FrameLogger;
 import io.netty.handler.codec.http2.Http2LocalFlowController;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LogLevel;
+import io.vertx.core.http.HttpServerOptions;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -38,6 +39,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
 
   private Map<Channel, ? super C> connectionMap;
   private boolean useCompression;
+  private int compressionLevel = HttpServerOptions.DEFAULT_COMPRESSION_LEVEL;
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private boolean logEnabled;
@@ -61,6 +63,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
 
   VertxHttp2ConnectionHandlerBuilder<C> useCompression(boolean useCompression) {
     this.useCompression = useCompression;
+    return this;
+  }
+  
+  VertxHttp2ConnectionHandlerBuilder<C> compressionLevel(int compressionLevel) {
+    this.compressionLevel = compressionLevel;
     return this;
   }
 
@@ -89,7 +96,8 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   protected VertxHttp2ConnectionHandler<C> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
     if (isServer()) {
       if (useCompression) {
-        encoder = new CompressorHttp2ConnectionEncoder(encoder);
+        encoder = new CompressorHttp2ConnectionEncoder(
+                encoder,compressionLevel,CompressorHttp2ConnectionEncoder.DEFAULT_WINDOW_BITS,CompressorHttp2ConnectionEncoder.DEFAULT_MEM_LEVEL );
       }
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
       frameListener(handler.connection);
