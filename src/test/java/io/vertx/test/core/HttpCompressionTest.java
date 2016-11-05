@@ -34,7 +34,7 @@ import org.junit.Test;
 public class HttpCompressionTest extends HttpTestBase {
 
     private static final String COMPRESS_TEST_STRING = "/*\n" +
-" * Copyright (c) 2011-2016 The original author or authors\n" +
+" * CLA commit - Copyright (c) 2011-2016 The original author or authors\n" +
 " * ------------------------------------------------------\n" +
 " * All rights reserved. This program and the accompanying materials\n" +
 " * are made available under the terms of the Eclipse Public License v1.0\n" +
