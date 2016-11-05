@@ -309,6 +309,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .connectionMap(connectionMap2)
         .server(true)
         .useCompression(options.isCompressionSupported())
+        .compressionLevel(options.getCompressionLevel())
         .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics))
         .logEnabled(logEnabled)
