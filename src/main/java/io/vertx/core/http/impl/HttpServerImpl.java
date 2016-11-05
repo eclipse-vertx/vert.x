@@ -355,6 +355,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .connectionMap(connectionMap2)
         .server(true)
         .useCompression(options.isCompressionSupported())
+        .compressionLevel(options.getCompressionLevel())
         .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics))
         .logEnabled(logEnabled)
@@ -372,7 +373,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
     if (options.isCompressionSupported()) {
-      pipeline.addLast("deflater", new HttpChunkContentCompressor());
+      pipeline.addLast("deflater", new HttpChunkContentCompressor(options.getCompressionLevel()));
     }
     if (sslHelper.isSSL() || options.isCompressionSupported()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
@@ -419,17 +420,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       requestStream.endHandler(null);
       Handler<AsyncResult<Void>> next = done;
       done = event -> {
-        if (event.succeeded()) {
-          if (wsEndHandler != null) {
-            wsEndHandler.handle(event.result());
+          if (event.succeeded()) {
+            if (wsEndHandler != null) {
+              wsEndHandler.handle(event.result());
+            }
+            if (requestEndHandler != null) {
+              requestEndHandler.handle(event.result());
+            }
           }
-          if (requestEndHandler != null) {
-            requestEndHandler.handle(event.result());
+          if (next != null) {
+            next.handle(event);
           }
-        }
-        if (next != null) {
-          next.handle(event);
-        }
       };
     }
 
@@ -1069,6 +1070,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       channel.close();
       HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(channel.eventLoop());
       reqHandler.context.executeFromIO(() -> HttpServerImpl.this.connectionExceptionHandler.handle(cause));
-    }
   }
+}
 }
