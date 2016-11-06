@@ -359,9 +359,9 @@ public class HttpServerOptions extends NetServerOptions {
   }
   
   /**
-   * Set whether the server supports compression
+   * Set the compression level
    *
-   * @param compressionSupported gzip compression level (1-9) - 1 is fastest, 9 the slower but size reducing savings
+   * @param compressionLevel  gzip compression level (1-9) - 1 is fastest, 9 the slower but size reducing savings
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setCompressionLevel(int compressionLevel) {
