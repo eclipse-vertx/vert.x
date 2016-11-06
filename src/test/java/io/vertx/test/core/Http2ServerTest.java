@@ -2089,6 +2089,35 @@ public class Http2ServerTest extends Http2TestBase {
     fut.sync();
     await();
   }
+  
+  @Test
+  public void testRequestCompressionEnabled() throws Exception {
+    String expected = TestUtils.randomAlphaString(1000);
+    byte[] expectedGzipped = TestUtils.compressGzip(expected);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setDecompressionSupported(true));
+    server.requestHandler(req -> {
+      StringBuilder postContent = new StringBuilder();
+      req.handler(buff -> {
+        postContent.append(buff.toString());
+      });
+      req.endHandler(v -> {
+        req.response().putHeader("content-type", "text/plain").end("");
+        assertEquals(expected, postContent.toString());
+        testComplete();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, POST("/").add("content-encoding", "gzip"), 0, false, request.context.newPromise());
+      request.encoder.writeData(request.context, id, Buffer.buffer(expectedGzipped).getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
 
   @Test
   public void test100ContinueHandledManually() throws Exception {

@@ -23,9 +23,11 @@ import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 
+import java.io.ByteArrayOutputStream;
 import java.util.EnumSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.fail;
 
@@ -304,5 +306,18 @@ public class TestUtils {
     } catch (IndexOutOfBoundsException e) {
       // OK
     }
+  }
+  
+  /**
+   * @param source
+   * @return gzipped data
+   * @throws Exception
+   */
+  public static byte[] compressGzip(String source) throws Exception {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    GZIPOutputStream gos = new GZIPOutputStream(baos);
+    gos.write(source.getBytes());
+    gos.close();
+    return baos.toByteArray();
   }
 }

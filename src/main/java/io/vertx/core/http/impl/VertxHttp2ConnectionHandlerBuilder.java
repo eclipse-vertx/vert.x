@@ -38,6 +38,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
 
   private Map<Channel, ? super C> connectionMap;
   private boolean useCompression;
+  private boolean useDecompression;
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private boolean logEnabled;
@@ -61,6 +62,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
 
   VertxHttp2ConnectionHandlerBuilder<C> useCompression(boolean useCompression) {
     this.useCompression = useCompression;
+    return this;
+  }
+
+  VertxHttp2ConnectionHandlerBuilder<C> useDecompression(boolean useDecompression) {
+    this.useDecompression = useDecompression;
     return this;
   }
 
@@ -92,7 +98,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
         encoder = new CompressorHttp2ConnectionEncoder(encoder);
       }
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
-      frameListener(handler.connection);
+      if (useDecompression) {
+        frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler.connection));
+      } else {
+        frameListener(handler.connection);
+      }
       return handler;
     } else {
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
