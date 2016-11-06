@@ -37,6 +37,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -355,6 +356,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .connectionMap(connectionMap2)
         .server(true)
         .useCompression(options.isCompressionSupported())
+        .useDecompression(options.isDecompressionSupported())
         .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics))
         .logEnabled(logEnabled)
@@ -371,6 +373,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
         , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
+    if (options.isDecompressionSupported()) {
+      pipeline.addLast("inflater", new HttpContentDecompressor(true));
+    }
     if (options.isCompressionSupported()) {
       pipeline.addLast("deflater", new HttpChunkContentCompressor());
     }

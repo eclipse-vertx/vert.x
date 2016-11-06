@@ -84,6 +84,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
 
+  /**
+   * Default value of whether decompression is supported = false
+   */
+  public static final boolean DEFAULT_DECOMPRESSION_SUPPORTED = false;
+
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -94,6 +99,7 @@ public class HttpServerOptions extends NetServerOptions {
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private int http2ConnectionWindowSize;
+  private boolean decompressionSupported;
 
   /**
    * Default constructor
@@ -121,6 +127,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
+    this.decompressionSupported = other.isDecompressionSupported();
   }
 
   /**
@@ -145,6 +152,7 @@ public class HttpServerOptions extends NetServerOptions {
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
+    decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
   }
 
   @Override
@@ -514,6 +522,24 @@ public class HttpServerOptions extends NetServerOptions {
     return (HttpServerOptions) super.setLogActivity(logEnabled);
   }
 
+  /**
+   * @return true if the server supports decompression
+   */
+  public boolean isDecompressionSupported() {
+    return decompressionSupported;
+  }
+
+  /**
+   * Set whether the server supports decompression
+   *
+   * @param decompressionSupported true if decompression supported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setDecompressionSupported(boolean decompressionSupported) {
+    this.decompressionSupported = decompressionSupported;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -531,6 +557,7 @@ public class HttpServerOptions extends NetServerOptions {
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
+    if (decompressionSupported != that.decompressionSupported) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
   }
 
@@ -547,6 +574,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + maxHeaderSize;
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + http2ConnectionWindowSize;
+    result = 31 * result + (decompressionSupported ? 1 : 0);
     return result;
   }
 }

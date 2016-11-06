@@ -885,6 +885,10 @@ Add a CRL path
 +++
 Add a CRL value
 +++
+|[[decompressionSupported]]`decompressionSupported`|`Boolean`|
++++
+Set whether the server supports decompression
++++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
 Add an enabled cipher suite, appended to the ordered suites.
