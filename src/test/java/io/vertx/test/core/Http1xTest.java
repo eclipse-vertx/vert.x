@@ -2587,4 +2587,28 @@ public class Http1xTest extends HttpTest {
     }
     await();
   }
+
+  @Test
+  public void testContentDecompression() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setDecompressionSupported(true));
+    String expected = TestUtils.randomAlphaString(1000);
+    byte[] dataGzipped = TestUtils.compressGzip(expected);
+    server.requestHandler(req -> {
+      assertEquals("localhost:" + DEFAULT_HTTP_PORT, req.headers().get("host"));
+      req.bodyHandler(buffer -> {
+        assertEquals(expected, buffer.toString());
+        req.response().end();
+      });
+    });
+
+    server.listen(onSuccess(server -> {
+      client
+      .request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "some-uri", resp -> testComplete())
+      .putHeader("Content-Encoding", "gzip")
+      .end(Buffer.buffer(dataGzipped));
+    }));
+
+    await();
+  }
 }
