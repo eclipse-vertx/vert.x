@@ -351,6 +351,16 @@
  * WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
  * to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
  *
+ * ==== Handling compressed body
+ *
+ * Vert.x can handle compressed body payloads which are encoded by the client with the _deflate_ or _gzip_
+ * algorithms.
+ *
+ * To enable decompression set {@link io.vertx.core.http.HttpServerOptions#setDecompressionSupported(boolean)} on the
+ * options when creating the server.
+ *
+ * By default decompression is disabled.
+ *
  * ==== Receiving custom HTTP/2 frames
  *
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
