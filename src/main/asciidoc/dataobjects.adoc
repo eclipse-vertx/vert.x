@@ -875,7 +875,7 @@ Set whether client auth is required
 +++
 |[[compressionLevel]]`compressionLevel`|`Number (int)`|
 +++
-Set whether the server supports compression
+Set the compression level
 +++
 |[[compressionSupported]]`compressionSupported`|`Boolean`|
 +++
