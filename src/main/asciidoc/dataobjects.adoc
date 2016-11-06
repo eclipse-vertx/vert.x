@@ -875,7 +875,7 @@ Set whether client auth is required
 +++
 |[[compressionLevel]]`compressionLevel`|`Number (int)`|
 +++
-Set whether the server supports compression
+Set the compression level
 +++
 |[[compressionSupported]]`compressionSupported`|`Boolean`|
 +++
@@ -888,6 +888,10 @@ Add a CRL path
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
 Add a CRL value
++++
+|[[decompressionSupported]]`decompressionSupported`|`Boolean`|
++++
+Set whether the server supports decompression
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++

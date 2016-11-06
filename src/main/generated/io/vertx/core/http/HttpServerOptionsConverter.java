@@ -41,6 +41,9 @@ public class HttpServerOptionsConverter {
     if (json.getValue("compressionSupported") instanceof Boolean) {
       obj.setCompressionSupported((Boolean)json.getValue("compressionSupported"));
     }
+    if (json.getValue("decompressionSupported") instanceof Boolean) {
+      obj.setDecompressionSupported((Boolean)json.getValue("decompressionSupported"));
+    }
     if (json.getValue("handle100ContinueAutomatically") instanceof Boolean) {
       obj.setHandle100ContinueAutomatically((Boolean)json.getValue("handle100ContinueAutomatically"));
     }
@@ -77,6 +80,7 @@ public class HttpServerOptionsConverter {
     }
     json.put("compressionLevel", obj.getCompressionLevel());
     json.put("compressionSupported", obj.isCompressionSupported());
+    json.put("decompressionSupported", obj.isDecompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     if (obj.getInitialSettings() != null) {

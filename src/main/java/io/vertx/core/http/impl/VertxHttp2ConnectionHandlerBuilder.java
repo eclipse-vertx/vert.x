@@ -39,6 +39,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
 
   private Map<Channel, ? super C> connectionMap;
   private boolean useCompression;
+  private boolean useDecompression;
   private int compressionLevel = HttpServerOptions.DEFAULT_COMPRESSION_LEVEL;
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
@@ -71,6 +72,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     return this;
   }
 
+  VertxHttp2ConnectionHandlerBuilder<C> useDecompression(boolean useDecompression) {
+    this.useDecompression = useDecompression;
+    return this;
+  }
+  
   VertxHttp2ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
     return this;
@@ -99,7 +105,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
         encoder = new CompressorHttp2ConnectionEncoder(encoder,compressionLevel,CompressorHttp2ConnectionEncoder.DEFAULT_WINDOW_BITS,CompressorHttp2ConnectionEncoder.DEFAULT_MEM_LEVEL);
       }
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
-      frameListener(handler.connection);
+      if (useDecompression) {
+        frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler.connection));
+      } else {
+        frameListener(handler.connection);
+      }
       return handler;
     } else {
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
