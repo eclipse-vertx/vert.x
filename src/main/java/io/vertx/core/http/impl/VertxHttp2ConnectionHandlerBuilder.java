@@ -77,7 +77,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
    * While one can think that best value is always the maximum compression ratio, 
    * there's a trade-off to consider: the most compressed level requires the most computatinal work to compress/decompress, 
    * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
-   * and latency on resource serving due to CPU overload, and homehower - as the comptational work is required also client side 
+   * and latency on resource serving due to CPU overload, and however - as the comptational work is required also client side 
    * while decompressing - setting an higher compression level can result in an overall higher page load time
    * especially nowadays when many clients are handled mobile devices with a low CPU profile.
    * 
