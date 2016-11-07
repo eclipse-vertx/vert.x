@@ -386,7 +386,7 @@ public class HttpServerOptions extends NetServerOptions {
    * computatinal work to compress/decompress data, e.g. more dictionary lookups and loops.
    * 
    * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
-   * and latency on resource serving due to CPU overload, however - as the comptational work is required also client side 
+   * and latency on resource serving due to CPU overload, and, however - as the comptational work is required also client side 
    * while decompressing - setting an higher compression level can result in an overall higher page load time
    * especially nowadays when many clients are handled mobile devices with a low CPU profile.
    * 
