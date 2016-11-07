@@ -325,7 +325,7 @@
  *
  * [source,java]
  * ----
- * // Force logging to SLF4J
+ * // Force logging to Log4j
  * InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
  * ----
  *
