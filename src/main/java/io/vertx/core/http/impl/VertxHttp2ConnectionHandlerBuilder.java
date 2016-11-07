@@ -67,6 +67,25 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     return this;
   }
   
+  /** 
+   * This method allows to set the compression level to be used in the http/2 connection encoder 
+   * (for data sent to client) when compression support is turned on (@see useCompression) and 
+   * the client advertises to support deflate/gizip compression in the Accept-Encoding header
+   * 
+   * default value is : 1
+   * 
+   * While one can think that best value is always the maximum compression ratio, 
+   * there's a trade-off to consider: the most compressed level requires the most computatinal work to compress/decompress, 
+   * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
+   * and latency on resource serving due to CPU overload, and homehower - as the comptational work is required also client side 
+   * while decompressing - setting an higher compression level can result in an overall higher page load time
+   * especially nowadays when many clients are handled mobile devices with a low CPU profile.
+   * 
+   * see also: http://www.gzip.org/algorithm.txt
+   * 
+   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9 slower algorithm but better compression ratio 
+   * @return a reference to this instance for fulent API coding style
+   */
   VertxHttp2ConnectionHandlerBuilder<C> compressionLevel(int compressionLevel) {
     this.compressionLevel = compressionLevel;
     return this;
