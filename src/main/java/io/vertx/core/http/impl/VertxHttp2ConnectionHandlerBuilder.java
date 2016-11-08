@@ -72,7 +72,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
    * (for data sent to client) when compression support is turned on (@see useCompression) and 
    * the client advertises to support deflate/gizip compression in the Accept-Encoding header
    * 
-   * default value is : 1
+   * default value is : 6 (Netty legacy)
    * 
    * While one can think that best value is always the maximum compression ratio, 
    * there's a trade-off to consider: the most compressed level requires the most computatinal work to compress/decompress, 

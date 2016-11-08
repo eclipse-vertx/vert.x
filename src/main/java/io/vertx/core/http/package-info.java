@@ -688,7 +688,7 @@
  * at every request body generation ) and in the same way it affects client(s) while decoding (inflating) received responses, operation that becomes more CPU-intensive 
  * the more the level increases.
  * 
- * By default - if compression is enabled via {@link io.vertx.core.http.HttpServerOptions#setCompressionSupported} - Vert.x will use '1' as compression level,
+ * By default - if compression is enabled via {@link io.vertx.core.http.HttpServerOptions#setCompressionSupported} - Vert.x will use '6' as compression level,
  * but the parameter can be configured to address any case with {@link io.vertx.core.http.HttpServerOptions#setCompressionLevel}.
  *
  * === Creating an HTTP client

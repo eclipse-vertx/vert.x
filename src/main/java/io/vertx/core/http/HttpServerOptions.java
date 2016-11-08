@@ -45,9 +45,9 @@ public class HttpServerOptions extends NetServerOptions {
   public static final boolean DEFAULT_COMPRESSION_SUPPORTED = false;
   
   /**
-   * Default gzip/deflate compression level = 1, fastest algorithm
+   * Default gzip/deflate compression level = 6 (Netty legacy)
    */
-  public static final int DEFAULT_COMPRESSION_LEVEL = 1;
+  public static final int DEFAULT_COMPRESSION_LEVEL = 6;
 
   /**
    * Default max websocket framesize = 65536
@@ -374,7 +374,7 @@ public class HttpServerOptions extends NetServerOptions {
    * when compression support is turned on (@see setCompressionSupported) and the client advertises
    * to support deflate/gizip compression in the Accept-Encoding header
    * 
-   * default value is : 1
+   * default value is : 6 (Netty legacy)
    * 
    * The compression level determines how much the data is compressed on a scale from 1 to 9,
    * where '9' is trying to achieve the maximum compression ratio while '1' instead is giving
