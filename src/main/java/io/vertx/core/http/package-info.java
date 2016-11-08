@@ -675,6 +675,21 @@
  * compressions and send it back to the client.
  *
  * Be aware that compression may be able to reduce network traffic but is more CPU-intensive.
+ * 
+ * To address this latter issue Vert.x allows you to tune the 'compression level' parameter that is native of the gzip/deflate compression algorithms. 
+ * 
+ * Compression level allows to configure gizp/deflate algorithms in terms of the compression ratio of the resulting data and the computational cost of the compress/decompress operation. 
+ * 
+ * The compression level is an integer value ranged from '1' to '9', where '1' means lower compression ratio but fastest algorithm and '9' means maximum compression ratio available but a slower algorithm. 
+ * 
+ * Using compression levels higher that 1-2 usually allows to save just some bytes in size - the gain is not linear, and depends on the specific data to be compressed 
+ * - but it comports a non-trascurable cost in term of CPU cycles required to the server while generating the compressed response data 
+ * ( Note that at moment Vert.x doesn't support any form caching of compressed response data, even for static files, so the compression is done on-the-fly 
+ * at every request body generation ) and in the same way it affects client(s) while decoding (inflating) received responses, operation that becomes more CPU-intensive 
+ * the more the level increases.
+ * 
+ * By default - if compression is enabled via {@link io.vertx.core.http.HttpServerOptions#setCompressionSupported} - Vert.x will use '1' as compression level,
+ * but the parameter can be configured to address any case with {@link io.vertx.core.http.HttpServerOptions#setCompressionLevel}.
  *
  * === Creating an HTTP client
  *
