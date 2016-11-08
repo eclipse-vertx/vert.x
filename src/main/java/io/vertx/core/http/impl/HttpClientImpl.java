@@ -23,6 +23,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.Closeable;
+import io.vertx.core.Context;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -86,8 +87,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       if (creatingContext.isMultiThreadedWorkerContext()) {
         throw new IllegalStateException("Cannot use HttpClient in a multi-threaded worker verticle");
       }
-      if(options.getProtocolVersion() == HttpVersion.HTTP_2 && creatingContext.isWorkerContext()) {
-        throw new IllegalStateException("Cannot use HttpClient with HTTP_2 in a worker verticle");
+      if(options.getProtocolVersion() == HttpVersion.HTTP_2 && Context.isOnWorkerThread()) {
+        throw new IllegalStateException("Cannot use HttpClient with HTTP_2 in a worker");
       }
       creatingContext.addCloseHook(closeHook);
     }

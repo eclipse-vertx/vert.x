@@ -1823,7 +1823,7 @@ public class Http2ClientTest extends Http2TestBase {
           vertx.createHttpClient(createHttp2ClientOptions());
           fail("HttpClient should not work with HTTP_2");
         } catch(Exception ex) {
-          assertEquals("Cannot use HttpClient with HTTP_2 in a worker verticle", ex.getMessage());
+          assertEquals("Cannot use HttpClient with HTTP_2 in a worker", ex.getMessage());
           complete();
         }
       }
@@ -1833,22 +1833,17 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testExecuteBlocking() throws Exception {
-
-    String expected = TestUtils.randomAlphaString(27);
-    server.requestHandler(req -> req.response().end(expected));
-    startServer();
+  public void testExecuteBlockingException() throws Exception {
 
     vertx.executeBlocking(fut -> {
-      client = vertx.createHttpClient(createHttp2ClientOptions());
-      client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/", resp -> {
-        resp.bodyHandler(body -> fut.complete(body.toString()));
-      });
-    }, res -> {
-      assertTrue(res.succeeded());
-      assertEquals(expected, res.result());
-      complete();
-    });
+      try {
+        vertx.createHttpClient(createHttp2ClientOptions());
+        fail("HttpClient should not work with HTTP_2 inside executeBlocking");
+      } catch(Exception ex) {
+        assertEquals("Cannot use HttpClient with HTTP_2 in a worker", ex.getMessage());
+        complete();
+      }
+    }, null);
 
     await();
   }
