@@ -879,7 +879,7 @@ This method allows to set the compression level to be used in http1.x/2 response
  when compression support is turned on (@see setCompressionSupported) and the client advertises
  to support deflate/gizip compression in the Accept-Encoding header
  
- default value is : 1
+ default value is : 6 (Netty legacy)
  
  The compression level determines how much the data is compressed on a scale from 1 to 9,
  where '9' is trying to achieve the maximum compression ratio while '1' instead is giving
