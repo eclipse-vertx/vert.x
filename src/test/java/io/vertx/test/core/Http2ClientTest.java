@@ -1815,7 +1815,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 */
   @Test
-  public void testHttp2ClientInWorkerVerticle() throws Exception {
+  public void testWorkerVerticleException() throws Exception {
     Verticle workerVerticle = new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -1829,6 +1829,27 @@ public class Http2ClientTest extends Http2TestBase {
       }
     };
     vertx.deployVerticle(workerVerticle, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testExecuteBlocking() throws Exception {
+
+    String expected = TestUtils.randomAlphaString(27);
+    server.requestHandler(req -> req.response().end(expected));
+    startServer();
+
+    vertx.executeBlocking(fut -> {
+      client = vertx.createHttpClient(createHttp2ClientOptions());
+      client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/", resp -> {
+        resp.bodyHandler(body -> fut.complete(body.toString()));
+      });
+    }, res -> {
+      assertTrue(res.succeeded());
+      assertEquals(expected, res.result());
+      complete();
+    });
+
     await();
   }
 }
