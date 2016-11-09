@@ -13,7 +13,6 @@
  *
  *  You may elect to redistribute this code under either of these licenses.
  */
-
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
@@ -66,24 +65,29 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     this.useCompression = useCompression;
     return this;
   }
-  
-  /** 
-   * This method allows to set the compression level to be used in the http/2 connection encoder 
-   * (for data sent to client) when compression support is turned on (@see useCompression) and 
-   * the client advertises to support deflate/gizip compression in the Accept-Encoding header
-   * 
+
+  /**
+   * This method allows to set the compression level to be used in the http/2
+   * connection encoder (for data sent to client) when compression support is
+   * turned on (@see useCompression) and the client advertises to support
+   * deflate/gizip compression in the Accept-Encoding header
+   *
    * default value is : 6 (Netty legacy)
-   * 
-   * While one can think that best value is always the maximum compression ratio, 
-   * there's a trade-off to consider: the most compressed level requires the most computatinal work to compress/decompress, 
-   * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
-   * and latency on resource serving due to CPU overload, and however - as the comptational work is required also client side 
-   * while decompressing - setting an higher compression level can result in an overall higher page load time
-   * especially nowadays when many clients are handled mobile devices with a low CPU profile.
-   * 
+   *
+   * While one can think that best value is always the maximum compression
+   * ratio, there's a trade-off to consider: the most compressed level requires
+   * the most computatinal work to compress/decompress, E.g. you have it set
+   * fairly high on a high-volume website, you may experience performance
+   * degradation and latency on resource serving due to CPU overload, and
+   * however - as the comptational work is required also client side while
+   * decompressing - setting an higher compression level can result in an
+   * overall higher page load time especially nowadays when many clients are
+   * handled mobile devices with a low CPU profile.
+   *
    * see also: http://www.gzip.org/algorithm.txt
-   * 
-   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9 slower algorithm but better compression ratio 
+   *
+   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9
+   * slower algorithm but better compression ratio
    * @return a reference to this instance for fulent API coding style
    */
   VertxHttp2ConnectionHandlerBuilder<C> compressionLevel(int compressionLevel) {
@@ -95,7 +99,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     this.useDecompression = useDecompression;
     return this;
   }
-  
+
   VertxHttp2ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
     return this;
@@ -121,7 +125,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   protected VertxHttp2ConnectionHandler<C> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
     if (isServer()) {
       if (useCompression) {
-        encoder = new CompressorHttp2ConnectionEncoder(encoder,compressionLevel,CompressorHttp2ConnectionEncoder.DEFAULT_WINDOW_BITS,CompressorHttp2ConnectionEncoder.DEFAULT_MEM_LEVEL);
+        encoder = new CompressorHttp2ConnectionEncoder(encoder, compressionLevel, CompressorHttp2ConnectionEncoder.DEFAULT_WINDOW_BITS, CompressorHttp2ConnectionEncoder.DEFAULT_MEM_LEVEL);
       }
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
       if (useDecompression) {
