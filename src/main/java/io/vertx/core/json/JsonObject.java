@@ -241,6 +241,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Get the value with the specified key, as an generic retrun type
+   * @param key  the key to lookup
+   * @return the value
+   */
+  public <R> R get(String key) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    if (val instanceof Map) {
+      val = new JsonObject((Map)val);
+    } else if (val instanceof List) {
+      val = new JsonArray((List)val);
+    }
+    return (R)val;
+  }
+
+  /**
    * Get the value with the specified key, as an Object
    * @param key  the key to lookup
    * @return the value
