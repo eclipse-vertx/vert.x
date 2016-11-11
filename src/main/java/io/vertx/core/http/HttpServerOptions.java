@@ -43,6 +43,11 @@ public class HttpServerOptions extends NetServerOptions {
    * Default value of whether compression is supported = false
    */
   public static final boolean DEFAULT_COMPRESSION_SUPPORTED = false;
+  
+  /**
+   * Default gzip/deflate compression level = 6 (Netty legacy)
+   */
+  public static final int DEFAULT_COMPRESSION_LEVEL = 6;
 
   /**
    * Default max websocket framesize = 65536
@@ -90,6 +95,7 @@ public class HttpServerOptions extends NetServerOptions {
   public static final boolean DEFAULT_DECOMPRESSION_SUPPORTED = false;
 
   private boolean compressionSupported;
+  private int compressionLevel;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
   private boolean handle100ContinueAutomatically;
@@ -118,6 +124,7 @@ public class HttpServerOptions extends NetServerOptions {
   public HttpServerOptions(HttpServerOptions other) {
     super(other);
     this.compressionSupported = other.isCompressionSupported();
+    this.compressionLevel = other.getCompressionLevel();
     this.maxWebsocketFrameSize = other.getMaxWebsocketFrameSize();
     this.websocketSubProtocols = other.getWebsocketSubProtocols();
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
@@ -144,6 +151,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   private void init() {
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
+    compressionLevel = DEFAULT_COMPRESSION_LEVEL;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
@@ -334,16 +342,17 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return true if the server supports compression
+   * @return true if the server supports gzip/deflate compression
    */
   public boolean isCompressionSupported() {
     return compressionSupported;
   }
 
   /**
-   * Set whether the server supports compression
+   * Set whether the server should support gzip/deflate compression 
+   * (serving compressed responses to clients advertising support for them with Accept-Encoding header)
    *
-   * @param compressionSupported true if compression supported
+   * @param compressionSupported true to enable compression support
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setCompressionSupported(boolean compressionSupported) {
@@ -351,6 +360,46 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * 
+   * @return the server gzip/deflate 'compression level' to be used in responses when client and server support is turned on
+   */
+  public int getCompressionLevel() {
+    return this.compressionLevel;
+  }
+  
+
+  /** 
+   * This method allows to set the compression level to be used in http1.x/2 response bodies 
+   * when compression support is turned on (@see setCompressionSupported) and the client advertises
+   * to support deflate/gizip compression in the Accept-Encoding header
+   * 
+   * default value is : 6 (Netty legacy)
+   * 
+   * The compression level determines how much the data is compressed on a scale from 1 to 9,
+   * where '9' is trying to achieve the maximum compression ratio while '1' instead is giving
+   * priority to speed instead of compression ratio using some algorithm optimizations and skipping 
+   * pedantic loops that usually gives just little improvements
+   * 
+   * While one can think that best value is always the maximum compression ratio, 
+   * there's a trade-off to consider: the most compressed level requires the most
+   * computatinal work to compress/decompress data, e.g. more dictionary lookups and loops.
+   * 
+   * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
+   * and latency on resource serving due to CPU overload, and, however - as the comptational work is required also client side 
+   * while decompressing - setting an higher compression level can result in an overall higher page load time
+   * especially nowadays when many clients are handled mobile devices with a low CPU profile.
+   * 
+   * see also: http://www.gzip.org/algorithm.txt
+   * 
+   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9 slower algorithm but better compression ratio 
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setCompressionLevel(int compressionLevel) {
+    this.compressionLevel = compressionLevel;
+    return this;
+  }
+  
   /**
    * @return  the maximum websocket framesize
    */

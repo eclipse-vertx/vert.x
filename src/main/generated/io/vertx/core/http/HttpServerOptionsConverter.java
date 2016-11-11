@@ -35,6 +35,9 @@ public class HttpServerOptionsConverter {
       });
       obj.setAlpnVersions(list);
     }
+    if (json.getValue("compressionLevel") instanceof Number) {
+      obj.setCompressionLevel(((Number)json.getValue("compressionLevel")).intValue());
+    }
     if (json.getValue("compressionSupported") instanceof Boolean) {
       obj.setCompressionSupported((Boolean)json.getValue("compressionSupported"));
     }
@@ -75,6 +78,7 @@ public class HttpServerOptionsConverter {
               map(item -> item.name()).
               collect(java.util.stream.Collectors.toList())));
     }
+    json.put("compressionLevel", obj.getCompressionLevel());
     json.put("compressionSupported", obj.isCompressionSupported());
     json.put("decompressionSupported", obj.isDecompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());

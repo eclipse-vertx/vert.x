@@ -15,6 +15,7 @@
  */
 package io.vertx.test.core;
 
+import io.vertx.test.core.*;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -25,31 +26,33 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpVersion;
 import static io.vertx.test.core.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.test.core.HttpTestBase.DEFAULT_HTTP_PORT;
+import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class HttpCompressionTest extends HttpTestBase {
+public class Http2CompressionTest extends Http2TestBase {
 
-    private static final String COMPRESS_TEST_STRING = "/*\n" +
-" * Copyright (c) 2011-2016 The original author or authors\n" +
-" * ------------------------------------------------------\n" +
-" * All rights reserved. This program and the accompanying materials\n" +
-" * are made available under the terms of the Eclipse Public License v1.0\n" +
-" * and Apache License v2.0 which accompanies this distribution.\n" +
-" *\n" +
-" *     The Eclipse Public License is available at\n" +
-" *     http://www.eclipse.org/legal/epl-v10.html\n" +
-" *\n" +
-" *     The Apache License v2.0 is available at\n" +
-" *     http://www.opensource.org/licenses/apache2.0.php\n" +
-" *\n" +
-" * You may elect to redistribute this code under either of these licenses.\n" +
-" */";
+    private static final String COMPRESS_TEST_STRING = "/*\n"
+            + " * Copyright (c) 2011-2016 The original author or authors\n"
+            + " * ------------------------------------------------------\n"
+            + " * All rights reserved. This program and the accompanying materials\n"
+            + " * are made available under the terms of the Eclipse Public License v1.0\n"
+            + " * and Apache License v2.0 which accompanies this distribution.\n"
+            + " *\n"
+            + " *     The Eclipse Public License is available at\n"
+            + " *     http://www.eclipse.org/legal/epl-v10.html\n"
+            + " *\n"
+            + " *     The Apache License v2.0 is available at\n"
+            + " *     http://www.opensource.org/licenses/apache2.0.php\n"
+            + " *\n"
+            + " * You may elect to redistribute this code under either of these licenses.\n"
+            + " */";
 
     HttpServer serverWithMinCompressionLevel, serverWithMaxCompressionLevel = null;
 
@@ -57,21 +60,26 @@ public class HttpCompressionTest extends HttpTestBase {
 
     public void setUp() throws Exception {
         super.setUp();
-        client = vertx.createHttpClient(new HttpClientOptions().setTryUseCompression(true));
-        clientraw = vertx.createHttpClient(new HttpClientOptions().setTryUseCompression(false));
 
-        HttpServerOptions serverOpts = new HttpServerOptions()
-                .setPort(DEFAULT_HTTP_PORT)
-                .setCompressionSupported(true);
+        client = vertx.createHttpClient(createHttp2ClientOptions().setTryUseCompression(true));
+        clientraw = vertx.createHttpClient(createHttp2ClientOptions().setTryUseCompression(false));
+
         // server = vertx.createHttpServer();
-        serverWithMinCompressionLevel = vertx.createHttpServer(serverOpts.setPort(DEFAULT_HTTP_PORT - 1).setCompressionLevel(1));
-        serverWithMaxCompressionLevel = vertx.createHttpServer(serverOpts.setPort(DEFAULT_HTTP_PORT + 1).setCompressionLevel(9));
+        serverWithMinCompressionLevel = vertx.createHttpServer(
+                createHttp2ServerOptions(DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST)
+                        .setCompressionSupported(true)
+                        .setCompressionLevel(1));
+        serverWithMaxCompressionLevel = vertx.createHttpServer(
+                createHttp2ServerOptions(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST)
+                        .setCompressionSupported(true)
+                        .setCompressionLevel(9));
     }
 
     @Test
     public void testDefaultRequestHeaders() {
         Handler<HttpServerRequest> requestHandler = req -> {
-            assertEquals(2, req.headers().size());
+            //    assertEquals(2, req.headers().size());
+            assertEquals(HttpVersion.HTTP_2, req.version());
             //  assertEquals("localhost:" + DEFAULT_HTTP_PORT, req.headers().get("host"));
             assertNotNull(req.headers().get("Accept-Encoding"));
             req.response().end(Buffer.buffer(COMPRESS_TEST_STRING).toString(CharsetUtil.UTF_8));
@@ -130,7 +138,7 @@ public class HttpCompressionTest extends HttpTestBase {
                         String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
                         Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
                         //1606
-                       // assertEquals((Integer)1606,responseByteCount);
+                        // assertEquals((Integer)1606,responseByteCount);
                         // assertEquals(LARGE_HTML_STRING, responseBody);
                         rawMaxCompressionResponseByteCount = responseByteCount;
                         terminateTestWhenAllPassed();
@@ -146,7 +154,7 @@ public class HttpCompressionTest extends HttpTestBase {
                     resp.bodyHandler(responseBuffer -> {
                         String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
                         Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
-                       // assertEquals((Integer)1642,responseByteCount);
+                        // assertEquals((Integer)1642,responseByteCount);
                         rawMinCompressionResponseByteCount = responseByteCount;
                         terminateTestWhenAllPassed();
                     });
@@ -154,9 +162,9 @@ public class HttpCompressionTest extends HttpTestBase {
     }
 
     public void terminateTestWhenAllPassed() {
-        if (maxCompressionTestPassed && minCompressionTestPassed 
-                && rawMinCompressionResponseByteCount!=null && rawMaxCompressionResponseByteCount!=null) {
-            assertTrue("Checking compression byte size difference", rawMaxCompressionResponseByteCount>0 
+        if (maxCompressionTestPassed && minCompressionTestPassed
+                && rawMinCompressionResponseByteCount != null && rawMaxCompressionResponseByteCount != null) {
+            assertTrue("Checking compression byte size difference", rawMaxCompressionResponseByteCount > 0
                     && rawMinCompressionResponseByteCount > rawMaxCompressionResponseByteCount);
             testComplete();
         }
