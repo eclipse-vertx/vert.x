@@ -372,7 +372,7 @@ public class HttpServerOptions extends NetServerOptions {
   /** 
    * This method allows to set the compression level to be used in http1.x/2 response bodies 
    * when compression support is turned on (@see setCompressionSupported) and the client advertises
-   * to support deflate/gizip compression in the Accept-Encoding header
+   * to support {@code deflate/gzip} compression in the {@code Accept-Encoding} header
    * 
    * default value is : 6 (Netty legacy)
    * 
