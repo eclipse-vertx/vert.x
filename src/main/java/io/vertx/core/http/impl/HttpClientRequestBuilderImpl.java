@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2011-2013 The original author or authors
+ * ------------------------------------------------------
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Apache License v2.0 which accompanies this distribution.
+ *
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
+ *
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
+ *
+ * You may elect to redistribute this code under either of these licenses.
+ */
 package io.vertx.core.http.impl;
 
 import io.vertx.core.AsyncResult;
@@ -10,16 +25,18 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientRequestBuilder;
 import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpClientResponseBuilder;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
+
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpClientRequestBuilderImpl implements HttpClientRequestBuilder {
+class HttpClientRequestBuilderImpl implements HttpClientRequestBuilder {
 
   final HttpClient client;
   HttpMethod method;
@@ -28,7 +45,7 @@ public class HttpClientRequestBuilderImpl implements HttpClientRequestBuilder {
   String requestURI;
   MultiMap headers;
 
-  public HttpClientRequestBuilderImpl(HttpClient client, HttpMethod method) {
+  HttpClientRequestBuilderImpl(HttpClient client, HttpMethod method) {
     this.client = client;
     this.method = method;
   }
@@ -81,12 +98,12 @@ public class HttpClientRequestBuilderImpl implements HttpClientRequestBuilder {
   }
 
   @Override
-  public void request(ReadStream<Buffer> stream, Handler<AsyncResult<HttpClientResponse>> handler) {
+  public void send(ReadStream<Buffer> stream, Handler<AsyncResult<HttpClientResponse>> handler) {
     perform(stream, handler);
   }
 
   @Override
-  public void request(Handler<AsyncResult<HttpClientResponse>> handler) {
+  public void send(Handler<AsyncResult<HttpClientResponse>> handler) {
     perform(null, handler);
   }
 
@@ -126,5 +143,25 @@ public class HttpClientRequestBuilderImpl implements HttpClientRequestBuilder {
       req.end();
     }
     fut.setHandler(handler);
+  }
+
+  @Override
+  public HttpClientResponseBuilder<Buffer> asBuffer() {
+    return new HttpClientResponseBuilderImpl<>(this, Function.identity());
+  }
+
+  @Override
+  public HttpClientResponseBuilder<String> asString() {
+    return new HttpClientResponseBuilderImpl<>(this, Buffer::toString);
+  }
+
+  @Override
+  public HttpClientResponseBuilder<JsonObject> asJsonObject() {
+    return new HttpClientResponseBuilderImpl<>(this, buff -> new JsonObject(buff.toString()));
+  }
+
+  @Override
+  public <T> HttpClientResponseBuilder<T> as(Class<T> clazz) {
+    throw new UnsupportedOperationException();
   }
 }

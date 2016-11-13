@@ -7,6 +7,8 @@ import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequestBuilder;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
@@ -14,7 +16,6 @@ import java.io.File;
 import java.net.ConnectException;
 import java.nio.file.Files;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -37,10 +38,10 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
     });
     startServer();
     HttpClientRequestBuilder get = client.createGet(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-    get.request(onSuccess(resp -> {
+    get.send(onSuccess(resp -> {
       complete();
     }));
-    get.request(onSuccess(resp -> {
+    get.send(onSuccess(resp -> {
       complete();
     }));
     await();
@@ -74,7 +75,7 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
       if (!chunked) {
         post = post.putHeader("Content-Length", "" + expected.length());
       }
-      post.request(asyncFile, onSuccess(resp -> {
+      post.send(asyncFile, onSuccess(resp -> {
             assertEquals(200, resp.statusCode());
             complete();
           }));
@@ -85,7 +86,7 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
   @Test
   public void testConnectError() throws Exception {
     HttpClientRequestBuilder get = client.createGet(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-    get.request(onFailure(err -> {
+    get.send(onFailure(err -> {
       assertTrue(err instanceof ConnectException);
       complete();
     }));
@@ -102,7 +103,7 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
     });
     startServer();
     post.putHeader("Content-Length", "2048")
-        .request(new ReadStream<Buffer>() {
+        .send(new ReadStream<Buffer>() {
           @Override
           public ReadStream<Buffer> exceptionHandler(Handler<Throwable> handler) {
             return this;
@@ -146,7 +147,7 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
     });
     Throwable cause = new Throwable();
     startServer();
-    post.request(new ReadStream<Buffer>() {
+    post.send(new ReadStream<Buffer>() {
           @Override
           public ReadStream<Buffer> exceptionHandler(Handler<Throwable> handler) {
             if (handler != null) {
@@ -190,7 +191,7 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
     });
     Throwable cause = new Throwable();
     startServer();
-    post.request(new ReadStream<Buffer>() {
+    post.send(new ReadStream<Buffer>() {
       Handler<Throwable> exceptionHandler;
       @Override
       public ReadStream<Buffer> exceptionHandler(Handler<Throwable> handler) {
@@ -221,6 +222,36 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
       }
     }, onFailure(err -> {
       assertSame(cause, err);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testAsJsonObject() throws Exception {
+    JsonObject expected = new JsonObject().put("cheese", "Goat Cheese").put("wine", "Condrieu");
+    server.requestHandler(req -> {
+      req.response().end(expected.encode());
+    });
+    startServer();
+    HttpClientRequestBuilder get = client.createGet(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+    get.asJsonObject().send(onSuccess(resp -> {
+      assertEquals(200, resp.statusCode());
+      assertEquals(expected, resp.body());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testBodyUnmarshallingError() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end("not-json-object");
+    });
+    startServer();
+    HttpClientRequestBuilder get = client.createGet(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+    get.asJsonObject().send(onFailure(err -> {
+      assertTrue(err instanceof DecodeException);
       testComplete();
     }));
     await();

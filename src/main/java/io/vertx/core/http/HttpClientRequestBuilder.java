@@ -4,6 +4,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -22,8 +23,24 @@ public interface HttpClientRequestBuilder {
 
   HttpClientRequestBuilder putHeader(String name, String value);
 
-  void request(ReadStream<Buffer> stream, Handler<AsyncResult<HttpClientResponse>> handler);
+  // Could be called end() instead ?
+  // For RxJava we could generate with send(Observable<Buffer> stream
+  // would it work well ? i.e could the Observable<Buffer> could be subscribed easily ?
+  // in the case of FileSystem it *should* work (need to check):
 
-  void request(Handler<AsyncResult<HttpClientResponse>> handler);
+  // Observable<Buffer> fileObs = fileSystem.open("file.txt", new OpenOptions());
+  // Observable<HttpClientResponse> respObs = httpClient.createPost().send(fileObs);
+  // respObs.subscribe(resp -> {});
+  void send(ReadStream<Buffer> stream, Handler<AsyncResult<HttpClientResponse>> handler);
+
+  void send(Handler<AsyncResult<HttpClientResponse>> handler);
+
+  HttpClientResponseBuilder<Buffer> asBuffer();
+
+  HttpClientResponseBuilder<String> asString();
+
+  HttpClientResponseBuilder<JsonObject> asJsonObject();
+
+  <T> HttpClientResponseBuilder<T> as(Class<T> clazz);
 
 }
