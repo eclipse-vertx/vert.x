@@ -6,6 +6,7 @@ import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequestBuilder;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -31,17 +32,48 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
 
   @Test
   public void testGet() throws Exception {
+    testRequest(HttpMethod.GET);
+  }
+
+  @Test
+  public void testHead() throws Exception {
+    testRequest(HttpMethod.HEAD);
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    testRequest(HttpMethod.DELETE);
+  }
+
+  private void testRequest(HttpMethod method) throws Exception {
     waitFor(4);
     server.requestHandler(req -> {
+      assertEquals(method, req.method());
       complete();
       req.response().end();
     });
     startServer();
-    HttpClientRequestBuilder get = client.createGet(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-    get.send(onSuccess(resp -> {
+
+    HttpClientRequestBuilder builder = null;
+
+    switch (method) {
+      case GET:
+        builder = client.createGet(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+        break;
+      case HEAD:
+        builder = client.createHead(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+        break;
+      case DELETE:
+        builder = client.createDelete(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+        break;
+
+      default: fail("Invalid HTTP method");
+    }
+
+    builder.send(onSuccess(resp -> {
       complete();
     }));
-    get.send(onSuccess(resp -> {
+    builder.send(onSuccess(resp -> {
       complete();
     }));
     await();
@@ -49,21 +81,37 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
 
   @Test
   public void testPost() throws Exception {
-    testPost(false);
+    testRequestWithBody(HttpMethod.POST, false);
   }
 
   @Test
   public void testPostChunked() throws Exception {
-    testPost(true);
+    testRequestWithBody(HttpMethod.POST, true);
   }
 
-  private void testPost(boolean chunked) throws Exception {
+  @Test
+  public void testPut() throws Exception {
+    testRequestWithBody(HttpMethod.PUT, false);
+  }
+
+  @Test
+  public void testPutChunked() throws Exception {
+    testRequestWithBody(HttpMethod.PUT, true);
+  }
+
+  @Test
+  public void testPatch() throws Exception {
+    testRequestWithBody(HttpMethod.PATCH, false);
+  }
+
+  private void testRequestWithBody(HttpMethod method, boolean chunked) throws Exception {
     String expected = TestUtils.randomAlphaString(1024 * 1024);
     File f = File.createTempFile("vertx", ".data");
     f.deleteOnExit();
     Files.write(f.toPath(), expected.getBytes());
     waitFor(2);
     server.requestHandler(req -> req.bodyHandler(buff -> {
+      assertEquals(method, req.method());
       assertEquals(Buffer.buffer(expected), buff);
       complete();
       req.response().end();
@@ -71,11 +119,27 @@ public class HttpClientRequestBuilderTest extends HttpTestBase {
     startServer();
     vertx.runOnContext(v -> {
       AsyncFile asyncFile = vertx.fileSystem().openBlocking(f.getAbsolutePath(), new OpenOptions());
-      HttpClientRequestBuilder post = client.createGet(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-      if (!chunked) {
-        post = post.putHeader("Content-Length", "" + expected.length());
+
+      HttpClientRequestBuilder builder = null;
+
+      switch (method) {
+        case POST:
+          builder = client.createPost(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+          break;
+        case PUT:
+          builder = client.createPut(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+          break;
+        case PATCH:
+          builder = client.createPatch(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+          break;
+        default:
+          fail("Invalid HTTP method");
       }
-      post.send(asyncFile, onSuccess(resp -> {
+
+      if (!chunked) {
+        builder = builder.putHeader("Content-Length", "" + expected.length());
+      }
+      builder.send(asyncFile, onSuccess(resp -> {
             assertEquals(200, resp.statusCode());
             complete();
           }));
