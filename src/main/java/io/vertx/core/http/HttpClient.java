@@ -239,6 +239,26 @@ public interface HttpClient extends Measured {
 
   HttpClientRequestBuilder createPost(int port, String host, String requestURI);
 
+  HttpClientRequestBuilder createPut(int port, String host, String requestURI);
+
+  HttpClientRequestBuilder createDelete(int port, String host, String requestURI);
+
+  HttpClientRequestBuilder createPatch(int port, String host, String requestURI);
+
+  HttpClientRequestBuilder createHead(int port, String host, String requestURI);
+
+  HttpClientRequestBuilder createGetAbs(String absoluteURI);
+
+  HttpClientRequestBuilder createPostAbs(String absoluteURI);
+
+  HttpClientRequestBuilder createPutAbs(String absoluteURI);
+
+  HttpClientRequestBuilder createDeleteAbs(String absoluteURI);
+
+  HttpClientRequestBuilder createPatchAbs(String absoluteURI);
+
+  HttpClientRequestBuilder createHeadAbs(String absoluteURI);
+
   /**
    * Create an HTTP POST request to send to the server at the specified host and port.
    * @param port  the port
