@@ -35,6 +35,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Base64;
@@ -400,16 +401,89 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClientRequestBuilder createGet(int port, String host, String requestURI) {
-    HttpClientRequestBuilderImpl get = new HttpClientRequestBuilderImpl(this, HttpMethod.GET);
-    get.port = port;
-    get.host = host;
-    get.requestURI = requestURI;
-    return get;
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.GET);
+    return createClientRequestBuilder(port, host, requestURI, builder);
   }
 
   @Override
   public HttpClientRequestBuilder createPost(int port, String host, String requestURI) {
-    HttpClientRequestBuilderImpl get = new HttpClientRequestBuilderImpl(this, HttpMethod.POST);
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.POST);
+    return createClientRequestBuilder(port, host, requestURI, builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createPut(int port, String host, String requestURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.PUT);
+    return createClientRequestBuilder(port, host, requestURI, builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createDelete(int port, String host, String requestURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.DELETE);
+    return createClientRequestBuilder(port, host, requestURI, builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createPatch(int port, String host, String requestURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.PATCH);
+    return createClientRequestBuilder(port, host, requestURI, builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createHead(int port, String host, String requestURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.HEAD);
+    return createClientRequestBuilder(port, host, requestURI, builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createGetAbs(String absoluteURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.GET);
+    URL url = parseUrl(absoluteURI);
+
+    return createClientRequestBuilder(url.getPort(), url.getHost(), url.getFile(), builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createPostAbs(String absoluteURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.POST);
+    URL url = parseUrl(absoluteURI);
+
+    return createClientRequestBuilder(url.getPort(), url.getHost(), url.getFile(), builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createPutAbs(String absoluteURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.PUT);
+    URL url = parseUrl(absoluteURI);
+
+    return createClientRequestBuilder(url.getPort(), url.getHost(), url.getFile(), builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createDeleteAbs(String absoluteURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.DELETE);
+    URL url = parseUrl(absoluteURI);
+
+    return createClientRequestBuilder(url.getPort(), url.getHost(), url.getFile(), builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createPatchAbs(String absoluteURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.PATCH);
+    URL url = parseUrl(absoluteURI);
+
+    return createClientRequestBuilder(url.getPort(), url.getHost(), url.getFile(), builder);
+  }
+
+  @Override
+  public HttpClientRequestBuilder createHeadAbs(String absoluteURI) {
+    HttpClientRequestBuilderImpl builder = new HttpClientRequestBuilderImpl(this, HttpMethod.HEAD);
+    URL url = parseUrl(absoluteURI);
+
+    return createClientRequestBuilder(url.getPort(), url.getHost(), url.getFile(), builder);
+  }
+
+  private HttpClientRequestBuilder createClientRequestBuilder(int port, String host, String requestURI, HttpClientRequestBuilderImpl get) {
     get.port = port;
     get.host = host;
     get.requestURI = requestURI;
