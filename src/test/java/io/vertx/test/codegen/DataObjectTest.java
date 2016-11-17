@@ -14,20 +14,14 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.test.core;
+package io.vertx.test.codegen;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.codegen.AggregatedDataObject;
-import io.vertx.test.codegen.ChildInheritingDataObject;
-import io.vertx.test.codegen.ChildInheritingDataObjectConverter;
-import io.vertx.test.codegen.ChildNotInheritingDataObject;
-import io.vertx.test.codegen.ChildNotInheritingDataObjectConverter;
-import io.vertx.test.codegen.NoConverterDataObject;
-import io.vertx.test.codegen.TestDataObject;
-import io.vertx.test.codegen.TestDataObjectConverter;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.ArrayList;

@@ -7,7 +7,7 @@
     "templateFileName": "vertx-java/template/dataObjectCheatsheetIndex.templ"
   },{
     "kind": "dataObject",
-    "fileName": "(model.isClass() && model.getGenerateConverter()) ? (fqn + 'Converter.java') : null",
+    "fileName": "(model.isClass() && model.getGenerateConverter()) ? ('generated/' + fqn.replace('.', '/') + 'Converter.java') : null",
     "templateFileName": "vertx-java/template/dataObjectConverter.templ"
   },{
     "kind": "enum",
