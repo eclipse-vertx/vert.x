@@ -1481,6 +1481,24 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testIncorrectHttpVersion() throws Exception {
+    server.requestHandler(req -> {
+      NetSocket so = req.netSocket();
+      so.write(Buffer.buffer("HTTP/1.2 200 OK\r\n\r\n"));
+      so.close();
+    });
+    startServer();
+    HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Should not be called"));
+    req.exceptionHandler(err -> {
+      assertTrue("message " + err.getMessage() + " should contain HTTP/1.2", err.getMessage().contains("HTTP/1.2"));
+      req.connection().closeHandler(v -> {
+        testComplete();
+      });
+    }).putHeader("connection", "close").end();
+    await();
+  }
+
+  @Test
   public void testHttp11PersistentConnectionNotClosed() throws Exception {
     client.close();
 

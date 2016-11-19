@@ -302,14 +302,18 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
       vertxVersion = HttpVersion.HTTP_1_1;
     } else {
-      throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
+      vertxVersion = null;
     }
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
     if (metrics.isEnabled()) {
       metrics.responseBegin(requestForResponse.metric(), nResp);
     }
-    requestForResponse.handleResponse(nResp);
+    if (vertxVersion != null) {
+      requestForResponse.handleResponse(nResp);
+    } else {
+      requestForResponse.handleException(new IllegalStateException("Unsupported HTTP version: " + nettyVersion));
+    }
   }
 
   public void doPause() {
