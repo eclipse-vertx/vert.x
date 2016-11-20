@@ -56,6 +56,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Buffer pausedLastChunk;
   private MultiMap pausedTrailers;
   private NetSocket netSocket;
+  private boolean completed;
 
   // Track for metrics
   private long bytesRead;
@@ -135,6 +136,13 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         }
       }
       return cookies;
+    }
+  }
+
+  @Override
+  public void reset(long code) {
+    if (!completed) {
+      stream.resetResponse(code);
     }
   }
 
@@ -258,6 +266,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
             handleException(t);
           }
         }
+        completed = true;
       }
     }
   }

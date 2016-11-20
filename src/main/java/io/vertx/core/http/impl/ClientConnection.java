@@ -442,18 +442,20 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     return super.getContext();
   }
 
-  public void reset(long code) {
-    if (currentRequest == null) {
-      throw new IllegalStateException();
-    }
+  public void resetRequest(long code) {
     if (!reset) {
-      currentRequest = null;
       reset = true;
+      currentRequest = null;
       requests.removeLast();
       if (requests.size() == 0) {
         pool.responseEnded(this, true);
       }
     }
+  }
+
+  @Override
+  public void resetResponse(long code) {
+    pool.responseEnded(this, true);
   }
 
   private HttpRequest createRequest(HttpVersion version, HttpMethod method, String rawMethod, String uri, MultiMap headers) {

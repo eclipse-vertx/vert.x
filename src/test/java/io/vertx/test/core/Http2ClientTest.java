@@ -749,7 +749,7 @@ public class Http2ClientTest extends Http2TestBase {
       req.reset(10);
       assertIllegalStateException(() -> req.write(Buffer.buffer()));
       assertIllegalStateException(req::end);
-    }).setChunked(true).write(Buffer.buffer("hello"));
+    }).end(Buffer.buffer("hello"));
     await();
   }
 
@@ -896,7 +896,7 @@ public class Http2ClientTest extends Http2TestBase {
       fail();
     });
     req2.handler(resp -> {
-      assertSame(connection.get(), req1.connection());
+      assertSame(connection.get(), req2.connection());
       complete();
     });
     req1.end();

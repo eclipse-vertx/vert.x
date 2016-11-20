@@ -259,7 +259,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       checkComplete();
       this.drainHandler = handler;
       if (stream != null) {
-        stream.getContext().runOnContext(v -> stream.checkDrained());
+        stream.getContext().runOnContext(v -> {
+          synchronized (getLock()) {
+            if (stream != null) {
+              stream.checkDrained();
+            }
+          }
+        });
       }
       return this;
     }
@@ -364,13 +370,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public boolean reset(long code) {
     synchronized (getLock()) {
-      if (completed) {
-        throw new IllegalStateException("Request already completed");
-      }
       exceptionOccurred = true;
       completed = true;
       if (stream != null) {
-        stream.reset(code);
+        stream.resetRequest(code);
+        stream = null;
         return true;
       } else {
         return false;
@@ -381,10 +385,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public HttpConnection connection() {
     synchronized (getLock()) {
-      if (stream == null) {
-        throw new IllegalStateException("Not yet connected");
-      }
-      return stream.connection();
+      return stream != null ? stream.connection() : null;
     }
   }
 
@@ -513,6 +514,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           @Override
           public List<String> cookies() {
             return resp.cookies();
+          }
+
+          @Override
+          public void reset(long code) {
+            resp.reset(code);
           }
 
           @Override
@@ -749,10 +755,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         stream.writeBuffer(buff, end);
       }
       if (end) {
-        stream.connection().reportBytesWritten(written);
-
+        HttpClientStream s = stream;
+        stream = null;
+        s.connection().reportBytesWritten(written);
         if (respHandler != null) {
-          stream.endRequest();
+          s.endRequest();
         }
       }
     }

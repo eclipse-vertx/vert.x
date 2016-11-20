@@ -22,7 +22,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
@@ -105,7 +104,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   @Override
   public boolean reset(long code) {
     synchronized (conn) {
-      stream.reset(code);
+      stream.resetRequest(code);
       return true;
     }
   }
