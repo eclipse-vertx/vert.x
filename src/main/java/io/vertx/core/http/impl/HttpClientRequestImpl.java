@@ -65,6 +65,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<HttpConnection> connectionHandler;
   private boolean headWritten;
   private boolean completed;
+  private Long reset;
+  private HttpClientResponseImpl response;
   private ByteBuf pendingChunks;
   private int pendingMaxSize = -1;
   private boolean connecting;
@@ -370,15 +372,21 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public boolean reset(long code) {
     synchronized (getLock()) {
-      exceptionOccurred = true;
-      completed = true;
-      if (stream != null) {
-        stream.resetRequest(code);
-        stream = null;
+      if (reset == null) {
+        reset = code;
+        if (!completed) {
+          completed = true;
+          if (stream != null) {
+            stream.resetRequest(code);
+          }
+        } else {
+          if (response != null) {
+            stream.resetResponse(code);
+          }
+        }
         return true;
-      } else {
-        return false;
       }
+      return false;
     }
   }
 
@@ -421,16 +429,21 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   protected void doHandleResponse(HttpClientResponseImpl resp) {
-    if (resp.statusCode() == 100) {
-      if (continueHandler != null) {
-        continueHandler.handle(null);
-      }
+    if (reset != null) {
+      stream.resetResponse(reset);
     } else {
-      if (respHandler != null) {
-        respHandler.handle(resp);
-      }
-      if (endHandler != null) {
-        endHandler.handle(null);
+      response = resp;
+      if (resp.statusCode() == 100) {
+        if (continueHandler != null) {
+          continueHandler.handle(null);
+        }
+      } else {
+        if (respHandler != null) {
+          respHandler.handle(resp);
+        }
+        if (endHandler != null) {
+          endHandler.handle(null);
+        }
       }
     }
   }
@@ -514,11 +527,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           @Override
           public List<String> cookies() {
             return resp.cookies();
-          }
-
-          @Override
-          public void reset(long code) {
-            resp.reset(code);
           }
 
           @Override
@@ -616,7 +624,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         boolean isCancelled() {
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
-          return exceptionOccurred;
+          return exceptionOccurred || reset != null;
         }
       };
 
@@ -755,13 +763,17 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         stream.writeBuffer(buff, end);
       }
       if (end) {
-        HttpClientStream s = stream;
-        stream = null;
-        s.connection().reportBytesWritten(written);
+        stream.connection().reportBytesWritten(written);
         if (respHandler != null) {
-          s.endRequest();
+          stream.endRequest();
         }
       }
+    }
+  }
+
+  void handleResponseEnd() {
+    synchronized (getLock()) {
+      response = null;
     }
   }
 

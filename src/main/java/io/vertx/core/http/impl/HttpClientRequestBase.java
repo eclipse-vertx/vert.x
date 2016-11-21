@@ -155,6 +155,9 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for host " + host));
   }
 
+  void handleResponseEnd() {
+  }
+
   void dataReceived() {
     synchronized (getLock()) {
       if (currentTimeoutTimerId != -1) {

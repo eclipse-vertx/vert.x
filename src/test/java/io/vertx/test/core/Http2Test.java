@@ -274,7 +274,7 @@ public class Http2Test extends HttpTest {
       fail();
     });
     post.setChunked(true).write(TestUtils.randomBuffer(1024));
-    assertFalse(post.reset());
+    assertTrue(post.reset());
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(1, numReq.get());
       complete();

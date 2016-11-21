@@ -455,6 +455,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   @Override
   public void resetResponse(long code) {
+    reset = true;
     pool.responseEnded(this, true);
   }
 

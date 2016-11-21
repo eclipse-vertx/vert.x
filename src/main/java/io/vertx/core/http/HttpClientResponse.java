@@ -117,28 +117,6 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   List<String> cookies();
 
   /**
-   * Reset this response with the error code {@code 0}.
-   *
-   * @see #reset(long)
-   */
-  default void reset() {
-    reset(0L);
-  }
-
-  /**
-   * Reset this response:
-   * <p/>
-   * <ul>
-   *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the specified error {@code code}</li>
-   *   <li>for HTTP/1.x, this closes the connection</li>
-   * </ul>
-   * <p/>
-   *
-   * @param code the error code
-   */
-  void reset(long code);
-
-  /**
    * Convenience method for receiving the entire request body in one piece.
    * <p>
    * This saves you having to manually set a dataHandler and an endHandler and append the chunks of the body until

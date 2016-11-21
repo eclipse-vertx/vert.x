@@ -1775,8 +1775,8 @@ public class Http1xTest extends HttpTest {
     AtomicReference<HttpConnection> conn = new AtomicReference<>();
     req1.handler(res -> {
       c.set(Vertx.currentContext());
-      res.endHandler(v -> req1Latch.countDown());
       conn.set(req1.connection());
+      res.endHandler(v -> req1Latch.countDown());
     });
     req1.end();
     Consumer<HttpClientRequest> checker = req -> {
@@ -2389,7 +2389,7 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-//  @Test
+  @Test
   public void testDontReuseConnectionWhenResponseEndsDuringAnOngoingRequest() throws Exception {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
@@ -2687,7 +2687,7 @@ public class Http1xTest extends HttpTest {
         fail();
       });
       post.setChunked(true).write(TestUtils.randomBuffer(1024));
-      assertFalse(post.reset());
+      assertTrue(post.reset());
       client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(1, numReq.get());
         complete();
@@ -2982,7 +2982,7 @@ public class Http1xTest extends HttpTest {
       if (pipelined) {
         req1.handler(resp1 -> {
           resp1.handler(buff -> {
-            resp1.reset();
+            req1.reset();
             client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
               assertEquals(200, resp.statusCode());
               resp.bodyHandler(body -> {
@@ -2996,9 +2996,112 @@ public class Http1xTest extends HttpTest {
       } else {
         req1.handler(resp -> {
           resp.handler(buff -> {
-            resp.reset();
+            req1.reset();
           });
         });
+        req1.end();
+        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+          assertEquals(200, resp.statusCode());
+          resp.bodyHandler(body -> {
+            assertEquals("Hello world", body.toString());
+            complete();
+          });
+        });
+      }
+      await();
+    } finally {
+      server.close();
+    }
+  }
+
+  @Test
+  public void testCloseTheConnectionAfterResetBeforePipelinedResponseReceived() throws Exception {
+    testCloseTheConnectionAfterResetBeforeResponseReceived(true);
+  }
+
+  @Test
+  public void testCloseTheConnectionAfterResetBeforeKeepAliveResponseReceived() throws Exception {
+    testCloseTheConnectionAfterResetBeforeResponseReceived(false);
+  }
+
+  private void testCloseTheConnectionAfterResetBeforeResponseReceived(boolean pipelined) throws Exception {
+    waitFor(2);
+    server.close();
+    NetServer server = vertx.createNetServer();
+    CompletableFuture<Void> requestReceived = new CompletableFuture<>();
+    try {
+      AtomicInteger count = new AtomicInteger();
+      AtomicBoolean closed = new AtomicBoolean();
+      server.connectHandler(so -> {
+        Buffer total = Buffer.buffer();
+        switch (count.getAndIncrement()) {
+          case 0:
+            so.handler(buff -> {
+              total.appendBuffer(buff);
+              if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
+                  "Host: localhost:8080\r\n" +
+                  "\r\n")) {
+                requestReceived.complete(null);
+                so.write(Buffer.buffer(
+                    "HTTP/1.1 200 OK\r\n" +
+                        "Content-Length: 200\r\n" +
+                        "\r\n" +
+                        "Some-Buffer"
+                ));
+                so.closeHandler(v -> {
+                  closed.set(true);
+                });
+              }
+            });
+            break;
+          case 1:
+            so.handler(buff -> {
+              total.appendBuffer(buff);
+              if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
+                  "Host: localhost:8080\r\n" +
+                  "\r\n")) {
+                so.write(
+                    "HTTP/1.1 200 OK\r\n" +
+                        "Content-Type: text/plain\r\n" +
+                        "Content-Length: 11\r\n" +
+                        "\r\n" +
+                        "Hello world");
+                complete();
+              }
+            });
+            break;
+          default:
+            fail("Invalid count");
+            break;
+
+        }
+      });
+      CountDownLatch listenLatch = new CountDownLatch(1);
+      server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v -> {
+        listenLatch.countDown();
+      }));
+      awaitLatch(listenLatch);
+      client.close();
+      client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(pipelined).setKeepAlive(true));
+      HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+      if (pipelined) {
+        requestReceived.thenAccept(v -> {
+          req1.reset();
+          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+            assertEquals(200, resp.statusCode());
+            resp.bodyHandler(body -> {
+              assertEquals("Hello world", body.toString());
+              complete();
+            });
+          });
+        });
+        req1.handler(resp1 -> fail());
+        req1.end();
+      } else {
+        requestReceived.thenAccept(v -> {
+          req1.reset();
+        });
+        req1.handler(resp -> fail());
         req1.end();
         client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
           assertEquals(200, resp.statusCode());
