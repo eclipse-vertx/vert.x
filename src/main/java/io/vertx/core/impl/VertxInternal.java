@@ -61,11 +61,11 @@ public interface VertxInternal extends Vertx {
 
   VertxMetrics metricsSPI();
 
-	/**
-	 * Get the current context
-	 * @return the context
-	 */
-	ContextImpl getContext();
+  /**
+   * Get the current context
+   * @return the context
+   */
+  ContextImpl getContext();
 
   /**
    * @return event loop context

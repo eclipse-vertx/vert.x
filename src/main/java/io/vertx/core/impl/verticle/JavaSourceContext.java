@@ -57,11 +57,11 @@ public class JavaSourceContext {
   }
 
   public File getSourceRoot() {
-	  return sourceRoot;
+    return sourceRoot;
   }
 
   public String getClassName() {
-	  return className;
+   return className;
   }
 
   /*
@@ -85,7 +85,7 @@ public class JavaSourceContext {
           return null; // Package definition must be on the first non-comment line
         }
       }
-	    return null;
+      return null;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

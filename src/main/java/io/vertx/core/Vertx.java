@@ -282,13 +282,13 @@ public interface Vertx extends Measured {
   void runOnContext(Handler<Void> action);
 
   /**
-	 * Stop the the Vertx instance and release any resources held by it.
+   * Stop the the Vertx instance and release any resources held by it.
    * <p>
    * The instance cannot be used after it has been closed.
    * <p>
    * The actual close is asynchronous and may not complete until after the call has returned.
-	 */
-	void close();
+   */
+  void close();
 
   /**
    * Like {@link #close} but the completionHandler will be called when the close is complete

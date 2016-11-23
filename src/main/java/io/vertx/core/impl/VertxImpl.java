@@ -203,7 +203,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * @return The FileSystem implementation for the OS
    */
   protected FileSystem getFileSystem() {
-  	return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
+    return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
   }
 
   @Override

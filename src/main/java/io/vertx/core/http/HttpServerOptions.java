@@ -478,7 +478,7 @@ public class HttpServerOptions extends NetServerOptions {
   public int getMaxInitialLineLength() {
     return maxInitialLineLength;
   }
-	
+
   /**
    * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    * 
@@ -489,14 +489,14 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxInitialLineLength = maxInitialLineLength;
     return this;
   }
-	
+
   /**
    * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
     return maxHeaderSize;
   }
-	
+
   /**
    * Set the maximum length of all headers for HTTP/1.x .
    *

@@ -78,8 +78,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private long bytesWritten;
 
   HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
-  	this.vertx = vertx;
-  	this.conn = conn;
+    this.vertx = vertx;
+    this.conn = conn;
     this.version = request.getProtocolVersion();
     this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
