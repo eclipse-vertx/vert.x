@@ -114,6 +114,16 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_CHUNK_SIZE = 8192;
 
   /**
+   * Default max length of the initial line (e.g. {@code "HTTP/1.1 200 OK"}) = 4096
+   */
+  public static final int DEFAULT_MAX_INITIAL_LINE_LENGTH = 4096;
+
+  /**
+   * Default max length of all headers = 8192
+   */
+  public static final int DEFAULT_MAX_HEADER_SIZE = 8192;
+
+  /**
    * Default max wait queue size = -1 (unbounded)
    */
   public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
@@ -143,6 +153,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int defaultPort;
   private HttpVersion protocolVersion;
   private int maxChunkSize;
+  private int maxInitialLineLength;
+  private int maxHeaderSize;
   private int maxWaitQueueSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
@@ -177,6 +189,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
+    this.maxInitialLineLength = other.getMaxInitialLineLength();
+    this.maxHeaderSize = other.getMaxHeaderSize();
     this.maxWaitQueueSize = other.maxWaitQueueSize;
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
@@ -209,6 +223,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
+    maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
+    maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
@@ -646,6 +662,42 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public int getMaxChunkSize() {
     return maxChunkSize;
+  }
+
+  /**
+   * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
+   */
+  public int getMaxInitialLineLength() {
+    return maxInitialLineLength;
+  }
+
+  /**
+   * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "HTTP/1.1 200 OK"})
+   *
+   * @param maxInitialLineLength the new maximum initial length
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxInitialLineLength(int maxInitialLineLength) {
+    this.maxInitialLineLength = maxInitialLineLength;
+    return this;
+  }
+
+  /**
+   * @return Returns the maximum length of all headers for HTTP/1.x
+   */
+  public int getMaxHeaderSize() {
+    return maxHeaderSize;
+  }
+
+  /**
+   * Set the maximum length of all headers for HTTP/1.x .
+   *
+   * @param maxHeaderSize the new maximum length
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxHeaderSize(int maxHeaderSize) {
+    this.maxHeaderSize = maxHeaderSize;
+    return this;
   }
 
   /**

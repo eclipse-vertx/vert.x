@@ -736,6 +736,14 @@ Set to true to enabled network activity logging: Netty's pipeline is configured 
 +++
 Set the maximum HTTP chunk size
 +++
+|[[maxHeaderSize]]`maxHeaderSize`|`Number (int)`|
++++
+Set the maximum length of all headers for HTTP/1.x .
++++
+|[[maxInitialLineLength]]`maxInitialLineLength`|`Number (int)`|
++++
+Set the maximum length of the initial line for HTTP/1.x (e.g. <code>"HTTP/1.1 200 OK"</code>)
++++
 |[[maxPoolSize]]`maxPoolSize`|`Number (int)`|
 +++
 Set the maximum pool size for connections

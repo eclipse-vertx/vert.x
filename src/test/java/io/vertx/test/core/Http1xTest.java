@@ -199,6 +199,18 @@ public class Http1xTest extends HttpTest {
     assertEquals(HttpVersion.HTTP_1_0, options.getProtocolVersion());
     assertIllegalArgumentException(() -> options.setProtocolVersion(null));
 
+    assertEquals(HttpClientOptions.DEFAULT_MAX_CHUNK_SIZE, options.getMaxChunkSize());
+    assertEquals(options, options.setMaxChunkSize(100));
+    assertEquals(100, options.getMaxChunkSize());
+
+    assertEquals(HttpClientOptions.DEFAULT_MAX_INITIAL_LINE_LENGTH, options.getMaxInitialLineLength());
+    assertEquals(options, options.setMaxInitialLineLength(100));
+    assertEquals(100, options.getMaxInitialLineLength());
+
+    assertEquals(HttpClientOptions.DEFAULT_MAX_HEADER_SIZE, options.getMaxHeaderSize());
+    assertEquals(options, options.setMaxHeaderSize(100));
+    assertEquals(100, options.getMaxHeaderSize());
+
     assertEquals(HttpClientOptions.DEFAULT_MAX_WAIT_QUEUE_SIZE, options.getMaxWaitQueueSize());
     assertEquals(options, options.setMaxWaitQueueSize(100));
     assertEquals(100, options.getMaxWaitQueueSize());
@@ -227,7 +239,6 @@ public class Http1xTest extends HttpTest {
 
     assertEquals(null, options.getLocalAddress());
   }
-
 
   @Test
   public void testServerOptions() {
@@ -406,6 +417,9 @@ public class Http1xTest extends HttpTest {
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
+    int maxChunkSize = TestUtils.randomPositiveInt();
+    int maxInitialLineLength = TestUtils.randomPositiveInt();
+    int maxHeaderSize = TestUtils.randomPositiveInt();
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
     Http2Settings initialSettings = randomHttp2Settings();
     boolean useAlpn = TestUtils.randomBoolean();
@@ -442,6 +456,9 @@ public class Http1xTest extends HttpTest {
     options.setHttp2ConnectionWindowSize(http2ConnectionWindowSize);
     options.setTryUseCompression(tryUseCompression);
     options.setProtocolVersion(protocolVersion);
+    options.setMaxChunkSize(maxChunkSize);
+    options.setMaxInitialLineLength(maxInitialLineLength);
+    options.setMaxHeaderSize(maxHeaderSize);
     options.setMaxWaitQueueSize(maxWaitQueueSize);
     options.setInitialSettings(initialSettings);
     options.setUseAlpn(useAlpn);
@@ -482,6 +499,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(http2ConnectionWindowSize, copy.getHttp2ConnectionWindowSize());
     assertEquals(tryUseCompression, copy.isTryUseCompression());
     assertEquals(protocolVersion, copy.getProtocolVersion());
+    assertEquals(maxChunkSize, copy.getMaxChunkSize());
+    assertEquals(maxInitialLineLength, copy.getMaxInitialLineLength());
+    assertEquals(maxHeaderSize, copy.getMaxHeaderSize());
     assertEquals(maxWaitQueueSize, copy.getMaxWaitQueueSize());
     assertEquals(initialSettings, copy.getInitialSettings());
     assertEquals(useAlpn, copy.isUseAlpn());
@@ -515,6 +535,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.getProtocolVersion(), json.getProtocolVersion());
     assertEquals(def.getMaxWaitQueueSize(), json.getMaxWaitQueueSize());
+    assertEquals(def.getMaxChunkSize(), json.getMaxChunkSize());
+    assertEquals(def.getMaxInitialLineLength(), json.getMaxInitialLineLength());
+    assertEquals(def.getMaxHeaderSize(), json.getMaxHeaderSize());
     assertEquals(def.getInitialSettings(), json.getInitialSettings());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
@@ -560,6 +583,9 @@ public class Http1xTest extends HttpTest {
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
+    int maxChunkSize = TestUtils.randomPositiveInt();
+    int maxInitialLineLength = TestUtils.randomPositiveInt();
+    int maxHeaderSize = TestUtils.randomPositiveInt();
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
     Http2Settings initialSettings = randomHttp2Settings();
     boolean useAlpn = TestUtils.randomBoolean();
@@ -596,6 +622,9 @@ public class Http1xTest extends HttpTest {
       .put("http2ConnectionWindowSize", http2ConnectionWindowSize)
       .put("tryUseCompression", tryUseCompression)
       .put("protocolVersion", protocolVersion.name())
+      .put("maxChunkSize", maxChunkSize)
+      .put("maxInitialLineLength", maxInitialLineLength)
+      .put("maxHeaderSize", maxHeaderSize)
       .put("maxWaitQueueSize", maxWaitQueueSize)
       .put("initialSettings", new JsonObject()
           .put("pushEnabled", initialSettings.isPushEnabled())
@@ -644,6 +673,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(http2ConnectionWindowSize, options.getHttp2ConnectionWindowSize());
     assertEquals(tryUseCompression, options.isTryUseCompression());
     assertEquals(protocolVersion, options.getProtocolVersion());
+    assertEquals(maxChunkSize, options.getMaxChunkSize());
+    assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
+    assertEquals(maxHeaderSize, options.getMaxHeaderSize());
     assertEquals(maxWaitQueueSize, options.getMaxWaitQueueSize());
     assertEquals(initialSettings, options.getInitialSettings());
     assertEquals(useAlpn, options.isUseAlpn());
@@ -2129,38 +2161,94 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testMaxInitialLineLengthOption() {
-	  
+  public void testServerMaxInitialLineLengthOption() {
+
     String longParam = TestUtils.randomAlphaString(5000);
-	
+
     // 5017 = 5000 for longParam and 17 for the rest in the following line - "GET /?t=longParam HTTP/1.1"
     vertx.createHttpServer(new HttpServerOptions().setMaxInitialLineLength(5017)
-    						.setHost("localhost").setPort(8080)).requestHandler(req -> {
+                .setHost("localhost").setPort(8080)).requestHandler(req -> {
       assertEquals(req.getParam("t"), longParam);
       req.response().end();
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
-      		.request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam, resp -> {
+          .request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam, resp -> {
         testComplete();
       }).end();
     }));
     
     await();
   }
-  
+
+  @Test
+  public void testClientMaxInitialLineLengthOption() {
+
+    String longParam = TestUtils.randomAlphaString(5000);
+    NetServer server = vertx.createNetServer();
+
+    server.connectHandler(so -> {
+      so.write("" +
+          "HTTP/1.1 200 OK\r\n" +
+          "Transfer-Encoding: chunked\r\n" +
+          "\r\n" +
+          "A; name=\"" + longParam + "\"\r\n" +
+          "0123456789\r\n" +
+          "0\r\n" +
+          "\r\n");
+    });
+
+    // 5017 = 5000 for longParam and 17 for the rest in the following line - "GET /?t=longParam HTTP/1.1"
+    try {
+      server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, onSuccess(v -> {
+        vertx.createHttpClient(new HttpClientOptions().setMaxInitialLineLength(6000))
+            .request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam, resp -> {
+              resp.bodyHandler(body -> {
+                assertEquals("0123456789", body.toString());
+                testComplete();
+              });
+            }).end();
+      }));
+      await();
+    } finally {
+      server.close();
+    }
+  }
+
+  @Test
+  public void testClientMaxHeaderSizeOption() {
+
+    String longHeader = TestUtils.randomAlphaString(9000);
+
+    // min 9023 = 9000 for longHeader and 23 for "Content-Length: 0 t: "
+    vertx.createHttpServer(new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
+      // Add longHeader
+      req.response().putHeader("t", longHeader).end();
+    }).listen(onSuccess(res -> {
+      HttpClientRequest req = vertx.createHttpClient(new HttpClientOptions().setMaxHeaderSize(10000))
+          .request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+            assertEquals(200, resp.statusCode());
+            assertEquals(resp.getHeader("t"), longHeader);
+            testComplete();
+          });
+      req.end();
+    }));
+
+    await();
+  }
+
   @Test
   public void testServerMaxHeaderSizeOption() {
-	  
+
     String longHeader = TestUtils.randomAlphaString(9000);
-	
+
     // min 9023 = 9000 for longHeader and 23 for "Content-Length: 0 t: "
     vertx.createHttpServer(new HttpServerOptions().setMaxHeaderSize(10000)
-    						.setHost("localhost").setPort(8080)).requestHandler(req -> {
+                .setHost("localhost").setPort(8080)).requestHandler(req -> {
       assertEquals(req.getHeader("t"), longHeader);
       req.response().end();
     }).listen(onSuccess(res -> {
       HttpClientRequest req = vertx.createHttpClient(new HttpClientOptions())
-      		.request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+          .request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
         testComplete();
       });
       // Add longHeader
