@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -2161,22 +2162,39 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testServerMaxInitialLineLength() {
+    testServerMaxInitialLineLength(HttpServerOptions.DEFAULT_MAX_INITIAL_LINE_LENGTH);
+  }
+
+  @Test
   public void testServerMaxInitialLineLengthOption() {
-
-    String longParam = TestUtils.randomAlphaString(5000);
-
     // 5017 = 5000 for longParam and 17 for the rest in the following line - "GET /?t=longParam HTTP/1.1"
-    vertx.createHttpServer(new HttpServerOptions().setMaxInitialLineLength(5017)
-                .setHost("localhost").setPort(8080)).requestHandler(req -> {
+    testServerMaxInitialLineLength(5017);
+  }
+
+  private void testServerMaxInitialLineLength(int maxInitialLength) {
+    String longParam = TestUtils.randomAlphaString(5000);
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setMaxInitialLineLength(maxInitialLength)
+        .setHost("localhost").setPort(8080)).requestHandler(req -> {
       assertEquals(req.getParam("t"), longParam);
       req.response().end();
     }).listen(onSuccess(res -> {
-      vertx.createHttpClient(new HttpClientOptions())
-          .request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam, resp -> {
-        testComplete();
-      }).end();
+      HttpClientRequest req = vertx.createHttpClient(new HttpClientOptions())
+          .request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam);
+      req.handler(resp -> {
+        if (maxInitialLength > HttpServerOptions.DEFAULT_MAX_INITIAL_LINE_LENGTH) {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        } else {
+          assertEquals(414, resp.statusCode());
+          req.connection().closeHandler(v -> {
+            testComplete();
+          });
+        }
+      });
+      req.end();
     }));
-    
     await();
   }
 
@@ -2237,25 +2255,43 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testServerMaxHeaderSize() {
+    testServerMaxHeaderSize(HttpServerOptions.DEFAULT_MAX_HEADER_SIZE);
+  }
+
+  @Test
   public void testServerMaxHeaderSizeOption() {
+    // min 9023 = 9000 for longHeader and 23 for "Content-Length: 0 t: "
+    testServerMaxHeaderSize(10000);
+  }
+
+  private void testServerMaxHeaderSize(int maxHeaderSize) {
 
     String longHeader = TestUtils.randomAlphaString(9000);
 
-    // min 9023 = 9000 for longHeader and 23 for "Content-Length: 0 t: "
-    vertx.createHttpServer(new HttpServerOptions().setMaxHeaderSize(10000)
-                .setHost("localhost").setPort(8080)).requestHandler(req -> {
+    vertx.createHttpServer(new HttpServerOptions().setMaxHeaderSize(maxHeaderSize)
+        .setHost("localhost").setPort(8080)).requestHandler(req -> {
       assertEquals(req.getHeader("t"), longHeader);
       req.response().end();
     }).listen(onSuccess(res -> {
       HttpClientRequest req = vertx.createHttpClient(new HttpClientOptions())
-          .request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
-        testComplete();
+          .request(HttpMethod.GET, 8080, "localhost", "/");
+      req.handler(resp -> {
+        if (maxHeaderSize > HttpServerOptions.DEFAULT_MAX_HEADER_SIZE) {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        } else {
+          assertEquals(400, resp.statusCode());
+          req.connection().closeHandler(v -> {
+            testComplete();
+          });
+        }
       });
       // Add longHeader
       req.putHeader("t", longHeader);
       req.end();
     }));
-    
+
     await();
   }
 

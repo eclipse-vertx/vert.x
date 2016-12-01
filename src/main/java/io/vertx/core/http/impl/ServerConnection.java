@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -398,6 +399,13 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       HttpRequest request = (HttpRequest) msg;
       DecoderResult result = ((HttpObject) msg).getDecoderResult();
       if (result.isFailure()) {
+        Throwable cause = result.cause();
+        if (cause instanceof TooLongFrameException) {
+          String causeMsg = cause.getMessage();
+          HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
+          DefaultFullHttpResponse resp = new DefaultFullHttpResponse(request.protocolVersion(), status);
+          writeToChannel(resp);
+        }
         channel.pipeline().fireExceptionCaught(result.cause());
         return;
       }
