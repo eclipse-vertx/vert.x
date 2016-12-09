@@ -19,6 +19,8 @@ package io.vertx.core.spi.cluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
+import java.util.function.Predicate;
+
 /**
  *
  * An asynchronous multi-map.
@@ -63,4 +65,6 @@ public interface AsyncMultiMap<K, V> {
    * @param completionHandler This will be called when the remove is complete
    */
   void removeAllForValue(V v, Handler<AsyncResult<Void>> completionHandler);
+
+  void removeAll(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler);
 }
