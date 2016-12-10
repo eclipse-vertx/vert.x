@@ -71,7 +71,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param <T>  the result type
    * @return  the future
    */
-  @GenIgnore
   static <T> Future<T> failedFuture(Throwable t) {
     return factory.failedFuture(t);
   }
