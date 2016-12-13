@@ -86,6 +86,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       if (creatingContext.isMultiThreadedWorkerContext()) {
         throw new IllegalStateException("Cannot use HttpClient in a multi-threaded worker verticle");
       }
+      if(options.getProtocolVersion() == HttpVersion.HTTP_2 && creatingContext.isWorkerContext()) {
+        throw new IllegalStateException("Cannot use HttpClient with HTTP_2 in a worker verticle");
+      }
       creatingContext.addCloseHook(closeHook);
     }
     HttpClientMetrics metrics = vertx.metricsSPI().createMetrics(this, options);
