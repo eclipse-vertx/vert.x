@@ -316,7 +316,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   protected <T> void sendOrPub(SendContextImpl<T> sendContext) {
     MessageImpl message = sendContext.message;
-    metrics.messageSent(message.address(), !message.send(), true, false);
+    metrics.messageSent(message.address(), !message.isSend(), true, false);
     deliverMessageLocally(sendContext);
   }
 
@@ -362,23 +362,23 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     msg.setBus(this);
     Handlers handlers = handlerMap.get(msg.address());
     if (handlers != null) {
-      if (msg.send()) {
+      if (msg.isSend()) {
         //Choose one
         HandlerHolder holder = handlers.choose();
-        metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), holder != null ? 1 : 0);
+        metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), holder != null ? 1 : 0);
         if (holder != null) {
           deliverToHandler(msg, holder);
         }
       } else {
         // Publish
-        metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), handlers.list.size());
+        metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), handlers.list.size());
         for (HandlerHolder holder: handlers.list) {
           deliverToHandler(msg, holder);
         }
       }
       return true;
     } else {
-      metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), 0);
+      metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), 0);
       return false;
     }
   }
@@ -453,7 +453,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
     @Override
     public boolean send() {
-      return message.send();
+      return message.isSend();
     }
   }
 

@@ -947,6 +947,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
     eb.<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
+        assertTrue(msg.isSend());
         assertEquals(received, msg.body());
         if (options != null && options.getHeaders() != null) {
           assertNotNull(msg.headers());
@@ -992,6 +993,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     eb.send(ADDRESS1, str, onSuccess((Message<R> reply) -> {
       if (consumer == null) {
+        assertTrue(reply.isSend());
         assertEquals(received, reply.body());
         if (options != null && options.getHeaders() != null) {
           assertNotNull(reply.headers());
@@ -1015,6 +1017,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       @Override
       public void handle(Message<T> msg) {
         if (consumer == null) {
+          assertFalse(msg.isSend());
           assertEquals(val, msg.body());
         } else {
           consumer.accept(msg.body());
