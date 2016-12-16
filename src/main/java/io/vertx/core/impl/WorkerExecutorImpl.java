@@ -20,7 +20,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -30,7 +29,7 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WorkerExecutorImpl implements WorkerExecutor, Closeable, MetricsProvider {
+class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorInternal {
 
   private final ContextImpl context;
   final WorkerPool pool;
@@ -54,6 +53,11 @@ class WorkerExecutorImpl implements WorkerExecutor, Closeable, MetricsProvider {
   public boolean isMetricsEnabled() {
     PoolMetrics metrics = pool.metrics();
     return metrics != null && metrics.isEnabled();
+  }
+
+  @Override
+  public ContextImpl getContext() {
+    return context;
   }
 
   public WorkerPool getPool() {
