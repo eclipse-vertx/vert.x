@@ -46,10 +46,7 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsciiString;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -1824,4 +1821,37 @@ public class Http2ClientTest extends Http2TestBase {
     await();
   }
 */
+  @Test
+  public void testWorkerVerticleException() throws Exception {
+    Verticle workerVerticle = new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        try {
+          vertx.createHttpClient(createHttp2ClientOptions());
+          fail("HttpClient should not work with HTTP_2");
+        } catch(Exception ex) {
+          assertEquals("Cannot use HttpClient with HTTP_2 in a worker", ex.getMessage());
+          complete();
+        }
+      }
+    };
+    vertx.deployVerticle(workerVerticle, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testExecuteBlockingException() throws Exception {
+
+    vertx.executeBlocking(fut -> {
+      try {
+        vertx.createHttpClient(createHttp2ClientOptions());
+        fail("HttpClient should not work with HTTP_2 inside executeBlocking");
+      } catch(Exception ex) {
+        assertEquals("Cannot use HttpClient with HTTP_2 in a worker", ex.getMessage());
+        complete();
+      }
+    }, null);
+
+    await();
+  }
 }
