@@ -44,6 +44,14 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   private Map<String, Object> map;
 
+  public static JsonObject create() {
+    return new JsonObject();
+  }
+
+  public static JsonObject create(String json) {
+    return new JsonObject(json);
+  }
+
   /**
    * Create an instance from a string of JSON
    *
