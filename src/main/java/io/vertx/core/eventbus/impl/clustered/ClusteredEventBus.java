@@ -217,7 +217,7 @@ public class ClusteredEventBus extends EventBusImpl {
         if (serverIDs != null && !serverIDs.isEmpty()) {
           sendToSubs(serverIDs, sendContext);
         } else {
-          metrics.messageSent(address, !sendContext.message.send(), true, false);
+          metrics.messageSent(address, !sendContext.message.isSend(), true, false);
           deliverMessageLocally(sendContext);
         }
       } else {
@@ -309,7 +309,7 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private <T> void sendToSubs(ChoosableIterable<ServerID> subs, SendContextImpl<T> sendContext) {
     String address = sendContext.message.address();
-    if (sendContext.message.send()) {
+    if (sendContext.message.isSend()) {
       // Choose one
       ServerID sid = subs.choose();
       if (!sid.equals(serverID)) {  //We don't send to this node
