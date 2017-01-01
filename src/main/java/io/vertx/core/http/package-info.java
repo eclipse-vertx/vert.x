@@ -76,6 +76,8 @@
  * - {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: {@code 100} as recommended by the HTTP/2 RFC
  * - the default HTTP/2 settings values for the others
  *
+ * NOTE: Worker Verticles are not compatible with HTTP/2
+ *
  * === Logging network server activity
  *
  * For debugging purposes, network activity can be logged.
