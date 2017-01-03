@@ -18,6 +18,7 @@ public interface Trust<T extends TrustOptions> extends Supplier<T> {
   Trust<PfxOptions> SERVER_PKCS12 = () -> new PfxOptions().setPath("tls/client-truststore.p12").setPassword("wibble");
   Trust<PfxOptions> CLIENT_PKCS12 = () -> new PfxOptions().setPath("tls/server-truststore.p12").setPassword("wibble");
   Trust<PemTrustOptions> SERVER_PEM = () -> new PemTrustOptions().addCertPath("tls/server-cert.pem");
+  Trust<PemTrustOptions> SERVER_VIRT_PEM = () -> new PemTrustOptions().addCertPath("tls/server-virt-cert.pem");
   Trust<PemTrustOptions> CLIENT_PEM = () -> new PemTrustOptions().addCertPath("tls/client-cert.pem");
   Trust<JksOptions> SERVER_JKS_ROOT_CA = () -> new JksOptions().setPath("tls/client-truststore-root-ca.jks").setPassword("wibble");
   Trust<PfxOptions> SERVER_PKCS12_ROOT_CA = () -> new PfxOptions().setPath("tls/client-truststore-root-ca.p12").setPassword("wibble");

@@ -213,6 +213,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniServerName]]`sniServerName`|`String`|
++++
+Set SNI server name
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -524,6 +528,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniServerName]]`sniServerName`|`String`|
++++
+Set SNI server name
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -807,6 +815,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniServerName]]`sniServerName`|`String`|
++++
+Set SNI server name
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -1012,6 +1024,10 @@ Set the value of reuse address
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
++++
+|[[sniServerName]]`sniServerName`|`String`|
++++
+Set SNI server name
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
@@ -1234,6 +1250,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniServerName]]`sniServerName`|`String`|
++++
+Set SNI server name
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -1362,6 +1382,10 @@ Set the value of reuse address
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
++++
+|[[sniServerName]]`sniServerName`|`String`|
++++
+Set SNI server name
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
@@ -1854,6 +1878,10 @@ Set the value of reuse address
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
++++
+|[[sniServerName]]`sniServerName`|`String`|
++++
+Set SNI server name
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++

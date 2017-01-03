@@ -85,6 +85,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean useAlpn;
   private SSLEngineOptions sslEngineOptions;
   private Set<String> enabledSecureTransportProtocols = new LinkedHashSet<>();
+  private Map<String, KeyCertOptions> sniKeyCertOptions = new LinkedHashMap<>();
+  private String sniServername;
 
   /**
    * Default constructor
@@ -112,6 +114,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
+    this.sniServername = other.getSNIServerName();
+    this.sniKeyCertOptions = other.getSNIKeyCertOptions();
     this.useAlpn = other.useAlpn;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.clone() : null;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
@@ -137,6 +141,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     ssl = DEFAULT_SSL;
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
+    sniServername = null;
     useAlpn = DEFAULT_USE_ALPN;
     sslEngineOptions = null;
   }
@@ -405,6 +410,50 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Add key options for SNI host.
+   *
+   * @param domain The domain name to match. May contain wildcards.
+   * @param keyCertOptions The key options to use when matching this host.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions addSNIKeyCertOptionsForDomain(String domain, KeyCertOptions keyCertOptions) throws NullPointerException {
+    Objects.requireNonNull(domain, "matchString cannot be null");
+    Objects.requireNonNull(keyCertOptions, "keyCertOptions cannot be null");
+    sniKeyCertOptions.put(domain, keyCertOptions);
+    return this;
+  }
+
+  /**
+   * Get the SNI Key Cert Map.
+   *
+   * @return the map
+   */
+  public Map<String, KeyCertOptions> getSNIKeyCertOptions() {
+    return sniKeyCertOptions;
+  }
+
+  /**
+   * Set SNI server name
+   *
+   * @param serverName the name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSNIServerName(String serverName) throws NullPointerException {
+    Objects.requireNonNull(serverName, "No null serverName accepted");
+    sniServername = serverName;
+    return this;
+  }
+
+  /**
+   * Get the SNI server name
+   *
+   * @return the name
+   */
+  public String getSNIServerName() {
+    return sniServername;
+  }
+
+  /**
    * Add a CRL value
    *
    * @param crlValue  the value
@@ -500,6 +549,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (usePooledBuffers != that.usePooledBuffers) return false;
     if (crlPaths != null ? !crlPaths.equals(that.crlPaths) : that.crlPaths != null) return false;
     if (crlValues != null ? !crlValues.equals(that.crlValues) : that.crlValues != null) return false;
+    if (sniServername != null ? !sniServername.equals(that.sniServername) : that.sniServername != null) return false;
+    if (sniKeyCertOptions != null ? !sniKeyCertOptions.equals(that.sniKeyCertOptions) : that.sniKeyCertOptions != null) return false;
     if (enabledCipherSuites != null ? !enabledCipherSuites.equals(that.enabledCipherSuites) : that.enabledCipherSuites != null)
       return false;
     if (keyCertOptions != null ? !keyCertOptions.equals(that.keyCertOptions) : that.keyCertOptions != null) return false;
@@ -524,6 +575,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + (trustOptions != null ? trustOptions.hashCode() : 0);
     result = 31 * result + (enabledCipherSuites != null ? enabledCipherSuites.hashCode() : 0);
     result = 31 * result + (crlPaths != null ? crlPaths.hashCode() : 0);
+    result = 31 * result + (sniServername != null ? sniServername.hashCode() : 0);
+    result = 31 * result + (sniKeyCertOptions != null ? sniKeyCertOptions.hashCode() : 0);
     result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);
     result = 31 * result + (useAlpn ? 1 : 0);
     result = 31 * result + (sslEngineOptions != null ? sslEngineOptions.hashCode() : 0);

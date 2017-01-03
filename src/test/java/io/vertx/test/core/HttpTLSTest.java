@@ -75,6 +75,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  // Server specifies specific cert that the client trusts (not trust all)
+  public void testTLSCLientTrustVirtServerCertPEM() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_VIRT_PEM, Trust.NONE).pass();
+  }
+
+  @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertJKSRootCAWithJKSRootCA() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS_ROOT_CA, Cert.SERVER_JKS_ROOT_CA, Trust.NONE).pass();

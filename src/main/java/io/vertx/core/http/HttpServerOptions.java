@@ -280,6 +280,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions addSNIKeyCertOptionsForDomain(String domain, KeyCertOptions keyCertOptions) throws NullPointerException {
+    super.addSNIKeyCertOptionsForDomain(domain, keyCertOptions);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions addEnabledSecureTransportProtocol(final String protocol) {
     super.addEnabledSecureTransportProtocol(protocol);
     return this;

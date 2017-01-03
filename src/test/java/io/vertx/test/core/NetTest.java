@@ -2583,7 +2583,9 @@ public class NetTest extends VertxTestBase {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
         .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
-    server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
+    server.connectHandler((NetSocket netSocket) ->
+            netSocket.close()
+    ).listen(ar -> {
 
       NetClientOptions options = new NetClientOptions()
           .setHostnameVerificationAlgorithm("HTTPS")

@@ -23,7 +23,7 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -164,7 +164,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
             }
             ChannelPipeline pipeline = ch.pipeline();
             if (sslHelper.isSSL()) {
-              SslHandler sslHandler = sslHelper.createSslHandler(vertx);
+              SniHandler sslHandler = sslHelper.createSniHandler(vertx);
               pipeline.addLast("ssl", sslHandler);
             }
             if (logEnabled) {
@@ -178,6 +178,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
               pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
             }
             pipeline.addLast("handler", new ServerHandler(ch));
+
           }
         });
 
@@ -394,10 +395,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       }
 
       if (sslHelper.isSSL()) {
-        SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
+        SSLHelper.SNIHandler sslHandler = ch.pipeline().get(SSLHelper.SNIHandler.class);
 
-        io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-        fut.addListener(future -> {
+        sslHandler.addHandshakeListener(future -> {
           if (future.isSuccess()) {
             connected(ch, handler);
           } else {

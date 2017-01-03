@@ -18,7 +18,6 @@ keytool -import -trustcacerts -alias test-store -file localhost.crt -keystore cl
 
 keytool -genkey -alias test-store -keyalg RSA -keystore mim-server-keystore.jks -keysize 2048 -validity 1095 -dname CN=mim-localhost -keypass wibble -storepass wibble
 
-
 ## Self signed PKCS12
 
 1) Transform JKS to PKCS12
@@ -40,6 +39,24 @@ openssl pkcs12 -in server-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM
 
 openssl pkcs12 -in server-keystore.p12 -nokeys -out server-cert.pem
 
+
+## Self signed certificate for virtual server (SNI)
+
+1) Create a private key + certificate for the server in a new key store:
+
+keytool -genkey -alias test-store -keyalg RSA -keystore server-virt-keystore.jks -keysize 2048 -validity 1095 -dname CN=localhost -keypass wibble -storepass wibble
+
+2) Transform JKS to PKCS12
+
+keytool -importkeystore -srckeystore server-virt-keystore.jks -destkeystore server-virt-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
+
+3) Extract the private key from the PCS12 store and convert it to PKCS8 format
+
+openssl pkcs12 -in server-virt-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out server-virt-key.pem -nocrypt
+
+4) Extract the X.509 certificate from the PCS12 store
+
+openssl pkcs12 -in server-virt-keystore.p12 -nokeys -out server-virt-cert.pem
 
 
 # Signed by root CA server->client

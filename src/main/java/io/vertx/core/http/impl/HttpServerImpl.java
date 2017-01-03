@@ -266,7 +266,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
-                pipeline.addLast("ssl", sslHelper.createSslHandler(vertx));
+                pipeline.addLast("ssl", sslHelper.createSniHandler(vertx));
                 if (options.isUseAlpn()) {
                   pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
                     @Override

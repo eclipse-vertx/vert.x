@@ -123,6 +123,9 @@ public class EventBusOptionsConverter {
     if (json.getValue("sendBufferSize") instanceof Number) {
       obj.setSendBufferSize(((Number)json.getValue("sendBufferSize")).intValue());
     }
+    if (json.getValue("sniServerName") instanceof String) {
+      obj.setSNIServerName((String)json.getValue("sniServerName"));
+    }
     if (json.getValue("soLinger") instanceof Number) {
       obj.setSoLinger(((Number)json.getValue("soLinger")).intValue());
     }
@@ -204,6 +207,9 @@ public class EventBusOptionsConverter {
     json.put("reconnectInterval", obj.getReconnectInterval());
     json.put("reuseAddress", obj.isReuseAddress());
     json.put("sendBufferSize", obj.getSendBufferSize());
+    if (obj.getSNIServerName() != null) {
+      json.put("sniServerName", obj.getSNIServerName());
+    }
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());

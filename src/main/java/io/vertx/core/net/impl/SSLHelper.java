@@ -17,8 +17,14 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.*;
-import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
+import io.netty.util.DomainNameMapping;
+import io.netty.util.DomainNameMappingBuilder;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -39,7 +45,6 @@ import io.vertx.core.net.TrustOptions;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
-import java.security.KeyStore;
 import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -140,8 +145,11 @@ public class SSLHelper {
   private Set<String> enabledProtocols;
 
   private String endpointIdentificationAlgorithm = "";
+  private String sniServerName;
+  private Map<String, KeyCertOptions> sniKeyCertOptions;
 
   private SslContext sslContext;
+  private Map<String, SslContext> sniSslContextMap = new LinkedHashMap<>();
   private boolean openSslSessionCacheEnabled = true;
 
   public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -161,6 +169,8 @@ public class SSLHelper {
       this.endpointIdentificationAlgorithm = "HTTPS";
     }
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
+    this.sniServerName = options.getSNIServerName();
+    this.sniKeyCertOptions = options.getSNIKeyCertOptions();
   }
 
   public SSLHelper(HttpServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -177,6 +187,7 @@ public class SSLHelper {
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
+    this.sniKeyCertOptions = options.getSNIKeyCertOptions();
   }
 
   public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -187,6 +198,7 @@ public class SSLHelper {
     this.trustAll = options.isTrustAll();
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
+    this.sniServerName = options.getSNIServerName();
     this.enabledCipherSuites = options.getEnabledCipherSuites();
     this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
     this.client = true;
@@ -194,6 +206,7 @@ public class SSLHelper {
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
+    this.sniKeyCertOptions = options.getSNIKeyCertOptions();
   }
 
   public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -210,6 +223,7 @@ public class SSLHelper {
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.openSslSessionCacheEnabled = (options.getSslEngineOptions() instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) options.getSslEngineOptions()).isSessionCacheEnabled();
+    this.sniKeyCertOptions = options.getSNIKeyCertOptions();
   }
 
   public boolean isSSL() {
@@ -237,9 +251,9 @@ public class SSLHelper {
     If you don't specify a key store, and don't specify a system property no key store will be used
     You can override this by specifying the javax.echo.ssl.keyStore system property
      */
-  private SslContext createContext(VertxInternal vertx) {
+  private SslContext createContext(VertxInternal vertx, KeyCertOptions keyCertOptions) {
     try {
-      KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx);
+      KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx, keyCertOptions);
       TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx);
       SslContextBuilder builder;
       if (client) {
@@ -285,7 +299,7 @@ public class SSLHelper {
     }
   }
 
-  private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
+  private static KeyManagerFactory getKeyMgrFactory(VertxInternal vertx, KeyCertOptions keyCertOptions) throws Exception {
     return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx);
   }
 
@@ -404,17 +418,24 @@ public class SSLHelper {
           break;
         }
       }
-    } else if (!endpointIdentificationAlgorithm.isEmpty()) {
+    } else {
       SSLParameters sslParameters = engine.getSSLParameters();
-      sslParameters.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
+      if (!endpointIdentificationAlgorithm.isEmpty()) {
+        sslParameters.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
+      }
+      if (sniServerName != null) {
+        sslParameters.setServerNames(Arrays.asList(new SNIHostName(sniServerName)));
+      }
       engine.setSSLParameters(sslParameters);
     }
+
+
     return new SslHandler(engine);
   }
 
   public SslContext getContext(VertxInternal vertx) {
     if (sslContext == null) {
-      sslContext = createContext(vertx);
+      sslContext = createContext(vertx, keyCertOptions);
       if (sslContext instanceof OpenSslServerContext){
         SSLSessionContext sslSessionContext = sslContext.sessionContext();
         if (sslSessionContext instanceof OpenSslServerSessionContext){
@@ -423,6 +444,20 @@ public class SSLHelper {
       }
     }
     return sslContext;
+  }
+
+  public SslContext getContext(VertxInternal vertx, String sniServerName) {
+    if (!sniSslContextMap.containsKey(sniServerName)) {
+      SslContext context = createContext(vertx, sniKeyCertOptions.get(sniServerName));
+      if (context instanceof OpenSslServerContext){
+        SSLSessionContext sslSessionContext = context.sessionContext();
+        if (sslSessionContext instanceof OpenSslServerSessionContext){
+          ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(openSslSessionCacheEnabled);
+        }
+      }
+      sniSslContextMap.put(sniServerName, context);
+    }
+    return sniSslContextMap.get(sniServerName);
   }
 
   // This is called to validate some of the SSL params as that only happens when the context is created
@@ -440,5 +475,50 @@ public class SSLHelper {
   public SslHandler createSslHandler(VertxInternal vertx) {
     SSLEngine engine = getContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
     return createHandler(engine, client);
+  }
+
+  public SNIHandler createSniHandler(VertxInternal vertx) {
+    DomainNameMappingBuilder<SslContext> builder = new DomainNameMappingBuilder(getContext(vertx));
+    for (String sniServername : sniKeyCertOptions.keySet()) {
+      builder.add(sniServername, getContext(vertx, sniServername));
+    }
+    return new SNIHandler(builder.build());
+  }
+
+  /**
+   * Custom SNI handler that allows for listening to handshakes and configuring the SSLEngine.
+   */
+  public class SNIHandler extends SniHandler {
+
+    private final List<GenericFutureListener<Future<Channel>>> listeners = new ArrayList<>();
+
+    private SNIHandler(DomainNameMapping<? extends SslContext> mapping) {
+      super(mapping);
+    }
+
+    @Override
+    protected void replaceHandler(ChannelHandlerContext ctx, String hostname, SslContext sslContext) throws Exception {
+      SslHandler sslHandler = null;
+      try {
+        SSLEngine sslEngine = sslContext.newEngine(ctx.alloc());
+        sslHandler = createHandler(sslEngine, client);
+        for (GenericFutureListener<Future<Channel>> listener : listeners) {
+            sslHandler.handshakeFuture().addListener(listener);
+        }
+        ctx.pipeline().replace(this, "ssl", sslHandler);
+        sslHandler = null;
+      } finally {
+        // Since the SslHandler was not inserted into the pipeline the ownership of the SSLEngine was not
+        // transferred to the SslHandler.
+        // See https://github.com/netty/netty/issues/5678
+        if (sslHandler != null) {
+          ReferenceCountUtil.safeRelease(sslHandler.engine());
+        }
+      }
+    }
+
+    public void addHandshakeListener(GenericFutureListener<Future<Channel>> listener) {
+      listeners.add(listener);
+    }
   }
 }
