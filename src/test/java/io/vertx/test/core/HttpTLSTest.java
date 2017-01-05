@@ -75,9 +75,27 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  // Server specifies specific cert that the client trusts (not trust all)
-  public void testTLSCLientTrustVirtServerCertPEM() throws Exception {
-    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_VIRT_PEM, Trust.NONE).pass();
+  // Test SNI fails if SNI is not set by client
+  public void testTLSCLientWithoutSNISet() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniCert(Cert.SERVER_VIRT_PEM.get()).fail();
+  }
+
+  @Test
+  // Test SNI fails if domain doesnt match
+  public void testTLSCLientWithWrongSNISet() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("bad.sni.domain").sniCert(Cert.SERVER_VIRT_PEM.get()).fail();
+  }
+
+  @Test
+  // Test handshake succeeds with default context even if SNI is not found
+  public void testTLSCLientWithSNISetAcceptingDefault() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("no.sni.domain").pass();
+  }
+
+  @Test
+  // Test SNI succeeds if correct domain name set if SNI is not set by client
+  public void testTLSCLientWithSNISet() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("my.sni.domain").sniCert(Cert.SERVER_VIRT_PEM.get()).pass();
   }
 
   @Test
@@ -371,11 +389,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean useProxy;
     boolean useProxyAuth;
     boolean useSocksProxy;
+    KeyCertOptions sniCert;
+    String sniServerName;
     String[] clientEnabledCipherSuites = new String[0];
     String[] serverEnabledCipherSuites = new String[0];
     String[] clientEnabledSecureTransportProtocol   = new String[0];
     String[] serverEnabledSecureTransportProtocol   = new String[0];
-    private String connectHostname;
+    String connectHostname;
 
 
     public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
@@ -418,6 +438,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
     TLSTest clientTrustAll() {
       clientTrustAll = true;
+      return this;
+    }
+
+    TLSTest sniServerName(String sniServerName) {
+      this.sniServerName = sniServerName;
+      return this;
+    }
+
+    TLSTest sniCert(KeyCertOptions sniCert) {
+      this.sniCert = sniCert;
       return this;
     }
 
@@ -506,6 +536,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (clientUsesAlpn) {
         options.setUseAlpn(true);
       }
+      if (sniServerName != null) {
+        options.setSNIServerName(sniServerName);
+      }
       options.setVerifyHost(clientVerifyHost);
       setOptions(options, clientTrust);
       setOptions(options, clientCert);
@@ -544,6 +577,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       if (serverUsesAlpn) {
         serverOptions.setUseAlpn(true);
+      }
+      if (sniCert != null) {
+        serverOptions.addSNIKeyCertOptionsForDomain("my.sni.domain", sniCert);
       }
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
