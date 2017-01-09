@@ -603,13 +603,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
         serverOptions.setUseAlpn(true);
       }
       if (sniPemCert != null) {
-        serverOptions.addSniKeyCertOption("my.sni.domain", sniPemCert);
+        serverOptions.addSniPemKeyCertOption("my.sni.domain", sniPemCert);
       }
       if (sniJksCert != null) {
-        serverOptions.addSniKeyCertOption("my.sni.domain", sniJksCert);
+        serverOptions.addSniKeyStoreOption("my.sni.domain", sniJksCert);
       }
       if (sniPfxCert != null) {
-        serverOptions.addSniKeyCertOption("my.sni.domain", sniPfxCert);
+        serverOptions.addSniPfxKeyCertOption("my.sni.domain", sniPfxCert);
       }
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
