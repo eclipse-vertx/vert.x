@@ -95,7 +95,6 @@ public class DefaultEventBus implements EventBus {
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getAsyncMultiMap("subs");
     this.server = setServer(port, hostname, listenHandler);
-    ManagementRegistry.registerEventBus(serverID);
   }
 
   @Override
@@ -625,6 +624,7 @@ public class DefaultEventBus implements EventBus {
           int serverPort = (publicPort == -1) ? server.port() : publicPort;
           String serverHost = (publicHost == null) ? hostName : publicHost;
           DefaultEventBus.this.serverID = new ServerID(serverPort, serverHost);
+          ManagementRegistry.registerEventBus(serverID);
         }
         if (listenHandler != null) {
           if (asyncResult.succeeded()) {
