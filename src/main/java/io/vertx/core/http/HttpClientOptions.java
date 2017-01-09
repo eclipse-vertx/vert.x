@@ -292,8 +292,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setSNIServerName(String serverName) {
-    super.setSNIServerName(serverName);
+  public HttpClientOptions setSniServerName(String serverName) {
+    super.setSniServerName(serverName);
     return this;
   }
 

@@ -213,6 +213,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
++++
 |[[sniServerName]]`sniServerName`|`String`|
 +++
 Set SNI server name
@@ -528,6 +532,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
++++
 |[[sniServerName]]`sniServerName`|`String`|
 +++
 Set SNI server name
@@ -815,6 +823,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
++++
 |[[sniServerName]]`sniServerName`|`String`|
 +++
 Set SNI server name
@@ -1024,6 +1036,10 @@ Set the value of reuse address
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
++++
+|[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
 +++
 |[[sniServerName]]`sniServerName`|`String`|
 +++
@@ -1250,6 +1266,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
++++
 |[[sniServerName]]`sniServerName`|`String`|
 +++
 Set SNI server name
@@ -1382,6 +1402,10 @@ Set the value of reuse address
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
++++
+|[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
 +++
 |[[sniServerName]]`sniServerName`|`String`|
 +++
@@ -1878,6 +1902,10 @@ Set the value of reuse address
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
++++
+|[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
 +++
 |[[sniServerName]]`sniServerName`|`String`|
 +++

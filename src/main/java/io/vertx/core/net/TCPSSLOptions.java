@@ -115,7 +115,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.sniServername = other.getSNIServerName();
-    this.sniKeyCertOptions = other.getSNIKeyCertOptions();
+    this.sniKeyCertOptions = other.getSniKeyCertOptions();
     this.useAlpn = other.useAlpn;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.clone() : null;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
@@ -413,13 +413,52 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Add key options for SNI host.
    *
    * @param domain The domain name to match. May contain wildcards.
-   * @param keyCertOptions The key options to use when matching this host.
+   * @param options The key options to use when matching this host.
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions addSNIKeyCertOptionsForDomain(String domain, KeyCertOptions keyCertOptions) throws NullPointerException {
+  @GenIgnore
+  public TCPSSLOptions addSniKeyCertOption(String domain, KeyCertOptions options) throws NullPointerException {
     Objects.requireNonNull(domain, "matchString cannot be null");
-    Objects.requireNonNull(keyCertOptions, "keyCertOptions cannot be null");
-    sniKeyCertOptions.put(domain, keyCertOptions);
+    Objects.requireNonNull(options, "keyCertOptions cannot be null");
+    sniKeyCertOptions.put(domain, options);
+    return this;
+  }
+
+  /**
+   * Add key options for SNI host.
+   *
+   * @param domain The domain name to match. May contain wildcards.
+   * @param options The key options to use when matching this host.
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public TCPSSLOptions addSniKeyStoreOption(String domain, JksOptions options) throws NullPointerException {
+    addSniKeyCertOption(domain, options);
+    return this;
+  }
+
+  /**
+   * Add key options for SNI host.
+   *
+   * @param domain The domain name to match. May contain wildcards.
+   * @param options The key options to use when matching this host.
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public TCPSSLOptions addSniPfxKeyCertOption(String domain, PfxOptions options) throws NullPointerException {
+    addSniKeyCertOption(domain, options);
+    return this;
+  }
+
+  /**
+   * Add key options for SNI host.
+   *
+   * @param domain The domain name to match. May contain wildcards.
+   * @param options The key options to use when matching this host.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions addSniPemKeyCertOption(String domain, PemKeyCertOptions options) throws NullPointerException {
+    addSniKeyCertOption(domain, options);
     return this;
   }
 
@@ -428,7 +467,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * @return the map
    */
-  public Map<String, KeyCertOptions> getSNIKeyCertOptions() {
+  public Map<String, KeyCertOptions> getSniKeyCertOptions() {
     return sniKeyCertOptions;
   }
 
@@ -438,7 +477,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param serverName the name
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions setSNIServerName(String serverName) throws NullPointerException {
+  public TCPSSLOptions setSniServerName(String serverName) throws NullPointerException {
     Objects.requireNonNull(serverName, "No null serverName accepted");
     sniServername = serverName;
     return this;

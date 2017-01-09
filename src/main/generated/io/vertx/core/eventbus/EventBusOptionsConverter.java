@@ -124,7 +124,7 @@ public class EventBusOptionsConverter {
       obj.setSendBufferSize(((Number)json.getValue("sendBufferSize")).intValue());
     }
     if (json.getValue("sniServerName") instanceof String) {
-      obj.setSNIServerName((String)json.getValue("sniServerName"));
+      obj.setSniServerName((String)json.getValue("sniServerName"));
     }
     if (json.getValue("soLinger") instanceof Number) {
       obj.setSoLinger(((Number)json.getValue("soLinger")).intValue());

@@ -72,7 +72,7 @@ public class SSLEngineTest extends HttpTestBase {
     server.listen(onSuccess(s -> {
       NetClientOptions options = new NetClientOptions();
       options.setSsl(true);
-      options.setSNIServerName("host1");
+      options.setSniServerName("host1");
       options.setTrustOptions(new PemTrustOptions().addCertPath(Cert.SERVER_PEM.get().getCertPath()));
       NetClient netClient = vertx.createNetClient(options);
       {
@@ -114,7 +114,7 @@ public class SSLEngineTest extends HttpTestBase {
       client = vertx.createHttpClient(new HttpClientOptions()
           .setSslEngineOptions(engine)
           .setSsl(true)
-          .setSNIServerName("host1")
+          .setSniServerName("host1")
           .setUseAlpn(useAlpn)
           .setTrustOptions(trustOptions)
           .setProtocolVersion(version));
@@ -136,7 +136,7 @@ public class SSLEngineTest extends HttpTestBase {
         .setHost(DEFAULT_HTTP_HOST)
         .setKeyCertOptions(Cert.SERVER_PEM.get())
         .setSsl(true)
-        .addSNIKeyCertOptionsForDomain("host1", sniOptions)
+        .addSniKeyCertOption("host1", sniOptions)
         .setUseAlpn(useAlpn);
     try {
       server = vertx.createHttpServer(options);

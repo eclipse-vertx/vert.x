@@ -27,11 +27,9 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerOptionsConverter;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetServerOptionsConverter;
 import io.vertx.core.net.NetworkOptionsConverter;
 import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.TCPSSLOptionsConverter;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.tls.Cert;
@@ -83,7 +81,7 @@ public class SSLHelperTest extends VertxTestBase {
   public void testSNIServerNameCanBeSet() throws Exception {
     HttpClientOptions options = new HttpClientOptions();
     options.setOpenSslEngineOptions(new OpenSSLEngineOptions());
-    options.setSNIServerName("foo.example.com");
+    options.setSniServerName("foo.example.com");
     SSLHelper helper = new SSLHelper(
             options,
             Cert.CLIENT_PEM.get(),
@@ -98,7 +96,7 @@ public class SSLHelperTest extends VertxTestBase {
   @Test
   public void testSNIMatchersCanBeSet() throws Exception {
     HttpServerOptions options = new HttpServerOptions();
-    options.addSNIKeyCertOptionsForDomain("host1.example.com", Cert.SERVER_PEM.get());
+    options.addSniKeyCertOption("host1.example.com", Cert.SERVER_PEM.get());
     SSLHelper helper = new SSLHelper(
             options,
             Cert.SERVER_PEM.get(),

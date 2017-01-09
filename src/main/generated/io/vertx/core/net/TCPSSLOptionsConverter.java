@@ -76,7 +76,7 @@ public class TCPSSLOptionsConverter {
       obj.setPfxTrustOptions(new io.vertx.core.net.PfxOptions((JsonObject)json.getValue("pfxTrustOptions")));
     }
     if (json.getValue("sniServerName") instanceof String) {
-      obj.setSNIServerName((String)json.getValue("sniServerName"));
+      obj.setSniServerName((String)json.getValue("sniServerName"));
     }
     if (json.getValue("soLinger") instanceof Number) {
       obj.setSoLinger(((Number)json.getValue("soLinger")).intValue());

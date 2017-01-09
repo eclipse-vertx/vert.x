@@ -280,8 +280,8 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions addSNIKeyCertOptionsForDomain(String domain, KeyCertOptions keyCertOptions) throws NullPointerException {
-    super.addSNIKeyCertOptionsForDomain(domain, keyCertOptions);
+  public HttpServerOptions addSniKeyCertOption(String domain, KeyCertOptions keyCertOptions) throws NullPointerException {
+    super.addSniKeyCertOption(domain, keyCertOptions);
     return this;
   }
 

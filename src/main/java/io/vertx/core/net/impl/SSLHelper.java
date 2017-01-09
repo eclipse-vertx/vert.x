@@ -164,7 +164,7 @@ public class SSLHelper {
     }
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
     this.sniServerName = options.getSNIServerName();
-    this.sniKeyCertOptions = options.getSNIKeyCertOptions();
+    this.sniKeyCertOptions = options.getSniKeyCertOptions();
   }
 
   public SSLHelper(HttpServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -181,7 +181,7 @@ public class SSLHelper {
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
-    this.sniKeyCertOptions = options.getSNIKeyCertOptions();
+    this.sniKeyCertOptions = options.getSniKeyCertOptions();
   }
 
   public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -200,7 +200,7 @@ public class SSLHelper {
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
-    this.sniKeyCertOptions = options.getSNIKeyCertOptions();
+    this.sniKeyCertOptions = options.getSniKeyCertOptions();
   }
 
   public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -217,7 +217,7 @@ public class SSLHelper {
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.openSslSessionCacheEnabled = (options.getSslEngineOptions() instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) options.getSslEngineOptions()).isSessionCacheEnabled();
-    this.sniKeyCertOptions = options.getSNIKeyCertOptions();
+    this.sniKeyCertOptions = options.getSniKeyCertOptions();
   }
 
   public boolean isSSL() {

@@ -537,7 +537,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         options.setUseAlpn(true);
       }
       if (sniServerName != null) {
-        options.setSNIServerName(sniServerName);
+        options.setSniServerName(sniServerName);
       }
       options.setVerifyHost(clientVerifyHost);
       setOptions(options, clientTrust);
@@ -579,7 +579,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         serverOptions.setUseAlpn(true);
       }
       if (sniCert != null) {
-        serverOptions.addSNIKeyCertOptionsForDomain("my.sni.domain", sniCert);
+        serverOptions.addSniKeyCertOption("my.sni.domain", sniCert);
       }
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
