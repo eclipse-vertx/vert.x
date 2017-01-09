@@ -215,6 +215,21 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions addSniKeyCertOption(String domain, KeyCertOptions options) {
+    return (NetServerOptions) super.addSniKeyCertOption(domain, options);
+  }
+
+  @Override
+  public NetServerOptions addSniKeyStoreOption(String domain, JksOptions options) {
+    return (NetServerOptions) super.addSniKeyStoreOption(domain, options);
+  }
+
+  @Override
+  public NetServerOptions addSniPfxKeyCertOption(String domain, PfxOptions options) {
+    return (NetServerOptions) super.addSniPfxKeyCertOption(domain, options);
+  }
+
+  @Override
   public NetServerOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;

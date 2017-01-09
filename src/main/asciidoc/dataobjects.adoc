@@ -1037,7 +1037,15 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniKeyStoreOptions]]`sniKeyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
++++
+Add key options for SNI host.
++++
 |[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
++++
+|[[sniPfxKeyCertOptions]]`sniPfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|
 +++
 Add key options for SNI host.
 +++
@@ -1403,7 +1411,15 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sniKeyStoreOptions]]`sniKeyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
++++
+Add key options for SNI host.
++++
 |[[sniPemKeyCertOptions]]`sniPemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Add key options for SNI host.
++++
+|[[sniPfxKeyCertOptions]]`sniPfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|
 +++
 Add key options for SNI host.
 +++

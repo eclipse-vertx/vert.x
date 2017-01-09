@@ -689,6 +689,27 @@
  * -javaagent:/path/to/alpn/agent
  * ----
  *
+ * ==== Configuring SNI
+ *
+ * Net Servers and Clients also support the TLS Server Name Indication (SNI) extension. This allows you to
+ * support 'virtual' hosts on the server, where you may respond to the client with different certificates depending on
+ * the SNI option set by the client. 
+ *
+ * The server can be configured by adding a mapping from domain to a certificate. Wildcards are
+ * allowed:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example48}
+ * ----
+ *
+ *  Clients may be configured to set the SNI field explicitly:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example49}
+ * ----
+ *
  * === Using a proxy for client connections
  *
  * The {@link io.vertx.core.net.NetClient} supports either a HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.

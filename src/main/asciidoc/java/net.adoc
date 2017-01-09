@@ -947,6 +947,33 @@ ALPN version for the JVM running it:
 -javaagent:/path/to/alpn/agent
 ----
 
+==== Configuring SNI
+
+Net Servers and Clients also support the TLS Server Name Indication (SNI) extension. This allows you to
+support 'virtual' hosts on the server, where you may respond to the client with different certificates depending on
+the SNI option set by the client. 
+
+The server can be configured by adding a mapping from domain to a certificate. Wildcards are
+allowed:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions()
+        .setSsl(true)
+        .addSniKeyCertOption("*.example.com", keyCertOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+ Clients may be configured to set the SNI field explicitly:
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions()
+        .setSsl(true)
+        .setSniServerName("my.example.com");
+NetClient client = vertx.createNetClient(options);
+----
+
 === Using a proxy for client connections
 
 The `link:../../apidocs/io/vertx/core/net/NetClient.html[NetClient]` supports either a HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.
