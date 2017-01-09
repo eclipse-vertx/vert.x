@@ -77,13 +77,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Test SNI fails if SNI is not set by client
   public void testTLSCLientWithoutSNISet() throws Exception {
-    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniCert(Cert.SERVER_VIRT_PEM.get()).fail();
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniPemCert(Cert.SERVER_VIRT_PEM.get()).fail();
   }
 
   @Test
   // Test SNI fails if domain doesnt match
   public void testTLSCLientWithWrongSNISet() throws Exception {
-    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("bad.sni.domain").sniCert(Cert.SERVER_VIRT_PEM.get()).fail();
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("bad.sni.domain").sniPemCert(Cert.SERVER_VIRT_PEM.get()).fail();
   }
 
   @Test
@@ -93,9 +93,21 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  // Test SNI succeeds if correct domain name set if SNI is not set by client
+  // Test SNI succeeds if correct domain name set if SNI is set by client
   public void testTLSCLientWithSNISet() throws Exception {
-    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("my.sni.domain").sniCert(Cert.SERVER_VIRT_PEM.get()).pass();
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("my.sni.domain").sniPemCert(Cert.SERVER_VIRT_PEM.get()).pass();
+  }
+
+  @Test
+  // Test SNI succeeds if correct domain name set if SNI is set by client
+  public void testTLSCLientWithKeyStoreSNISet() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("my.sni.domain").sniKeyStoreCert(Cert.SERVER_VIRT_JKS.get()).pass();
+  }
+
+  @Test
+  // Test SNI succeeds if correct domain name set if SNI is set by client
+  public void testTLSCLientWithPfxSNISet() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_VIRT_PEM, Cert.SERVER_PEM, Trust.NONE).sniServerName("my.sni.domain").sniPfxCert(Cert.SERVER_VIRT_PKCS12.get()).pass();
   }
 
   @Test
@@ -389,7 +401,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean useProxy;
     boolean useProxyAuth;
     boolean useSocksProxy;
-    KeyCertOptions sniCert;
+    PemKeyCertOptions sniPemCert;
+    PfxOptions sniPfxCert;
+    JksOptions sniJksCert;
     String sniServerName;
     String[] clientEnabledCipherSuites = new String[0];
     String[] serverEnabledCipherSuites = new String[0];
@@ -446,8 +460,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
-    TLSTest sniCert(KeyCertOptions sniCert) {
-      this.sniCert = sniCert;
+    TLSTest sniPemCert(PemKeyCertOptions sniCert) {
+      this.sniPemCert = sniCert;
+      return this;
+    }
+
+    TLSTest sniKeyStoreCert(JksOptions sniCert) {
+      this.sniJksCert = sniCert;
+      return this;
+    }
+
+    TLSTest sniPfxCert(PfxOptions sniCert) {
+      this.sniPfxCert = sniCert;
       return this;
     }
 
@@ -578,8 +602,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (serverUsesAlpn) {
         serverOptions.setUseAlpn(true);
       }
-      if (sniCert != null) {
-        serverOptions.addSniKeyCertOption("my.sni.domain", sniCert);
+      if (sniPemCert != null) {
+        serverOptions.addSniKeyCertOption("my.sni.domain", sniPemCert);
+      }
+      if (sniJksCert != null) {
+        serverOptions.addSniKeyCertOption("my.sni.domain", sniJksCert);
+      }
+      if (sniPfxCert != null) {
+        serverOptions.addSniKeyCertOption("my.sni.domain", sniPfxCert);
       }
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
