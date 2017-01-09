@@ -395,7 +395,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       }
 
       if (sslHelper.isSSL()) {
-        SSLHelper.SNIHandler sslHandler = ch.pipeline().get(SSLHelper.SNIHandler.class);
+        VertxSniHandler sslHandler = ch.pipeline().get(VertxSniHandler.class);
 
         sslHandler.addHandshakeListener(future -> {
           if (future.isSuccess()) {
