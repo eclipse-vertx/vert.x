@@ -75,7 +75,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     this.headers = headers;
   }
 
-  HttpClientRequestBase request() {
+  @Override
+  public HttpClientRequestBase request() {
     return request;
   }
 

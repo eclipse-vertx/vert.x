@@ -490,6 +490,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           private boolean resumed;
 
           @Override
+          public HttpClientRequest request() {
+            return resp.request();
+          }
+
+          @Override
           public int statusCode() {
             return resp.statusCode();
           }
