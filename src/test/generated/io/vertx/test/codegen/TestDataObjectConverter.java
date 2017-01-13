@@ -382,6 +382,96 @@ public class TestDataObjectConverter {
       });
       obj.setJsonObjects(list);
     }
+    if (json.getValue("keyedBoxedBooleanValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBoxedBooleanValues").forEach(entry -> {
+        if (entry.getValue() instanceof Boolean)
+          obj.addKeyedBoxedBooleanValue(entry.getKey(), (Boolean)entry.getValue());
+      });
+    }
+    if (json.getValue("keyedBoxedByteValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBoxedByteValues").forEach(entry -> {
+        if (entry.getValue() instanceof Number)
+          obj.addKeyedBoxedByteValue(entry.getKey(), ((Number)entry.getValue()).byteValue());
+      });
+    }
+    if (json.getValue("keyedBoxedCharValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBoxedCharValues").forEach(entry -> {
+        if (entry.getValue() instanceof String)
+          obj.addKeyedBoxedCharValue(entry.getKey(), ((String)entry.getValue()).charAt(0));
+      });
+    }
+    if (json.getValue("keyedBoxedDoubleValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBoxedDoubleValues").forEach(entry -> {
+        if (entry.getValue() instanceof Number)
+          obj.addKeyedBoxedDoubleValue(entry.getKey(), ((Number)entry.getValue()).doubleValue());
+      });
+    }
+    if (json.getValue("keyedBoxedFloatValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBoxedFloatValues").forEach(entry -> {
+        if (entry.getValue() instanceof Number)
+          obj.addKeyedBoxedFloatValue(entry.getKey(), ((Number)entry.getValue()).floatValue());
+      });
+    }
+    if (json.getValue("keyedBoxedIntValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBoxedIntValues").forEach(entry -> {
+        if (entry.getValue() instanceof Number)
+          obj.addKeyedBoxedIntValue(entry.getKey(), ((Number)entry.getValue()).intValue());
+      });
+    }
+    if (json.getValue("keyedBoxedLongValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBoxedLongValues").forEach(entry -> {
+        if (entry.getValue() instanceof Number)
+          obj.addKeyedBoxedLongValue(entry.getKey(), ((Number)entry.getValue()).longValue());
+      });
+    }
+    if (json.getValue("keyedBoxedShortValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBoxedShortValues").forEach(entry -> {
+        if (entry.getValue() instanceof Number)
+          obj.addKeyedBoxedShortValue(entry.getKey(), ((Number)entry.getValue()).shortValue());
+      });
+    }
+    if (json.getValue("keyedBufferValues") instanceof JsonObject) {
+      json.getJsonObject("keyedBufferValues").forEach(entry -> {
+        if (entry.getValue() instanceof String)
+          obj.addKeyedBufferValue(entry.getKey(), io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)entry.getValue())));
+      });
+    }
+    if (json.getValue("keyedDataObjectValues") instanceof JsonObject) {
+      json.getJsonObject("keyedDataObjectValues").forEach(entry -> {
+        if (entry.getValue() instanceof JsonObject)
+          obj.addKeyedDataObjectValue(entry.getKey(), new io.vertx.test.codegen.AggregatedDataObject((JsonObject)entry.getValue()));
+      });
+    }
+    if (json.getValue("keyedEnumValues") instanceof JsonObject) {
+      json.getJsonObject("keyedEnumValues").forEach(entry -> {
+        if (entry.getValue() instanceof String)
+          obj.addKeyedEnumValue(entry.getKey(), io.vertx.core.http.HttpMethod.valueOf((String)entry.getValue()));
+      });
+    }
+    if (json.getValue("keyedJsonArrayValues") instanceof JsonObject) {
+      json.getJsonObject("keyedJsonArrayValues").forEach(entry -> {
+        if (entry.getValue() instanceof JsonArray)
+          obj.addKeyedJsonArrayValue(entry.getKey(), ((JsonArray)entry.getValue()).copy());
+      });
+    }
+    if (json.getValue("keyedJsonObjectValues") instanceof JsonObject) {
+      json.getJsonObject("keyedJsonObjectValues").forEach(entry -> {
+        if (entry.getValue() instanceof JsonObject)
+          obj.addKeyedJsonObjectValue(entry.getKey(), ((JsonObject)entry.getValue()).copy());
+      });
+    }
+    if (json.getValue("keyedObjectValues") instanceof JsonObject) {
+      json.getJsonObject("keyedObjectValues").forEach(entry -> {
+        if (entry.getValue() instanceof Object)
+          obj.addKeyedObjectValue(entry.getKey(), entry.getValue());
+      });
+    }
+    if (json.getValue("keyedStringValues") instanceof JsonObject) {
+      json.getJsonObject("keyedStringValues").forEach(entry -> {
+        if (entry.getValue() instanceof String)
+          obj.addKeyedStringValue(entry.getKey(), (String)entry.getValue());
+      });
+    }
     if (json.getValue("longValue") instanceof Number) {
       obj.setLongValue(((Number)json.getValue("longValue")).longValue());
     }
@@ -731,6 +821,81 @@ public class TestDataObjectConverter {
               stream().
               map(item -> item).
               collect(java.util.stream.Collectors.toList())));
+    }
+    if (obj.getKeyedBoxedBooleanValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBoxedBooleanValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedBoxedBooleanValues", map);
+    }
+    if (obj.getKeyedBoxedByteValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBoxedByteValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedBoxedByteValues", map);
+    }
+    if (obj.getKeyedBoxedCharValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBoxedCharValues().forEach((key,value) -> map.put(key, Character.toString(value)));
+      json.put("keyedBoxedCharValues", map);
+    }
+    if (obj.getKeyedBoxedDoubleValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBoxedDoubleValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedBoxedDoubleValues", map);
+    }
+    if (obj.getKeyedBoxedFloatValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBoxedFloatValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedBoxedFloatValues", map);
+    }
+    if (obj.getKeyedBoxedIntValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBoxedIntValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedBoxedIntValues", map);
+    }
+    if (obj.getKeyedBoxedLongValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBoxedLongValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedBoxedLongValues", map);
+    }
+    if (obj.getKeyedBoxedShortValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBoxedShortValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedBoxedShortValues", map);
+    }
+    if (obj.getKeyedBufferValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedBufferValues().forEach((key,value) -> map.put(key, value.getBytes()));
+      json.put("keyedBufferValues", map);
+    }
+    if (obj.getKeyedDataObjectValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedDataObjectValues().forEach((key,value) -> map.put(key, value.toJson()));
+      json.put("keyedDataObjectValues", map);
+    }
+    if (obj.getKeyedEnumValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedEnumValues().forEach((key,value) -> map.put(key, value.name()));
+      json.put("keyedEnumValues", map);
+    }
+    if (obj.getKeyedJsonArrayValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedJsonArrayValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedJsonArrayValues", map);
+    }
+    if (obj.getKeyedJsonObjectValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedJsonObjectValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedJsonObjectValues", map);
+    }
+    if (obj.getKeyedObjectValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedObjectValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedObjectValues", map);
+    }
+    if (obj.getKeyedStringValues() != null) {
+      JsonObject map = new JsonObject();
+      obj.getKeyedStringValues().forEach((key,value) -> map.put(key, value));
+      json.put("keyedStringValues", map);
     }
     json.put("longValue", obj.getLongValue());
     if (obj.getObjectMap() != null) {

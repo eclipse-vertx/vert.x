@@ -140,6 +140,20 @@
 |[[jsonObject]]`jsonObject`|`Json object`|-
 |[[jsonObjectMap]]`jsonObjectMap`|`Json object`|-
 |[[jsonObjects]]`jsonObjects`|`Array of Json object`|-
+|[[keyedBoxedBooleanValues]]`keyedBoxedBooleanValues`|`Boolean`|-
+|[[keyedBoxedByteValues]]`keyedBoxedByteValues`|`Number (Byte)`|-
+|[[keyedBoxedCharValues]]`keyedBoxedCharValues`|`Char`|-
+|[[keyedBoxedDoubleValues]]`keyedBoxedDoubleValues`|`Number (Double)`|-
+|[[keyedBoxedFloatValues]]`keyedBoxedFloatValues`|`Number (Float)`|-
+|[[keyedBoxedIntValues]]`keyedBoxedIntValues`|`Number (Integer)`|-
+|[[keyedBoxedLongValues]]`keyedBoxedLongValues`|`Number (Long)`|-
+|[[keyedBoxedShortValues]]`keyedBoxedShortValues`|`Number (Short)`|-
+|[[keyedBufferValues]]`keyedBufferValues`|`Buffer`|-
+|[[keyedDataObjectValues]]`keyedDataObjectValues`|`link:dataobjects.html#AggregatedDataObject[AggregatedDataObject]`|-
+|[[keyedEnumValues]]`keyedEnumValues`|`link:enums.html#HttpMethod[HttpMethod]`|-
+|[[keyedJsonArrayValues]]`keyedJsonArrayValues`|`Json array`|-
+|[[keyedJsonObjectValues]]`keyedJsonObjectValues`|`Json object`|-
+|[[keyedStringValues]]`keyedStringValues`|`String`|-
 |[[longValue]]`longValue`|`Number (long)`|-
 |[[shortValue]]`shortValue`|`Number (short)`|-
 |[[stringValue]]`stringValue`|`String`|-

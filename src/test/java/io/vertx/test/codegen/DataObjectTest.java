@@ -95,8 +95,8 @@ public class DataObjectTest extends VertxTestBase {
     json.put("boxedFloatValue", boxedFloatValue);
     json.put("boxedDoubleValue", boxedDoubleValue);
     json.put("boxedCharValue", Character.toString(boxedCharValue));
-    json.put("aggregatedDataObject", new JsonObject().put("value", aggregatedDataObject.getValue()));
-    json.put("buffer", Base64.getEncoder().encodeToString(buffer.getBytes()));
+    json.put("aggregatedDataObject", aggregatedDataObject.toJson());
+    json.put("buffer", toBase64(buffer));
     json.put("jsonObject", jsonObject);
     json.put("jsonArray", jsonArray);
     json.put("httpMethod", httpMethod.toString());
@@ -109,8 +109,8 @@ public class DataObjectTest extends VertxTestBase {
     json.put("boxedFloatValues", new JsonArray().add(boxedFloatValue));
     json.put("boxedDoubleValues", new JsonArray().add(boxedDoubleValue));
     json.put("boxedCharValues", new JsonArray().add(Character.toString(boxedCharValue)));
-    json.put("aggregatedDataObjects", new JsonArray().add(new JsonObject().put("value", aggregatedDataObject.getValue())));
-    json.put("buffers", new JsonArray().add(Base64.getEncoder().encodeToString(buffer.getBytes())));
+    json.put("aggregatedDataObjects", new JsonArray().add(aggregatedDataObject.toJson()));
+    json.put("buffers", new JsonArray().add(toBase64(buffer)));
     json.put("jsonObjects", new JsonArray().add(jsonObject));
     json.put("jsonArrays", new JsonArray().add(jsonArray));
     json.put("httpMethods", new JsonArray().add(httpMethod.toString()));
@@ -132,8 +132,8 @@ public class DataObjectTest extends VertxTestBase {
     json.put("addedBoxedFloatValues", new JsonArray().add(boxedFloatValue));
     json.put("addedBoxedDoubleValues", new JsonArray().add(boxedDoubleValue));
     json.put("addedBoxedCharValues", new JsonArray().add(Character.toString(boxedCharValue)));
-    json.put("addedAggregatedDataObjects", new JsonArray().add(new JsonObject().put("value", aggregatedDataObject.getValue())));
-    json.put("addedBuffers", new JsonArray().add(Base64.getEncoder().encodeToString(buffer.getBytes())));
+    json.put("addedAggregatedDataObjects", new JsonArray().add(aggregatedDataObject.toJson()));
+    json.put("addedBuffers", new JsonArray().add(toBase64(buffer)));
     json.put("addedJsonObjects", new JsonArray().add(jsonObject));
     json.put("addedJsonArrays", new JsonArray().add(jsonArray));
     json.put("addedHttpMethods", new JsonArray().add(httpMethod.toString()));
@@ -147,12 +147,27 @@ public class DataObjectTest extends VertxTestBase {
     json.put("boxedFloatValueMap", new JsonObject().put(key, boxedFloatValue));
     json.put("boxedDoubleValueMap", new JsonObject().put(key, boxedDoubleValue));
     json.put("boxedCharValueMap", new JsonObject().put(key, Character.toString(boxedCharValue)));
-    json.put("aggregatedDataObjectMap", new JsonObject().put(key, new JsonObject().put("value", aggregatedDataObject.getValue())));
-    json.put("bufferMap", new JsonObject().put(key, Base64.getEncoder().encodeToString(buffer.getBytes())));
+    json.put("aggregatedDataObjectMap", new JsonObject().put(key, aggregatedDataObject.toJson()));
+    json.put("bufferMap", new JsonObject().put(key, toBase64(buffer)));
     json.put("jsonObjectMap", new JsonObject().put(key, jsonObject));
     json.put("jsonArrayMap", new JsonObject().put(key, jsonArray));
     json.put("httpMethodMap", new JsonObject().put(key, httpMethod.toString()));
     json.put("objectMap", toJson(map));
+    json.put("keyedStringValues", new JsonObject().put(key, stringValue));
+    json.put("keyedBoxedBooleanValues", new JsonObject().put(key, boxedBooleanValue));
+    json.put("keyedBoxedByteValues", new JsonObject().put(key, boxedByteValue));
+    json.put("keyedBoxedShortValues", new JsonObject().put(key, boxedShortValue));
+    json.put("keyedBoxedIntValues", new JsonObject().put(key, boxedIntValue));
+    json.put("keyedBoxedLongValues", new JsonObject().put(key, boxedLongValue));
+    json.put("keyedBoxedFloatValues", new JsonObject().put(key, boxedFloatValue));
+    json.put("keyedBoxedDoubleValues", new JsonObject().put(key, boxedDoubleValue));
+    json.put("keyedBoxedCharValues", new JsonObject().put(key, Character.toString(boxedCharValue)));
+    json.put("keyedDataObjectValues", new JsonObject().put(key, aggregatedDataObject.toJson()));
+    json.put("keyedBufferValues", new JsonObject().put(key, toBase64(buffer)));
+    json.put("keyedJsonObjectValues", new JsonObject().put(key, jsonObject));
+    json.put("keyedJsonArrayValues", new JsonObject().put(key, jsonArray));
+    json.put("keyedEnumValues", new JsonObject().put(key, httpMethod));
+    json.put("keyedObjectValues", toJson(map));
 
     TestDataObject obj = new TestDataObject();
     TestDataObjectConverter.fromJson(json, obj);
@@ -223,6 +238,21 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(Collections.singletonMap(key, jsonObject), obj.getJsonObjectMap());
     assertEquals(Collections.singletonMap(key, jsonArray), obj.getJsonArrayMap());
     assertEquals(Collections.singletonMap(key, httpMethod), obj.getHttpMethodMap());
+    assertEquals(map, obj.getObjectMap());
+    assertEquals(Collections.singletonMap(key, stringValue), obj.getKeyedStringValues());
+    assertEquals(Collections.singletonMap(key, boxedBooleanValue), obj.getKeyedBoxedBooleanValues());
+    assertEquals(Collections.singletonMap(key, boxedByteValue), obj.getKeyedBoxedByteValues());
+    assertEquals(Collections.singletonMap(key, boxedShortValue), obj.getKeyedBoxedShortValues());
+    assertEquals(Collections.singletonMap(key, boxedIntValue), obj.getKeyedBoxedIntValues());
+    assertEquals(Collections.singletonMap(key, boxedLongValue), obj.getKeyedBoxedLongValues());
+    assertEquals(Collections.singletonMap(key, boxedFloatValue), obj.getKeyedBoxedFloatValues());
+    assertEquals(Collections.singletonMap(key, boxedDoubleValue), obj.getKeyedBoxedDoubleValues());
+    assertEquals(Collections.singletonMap(key, boxedCharValue), obj.getKeyedBoxedCharValues());
+    assertEquals(Collections.singletonMap(key, aggregatedDataObject), obj.getKeyedDataObjectValues());
+    assertEquals(Collections.singletonMap(key, buffer), obj.getKeyedBufferValues());
+    assertEquals(Collections.singletonMap(key, jsonObject), obj.getKeyedJsonObjectValues());
+    assertEquals(Collections.singletonMap(key, jsonArray), obj.getKeyedJsonArrayValues());
+    assertEquals(Collections.singletonMap(key, httpMethod), obj.getKeyedEnumValues());
     assertEquals(map, obj.getObjectMap());
 
     // Sometimes json can use java collections so test it runs fine in this case
@@ -400,7 +430,21 @@ public class DataObjectTest extends VertxTestBase {
     obj.setJsonArrayMap(Collections.singletonMap(key, jsonArray));
     obj.setHttpMethodMap(Collections.singletonMap(key, httpMethod));
     obj.setObjectMap(map);
-
+    obj.addKeyedStringValue(key, stringValue);
+    obj.addKeyedBoxedBooleanValue(key, boxedBooleanValue);
+    obj.addKeyedBoxedByteValue(key, boxedByteValue);
+    obj.addKeyedBoxedShortValue(key, boxedShortValue);
+    obj.addKeyedBoxedIntValue(key, boxedIntValue);
+    obj.addKeyedBoxedLongValue(key, boxedLongValue);
+    obj.addKeyedBoxedFloatValue(key, boxedFloatValue);
+    obj.addKeyedBoxedDoubleValue(key, boxedDoubleValue);
+    obj.addKeyedBoxedCharValue(key, boxedCharValue);
+    obj.addKeyedDataObjectValue(key, aggregatedDataObject);
+    obj.addKeyedBufferValue(key, buffer);
+    obj.addKeyedJsonObjectValue(key, jsonObject);
+    obj.addKeyedJsonArrayValue(key, jsonArray);
+    obj.addKeyedEnumValue(key, httpMethod);
+    map.forEach(obj::addKeyedObjectValue);
 
     JsonObject json = new JsonObject();
     TestDataObjectConverter.toJson(obj, json);
@@ -440,7 +484,7 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(boxedDoubleValue, json.getJsonArray("boxedDoubleValues").getDouble(0), 0.001);
     assertEquals(new JsonArray().add(Character.toString(boxedCharValue)), json.getJsonArray("boxedCharValues"));
     assertEquals(new JsonArray().add(aggregatedDataObject.toJson()), json.getJsonArray("aggregatedDataObjects"));
-    assertEquals(new JsonArray().add(Base64.getEncoder().encodeToString(buffer.getBytes())), json.getJsonArray("buffers"));
+    assertEquals(new JsonArray().add(toBase64(buffer)), json.getJsonArray("buffers"));
     assertEquals(new JsonArray().add(jsonObject), json.getJsonArray("jsonObjects"));
     assertEquals(new JsonArray().add(jsonArray), json.getJsonArray("jsonArrays"));
     assertEquals(new JsonArray().add(httpMethod.name()), json.getJsonArray("httpMethods"));
@@ -457,11 +501,28 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(boxedDoubleValue, json.getJsonObject("boxedDoubleValueMap").getDouble(key), 0.001);
     assertEquals(new JsonObject().put(key, Character.toString(boxedCharValue)), json.getJsonObject("boxedCharValueMap"));
     assertEquals(new JsonObject().put(key, aggregatedDataObject.toJson()), json.getJsonObject("aggregatedDataObjectMap"));
-    assertEquals(new JsonObject().put(key, Base64.getEncoder().encodeToString(buffer.getBytes())), json.getJsonObject("bufferMap"));
+    assertEquals(new JsonObject().put(key, toBase64(buffer)), json.getJsonObject("bufferMap"));
     assertEquals(new JsonObject().put(key, jsonObject), json.getJsonObject("jsonObjectMap"));
     assertEquals(new JsonObject().put(key, jsonArray), json.getJsonObject("jsonArrayMap"));
     assertEquals(new JsonObject().put(key, httpMethod.name()), json.getJsonObject("httpMethodMap"));
     assertEquals(toJson(map), json.getJsonObject("objectMap"));
+    assertEquals(new JsonObject().put(key, stringValue), json.getJsonObject("keyedStringValues"));
+    assertEquals(new JsonObject().put(key, boxedBooleanValue), json.getJsonObject("keyedBoxedBooleanValues"));
+    assertEquals(new JsonObject().put(key, boxedByteValue), json.getJsonObject("keyedBoxedByteValues"));
+    assertEquals(new JsonObject().put(key, boxedShortValue), json.getJsonObject("keyedBoxedShortValues"));
+    assertEquals(new JsonObject().put(key, boxedIntValue), json.getJsonObject("keyedBoxedIntValues"));
+    assertEquals(new JsonObject().put(key, boxedLongValue), json.getJsonObject("keyedBoxedLongValues"));
+    assertEquals(1, json.getJsonObject("keyedBoxedFloatValues").size());
+    assertEquals(boxedFloatValue, json.getJsonObject("keyedBoxedFloatValues").getFloat(key), 0.001);
+    assertEquals(1, json.getJsonObject("keyedBoxedDoubleValues").size());
+    assertEquals(boxedDoubleValue, json.getJsonObject("keyedBoxedDoubleValues").getDouble(key), 0.001);
+    assertEquals(new JsonObject().put(key, Character.toString(boxedCharValue)), json.getJsonObject("keyedBoxedCharValues"));
+    assertEquals(new JsonObject().put(key, aggregatedDataObject.toJson()), json.getJsonObject("keyedDataObjectValues"));
+    assertEquals(new JsonObject().put(key, toBase64(buffer)), json.getJsonObject("keyedBufferValues"));
+    assertEquals(new JsonObject().put(key, jsonObject), json.getJsonObject("keyedJsonObjectValues"));
+    assertEquals(new JsonObject().put(key, jsonArray), json.getJsonObject("keyedJsonArrayValues"));
+    assertEquals(new JsonObject().put(key, httpMethod.name()), json.getJsonObject("keyedEnumValues"));
+    assertEquals(toJson(map), json.getJsonObject("keyedObjectValues"));
   }
 
   @Test
@@ -579,5 +640,9 @@ public class DataObjectTest extends VertxTestBase {
     ChildNotInheritingDataObjectConverter.toJson(obj, json);
     expectedJson.remove("parentProperty");
     assertEquals(expectedJson, json);
+  }
+
+  private String toBase64(Buffer buffer) {
+    return Base64.getEncoder().encodeToString(buffer.getBytes());
   }
 }

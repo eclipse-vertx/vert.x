@@ -19,16 +19,21 @@
 		@end{}
 	@{indent}}\n
 	@else{property.map}
-		@if{property.setter}
-			@{indent}if (json.getValue("@{property.name}") instanceof JsonObject) {\n
-				@{indent}  java.util.Map<String, @{propType.name}> map = new java.util.LinkedHashMap<>();\n
-				@{indent}  json.getJsonObject("@{property.name}").forEach(entry -> {\n
-				@{indent}    if (entry.getValue() instanceof @{cast})\n
-				@{indent}      map.put(entry.getKey(), @{before}entry.getValue()@{after});\n
-				@{indent}  });\n
-				@{indent}  obj.@{property.setterMethod}(map);\n
-			@{indent}}\n
+		@{indent}if (json.getValue("@{property.name}") instanceof JsonObject) {\n
+		@if{property.adder}
+			@{indent}  json.getJsonObject("@{property.name}").forEach(entry -> {\n
+			@{indent}    if (entry.getValue() instanceof @{cast})\n
+			@{indent}      obj.@{property.adderMethod}(entry.getKey(), @{before}entry.getValue()@{after});\n
+			@{indent}  });\n
+		@else{property.setter}
+			@{indent}  java.util.Map<String, @{propType.name}> map = new java.util.LinkedHashMap<>();\n
+			@{indent}  json.getJsonObject("@{property.name}").forEach(entry -> {\n
+			@{indent}    if (entry.getValue() instanceof @{cast})\n
+			@{indent}      map.put(entry.getKey(), @{before}entry.getValue()@{after});\n
+			@{indent}  });\n
+			@{indent}  obj.@{property.setterMethod}(map);\n
 		@end{}
+	@{indent}}\n
 	@else{}
 		@if{property.setter}
 			@{indent}if (json.getValue("@{property.name}") instanceof @{cast}) {\n
