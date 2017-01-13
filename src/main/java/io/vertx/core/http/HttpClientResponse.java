@@ -149,4 +149,9 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   @CacheReturn
   NetSocket netSocket();
 
+  /**
+   * @return the corresponding request
+   */
+  @CacheReturn
+  HttpClientRequest request();
 }
