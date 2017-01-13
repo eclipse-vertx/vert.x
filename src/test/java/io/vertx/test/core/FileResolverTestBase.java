@@ -23,9 +23,15 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.FileResolver;
 import io.vertx.core.impl.VertxInternal;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -228,6 +234,44 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       }).end();
     }));
     await();
+  }
+
+  @Test
+  public void testResolveFileFromDifferentThreads() throws Exception {
+    int size = 10 * 1024 * 1024;
+    byte[] content = new byte[size];
+    new Random().nextBytes(content);
+
+    File out = new File("target/test-classes/temp");
+    if (out.exists()) {
+      Files.delete(out.toPath());
+    }
+    Files.write(out.toPath(), content, StandardOpenOption.CREATE_NEW);
+
+    int count = 100;
+    CountDownLatch latch = new CountDownLatch(count);
+    CountDownLatch start = new CountDownLatch(1);
+    List<Exception> errors = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+        Runnable runnable = () -> {
+        try {
+          start.await();
+          File file = resolver.resolveFile("temp");
+          byte[] data = Files.readAllBytes(file.toPath());
+          Assert.assertArrayEquals(content, data);
+        } catch (Exception e) {
+          errors.add(e);
+        } finally {
+          latch.countDown();
+        }
+      };
+
+      new Thread(runnable).start();
+    }
+
+    start.countDown();
+    latch.await();
+    assertTrue(errors.isEmpty());
   }
 
   private String readFile(File file) {

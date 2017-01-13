@@ -107,31 +107,35 @@ public class FileResolver {
     if (!ENABLE_CP_RESOLVING) {
       return file;
     }
-    if (!file.exists()) {
-      // Look for it in local file cache
-      File cacheFile = new File(cacheDir, fileName);
-      if (ENABLE_CACHING && cacheFile.exists()) {
-        return cacheFile;
-      }
-      // Look for file on classpath
-      ClassLoader cl = getClassLoader();
-      if (NON_UNIX_FILE_SEP) {
-        fileName = fileName.replace(FILE_SEP, "/");
-      }
-      URL url = cl.getResource(fileName);
-      if (url != null) {
-        String prot = url.getProtocol();
-        switch (prot) {
-          case "file":
-            return unpackFromFileURL(url, fileName, cl);
-          case "jar":
-            return unpackFromJarURL(url, fileName, cl);
-          case "bundle": // Apache Felix, Knopflerfish
-          case "bundleentry": // Equinox
-          case "bundleresource": // Equinox
-            return unpackFromBundleURL(url);
-          default:
-            throw new IllegalStateException("Invalid url protocol: " + prot);
+    // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
+    // corrupting the content.
+    synchronized (this) {
+      if (!file.exists()) {
+        // Look for it in local file cache
+        File cacheFile = new File(cacheDir, fileName);
+        if (ENABLE_CACHING && cacheFile.exists()) {
+          return cacheFile;
+        }
+        // Look for file on classpath
+        ClassLoader cl = getClassLoader();
+        if (NON_UNIX_FILE_SEP) {
+          fileName = fileName.replace(FILE_SEP, "/");
+        }
+        URL url = cl.getResource(fileName);
+        if (url != null) {
+          String prot = url.getProtocol();
+          switch (prot) {
+            case "file":
+              return unpackFromFileURL(url, fileName, cl);
+            case "jar":
+              return unpackFromJarURL(url, fileName, cl);
+            case "bundle": // Apache Felix, Knopflerfish
+            case "bundleentry": // Equinox
+            case "bundleresource": // Equinox
+              return unpackFromBundleURL(url);
+            default:
+              throw new IllegalStateException("Invalid url protocol: " + prot);
+          }
         }
       }
     }
