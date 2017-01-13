@@ -550,4 +550,18 @@ public class NetExamples {
             .setUsername("username").setPassword("secret"));
     NetClient client = vertx.createNetClient(options);
   }
+
+  public void example48(Vertx vertx, KeyCertOptions keyCertOptions) {
+    NetServerOptions options = new NetServerOptions()
+            .setSsl(true)
+            .addSniKeyCertOption("*.example.com", keyCertOptions);
+    NetServer server = vertx.createNetServer(options);
+  }
+
+  public void example49(Vertx vertx) {
+    NetClientOptions options = new NetClientOptions()
+            .setSsl(true)
+            .setSniServerName("my.example.com");
+    NetClient client = vertx.createNetClient(options);
+  }
 }

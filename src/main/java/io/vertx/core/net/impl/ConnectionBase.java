@@ -17,6 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.channel.*;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.vertx.core.*;
@@ -237,7 +238,7 @@ public abstract class ConnectionBase {
   }
 
   private boolean isSSL() {
-    return channel.pipeline().get(SslHandler.class) != null;
+    return channel.pipeline().get("ssl") != null;
   }
 
   protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {

@@ -192,6 +192,11 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setSniServerName(String sniServerName) {
+    return (NetClientOptions) super.setSniServerName(sniServerName);
+  }
+
+  @Override
   public NetClientOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;

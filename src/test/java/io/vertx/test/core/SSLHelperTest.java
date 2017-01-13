@@ -19,7 +19,9 @@ package io.vertx.test.core;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.OpenSslServerContext;
 import io.netty.handler.ssl.OpenSslServerSessionContext;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerOptionsConverter;
@@ -34,8 +36,11 @@ import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSessionContext;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,6 +75,34 @@ public class SSLHelperTest extends VertxTestBase {
         Trust.SERVER_PEM.get());
     SslContext ctx = helper.getContext((VertxInternal) vertx);
     assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
+  }
+
+  @Test
+  public void testSNIServerNameCanBeSet() throws Exception {
+    HttpClientOptions options = new HttpClientOptions();
+    options.setOpenSslEngineOptions(new OpenSSLEngineOptions());
+    options.setSniServerName("foo.example.com");
+    SSLHelper helper = new SSLHelper(
+            options,
+            Cert.CLIENT_PEM.get(),
+            Trust.SERVER_PEM.get());
+    SslHandler handler = helper.createSslHandler((VertxInternal) vertx);
+    SSLParameters parameters = handler.engine().getSSLParameters();
+    List<SNIServerName> names = parameters.getServerNames();
+    assertEquals(1, names.size());
+    assertEquals("foo.example.com", ((SNIHostName)names.get(0)).getAsciiName());
+  }
+
+  @Test
+  public void testSNIMatchersCanBeSet() throws Exception {
+    HttpServerOptions options = new HttpServerOptions();
+    options.addSniKeyCertOption("host1.example.com", Cert.SERVER_PEM.get());
+    SSLHelper helper = new SSLHelper(
+            options,
+            Cert.SERVER_PEM.get(),
+            null);
+    SniHandler handler = helper.createSniHandler((VertxInternal)vertx);
+    assertNotNull(handler);
   }
 
   @Test

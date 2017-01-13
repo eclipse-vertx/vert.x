@@ -10,8 +10,14 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.HttpTestBase;
 import io.vertx.test.core.tls.Cert;
@@ -59,30 +65,33 @@ public class SSLEngineTest extends HttpTestBase {
     doTest(new OpenSSLEngineOptions(), false, HttpVersion.HTTP_1_1, "OpenSSL is not available", "openssl", true);
   }
 
-  private void doTest(SSLEngineOptions engine,
-                      boolean useAlpn, HttpVersion version, String error, String expectedSslContext, boolean expectCause) {
-    server.close();
-    HttpServerOptions options = new HttpServerOptions()
-        .setSslEngineOptions(engine)
-        .setPort(DEFAULT_HTTP_PORT)
-        .setHost(DEFAULT_HTTP_HOST)
-        .setKeyCertOptions(Cert.SERVER_PEM.get())
-        .setSsl(true)
-        .setUseAlpn(useAlpn);
-    try {
-      server = vertx.createHttpServer(options);
-    } catch (VertxException e) {
-      e.printStackTrace();
-      if (error == null) {
-        fail(e);
-      } else {
-        assertEquals(error, e.getMessage());
-        if (expectCause) {
-          assertNotSame(e, e.getCause());
+  @Test
+  public void testSNIFailure() {
+    createSSLServer(null, false, "jdk", false);
+    server.requestHandler(req -> req.response().end());
+    server.listen(onSuccess(s -> {
+      NetClientOptions options = new NetClientOptions();
+      options.setSsl(true);
+      options.setSniServerName("host1");
+      options.setTrustOptions(new PemTrustOptions().addCertPath(Cert.SERVER_PEM.get().getCertPath()));
+      NetClient netClient = vertx.createNetClient(options);
+      {
+        try {
+          netClient.connect(server.actualPort(), "localhost", event -> {
+            assertTrue(event.failed());
+            testComplete();
+          });
+        } finally {
+          netClient.close();
         }
       }
-      return;
-    }
+    }));
+    await();
+  }
+
+  private void doTest(SSLEngineOptions engine,
+                      boolean useAlpn, HttpVersion version, String error, String expectedSslContext, boolean expectCause) {
+    createSSLServer(engine, useAlpn, error, expectCause);
     server.requestHandler(req -> {
       assertEquals(req.version(), version);
       assertTrue(req.isSSL());
@@ -100,11 +109,14 @@ public class SSLEngineTest extends HttpTestBase {
           assertTrue(ctx instanceof OpenSslContext);
           break;
       }
+
+      TrustOptions trustOptions = new PemTrustOptions().addCertPath(Cert.SERVER_VIRT_PEM.get().getCertPath());
       client = vertx.createHttpClient(new HttpClientOptions()
           .setSslEngineOptions(engine)
           .setSsl(true)
+          .setSniServerName("host1")
           .setUseAlpn(useAlpn)
-          .setTrustAll(true)
+          .setTrustOptions(trustOptions)
           .setProtocolVersion(version));
       client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
         assertEquals(200, resp.statusCode());
@@ -112,5 +124,33 @@ public class SSLEngineTest extends HttpTestBase {
       });
     }));
     await();
+  }
+
+  private void createSSLServer(SSLEngineOptions engine, boolean useAlpn, String error, boolean expectCause) {
+    server.close();
+    KeyCertOptions sniOptions = new PemKeyCertOptions(Cert.SERVER_VIRT_PEM.get());
+    HttpServerOptions options = new HttpServerOptions()
+        .setSslEngineOptions(engine)
+        .setLogActivity(true)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setKeyCertOptions(Cert.SERVER_PEM.get())
+        .setSsl(true)
+        .addSniKeyCertOption("host1", sniOptions)
+        .setUseAlpn(useAlpn);
+    try {
+      server = vertx.createHttpServer(options);
+    } catch (VertxException e) {
+      e.printStackTrace();
+      if (error == null) {
+        fail(e);
+      } else {
+        assertEquals(error, e.getMessage());
+        if (expectCause) {
+          assertNotSame(e, e.getCause());
+        }
+      }
+      return;
+    }
   }
 }

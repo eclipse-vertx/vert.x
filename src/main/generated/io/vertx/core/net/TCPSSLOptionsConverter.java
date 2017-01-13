@@ -75,6 +75,9 @@ public class TCPSSLOptionsConverter {
     if (json.getValue("pfxTrustOptions") instanceof JsonObject) {
       obj.setPfxTrustOptions(new io.vertx.core.net.PfxOptions((JsonObject)json.getValue("pfxTrustOptions")));
     }
+    if (json.getValue("sniServerName") instanceof String) {
+      obj.setSniServerName((String)json.getValue("sniServerName"));
+    }
     if (json.getValue("soLinger") instanceof Number) {
       obj.setSoLinger(((Number)json.getValue("soLinger")).intValue());
     }
@@ -128,6 +131,9 @@ public class TCPSSLOptionsConverter {
               collect(java.util.stream.Collectors.toList())));
     }
     json.put("idleTimeout", obj.getIdleTimeout());
+    if (obj.getSNIServerName() != null) {
+      json.put("sniServerName", obj.getSNIServerName());
+    }
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
