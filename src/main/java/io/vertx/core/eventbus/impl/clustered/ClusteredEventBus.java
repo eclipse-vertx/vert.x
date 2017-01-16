@@ -16,17 +16,35 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.*;
+import io.vertx.core.eventbus.impl.CodecManager;
+import io.vertx.core.eventbus.impl.EventBusImpl;
+import io.vertx.core.eventbus.impl.HandlerHolder;
+import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.impl.HAManager;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.*;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
@@ -224,7 +242,8 @@ public class ClusteredEventBus extends EventBusImpl {
         log.error("Failed to send message", asyncResult.cause());
       }
     };
-    if (Vertx.currentContext() == null) {
+    Context context = Vertx.currentContext();
+    if (context == null || !context.isEventLoopContext()) {
       // Guarantees the order when there is no current context
       sendNoContext.runOnContext(v -> {
         subs.get(address, resultHandler);
