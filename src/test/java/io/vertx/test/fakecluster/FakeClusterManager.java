@@ -21,6 +21,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -312,16 +313,17 @@ public class FakeClusterManager implements ClusterManager {
 
   private class FakeAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
 
-
     private final ConcurrentMap<K, ChoosableSet<V>> map;
+    private final WorkerExecutor workerExecutor;
 
     public FakeAsyncMultiMap(ConcurrentMap<K, ChoosableSet<V>> map) {
+      workerExecutor = vertx.getOrCreateContext().createWorkerExecutor();
       this.map = map;
     }
 
     @Override
     public void add(final K k, final V v, Handler<AsyncResult<Void>> completionHandler) {
-      vertx.executeBlocking(fut -> {
+      workerExecutor.executeBlocking(fut -> {
         ChoosableSet<V> vals = map.get(k);
         if (vals == null) {
           vals = new ChoosableSet<>(1);
@@ -337,7 +339,7 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void get(final K k, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
-      vertx.executeBlocking(fut -> {
+      workerExecutor.executeBlocking(fut -> {
         ChoosableIterable<V> it = map.get(k);
         if (it == null) {
           it = new ChoosableSet<V>(0);
@@ -348,7 +350,7 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void remove(final K k, final V v, Handler<AsyncResult<Boolean>> completionHandler) {
-      vertx.executeBlocking(fut -> {
+      workerExecutor.executeBlocking(fut -> {
           ChoosableSet<V> vals = map.get(k);
           boolean found = false;
           if (vals != null) {
@@ -366,7 +368,7 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void removeAllForValue(final V v, Handler<AsyncResult<Void>> completionHandler) {
-      vertx.executeBlocking(fut -> {
+      workerExecutor.executeBlocking(fut -> {
         Iterator<Map.Entry<K, ChoosableSet<V>>> mapIter = map.entrySet().iterator();
         while (mapIter.hasNext()) {
           Map.Entry<K, ChoosableSet<V>> entry = mapIter.next();

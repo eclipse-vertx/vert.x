@@ -24,7 +24,6 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
-import io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
@@ -340,16 +339,19 @@ public abstract class EventBusTestBase extends VertxTestBase {
   @Test
   public void testSendFromWorker() throws Exception {
     String expectedBody = TestUtils.randomAlphaString(20);
+    CountDownLatch receivedLatch = new CountDownLatch(1);
     startNodes(2);
     vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
       assertEquals(expectedBody, msg.body());
-      testComplete();
+      receivedLatch.countDown();
     }).completionHandler(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].deployVerticle(new AbstractVerticle() {
         @Override
         public void start() throws Exception {
           vertices[0].eventBus().send(ADDRESS1, expectedBody);
+          awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
+          testComplete();
         }
       }, new DeploymentOptions().setWorker(true));
     });
@@ -377,6 +379,41 @@ public abstract class EventBusTestBase extends VertxTestBase {
       assertTrue(reply.succeeded());
       assertEquals(expectedBody, reply.result().body());
       testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testSendFromExecuteBlocking() throws Exception {
+    String expectedBody = TestUtils.randomAlphaString(20);
+    CountDownLatch receivedLatch = new CountDownLatch(1);
+    startNodes(2);
+    vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
+      assertEquals(expectedBody, msg.body());
+      receivedLatch.countDown();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      vertices[0].deployVerticle(new AbstractVerticle() {
+        @Override
+        public void start() throws Exception {
+          vertx().executeBlocking(fut -> {
+            vertices[0].eventBus().send(ADDRESS1, expectedBody);
+            try {
+              awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
+            } catch (InterruptedException e) {
+              Thread.interrupted();
+              fut.fail(e);
+            }
+            fut.complete();
+          }, ar -> {
+            if (ar.succeeded()) {
+              testComplete();
+            } else {
+              fail(ar.cause());
+            }
+          });
+        }
+      });
     });
     await();
   }
