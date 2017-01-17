@@ -332,7 +332,7 @@ public class ClusteredEventBus extends EventBusImpl {
     if (sendContext.message.isSend()) {
       // Choose one
       ServerID sid = subs.choose();
-      if (!sid.equals(serverID)) {  //We don't send to this node
+      if (sid != null && !sid.equals(serverID)) {  //We don't send to this node
         metrics.messageSent(address, false, false, true);
         sendRemote(sid, sendContext.message);
       } else {
