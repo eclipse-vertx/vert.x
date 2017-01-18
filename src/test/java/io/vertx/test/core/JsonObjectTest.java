@@ -1157,6 +1157,16 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testMergeInFlat() {
+    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\", \"eek\": 32 }}");
+    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    obj1.mergeIn(obj2, false);
+    assertEquals(1, obj1.size());
+    assertEquals(1, obj1.getJsonObject("foo").size());
+    assertEquals("eek", obj1.getJsonObject("foo").getString("bar"));
+  }
+
+  @Test
   public void testMergeInDepth1() {
     JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
     JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
