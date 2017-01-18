@@ -660,12 +660,58 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Merge in another JSON object.
    * <p>
-   * This is the equivalent of putting all the entries of the other JSON object into this object.
+   * This is the equivalent of putting all the entries of the other JSON object into this object. This is not a deep
+   * merge, entries containing (sub) JSON objects will be replaced entirely.
    * @param other  the other JSON object
    * @return a reference to this, so the API can be used fluently
    */
   public JsonObject mergeIn(JsonObject other) {
-    map.putAll(other.map);
+    return mergeIn(other, false);
+  }
+
+  /**
+   * Merge in another JSON object.
+   * A deep merge (recursive) matches (sub) JSON objects in the existing tree and replaces all
+   * matching entries. JsonArrays are treated like any other entry, i.e. replaced entirely.
+   * @param other the other JSON object
+   * @param deep if true, a deep merge is performed
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonObject mergeIn(JsonObject other, boolean deep) {
+    return mergeIn(other, Integer.MAX_VALUE);
+  }
+
+  /**
+   * Merge in another JSON object.
+   * The merge is deep (recursive) to the specified level. If depth is 0, no merge is performed,
+   * if depth is greater than the depth of one of the objects, a full deep merge is performed.
+   * @param other the other JSON object
+   * @param depth depth of merge
+   * @return a reference to this, so the API can be used fluently
+   */
+  @SuppressWarnings("unchecked")
+  public JsonObject mergeIn(JsonObject other, int depth) {
+    if(depth < 1) {
+      return this;
+    }
+    if(depth == 1) {
+      map.putAll(other.map);
+      return this;
+    }
+    for(Map.Entry<String, Object> e : other.map.entrySet()) {
+      map.merge(e.getKey(), e.getValue(), (oldVal, newVal) -> {
+        if(oldVal instanceof Map) {
+          oldVal = new JsonObject((Map)oldVal);
+        }
+        if(newVal instanceof Map) {
+          newVal = new JsonObject((Map)newVal);
+        }
+        if(oldVal instanceof JsonObject && newVal instanceof JsonObject) {
+          return ((JsonObject) oldVal).mergeIn((JsonObject)newVal, depth - 1);
+        }
+        return newVal;
+      });
+    }
     return this;
   }
 

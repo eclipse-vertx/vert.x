@@ -1147,6 +1147,37 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testMergeInDepth0() {
+    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\" }}");
+    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    obj1.mergeIn(obj2, 0);
+    assertEquals(1, obj1.size());
+    assertEquals(1, obj1.getJsonObject("foo").size());
+    assertEquals("flurb", obj1.getJsonObject("foo").getString("bar"));
+  }
+
+  @Test
+  public void testMergeInDepth1() {
+    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
+    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    obj1.mergeIn(obj2, 1);
+    assertEquals(2, obj1.size());
+    assertEquals(1, obj1.getJsonObject("flurb").size());
+    assertEquals("flurb1", obj1.getJsonObject("flurb").getString("bar"));
+  }
+
+  @Test
+  public void testMergeInDepth2() {
+    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
+    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    obj1.mergeIn(obj2, 2);
+    assertEquals(2, obj1.size());
+    assertEquals(2, obj1.getJsonObject("flurb").size());
+    assertEquals("foo", obj1.getJsonObject("flurb").getString("eek"));
+    assertEquals("flurb1", obj1.getJsonObject("flurb").getString("bar"));
+  }
+
+  @Test
   public void testEncode() throws Exception {
     jsonObject.put("mystr", "foo");
     jsonObject.put("mycharsequence", new StringBuilder("oob"));
