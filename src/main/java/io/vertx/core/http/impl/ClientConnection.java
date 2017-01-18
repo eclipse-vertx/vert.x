@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
@@ -93,7 +92,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
-    super(client.getVertx(), channel, context, metrics);
+    super(client.getVertx(), channel, context);
     this.client = client;
     this.ssl = ssl;
     this.host = host;
@@ -104,7 +103,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     this.endpointMetric = endpointMetric;
   }
 
-  protected HttpClientMetrics metrics() {
+  public HttpClientMetrics metrics() {
     return metrics;
   }
 

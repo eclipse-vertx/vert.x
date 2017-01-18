@@ -48,6 +48,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.NetworkMetrics;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -95,11 +96,16 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
                    WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
-    super(vertx, channel, context, metrics);
+    super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.server = server;
     this.handshaker = handshaker;
     this.metrics = metrics;
+  }
+
+  @Override
+  public HttpServerMetrics metrics() {
+    return metrics;
   }
 
   public synchronized void pause() {

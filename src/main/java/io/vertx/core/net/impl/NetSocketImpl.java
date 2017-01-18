@@ -35,6 +35,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -64,6 +65,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private final SSLHelper helper;
   private final String host;
   private final int port;
+  private final TCPMetrics metrics;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
@@ -78,13 +80,19 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   public NetSocketImpl(VertxInternal vertx, Channel channel, String host, int port, ContextImpl context,
                        SSLHelper helper, TCPMetrics metrics) {
-    super(vertx, channel, context, metrics);
+    super(vertx, channel, context);
     this.helper = helper;
     this.writeHandlerID = UUID.randomUUID().toString();
     this.host = host;
     this.port = port;
+    this.metrics = metrics;
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
+  }
+
+  @Override
+  public TCPMetrics metrics() {
+    return metrics;
   }
 
   @Override

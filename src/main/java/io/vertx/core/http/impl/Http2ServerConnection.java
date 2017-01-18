@@ -65,7 +65,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       HttpServerOptions options,
       Handler<HttpServerRequest> requestHandler,
       HttpServerMetrics metrics) {
-    super(channel, context, connHandler, metrics);
+    super(channel, context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;
@@ -73,7 +73,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     this.metrics = metrics;
   }
 
-  HttpServerMetrics metrics() {
+  public HttpServerMetrics metrics() {
     return metrics;
   }
 

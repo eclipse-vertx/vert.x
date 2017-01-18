@@ -41,6 +41,7 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.NetworkMetrics;
 
 import java.util.Map;
 
@@ -62,10 +63,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
                                Channel channel,
                                VertxHttp2ConnectionHandler connHandler,
                                HttpClientMetrics metrics) {
-    super(channel, context, connHandler, metrics);
+    super(channel, context, connHandler);
     this.http2Pool = http2Pool;
     this.metrics = metrics;
     this.queueMetric = queueMetric;
+  }
+
+  @Override
+  public HttpClientMetrics metrics() {
+    return metrics;
   }
 
   @Override
