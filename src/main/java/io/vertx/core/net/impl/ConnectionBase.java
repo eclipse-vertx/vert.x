@@ -59,6 +59,7 @@ public abstract class ConnectionBase {
   private boolean needsFlush;
   private Thread ctxThread;
   private boolean needsAsyncFlush;
+  private Object metric;
 
   protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
     this.vertx = vertx;
@@ -182,7 +183,13 @@ public abstract class ConnectionBase {
     return context;
   }
 
-  protected abstract Object metric();
+  public synchronized void metric(Object metric) {
+    this.metric = metric;
+  }
+
+  public synchronized Object metric() {
+    return metric;
+  }
 
   protected synchronized void handleException(Throwable t) {
     metrics.exceptionOccurred(metric(), remoteAddress(), t);

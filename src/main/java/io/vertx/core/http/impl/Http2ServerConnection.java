@@ -52,7 +52,6 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   private final String serverOrigin;
   private final Handler<HttpServerRequest> requestHandler;
   private final HttpServerMetrics metrics;
-  private final Object metric;
 
   private Long maxConcurrentStreams;
   private int concurrentStreams;
@@ -71,7 +70,6 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     this.options = options;
     this.serverOrigin = serverOrigin;
     this.requestHandler = requestHandler;
-    this.metric = metrics.connected(remoteAddress(), remoteName());
     this.metrics = metrics;
   }
 
@@ -199,11 +197,6 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     super.updateSettings(settingsUpdate, completionHandler);
-  }
-
-  @Override
-  protected Object metric() {
-    return metric;
   }
 
   private class Push extends VertxHttp2Stream<Http2ServerConnection> {

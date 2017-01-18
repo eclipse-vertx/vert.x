@@ -92,7 +92,12 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
           .server(false)
           .useCompression(client.getOptions().isTryUseCompression())
           .initialSettings(client.getOptions().getInitialSettings())
-          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, queue.metric, context, ch, connHandler, metrics))
+          .connectionFactory(connHandler -> {
+            Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, ch, connHandler, metrics);
+            Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+            conn.metric(metric);
+            return conn;
+          })
           .logEnabled(logEnabled)
           .build();
       if (upgrade) {

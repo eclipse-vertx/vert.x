@@ -76,11 +76,6 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  protected Object metric() {
-    return null;
-  }
-
-  @Override
   public DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<DatagramSocket>> handler) {
     try {
       addListener(channel().joinGroup(InetAddress.getByName(multicastAddress)), handler);

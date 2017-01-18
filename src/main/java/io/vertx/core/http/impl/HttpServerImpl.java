@@ -61,7 +61,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -359,7 +358,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .useDecompression(options.isDecompressionSupported())
         .compressionLevel(options.getCompressionLevel())
         .initialSettings(options.getInitialSettings())
-        .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics))
+        .connectionFactory(connHandler -> {
+          Http2ServerConnection conn = new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          return conn;
+        })
         .logEnabled(logEnabled)
         .build();
   }

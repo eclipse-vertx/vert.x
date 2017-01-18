@@ -412,12 +412,12 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     private void connected(Channel ch, HandlerHolder<Handler<NetSocket>> handler) {
       // Need to set context before constructor is called as writehandler registration needs this
       ContextImpl.setContext(handler.context);
-      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, metrics, null);
+      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, metrics);
       socketMap.put(ch, sock);
       VertxNetHandler netHandler = ch.pipeline().get(VertxNetHandler.class);
       netHandler.conn = sock;
       handler.context.executeFromIO(() -> {
-        sock.setMetric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+        sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
         handler.handler.handle(sock);
       });
     }

@@ -78,7 +78,6 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private final Object endpointMetric;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Deque<HttpClientRequestImpl> requests = new ArrayDeque<>();
-  private final Object metric;
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
 
@@ -101,14 +100,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     this.port = port;
     this.pool = pool;
     this.metrics = metrics;
-    this.metric = metrics.connected(remoteAddress(), remoteName());
     this.version = version;
     this.endpointMetric = endpointMetric;
-  }
-
-  @Override
-  protected Object metric() {
-    return metric;
   }
 
   protected HttpClientMetrics metrics() {
@@ -548,7 +541,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       throw new IllegalStateException("Connection is already writing a request");
     }
     if (metrics.isEnabled()) {
-      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric, localAddress(), remoteAddress(), req);
+      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric(), localAddress(), remoteAddress(), req);
       req.metric(reqMetric);
     }
     this.currentRequest = req;
@@ -580,7 +573,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   public NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), metrics, metric);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), metrics);
+    socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 

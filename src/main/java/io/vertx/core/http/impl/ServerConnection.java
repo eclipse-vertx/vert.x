@@ -92,7 +92,6 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   private boolean sentCheck;
   private long bytesRead;
   private long bytesWritten;
-  private Object metric;
 
   ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
                    WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
@@ -101,15 +100,6 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     this.server = server;
     this.handshaker = handshaker;
     this.metrics = metrics;
-  }
-
-  @Override
-  protected synchronized Object metric() {
-    return metric;
-  }
-
-  synchronized void metric(Object metric) {
-    this.metric = metric;
   }
 
   public synchronized void pause() {
@@ -218,7 +208,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics, metric);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics);
+    socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
@@ -280,7 +271,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     this.currentRequest = req;
     pendingResponse = resp;
     if (metrics.isEnabled()) {
-      requestMetric = metrics.requestBegin(metric, req);
+      requestMetric = metrics.requestBegin(metric(), req);
     }
     if (requestHandler != null) {
       requestHandler.handle(req);
