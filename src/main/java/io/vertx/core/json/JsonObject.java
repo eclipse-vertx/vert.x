@@ -678,7 +678,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a reference to this, so the API can be used fluently
    */
   public JsonObject mergeIn(JsonObject other, boolean deep) {
-    return mergeIn(other, Integer.MAX_VALUE);
+    return mergeIn(other, deep ? Integer.MAX_VALUE : 1);
   }
 
   /**
