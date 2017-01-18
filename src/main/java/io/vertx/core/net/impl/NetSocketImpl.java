@@ -302,7 +302,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
   }
 
-  synchronized void handleDataReceived(Buffer data) {
+  public synchronized void handleDataReceived(Buffer data) {
     checkContext();
     if (paused) {
       if (pendingData == null) {

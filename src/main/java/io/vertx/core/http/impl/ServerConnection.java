@@ -234,7 +234,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       pipeline.remove("chunkedWriter");
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(channel, socket, connectionMap) {
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
@@ -256,6 +256,12 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
           return;
         }
         super.channelRead(chctx, msg);
+      }
+
+      @Override
+      protected void handleMsgReceived(Object msg) {
+        ByteBuf buf = (ByteBuf) msg;
+        conn.handleDataReceived(Buffer.buffer(buf));
       }
     });
 

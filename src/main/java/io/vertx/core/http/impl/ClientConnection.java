@@ -587,7 +587,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler(channel, socket, connectionMap) {
+    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
@@ -612,6 +612,12 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
           return;
         }
         super.channelRead(chctx, msg);
+      }
+
+      @Override
+      protected void handleMsgReceived(Object msg) {
+        ByteBuf buf = (ByteBuf) msg;
+        conn.handleDataReceived(Buffer.buffer(buf));
       }
     });
     return socket;
