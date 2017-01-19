@@ -148,9 +148,10 @@ public class AsyncFileImpl implements AsyncFile {
     Handler<AsyncResult<Void>> wrapped = ar -> {
       if (ar.succeeded()) {
         checkContext();
-        checkDrained();
         if (writesOutstanding == 0 && closedDeferred != null) {
           closedDeferred.run();
+        } else {
+          checkDrained();
         }
         if (handler != null) {
           handler.handle(ar);

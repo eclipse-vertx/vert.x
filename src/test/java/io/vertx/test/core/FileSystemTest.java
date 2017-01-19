@@ -54,6 +54,7 @@ import java.nio.file.attribute.UserPrincipal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.test.core.TestUtils.*;
@@ -1544,6 +1545,24 @@ public class FileSystemTest extends VertxTestBase {
       assertTrue(Vertx.currentContext().isEventLoopContext());
       testComplete();
     });
+    await();
+  }
+
+  @Test
+  public void testDrainNotCalledAfterClose() throws Exception {
+    String fileName = "some-file.dat";
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
+      Buffer buf = TestUtils.randomBuffer(1024 * 1024);
+      file.write(buf);
+      AtomicBoolean drainAfterClose = new AtomicBoolean();
+      file.drainHandler(v -> {
+        drainAfterClose.set(true);
+      });
+      file.close(ar -> {
+        assertFalse(drainAfterClose.get());
+        testComplete();
+      });
+    }));
     await();
   }
 
