@@ -20,7 +20,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
 
 import java.util.Map;
@@ -28,47 +27,47 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
-
+public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHandler<C> {
 
   private final Channel ch;
-  private final Map<Channel, NetSocketImpl> connectionMap;
-  protected NetSocketImpl conn;
+  private final Map<Channel, C> connectionMap;
+  protected C conn;
 
-  public VertxNetHandler(Channel ch, Map<Channel, NetSocketImpl> connectionMap) {
+  public VertxNetHandler(Channel ch, Map<Channel, C> connectionMap) {
     this.ch = ch;
     this.connectionMap = connectionMap;
   }
 
-  public VertxNetHandler(Channel ch, NetSocketImpl conn, Map<Channel, NetSocketImpl> connectionMap) {
+  public VertxNetHandler(Channel ch, C conn, Map<Channel, C> connectionMap) {
     this.ch = ch;
     this.connectionMap = connectionMap;
     this.conn = conn;
   }
 
   @Override
-  protected NetSocketImpl getConnection() {
+  protected C getConnection() {
     return conn;
   }
 
   @Override
-  protected NetSocketImpl removeConnection() {
+  protected C removeConnection() {
     connectionMap.remove(ch);
-    NetSocketImpl conn = this.conn;
+    C conn = this.conn;
     this.conn = null;
     return conn;
   }
 
 
   @Override
-  protected void channelRead(NetSocketImpl sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void channelRead(C sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (sock != null) {
-      ByteBuf buf = (ByteBuf) msg;
-      context.executeFromIO(() -> sock.handleDataReceived(Buffer.buffer(buf)));
+      context.executeFromIO(() -> handleMsgReceived(msg));
     } else {
       // just discard
     }
   }
+
+  protected abstract void handleMsgReceived(Object msg);
 
   @Override
   protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {

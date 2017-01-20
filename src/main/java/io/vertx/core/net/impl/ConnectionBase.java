@@ -52,30 +52,18 @@ public abstract class ConnectionBase {
   protected final VertxInternal vertx;
   protected final Channel channel;
   protected final ContextImpl context;
-  protected final NetworkMetrics metrics;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private boolean read;
   private boolean needsFlush;
   private Thread ctxThread;
   private boolean needsAsyncFlush;
+  private Object metric;
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
+  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context) {
     this.vertx = vertx;
     this.channel = channel;
     this.context = context;
-    this.metrics = metrics;
-  }
-
-  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetworkOptions options) {
-    this.vertx = vertx;
-    this.channel = channel;
-    this.context = context;
-    this.metrics = createMetrics(options);
-  }
-
-  protected NetworkMetrics createMetrics(NetworkOptions options) {
-    return null;
   }
 
   protected synchronized final void startRead() {
@@ -182,10 +170,18 @@ public abstract class ConnectionBase {
     return context;
   }
 
-  protected abstract Object metric();
+  public synchronized void metric(Object metric) {
+    this.metric = metric;
+  }
+
+  public synchronized Object metric() {
+    return metric;
+  }
+
+  public abstract NetworkMetrics metrics();
 
   protected synchronized void handleException(Throwable t) {
-    metrics.exceptionOccurred(metric(), remoteAddress(), t);
+    metrics().exceptionOccurred(metric(), remoteAddress(), t);
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     } else {
@@ -194,6 +190,7 @@ public abstract class ConnectionBase {
   }
 
   protected synchronized void handleClosed() {
+    NetworkMetrics metrics = metrics();
     if (metrics instanceof TCPMetrics) {
       ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
     }
@@ -225,12 +222,14 @@ public abstract class ConnectionBase {
   }
 
   public void reportBytesRead(long numberOfBytes) {
+    NetworkMetrics metrics = metrics();
     if (metrics.isEnabled()) {
       metrics.bytesRead(metric(), remoteAddress(), numberOfBytes);
     }
   }
 
   public void reportBytesWritten(long numberOfBytes) {
+    NetworkMetrics metrics = metrics();
     if (metrics.isEnabled()) {
       metrics.bytesWritten(metric(), remoteAddress(), numberOfBytes);
     }

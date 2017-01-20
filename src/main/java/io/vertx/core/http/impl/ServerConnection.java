@@ -48,6 +48,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.NetworkMetrics;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -92,11 +93,10 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   private boolean sentCheck;
   private long bytesRead;
   private long bytesWritten;
-  private Object metric;
 
   ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
                    WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
-    super(vertx, channel, context, metrics);
+    super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.server = server;
     this.handshaker = handshaker;
@@ -104,12 +104,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   @Override
-  protected synchronized Object metric() {
-    return metric;
-  }
-
-  synchronized void metric(Object metric) {
-    this.metric = metric;
+  public HttpServerMetrics metrics() {
+    return metrics;
   }
 
   public synchronized void pause() {
@@ -218,7 +214,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics, metric);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics);
+    socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
@@ -237,7 +234,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       pipeline.remove("chunkedWriter");
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(channel, socket, connectionMap) {
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
@@ -260,6 +257,12 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
         }
         super.channelRead(chctx, msg);
       }
+
+      @Override
+      protected void handleMsgReceived(Object msg) {
+        ByteBuf buf = (ByteBuf) msg;
+        conn.handleDataReceived(Buffer.buffer(buf));
+      }
     });
 
     // check if the encoder can be removed yet or not.
@@ -280,7 +283,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     this.currentRequest = req;
     pendingResponse = resp;
     if (metrics.isEnabled()) {
-      requestMetric = metrics.requestBegin(metric, req);
+      requestMetric = metrics.requestBegin(metric(), req);
     }
     if (requestHandler != null) {
       requestHandler.handle(req);

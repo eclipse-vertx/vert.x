@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
@@ -78,7 +77,6 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private final Object endpointMetric;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Deque<HttpClientRequestImpl> requests = new ArrayDeque<>();
-  private final Object metric;
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
 
@@ -94,24 +92,18 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
-    super(client.getVertx(), channel, context, metrics);
+    super(client.getVertx(), channel, context);
     this.client = client;
     this.ssl = ssl;
     this.host = host;
     this.port = port;
     this.pool = pool;
     this.metrics = metrics;
-    this.metric = metrics.connected(remoteAddress(), remoteName());
     this.version = version;
     this.endpointMetric = endpointMetric;
   }
 
-  @Override
-  protected Object metric() {
-    return metric;
-  }
-
-  protected HttpClientMetrics metrics() {
+  public HttpClientMetrics metrics() {
     return metrics;
   }
 
@@ -548,7 +540,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       throw new IllegalStateException("Connection is already writing a request");
     }
     if (metrics.isEnabled()) {
-      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric, localAddress(), remoteAddress(), req);
+      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric(), localAddress(), remoteAddress(), req);
       req.metric(reqMetric);
     }
     this.currentRequest = req;
@@ -580,7 +572,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   public NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), metrics, metric);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), metrics);
+    socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
@@ -594,7 +587,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler(channel, socket, connectionMap) {
+    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
@@ -619,6 +612,12 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
           return;
         }
         super.channelRead(chctx, msg);
+      }
+
+      @Override
+      protected void handleMsgReceived(Object msg) {
+        ByteBuf buf = (ByteBuf) msg;
+        conn.handleDataReceived(Buffer.buffer(buf));
       }
     });
     return socket;

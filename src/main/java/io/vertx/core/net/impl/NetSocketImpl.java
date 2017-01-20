@@ -35,6 +35,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -64,7 +65,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private final SSLHelper helper;
   private final String host;
   private final int port;
-  private Object metric;
+  private final TCPMetrics metrics;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
@@ -73,29 +74,25 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private ChannelFuture writeFuture;
 
   public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context,
-                       SSLHelper helper, TCPMetrics metrics, Object metric) {
-    this(vertx, channel, null, 0, context, helper, metrics, metric);
+                       SSLHelper helper, TCPMetrics metrics) {
+    this(vertx, channel, null, 0, context, helper, metrics);
   }
 
   public NetSocketImpl(VertxInternal vertx, Channel channel, String host, int port, ContextImpl context,
-                       SSLHelper helper, TCPMetrics metrics, Object metric) {
-    super(vertx, channel, context, metrics);
+                       SSLHelper helper, TCPMetrics metrics) {
+    super(vertx, channel, context);
     this.helper = helper;
     this.writeHandlerID = UUID.randomUUID().toString();
-    this.metric = metric;
     this.host = host;
     this.port = port;
+    this.metrics = metrics;
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
   }
 
-  protected synchronized void setMetric(Object metric) {
-    this.metric = metric;
-  }
-
   @Override
-  protected synchronized Object metric() {
-    return metric;
+  public TCPMetrics metrics() {
+    return metrics;
   }
 
   @Override
@@ -305,7 +302,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
   }
 
-  synchronized void handleDataReceived(Buffer data) {
+  public synchronized void handleDataReceived(Buffer data) {
     checkContext();
     if (paused) {
       if (pendingData == null) {

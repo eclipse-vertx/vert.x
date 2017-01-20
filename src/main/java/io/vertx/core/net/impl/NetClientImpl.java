@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -34,6 +35,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -188,7 +190,13 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       if (options.getIdleTimeout() > 0) {
         pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
       }
-      pipeline.addLast("handler", new VertxNetHandler(ch, socketMap));
+      pipeline.addLast("handler", new VertxNetHandler<NetSocketImpl>(ch, socketMap) {
+        @Override
+        protected void handleMsgReceived(Object msg) {
+          ByteBuf buf = (ByteBuf) msg;
+          conn.handleDataReceived(Buffer.buffer(buf));
+        }
+      });
     };
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
@@ -233,12 +241,12 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, String host, int port) {
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
-    NetSocketImpl sock = new NetSocketImpl(vertx, ch, host, port, context, sslHelper, metrics, null);
+    NetSocketImpl sock = new NetSocketImpl(vertx, ch, host, port, context, sslHelper, metrics);
     VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
     handler.conn = sock;
     socketMap.put(ch, sock);
     context.executeFromIO(() -> {
-      sock.setMetric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+      sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       connectHandler.handle(Future.succeededFuture(sock));
     });
   }

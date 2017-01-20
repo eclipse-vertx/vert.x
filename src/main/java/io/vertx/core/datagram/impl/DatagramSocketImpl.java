@@ -33,7 +33,6 @@ import io.vertx.core.datagram.PacketWritestream;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
@@ -41,7 +40,6 @@ import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.NetworkMetrics;
 
 import java.net.*;
 import java.util.Objects;
@@ -52,10 +50,11 @@ import java.util.Objects;
 public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket, MetricsProvider {
 
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
+  private DatagramSocketMetrics metrics;
 
   public DatagramSocketImpl(VertxInternal vertx, DatagramSocketOptions options) {
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-          new DatagramSocketOptions(options)), vertx.getOrCreateContext(), options);
+          new DatagramSocketOptions(options)), vertx.getOrCreateContext());
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
@@ -68,16 +67,12 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     channel.pipeline().addLast("handler", new DatagramServerHandler(this));
     channel().config().setMaxMessagesPerRead(1);
     channel().config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
+    metrics = vertx.metricsSPI().createMetrics(this, (DatagramSocketOptions) options);
   }
 
   @Override
-  protected NetworkMetrics createMetrics(NetworkOptions options) {
-    return vertx.metricsSPI().createMetrics(this, (DatagramSocketOptions) options);
-  }
-
-  @Override
-  protected Object metric() {
-    return null;
+  public DatagramSocketMetrics metrics() {
+    return metrics;
   }
 
   @Override

@@ -39,7 +39,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     return connection.getContext();
   }
 
-  protected static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
+  public static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
     if (buf == Unpooled.EMPTY_BUFFER) {
       return buf;
     }

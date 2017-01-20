@@ -520,7 +520,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
-      public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
+      public TCPMetrics createMetrics(SocketAddress localAddress, NetServerOptions options) {
         return new DummyTCPMetrics() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
