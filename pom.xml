@@ -318,7 +318,7 @@
                 <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
               </processors>
               <optionMap>
-                <outputDirectory>${project.basedir}/src/main</outputDirectory>
+                <codegen.output>${project.basedir}/src/main</codegen.output>
                 <docgen.output>${asciidoc.dir}/java</docgen.output>
                 <maven.groupId>${project.groupId}</maven.groupId>
                 <maven.artifactId>${project.artifactId}</maven.artifactId>
@@ -337,7 +337,7 @@
                 <processor>io.vertx.codegen.CodeGenProcessor</processor>
               </processors>
               <optionMap>
-                <outputDirectory>${project.basedir}/src/test</outputDirectory>
+                <codegen.output>${project.basedir}/src/test</codegen.output>
               </optionMap>
             </configuration>
           </execution>
