@@ -393,25 +393,20 @@ public abstract class EventBusTestBase extends VertxTestBase {
       receivedLatch.countDown();
     }).completionHandler(ar -> {
       assertTrue(ar.succeeded());
-      vertices[0].deployVerticle(new AbstractVerticle() {
-        @Override
-        public void start() throws Exception {
-          vertx().executeBlocking(fut -> {
-            vertices[0].eventBus().send(ADDRESS1, expectedBody);
-            try {
-              awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
-            } catch (InterruptedException e) {
-              Thread.interrupted();
-              fut.fail(e);
-            }
-            fut.complete();
-          }, ar -> {
-            if (ar.succeeded()) {
-              testComplete();
-            } else {
-              fail(ar.cause());
-            }
-          });
+      vertices[0].executeBlocking(fut -> {
+        vertices[0].eventBus().send(ADDRESS1, expectedBody);
+        try {
+          awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
+        } catch (InterruptedException e) {
+          Thread.interrupted();
+          fut.fail(e);
+        }
+        fut.complete();
+      }, ar2 -> {
+        if (ar2.succeeded()) {
+          testComplete();
+        } else {
+          fail(ar2.cause());
         }
       });
     });
