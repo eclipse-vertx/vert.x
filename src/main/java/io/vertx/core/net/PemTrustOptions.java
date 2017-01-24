@@ -98,6 +98,17 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   }
 
   /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    PemTrustOptionsConverter.toJson(this, json);
+    return json;
+  }
+
+  /**
    * @return  the certificate paths used to locate certificates
    */
   public List<String> getCertPaths() {

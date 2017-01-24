@@ -52,6 +52,9 @@ public class ClientOptionsBaseConverter {
     if (obj.getMetricsName() != null) {
       json.put("metricsName", obj.getMetricsName());
     }
+    if (obj.getProxyOptions() != null) {
+      json.put("proxyOptions", obj.getProxyOptions().toJson());
+    }
     json.put("trustAll", obj.isTrustAll());
   }
 }

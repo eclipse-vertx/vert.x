@@ -128,11 +128,9 @@ public class @{type.simpleName}Converter {\n
 @declare{'genPropToJson'}
 	@if{property.list || property.set}
 		@{indent}if (obj.@{property.getterMethod}() != null) {\n
-		@{indent}  json.put("@{property.name}", new JsonArray(\n
-		@{indent}      obj.@{property.getterMethod}().\n
-		@{indent}          stream().\n
-		@{indent}          map(item -> @{before}item@{after}).\n
-		@{indent}          collect(java.util.stream.Collectors.toList())));\n
+		@{indent}  JsonArray array = new JsonArray();\n
+		@{indent}  obj.@{property.getterMethod}().forEach(item -> array.add(@{before}item@{after}));\n
+		@{indent}  json.put("@{property.name}", array);\n
 		@{indent}}\n
 	@else{property.map}
 		@{indent}if (obj.@{property.getterMethod}() != null) {\n
