@@ -28,14 +28,14 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.TrustOptions;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -43,14 +43,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -61,6 +59,7 @@ public class WebsocketTest extends VertxTestBase {
 
   private HttpClient client;
   private HttpServer server;
+  private NetServer netServer;
 
   public void setUp() throws Exception {
     super.setUp();
@@ -72,6 +71,14 @@ public class WebsocketTest extends VertxTestBase {
     if (server != null) {
       CountDownLatch latch = new CountDownLatch(1);
       server.close(ar -> {
+        assertTrue(ar.succeeded());
+        latch.countDown();
+      });
+      awaitLatch(latch);
+    }
+    if (netServer != null) {
+      CountDownLatch latch = new CountDownLatch(1);
+      netServer.close(ar -> {
         assertTrue(ar.succeeded());
         latch.countDown();
       });
@@ -1349,5 +1356,87 @@ public class WebsocketTest extends VertxTestBase {
       });
     }));
     await();
+  }
+
+  @Test
+  public void testIssue1757_1() throws Throwable {
+    doTestIssue1757(true);
+  }
+
+  @Test
+  public void testIssue1757_2() throws Throwable {
+    doTestIssue1757(false);
+  }
+
+  final BlockingQueue<Throwable> resultQueue = new ArrayBlockingQueue<Throwable>(10);
+
+  void addResult(Throwable result) {
+    try {
+      resultQueue.put(result);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  private void doTestIssue1757(boolean keepAliveInOptions) throws Throwable {
+    final Exception serverGotCloseException = new Exception();
+
+    netServer = vertx.createNetServer().connectHandler(sock -> {
+      final Buffer fullReq = Buffer.buffer(230);
+      sock.handler(b -> {
+        fullReq.appendBuffer(b);
+        String reqPart = b.toString();
+        if (fullReq.toString().contains("\r\n\r\n")) {
+          try {
+            String content = "0123456789";
+            content = content + content;
+            content = content + content + content + content + content;
+            String resp = "HTTP/1.1 200 OK\r\n";
+            if (keepAliveInOptions) {
+              resp += "Connection: close\r\n";
+            }
+            resp += "Content-Length: 100\r\n\r\n" + content;
+            sock.write(Buffer.buffer(resp.getBytes("ASCII")));
+          } catch (UnsupportedEncodingException e) {
+            addResult(e);
+          }
+        }
+      });
+      sock.closeHandler(v -> {
+        addResult(serverGotCloseException);
+      });
+    }).listen(ar -> {
+      if (ar.failed()) {
+        addResult(ar.cause());
+        return;
+      }
+      NetServer server = ar.result();
+      int port = server.actualPort();
+
+      HttpClientOptions opts = new HttpClientOptions().setKeepAlive(keepAliveInOptions);
+      client.close();
+      client = vertx.createHttpClient(opts).websocket(port, "localhost", "/", ws -> {
+        addResult(new AssertionError("Websocket unexpectedly connected"));
+        ws.close();
+      }, t -> {
+        addResult(t);
+      });
+    });
+
+    boolean serverGotClose = false;
+    boolean clientGotCorrectException = false;
+    while (!serverGotClose || !clientGotCorrectException) {
+      Throwable result = resultQueue.poll(20, TimeUnit.SECONDS);
+      if (result == null) {
+        throw new AssertionError("Timed out waiting for expected state, current: serverGotClose = " + serverGotClose + ", clientGotCorrectException = " + clientGotCorrectException);
+      } else if (result == serverGotCloseException) {
+        serverGotClose = true;
+      } else if (result instanceof WebSocketHandshakeException
+              && result.getMessage().equals("Websocket connection attempt returned HTTP status code 200")) {
+        clientGotCorrectException = true;
+      } else {
+        throw result;
+      }
+    }
   }
 }
