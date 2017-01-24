@@ -87,18 +87,14 @@ public class AddressResolverOptionsConverter {
     json.put("queryTimeout", obj.getQueryTimeout());
     json.put("rdFlag", obj.getRdFlag());
     if (obj.getSearchDomains() != null) {
-      json.put("searchDomains", new JsonArray(
-          obj.getSearchDomains().
-              stream().
-              map(item -> item).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getSearchDomains().forEach(item -> array.add(item));
+      json.put("searchDomains", array);
     }
     if (obj.getServers() != null) {
-      json.put("servers", new JsonArray(
-          obj.getServers().
-              stream().
-              map(item -> item).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getServers().forEach(item -> array.add(item));
+      json.put("servers", array);
     }
   }
 }

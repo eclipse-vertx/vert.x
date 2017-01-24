@@ -72,11 +72,9 @@ public class HttpServerOptionsConverter {
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
     if (obj.getAlpnVersions() != null) {
-      json.put("alpnVersions", new JsonArray(
-          obj.getAlpnVersions().
-              stream().
-              map(item -> item.name()).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getAlpnVersions().forEach(item -> array.add(item.name()));
+      json.put("alpnVersions", array);
     }
     json.put("compressionLevel", obj.getCompressionLevel());
     json.put("compressionSupported", obj.isCompressionSupported());

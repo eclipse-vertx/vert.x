@@ -81,6 +81,17 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   }
 
   /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    PfxOptionsConverter.toJson(this, json);
+    return json;
+  }
+
+  /**
    * Get the password
    *
    * @return  the password

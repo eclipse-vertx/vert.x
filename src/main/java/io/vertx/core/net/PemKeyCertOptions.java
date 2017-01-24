@@ -105,6 +105,17 @@ public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
   }
 
   /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    PemKeyCertOptionsConverter.toJson(this, json);
+    return json;
+  }
+
+  /**
    * Get the path to the key file
    *
    * @return the path to the key file

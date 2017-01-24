@@ -100,6 +100,10 @@ public class KeyStoreTest extends VertxTestBase {
     assertEquals(password, options.getPassword());
     assertEquals(path, options.getPath());
     assertEquals(value, options.getValue());
+    options = new JksOptions(options.toJson());
+    assertEquals(password, options.getPassword());
+    assertEquals(path, options.getPath());
+    assertEquals(value, options.getValue());
   }
 
   @Test
@@ -155,6 +159,10 @@ public class KeyStoreTest extends VertxTestBase {
     options.setPath(path);
     options.setValue(value);
     options = new PfxOptions(options);
+    assertEquals(password, options.getPassword());
+    assertEquals(path, options.getPath());
+    assertEquals(value, options.getValue());
+    options = new PfxOptions(options.toJson());
     assertEquals(password, options.getPassword());
     assertEquals(path, options.getPath());
     assertEquals(value, options.getValue());
@@ -224,6 +232,11 @@ public class KeyStoreTest extends VertxTestBase {
     assertEquals(keyValue, options.getKeyValue());
     assertEquals(certPath, options.getCertPath());
     assertEquals(certValue, options.getCertValue());
+    options = new PemKeyCertOptions(options.toJson());
+    assertEquals(keyPath, options.getKeyPath());
+    assertEquals(keyValue, options.getKeyValue());
+    assertEquals(certPath, options.getCertPath());
+    assertEquals(certValue, options.getCertValue());
   }
 
   @Test
@@ -277,6 +290,9 @@ public class KeyStoreTest extends VertxTestBase {
     options.addCertPath(certPath);
     options.addCertValue(certValue);
     options = new PemTrustOptions(options);
+    assertEquals(Collections.singletonList(certPath), options.getCertPaths());
+    assertEquals(Collections.singletonList(certValue), options.getCertValues());
+    options = new PemTrustOptions(options.toJson());
     assertEquals(Collections.singletonList(certPath), options.getCertPaths());
     assertEquals(Collections.singletonList(certValue), options.getCertValues());
   }

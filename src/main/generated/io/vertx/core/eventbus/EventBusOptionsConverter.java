@@ -166,32 +166,24 @@ public class EventBusOptionsConverter {
     json.put("clustered", obj.isClustered());
     json.put("connectTimeout", obj.getConnectTimeout());
     if (obj.getCrlPaths() != null) {
-      json.put("crlPaths", new JsonArray(
-          obj.getCrlPaths().
-              stream().
-              map(item -> item).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getCrlPaths().forEach(item -> array.add(item));
+      json.put("crlPaths", array);
     }
     if (obj.getCrlValues() != null) {
-      json.put("crlValues", new JsonArray(
-          obj.getCrlValues().
-              stream().
-              map(item -> item.getBytes()).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getCrlValues().forEach(item -> array.add(item.getBytes()));
+      json.put("crlValues", array);
     }
     if (obj.getEnabledCipherSuites() != null) {
-      json.put("enabledCipherSuites", new JsonArray(
-          obj.getEnabledCipherSuites().
-              stream().
-              map(item -> item).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getEnabledCipherSuites().forEach(item -> array.add(item));
+      json.put("enabledCipherSuites", array);
     }
     if (obj.getEnabledSecureTransportProtocols() != null) {
-      json.put("enabledSecureTransportProtocols", new JsonArray(
-          obj.getEnabledSecureTransportProtocols().
-              stream().
-              map(item -> item).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));
+      json.put("enabledSecureTransportProtocols", array);
     }
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
