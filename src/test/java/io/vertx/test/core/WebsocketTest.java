@@ -1247,7 +1247,6 @@ public class WebsocketTest extends VertxTestBase {
         fail("Cannot decode unmasked message because I require masked frame as configured");
       });
     });
-
     server.listen(onSuccess(server -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         ws.writeFinalTextFrame("first unmasked frame");
