@@ -68,6 +68,10 @@ public class HttpServerOptionsConverter {
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
     }
+    if(json.getValue("unmaskedFrame") instanceof  Boolean)
+    {
+      obj.setUnmaskedFrame((Boolean)json.getValue("unmaskedFrame"));
+    }
   }
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
