@@ -748,6 +748,10 @@ Set the maximum length of the initial line for HTTP/1.x (e.g. <code>"HTTP/1.1 20
 +++
 Set the maximum pool size for connections
 +++
+|[[maxRedirects]]`maxRedirects`|`Number (int)`|
++++
+Set to <code>maxRedirects</code> the maximum number of redirection a request can follow.
++++
 |[[maxWaitQueueSize]]`maxWaitQueueSize`|`Number (int)`|
 +++
 Set the maximum requests allowed in the wait queue, any requests beyond the max size will result in

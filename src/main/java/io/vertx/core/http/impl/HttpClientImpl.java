@@ -37,12 +37,15 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  *
@@ -51,6 +54,29 @@ import java.util.Objects;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientImpl implements HttpClient, MetricsProvider {
+
+  private final Function<HttpClientResponse, HttpClientRequest> DEFAULT_HANDLER = resp -> {
+    int statusCode = resp.statusCode();
+    String location = resp.getHeader(HttpHeaders.LOCATION);
+    if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)) {
+      HttpMethod m = resp.request().method();
+      if (statusCode == 301 || statusCode == 302 || statusCode == 303) {
+        m = HttpMethod.GET;
+      }
+      URI uri;
+      try {
+        uri = HttpUtils.resolveURIReference(resp.request().absoluteURI(), location);
+      } catch (URISyntaxException e) {
+        return null;
+      }
+      String requestURI = uri.getPath();
+      if (uri.getQuery() != null) {
+        requestURI += "?" + uri.getQuery();
+      }
+      return request(m, uri.getPort(), uri.getHost(), requestURI);
+    }
+    return null;
+  };
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
 
@@ -62,6 +88,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final boolean useProxy;
   private final SSLHelper sslHelper;
   private volatile boolean closed;
+  private volatile Function<HttpClientResponse, HttpClientRequest> redirectHandler = DEFAULT_HANDLER;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
@@ -808,6 +835,20 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return connectionManager.metrics();
   }
 
+  @Override
+  public HttpClient redirectHandler(Function<HttpClientResponse, HttpClientRequest> handler) {
+    if (handler == null) {
+      handler = DEFAULT_HANDLER;
+    }
+    redirectHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Function<HttpClientResponse, HttpClientRequest> redirectHandler() {
+    return redirectHandler;
+  }
+
   HttpClientOptions getOptions() {
     return options;
   }
@@ -886,11 +927,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-      req = new HttpClientRequestImpl(this, method, proxyOptions.getHost(), proxyOptions.getPort(), options.isSsl(),
+      req = new HttpClientRequestImpl(this, method, proxyOptions.getHost(), proxyOptions.getPort(),
           relativeURI, vertx);
       req.setHost(host + (port != 80 ? ":" + port : ""));
     } else {
-      req = new HttpClientRequestImpl(this, method, host, port, ssl != null ? ssl : options.isSsl(), relativeURI, vertx);
+      req = new HttpClientRequestImpl(this, method, host, port, relativeURI, vertx);
     }
     if (headers != null) {
       req.headers().setAll(headers);
@@ -990,5 +1031,4 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     close();
     super.finalize();
   }
-
 }

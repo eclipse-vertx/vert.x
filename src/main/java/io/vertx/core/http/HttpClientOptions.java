@@ -143,6 +143,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_SEND_UNMASKED_FRAMES = false;
 
+  /*
+   * Default max redirect = 16
+   */
+  public static final int DEFAULT_MAX_REDIRECTS = 16;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -165,6 +170,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
   private boolean sendUnmaskedFrames;
+  private int maxRedirects;
 
   /**
    * Default constructor
@@ -202,6 +208,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
+    this.maxRedirects = other.maxRedirects;
   }
 
   /**
@@ -237,6 +244,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     sendUnmaskedFrames = DEFAULT_SEND_UNMASKED_FRAMES;
+    maxRedirects = DEFAULT_MAX_REDIRECTS;
   }
 
   @Override
@@ -832,6 +840,24 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * @return the maximum number of redirection a request can follow
+   */
+  public int getMaxRedirects() {
+    return maxRedirects;
+  }
+
+  /**
+   * Set to {@code maxRedirects} the maximum number of redirection a request can follow.
+   *
+   * @param maxRedirects the maximum number of redirection
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxRedirects(int maxRedirects) {
+    this.maxRedirects = maxRedirects;
+    return this;
+  }
+
   public HttpClientOptions setMetricsName(String metricsName) {
     return (HttpClientOptions) super.setMetricsName(metricsName);
   }
@@ -876,6 +902,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (http2ClearTextUpgrade != that.http2ClearTextUpgrade) return false;
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
     if (sendUnmaskedFrames != that.sendUnmaskedFrames) return false;
+    if (maxRedirects != that.maxRedirects) return false;
 
     return true;
   }
@@ -901,7 +928,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (http2ClearTextUpgrade ? 1 : 0);
     result = 31 * result + http2ConnectionWindowSize;
     result = 31 * result + (sendUnmaskedFrames ? 1 : 0);
-
+    result = 31 * result + maxRedirects;
     return result;
   }
 }

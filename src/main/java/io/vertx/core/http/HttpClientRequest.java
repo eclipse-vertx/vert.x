@@ -86,6 +86,9 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Override
   HttpClientRequest endHandler(Handler<Void> endHandler);
 
+  @Fluent
+  HttpClientRequest setFollowRedirects(boolean followRedirects);
+
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
    *
@@ -118,6 +121,8 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    */
   @Fluent
   HttpClientRequest setRawMethod(String method);
+
+  String absoluteURI();
 
   /**
    * @return The URI of the request.

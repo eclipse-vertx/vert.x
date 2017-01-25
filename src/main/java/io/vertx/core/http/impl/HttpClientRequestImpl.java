@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -49,7 +50,6 @@ import static io.vertx.core.http.HttpHeaders.*;
  */
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
-  private final boolean ssl;
   private final VertxInternal vertx;
   private final int port;
   private Handler<HttpClientResponse> respHandler;
@@ -68,18 +68,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Long reset;
   private HttpClientResponseImpl response;
   private ByteBuf pendingChunks;
+  private CompositeByteBuf cachedChunks;
   private int pendingMaxSize = -1;
+  private int followRedirects;
   private boolean connecting;
   private boolean writeHead;
   private long written;
   private CaseInsensitiveHeaders headers;
 
-  HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
-                        boolean ssl, String relativeURI, VertxInternal vertx) {
-    super(client, method, host, relativeURI);
+  HttpClientRequestImpl(HttpClientImpl client, HttpMethod method, String host, int port,
+                        String relativeURI, VertxInternal vertx) {
+    super(client, method, host, port, relativeURI);
     this.chunked = false;
     this.vertx = vertx;
-    this.ssl = ssl;
     this.port = port;
   }
 
@@ -111,6 +112,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public HttpClientRequest resume() {
     return this;
+  }
+
+  @Override
+  public HttpClientRequest setFollowRedirects(boolean followRedirects) {
+    synchronized (getLock()) {
+      checkComplete();
+      if (followRedirects) {
+        this.followRedirects = client.getOptions().getMaxRedirects() - 1;
+      } else {
+        this.followRedirects = 0;
+      }
+      return this;
+    }
   }
 
   @Override
@@ -327,9 +341,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (getLock()) {
       checkComplete();
       checkResponseHandler();
-      if (!chunked && !contentLengthSet()) {
-        headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
-      }
       write(chunk.getByteBuf(), true);
     }
   }
@@ -433,7 +444,66 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       stream.resetResponse(reset);
     } else {
       response = resp;
-      if (resp.statusCode() == 100) {
+      int statusCode = resp.statusCode();
+      if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
+        HttpClientRequestImpl next = (HttpClientRequestImpl) client.redirectHandler().apply(resp);
+        if (next != null) {
+          next.handler(respHandler);
+          next.exceptionHandler(exceptionHandler());
+          next.endHandler(endHandler);
+          next.pushHandler = pushHandler;
+          next.followRedirects = followRedirects - 1;
+          next.written = written;
+          if (next.hostHeader != null) {
+            next.hostHeader = hostHeader;
+          }
+          if (next.headers != null) {
+            next.headers().addAll(headers);
+          }
+          ByteBuf body;
+          switch (next.method) {
+            case GET:
+              body = null;
+              break;
+            case OTHER:
+              next.rawMethod = rawMethod;
+              body = null;
+              break;
+            default:
+              if (cachedChunks != null) {
+                body = cachedChunks;
+              } else {
+                body = null;
+              }
+              break;
+          }
+          cachedChunks = null;
+          Future<Void> fut = Future.future();
+          fut.setHandler(ar -> {
+            if (ar.succeeded()) {
+              next.write(body, true);
+            } else {
+              handleException(ar.cause());
+            }
+          });
+          if (completed) {
+            fut.complete();
+          } else {
+            resp.exceptionHandler(err -> {
+              if (!fut.isComplete()) {
+                fut.fail(err);
+              }
+            });
+            resp.endHandler(v -> {
+              if (!fut.isComplete()) {
+                fut.complete();
+              }
+            });
+          }
+          return;
+        }
+      }
+      if (statusCode == 100) {
         if (continueHandler != null) {
           continueHandler.handle(null);
         }
@@ -706,14 +776,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private String hostHeader() {
-    if (hostHeader != null) {
-      return hostHeader;
-    }
-    if ((port == 80 && !ssl) || (port == 443 && ssl)) {
-      return host;
-    } else {
-      return host + ':' + port;
-    }
+    return hostHeader != null ? hostHeader : hostAndPort();
   }
 
   private void writeHead() {
@@ -733,6 +796,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
 
     if (end) {
+      if (buff != null && !chunked && !contentLengthSet()) {
+        headers().set(CONTENT_LENGTH, String.valueOf(buff.writerIndex()));
+      }
       completed = true;
     }
     if (!end && !chunked && !contentLengthSet()) {
@@ -742,6 +808,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
     if (buff != null) {
       written += buff.readableBytes();
+    }
+
+    if (buff != null && followRedirects > 0) {
+      if (cachedChunks == null) {
+        cachedChunks = Unpooled.compositeBuffer();
+      }
+      cachedChunks.addComponent(buff).writerIndex(cachedChunks.writerIndex() + buff.writerIndex());
     }
 
     if (stream == null) {

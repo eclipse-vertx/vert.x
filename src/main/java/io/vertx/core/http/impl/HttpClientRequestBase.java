@@ -35,6 +35,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final String uri;
   protected final String path;
   protected final String host;
+  protected final int port;
   protected final String query;
   private Handler<Throwable> exceptionHandler;
   private long currentTimeoutTimerId = -1;
@@ -42,11 +43,12 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected boolean exceptionOccurred;
   private Object metric;
 
-  HttpClientRequestBase(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port, String uri) {
     this.client = client;
     this.uri = uri;
     this.method = method;
     this.host = host;
+    this.port = port;
     this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
     this.query = HttpUtils.parseQuery(uri);
   }
@@ -62,6 +64,20 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected abstract Object getLock();
   protected abstract void doHandleResponse(HttpClientResponseImpl resp);
   protected abstract void checkComplete();
+
+  protected final String hostAndPort() {
+    boolean ssl = client.getOptions().isSsl();
+    if ((port == 80 && !ssl) || (port == 443 && ssl)) {
+      return host;
+    } else {
+      return host + ':' + port;
+    }
+  }
+
+  @Override
+  public String absoluteURI() {
+    return (client.getOptions().isSsl() ? "https://" : "http://") + hostAndPort() + uri;
+  }
 
   public String query() {
     return query;
@@ -90,6 +106,12 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
         this.exceptionHandler = null;
       }
       return this;
+    }
+  }
+
+  Handler<Throwable> exceptionHandler() {
+    synchronized (getLock()) {
+      return exceptionHandler;
     }
   }
 

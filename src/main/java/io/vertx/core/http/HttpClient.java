@@ -17,10 +17,13 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.metrics.Measured;
+
+import java.util.function.Function;
 
 /**
  * An asynchronous HTTP client.
@@ -1363,6 +1366,31 @@ public interface HttpClient extends Measured {
    */
   WebSocketStream websocketStream(String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
+
+  /**
+   * Set a redirect handler for the web client.
+   * <p>
+   * The redirect handler is called when a {@code 3xx} response is received and the request is configured to
+   * follow redirects with {@link HttpClientRequest#setFollowRedirects(boolean)}.
+   * <p>
+   * The redirect handler is passed the {@link HttpClientResponse}, it can return an {@link HttpClientRequest} or {@code null}.
+   * <ul>
+   *   <li>when null is returned, the original response is processed by the original request response handler</li>
+   *   <li>when a new {@code HttpClientRequest} is returned, the client will send this new request</li>
+   * </ul>
+   * The handler must return a request unsent so the client can further configure it and send it.
+   *
+   * @param handler the new redirect handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClient redirectHandler(Function<HttpClientResponse, HttpClientRequest> handler);
+
+  /**
+   * @return the current redirect handler.
+   */
+  @GenIgnore
+  Function<HttpClientResponse, HttpClientRequest> redirectHandler();
 
   /**
    * Close the client. Closing will close down any pooled connections.

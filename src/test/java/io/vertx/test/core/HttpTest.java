@@ -55,6 +55,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -3121,6 +3122,266 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(200, resp.statusCode());
       testComplete();
     });
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectGetOn301() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn301() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn301() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectGetOn302() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn302() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn302() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectGetOn303() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn303() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn303() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectNotOn304() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 304, 304, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+  }
+
+  @Test
+  public void testFollowRedirectGetOn307() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn307() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn307() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectWithRelativeLocation() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "/another", "http://localhost:8080/another");
+  }
+
+  private void testFollowRedirect(
+      HttpMethod method,
+      HttpMethod expectedMethod,
+      int statusCode,
+      int expectedStatus,
+      int expectedRequests,
+      String location,
+      String expectedURI) throws Exception {
+    String s;
+    if (createBaseServerOptions().isSsl() && location.startsWith("http://")) {
+      s = "https://" + location.substring("http://".length());
+    } else {
+      s = location;
+    }
+    String t;
+    if (createBaseServerOptions().isSsl() && expectedURI.startsWith("http://")) {
+      t = "https://" + expectedURI.substring("http://".length());
+    } else {
+      t = expectedURI;
+    }
+    AtomicInteger numRequests = new AtomicInteger();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      if (numRequests.getAndIncrement() == 0) {
+        resp.setStatusCode(statusCode);
+        if (s != null) {
+          resp.putHeader(HttpHeaders.LOCATION, s);
+        }
+        resp.end();
+      } else {
+        assertEquals(t, req.absoluteURI());
+        assertEquals(expectedMethod, req.method());
+        resp.end();
+      }
+    });
+    startServer();
+    client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(resp.request().absoluteURI(), t);
+      assertEquals(expectedRequests, numRequests.get());
+      assertEquals(expectedStatus, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true).end();
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectWithBody() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(2048);
+    AtomicBoolean redirected = new AtomicBoolean();
+    server.requestHandler(req -> {
+      req.bodyHandler(body -> {
+        assertEquals(HttpMethod.PUT, req.method());
+        assertEquals(body, expected);
+        if (redirected.compareAndSet(false, true)) {
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+        } else {
+          req.response().end();
+        }
+      });
+    });
+    startServer();
+    client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true).end(expected);
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectWithChunkedBody() throws Exception {
+    Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    Buffer expected = Buffer.buffer().appendBuffer(buff1).appendBuffer(buff2);
+    AtomicBoolean redirected = new AtomicBoolean();
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      boolean redirect = redirected.compareAndSet(false, true);
+      if (redirect) {
+        latch.countDown();
+      }
+      req.bodyHandler(body -> {
+        assertEquals(HttpMethod.PUT, req.method());
+        assertEquals(body, expected);
+        if (redirect) {
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+        } else {
+          req.response().end();
+        }
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true)
+      .setChunked(true)
+      .write(buff1);
+    awaitLatch(latch);
+    req.end(buff2);
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectWithRequestNotEnded() throws Exception {
+    Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    Buffer expected = Buffer.buffer().appendBuffer(buff1).appendBuffer(buff2);
+    AtomicBoolean redirected = new AtomicBoolean();
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      boolean redirect = redirected.compareAndSet(false, true);
+      if (redirect) {
+        Buffer body = Buffer.buffer();
+        req.handler(buff -> {
+          if (body.length() == 0) {
+            req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+            latch.countDown();
+          }
+          body.appendBuffer(buff);
+        });
+        req.endHandler(v -> {
+          assertEquals(expected, body);
+        });
+      } else {
+        req.response().end();
+      }
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true)
+        .setChunked(true)
+        .write(buff1);
+    awaitLatch(latch);
+    // Wait so we end the request while having received the server response (but we can't be notified)
+    Thread.sleep(500);
+    req.end(buff2);
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectSendHeadThenBody() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    AtomicBoolean redirected = new AtomicBoolean();
+    server.requestHandler(req -> {
+      req.bodyHandler(body -> {
+        assertEquals(HttpMethod.PUT, req.method());
+        assertEquals(body, expected);
+        if (redirected.compareAndSet(false, true)) {
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "/whatever").end();
+        } else {
+          req.response().end();
+        }
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true);
+    req.putHeader("Content-Length", "" + expected.length());
+    req.exceptionHandler(this::fail);
+    req.sendHead(v -> {
+      req.end(expected);
+    });
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectLimit() throws Exception {
+    AtomicInteger redirects = new AtomicInteger();
+    server.requestHandler(req -> {
+      int val = redirects.incrementAndGet();
+      if (val > 16) {
+        fail();
+      } else {
+        req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/otherpath").end();
+      }
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(16, redirects.get());
+      assertEquals(301, resp.statusCode());
+      assertEquals("/otherpath", resp.request().path());
+      testComplete();
+    }).setFollowRedirects(true).end();
     await();
   }
 

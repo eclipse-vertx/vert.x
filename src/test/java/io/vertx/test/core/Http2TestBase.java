@@ -42,6 +42,7 @@ public class Http2TestBase extends HttpTestBase {
 
   static HttpClientOptions createHttp2ClientOptions() {
     return new HttpClientOptions().
+        setSsl(true).
         setUseAlpn(true).
         setTrustStoreOptions(Trust.SERVER_JKS.get()).
         setProtocolVersion(HttpVersion.HTTP_2);
