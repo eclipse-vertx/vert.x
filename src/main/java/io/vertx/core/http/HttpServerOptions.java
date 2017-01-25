@@ -106,6 +106,7 @@ public class HttpServerOptions extends NetServerOptions {
   private List<HttpVersion> alpnVersions;
   private int http2ConnectionWindowSize;
   private boolean decompressionSupported;
+  private boolean unmaskedFrame;
 
   /**
    * Default constructor
@@ -135,6 +136,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.decompressionSupported = other.isDecompressionSupported();
+    this.unmaskedFrame = other.isUnmaskedFrame();
   }
 
   /**
@@ -399,7 +401,16 @@ public class HttpServerOptions extends NetServerOptions {
     this.compressionLevel = compressionLevel;
     return this;
   }
-  
+
+  public boolean isUnmaskedFrame() {
+    return unmaskedFrame;
+  }
+
+  public HttpServerOptions setUnmaskedFrame(boolean unmaskedFrame) {
+    this.unmaskedFrame = unmaskedFrame;
+    return this;
+  }
+
   /**
    * @return  the maximum websocket framesize
    */
