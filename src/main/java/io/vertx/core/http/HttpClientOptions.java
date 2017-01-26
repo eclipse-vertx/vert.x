@@ -159,7 +159,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
-  private boolean unmaskedFrame;
+  private boolean performFrameUnmasking;
 
   /**
    * Default constructor
@@ -196,7 +196,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
-    this.unmaskedFrame = other.isUnmaskedFrame();
+    this.performFrameUnmasking = other.isPerformFrameUnmasking();
   }
 
   /**
@@ -572,18 +572,18 @@ public class HttpClientOptions extends ClientOptionsBase {
   * Is Unmasking frame enabled. It's false as default
   * @return
   */
-  public boolean isUnmaskedFrame() {
-    return unmaskedFrame;
+  public boolean isPerformFrameUnmasking() {
+    return performFrameUnmasking;
   }
 
   /**
    * Set whether unmasking frame is enabled
    *
-   * @param unmaskedFrame  true if enabled
+   * @param performFrameUnmasking  true if enabled
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setUnmaskedFrame(boolean unmaskedFrame) {
-    this.unmaskedFrame = unmaskedFrame;
+  public HttpClientOptions setPerformFrameUnmasking(boolean performFrameUnmasking) {
+    this.performFrameUnmasking = performFrameUnmasking;
     return this;
   }
 
