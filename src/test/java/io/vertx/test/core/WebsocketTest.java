@@ -28,9 +28,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.TrustOptions;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
@@ -1204,8 +1202,8 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   public void testUnmaskedFrameRequest(){
 
-    client = vertx.createHttpClient(new HttpClientOptions().setUnmaskedFrame(true));
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setUnmaskedFrame(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setPerformFrameUnmasking(true));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setPerformFrameUnmasking(true));
     server.requestHandler(req -> {
       req.response().setChunked(true).write("connect");
     });
@@ -1231,7 +1229,7 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   public void testInvalidUnmaskedFrameRequest(){
 
-    client = vertx.createHttpClient(new HttpClientOptions().setUnmaskedFrame(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setPerformFrameUnmasking(true));
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     server.requestHandler(req -> {
       req.response().setChunked(true).write("connect");

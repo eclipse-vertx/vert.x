@@ -92,9 +92,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("verifyHost") instanceof Boolean) {
       obj.setVerifyHost((Boolean)json.getValue("verifyHost"));
     }
-    if(json.getValue("unmaskedFrame") instanceof  Boolean)
+    if(json.getValue("performFrameUnmasking") instanceof  Boolean)
     {
-      obj.setUnmaskedFrame((Boolean)json.getValue("unmaskedFrame"));
+      obj.setPerformFrameUnmasking((Boolean)json.getValue("performFrameUnmasking"));
     }
   }
 
