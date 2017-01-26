@@ -439,6 +439,61 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
+  private void handleNextRequest(HttpClientResponse resp, HttpClientRequestImpl next) {
+    next.handler(respHandler);
+    next.exceptionHandler(exceptionHandler());
+    next.endHandler(endHandler);
+    next.pushHandler = pushHandler;
+    next.followRedirects = followRedirects - 1;
+    next.written = written;
+    if (next.hostHeader != null) {
+      next.hostHeader = hostHeader;
+    }
+    if (next.headers != null) {
+      next.headers().addAll(headers);
+    }
+    ByteBuf body;
+    switch (next.method) {
+      case GET:
+        body = null;
+        break;
+      case OTHER:
+        next.rawMethod = rawMethod;
+        body = null;
+        break;
+      default:
+        if (cachedChunks != null) {
+          body = cachedChunks;
+        } else {
+          body = null;
+        }
+        break;
+    }
+    cachedChunks = null;
+    Future<Void> fut = Future.future();
+    fut.setHandler(ar -> {
+      if (ar.succeeded()) {
+        next.write(body, true);
+      } else {
+        handleException(ar.cause());
+      }
+    });
+    if (completed) {
+      fut.complete();
+    } else {
+      resp.exceptionHandler(err -> {
+        if (!fut.isComplete()) {
+          fut.fail(err);
+        }
+      });
+      resp.endHandler(v -> {
+        if (!fut.isComplete()) {
+          fut.complete();
+        }
+      });
+    }
+  }
+
   protected void doHandleResponse(HttpClientResponseImpl resp) {
     if (reset != null) {
       stream.resetResponse(reset);
@@ -446,60 +501,15 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       response = resp;
       int statusCode = resp.statusCode();
       if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
-        HttpClientRequestImpl next = (HttpClientRequestImpl) client.redirectHandler().apply(resp);
+        Future<HttpClientRequest> next = client.redirectHandler().apply(resp);
         if (next != null) {
-          next.handler(respHandler);
-          next.exceptionHandler(exceptionHandler());
-          next.endHandler(endHandler);
-          next.pushHandler = pushHandler;
-          next.followRedirects = followRedirects - 1;
-          next.written = written;
-          if (next.hostHeader != null) {
-            next.hostHeader = hostHeader;
-          }
-          if (next.headers != null) {
-            next.headers().addAll(headers);
-          }
-          ByteBuf body;
-          switch (next.method) {
-            case GET:
-              body = null;
-              break;
-            case OTHER:
-              next.rawMethod = rawMethod;
-              body = null;
-              break;
-            default:
-              if (cachedChunks != null) {
-                body = cachedChunks;
-              } else {
-                body = null;
-              }
-              break;
-          }
-          cachedChunks = null;
-          Future<Void> fut = Future.future();
-          fut.setHandler(ar -> {
+          next.setHandler(ar -> {
             if (ar.succeeded()) {
-              next.write(body, true);
+              handleNextRequest(resp, (HttpClientRequestImpl) ar.result());
             } else {
               handleException(ar.cause());
             }
           });
-          if (completed) {
-            fut.complete();
-          } else {
-            resp.exceptionHandler(err -> {
-              if (!fut.isComplete()) {
-                fut.fail(err);
-              }
-            });
-            resp.endHandler(v -> {
-              if (!fut.isComplete()) {
-                fut.complete();
-              }
-            });
-          }
           return;
         }
       }

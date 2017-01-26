@@ -16,6 +16,7 @@
 
 package examples;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -551,6 +552,47 @@ public class HTTPExamples {
         // Now all the body has been read
         System.out.println("Total response body length is " + totalBuffer.length());
       });
+    });
+  }
+
+  public void exampleFollowRedirect01(HttpClient client) {
+
+    client.get("some-uri", response -> {
+      System.out.println("Received response with status code " + response.statusCode());
+    }).setFollowRedirects(true).end();
+  }
+
+  public void exampleFollowRedirect02(Vertx vertx) {
+
+    HttpClient client = vertx.createHttpClient(
+        new HttpClientOptions()
+            .setMaxRedirects(32));
+
+    client.get("some-uri", response -> {
+      System.out.println("Received response with status code " + response.statusCode());
+    }).setFollowRedirects(true).end();
+  }
+
+  private String resolveURI(String base, String uriRef) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void exampleFollowRedirect03(HttpClient client) {
+
+    client.redirectHandler(response -> {
+
+      // Only follow 301 code
+      if (response.statusCode() == 301 && response.getHeader("Location") != null) {
+
+        // Compute the redirect URI
+        String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
+
+        // Create a new ready to use request that the client will use
+        return Future.succeededFuture(client.getAbs(absoluteURI));
+      }
+
+      // We don't redirect
+      return null;
     });
   }
 

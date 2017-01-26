@@ -1374,6 +1374,72 @@ You can retrieve the list of cookies from a response using `link:../../apidocs/i
 
 Alternatively you can just parse the `Set-Cookie` headers yourself in the response.
 
+==== 30x redirection handling
+
+The client can be configured to follow HTTP redirections: when the client receives an
+`301`, `302`, `303` or `307` status code, it follows the redirection provided by the `Location` response header
+and the response handler is passed the redirected response instead of the original response.
+
+Here’s an example:
+
+[source,java]
+----
+client.get("some-uri", response -> {
+  System.out.println("Received response with status code " + response.statusCode());
+}).setFollowRedirects(true).end();
+----
+
+The redirection policy is as follow
+
+* on a `301`, `302` or `303` status code, follow the redirection with a `GET` method
+* on a `307` status code, follow the redirection with the same HTTP method and the cached body
+
+WARNING: following redirections caches the request body
+
+The maximum redirects is `16` by default and can be changed with `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxRedirects-int-[setMaxRedirects]`.
+
+[source,java]
+----
+HttpClient client = vertx.createHttpClient(
+    new HttpClientOptions()
+        .setMaxRedirects(32));
+
+client.get("some-uri", response -> {
+  System.out.println("Received response with status code " + response.statusCode());
+}).setFollowRedirects(true).end();
+----
+
+One size does not fit all and the default redirection policy may not be adapted to your needs.
+
+The default redirection policy can changed with a custom implementation:
+
+[source,java]
+----
+client.redirectHandler(response -> {
+
+  // Only follow 301 code
+  if (response.statusCode() == 301 && response.getHeader("Location") != null) {
+
+    // Compute the redirect URI
+    String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
+
+    // Create a new ready to use request that the client will use
+    return Future.succeededFuture(client.getAbs(absoluteURI));
+  }
+
+  // We don't redirect
+  return null;
+});
+----
+
+The policy handles the original `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` received and returns either `null`
+or a `Future<HttpClientRequest>`.
+
+- when `null` is returned, the original response is processed
+- when a future is returned, the request will be sent on its successful completion
+- when a future is returned, the exception handler set on the request is called on its failure
+
+The returned request must be unsent so the original request handlers can be sent and the client can send it after.
 
 ==== 100-Continue handling
 

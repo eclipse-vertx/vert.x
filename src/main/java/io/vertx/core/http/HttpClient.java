@@ -19,6 +19,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.metrics.Measured;
@@ -1376,21 +1377,21 @@ public interface HttpClient extends Measured {
    * The redirect handler is passed the {@link HttpClientResponse}, it can return an {@link HttpClientRequest} or {@code null}.
    * <ul>
    *   <li>when null is returned, the original response is processed by the original request response handler</li>
-   *   <li>when a new {@code HttpClientRequest} is returned, the client will send this new request</li>
+   *   <li>when a new {@code Future<HttpClientRequest>} is returned, the client will send this new request</li>
    * </ul>
-   * The handler must return a request unsent so the client can further configure it and send it.
+   * The handler must return a {@code Future<HttpClientRequest>} unsent so the client can further configure it and send it.
    *
    * @param handler the new redirect handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient redirectHandler(Function<HttpClientResponse, HttpClientRequest> handler);
+  HttpClient redirectHandler(Function<HttpClientResponse, Future<HttpClientRequest>> handler);
 
   /**
    * @return the current redirect handler.
    */
   @GenIgnore
-  Function<HttpClientResponse, HttpClientRequest> redirectHandler();
+  Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler();
 
   /**
    * Close the client. Closing will close down any pooled connections.

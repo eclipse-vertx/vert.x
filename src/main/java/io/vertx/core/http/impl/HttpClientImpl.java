@@ -55,7 +55,7 @@ import java.util.function.Function;
  */
 public class HttpClientImpl implements HttpClient, MetricsProvider {
 
-  private final Function<HttpClientResponse, HttpClientRequest> DEFAULT_HANDLER = resp -> {
+  private final Function<HttpClientResponse, Future<HttpClientRequest>> DEFAULT_HANDLER = resp -> {
     int statusCode = resp.statusCode();
     String location = resp.getHeader(HttpHeaders.LOCATION);
     if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)) {
@@ -73,7 +73,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       if (uri.getQuery() != null) {
         requestURI += "?" + uri.getQuery();
       }
-      return request(m, uri.getPort(), uri.getHost(), requestURI);
+      return Future.succeededFuture(request(m, uri.getPort(), uri.getHost(), requestURI));
     }
     return null;
   };
@@ -88,7 +88,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final boolean useProxy;
   private final SSLHelper sslHelper;
   private volatile boolean closed;
-  private volatile Function<HttpClientResponse, HttpClientRequest> redirectHandler = DEFAULT_HANDLER;
+  private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     if (options.isUseAlpn() && !options.isSsl()) {
@@ -839,7 +839,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClient redirectHandler(Function<HttpClientResponse, HttpClientRequest> handler) {
+  public HttpClient redirectHandler(Function<HttpClientResponse, Future<HttpClientRequest>> handler) {
     if (handler == null) {
       handler = DEFAULT_HANDLER;
     }
@@ -848,7 +848,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public Function<HttpClientResponse, HttpClientRequest> redirectHandler() {
+  public Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler() {
     return redirectHandler;
   }
 
