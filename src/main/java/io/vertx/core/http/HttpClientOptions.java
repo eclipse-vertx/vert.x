@@ -138,6 +138,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE = true;
 
+  /**
+   * Default WebSocket Masked bit is true as depicted by RFC. PerformingUnMasking will be false
+   */
+  public static final boolean DEFAULT_FRAME_UNMASKING = false;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -231,6 +236,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
+    performFrameUnmasking = DEFAULT_FRAME_UNMASKING;
   }
 
   @Override
