@@ -94,6 +94,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_DECOMPRESSION_SUPPORTED = false;
 
+  /**
+   * Default WebSocket Masked bit is true as depicted by RFC. PerformingUnMasking will be false
+   */
+  public static final boolean DEFAULT_FRAME_UNMASKING = false;
+
   private boolean compressionSupported;
   private int compressionLevel;
   private int maxWebsocketFrameSize;
@@ -163,6 +168,7 @@ public class HttpServerOptions extends NetServerOptions {
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
+    performFrameUnmasking = DEFAULT_FRAME_UNMASKING;
   }
 
   @Override
