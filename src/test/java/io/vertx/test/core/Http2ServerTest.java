@@ -216,7 +216,7 @@ public class Http2ServerTest extends Http2TestBase {
       return new ChannelInitializer<Channel>() {
         @Override
         protected void initChannel(Channel ch) throws Exception {
-          SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true), null, Trust.SERVER_JKS.get());
+          SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true).setSsl(true), null, Trust.SERVER_JKS.get());
           SslHandler sslHandler = sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createSslHandler((VertxInternal) vertx, host, port);
           ch.pipeline().addLast(sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
@@ -2552,6 +2552,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
     client = vertx.createHttpClient(clientOptions.
         setUseAlpn(false).
+        setSsl(false).
         setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10000)));
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
     req.handler(resp -> {
@@ -2579,7 +2580,7 @@ public class Http2ServerTest extends Http2TestBase {
       req.response().end();
     });
     startServer();
-    client = vertx.createHttpClient(clientOptions.setUseAlpn(false));
+    client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
     req.handler(resp -> {
       assertEquals(HttpVersion.HTTP_2, resp.version());
@@ -2645,7 +2646,7 @@ public class Http2ServerTest extends Http2TestBase {
       fail();
     });
     startServer(context);
-    client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
+    client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
     doRequest.apply(client).handler(resp -> {
       assertEquals(400, resp.statusCode());
       assertEquals(HttpVersion.HTTP_1_1, resp.version());

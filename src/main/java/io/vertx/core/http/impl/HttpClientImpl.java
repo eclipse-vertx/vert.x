@@ -91,6 +91,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private volatile Function<HttpClientResponse, HttpClientRequest> redirectHandler = DEFAULT_HANDLER;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
+    if (options.isUseAlpn() && !options.isSsl()) {
+      throw new IllegalArgumentException("Must enable SSL when using ALPN");
+    }
     this.vertx = vertx;
     this.options = new HttpClientOptions(options);
     List<HttpVersion> alpnVersions = options.getAlpnVersions();

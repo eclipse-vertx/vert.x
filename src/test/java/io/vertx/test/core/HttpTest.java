@@ -3299,6 +3299,15 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectWithRequestNotEnded() throws Exception {
+    testFollowRedirectWithRequestNotEnded(false);
+  }
+
+  @Test
+  public void testFollowRedirectWithRequestNotEndedFailing() throws Exception {
+    testFollowRedirectWithRequestNotEnded(true);
+  }
+
+  private void testFollowRedirectWithRequestNotEnded(boolean expectFail) throws Exception {
     Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
     Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
     Buffer expected = Buffer.buffer().appendBuffer(buff1).appendBuffer(buff2);
@@ -3310,7 +3319,16 @@ public abstract class HttpTest extends HttpTestBase {
         Buffer body = Buffer.buffer();
         req.handler(buff -> {
           if (body.length() == 0) {
-            req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+            HttpServerResponse resp = req.response();
+            resp.setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever");
+            if (expectFail) {
+              resp.setChunked(true).write("whatever");
+              vertx.runOnContext(v -> {
+                resp.close();
+              });
+            } else {
+              resp.end();
+            }
             latch.countDown();
           }
           body.appendBuffer(buff);
@@ -3323,16 +3341,28 @@ public abstract class HttpTest extends HttpTestBase {
       }
     });
     startServer();
+    AtomicBoolean called = new AtomicBoolean();
     HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
       testComplete();
     }).setFollowRedirects(true)
+        .exceptionHandler(err -> {
+          if (expectFail) {
+            if (called.compareAndSet(false, true)) {
+              testComplete();
+            }
+          } else {
+            fail(err);
+          }
+        })
         .setChunked(true)
         .write(buff1);
     awaitLatch(latch);
     // Wait so we end the request while having received the server response (but we can't be notified)
-    Thread.sleep(500);
-    req.end(buff2);
+    if (!expectFail) {
+      Thread.sleep(500);
+      req.end(buff2);
+    }
     await();
   }
 
