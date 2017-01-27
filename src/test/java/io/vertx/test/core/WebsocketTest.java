@@ -1202,6 +1202,60 @@ public class WebsocketTest extends VertxTestBase {
   }
 
 
+  @Test
+  public void testUnmaskedFrameRequest(){
+
+    client = vertx.createHttpClient(new HttpClientOptions().setUnmaskedFrame(true));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setUnmaskedFrame(true));
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write("connect");
+    });
+    server.websocketHandler(ws -> {
+
+      ws.handler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+            assertEquals(data.toString(), "first unmasked frame");
+            testComplete();
+          }
+      });
+
+    });
+    server.listen(onSuccess(server -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+        ws.writeFinalTextFrame("first unmasked frame");
+      });
+    }));
+    await();
+  }
+
+
+  @Test
+  public void testInvalidUnmaskedFrameRequest(){
+
+    client = vertx.createHttpClient(new HttpClientOptions().setUnmaskedFrame(true));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write("connect");
+    });
+    server.websocketHandler(ws -> {
+
+      ws.exceptionHandler(exception -> {
+        testComplete();
+      });
+
+      ws.handler(result -> {
+        fail("Cannot decode unmasked message because I require masked frame as configured");
+      });
+    });
+
+    server.listen(onSuccess(server -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+        ws.writeFinalTextFrame("first unmasked frame");
+      });
+    }));
+
+    await();
+  }
 
   @Test
   public void testUpgradeInvalidRequest() {

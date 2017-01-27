@@ -843,7 +843,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
       WebSocketServerHandshakerFactory factory =
         new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
-          options.getMaxWebsocketFrameSize());
+          options.getMaxWebsocketFrameSize(),options.isUnmaskedFrame());
       WebSocketServerHandshaker shake = factory.newHandshaker(request);
 
       if (shake == null) {
