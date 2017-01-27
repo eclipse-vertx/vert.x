@@ -41,7 +41,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
-  protected boolean exceptionOccurred;
+  protected Throwable exceptionOccurred;
   private Object metric;
 
   HttpClientRequestBase(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port, String uri) {
@@ -129,7 +129,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   public void handleException(Throwable t) {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
-      exceptionOccurred = true;
+      exceptionOccurred = t;
       if (exceptionHandler != null) {
         exceptionHandler.handle(t);
       } else {
@@ -141,7 +141,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   void handleResponse(HttpClientResponseImpl resp) {
     synchronized (getLock()) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
-      if (!exceptionOccurred) {
+      if (exceptionOccurred == null) {
         long timeoutMS = currentTimeoutMs;
         cancelOutstandingTimeoutTimer();
         try {

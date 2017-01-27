@@ -1129,6 +1129,14 @@
  *
  * The returned request must be unsent so the original request handlers can be sent and the client can send it after.
  *
+ * Most of the original request settings will be propagated to the new request:
+ *
+ * * request headers, unless if you have set some headers (including {@link io.vertx.core.http.HttpClientRequest#setHost})
+ * * request body unless the returned request uses a `GET` method
+ * * response handler
+ * * request exception handler
+ * * request timeout
+ *
  * ==== 100-Continue handling
  *
  * According to the http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html[HTTP 1.1 specification] a client can set a

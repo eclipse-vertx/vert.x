@@ -3446,6 +3446,32 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectHost() throws Exception {
+    String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
+    waitFor(2);
+    AtomicInteger redirections = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (redirections.getAndIncrement()) {
+        case 0:
+          req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
+          break;
+        case 1:
+          assertEquals(scheme + "://the_host/whatever", req.absoluteURI());
+          req.response().end();
+          complete();
+          break;
+      }
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(scheme + "://the_host/whatever", resp.request().absoluteURI());
+      complete();
+    }).setFollowRedirects(true).setHost("the_host").end();
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectWithCustomHandler() throws Exception {
+    String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
     waitFor(2);
     AtomicInteger redirections = new AtomicInteger();
     server.requestHandler(req -> {
@@ -3454,17 +3480,27 @@ public abstract class HttpTest extends HttpTestBase {
           req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
           break;
         case 1:
-          assertEquals("http://the_host/whatever", req.absoluteURI());
+          assertEquals(scheme + "://another_host/custom", req.absoluteURI());
           req.response().end();
           complete();
           break;
       }
     });
     startServer();
+    client.redirectHandler(resp -> {
+      Future<HttpClientRequest> fut = Future.future();
+      vertx.setTimer(25, id -> {
+        HttpClientRequest req = client.getAbs(scheme + "://localhost:8080/custom");
+        req.putHeader("foo", "foo_another");
+        req.setHost("another_host");
+        fut.complete(req);
+      });
+      return fut;
+    });
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      assertEquals("http://the_host/whatever", resp.request().absoluteURI());
+      assertEquals(scheme + "://another_host/custom", resp.request().absoluteURI());
       complete();
-    }).setFollowRedirects(true).setHost("the_host").end();
+    }).setFollowRedirects(true).putHeader("foo", "foo_value").setHost("the_host").end();
     await();
   }
 

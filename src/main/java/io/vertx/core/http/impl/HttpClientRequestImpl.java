@@ -65,6 +65,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<HttpConnection> connectionHandler;
   private boolean headWritten;
   private boolean completed;
+  private Handler<Void> completionHandler;
   private Long reset;
   private HttpClientResponseImpl response;
   private ByteBuf pendingChunks;
@@ -390,6 +391,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           if (stream != null) {
             stream.resetRequest(code);
           }
+          if (completionHandler != null) {
+            completionHandler.handle(null);
+          }
         } else {
           if (response != null) {
             stream.resetResponse(code);
@@ -479,22 +483,25 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
         next.write(body, true);
       } else {
-        handleException(ar.cause());
+        next.handleException(ar.cause());
       }
     });
-    if (completed) {
+    if (exceptionOccurred != null) {
+      fut.fail(exceptionOccurred);
+    }
+    else if (completed) {
       fut.complete();
     } else {
-      resp.exceptionHandler(err -> {
+      exceptionHandler(err -> {
         if (!fut.isComplete()) {
           fut.fail(err);
         }
       });
-      resp.endHandler(v -> {
+      completionHandler = v -> {
         if (!fut.isComplete()) {
           fut.complete();
         }
-      });
+      };
     }
   }
 
@@ -718,7 +725,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         boolean isCancelled() {
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
-          return exceptionOccurred || reset != null;
+          return exceptionOccurred != null || reset != null;
         }
       };
 
@@ -814,22 +821,21 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (buff != null && !chunked && !contentLengthSet()) {
         headers().set(CONTENT_LENGTH, String.valueOf(buff.writerIndex()));
       }
-      completed = true;
-    }
-    if (!end && !chunked && !contentLengthSet()) {
-      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-              + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+    } else {
+      if (!chunked && !contentLengthSet()) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+            + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      }
     }
 
     if (buff != null) {
       written += buff.readableBytes();
-    }
-
-    if (buff != null && followRedirects > 0) {
-      if (cachedChunks == null) {
-        cachedChunks = Unpooled.compositeBuffer();
+      if (followRedirects > 0) {
+        if (cachedChunks == null) {
+          cachedChunks = Unpooled.compositeBuffer();
+        }
+        cachedChunks.addComponent(buff).writerIndex(cachedChunks.writerIndex() + buff.writerIndex());
       }
-      cachedChunks.addComponent(buff).writerIndex(cachedChunks.writerIndex() + buff.writerIndex());
     }
 
     if (stream == null) {
@@ -860,6 +866,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (respHandler != null) {
           stream.endRequest();
         }
+      }
+    }
+
+    if (end) {
+      completed = true;
+      if (completionHandler != null) {
+        completionHandler.handle(null);
       }
     }
   }

@@ -172,7 +172,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     void handleEnd(MultiMap trailers) {
       if (conn.metrics.isEnabled()) {
-        if (request.exceptionOccurred) {
+        if (request.exceptionOccurred != null) {
           conn.metrics.requestReset(request.metric());
         } else {
           conn.metrics.responseEnd(request.metric(), response);
