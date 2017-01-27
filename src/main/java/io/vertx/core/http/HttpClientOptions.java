@@ -873,6 +873,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (http2ClearTextUpgrade != that.http2ClearTextUpgrade) return false;
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
+    if (performFrameUnmasking != that.performFrameUnmasking) return false;
 
     return true;
   }
@@ -897,6 +898,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + (http2ClearTextUpgrade ? 1 : 0);
     result = 31 * result + http2ConnectionWindowSize;
+    result = 31 * result + (performFrameUnmasking ? 1 : 0);
+
     return result;
   }
 }
