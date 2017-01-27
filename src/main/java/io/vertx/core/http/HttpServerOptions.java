@@ -624,7 +624,10 @@ public class HttpServerOptions extends NetServerOptions {
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
     if (decompressionSupported != that.decompressionSupported) return false;
+    if (performFrameUnmasking != that.performFrameUnmasking) return false;
+
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
+
   }
 
   @Override
@@ -641,6 +644,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + http2ConnectionWindowSize;
     result = 31 * result + (decompressionSupported ? 1 : 0);
+    result = 31 * result + (performFrameUnmasking ? 1 : 0);
     return result;
   }
 }
