@@ -122,6 +122,9 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Fluent
   HttpClientRequest setRawMethod(String method);
 
+  /**
+   * @return the absolute URI corresponding to the the HTTP request
+   */
   String absoluteURI();
 
   /**
