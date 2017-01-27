@@ -66,7 +66,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  protected void doHandleResponse(HttpClientResponseImpl resp) {
+  protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
     synchronized (getLock()) {
       if (respHandler != null) {
         respHandler.handle(resp);

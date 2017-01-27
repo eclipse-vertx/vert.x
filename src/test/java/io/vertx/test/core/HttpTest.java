@@ -3226,6 +3226,7 @@ public abstract class HttpTest extends HttpTestBase {
         resp.end();
       } else {
         assertEquals(t, req.absoluteURI());
+        assertEquals("foo_value", req.getHeader("foo"));
         assertEquals(expectedMethod, req.method());
         resp.end();
       }
@@ -3236,7 +3237,10 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(expectedRequests, numRequests.get());
       assertEquals(expectedStatus, resp.statusCode());
       testComplete();
-    }).setFollowRedirects(true).end();
+    }).
+        putHeader("foo", "foo_value").
+        setFollowRedirects(true).
+        end();
     await();
   }
 
@@ -3412,6 +3416,55 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals("/otherpath", resp.request().path());
       testComplete();
     }).setFollowRedirects(true).end();
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectPropagatesTimeout() throws Exception {
+    AtomicInteger redirections = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (redirections.getAndIncrement()) {
+        case 0:
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+          break;
+      }
+    });
+    startServer();
+    AtomicBoolean done = new AtomicBoolean();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      fail();
+    }).setFollowRedirects(true)
+      .exceptionHandler(err -> {
+        if (done.compareAndSet(false, true)) {
+          assertEquals(2, redirections.get());
+          testComplete();
+        }
+      })
+      .setTimeout(500).end();
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectHost() throws Exception {
+    waitFor(2);
+    AtomicInteger redirections = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (redirections.getAndIncrement()) {
+        case 0:
+          req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+          break;
+        case 1:
+          assertEquals("http://the_host/whatever", req.absoluteURI());
+          req.response().end();
+          complete();
+          break;
+      }
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals("http://the_host/whatever", resp.request().absoluteURI());
+      complete();
+    }).setFollowRedirects(true).setHost("the_host").end();
     await();
   }
 

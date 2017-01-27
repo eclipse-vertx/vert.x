@@ -439,17 +439,18 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  private void handleNextRequest(HttpClientResponse resp, HttpClientRequestImpl next) {
+  private void handleNextRequest(HttpClientResponse resp, HttpClientRequestImpl next, long timeoutMs) {
     next.handler(respHandler);
     next.exceptionHandler(exceptionHandler());
+    exceptionHandler(null);
     next.endHandler(endHandler);
     next.pushHandler = pushHandler;
     next.followRedirects = followRedirects - 1;
     next.written = written;
-    if (next.hostHeader != null) {
+    if (next.hostHeader == null) {
       next.hostHeader = hostHeader;
     }
-    if (next.headers != null) {
+    if (headers != null && next.headers == null) {
       next.headers().addAll(headers);
     }
     ByteBuf body;
@@ -473,6 +474,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     Future<Void> fut = Future.future();
     fut.setHandler(ar -> {
       if (ar.succeeded()) {
+        if (timeoutMs > 0) {
+          next.setTimeout(timeoutMs);
+        }
         next.write(body, true);
       } else {
         handleException(ar.cause());
@@ -494,7 +498,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  protected void doHandleResponse(HttpClientResponseImpl resp) {
+  protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
     if (reset != null) {
       stream.resetResponse(reset);
     } else {
@@ -505,7 +509,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (next != null) {
           next.setHandler(ar -> {
             if (ar.succeeded()) {
-              handleNextRequest(resp, (HttpClientRequestImpl) ar.result());
+              handleNextRequest(resp, (HttpClientRequestImpl) ar.result(), timeoutMs);
             } else {
               handleException(ar.cause());
             }
@@ -526,6 +530,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
       }
     }
+  }
+
+  @Override
+  protected String hostHeader() {
+    return hostHeader != null ? hostHeader : super.hostHeader();
   }
 
   // After connecting we should synchronize on the client connection instance to prevent deadlock conditions
@@ -783,10 +792,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private boolean contentLengthSet() {
     return headers != null && headers().contains(CONTENT_LENGTH);
-  }
-
-  private String hostHeader() {
-    return hostHeader != null ? hostHeader : hostAndPort();
   }
 
   private void writeHead() {

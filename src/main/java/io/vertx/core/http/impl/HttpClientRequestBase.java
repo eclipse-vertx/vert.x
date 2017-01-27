@@ -39,6 +39,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final String query;
   private Handler<Throwable> exceptionHandler;
   private long currentTimeoutTimerId = -1;
+  private long currentTimeoutMs;
   private long lastDataReceived;
   protected boolean exceptionOccurred;
   private Object metric;
@@ -62,10 +63,10 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   protected abstract Object getLock();
-  protected abstract void doHandleResponse(HttpClientResponseImpl resp);
+  protected abstract void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs);
   protected abstract void checkComplete();
 
-  protected final String hostAndPort() {
+  protected String hostHeader() {
     boolean ssl = client.getOptions().isSsl();
     if ((port == 80 && !ssl) || (port == 443 && ssl)) {
       return host;
@@ -76,7 +77,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
 
   @Override
   public String absoluteURI() {
-    return (client.getOptions().isSsl() ? "https://" : "http://") + hostAndPort() + uri;
+    return (client.getOptions().isSsl() ? "https://" : "http://") + hostHeader() + uri;
   }
 
   public String query() {
@@ -119,6 +120,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   public HttpClientRequest setTimeout(long timeoutMs) {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
+      currentTimeoutMs = timeoutMs;
       currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
       return this;
     }
@@ -140,9 +142,10 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     synchronized (getLock()) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
       if (!exceptionOccurred) {
+        long timeoutMS = currentTimeoutMs;
         cancelOutstandingTimeoutTimer();
         try {
-          doHandleResponse(resp);
+          doHandleResponse(resp, timeoutMS);
         } catch (Throwable t) {
           handleException(t);
         }
@@ -154,6 +157,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     if (currentTimeoutTimerId != -1) {
       client.getVertx().cancelTimer(currentTimeoutTimerId);
       currentTimeoutTimerId = -1;
+      currentTimeoutMs = 0;
     }
   }
 
