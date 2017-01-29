@@ -52,7 +52,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
-  private final List<Handler<SendContext>> interceptors = new CopyOnWriteArrayList<>();
+  private final List<Interceptor> interceptors = new CopyOnWriteArrayList<>();
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
@@ -68,12 +68,22 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public EventBus addInterceptor(Handler<SendContext> interceptor) {
+    return addInterceptor(new LegacyInterceptorWrapper(interceptor));
+  }
+
+  @Override
+  public EventBus addInterceptor(Interceptor interceptor) {
     interceptors.add(interceptor);
     return this;
   }
 
   @Override
   public EventBus removeInterceptor(Handler<SendContext> interceptor) {
+    return removeInterceptor(new LegacyInterceptorWrapper(interceptor));
+  }
+
+  @Override
+  public EventBus removeInterceptor(Interceptor interceptor) {
     interceptors.remove(interceptor);
     return this;
   }
@@ -440,7 +450,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     public final MessageImpl message;
     public final DeliveryOptions options;
     public final HandlerRegistration<T> handlerRegistration;
-    public final Iterator<Handler<SendContext>> iter;
+    public final Iterator<Interceptor> iter;
 
     public SendContextImpl(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration) {
       this.message = message;
@@ -512,8 +522,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private <T> void deliverToHandler(MessageImpl msg, HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
-    @SuppressWarnings("unchecked")
-    Message<T> copied = msg.copyBeforeReceive();
+    MessageImpl copied = msg.copyBeforeReceive();
+    DeliveryContext<T> deliveryContext = new DeliveryContextImpl<>(copied, holder);
 
     if (metrics != null) {
       metrics.scheduleMessage(holder.getHandler().getMetric(), msg.isLocal());
@@ -524,7 +534,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // before it was received
       try {
         if (!holder.isRemoved()) {
-          holder.getHandler().handle(copied);
+          deliveryContext.next();
         }
       } finally {
         if (holder.isReplyHandler()) {
@@ -532,6 +542,61 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
       }
     });
+  }
+
+  // NOTE: Consider merging the delivery & send context into a general `TransmissionContext`
+  protected class DeliveryContextImpl<T> implements DeliveryContext<T> {
+    private final MessageImpl message;
+    private final Iterator<Interceptor> iter;
+    private final HandlerHolder<T> holder;
+
+    public DeliveryContextImpl(MessageImpl message, HandlerHolder<T> holder) {
+      this.message = message;
+      this.holder = holder;
+      this.iter = interceptors.iterator();
+    }
+
+    @Override
+    public Message<T> message() {
+      return message;
+    }
+
+    @Override
+    public void next() {
+      if (iter.hasNext()) {
+        Interceptor interceptor = iter.next();
+        try {
+          interceptor.handleDelivery(this);
+        } catch (Throwable t) {
+          log.error("Failure in interceptor", t);
+        }
+      } else {
+        holder.getHandler().handle(message);
+      }
+    }
+
+    @Override
+    public boolean send() {
+      return message.isSend();
+    }
+  }
+
+  protected static class LegacyInterceptorWrapper implements Interceptor {
+    private final Handler<SendContext> delegate;
+
+    LegacyInterceptorWrapper(final Handler<SendContext> delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public void handle(SendContext event) {
+      delegate.handle(event);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return (obj instanceof LegacyInterceptorWrapper) && delegate.equals(((LegacyInterceptorWrapper) obj).delegate);
+    }
   }
 
   public class HandlerEntry<T> implements Closeable {
