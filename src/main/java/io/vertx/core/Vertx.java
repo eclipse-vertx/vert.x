@@ -42,6 +42,7 @@ import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * The entry point into the Vert.x Core API.
@@ -471,6 +472,24 @@ public interface Vertx extends Measured {
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
   <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
+
+  /**
+   * Add an interceptor that will be called whenever work is scheduled
+   *
+   * @param interceptor  the interceptor
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  Vertx addSchedulerInterceptor(BiFunction<Context, Runnable, Runnable> interceptor);
+
+  /**
+   * Remove an interceptor
+   *
+   * @param interceptor  the interceptor
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  Vertx removeSchedulerInterceptor(BiFunction<Context, Runnable, Runnable> interceptor);
 
   /**
    * Return the Netty EventLoopGroup used by Vert.x

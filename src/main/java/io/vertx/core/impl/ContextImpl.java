@@ -247,7 +247,7 @@ public abstract class ContextImpl implements ContextInternal {
       Executor exec, PoolMetrics metrics) {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     try {
-      exec.execute(() -> {
+      Runnable task = () -> {
         VertxThread current = (VertxThread) Thread.currentThread();
         Object execMetric = null;
         if (metrics != null) {
@@ -278,7 +278,14 @@ public abstract class ContextImpl implements ContextInternal {
         if (resultHandler != null) {
           runOnContext(v -> res.setHandler(resultHandler));
         }
-      });
+      };
+
+      // Don't provide application scheduler hooks on the framework internal tasks
+      if (exec != orderedInternalPoolExec ) {
+        task = owner.interceptScheduledWork(this, task);
+      }
+
+      exec.execute(task);
     } catch (RejectedExecutionException e) {
       // Pool is already shut down
       if (metrics != null) {

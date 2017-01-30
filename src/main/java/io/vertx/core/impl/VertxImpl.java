@@ -70,6 +70,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -88,6 +89,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
 
+  private final List<BiFunction<Context, Runnable, Runnable>> schedulerInteceptors = new CopyOnWriteArrayList<>();
   private final FileSystem fileSystem = getFileSystem();
   private final SharedData sharedData;
   private final VertxMetrics metrics;
@@ -633,6 +635,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
                                   Handler<AsyncResult<T>> asyncResultHandler) {
     executeBlocking(blockingCodeHandler, true, asyncResultHandler);
+  }
+
+  @Override
+  public Vertx addSchedulerInterceptor(BiFunction<Context, Runnable, Runnable> interceptor) {
+    schedulerInteceptors.add(interceptor);
+    return this;
+  }
+
+  @Override
+  public Vertx removeSchedulerInterceptor(BiFunction<Context, Runnable, Runnable> interceptor) {
+    schedulerInteceptors.remove(interceptor);
+    return this;
+  }
+
+  @Override
+  public Runnable interceptScheduledWork(final ContextImpl context, final Runnable task) {
+    return schedulerInteceptors.stream()
+        .reduce((c, t) -> t, (a, b) -> (c, t) -> b.apply(c, a.apply(c, t)))
+        .apply(context, task);
   }
 
   @Override

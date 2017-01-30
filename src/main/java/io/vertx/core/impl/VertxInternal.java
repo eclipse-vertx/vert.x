@@ -127,4 +127,6 @@ public interface VertxInternal extends Vertx {
 
   @GenIgnore
   void removeCloseHook(Closeable hook);
+
+  Runnable interceptScheduledWork(final ContextImpl context, final Runnable task);
 }
