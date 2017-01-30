@@ -1202,8 +1202,8 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   public void testUnmaskedFrameRequest(){
 
-    client = vertx.createHttpClient(new HttpClientOptions().setPerformFrameUnmasking(true));
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setPerformFrameUnmasking(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setSendUnmaskedFrames(true));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setAcceptUnmaskedFrames(true));
     server.requestHandler(req -> {
       req.response().setChunked(true).write("connect");
     });
@@ -1229,7 +1229,7 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   public void testInvalidUnmaskedFrameRequest(){
 
-    client = vertx.createHttpClient(new HttpClientOptions().setPerformFrameUnmasking(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setSendUnmaskedFrames(true));
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     server.requestHandler(req -> {
       req.response().setChunked(true).write("connect");

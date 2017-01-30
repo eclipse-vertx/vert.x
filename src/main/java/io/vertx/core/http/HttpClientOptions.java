@@ -164,7 +164,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
-  private boolean performFrameUnmasking;
+  private boolean sendUnmaskedFrames;
 
   /**
    * Default constructor
@@ -201,7 +201,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
-    this.performFrameUnmasking = other.isPerformFrameUnmasking();
+    this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
   }
 
   /**
@@ -236,7 +236,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
-    performFrameUnmasking = DEFAULT_FRAME_UNMASKING;
+    sendUnmaskedFrames = DEFAULT_FRAME_UNMASKING;
   }
 
   @Override
@@ -575,21 +575,23 @@ public class HttpClientOptions extends ClientOptionsBase {
 
 
   /**
-  * Is Unmasking frame enabled. It's false as default
+  * is masking frame skipped ?
   * @return
   */
-  public boolean isPerformFrameUnmasking() {
-    return performFrameUnmasking;
+  public boolean isSendUnmaskedFrames() {
+    return sendUnmaskedFrames;
   }
 
   /**
-   * Set whether unmasking frame is enabled
+   * Set true when the client wants to skip frame masking.
+   * You may want to set it true on server by server websocket communication: In this case you are by passing RFC6455 protocol.
+   * It's false as default.
    *
-   * @param performFrameUnmasking  true if enabled
+   * @param sendUnmaskedFrames  true if enabled
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setPerformFrameUnmasking(boolean performFrameUnmasking) {
-    this.performFrameUnmasking = performFrameUnmasking;
+  public HttpClientOptions setSendUnmaskedFrames(boolean sendUnmaskedFrames) {
+    this.sendUnmaskedFrames = sendUnmaskedFrames;
     return this;
   }
 
@@ -873,7 +875,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (http2ClearTextUpgrade != that.http2ClearTextUpgrade) return false;
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
-    if (performFrameUnmasking != that.performFrameUnmasking) return false;
+    if (sendUnmaskedFrames != that.sendUnmaskedFrames) return false;
 
     return true;
   }
@@ -898,7 +900,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + (http2ClearTextUpgrade ? 1 : 0);
     result = 31 * result + http2ConnectionWindowSize;
-    result = 31 * result + (performFrameUnmasking ? 1 : 0);
+    result = 31 * result + (sendUnmaskedFrames ? 1 : 0);
 
     return result;
   }
