@@ -68,9 +68,9 @@ public class HttpServerOptionsConverter {
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
     }
-    if(json.getValue("performFrameUnmasking") instanceof  Boolean)
+    if(json.getValue("acceptUnmaskedFrames") instanceof  Boolean)
     {
-      obj.setPerformFrameUnmasking((Boolean)json.getValue("performFrameUnmasking"));
+      obj.setAcceptUnmaskedFrames((Boolean)json.getValue("acceptUnmaskedFrames"));
     }
   }
 

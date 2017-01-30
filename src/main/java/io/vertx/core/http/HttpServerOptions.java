@@ -111,7 +111,7 @@ public class HttpServerOptions extends NetServerOptions {
   private List<HttpVersion> alpnVersions;
   private int http2ConnectionWindowSize;
   private boolean decompressionSupported;
-  private boolean performFrameUnmasking;
+  private boolean acceptUnmaskedFrames;
 
   /**
    * Default constructor
@@ -141,7 +141,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.decompressionSupported = other.isDecompressionSupported();
-    this.performFrameUnmasking = other.isPerformFrameUnmasking();
+    this.acceptUnmaskedFrames = other.isAcceptUnmaskedFrames();
   }
 
   /**
@@ -168,7 +168,7 @@ public class HttpServerOptions extends NetServerOptions {
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
-    performFrameUnmasking = DEFAULT_FRAME_UNMASKING;
+    acceptUnmaskedFrames = DEFAULT_FRAME_UNMASKING;
   }
 
   @Override
@@ -408,12 +408,20 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
-  public boolean isPerformFrameUnmasking() {
-    return performFrameUnmasking;
+  public boolean isAcceptUnmaskedFrames() {
+    return acceptUnmaskedFrames;
   }
 
-  public HttpServerOptions setPerformFrameUnmasking(boolean performFrameUnmasking) {
-    this.performFrameUnmasking = performFrameUnmasking;
+  /**
+   * Set true when the server accepts unmasked frame.
+   * As default Server doesn't accept unmasked frame, you can bypass this behaviour (RFC 6455) setting true
+   * It's set to false as default.
+   *
+   * @param acceptUnmaskedFrames  true if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setAcceptUnmaskedFrames(boolean acceptUnmaskedFrames) {
+    this.acceptUnmaskedFrames = acceptUnmaskedFrames;
     return this;
   }
 
@@ -624,7 +632,7 @@ public class HttpServerOptions extends NetServerOptions {
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
     if (decompressionSupported != that.decompressionSupported) return false;
-    if (performFrameUnmasking != that.performFrameUnmasking) return false;
+    if (acceptUnmaskedFrames != that.acceptUnmaskedFrames) return false;
 
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
 
@@ -644,7 +652,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + http2ConnectionWindowSize;
     result = 31 * result + (decompressionSupported ? 1 : 0);
-    result = 31 * result + (performFrameUnmasking ? 1 : 0);
+    result = 31 * result + (acceptUnmaskedFrames ? 1 : 0);
     return result;
   }
 }
