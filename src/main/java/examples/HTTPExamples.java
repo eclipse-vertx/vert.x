@@ -735,4 +735,14 @@ public class HTTPExamples {
     });
   }
 
+  public void setSSLPerRequest(HttpClient client) {
+    client.getNow(new RequestOptions()
+        .setHost("localhost")
+        .setPort(8080)
+        .setURI("/")
+        .setSsl(true), response -> {
+      System.out.println("Received response with status code " + response.statusCode());
+    });
+  }
+
 }

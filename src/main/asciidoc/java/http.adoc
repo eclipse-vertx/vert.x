@@ -939,7 +939,7 @@ Often, you'll want to make HTTP requests with no request body. This is usually t
 HEAD requests.
 
 The simplest way to do this with the Vert.x http client is using the methods prefixed with `Now`. For example
-`link:../../apidocs/io/vertx/core/http/HttpClient.html#getNow-int-java.lang.String-java.lang.String-io.vertx.core.Handler-[getNow]`.
+`link:../../apidocs/io/vertx/core/http/HttpClient.html#getNow-io.vertx.core.http.RequestOptions-io.vertx.core.Handler-[getNow]`.
 
 These methods create the http request and send it in a single method call and allow you to provide a handler that will be
 called with the http response when it comes back.
@@ -962,7 +962,7 @@ client.headNow("/other-uri", response -> {
 ==== Writing general requests
 
 At other times you don't know the request method you want to send until run-time. For that use case we provide
-general purpose request methods such as `link:../../apidocs/io/vertx/core/http/HttpClient.html#request-io.vertx.core.http.HttpMethod-int-java.lang.String-java.lang.String-[request]` which allow you to specify
+general purpose request methods such as `link:../../apidocs/io/vertx/core/http/HttpClient.html#request-io.vertx.core.http.HttpMethod-io.vertx.core.http.RequestOptions-[request]` which allow you to specify
 the HTTP method at run-time:
 
 [source,java]
@@ -983,8 +983,8 @@ client.request(HttpMethod.POST, "foo-uri", response -> {
 Sometimes you'll want to write requests which have a body, or perhaps you want to write headers to a request
 before sending it.
 
-To do this you can call one of the specific request methods such as `link:../../apidocs/io/vertx/core/http/HttpClient.html#post-int-java.lang.String-java.lang.String-[post]` or
-one of the general purpose request methods such as `link:../../apidocs/io/vertx/core/http/HttpClient.html#request-io.vertx.core.http.HttpMethod-int-java.lang.String-java.lang.String-[request]`.
+To do this you can call one of the specific request methods such as `link:../../apidocs/io/vertx/core/http/HttpClient.html#post-io.vertx.core.http.RequestOptions-[post]` or
+one of the general purpose request methods such as `link:../../apidocs/io/vertx/core/http/HttpClient.html#request-io.vertx.core.http.HttpMethod-io.vertx.core.http.RequestOptions-[request]`.
 
 These methods don't send the request immediately, but instead return an instance of `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`
 which can be used to write to the request body or write headers.
@@ -1891,6 +1891,27 @@ Vert.x http servers and clients can be configured to use HTTPS in exactly the sa
 
 Please see <<ssl, configuring net servers to use SSL>> for more information.
 
+SSL can also be enabled/disabled per request with `link:../../apidocs/io/vertx/core/http/RequestOptions.html[RequestOptions]`:
+
+[source,java]
+----
+client.getNow(new RequestOptions()
+    .setHost("localhost")
+    .setPort(8080)
+    .setURI("/")
+    .setSsl(true), response -> {
+  System.out.println("Received response with status code " + response.statusCode());
+});
+----
+
+The `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setSsl-boolean-[setSsl]` setting acts as the default client setting.
+
+The `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setSsl-boolean-[setSsl]` overrides the default client setting.
+
+* setting the value to `false` will disable SSL even if the client is configured to use SSL/TLS
+* setting the value to `true` will enable SSL  even if the client is configured to not use SSL/TLS, the actual
+client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused 
+
 === WebSockets
 
 http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like
@@ -1960,7 +1981,7 @@ The `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html[ServerWebSocket]
 
 The Vert.x `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` supports WebSockets.
 
-You can connect a WebSocket to a server using one of the `link:../../apidocs/io/vertx/core/http/HttpClient.html#websocket-int-java.lang.String-java.lang.String-io.vertx.core.Handler-[websocket]` operations and
+You can connect a WebSocket to a server using one of the `link:../../apidocs/io/vertx/core/http/HttpClient.html#websocket-io.vertx.core.http.RequestOptions-io.vertx.core.Handler-[websocket]` operations and
 providing a handler.
 
 The handler will be called with an instance of `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` when the connection has been made:

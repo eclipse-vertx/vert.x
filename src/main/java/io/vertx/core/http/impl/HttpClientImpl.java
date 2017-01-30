@@ -28,6 +28,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
@@ -99,9 +100,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect) {
+    return websocket(options.getPort(), options.getHost(), options.getURI(), wsConnect);
+  }
+
+  @Override
   public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect) {
     websocketStream(port, host, requestURI, null, null).handler(wsConnect);
     return this;
+  }
+
+  @Override
+  public HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+    return websocket(options.getPort(), options.getHost(), options.getURI(), wsConnect, failureHandler);
   }
 
   public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler){
@@ -120,9 +131,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect) {
+    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, wsConnect);
+  }
+
+  @Override
   public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect) {
     websocketStream(port, host, requestURI, headers, null).handler(wsConnect);
     return this;
+  }
+
+  @Override
+  public HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, wsConnect, failureHandler);
   }
 
   @Override
@@ -142,9 +163,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
+    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, wsConnect);
+  }
+
+  @Override
   public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
     websocketStream(port, host, requestURI, headers, version, null).handler(wsConnect);
     return this;
+  }
+
+  @Override
+  public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, wsConnect, failureHandler);
   }
 
   @Override
@@ -166,10 +197,20 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect) {
+    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, wsConnect);
+  }
+
+  @Override
   public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                               String subProtocols, Handler<WebSocket> wsConnect) {
     websocketStream(port, host, requestURI, headers, version, subProtocols).handler(wsConnect);
     return this;
+  }
+
+  @Override
+  public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, wsConnect, failureHandler);
   }
 
   @Override
@@ -232,6 +273,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public WebSocketStream websocketStream(RequestOptions options) {
+    return websocketStream(options.getPort(), options.getHost(), options.getURI());
+  }
+
+  @Override
   public WebSocketStream websocketStream(int port, String host, String requestURI) {
     return websocketStream(port, host, requestURI, null, null);
   }
@@ -239,6 +285,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public WebSocketStream websocketStream(String host, String requestURI) {
     return websocketStream(options.getDefaultPort(), host, requestURI);
+  }
+
+  @Override
+  public WebSocketStream websocketStream(RequestOptions options, MultiMap headers) {
+    return websocketStream(options.getPort(), options.getHost(), options.getURI(), headers);
   }
 
   @Override
@@ -252,6 +303,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version) {
+    return websocketStream(options.getPort(), options.getHost(), options.getURI(), headers, version);
+  }
+
+  @Override
   public WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version) {
     return websocketStream(port, host, requestURI, headers, version, null);
   }
@@ -259,6 +315,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public WebSocketStream websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version) {
     return websocketStream(options.getDefaultPort(), host, requestURI, headers, version);
+  }
+
+  @Override
+  public WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols) {
+    return websocketStream(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols);
   }
 
   @Override
@@ -299,6 +360,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClientRequest get(RequestOptions options) {
+    return request(HttpMethod.GET, options);
+  }
+
+  @Override
   public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
     Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
     return request(method, port, host, requestURI).handler(responseHandler);
@@ -322,22 +388,36 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest requestAbs(HttpMethod method, String absoluteURI) {
     URL url = parseUrl(absoluteURI);
+    Boolean ssl = false;
     int port = url.getPort();
-    if (port == -1) {
-      String protocol = url.getProtocol();
-      char chend = protocol.charAt(protocol.length() - 1);
-      if (chend == 'p') {
+    String protocol = url.getProtocol();
+    char chend = protocol.charAt(protocol.length() - 1);
+    if (chend == 'p') {
+      if (port == -1) {
         port = 80;
-      } else if (chend == 's'){
+      }
+    } else if (chend == 's'){
+      ssl = true;
+      if (port == -1) {
         port = 443;
       }
     }
-    return doRequest(method, url.getHost(), port, url.getFile(), null);
+    return doRequest(method, url.getHost(), port, ssl, url.getFile(), null);
   }
 
   @Override
   public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI) {
-    return doRequest(method, host, port, requestURI, null);
+    return doRequest(method, host, port, null, requestURI, null);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return request(method, options).handler(responseHandler);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, RequestOptions options) {
+    return doRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null);
   }
 
   @Override
@@ -353,6 +433,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest get(String host, String requestURI) {
     return get(options.getDefaultPort(), host, requestURI);
+  }
+
+  @Override
+  public HttpClientRequest get(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return request(HttpMethod.GET, options, responseHandler);
   }
 
   @Override
@@ -386,6 +471,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return requestNow(HttpMethod.GET, options, responseHandler);
+  }
+
+  @Override
   public HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
     get(port, host, requestURI, responseHandler).end();
     return this;
@@ -403,6 +493,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClientRequest post(RequestOptions options) {
+    return request(HttpMethod.POST, options);
+  }
+
+  @Override
   public HttpClientRequest post(int port, String host, String requestURI) {
     return request(HttpMethod.POST, port, host, requestURI);
   }
@@ -410,6 +505,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest post(String host, String requestURI) {
     return post(options.getDefaultPort(), host, requestURI);
+  }
+
+  @Override
+  public HttpClientRequest post(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return request(HttpMethod.POST, options, responseHandler);
   }
 
   @Override
@@ -443,6 +543,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClientRequest head(RequestOptions options) {
+    return request(HttpMethod.HEAD, options);
+  }
+
+  @Override
   public HttpClientRequest head(int port, String host, String requestURI) {
     return request(HttpMethod.HEAD, port, host, requestURI);
   }
@@ -450,6 +555,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest head(String host, String requestURI) {
     return head(options.getDefaultPort(), host, requestURI);
+  }
+
+  @Override
+  public HttpClientRequest head(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return request(HttpMethod.HEAD, options, responseHandler);
   }
 
   @Override
@@ -483,6 +593,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClient headNow(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return requestNow(HttpMethod.HEAD, options, responseHandler);
+  }
+
+  @Override
   public HttpClient headNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
     head(port, host, requestURI, responseHandler).end();
     return this;
@@ -500,6 +615,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClientRequest options(RequestOptions options) {
+    return request(HttpMethod.OPTIONS, options);
+  }
+
+  @Override
   public HttpClientRequest options(int port, String host, String requestURI) {
     return request(HttpMethod.OPTIONS, port, host, requestURI);
   }
@@ -507,6 +627,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest options(String host, String requestURI) {
     return options(options.getDefaultPort(), host, requestURI);
+  }
+
+  @Override
+  public HttpClientRequest options(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return request(HttpMethod.OPTIONS, options, responseHandler);
   }
 
   @Override
@@ -540,6 +665,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClient optionsNow(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return requestNow(HttpMethod.OPTIONS, options, responseHandler);
+  }
+
+  @Override
   public HttpClient optionsNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
     options(port, host, requestURI, responseHandler).end();
     return this;
@@ -557,6 +687,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClientRequest put(RequestOptions options) {
+    return request(HttpMethod.PUT, options);
+  }
+
+  @Override
   public HttpClientRequest put(int port, String host, String requestURI) {
     return request(HttpMethod.PUT, port, host, requestURI);
   }
@@ -564,6 +699,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest put(String host, String requestURI) {
     return put(options.getDefaultPort(), host, requestURI);
+  }
+
+  @Override
+  public HttpClientRequest put(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return request(HttpMethod.PUT, options, responseHandler);
   }
 
   @Override
@@ -597,6 +737,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClientRequest delete(RequestOptions options) {
+    return request(HttpMethod.DELETE, options);
+  }
+
+  @Override
   public HttpClientRequest delete(int port, String host, String requestURI) {
     return request(HttpMethod.DELETE, port, host, requestURI);
   }
@@ -604,6 +749,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest delete(String host, String requestURI) {
     return delete(options.getDefaultPort(), host, requestURI);
+  }
+
+  @Override
+  public HttpClientRequest delete(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return request(HttpMethod.DELETE, options, responseHandler);
   }
 
   @Override
@@ -687,8 +837,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     });
   }
 
-  void getConnectionForRequest(int port, String host, Waiter waiter) {
-    connectionManager.getConnectionForRequest(options.getProtocolVersion(), port, host, waiter);
+  void getConnectionForRequest(boolean ssl, int port, String host, Waiter waiter) {
+    connectionManager.getConnectionForRequest(ssl, options.getProtocolVersion(), port, host, waiter);
   }
 
   /**
@@ -715,7 +865,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
   }
 
-  private HttpClientRequest doRequest(HttpMethod method, String host, int port, String relativeURI, MultiMap headers) {
+  private HttpClient requestNow(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    doRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).handler(responseHandler).end();
+    return this;
+  }
+
+  private HttpClientRequest doRequest(HttpMethod method, String host, int port, Boolean ssl, String relativeURI, MultiMap headers) {
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
@@ -735,7 +890,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           relativeURI, vertx);
       req.setHost(host + (port != 80 ? ":" + port : ""));
     } else {
-      req = new HttpClientRequestImpl(this, method, host, port, options.isSsl(), relativeURI, vertx);
+      req = new HttpClientRequestImpl(this, method, host, port, ssl != null ? ssl : options.isSsl(), relativeURI, vertx);
     }
     if (headers != null) {
       req.headers().setAll(headers);

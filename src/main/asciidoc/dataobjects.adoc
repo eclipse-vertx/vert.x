@@ -1796,6 +1796,36 @@ Set proxy username.
 +++
 |===
 
+[[RequestOptions]]
+== RequestOptions
+
+++++
+ Options describing how an link will make connect to make a request.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[host]]`host`|`String`|
++++
+Set the host name to be used by the client request.
++++
+|[[port]]`port`|`Number (int)`|
++++
+Set the port to be used by the client request.
++++
+|[[ssl]]`ssl`|`Boolean`|
++++
+Set whether SSL/TLS is enabled
++++
+|[[uri]]`uri`|`String`|
++++
+Set the request relative URI
++++
+|===
+
 [[TCPSSLOptions]]
 == TCPSSLOptions
 

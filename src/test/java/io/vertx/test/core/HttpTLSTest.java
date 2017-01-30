@@ -351,17 +351,19 @@ public abstract class HttpTLSTest extends HttpTestBase {
     HttpVersion version;
     KeyCertOptions clientCert;
     TrustOptions clientTrust;
-    KeyCertOptions serverCert;
-    TrustOptions serverTrust;
     boolean clientTrustAll;
     boolean clientUsesCrl;
     boolean clientUsesAlpn;
     boolean clientOpenSSL;
     boolean clientVerifyHost = true;
+    boolean clientSSL = true;
     boolean requiresClientAuth;
+    KeyCertOptions serverCert;
+    TrustOptions serverTrust;
     boolean serverUsesCrl;
     boolean serverOpenSSL;
     boolean serverUsesAlpn;
+    boolean serverSSL = true;
     boolean useProxy;
     boolean useProxyAuth;
     boolean useSocksProxy;
@@ -370,7 +372,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String[] clientEnabledSecureTransportProtocol   = new String[0];
     String[] serverEnabledSecureTransportProtocol   = new String[0];
     private String connectHostname;
-
+    private RequestOptions requestOptions;
 
     public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
       this.version = HttpVersion.HTTP_1_1;
@@ -475,6 +477,21 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
+    TLSTest requestOptions(RequestOptions requestOptions) {
+      this.requestOptions = requestOptions;
+      return this;
+    }
+
+    TLSTest clientSSL(boolean ssl) {
+      clientSSL = ssl;
+      return this;
+    }
+
+    TLSTest serverSSL(boolean ssl) {
+      serverSSL = ssl;
+      return this;
+    }
+
     void pass() {
       run(true);
     }
@@ -487,7 +504,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       server.close();
       HttpClientOptions options = new HttpClientOptions();
       options.setProtocolVersion(version);
-      options.setSsl(true);
+      options.setSsl(clientSSL);
       if (clientTrustAll) {
         options.setTrustAll(true);
       }
@@ -516,7 +533,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
         } else {
           proxyOptions = new ProxyOptions().setHost("localhost").setPort(13128).setType(ProxyType.HTTP);
         }
-
         if (useProxyAuth) {
           proxyOptions.setUsername("username").setPassword("username");
         }
@@ -524,7 +540,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       client = createHttpClient(options);
       HttpServerOptions serverOptions = new HttpServerOptions();
-      serverOptions.setSsl(true);
       setOptions(serverOptions, serverTrust);
       setOptions(serverOptions, serverCert);
       if (requiresClientAuth) {
@@ -539,6 +554,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (serverUsesAlpn) {
         serverOptions.setUseAlpn(true);
       }
+      if (serverSSL) {
+        serverOptions.setSsl(true);
+      }
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
       }
@@ -549,21 +567,26 @@ public abstract class HttpTLSTest extends HttpTestBase {
       server.requestHandler(req -> {
         assertEquals(version, req.version());
         req.bodyHandler(buffer -> {
-          assertEquals(true, req.isSSL());
+          assertEquals(serverSSL, req.isSSL());
           assertEquals("foo", buffer.toString());
           req.response().end("bar");
         });
       });
       server.listen(ar -> {
         assertTrue(ar.succeeded());
-
         String httpHost;
         if (connectHostname != null) {
           httpHost = connectHostname;
         } else {
           httpHost = DEFAULT_HTTP_HOST;
         }
-        HttpClientRequest req = client.request(HttpMethod.GET, 4043, httpHost, DEFAULT_TEST_URI, response -> {
+        HttpClientRequest req;
+        if (requestOptions == null) {
+          req = client.request(HttpMethod.GET, 4043, httpHost, DEFAULT_TEST_URI);
+        } else {
+          req = client.request(HttpMethod.GET, requestOptions);
+        }
+        req.handler(response -> {
           if (shouldPass) {
             response.version();
             response.bodyHandler(data -> assertEquals("bar", data.toString()));
@@ -840,5 +863,4 @@ public abstract class HttpTLSTest extends HttpTestBase {
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
   }
-
 }
