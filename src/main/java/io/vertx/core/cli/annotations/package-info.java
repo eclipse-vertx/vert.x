@@ -55,7 +55,7 @@
  *
  * For booleans, the boolean values are evaluated to {@code true}: `on`, `yes`, `1`, `true`.
  *
- * If one of your option as an `enum` as type, it computes the set of choices automatically.
+ * If one of your option has an `enum` as type, it computes the set of choices automatically.
  *
  * === Using annotations
  *

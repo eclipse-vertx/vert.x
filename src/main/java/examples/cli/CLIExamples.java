@@ -43,7 +43,7 @@ public class CLIExamples {
             .setDescription("The source")
             .setArgName("source"))
         .addArgument(new Argument()
-            .setIndex(0)
+            .setIndex(1)
             .setDescription("The destination")
             .setArgName("target"));
   }
