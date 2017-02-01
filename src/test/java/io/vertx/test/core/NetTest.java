@@ -1750,6 +1750,30 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testListenOnPortNoHandler() {
+    server.connectHandler(NetSocket::close);
+    server.listen(1234);
+    client.connect(1234, "localhost", onSuccess(so -> {
+      so.closeHandler(v -> {
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testListen() {
+    server.connectHandler(NetSocket::close);
+    server.listen();
+    client.connect(1234, "localhost", onSuccess(so -> {
+      so.closeHandler(v -> {
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
   public void testListenTwice2() {
     server.connectHandler(sock -> {
     });

@@ -126,7 +126,11 @@ public class NetServerImpl extends NetServerBase<NetSocketImpl> implements NetSe
 
   @Override
   public synchronized NetServerImpl listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
-    listen(handler, port, host, ar -> listenHandler.handle(ar.map(this)));
+    listen(handler, port, host, ar -> {
+      if (listenHandler != null) {
+        listenHandler.handle(ar.map(this));
+      }
+    });
     return this;
   }
 
