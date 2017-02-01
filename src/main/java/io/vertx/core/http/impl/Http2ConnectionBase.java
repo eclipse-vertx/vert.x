@@ -377,8 +377,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     io.vertx.core.http.Http2Settings a = new io.vertx.core.http.Http2Settings();
     a.setPushEnabled(handler.connection().remote().allowPushTo());
     a.setMaxConcurrentStreams((long) handler.connection().local().maxActiveStreams());
-    a.setMaxHeaderListSize(handler.encoder().configuration().headerTable().maxHeaderListSize());
-    a.setHeaderTableSize(handler.encoder().configuration().headerTable().maxHeaderTableSize());
+    a.setMaxHeaderListSize(handler.encoder().configuration().headersConfiguration().maxHeaderListSize());
+    a.setHeaderTableSize(handler.encoder().configuration().headersConfiguration().maxHeaderTableSize());
     a.setMaxFrameSize(handler.encoder().configuration().frameSizePolicy().maxFrameSize());
     a.setInitialWindowSize(handler.encoder().flowController().initialWindowSize());
     return a;

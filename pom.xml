@@ -53,8 +53,8 @@
 
   <properties>
 
-    <netty.version>4.1.7.Final</netty.version>
-    <tcnative.version>1.1.33.Fork25</tcnative.version>
+    <netty.version>4.1.8.Final</netty.version>
+    <tcnative.version>1.1.33.Fork26</tcnative.version>
     <jackson.version>2.7.4</jackson.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
@@ -64,7 +64,7 @@
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>3.4.0-SNAPSHOT</stack.version>
-    <jetty.alpnAgent.version>2.0.4</jetty.alpnAgent.version>
+    <jetty.alpnAgent.version>2.0.6</jetty.alpnAgent.version>
     <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
 
   </properties>
