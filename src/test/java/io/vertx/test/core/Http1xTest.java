@@ -1983,15 +1983,14 @@ public class Http1xTest extends HttpTest {
     new Random().nextBytes(data);
     Buffer buffer = Buffer.buffer(data);
     Buffer readBuffer = Buffer.buffer(64 * 1024 * 1024);
-    HttpServer httpServer = vertx.createHttpServer();
-    httpServer.requestHandler(request -> {
+    server.requestHandler(request -> {
       request.response().setChunked(true);
       for (int i = 0; i < buffer.length() / 8192; i++) {
         request.response().write(buffer.slice(i * 8192, (i + 1) * 8192));
       }
       request.response().end();
     });
-    httpServer.listen(10000);
+    server.listen(10000);
     HttpClient httpClient = vertx.createHttpClient();
     HttpClientRequest clientRequest = httpClient.get(10000, "localhost", "/");
     clientRequest.handler(resp -> {
@@ -2023,8 +2022,7 @@ public class Http1xTest extends HttpTest {
   public void testMultipleRecursiveCallsAndPipelining() throws Exception {
     int sendRequests = 100;
     AtomicInteger receivedRequests = new AtomicInteger();
-    vertx.createHttpServer()
-      .requestHandler(x -> {
+    server.requestHandler(x -> {
         x.response().end("hello");
       })
       .listen(8080, r -> {
@@ -2057,7 +2055,7 @@ public class Http1xTest extends HttpTest {
   }
 
   private void testUnsupported(String rawReq, boolean method) throws Exception {
-    vertx.createHttpServer()
+    server
       .requestHandler(req -> {
         try {
           if (method) {
@@ -2095,7 +2093,7 @@ public class Http1xTest extends HttpTest {
     CountDownLatch latch1 = new CountDownLatch(2);
     AtomicInteger server1Count = new AtomicInteger();
     AtomicInteger server2Count = new AtomicInteger();
-    vertx.createHttpServer().requestHandler(req -> {
+    server.requestHandler(req -> {
       server1Count.incrementAndGet();
       req.response().end();
     }).listen(8080, onSuccess(s -> {
@@ -2371,7 +2369,7 @@ public class Http1xTest extends HttpTest {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setKeepAlive(true).setMaxPoolSize(1));
     List<HttpServerRequest> received = new ArrayList<>();
-    vertx.createHttpServer().requestHandler(r -> {
+    server.requestHandler(r -> {
       // Generate an invalid response for the pipe-lined
       r.response().setChunked(true).setStatusCode(204).end();
     }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
