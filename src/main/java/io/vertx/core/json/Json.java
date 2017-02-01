@@ -18,8 +18,10 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -75,12 +77,23 @@ public class Json {
   }
 
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
+    return decodeValue(str, clazz, true);
+  }
+
+  public static <T> T decodeValue(String str, Class<T> clazz, boolean failOnUnknownProperties) throws DecodeException {
+
     try {
-      return mapper.readValue(str, clazz);
-    }
-    catch (Exception e) {
+      if (failOnUnknownProperties) {
+        return mapper.readValue(str, clazz);
+      } else {
+        return mapper.readerFor(clazz)
+                .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .readValue(str);
+      }
+    } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage());
     }
+
   }
 
   @SuppressWarnings("unchecked")
