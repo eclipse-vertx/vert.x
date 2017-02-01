@@ -19,23 +19,18 @@ package io.vertx.test.core;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-
-import static org.hamcrest.CoreMatchers.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -384,76 +379,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
       testComplete();
     });
     await();
-  }
-
-  @Test
-  public void testSendWhileUnsubscribing() throws Exception {
-    startNodes(2);
-    CountDownLatch registrationLatch = new CountDownLatch(1);
-    MessageConsumer<String> consumer = vertices[0].eventBus().consumer("whatever");
-    consumer.handler(new Handler<Message<String>>() {
-      int received = 0;
-
-      @Override
-      public void handle(Message<String> msg) {
-        if (++received == 1) {
-          consumer.unregister();
-        }
-      }
-    }).completionHandler(ar -> {
-      if (ar.succeeded()) {
-        registrationLatch.countDown();
-      } else {
-        fail(ar.cause());
-      }
-    });
-    awaitLatch(registrationLatch);
-    AtomicBoolean send = new AtomicBoolean(true);
-    while (send.get()) {
-      vertices[0].exceptionHandler(throwable -> {
-        send.set(false);
-        fail(throwable);
-      }).eventBus().send("whatever", "marseille", ar -> {
-        if (send.get() && ar.failed()) {
-          Throwable cause = ar.cause();
-          assertThat(cause, instanceOf(ReplyException.class));
-          ReplyException replyException = (ReplyException) cause;
-          assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
-          send.set(false);
-        }
-      });
-    }
-  }
-
-  @Test
-  public void testPublishWhileUnsubscribing() throws Exception {
-    startNodes(2);
-    CountDownLatch registrationLatch = new CountDownLatch(1);
-    MessageConsumer<String> consumer = vertices[0].eventBus().consumer("whatever");
-    consumer.handler(new Handler<Message<String>>() {
-      int received = 0;
-
-      @Override
-      public void handle(Message<String> msg) {
-        if (++received == 1) {
-          consumer.unregister();
-        }
-      }
-    }).completionHandler(ar -> {
-      if (ar.succeeded()) {
-        registrationLatch.countDown();
-      } else {
-        fail(ar.cause());
-      }
-    });
-    awaitLatch(registrationLatch);
-    AtomicBoolean send = new AtomicBoolean(true);
-    while (send.get()) {
-      vertices[0].exceptionHandler(throwable -> {
-        send.set(false);
-        fail(throwable);
-      }).eventBus().publish("whatever", "marseille");
-    }
   }
 
   protected <T> void testSend(T val) {
