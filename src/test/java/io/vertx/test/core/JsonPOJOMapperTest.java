@@ -61,15 +61,23 @@ public class JsonPOJOMapperTest extends VertxTestBase {
       e.add(3);
     }};
     
-    JsonObject jsonObject = JsonObject.mapFrom(myObj1);
-    String jsonStr = jsonObject.encode();
+    JsonObject jsonObject1 = JsonObject.mapFrom(myObj1);
+    String jsonStr1 = jsonObject1.encode();
     assertEquals("{\"a\":5,\"b\":\"obj1\",\"c\":{\"x\":\"1\",\"y\":2},\"d\":["
         +"{\"a\":-1,\"b\":\"obj0\",\"c\":{\"z\":[7,8]},\"d\":[],\"e\":[9]}"
-        + "],\"e\":[3]}", jsonStr);
+        + "],\"e\":[3]}", jsonStr1);
 
-    MyType myObj2 = jsonObject.mapTo(MyType.class);
-    assertEquals(myObj2.b, "obj1");
-    assertEquals(myObj2.d.get(0).b, "obj0");
+    MyType myObj1Roundtrip = jsonObject1.mapTo(MyType.class);
+    assertEquals(myObj1Roundtrip.a, 5);
+    assertEquals(myObj1Roundtrip.b, "obj1");
+    assertEquals(myObj1Roundtrip.c.get("x"), "1");
+    assertEquals(myObj1Roundtrip.c.get("y"), new Integer(2));
+    assertEquals(myObj1Roundtrip.e, Arrays.asList(3));
+    MyType myObj0Roundtrip = myObj1Roundtrip.d.get(0);
+    assertEquals(myObj0Roundtrip.a, -1);
+    assertEquals(myObj0Roundtrip.b, "obj0");
+    assertEquals(myObj0Roundtrip.c.get("z"), Arrays.asList(7, 8));
+    assertEquals(myObj0Roundtrip.e, Arrays.asList(9));
     
     boolean caughtCycle = false;
     try {
