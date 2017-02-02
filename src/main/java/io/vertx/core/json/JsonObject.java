@@ -84,7 +84,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Method for instantiating a Java object from a JsonObject.
+   * Instantiate a Java object from a JsonObject.
    * 
    * @param type
    *          The type to instantiate from the JsonObject.
