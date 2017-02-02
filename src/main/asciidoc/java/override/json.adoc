@@ -25,6 +25,16 @@ String jsonString = "{\"foo\":\"bar\"}";
 JsonObject object = new JsonObject(jsonString);
 ----
 
+You can create a JSON object from a map as follows:
+
+[source,java]
+----
+Map<String, Object> map = new HashMap<>();
+map.put("foo", "bar");
+map.put("xyz", 3);
+JsonObject object = new JsonObject(map);
+----
+
 ==== Putting entries into a JSON object
 
 Use the `link:../../apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Enum-[put]` methods to put values into the JSON object.
@@ -47,7 +57,23 @@ String val = jsonObject.getString("some-key");
 int intVal = jsonObject.getInteger("some-other-key");
 ----
 
-==== Encoding the JSON object to a String
+==== Mapping between JSON objects and Java objects
+
+You can create a JSON object from the fields of a Java object as follows:
+
+[source,java]
+----
+JsonObject jsonObject = JsonObject.mapFrom(javaObject);
+----
+
+You can instantiate a Java object of type `JavaType` and populate its fields from the entries of a JSON object as follows:
+
+[source,java]
+----
+JavaType javaObject = jsonObject.mapTo(JavaType.class);
+----
+
+==== Encoding a JSON object to a String
 
 You use `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]` to encode the object to a String form.
 
@@ -92,6 +118,6 @@ Integer intVal = array.getInteger(1);
 Boolean boolVal = array.getBoolean(2);
 ----
 
-==== Encoding the JSON array to a String
+==== Encoding a JSON array to a String
 
 You use `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` to encode the array to a String form.
