@@ -16,16 +16,23 @@
 
 package io.vertx.core.json;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.shareddata.impl.ClusterSerializable;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 /**
  * A representation of a <a href="http://json.org/">JSON</a> object in Java.
@@ -65,10 +72,37 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @param map  the map to create the instance from.
    */
+  
   public JsonObject(Map<String, Object> map) {
     this.map = map;
   }
+  
+  /**
+   * Create a JsonObject from the fields of a Java object.
+   * Faster than calling `new JsonObject(Json.encode(pojo))`.
+   * 
+   * @param obj
+   *          The object to convert to a JsonObject.
+   * @throws IllegalArgumentException
+   *          if conversion fails due to an incompatible type.
+   */
+  @SuppressWarnings("unchecked")
+  public JsonObject(Object obj) {
+    this((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
+  }
 
+  /**
+   * Method for instantiating a Java object from a JsonObject.
+   * 
+   * @param type
+   *          The type to instantiate from the JsonObject.
+   * @throws IllegalArgumentException
+   *          if the type cannot be instantiated.
+   */
+  public <T> T toInstance(Class<T> type) {
+    return Json.mapper.convertValue(map, type);
+  }
+  
   /**
    * Get the string value with the specified key
    *
