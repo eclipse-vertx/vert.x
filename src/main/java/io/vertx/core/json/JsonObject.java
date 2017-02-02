@@ -79,8 +79,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *          if conversion fails due to an incompatible type.
    */
   @SuppressWarnings("unchecked")
-  public JsonObject(Object obj) {
-    this((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
+  public static JsonObject fromInstance(Object obj) {
+    return new JsonObject((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
   }
 
   /**
