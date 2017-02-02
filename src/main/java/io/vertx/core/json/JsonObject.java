@@ -79,7 +79,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *          if conversion fails due to an incompatible type.
    */
   @SuppressWarnings("unchecked")
-  public static JsonObject fromInstance(Object obj) {
+  public static JsonObject mapFrom(Object obj) {
     return new JsonObject((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
   }
 
@@ -91,7 +91,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @throws IllegalArgumentException
    *          if the type cannot be instantiated.
    */
-  public <T> T toInstance(Class<T> type) {
+  public <T> T mapTo(Class<T> type) {
     return Json.mapper.convertValue(map, type);
   }
 
