@@ -1359,13 +1359,14 @@ public class WebsocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testIssue1757_1() throws Throwable {
-    doTestIssue1757(true);
+  public void testClientWebsocketConnectionCloseOnBadResponseWithKeepalive() throws Throwable {
+    // issue #1757
+    doTestClientWebsocketConnectionCloseOnBadResponse(true);
   }
 
   @Test
-  public void testIssue1757_2() throws Throwable {
-    doTestIssue1757(false);
+  public void testClientWebsocketConnectionCloseOnBadResponseWithoutKeepalive() throws Throwable {
+    doTestClientWebsocketConnectionCloseOnBadResponse(false);
   }
 
   final BlockingQueue<Throwable> resultQueue = new ArrayBlockingQueue<Throwable>(10);
@@ -1378,7 +1379,7 @@ public class WebsocketTest extends VertxTestBase {
     }
   }
 
-  private void doTestIssue1757(boolean keepAliveInOptions) throws Throwable {
+  private void doTestClientWebsocketConnectionCloseOnBadResponse(boolean keepAliveInOptions) throws Throwable {
     final Exception serverGotCloseException = new Exception();
 
     netServer = vertx.createNetServer().connectHandler(sock -> {
