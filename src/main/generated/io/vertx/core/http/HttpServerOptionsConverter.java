@@ -27,6 +27,9 @@ import io.vertx.core.json.JsonArray;
 public class HttpServerOptionsConverter {
 
   public static void fromJson(JsonObject json, HttpServerOptions obj) {
+    if (json.getValue("acceptUnmaskedFrames") instanceof Boolean) {
+      obj.setAcceptUnmaskedFrames((Boolean)json.getValue("acceptUnmaskedFrames"));
+    }
     if (json.getValue("alpnVersions") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
       json.getJsonArray("alpnVersions").forEach( item -> {
@@ -68,13 +71,10 @@ public class HttpServerOptionsConverter {
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
     }
-    if(json.getValue("acceptUnmaskedFrames") instanceof  Boolean)
-    {
-      obj.setAcceptUnmaskedFrames((Boolean)json.getValue("acceptUnmaskedFrames"));
-    }
   }
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
+    json.put("acceptUnmaskedFrames", obj.isAcceptUnmaskedFrames());
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));

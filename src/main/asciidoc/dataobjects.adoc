@@ -807,6 +807,12 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sendUnmaskedFrames]]`sendUnmaskedFrames`|`Boolean`|
++++
+Set true when the client wants to skip frame masking.
+ You may want to set it true on server by server websocket communication: In this case you are by passing RFC6455 protocol.
+ It's false as default.
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -868,6 +874,12 @@ Set whether hostname verification is enabled
 |[[acceptBacklog]]`acceptBacklog`|`Number (int)`|
 +++
 Set the accept back log
++++
+|[[acceptUnmaskedFrames]]`acceptUnmaskedFrames`|`Boolean`|
++++
+Set true when the server accepts unmasked frame.
+ As default Server doesn't accept unmasked frame, you can bypass this behaviour (RFC 6455) setting true
+ It's set to false as default.
 +++
 |[[alpnVersions]]`alpnVersions`|`Array of link:enums.html#HttpVersion[HttpVersion]`|
 +++

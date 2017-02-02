@@ -21,15 +21,17 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import io.vertx.core.json.JsonObject;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 /**
  * @author <a href="https://github.com/lukehutch">Luke Hutchison</a>
  */
-public class JsonPOJOMapperTest extends VertxTestBase {
+public class JsonPOJOMapperTest {
 
   public static class MyType {
     public int a;
@@ -37,10 +39,6 @@ public class JsonPOJOMapperTest extends VertxTestBase {
     public HashMap<String, Object> c = new HashMap<>();
     public List<MyType> d = new ArrayList<>();
     public List<Integer> e = new ArrayList<>();
-  }
-
-  @Before
-  public void setUp() throws Exception {
   }
 
   @Test
