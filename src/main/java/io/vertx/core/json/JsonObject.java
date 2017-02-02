@@ -85,6 +85,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   /**
    * Instantiate a Java object from a JsonObject.
+   * Faster than calling `Json.decodeValue(Json.encode(jsonObject), type)`.
    * 
    * @param type
    *          The type to instantiate from the JsonObject.
