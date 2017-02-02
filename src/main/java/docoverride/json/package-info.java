@@ -38,6 +38,13 @@
  *
  * [source,java]
  * ----
+ * {@link docoverride.json.Examples#example0_0}
+ * ----
+ *
+ * You can create a JSON object from a map as follows:
+ *
+ * [source,java]
+ * ----
  * {@link docoverride.json.Examples#example0_1}
  * ----
  *
@@ -61,7 +68,31 @@
  * {@link docoverride.json.Examples#example2}
  * ----
  *
- * ==== Encoding the JSON object to a String
+ * ==== Mapping between JSON objects and Java objects
+ * 
+ * You can create a JSON object from the fields of a Java object as follows:
+ * 
+ * [source,java]
+ * ----
+ * {@link docoverride.json.Examples#example4_0}
+ * ----
+ * 
+ * You can instantiate a Java object and populate its fields from a JSON object as follows:
+ * 
+ * [source,java]
+ * ----
+ * {@link docoverride.json.Examples#example4_1}
+ * ----
+ * 
+ * Note that both of the above mapping directions use Jackson's `ObjectMapper#convertValue()` to
+ * perform the mapping. See the Jackson documentation for information on the impact of field and
+ * constructor visibility, caveats on serialization and deserialization across object references,
+ * etc. However, in the simplest case, both `mapFrom` and `mapTo` should succeed if all fields
+ * of the Java class are public (or have public getters/setters), and if there is a public default
+ * constructor (or no defined constructors). Referenced objects will be transitively
+ * serialized/deserialized to/from nested JSON objects as long as the object graph is acyclic.
+ * 
+ * ==== Encoding a JSON object to a String
  *
  * You use {@link io.vertx.core.json.JsonObject#encode} to encode the object to a String form.
  *
@@ -102,7 +133,7 @@
  * {@link docoverride.json.Examples#example4}
  * ----
  *
- * ==== Encoding the JSON array to a String
+ * ==== Encoding a JSON array to a String
  *
  * You use {@link io.vertx.core.json.JsonArray#encode} to encode the array to a String form.
  *

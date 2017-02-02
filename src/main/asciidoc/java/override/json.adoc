@@ -63,17 +63,28 @@ You can create a JSON object from the fields of a Java object as follows:
 
 [source,java]
 ----
+SomeType javaObject = new SomeType() {{
+  x = 5;
+  y = "bar";
+}};
 JsonObject jsonObject = JsonObject.mapFrom(javaObject);
 ----
 
-You can instantiate a Java object of type `JavaType` and populate its fields from the entries of a JSON object as follows:
+You can instantiate a Java object and populate its fields from a JSON object as follows:
 
 [source,java]
 ----
-JavaType javaObject = jsonObject.mapTo(JavaType.class);
+JsonObject jsonObject = new JsonObject("{\"x\":5,\"y\":\"bar\"}");
+SomeType javaObject = jsonObject.mapTo(SomeType.class);
 ----
 
-Both of the above mapping directions use Jackson's `ObjectMapper#convertValue()` to perform the mapping. See the Jackson documentation for information on the impact of field and constructor visibility, caveats on serialization and deserialization across object references, etc. However, in the simplest case, both `mapFrom` and `mapTo` should succeed if all fields of the Java class are public (or have public getters/setters), and if there is a public default constructor (or no defined constructors). Referenced objects will also be transitively serialized/deserialized to/from nested JSON objects as long as the object graph is acyclic.
+Note that both of the above mapping directions use Jackson's `ObjectMapper#convertValue()` to
+perform the mapping. See the Jackson documentation for information on the impact of field and
+constructor visibility, caveats on serialization and deserialization across object references,
+etc. However, in the simplest case, both `mapFrom` and `mapTo` should succeed if all fields
+of the Java class are public (or have public getters/setters), and if there is a public default
+constructor (or no defined constructors). Referenced objects will be transitively
+serialized/deserialized to/from nested JSON objects as long as the object graph is acyclic.
 
 ==== Encoding a JSON object to a String
 
