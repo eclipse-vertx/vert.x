@@ -70,6 +70,32 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Create a JsonObject from the fields of a Java object.
+   * Faster than calling `new JsonObject(Json.encode(pojo))`.
+   * 
+   * @param obj
+   *          The object to convert to a JsonObject.
+   * @throws IllegalArgumentException
+   *          if conversion fails due to an incompatible type.
+   */
+  @SuppressWarnings("unchecked")
+  public JsonObject(Object obj) {
+    this((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
+  }
+
+  /**
+   * Method for instantiating a Java object from a JsonObject.
+   * 
+   * @param type
+   *          The type to instantiate from the JsonObject.
+   * @throws IllegalArgumentException
+   *          if the type cannot be instantiated.
+   */
+  public <T> T toInstance(Class<T> type) {
+    return Json.mapper.convertValue(map, type);
+  }
+
+  /**
    * Get the string value with the specified key
    *
    * @param key  the key to return the value for
