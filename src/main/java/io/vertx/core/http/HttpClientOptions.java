@@ -159,6 +159,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
+  private boolean unmaskedFrame;
 
   /**
    * Default constructor
@@ -195,6 +196,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
+    this.unmaskedFrame = other.isUnmaskedFrame();
   }
 
   /**
@@ -562,6 +564,25 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setTryUseCompression(boolean tryUseCompression) {
     this.tryUseCompression = tryUseCompression;
+    return this;
+  }
+
+  /**
+   * Is Unmasking frame enabled. It's false as default
+   * @return
+   */
+  public boolean isUnmaskedFrame() {
+    return unmaskedFrame;
+  }
+
+  /**
+   * Set whether unmasking frame is enabled
+   *
+   * @param unmaskedFrame  true if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setUnmaskedFrame(boolean unmaskedFrame) {
+    this.unmaskedFrame = unmaskedFrame;
     return this;
   }
 

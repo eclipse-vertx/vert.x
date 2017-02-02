@@ -136,7 +136,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         nettyHeaders = null;
       }
       handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
-                                                                  nettyHeaders, maxWebSocketFrameSize);
+                                                                  nettyHeaders, maxWebSocketFrameSize,!client.getOptions().isUnmaskedFrame(),false);
       ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(channel).addListener(future -> {
