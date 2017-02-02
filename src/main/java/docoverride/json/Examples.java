@@ -16,9 +16,13 @@
 
 package docoverride.json;
 
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.docgen.Source;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by tim on 09/01/15.
@@ -31,6 +35,13 @@ public class Examples {
     JsonObject object = new JsonObject(jsonString);
   }
 
+  public void exampleCreateFromMap() {
+    Map<String, Object> map = new HashMap<>();
+    map.put("foo", "bar");
+    map.put("xyz", 3);
+    JsonObject object = new JsonObject(map);
+  }
+
   public void example0_2() {
     String jsonString = "[\"foo\",\"bar\"]";
     JsonArray array = new JsonArray(jsonString);
@@ -39,6 +50,23 @@ public class Examples {
   public void example1() {
     JsonObject object = new JsonObject();
     object.put("foo", "bar").put("num", 123).put("mybool", true);
+  }
+
+  private static class User {
+    User(String firstName, String lastName) {
+    }
+  }
+
+  public void mapFromPojo(HttpServerRequest request) {
+    User user = new User("Dale", "Cooper");
+    JsonObject jsonObject = JsonObject.mapFrom(user);
+  }
+
+  public void mapToPojo(HttpServerRequest request) {
+    request.bodyHandler(buff -> {
+      JsonObject jsonObject = buff.toJsonObject();
+      User javaObject = jsonObject.mapTo(User.class);
+    });
   }
 
   public void example2(JsonObject jsonObject) {
