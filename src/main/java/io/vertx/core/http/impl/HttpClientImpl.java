@@ -69,11 +69,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       } catch (URISyntaxException e) {
         return null;
       }
+      boolean ssl;
+      if ("http".equals(uri.getScheme())) {
+        ssl = false;
+      } else if ("https".equals(uri.getScheme())) {
+        ssl = true;
+      } else {
+        return null;
+      }
       String requestURI = uri.getPath();
       if (uri.getQuery() != null) {
         requestURI += "?" + uri.getQuery();
       }
-      return Future.succeededFuture(request(m, uri.getPort(), uri.getHost(), requestURI));
+      return Future.succeededFuture(doRequest(m, uri.getHost(), uri.getPort(), ssl, requestURI, null));
     }
     return null;
   };
@@ -930,11 +938,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-      req = new HttpClientRequestImpl(this, method, proxyOptions.getHost(), proxyOptions.getPort(),
+      req = new HttpClientRequestImpl(this, ssl != null ? ssl : options.isSsl(), method, proxyOptions.getHost(), proxyOptions.getPort(),
           relativeURI, vertx);
       req.setHost(host + (port != 80 ? ":" + port : ""));
     } else {
-      req = new HttpClientRequestImpl(this, method, host, port, relativeURI, vertx);
+      req = new HttpClientRequestImpl(this, ssl != null ? ssl : options.isSsl(), method, host, port, relativeURI, vertx);
     }
     if (headers != null) {
       req.headers().setAll(headers);

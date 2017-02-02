@@ -52,6 +52,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private final VertxInternal vertx;
   private final int port;
+  private final boolean ssl;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
@@ -77,9 +78,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private long written;
   private CaseInsensitiveHeaders headers;
 
-  HttpClientRequestImpl(HttpClientImpl client, HttpMethod method, String host, int port,
+  HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port,
                         String relativeURI, VertxInternal vertx) {
     super(client, method, host, port, relativeURI);
+    this.ssl = ssl;
     this.chunked = false;
     this.vertx = vertx;
     this.port = port;

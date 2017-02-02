@@ -1982,9 +1982,9 @@ The `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setSsl-boolean
 
 The `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setSsl-boolean-[setSsl]` overrides the default client setting.
 
-* setting the value to `false` will disable SSL even if the client is configured to use SSL/TLS
-* setting the value to `true` will enable SSL  even if the client is configured to not use SSL/TLS, the actual
-client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused 
+* setting the value to `false` will disable SSL/TLS even if the client is configured to use SSL/TLS
+* setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual
+client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused
 
 === WebSockets
 

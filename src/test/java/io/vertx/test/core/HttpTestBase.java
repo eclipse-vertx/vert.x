@@ -81,7 +81,15 @@ public class HttpTestBase extends VertxTestBase {
     startServer(vertx.getOrCreateContext());
   }
 
+  protected void startServer(HttpServer server) throws Exception {
+    startServer(vertx.getOrCreateContext(), server);
+  }
+
   protected void startServer(Context context) throws Exception {
+    startServer(context, server);
+  }
+
+  protected void startServer(Context context, HttpServer server) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     context.runOnContext(v -> {
       server.listen(onSuccess(s -> latch.countDown()));

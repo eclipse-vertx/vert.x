@@ -373,6 +373,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String[] serverEnabledSecureTransportProtocol   = new String[0];
     private String connectHostname;
     private RequestOptions requestOptions;
+    private boolean followRedirects;
 
     public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
       this.version = HttpVersion.HTTP_1_1;
@@ -492,6 +493,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
+    TLSTest followRedirects(boolean follow) {
+      followRedirects = follow;
+      return this;
+    }
+
     void pass() {
       run(true);
     }
@@ -582,10 +588,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
         }
         HttpClientRequest req;
         if (requestOptions == null) {
-          req = client.request(HttpMethod.GET, 4043, httpHost, DEFAULT_TEST_URI);
+          req = client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
         } else {
-          req = client.request(HttpMethod.GET, requestOptions);
+          req = client.request(HttpMethod.POST, requestOptions);
         }
+        req.setFollowRedirects(followRedirects);
         req.handler(response -> {
           if (shouldPass) {
             response.version();
