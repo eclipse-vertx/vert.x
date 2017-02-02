@@ -41,6 +41,7 @@ public class JsonPOJOMapperTest extends VertxTestBase {
 
   @Before
   public void setUp() throws Exception {
+      Thread.currentThread().setName("vert.x-1");
   }
 
   @Test
