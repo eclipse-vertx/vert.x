@@ -77,125 +77,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @param map  the map to create the instance from.
    */
+  
   public JsonObject(Map<String, Object> map) {
     this.map = map;
   }
-
   /**
-   * Create a new JsonObject if the passed object is a map, or a JsonArray if the passed object is a List, or
-   * returns the passed object if the object is a boxed type or String. Otherwise, returns a JsonObject by
-   * serializing the object as a POJO. Checks for infinite cycles.
-   * 
-   * @param obj
-   *          The object to convert to a JsonObject.
-   * @param visited
-   *          The set of visited objects, used to check for cycles.
-   * @throws IllegalArgumentException
-   *           if a non-serializable field type is encountered, or if an infinite cycle is reached.
-   */
-  private static Object newJsonObjectOrArrayOrValue(Object obj, Set<Object> visited) {
-    if (!visited.add(obj)) {
-      throw new IllegalArgumentException("Reached infinite cycle while converting object graph into JsonObject");
-    }
-    Class<? extends Object> objClass = obj.getClass();
-    if (Map.class.isAssignableFrom(objClass)) {
-      Map<String, Object> jsonMap = new HashMap<>();
-      for (Map.Entry<?, ?> ent : ((Map<?, ?>) obj).entrySet()) {
-        Object key = ent.getKey();
-        Object val = ent.getValue();
-        if (!(key instanceof String)) {
-          throw new IllegalArgumentException("Tried to serialize a Map with a non-String key");
-        }
-        if (val != null) {
-          // Recurse on non-null vals
-          jsonMap.put((String) key, newJsonObjectOrArrayOrValue(val, visited));
-        }
-      }
-      return new JsonObject(jsonMap);
-    } else if (List.class.isAssignableFrom(objClass)) {
-      List<Object> list = new ArrayList<>();
-      for (Object item : (List<?>) obj) {
-        if (item == null) {
-          // Null is not practical to support in a list, because we don't know the expected element type
-          throw new IllegalArgumentException("Tried to serialize a List containing a null value");
-        }
-        // Recurse on non-null objects in lists
-        list.add(newJsonObjectOrArrayOrValue(item, visited));
-      }
-      return new JsonArray(list);
-    } else if (objClass == String.class || objClass == Integer.class || objClass == Long.class
-        || objClass == Short.class || objClass == Character.class || objClass == Boolean.class
-        || objClass == Float.class || objClass == Double.class) {
-      return obj;
-    } else {
-      // Recurively parse other object types as POJO
-      return new JsonObject(obj, visited);
-    }
-  }
-
-  /**
-   * Creating an instance from the fields of a POJO. Checks for infinitely-nested objects.
+   * Create a JsonObject from the fields of a Java object.
+   * Faster than calling `new JsonObject(Json.encode(pojo))`.
    * 
    * @param obj
    *          The object to convert to a JsonObject.
    * @throws IllegalArgumentException
-   *           if a non-serializable field type is encountered.
+   *          if conversion fails due to an incompatible type.
    */
-  private JsonObject(Object obj, Set<Object> visited) {
-    map = new HashMap<>();
-    for (Field field : obj.getClass().getFields()) {
-      if ((field.getModifiers() & Modifier.PUBLIC) != 0) {
-        try {
-          String fieldName = field.getName();
-          Class<?> type = field.getType();
-          if (type == String.class) {
-            map.put(fieldName, field.get(obj));
-          } else if (type == Integer.TYPE) {
-            map.put(fieldName, field.getInt(obj));
-          } else if (type == Long.TYPE) {
-            map.put(fieldName, field.getLong(obj));
-          } else if (type == Short.TYPE) {
-            map.put(fieldName, field.getShort(obj));
-          } else if (type == Character.TYPE) {
-            map.put(fieldName, field.getChar(obj));
-          } else if (type == Boolean.TYPE) {
-            map.put(fieldName, field.getBoolean(obj));
-          } else if (type == Float.TYPE) {
-            map.put(fieldName, field.getFloat(obj));
-          } else if (type == Double.TYPE) {
-            map.put(fieldName, field.getDouble(obj));
-          } else {
-            Object fieldVal = field.get(obj);
-            // Don't include null fields in the generated JSON
-            if (fieldVal != null) {
-              map.put(fieldName,
-                  newJsonObjectOrArrayOrValue(fieldVal, visited == null ? new HashSet<Object>() : visited));
-            }
-          }
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-          // Should not happen
-          throw new IllegalArgumentException(e);
-        }
-      }
-    }
-  }
-
-  /**
-   * Simple method for creating a JsonObject from the fields of a POJO (Plain Old Java Object). Only public fields
-   * are read, and getters are not supported. Fields may be one of the primitive types, a boxed type, a Map (whose
-   * keys must be strings), or List. Fields with a null value are omitted in the generated JsonObject. Lists may not
-   * include null values.
-   * 
-   * Faster than calling new JsonObject(Json.encode(pojo)).
-   * 
-   * @param obj
-   *          The object to convert to a JsonObject.
-   * @throws IllegalArgumentException
-   *           if a non-serializable field type is encountered, or in the case of an infinite loop in the object
-   *           graph.
-   */
+  @SuppressWarnings("unchecked")
   public JsonObject(Object obj) {
-    this(obj, null);
+    this((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
   }
 
   /**
@@ -204,16 +101,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param type
    *          The type to instantiate from the JsonObject.
    * @throws IllegalArgumentException
-   *           if the type cannot be instantiated.
+   *          if the type cannot be instantiated.
    */
   public <T> T toInstance(Class<T> type) {
-    try {
-      return Json.mapper.readValue(Json.encode(this), type);
-    } catch (EncodeException | IOException e) {
-      throw new IllegalArgumentException("Could not instantiate type " + type.getName(), e);
-    }
+    return Json.mapper.convertValue(map, type);
   }
-
+  
   /**
    * Get the string value with the specified key
    *
