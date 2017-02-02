@@ -54,7 +54,7 @@ import io.vertx.core.metrics.Measured;
 public interface HttpClient extends Measured {
 
   /**
-   * Create an HTTP request to send to the server using the specified options.
+   * Create an HTTP request to send to the server with the specified options.
    *
    * @param method  the HTTP method
    * @param options  the request options
@@ -82,7 +82,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest request(HttpMethod method, String host, String requestURI);
 
   /**
-   * Create an HTTP request to send to the server using the specified options, specifying a response handler to receive
+   * Create an HTTP request to send to the server with the specified options, specifying a response handler to receive
    *
    * @param method  the HTTP method
    * @param options  the request options
@@ -150,7 +150,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Create an HTTP GET request to send to the server using the specified options.
+   * Create an HTTP GET request to send to the server with the specified options.
    * @param options  the request options
    * @return  an HTTP client request object
    */
@@ -174,7 +174,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest get(String host, String requestURI);
 
   /**
-   * Create an HTTP GET request to send to the server using the specified options, specifying a response handler to receive
+   * Create an HTTP GET request to send to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -236,7 +236,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest getAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Sends an HTTP GET request to the server using the specified options, specifying a response handler to receive
+   * Sends an HTTP GET request to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -279,7 +279,7 @@ public interface HttpClient extends Measured {
   HttpClient getNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Create an HTTP POST request to send to the server using the specified options.
+   * Create an HTTP POST request to send to the server with the specified options.
    * @param options  the request options
    * @return  an HTTP client request object
    */
@@ -303,7 +303,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest post(String host, String requestURI);
 
   /**
-   * Create an HTTP POST request to send to the server using the specified options, specifying a response handler to receive
+   * Create an HTTP POST request to send to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -365,7 +365,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest postAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Create an HTTP HEAD request to send to the server using the specified options.
+   * Create an HTTP HEAD request to send to the server with the specified options.
    * @param options  the request options
    * @return  an HTTP client request object
    */
@@ -389,7 +389,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest head(String host, String requestURI);
 
   /**
-   * Create an HTTP HEAD request to send to the server using the specified options, specifying a response handler to receive
+   * Create an HTTP HEAD request to send to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -451,7 +451,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest headAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Sends an HTTP HEAD request to the server using the specified options, specifying a response handler to receive
+   * Sends an HTTP HEAD request to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -494,7 +494,7 @@ public interface HttpClient extends Measured {
   HttpClient headNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Create an HTTP OPTIONS request to send to the server using the specified options.
+   * Create an HTTP OPTIONS request to send to the server with the specified options.
    * @param options  the request options
    * @return  an HTTP client request object
    */
@@ -518,7 +518,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest options(String host, String requestURI);
 
   /**
-   * Create an HTTP OPTIONS request to send to the server using the specified options, specifying a response handler to receive
+   * Create an HTTP OPTIONS request to send to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -580,7 +580,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest optionsAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Sends an HTTP OPTIONS request to the server using the specified options, specifying a response handler to receive
+   * Sends an HTTP OPTIONS request to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -623,7 +623,7 @@ public interface HttpClient extends Measured {
   HttpClient optionsNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Create an HTTP PUT request to send to the server using the specified options.
+   * Create an HTTP PUT request to send to the server with the specified options.
    * @param options  the request options
    * @return  an HTTP client request object
    */
@@ -647,7 +647,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest put(String host, String requestURI);
 
   /**
-   * Create an HTTP PUT request to send to the server using the specified options, specifying a response handler to receive
+   * Create an HTTP PUT request to send to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -709,7 +709,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest putAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Create an HTTP DELETE request to send to the server using the specified options.
+   * Create an HTTP DELETE request to send to the server with the specified options.
    * @param options  the request options
    * @return  an HTTP client request object
    */
@@ -733,7 +733,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest delete(String host, String requestURI);
 
   /**
-   * Create an HTTP DELETE request to send to the server using the specified options, specifying a response handler to receive
+   * Create an HTTP DELETE request to send to the server with the specified options, specifying a response handler to receive
    * the response
    * @param options  the request options
    * @param responseHandler  the response handler
@@ -795,7 +795,7 @@ public interface HttpClient extends Measured {
   HttpClientRequest deleteAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Connect a WebSocket using the specified options
+   * Connect a WebSocket with the specified options
    * @param options  the request options
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
@@ -815,7 +815,7 @@ public interface HttpClient extends Measured {
   HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect);
 
   /**
-   * Connect a WebSocket using the specified options
+   * Connect a WebSocket with the specified options
    * @param options  the request options
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
@@ -858,7 +858,7 @@ public interface HttpClient extends Measured {
   HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
-   * Connect a WebSocket using the specified options, and with the specified headers
+   * Connect a WebSocket with the specified options, and with the specified headers
    * @param options  the request options
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
@@ -880,7 +880,7 @@ public interface HttpClient extends Measured {
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
   /**
-   * Connect a WebSocket using the specified options, and with the specified headers
+   * Connect a WebSocket with the specified options, and with the specified headers
    * @param options  the request options
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
@@ -927,7 +927,7 @@ public interface HttpClient extends Measured {
   HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
-   * Connect a WebSocket using the specified optionsI, with the specified headers and using
+   * Connect a WebSocket with the specified optionsI, with the specified headers and using
    * the specified version of WebSockets
    * @param options  the request options
    * @param headers  the headers
@@ -955,7 +955,7 @@ public interface HttpClient extends Measured {
                        Handler<WebSocket> wsConnect);
 
   /**
-   * Connect a WebSocket using the specified options, with the specified headers and using
+   * Connect a WebSocket with the specified options, with the specified headers and using
    * the specified version of WebSockets
    * @param options  the request options
    * @param headers  the headers
@@ -1014,7 +1014,7 @@ public interface HttpClient extends Measured {
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
-   * Connect a WebSocket using the specified options, with the specified headers, using
+   * Connect a WebSocket with the specified options, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
    * @param options  the request options
    * @param headers  the headers
@@ -1044,7 +1044,7 @@ public interface HttpClient extends Measured {
                        String subProtocols, Handler<WebSocket> wsConnect);
 
   /**
-   * Connect a WebSocket using the specified options, with the specified headers, using
+   * Connect a WebSocket with the specified options, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
    * @param options  the request options
    * @param headers  the headers
@@ -1205,7 +1205,7 @@ public interface HttpClient extends Measured {
 
 
   /**
-   * Create a WebSocket stream using the specified options
+   * Create a WebSocket stream with the specified options
    * @param options  the request options
    * @return a reference to this, so the API can be used fluently
    */
@@ -1229,7 +1229,7 @@ public interface HttpClient extends Measured {
   WebSocketStream websocketStream(String host, String requestURI);
 
   /**
-   * Create a WebSocket stream using the specified options, and with the specified headers
+   * Create a WebSocket stream with the specified options, and with the specified headers
    * @param options  the request options
    * @param headers  the headers
    * @return a reference to this, so the API can be used fluently
@@ -1256,7 +1256,7 @@ public interface HttpClient extends Measured {
   WebSocketStream websocketStream(String host, String requestURI, MultiMap headers);
 
   /**
-   * Create a WebSocket stream using the specified options, with the specified headers and using
+   * Create a WebSocket stream with the specified options, with the specified headers and using
    * the specified version of WebSockets
    * @param options  the request options
    * @param headers  the headers
@@ -1278,7 +1278,7 @@ public interface HttpClient extends Measured {
   WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
-   * Create a WebSocket stream using the specified options and with the specified headers and using
+   * Create a WebSocket stream with the specified options and with the specified headers and using
    * the specified version of WebSockets
    * @param host  the host
    * @param requestURI  the relative URI
