@@ -76,6 +76,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public JsonObject(Map<String, Object> map) {
     this.map = map;
   }
+  
   /**
    * Create a JsonObject from the fields of a Java object.
    * Faster than calling `new JsonObject(Json.encode(pojo))`.
