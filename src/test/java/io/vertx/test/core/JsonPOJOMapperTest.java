@@ -60,20 +60,20 @@ public class JsonPOJOMapperTest extends VertxTestBase {
       e.add(3);
     }};
     
-    JsonObject jsonObject = JsonObject.fromInstance(myObj1);
+    JsonObject jsonObject = JsonObject.mapFrom(myObj1);
     String jsonStr = jsonObject.encode();
     assertEquals("{\"a\":5,\"b\":\"obj1\",\"c\":{\"x\":\"1\",\"y\":2},\"d\":["
         +"{\"a\":-1,\"b\":\"obj0\",\"c\":{\"z\":[7,8]},\"d\":[],\"e\":[9]}"
         + "],\"e\":[3]}", jsonStr);
 
-    MyType myObj2 = jsonObject.toInstance(MyType.class);
+    MyType myObj2 = jsonObject.mapTo(MyType.class);
     assertEquals(myObj2.b, "obj1");
     assertEquals(myObj2.d.get(0).b, "obj0");
     
     boolean caughtCycle = false;
     try {
       myObj0.d.add(myObj0);
-      JsonObject.fromInstance(myObj0);
+      JsonObject.mapFrom(myObj0);
     } catch (IllegalArgumentException e) {
       caughtCycle = true;
     }
