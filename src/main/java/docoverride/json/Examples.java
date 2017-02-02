@@ -16,6 +16,9 @@
 
 package docoverride.json;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.docgen.Source;
@@ -26,14 +29,39 @@ import io.vertx.docgen.Source;
 @Source
 public class Examples {
 
-  public void example0_1() {
+  public void example0_0() {
     String jsonString = "{\"foo\":\"bar\"}";
     JsonObject object = new JsonObject(jsonString);
+  }
+
+  public void example0_1() {
+    Map<String, Object> map = new HashMap<>();
+    map.put("foo", "bar");
+    map.put("xyz", 3);
+    JsonObject object = new JsonObject(map);
   }
 
   public void example0_2() {
     String jsonString = "[\"foo\",\"bar\"]";
     JsonArray array = new JsonArray(jsonString);
+  }
+
+  public static class SomeType {
+      int x;
+      String y;
+  }
+  
+  public void example4_0() {
+    SomeType javaObject = new SomeType() {{
+      x = 5;
+      y = "bar";
+    }};
+    JsonObject jsonObject = JsonObject.mapFrom(javaObject);
+  }
+
+  public void example4_1() {
+    JsonObject jsonObject = new JsonObject("{\"x\":5,\"y\":\"bar\"}");
+    SomeType javaObject = jsonObject.mapTo(SomeType.class);
   }
 
   public void example1() {
