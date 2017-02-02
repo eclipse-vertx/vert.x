@@ -29,7 +29,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="https://github.com/lukehutch">Luke Hutchison</a>
  */
-public class JsonPOJOTest extends VertxTestBase {
+public class JsonPOJOMapperTest extends VertxTestBase {
 
   public static class MyType {
     public int a;
