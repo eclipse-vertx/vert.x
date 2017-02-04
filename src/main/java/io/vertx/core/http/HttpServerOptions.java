@@ -156,6 +156,17 @@ public class HttpServerOptions extends NetServerOptions {
     HttpServerOptionsConverter.fromJson(json, this);
   }
 
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    HttpServerOptionsConverter.toJson(this, json);
+    return json;
+  }
+
   private void init() {
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
     compressionLevel = DEFAULT_COMPRESSION_LEVEL;

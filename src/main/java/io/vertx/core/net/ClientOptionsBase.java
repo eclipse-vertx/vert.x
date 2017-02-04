@@ -83,6 +83,17 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     ClientOptionsBaseConverter.fromJson(json, this);
   }
 
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    ClientOptionsBaseConverter.toJson(this, json);
+    return json;
+  }
+
   private void init() {
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     this.trustAll = DEFAULT_TRUST_ALL;

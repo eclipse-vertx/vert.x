@@ -386,6 +386,48 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.isDecompressionSupported());
   }
 
+  private static KeyCertOptions randomKeyCertOptions() {
+    KeyCertOptions keyCertOptions;
+    switch (TestUtils.randomPositiveInt() % 3) {
+      case 0:
+        keyCertOptions = new JksOptions();
+        String jksPassword = TestUtils.randomAlphaString(100);
+        ((JksOptions) keyCertOptions).setPassword(jksPassword);
+        break;
+      case 1:
+        keyCertOptions = new PemKeyCertOptions();
+        Buffer keyValue = TestUtils.randomBuffer(100);
+        ((PemKeyCertOptions) keyCertOptions).setKeyValue(keyValue);
+        break;
+      default:
+        keyCertOptions = new PfxOptions();
+        String pfxPassword = TestUtils.randomAlphaString(100);
+        ((PfxOptions) keyCertOptions).setPassword(pfxPassword);
+    }
+    return keyCertOptions;
+  }
+
+  private static TrustOptions randomTrustOptions() {
+    TrustOptions trustOptions;
+    switch (TestUtils.randomPositiveInt() % 3) {
+      case 0:
+        trustOptions = new JksOptions();
+        String tsPassword = TestUtils.randomAlphaString(100);
+        ((JksOptions) trustOptions).setPassword(tsPassword);
+        break;
+      case 1:
+        trustOptions = new PemTrustOptions();
+        Buffer keyValue = TestUtils.randomBuffer(100);
+        ((PemTrustOptions) trustOptions).addCertValue(keyValue);
+        break;
+      default:
+        trustOptions = new PfxOptions();
+        String pfxPassword = TestUtils.randomAlphaString(100);
+        ((PfxOptions) trustOptions).setPassword(pfxPassword);
+    }
+    return trustOptions;
+  }
+
   @Test
   public void testCopyClientOptions() {
     HttpClientOptions options = new HttpClientOptions();
@@ -400,12 +442,8 @@ public class Http1xTest extends HttpTest {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JksOptions keyStoreOptions = new JksOptions();
-    String ksPassword = TestUtils.randomAlphaString(100);
-    keyStoreOptions.setPassword(ksPassword);
-    JksOptions trustStoreOptions = new JksOptions();
-    String tsPassword = TestUtils.randomAlphaString(100);
-    trustStoreOptions.setPassword(tsPassword);
+    KeyCertOptions keyCertOptions = randomKeyCertOptions();
+    TrustOptions trustOptions = randomTrustOptions();
     String enabledCipher = TestUtils.randomAlphaString(100);
     int connectTimeout = TestUtils.randomPositiveInt();
     boolean trustAll = rand.nextBoolean();
@@ -445,8 +483,8 @@ public class Http1xTest extends HttpTest {
     options.setSoLinger(soLinger);
     options.setUsePooledBuffers(usePooledBuffers);
     options.setIdleTimeout(idleTimeout);
-    options.setKeyStoreOptions(keyStoreOptions);
-    options.setTrustStoreOptions(trustStoreOptions);
+    options.setKeyCertOptions(keyCertOptions);
+    options.setTrustOptions(trustOptions);
     options.addEnabledCipherSuite(enabledCipher);
     options.setConnectTimeout(connectTimeout);
     options.setTrustAll(trustAll);
@@ -474,49 +512,59 @@ public class Http1xTest extends HttpTest {
     options.setLocalAddress(localAddress);
     options.setSendUnmaskedFrames(sendUnmaskedFrame);
     HttpClientOptions copy = new HttpClientOptions(options);
-    assertEquals(sendBufferSize, copy.getSendBufferSize());
-    assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
-    assertEquals(reuseAddress, copy.isReuseAddress());
-    assertEquals(trafficClass, copy.getTrafficClass());
-    assertEquals(tcpNoDelay, copy.isTcpNoDelay());
-    assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
-    assertEquals(soLinger, copy.getSoLinger());
-    assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
-    assertEquals(idleTimeout, copy.getIdleTimeout());
-    assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
-    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
+    checkCopyHttpClientOptions(options, copy);
+    HttpClientOptions copy2 = new HttpClientOptions(options.toJson());
+    checkCopyHttpClientOptions(options, copy2);
+  }
+
+  private void checkCopyHttpClientOptions(HttpClientOptions options, HttpClientOptions copy) {
+    assertEquals(options.getSendBufferSize(), copy.getSendBufferSize());
+    assertEquals(options.getReceiveBufferSize(), copy.getReceiveBufferSize());
+    assertEquals(options.isReuseAddress(), copy.isReuseAddress());
+    assertEquals(options.getTrafficClass(), copy.getTrafficClass());
+    assertEquals(options.isTcpNoDelay(), copy.isTcpNoDelay());
+    assertEquals(options.isTcpKeepAlive(), copy.isTcpKeepAlive());
+    assertEquals(options.getSoLinger(), copy.getSoLinger());
+    assertEquals(options.isUsePooledBuffers(), copy.isUsePooledBuffers());
+    assertEquals(options.getIdleTimeout(), copy.getIdleTimeout());
+    assertEquals(options.isSsl(), copy.isSsl());
+    assertNotSame(options.getKeyCertOptions(), copy.getKeyCertOptions());
+    assertEquals(options.getKeyCertOptions(), copy.getKeyCertOptions());
+    assertNotSame(options.getTrustOptions(), copy.getTrustOptions());
+    if (copy.getTrustOptions() instanceof PemTrustOptions) {
+      assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
+    } else {
+      assertEquals(options.getTrustOptions(), copy.getTrustOptions());
+    }
     assertEquals(1, copy.getEnabledCipherSuites().size());
-    assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
-    assertEquals(connectTimeout, copy.getConnectTimeout());
-    assertEquals(trustAll, copy.isTrustAll());
+    assertEquals(options.getEnabledCipherSuites(), copy.getEnabledCipherSuites());
+    assertEquals(options.getConnectTimeout(), copy.getConnectTimeout());
+    assertEquals(options.isTrustAll(), copy.isTrustAll());
     assertEquals(1, copy.getCrlPaths().size());
-    assertEquals(crlPath, copy.getCrlPaths().get(0));
+    assertEquals(options.getCrlPaths().get(0), copy.getCrlPaths().get(0));
     assertEquals(1, copy.getCrlValues().size());
-    assertEquals(crlValue, copy.getCrlValues().get(0));
-    assertEquals(verifyHost, copy.isVerifyHost());
-    assertEquals(maxPoolSize, copy.getMaxPoolSize());
-    assertEquals(keepAlive, copy.isKeepAlive());
-    assertEquals(pipelining, copy.isPipelining());
-    assertEquals(pipeliningLimit, copy.getPipeliningLimit());
-    assertEquals(http2MaxPoolSize, copy.getHttp2MaxPoolSize());
-    assertEquals(http2MultiplexingLimit, copy.getHttp2MultiplexingLimit());
-    assertEquals(http2ConnectionWindowSize, copy.getHttp2ConnectionWindowSize());
-    assertEquals(tryUseCompression, copy.isTryUseCompression());
-    assertEquals(protocolVersion, copy.getProtocolVersion());
-    assertEquals(maxChunkSize, copy.getMaxChunkSize());
-    assertEquals(maxInitialLineLength, copy.getMaxInitialLineLength());
-    assertEquals(maxHeaderSize, copy.getMaxHeaderSize());
-    assertEquals(maxWaitQueueSize, copy.getMaxWaitQueueSize());
-    assertEquals(initialSettings, copy.getInitialSettings());
-    assertEquals(useAlpn, copy.isUseAlpn());
-    assertEquals(sslEngine, copy.getSslEngineOptions());
-    assertEquals(alpnVersions, copy.getAlpnVersions());
-    assertEquals(h2cUpgrade, copy.isHttp2ClearTextUpgrade());
-    assertEquals(localAddress, copy.getLocalAddress());
-    assertEquals(sendUnmaskedFrame, copy.isSendUnmaskedFrames());
+    assertEquals(options.getCrlValues().get(0), copy.getCrlValues().get(0));
+    assertEquals(options.isVerifyHost(), copy.isVerifyHost());
+    assertEquals(options.getMaxPoolSize(), copy.getMaxPoolSize());
+    assertEquals(options.isKeepAlive(), copy.isKeepAlive());
+    assertEquals(options.isPipelining(), copy.isPipelining());
+    assertEquals(options.getPipeliningLimit(), copy.getPipeliningLimit());
+    assertEquals(options.getHttp2MaxPoolSize(), copy.getHttp2MaxPoolSize());
+    assertEquals(options.getHttp2MultiplexingLimit(), copy.getHttp2MultiplexingLimit());
+    assertEquals(options.getHttp2ConnectionWindowSize(), copy.getHttp2ConnectionWindowSize());
+    assertEquals(options.isTryUseCompression(), copy.isTryUseCompression());
+    assertEquals(options.getProtocolVersion(), copy.getProtocolVersion());
+    assertEquals(options.getMaxChunkSize(), copy.getMaxChunkSize());
+    assertEquals(options.getMaxInitialLineLength(), copy.getMaxInitialLineLength());
+    assertEquals(options.getMaxHeaderSize(), copy.getMaxHeaderSize());
+    assertEquals(options.getMaxWaitQueueSize(), copy.getMaxWaitQueueSize());
+    assertEquals(options.getInitialSettings(), copy.getInitialSettings());
+    assertEquals(options.isUseAlpn(), copy.isUseAlpn());
+    assertEquals(options.getSslEngineOptions(), copy.getSslEngineOptions());
+    assertEquals(options.getAlpnVersions(), copy.getAlpnVersions());
+    assertEquals(options.isHttp2ClearTextUpgrade(), copy.isHttp2ClearTextUpgrade());
+    assertEquals(options.getLocalAddress(), copy.getLocalAddress());
+    assertEquals(options.isSendUnmaskedFrames(), copy.isSendUnmaskedFrames());
   }
 
   @Test
@@ -738,12 +786,8 @@ public class Http1xTest extends HttpTest {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JksOptions keyStoreOptions = new JksOptions();
-    String ksPassword = TestUtils.randomAlphaString(100);
-    keyStoreOptions.setPassword(ksPassword);
-    JksOptions trustStoreOptions = new JksOptions();
-    String tsPassword = TestUtils.randomAlphaString(100);
-    trustStoreOptions.setPassword(tsPassword);
+    KeyCertOptions keyCertOptions = randomKeyCertOptions();
+    TrustOptions trustOptions = randomTrustOptions();
     String enabledCipher = TestUtils.randomAlphaString(100);
     String crlPath = TestUtils.randomUnicodeString(100);
     Buffer crlValue = TestUtils.randomBuffer(100);
@@ -774,8 +818,8 @@ public class Http1xTest extends HttpTest {
     options.setUsePooledBuffers(usePooledBuffers);
     options.setIdleTimeout(idleTimeout);
     options.setSsl(ssl);
-    options.setKeyStoreOptions(keyStoreOptions);
-    options.setTrustStoreOptions(trustStoreOptions);
+    options.setKeyCertOptions(keyCertOptions);
+    options.setTrustOptions(trustOptions);
     options.addEnabledCipherSuite(enabledCipher);
     options.addCrlPath(crlPath);
     options.addCrlValue(crlValue);
@@ -796,41 +840,51 @@ public class Http1xTest extends HttpTest {
     options.setAcceptUnmaskedFrames(acceptUnmaskedFrames);
 
     HttpServerOptions copy = new HttpServerOptions(options);
-    assertEquals(sendBufferSize, copy.getSendBufferSize());
-    assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
-    assertEquals(reuseAddress, copy.isReuseAddress());
-    assertEquals(trafficClass, copy.getTrafficClass());
-    assertEquals(tcpNoDelay, copy.isTcpNoDelay());
-    assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
-    assertEquals(soLinger, copy.getSoLinger());
-    assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
-    assertEquals(idleTimeout, copy.getIdleTimeout());
-    assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
-    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions) copy.getTrustOptions()).getPassword());
+    checkCopyHttpServerOptions(options, copy);
+    HttpServerOptions copy2 = new HttpServerOptions(options.toJson());
+    checkCopyHttpServerOptions(options, copy2);
+  }
+
+  private void checkCopyHttpServerOptions(HttpServerOptions options, HttpServerOptions copy) {
+    assertEquals(options.getSendBufferSize(), copy.getSendBufferSize());
+    assertEquals(options.getReceiveBufferSize(), copy.getReceiveBufferSize());
+    assertEquals(options.isReuseAddress(), copy.isReuseAddress());
+    assertEquals(options.getTrafficClass(), copy.getTrafficClass());
+    assertEquals(options.isTcpNoDelay(), copy.isTcpNoDelay());
+    assertEquals(options.isTcpKeepAlive(), copy.isTcpKeepAlive());
+    assertEquals(options.getSoLinger(), copy.getSoLinger());
+    assertEquals(options.isUsePooledBuffers(), copy.isUsePooledBuffers());
+    assertEquals(options.getIdleTimeout(), copy.getIdleTimeout());
+    assertEquals(options.isSsl(), copy.isSsl());
+    assertNotSame(options.getKeyCertOptions(), copy.getKeyCertOptions());
+    assertEquals(options.getKeyCertOptions(), copy.getKeyCertOptions());
+    assertNotSame(options.getTrustOptions(), copy.getTrustOptions());
+    if (copy.getTrustOptions() instanceof PemTrustOptions) {
+      assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
+    } else {
+      assertEquals(options.getTrustOptions(), copy.getTrustOptions());
+    }
     assertEquals(1, copy.getEnabledCipherSuites().size());
-    assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
+    assertEquals(options.getEnabledCipherSuites(), copy.getEnabledCipherSuites());
     assertEquals(1, copy.getCrlPaths().size());
-    assertEquals(crlPath, copy.getCrlPaths().get(0));
+    assertEquals(options.getCrlPaths().get(0), copy.getCrlPaths().get(0));
     assertEquals(1, copy.getCrlValues().size());
-    assertEquals(crlValue, copy.getCrlValues().get(0));
-    assertEquals(port, copy.getPort());
-    assertEquals(host, copy.getHost());
-    assertEquals(acceptBacklog, copy.getAcceptBacklog());
-    assertEquals(compressionSupported, copy.isCompressionSupported());
-    assertEquals(maxWebsocketFrameSize, copy.getMaxWebsocketFrameSize());
-    assertEquals(wsSubProtocol, copy.getWebsocketSubProtocols());
-    assertEquals(is100ContinueHandledAutomatically, copy.isHandle100ContinueAutomatically());
-    assertEquals(maxChunkSize, copy.getMaxChunkSize());
-    assertEquals(initialSettings, copy.getInitialSettings());
-    assertEquals(useAlpn, copy.isUseAlpn());
-    assertEquals(http2ConnectionWindowSize, copy.getHttp2ConnectionWindowSize());
-    assertEquals(sslEngine, copy.getSslEngineOptions());
-    assertEquals(alpnVersions, copy.getAlpnVersions());
-    assertEquals(decompressionSupported, copy.isDecompressionSupported());
-    assertEquals(acceptUnmaskedFrames, copy.isAcceptUnmaskedFrames());
+    assertEquals(options.getCrlValues().get(0), copy.getCrlValues().get(0));
+    assertEquals(options.getPort(), copy.getPort());
+    assertEquals(options.getHost(), copy.getHost());
+    assertEquals(options.getAcceptBacklog(), copy.getAcceptBacklog());
+    assertEquals(options.isCompressionSupported(), copy.isCompressionSupported());
+    assertEquals(options.getMaxWebsocketFrameSize(), copy.getMaxWebsocketFrameSize());
+    assertEquals(options.getWebsocketSubProtocols(), copy.getWebsocketSubProtocols());
+    assertEquals(options.isHandle100ContinueAutomatically(), copy.isHandle100ContinueAutomatically());
+    assertEquals(options.getMaxChunkSize(), copy.getMaxChunkSize());
+    assertEquals(options.getInitialSettings(), copy.getInitialSettings());
+    assertEquals(options.isUseAlpn(), copy.isUseAlpn());
+    assertEquals(options.getHttp2ConnectionWindowSize(), copy.getHttp2ConnectionWindowSize());
+    assertEquals(options.getSslEngineOptions(), copy.getSslEngineOptions());
+    assertEquals(options.getAlpnVersions(), copy.getAlpnVersions());
+    assertEquals(options.isDecompressionSupported(), copy.isDecompressionSupported());
+    assertEquals(options.isAcceptUnmaskedFrames(), copy.isAcceptUnmaskedFrames());
   }
 
   @Test
