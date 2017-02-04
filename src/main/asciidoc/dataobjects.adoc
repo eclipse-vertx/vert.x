@@ -239,7 +239,7 @@ Set whether all server certificates should be trusted
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -550,7 +550,7 @@ Set whether all server certificates should be trusted.
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -843,7 +843,7 @@ Set whether all server certificates should be trusted
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[tryUseCompression]]`tryUseCompression`|`Boolean`|
 +++
@@ -1051,7 +1051,7 @@ Set the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -1276,7 +1276,7 @@ Set whether all server certificates should be trusted
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -1401,7 +1401,7 @@ Set the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -1923,7 +1923,7 @@ Set the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++

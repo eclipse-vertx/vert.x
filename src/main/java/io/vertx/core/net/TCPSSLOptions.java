@@ -128,6 +128,17 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     TCPSSLOptionsConverter.fromJson(json ,this);
   }
 
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    TCPSSLOptionsConverter.toJson(this, json);
+    return json;
+  }
+
   private void init() {
     tcpNoDelay = DEFAULT_TCP_NO_DELAY;
     tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
@@ -280,6 +291,15 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Get the key/cert options in jks format, aka Java keystore.
+   *
+   * @return the key/cert options in jks format, aka Java keystore.
+   */
+  public JksOptions getKeyStoreOptions() {
+    return keyCertOptions instanceof JksOptions ? (JksOptions) keyCertOptions : null;
+  }
+
+  /**
    * Set the key/cert options in jks format, aka Java keystore.
    * @param options the key store in jks format
    * @return a reference to this, so the API can be used fluently
@@ -290,6 +310,15 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Get the key/cert options in pfx format.
+   *
+   * @return the key/cert options in pfx format.
+   */
+  public PfxOptions getPfxKeyCertOptions() {
+    return keyCertOptions instanceof PfxOptions ? (PfxOptions) keyCertOptions : null;
+  }
+
+  /**
    * Set the key/cert options in pfx format.
    * @param options the key cert options in pfx format
    * @return a reference to this, so the API can be used fluently
@@ -297,6 +326,15 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions setPfxKeyCertOptions(PfxOptions options) {
     this.keyCertOptions = options;
     return this;
+  }
+
+  /**
+   * Get the key/cert store options in pem format.
+   *
+   * @return the key/cert store options in pem format.
+   */
+  public PemKeyCertOptions getPemKeyCertOptions() {
+    return keyCertOptions instanceof PemKeyCertOptions ? (PemKeyCertOptions) keyCertOptions : null;
   }
 
   /**
@@ -327,13 +365,31 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * Set the trust options in jks format, aka Java trustore
+   * Get the trust options in jks format, aka Java truststore
+   *
+   * @return the trust options in jks format, aka Java truststore
+   */
+  public JksOptions getTrustStoreOptions() {
+    return trustOptions instanceof JksOptions ? (JksOptions) trustOptions : null;
+  }
+
+  /**
+   * Set the trust options in jks format, aka Java truststore
    * @param options the trust options in jks format
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
     this.trustOptions = options;
     return this;
+  }
+
+  /**
+   * Get the trust options in pfx format
+   *
+   * @return the trust options in pfx format
+   */
+  public PfxOptions getPfxTrustOptions() {
+    return trustOptions instanceof PfxOptions ? (PfxOptions) trustOptions : null;
   }
 
   /**
@@ -344,6 +400,15 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions setPfxTrustOptions(PfxOptions options) {
     this.trustOptions = options;
     return this;
+  }
+
+  /**
+   * Get the trust options in pem format
+   *
+   * @return the trust options in pem format
+   */
+  public PemTrustOptions getPemTrustOptions() {
+    return trustOptions instanceof PemTrustOptions ? (PemTrustOptions) trustOptions : null;
   }
 
   /**
@@ -452,8 +517,16 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return this;
   }
 
+  public JdkSSLEngineOptions getJdkSslEngineOptions() {
+    return sslEngineOptions instanceof JdkSSLEngineOptions ? (JdkSSLEngineOptions) sslEngineOptions : null;
+  }
+
   public TCPSSLOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return setSslEngineOptions(sslEngineOptions);
+  }
+
+  public OpenSSLEngineOptions getOpenSslEngineOptions() {
+    return sslEngineOptions instanceof OpenSSLEngineOptions ? (OpenSSLEngineOptions) sslEngineOptions : null;
   }
 
   public TCPSSLOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
