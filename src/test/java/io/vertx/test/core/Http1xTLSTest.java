@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.RequestOptions;
@@ -77,6 +78,36 @@ public class Http1xTLSTest extends HttpTLSTest {
   public void testSSLClientRequestOptionsSetClear() throws Exception {
     RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043).setSsl(false);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).serverSSL(false).requestOptions(options).pass();
+  }
+
+  // requestAbs tets
+
+  @Test
+  // Client trusts all server certs
+  public void testClearClientRequestAbsSetSSL() throws Exception {
+    String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043" + DEFAULT_TEST_URI;
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).requestProvider(c -> c.requestAbs(HttpMethod.POST, absoluteURI)).pass();
+  }
+
+  @Test
+  // Client trusts all server certs
+  public void testSSLClientRequestAbsSetSSL() throws Exception {
+    String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043" + DEFAULT_TEST_URI;
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).requestProvider(c -> c.requestAbs(HttpMethod.POST, absoluteURI)).pass();
+  }
+
+  @Test
+  // Client trusts all server certs
+  public void testClearClientRequestAbsSetClear() throws Exception {
+    String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043" + DEFAULT_TEST_URI;
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).serverSSL(false).requestProvider(c -> c.requestAbs(HttpMethod.POST, absoluteURI)).pass();
+  }
+
+  @Test
+  // Client trusts all server certs
+  public void testSSLClientRequestAbsSetClear() throws Exception {
+    String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043" + DEFAULT_TEST_URI;
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).serverSSL(false).requestProvider(c -> c.requestAbs(HttpMethod.POST, absoluteURI)).pass();
   }
 
   // Redirect tests

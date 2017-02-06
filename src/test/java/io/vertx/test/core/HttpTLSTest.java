@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -372,8 +373,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String[] clientEnabledSecureTransportProtocol   = new String[0];
     String[] serverEnabledSecureTransportProtocol   = new String[0];
     private String connectHostname;
-    private RequestOptions requestOptions;
     private boolean followRedirects;
+    private Function<HttpClient, HttpClientRequest> requestProvider = client -> {
+      String httpHost;
+      if (connectHostname != null) {
+        httpHost = connectHostname;
+      } else {
+        httpHost = DEFAULT_HTTP_HOST;
+      }
+      return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
+    };
 
     public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
       this.version = HttpVersion.HTTP_1_1;
@@ -479,7 +488,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
     }
 
     TLSTest requestOptions(RequestOptions requestOptions) {
-      this.requestOptions = requestOptions;
+      this.requestProvider = client -> client.request(HttpMethod.POST, requestOptions);
+      return this;
+    }
+
+    TLSTest requestProvider(Function<HttpClient, HttpClientRequest> requestProvider) {
+      this.requestProvider = requestProvider;
       return this;
     }
 
@@ -586,12 +600,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         } else {
           httpHost = DEFAULT_HTTP_HOST;
         }
-        HttpClientRequest req;
-        if (requestOptions == null) {
-          req = client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
-        } else {
-          req = client.request(HttpMethod.POST, requestOptions);
-        }
+        HttpClientRequest req = requestProvider.apply(client);
         req.setFollowRedirects(followRedirects);
         req.handler(response -> {
           if (shouldPass) {
