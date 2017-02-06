@@ -860,7 +860,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return redirectHandler;
   }
 
-  HttpClientOptions getOptions() {
+  public HttpClientOptions getOptions() {
     return options;
   }
 
