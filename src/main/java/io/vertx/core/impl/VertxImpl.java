@@ -163,6 +163,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.clusterManager.join(ar -> {
         if (ar.failed()) {
           log.error("Failed to join cluster", ar.cause());
+          resultHandler.handle(Future.failedFuture(ar.cause()));
         } else {
           // Provide a memory barrier as we are setting from a different thread
           synchronized (VertxImpl.this) {
