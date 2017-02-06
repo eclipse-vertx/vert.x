@@ -44,7 +44,7 @@ public class RequestOptions {
   /**
    * SSL enable by default = false
    */
-  public static final String DEFAULT_URI = "/";
+  public static final String DEFAULT_URI = "";
 
   private String host;
   private int port;
