@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -97,16 +98,18 @@ public class VertxTest extends AsyncTestBase {
   
   @Test
   public void testClusterManagerFailure() throws Exception {
-		VertxOptions options = new VertxOptions().setClusterManager(new FakeClusterManager(){
-			@Override
-			public void join(Handler<AsyncResult<Void>> resultHandler) {
-				resultHandler.handle(Future.failedFuture(new Exception()));
-			}
-			
-		});
-		Future<Vertx> f = Future.future();
-		Vertx.clusteredVertx(options, f.completer());
-		assertFalse(f.succeeded());
+    VertxOptions options = new VertxOptions().setClusterManager(new FakeClusterManager(){
+      @Override
+      public void join(Handler<AsyncResult<Void>> resultHandler) {
+        resultHandler.handle(Future.failedFuture(new Exception("joinfailure")));
+      }
+    });
+    Vertx.clusteredVertx(options, ar -> {
+      assertTrue(ar.failed());
+      assertEquals("joinfailure", ar.cause().getMessage());
+      testComplete();
+    });
+    await();
   }
   
 }
