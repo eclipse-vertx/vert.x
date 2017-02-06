@@ -160,7 +160,7 @@ public class ConnectionManager {
   }
 
   public void getConnectionForWebsocket(int port, String host, Waiter waiter) {
-    ConnectionKey address = new ConnectionKey(false, port, host);
+    ConnectionKey address = new ConnectionKey(options.isSsl(), port, host);
     ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);
   }
