@@ -85,28 +85,28 @@ public class Http1xTLSTest extends HttpTLSTest {
   @Test
   // Client trusts all server certs
   public void testClearClientRequestAbsSetSSL() throws Exception {
-    String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043" + DEFAULT_TEST_URI;
+    String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).requestProvider(c -> c.requestAbs(HttpMethod.POST, absoluteURI)).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestAbsSetSSL() throws Exception {
-    String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043" + DEFAULT_TEST_URI;
+    String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).requestProvider(c -> c.requestAbs(HttpMethod.POST, absoluteURI)).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testClearClientRequestAbsSetClear() throws Exception {
-    String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043" + DEFAULT_TEST_URI;
+    String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).serverSSL(false).requestProvider(c -> c.requestAbs(HttpMethod.POST, absoluteURI)).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestAbsSetClear() throws Exception {
-    String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043" + DEFAULT_TEST_URI;
+    String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).serverSSL(false).requestProvider(c -> c.requestAbs(HttpMethod.POST, absoluteURI)).pass();
   }
 
