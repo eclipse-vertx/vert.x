@@ -80,7 +80,7 @@ public class Http1xTLSTest extends HttpTLSTest {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).serverSSL(false).requestOptions(options).pass();
   }
 
-  // requestAbs tets
+  // requestAbs test
 
   @Test
   // Client trusts all server certs

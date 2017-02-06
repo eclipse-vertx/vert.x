@@ -159,8 +159,8 @@ public class ConnectionManager {
     }
   }
 
-  public void getConnectionForWebsocket(int port, String host, Waiter waiter) {
-    ConnectionKey address = new ConnectionKey(options.isSsl(), port, host);
+  public void getConnectionForWebsocket(boolean ssl, int port, String host, Waiter waiter) {
+    ConnectionKey address = new ConnectionKey(ssl, port, host);
     ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);
   }

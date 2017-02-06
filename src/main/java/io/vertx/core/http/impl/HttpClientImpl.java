@@ -312,7 +312,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public WebSocketStream websocketStream(RequestOptions options) {
-    return websocketStream(options.getPort(), options.getHost(), options.getURI());
+    return websocketStream(options, null);
   }
 
   @Override
@@ -327,7 +327,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public WebSocketStream websocketStream(RequestOptions options, MultiMap headers) {
-    return websocketStream(options.getPort(), options.getHost(), options.getURI(), headers);
+    return websocketStream(options, headers, null);
   }
 
   @Override
@@ -342,7 +342,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version) {
-    return websocketStream(options.getPort(), options.getHost(), options.getURI(), headers, version);
+    return websocketStream(options, headers, version, null);
   }
 
   @Override
@@ -357,13 +357,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols) {
-    return websocketStream(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols);
+    return new WebSocketStreamImpl(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, options.isSsl());
   }
 
   @Override
   public WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                          String subProtocols) {
-    return new WebSocketStreamImpl(port, host, requestURI, headers, version, subProtocols);
+    return new WebSocketStreamImpl(port, host, requestURI, headers, version, subProtocols, null);
   }
 
   @Override
@@ -864,12 +864,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return options;
   }
 
-  void getConnectionForWebsocket(int port,
+  void getConnectionForWebsocket(boolean ssl,
+                                 int port,
                                  String host,
                                  Handler<ClientConnection> handler,
                                  Handler<Throwable> connectionExceptionHandler,
                                  ContextImpl context) {
-    connectionManager.getConnectionForWebsocket(port, host, new Waiter(null, context) {
+    connectionManager.getConnectionForWebsocket(ssl, port, host, new Waiter(null, context) {
       @Override
       void handleConnection(HttpClientConnection conn) {
       }
@@ -967,14 +968,16 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     private Handler<WebSocket> handler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> endHandler;
+    private Boolean ssl;
 
-    public WebSocketStreamImpl(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols) {
+    public WebSocketStreamImpl(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Boolean ssl) {
       this.port = port;
       this.host = host;
       this.requestURI = requestURI;
       this.headers = headers;
       this.version = version;
       this.subProtocols = subProtocols;
+      this.ssl = ssl;
     }
 
     @Override
@@ -1005,7 +1008,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         } else {
           wsConnect = handler;
         }
-        getConnectionForWebsocket(port, host, conn -> {
+        getConnectionForWebsocket(ssl != null ? ssl : options.isSsl(), port, host, conn -> {
           conn.exceptionHandler(connectionExceptionHandler);
           if (conn.isValid()) {
             conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
