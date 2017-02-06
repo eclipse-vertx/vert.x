@@ -1538,7 +1538,9 @@
  *
  * Please see <<ssl, configuring net servers to use SSL>> for more information.
  *
- * SSL can also be enabled/disabled per request with {@link io.vertx.core.http.RequestOptions}:
+ * SSL can also be enabled/disabled per request with {@link io.vertx.core.http.RequestOptions} or when
+ * specifying a scheme with {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod, java.lang.String)}
+ * method.
  *
  * [source,$lang]
  * ----
@@ -1547,11 +1549,14 @@
  *
  * The {@link io.vertx.core.http.HttpClientOptions#setSsl(boolean)} setting acts as the default client setting.
  *
- * The {@link io.vertx.core.http.RequestOptions#setSsl(boolean)} overrides the default client setting.
+ * The {@link io.vertx.core.http.RequestOptions#setSsl(boolean)} overrides the default client setting
  *
  * * setting the value to `false` will disable SSL/TLS even if the client is configured to use SSL/TLS
  * * setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual
  * client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused
+ *
+ * Likewise {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod, java.lang.String)} scheme
+ * also overrides the default client setting.
  *
  * === WebSockets
  *

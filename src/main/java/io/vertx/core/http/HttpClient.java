@@ -1369,7 +1369,7 @@ public interface HttpClient extends Measured {
                                   String subProtocols);
 
   /**
-   * Set a redirect handler for the web client.
+   * Set a redirect handler for the http client.
    * <p>
    * The redirect handler is called when a {@code 3xx} response is received and the request is configured to
    * follow redirects with {@link HttpClientRequest#setFollowRedirects(boolean)}.
