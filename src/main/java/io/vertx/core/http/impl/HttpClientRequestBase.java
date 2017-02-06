@@ -35,18 +35,21 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final String uri;
   protected final String path;
   protected final String host;
+  protected final int port;
   protected final String query;
   private Handler<Throwable> exceptionHandler;
   private long currentTimeoutTimerId = -1;
+  private long currentTimeoutMs;
   private long lastDataReceived;
-  protected boolean exceptionOccurred;
+  protected Throwable exceptionOccurred;
   private Object metric;
 
-  HttpClientRequestBase(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port, String uri) {
     this.client = client;
     this.uri = uri;
     this.method = method;
     this.host = host;
+    this.port = port;
     this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
     this.query = HttpUtils.parseQuery(uri);
   }
@@ -60,8 +63,22 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   protected abstract Object getLock();
-  protected abstract void doHandleResponse(HttpClientResponseImpl resp);
+  protected abstract void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs);
   protected abstract void checkComplete();
+
+  protected String hostHeader() {
+    boolean ssl = client.getOptions().isSsl();
+    if ((port == 80 && !ssl) || (port == 443 && ssl)) {
+      return host;
+    } else {
+      return host + ':' + port;
+    }
+  }
+
+  @Override
+  public String absoluteURI() {
+    return (client.getOptions().isSsl() ? "https://" : "http://") + hostHeader() + uri;
+  }
 
   public String query() {
     return query;
@@ -93,10 +110,17 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     }
   }
 
+  Handler<Throwable> exceptionHandler() {
+    synchronized (getLock()) {
+      return exceptionHandler;
+    }
+  }
+
   @Override
   public HttpClientRequest setTimeout(long timeoutMs) {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
+      currentTimeoutMs = timeoutMs;
       currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
       return this;
     }
@@ -105,7 +129,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   public void handleException(Throwable t) {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
-      exceptionOccurred = true;
+      exceptionOccurred = t;
       if (exceptionHandler != null) {
         exceptionHandler.handle(t);
       } else {
@@ -117,10 +141,11 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   void handleResponse(HttpClientResponseImpl resp) {
     synchronized (getLock()) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
-      if (!exceptionOccurred) {
+      if (exceptionOccurred == null) {
+        long timeoutMS = currentTimeoutMs;
         cancelOutstandingTimeoutTimer();
         try {
-          doHandleResponse(resp);
+          doHandleResponse(resp, timeoutMS);
         } catch (Throwable t) {
           handleException(t);
         }
@@ -132,6 +157,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     if (currentTimeoutTimerId != -1) {
       client.getVertx().cancelTimer(currentTimeoutTimerId);
       currentTimeoutTimerId = -1;
+      currentTimeoutMs = 0;
     }
   }
 

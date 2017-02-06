@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -49,9 +50,9 @@ import static io.vertx.core.http.HttpHeaders.*;
  */
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
-  private final boolean ssl;
   private final VertxInternal vertx;
   private final int port;
+  private final boolean ssl;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
@@ -65,21 +66,24 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<HttpConnection> connectionHandler;
   private boolean headWritten;
   private boolean completed;
+  private Handler<Void> completionHandler;
   private Long reset;
   private HttpClientResponseImpl response;
   private ByteBuf pendingChunks;
+  private CompositeByteBuf cachedChunks;
   private int pendingMaxSize = -1;
+  private int followRedirects;
   private boolean connecting;
   private boolean writeHead;
   private long written;
   private CaseInsensitiveHeaders headers;
 
-  HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
-                        boolean ssl, String relativeURI, VertxInternal vertx) {
-    super(client, method, host, relativeURI);
+  HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port,
+                        String relativeURI, VertxInternal vertx) {
+    super(client, method, host, port, relativeURI);
+    this.ssl = ssl;
     this.chunked = false;
     this.vertx = vertx;
-    this.ssl = ssl;
     this.port = port;
   }
 
@@ -111,6 +115,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public HttpClientRequest resume() {
     return this;
+  }
+
+  @Override
+  public HttpClientRequest setFollowRedirects(boolean followRedirects) {
+    synchronized (getLock()) {
+      checkComplete();
+      if (followRedirects) {
+        this.followRedirects = client.getOptions().getMaxRedirects() - 1;
+      } else {
+        this.followRedirects = 0;
+      }
+      return this;
+    }
   }
 
   @Override
@@ -327,9 +344,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (getLock()) {
       checkComplete();
       checkResponseHandler();
-      if (!chunked && !contentLengthSet()) {
-        headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
-      }
       write(chunk.getByteBuf(), true);
     }
   }
@@ -378,6 +392,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           completed = true;
           if (stream != null) {
             stream.resetRequest(code);
+          }
+          if (completionHandler != null) {
+            completionHandler.handle(null);
           }
         } else {
           if (response != null) {
@@ -428,12 +445,88 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  protected void doHandleResponse(HttpClientResponseImpl resp) {
+  private void handleNextRequest(HttpClientResponse resp, HttpClientRequestImpl next, long timeoutMs) {
+    next.handler(respHandler);
+    next.exceptionHandler(exceptionHandler());
+    exceptionHandler(null);
+    next.endHandler(endHandler);
+    next.pushHandler = pushHandler;
+    next.followRedirects = followRedirects - 1;
+    next.written = written;
+    if (next.hostHeader == null) {
+      next.hostHeader = hostHeader;
+    }
+    if (headers != null && next.headers == null) {
+      next.headers().addAll(headers);
+    }
+    ByteBuf body;
+    switch (next.method) {
+      case GET:
+        body = null;
+        break;
+      case OTHER:
+        next.rawMethod = rawMethod;
+        body = null;
+        break;
+      default:
+        if (cachedChunks != null) {
+          body = cachedChunks;
+        } else {
+          body = null;
+        }
+        break;
+    }
+    cachedChunks = null;
+    Future<Void> fut = Future.future();
+    fut.setHandler(ar -> {
+      if (ar.succeeded()) {
+        if (timeoutMs > 0) {
+          next.setTimeout(timeoutMs);
+        }
+        next.write(body, true);
+      } else {
+        next.handleException(ar.cause());
+      }
+    });
+    if (exceptionOccurred != null) {
+      fut.fail(exceptionOccurred);
+    }
+    else if (completed) {
+      fut.complete();
+    } else {
+      exceptionHandler(err -> {
+        if (!fut.isComplete()) {
+          fut.fail(err);
+        }
+      });
+      completionHandler = v -> {
+        if (!fut.isComplete()) {
+          fut.complete();
+        }
+      };
+    }
+  }
+
+  protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
     if (reset != null) {
       stream.resetResponse(reset);
     } else {
       response = resp;
-      if (resp.statusCode() == 100) {
+      int statusCode = resp.statusCode();
+      if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
+        Future<HttpClientRequest> next = client.redirectHandler().apply(resp);
+        if (next != null) {
+          next.setHandler(ar -> {
+            if (ar.succeeded()) {
+              handleNextRequest(resp, (HttpClientRequestImpl) ar.result(), timeoutMs);
+            } else {
+              handleException(ar.cause());
+            }
+          });
+          return;
+        }
+      }
+      if (statusCode == 100) {
         if (continueHandler != null) {
           continueHandler.handle(null);
         }
@@ -446,6 +539,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
       }
     }
+  }
+
+  @Override
+  protected String hostHeader() {
+    return hostHeader != null ? hostHeader : super.hostHeader();
   }
 
   // After connecting we should synchronize on the client connection instance to prevent deadlock conditions
@@ -629,14 +727,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         boolean isCancelled() {
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
-          return exceptionOccurred || reset != null;
+          return exceptionOccurred != null || reset != null;
         }
       };
 
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnectionForRequest(port, host, waiter);
+      client.getConnectionForRequest(ssl, port, host, waiter);
       connecting = true;
     }
   }
@@ -705,17 +803,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return headers != null && headers().contains(CONTENT_LENGTH);
   }
 
-  private String hostHeader() {
-    if (hostHeader != null) {
-      return hostHeader;
-    }
-    if ((port == 80 && !ssl) || (port == 443 && ssl)) {
-      return host;
-    } else {
-      return host + ':' + port;
-    }
-  }
-
   private void writeHead() {
     stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked);
     headWritten = true;
@@ -733,15 +820,24 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
 
     if (end) {
-      completed = true;
-    }
-    if (!end && !chunked && !contentLengthSet()) {
-      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-              + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      if (buff != null && !chunked && !contentLengthSet()) {
+        headers().set(CONTENT_LENGTH, String.valueOf(buff.writerIndex()));
+      }
+    } else {
+      if (!chunked && !contentLengthSet()) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+            + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      }
     }
 
     if (buff != null) {
       written += buff.readableBytes();
+      if (followRedirects > 0) {
+        if (cachedChunks == null) {
+          cachedChunks = Unpooled.compositeBuffer();
+        }
+        cachedChunks.addComponent(buff).writerIndex(cachedChunks.writerIndex() + buff.writerIndex());
+      }
     }
 
     if (stream == null) {
@@ -772,6 +868,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (respHandler != null) {
           stream.endRequest();
         }
+      }
+    }
+
+    if (end) {
+      completed = true;
+      if (completionHandler != null) {
+        completionHandler.handle(null);
       }
     }
   }

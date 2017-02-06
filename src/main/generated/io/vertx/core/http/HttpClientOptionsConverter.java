@@ -71,6 +71,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("maxPoolSize") instanceof Number) {
       obj.setMaxPoolSize(((Number)json.getValue("maxPoolSize")).intValue());
     }
+    if (json.getValue("maxRedirects") instanceof Number) {
+      obj.setMaxRedirects(((Number)json.getValue("maxRedirects")).intValue());
+    }
     if (json.getValue("maxWaitQueueSize") instanceof Number) {
       obj.setMaxWaitQueueSize(((Number)json.getValue("maxWaitQueueSize")).intValue());
     }
@@ -119,6 +122,7 @@ public class HttpClientOptionsConverter {
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxPoolSize", obj.getMaxPoolSize());
+    json.put("maxRedirects", obj.getMaxRedirects());
     json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("pipelining", obj.isPipelining());

@@ -347,7 +347,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     if (metrics.isEnabled()) {
       HttpClientRequestBase req = currentResponse.request();
       Object reqMetric = req.metric();
-      if (req.exceptionOccurred) {
+      if (req.exceptionOccurred != null) {
         metrics.requestReset(reqMetric);
       } else {
         metrics.responseEnd(reqMetric, currentResponse);

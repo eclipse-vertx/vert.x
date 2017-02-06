@@ -107,6 +107,7 @@ public class Http2ClientTest extends Http2TestBase {
     super.setUp();
     clientOptions = new HttpClientOptions().
         setUseAlpn(true).
+        setSsl(true).
         setTrustStoreOptions(Trust.SERVER_JKS.get()).
         setProtocolVersion(HttpVersion.HTTP_2);
     client = vertx.createHttpClient(clientOptions);
@@ -643,9 +644,7 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       testComplete();
-    }).exceptionHandler(err -> {
-      fail();
-    }).end();
+    }).exceptionHandler(this::fail).end();
     await();
   }
 
@@ -1514,7 +1513,7 @@ public class Http2ClientTest extends Http2TestBase {
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT).sync();
     try {
       client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setHttp2ClearTextUpgrade(upgrade));
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(upgrade));
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
         assertEquals(HttpVersion.HTTP_2, resp.version());
         testComplete();
@@ -1537,7 +1536,7 @@ public class Http2ClientTest extends Http2TestBase {
       });
       startServer();
       client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false));
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
         assertEquals(HttpVersion.HTTP_1_1, resp.version());
         testComplete();

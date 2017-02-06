@@ -748,6 +748,10 @@ Set the maximum length of the initial line for HTTP/1.x (e.g. <code>"HTTP/1.1 20
 +++
 Set the maximum pool size for connections
 +++
+|[[maxRedirects]]`maxRedirects`|`Number (int)`|
++++
+Set to <code>maxRedirects</code> the maximum number of redirection a request can follow.
++++
 |[[maxWaitQueueSize]]`maxWaitQueueSize`|`Number (int)`|
 +++
 Set the maximum requests allowed in the wait queue, any requests beyond the max size will result in
@@ -1793,6 +1797,36 @@ Set proxy type.
 |[[username]]`username`|`String`|
 +++
 Set proxy username.
++++
+|===
+
+[[RequestOptions]]
+== RequestOptions
+
+++++
+ Options describing how an link will make connect to make a request.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[host]]`host`|`String`|
++++
+Set the host name to be used by the client request.
++++
+|[[port]]`port`|`Number (int)`|
++++
+Set the port to be used by the client request.
++++
+|[[ssl]]`ssl`|`Boolean`|
++++
+Set whether SSL/TLS is enabled
++++
+|[[uri]]`uri`|`String`|
++++
+Set the request relative URI
 +++
 |===
 

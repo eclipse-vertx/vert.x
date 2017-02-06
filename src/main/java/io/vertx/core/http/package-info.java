@@ -1084,6 +1084,58 @@
  *
  * Alternatively you can just parse the `Set-Cookie` headers yourself in the response.
  *
+ * ==== 30x redirection handling
+ *
+ * The client can be configured to follow HTTP redirections: when the client receives an
+ * `301`, `302`, `303` or `307` status code, it follows the redirection provided by the `Location` response header
+ * and the response handler is passed the redirected response instead of the original response.
+ *
+ * Here’s an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#exampleFollowRedirect01}
+ * ----
+ *
+ * The redirection policy is as follow
+ *
+ * * on a `301`, `302` or `303` status code, follow the redirection with a `GET` method
+ * * on a `307` status code, follow the redirection with the same HTTP method and the cached body
+ *
+ * WARNING: following redirections caches the request body
+ *
+ * The maximum redirects is `16` by default and can be changed with {@link io.vertx.core.http.HttpClientOptions#setMaxRedirects(int)}.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#exampleFollowRedirect02}
+ * ----
+ *
+ * One size does not fit all and the default redirection policy may not be adapted to your needs.
+ *
+ * The default redirection policy can changed with a custom implementation:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#exampleFollowRedirect03}
+ * ----
+ *
+ * The policy handles the original {@link io.vertx.core.http.HttpClientResponse} received and returns either `null`
+ * or a `Future<HttpClientRequest>`.
+ *
+ * - when `null` is returned, the original response is processed
+ * - when a future is returned, the request will be sent on its successful completion
+ * - when a future is returned, the exception handler set on the request is called on its failure
+ *
+ * The returned request must be unsent so the original request handlers can be sent and the client can send it after.
+ *
+ * Most of the original request settings will be propagated to the new request:
+ *
+ * * request headers, unless if you have set some headers (including {@link io.vertx.core.http.HttpClientRequest#setHost})
+ * * request body unless the returned request uses a `GET` method
+ * * response handler
+ * * request exception handler
+ * * request timeout
  *
  * ==== 100-Continue handling
  *
@@ -1485,6 +1537,26 @@
  * Vert.x http servers and clients can be configured to use HTTPS in exactly the same way as net servers.
  *
  * Please see <<ssl, configuring net servers to use SSL>> for more information.
+ *
+ * SSL can also be enabled/disabled per request with {@link io.vertx.core.http.RequestOptions} or when
+ * specifying a scheme with {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod, java.lang.String)}
+ * method.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#setSSLPerRequest(io.vertx.core.http.HttpClient)}
+ * ----
+ *
+ * The {@link io.vertx.core.http.HttpClientOptions#setSsl(boolean)} setting acts as the default client setting.
+ *
+ * The {@link io.vertx.core.http.RequestOptions#setSsl(boolean)} overrides the default client setting
+ *
+ * * setting the value to `false` will disable SSL/TLS even if the client is configured to use SSL/TLS
+ * * setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual
+ * client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused
+ *
+ * Likewise {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod, java.lang.String)} scheme
+ * also overrides the default client setting.
  *
  * === WebSockets
  *
