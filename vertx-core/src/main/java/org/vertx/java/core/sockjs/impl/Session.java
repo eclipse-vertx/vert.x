@@ -166,6 +166,7 @@ class Session extends SockJSSocketBase implements Shareable {
   // Yes, SockJS is weird, but it's hard to work out expected server behaviour when there's no spec
   @Override
   public synchronized void close() {
+    super.close();
     if (endHandler != null) {
       endHandler.handle(null);
     }
