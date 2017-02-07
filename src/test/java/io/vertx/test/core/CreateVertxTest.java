@@ -16,9 +16,10 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import org.junit.Test;
+
+import io.vertx.core.*;
+import io.vertx.test.fakecluster.FakeClusterManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -88,4 +89,20 @@ public class CreateVertxTest extends VertxTestBase {
     await();
   }
 
+  
+  @Test
+  public void testCreateClusteredVertxAsyncDetectJoinFailure() {
+    VertxOptions options = new VertxOptions().setClusterManager(new FakeClusterManager(){
+      @Override
+      public void join(Handler<AsyncResult<Void>> resultHandler) {
+        resultHandler.handle(Future.failedFuture(new Exception("joinfailure")));
+      }
+    });
+    clusteredVertx(options, ar -> {
+      assertTrue(ar.failed());
+      assertEquals("joinfailure", ar.cause().getMessage());
+      testComplete();
+    });
+    await();
+  }
 }

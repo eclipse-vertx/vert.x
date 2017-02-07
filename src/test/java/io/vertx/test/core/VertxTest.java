@@ -96,20 +96,4 @@ public class VertxTest extends AsyncTestBase {
     await();
   }
   
-  @Test
-  public void testClusterManagerFailure() throws Exception {
-    VertxOptions options = new VertxOptions().setClusterManager(new FakeClusterManager(){
-      @Override
-      public void join(Handler<AsyncResult<Void>> resultHandler) {
-        resultHandler.handle(Future.failedFuture(new Exception("joinfailure")));
-      }
-    });
-    Vertx.clusteredVertx(options, ar -> {
-      assertTrue(ar.failed());
-      assertEquals("joinfailure", ar.cause().getMessage());
-      testComplete();
-    });
-    await();
-  }
-  
 }
