@@ -117,8 +117,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final FileResolver fileResolver;
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private final Map<ServerID, NetServerBase> sharedNetServers = new HashMap<>();
-  private final WorkerPool workerPool;
-  private final WorkerPool internalBlockingPool;
+  final WorkerPool workerPool;
+  final WorkerPool internalBlockingPool;
   private final ThreadFactory eventLoopThreadFactory;
   private final NioEventLoopGroup eventLoopGroup;
   private final NioEventLoopGroup acceptorEventLoopGroup;
