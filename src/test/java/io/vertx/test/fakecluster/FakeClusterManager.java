@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 
 public class FakeClusterManager implements ClusterManager {
 
@@ -366,6 +367,11 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void removeAllForValue(final V v, Handler<AsyncResult<Void>> completionHandler) {
+      removeAll(v::equals, completionHandler);
+    }
+
+    @Override
+    public void removeAll(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler) {
       vertx.executeBlocking(fut -> {
         Iterator<Map.Entry<K, ChoosableSet<V>>> mapIter = map.entrySet().iterator();
         while (mapIter.hasNext()) {
@@ -374,7 +380,7 @@ public class FakeClusterManager implements ClusterManager {
           Iterator<V> iter = vals.iterator();
           while (iter.hasNext()) {
             V val = iter.next();
-            if (val.equals(v)) {
+            if (p.test(val)) {
               iter.remove();
             }
           }
