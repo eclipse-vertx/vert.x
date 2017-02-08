@@ -35,6 +35,7 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.streams.ReadStream;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -357,13 +358,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols) {
-    return new WebSocketStreamImpl(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, options.isSsl());
+    return new WebSocketStream(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, options.isSsl());
   }
 
   @Override
   public WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                          String subProtocols) {
-    return new WebSocketStreamImpl(port, host, requestURI, headers, version, subProtocols, null);
+    return new WebSocketStream(port, host, requestURI, headers, version, subProtocols, null);
   }
 
   @Override
@@ -957,7 +958,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
   }
 
-  private class WebSocketStreamImpl implements WebSocketStream {
+  private class WebSocketStream implements ReadStream<WebSocket> {
 
     final int port;
     final String host;
@@ -970,7 +971,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     private Handler<Void> endHandler;
     private Boolean ssl;
 
-    public WebSocketStreamImpl(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Boolean ssl) {
+    WebSocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Boolean ssl) {
       this.port = port;
       this.host = host;
       this.requestURI = requestURI;
@@ -981,13 +982,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
 
     @Override
-    public synchronized WebSocketStream exceptionHandler(Handler<Throwable> handler) {
+    public synchronized ReadStream<WebSocket> exceptionHandler(Handler<Throwable> handler) {
       exceptionHandler = handler;
       return this;
     }
 
     @Override
-    public synchronized WebSocketStream handler(Handler<WebSocket> handler) {
+    public synchronized ReadStream<WebSocket> handler(Handler<WebSocket> handler) {
       if (this.handler == null && handler != null) {
         this.handler = handler;
         checkClosed();
@@ -1021,18 +1022,18 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
 
     @Override
-    public synchronized WebSocketStream endHandler(Handler<Void> endHandler) {
+    public synchronized ReadStream<WebSocket> endHandler(Handler<Void> endHandler) {
       this.endHandler = endHandler;
       return this;
     }
 
     @Override
-    public WebSocketStream pause() {
+    public ReadStream<WebSocket> pause() {
       return this;
     }
 
     @Override
-    public WebSocketStream resume() {
+    public ReadStream<WebSocket> resume() {
       return this;
     }
   }

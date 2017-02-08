@@ -24,6 +24,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.streams.ReadStream;
 
 /**
  * An HTTP and WebSockets server.
@@ -46,7 +47,7 @@ public interface HttpServer extends Measured {
    * @return the request stream
    */
   @CacheReturn
-  HttpServerRequestStream requestStream();
+  ReadStream<HttpServerRequest> requestStream();
 
   /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
@@ -78,7 +79,7 @@ public interface HttpServer extends Measured {
    * @return the websocket stream
    */
   @CacheReturn
-  ServerWebSocketStream websocketStream();
+  ReadStream<ServerWebSocket> websocketStream();
 
   /**
    * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a

@@ -23,6 +23,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.function.Function;
 
@@ -1213,7 +1214,7 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(RequestOptions options);
+  ReadStream<WebSocket> websocketStream(RequestOptions options);
 
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI
@@ -1222,7 +1223,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(int port, String host, String requestURI);
+  ReadStream<WebSocket> websocketStream(int port, String host, String requestURI);
 
   /**
    * Create a WebSocket stream to the specified host, relative request URI and default port
@@ -1230,7 +1231,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(String host, String requestURI);
+  ReadStream<WebSocket> websocketStream(String host, String requestURI);
 
   /**
    * Create a WebSocket stream with the specified options, and with the specified headers
@@ -1238,7 +1239,7 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(RequestOptions options, MultiMap headers);
+  ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers);
 
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI, and with the specified headers
@@ -1248,7 +1249,7 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers);
+  ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers);
 
   /**
    * Create a WebSocket stream to the specified host, relative request URI and default port and with the specified headers
@@ -1257,7 +1258,7 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(String host, String requestURI, MultiMap headers);
+  ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers);
 
   /**
    * Create a WebSocket stream with the specified options, with the specified headers and using
@@ -1267,7 +1268,7 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version);
+  ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version);
 
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI, with the specified headers and using
@@ -1279,7 +1280,7 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version);
+  ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
    * Create a WebSocket stream with the specified options and with the specified headers and using
@@ -1290,7 +1291,7 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version);
+  ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI, with the specified headers, using
@@ -1301,7 +1302,7 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version,
+  ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
   /**
@@ -1315,7 +1316,7 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
+  ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
   /**
@@ -1328,7 +1329,7 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version,
+  ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
   /**
@@ -1336,7 +1337,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(String requestURI);
+  ReadStream<WebSocket> websocketStream(String requestURI);
 
   /**
    * Create a WebSocket stream at the relative request URI using the default host and port and the specified headers
@@ -1344,7 +1345,7 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(String requestURI, MultiMap headers);
+  ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers);
 
   /**
    * Create a WebSocket stream at the relative request URI using the default host and port, the specified headers and the
@@ -1354,7 +1355,7 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(String requestURI, MultiMap headers, WebsocketVersion version);
+  ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
    * Create a WebSocket stream at the relative request URI using the default host and port, the specified headers, the
@@ -1365,7 +1366,7 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols
    * @return a reference to this, so the API can be used fluently
    */
-  WebSocketStream websocketStream(String requestURI, MultiMap headers, WebsocketVersion version,
+  ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
   /**

@@ -23,7 +23,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerRequestStream;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -123,7 +122,7 @@ public class HttpRequestStreamTest extends VertxTestBase {
   public void testCloseServerAsynchronously() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     AtomicInteger done = new AtomicInteger();
-    HttpServerRequestStream stream = server.requestStream();
+    ReadStream<HttpServerRequest> stream = server.requestStream();
     stream.handler(req -> {});
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);

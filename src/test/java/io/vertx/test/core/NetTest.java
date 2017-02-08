@@ -29,6 +29,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
 import io.vertx.test.netty.TestLoggerFactory;
@@ -1991,7 +1992,7 @@ public class NetTest extends VertxTestBase {
   public void testReadStreamPauseResume() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
-    NetSocketStream socketStream = server.connectStream();
+    ReadStream<NetSocket> socketStream = server.connectStream();
     AtomicBoolean paused = new AtomicBoolean();
     socketStream.handler(so -> {
       assertTrue(!paused.get());
@@ -2031,7 +2032,7 @@ public class NetTest extends VertxTestBase {
   public void testNetSocketStreamCallbackIsAsync() {
     this.server = vertx.createNetServer(new NetServerOptions());
     AtomicInteger done = new AtomicInteger();
-    NetSocketStream stream = server.connectStream();
+    ReadStream<NetSocket> stream = server.connectStream();
     stream.handler(req -> {});
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);

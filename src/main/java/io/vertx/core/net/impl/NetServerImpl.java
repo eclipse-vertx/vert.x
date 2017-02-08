@@ -31,8 +31,8 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.NetSocketStream;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.streams.ReadStream;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
@@ -44,7 +44,7 @@ import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
  */
 public class NetServerImpl extends NetServerBase<NetSocketImpl> implements NetServer {
 
-  private final NetSocketStreamImpl connectStream = new NetSocketStreamImpl();
+  private final NetSocketStream connectStream = new NetSocketStream();
   private Handler<NetSocket> handler;
   private Handler<Void> endHandler;
 
@@ -135,7 +135,7 @@ public class NetServerImpl extends NetServerBase<NetSocketImpl> implements NetSe
   }
 
   @Override
-  public NetSocketStream connectStream() {
+  public ReadStream<NetSocket> connectStream() {
     return connectStream;
   }
 
@@ -167,28 +167,28 @@ public class NetServerImpl extends NetServerBase<NetSocketImpl> implements NetSe
         In practice synchronized overhead should be close to zero assuming most access is from the same thread due
         to biased locks
       */
-  private class NetSocketStreamImpl implements NetSocketStream {
+  private class NetSocketStream implements ReadStream<NetSocket> {
 
     @Override
-    public NetSocketStreamImpl handler(Handler<NetSocket> handler) {
+    public NetSocketStream handler(Handler<NetSocket> handler) {
       connectHandler(handler);
       return this;
     }
 
     @Override
-    public NetSocketStreamImpl pause() {
+    public NetSocketStream pause() {
       pauseAccepting();
       return this;
     }
 
     @Override
-    public NetSocketStreamImpl resume() {
+    public NetSocketStream resume() {
       resumeAccepting();
       return this;
     }
 
     @Override
-    public NetSocketStreamImpl endHandler(Handler<Void> handler) {
+    public NetSocketStream endHandler(Handler<Void> handler) {
       synchronized (NetServerImpl.this) {
         endHandler = handler;
         return this;
@@ -196,7 +196,7 @@ public class NetServerImpl extends NetServerBase<NetSocketImpl> implements NetSe
     }
 
     @Override
-    public NetSocketStreamImpl exceptionHandler(Handler<Throwable> handler) {
+    public NetSocketStream exceptionHandler(Handler<Throwable> handler) {
       // Should we use it in the server close exception handler ?
       return this;
     }

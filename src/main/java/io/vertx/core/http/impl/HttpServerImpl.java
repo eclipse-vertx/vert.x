@@ -65,14 +65,13 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerRequestStream;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.ServerWebSocketStream;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -131,8 +130,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<HttpHandler> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private final HandlerManager<Handler<ServerWebSocket>> wsHandlerManager = new HandlerManager<>(availableWorkers);
-  private final ServerWebSocketStreamImpl wsStream = new ServerWebSocketStreamImpl();
-  private final HttpServerRequestStreamImpl requestStream = new HttpServerRequestStreamImpl();
+  private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
+  private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
   private final String subProtocols;
   private String serverOrigin;
@@ -171,7 +170,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public HttpServerRequestStream requestStream() {
+  public ReadStream<HttpServerRequest> requestStream() {
     return requestStream;
   }
 
@@ -201,7 +200,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public ServerWebSocketStream websocketStream() {
+  public ReadStream<ServerWebSocket> websocketStream() {
     return wsStream;
   }
 
@@ -912,7 +911,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     In practice synchronized overhead should be close to zero assuming most access is from the same thread due
     to biased locks
   */
-  private class HttpStreamHandler<R extends ReadStream<C>, C extends ReadStream<?>> implements ReadStream<C> {
+  private class HttpStreamHandler<C extends ReadStream<Buffer>> implements ReadStream<C> {
 
     private Handler<C> handler;
     private boolean paused;
@@ -937,55 +936,49 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    public R handler(Handler<C> handler) {
+    public ReadStream handler(Handler<C> handler) {
       synchronized (HttpServerImpl.this) {
         if (listening) {
           throw new IllegalStateException("Please set handler before server is listening");
         }
         this.handler = handler;
-        return (R) this;
+        return this;
       }
     }
 
     @Override
-    public R pause() {
+    public ReadStream pause() {
       synchronized (HttpServerImpl.this) {
         if (!paused) {
           paused = true;
         }
-        return (R) this;
+        return this;
       }
     }
 
     @Override
-    public R resume() {
+    public ReadStream resume() {
       synchronized (HttpServerImpl.this) {
         if (paused) {
           paused = false;
         }
-        return (R) this;
+        return this;
       }
     }
 
     @Override
-    public R endHandler(Handler<Void> endHandler) {
+    public ReadStream endHandler(Handler<Void> endHandler) {
       synchronized (HttpServerImpl.this) {
         this.endHandler = endHandler;
-        return (R) this;
+        return this;
       }
     }
 
     @Override
-    public R exceptionHandler(Handler<Throwable> handler) {
+    public ReadStream exceptionHandler(Handler<Throwable> handler) {
       // Should we use it in the server close exception handler ?
-      return (R) this;
+      return this;
     }
-  }
-
-  class HttpServerRequestStreamImpl extends HttpStreamHandler<HttpServerRequestStream, HttpServerRequest> implements HttpServerRequestStream {
-  }
-
-  class ServerWebSocketStreamImpl extends HttpStreamHandler<ServerWebSocketStream, ServerWebSocket> implements ServerWebSocketStream {
   }
 
   class HttpHandler {

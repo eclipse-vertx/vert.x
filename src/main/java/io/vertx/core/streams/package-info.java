@@ -99,9 +99,8 @@
  *
  * `ReadStream` is implemented by {@link io.vertx.core.http.HttpClientResponse}, {@link io.vertx.core.datagram.DatagramSocket},
  * {@link io.vertx.core.http.HttpClientRequest}, {@link io.vertx.core.http.HttpServerFileUpload},
- * {@link io.vertx.core.http.HttpServerRequest}, {@link io.vertx.core.http.HttpServerRequestStream},
- * {@link io.vertx.core.eventbus.MessageConsumer}, {@link io.vertx.core.net.NetSocket}, {@link io.vertx.core.net.NetSocketStream},
- * {@link io.vertx.core.http.WebSocket}, {@link io.vertx.core.http.WebSocketStream}, {@link io.vertx.core.TimeoutStream},
+ * {@link io.vertx.core.http.HttpServerRequest}, {@link io.vertx.core.eventbus.MessageConsumer},
+ * {@link io.vertx.core.net.NetSocket}, {@link io.vertx.core.http.WebSocket}, {@link io.vertx.core.TimeoutStream},
  * {@link io.vertx.core.file.AsyncFile}.
  *
  * Functions:

@@ -361,7 +361,7 @@ public class WebsocketTest extends VertxTestBase {
                        boolean clientSsl,
                        boolean serverSsl,
                        String[] enabledCipherSuites,
-                       Function<HttpClient, WebSocketStream> wsProvider) throws Exception {
+                       Function<HttpClient, ReadStream<WebSocket>> wsProvider) throws Exception {
     HttpClientOptions options = new HttpClientOptions();
     options.setSsl(clientSsl);
     if (clientTrustAll) {
@@ -1100,7 +1100,7 @@ public class WebsocketTest extends VertxTestBase {
   public void testWebsocketStreamCallbackAsynchronously() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     AtomicInteger done = new AtomicInteger();
-    ServerWebSocketStream stream = server.websocketStream();
+    ReadStream<ServerWebSocket> stream = server.websocketStream();
     stream.handler(req -> { });
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
@@ -1400,7 +1400,7 @@ public class WebsocketTest extends VertxTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       workers.get(0).runOnContext(v -> {
-        WebSocketStream webSocketStream = client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/");
+        ReadStream<WebSocket> webSocketStream = client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/");
         webSocketStream.handler(ws -> {
           ws.handler(buf -> {
             assertEquals("hello", buf.toString());
