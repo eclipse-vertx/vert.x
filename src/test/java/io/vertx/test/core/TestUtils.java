@@ -22,6 +22,7 @@ package io.vertx.test.core;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.net.*;
 
 import java.io.ByteArrayOutputStream;
 import java.util.EnumSet;
@@ -320,4 +321,47 @@ public class TestUtils {
     gos.close();
     return baos.toByteArray();
   }
+
+  public static KeyCertOptions randomKeyCertOptions() {
+    KeyCertOptions keyCertOptions;
+    switch (TestUtils.randomPositiveInt() % 3) {
+      case 0:
+        keyCertOptions = new JksOptions();
+        String jksPassword = TestUtils.randomAlphaString(100);
+        ((JksOptions) keyCertOptions).setPassword(jksPassword);
+        break;
+      case 1:
+        keyCertOptions = new PemKeyCertOptions();
+        Buffer keyValue = TestUtils.randomBuffer(100);
+        ((PemKeyCertOptions) keyCertOptions).setKeyValue(keyValue);
+        break;
+      default:
+        keyCertOptions = new PfxOptions();
+        String pfxPassword = TestUtils.randomAlphaString(100);
+        ((PfxOptions) keyCertOptions).setPassword(pfxPassword);
+    }
+    return keyCertOptions;
+  }
+
+  public static TrustOptions randomTrustOptions() {
+    TrustOptions trustOptions;
+    switch (TestUtils.randomPositiveInt() % 3) {
+      case 0:
+        trustOptions = new JksOptions();
+        String tsPassword = TestUtils.randomAlphaString(100);
+        ((JksOptions) trustOptions).setPassword(tsPassword);
+        break;
+      case 1:
+        trustOptions = new PemTrustOptions();
+        Buffer keyValue = TestUtils.randomBuffer(100);
+        ((PemTrustOptions) trustOptions).addCertValue(keyValue);
+        break;
+      default:
+        trustOptions = new PfxOptions();
+        String pfxPassword = TestUtils.randomAlphaString(100);
+        ((PfxOptions) trustOptions).setPassword(pfxPassword);
+    }
+    return trustOptions;
+  }
+
 }

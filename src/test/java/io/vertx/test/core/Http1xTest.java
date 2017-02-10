@@ -386,48 +386,6 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.isDecompressionSupported());
   }
 
-  private static KeyCertOptions randomKeyCertOptions() {
-    KeyCertOptions keyCertOptions;
-    switch (TestUtils.randomPositiveInt() % 3) {
-      case 0:
-        keyCertOptions = new JksOptions();
-        String jksPassword = TestUtils.randomAlphaString(100);
-        ((JksOptions) keyCertOptions).setPassword(jksPassword);
-        break;
-      case 1:
-        keyCertOptions = new PemKeyCertOptions();
-        Buffer keyValue = TestUtils.randomBuffer(100);
-        ((PemKeyCertOptions) keyCertOptions).setKeyValue(keyValue);
-        break;
-      default:
-        keyCertOptions = new PfxOptions();
-        String pfxPassword = TestUtils.randomAlphaString(100);
-        ((PfxOptions) keyCertOptions).setPassword(pfxPassword);
-    }
-    return keyCertOptions;
-  }
-
-  private static TrustOptions randomTrustOptions() {
-    TrustOptions trustOptions;
-    switch (TestUtils.randomPositiveInt() % 3) {
-      case 0:
-        trustOptions = new JksOptions();
-        String tsPassword = TestUtils.randomAlphaString(100);
-        ((JksOptions) trustOptions).setPassword(tsPassword);
-        break;
-      case 1:
-        trustOptions = new PemTrustOptions();
-        Buffer keyValue = TestUtils.randomBuffer(100);
-        ((PemTrustOptions) trustOptions).addCertValue(keyValue);
-        break;
-      default:
-        trustOptions = new PfxOptions();
-        String pfxPassword = TestUtils.randomAlphaString(100);
-        ((PfxOptions) trustOptions).setPassword(pfxPassword);
-    }
-    return trustOptions;
-  }
-
   @Test
   public void testCopyClientOptions() {
     HttpClientOptions options = new HttpClientOptions();
