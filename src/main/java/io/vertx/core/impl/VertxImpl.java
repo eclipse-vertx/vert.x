@@ -932,7 +932,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
-    if (maxExecuteTime < 1) {
+    if (poolSize < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
     if (maxExecuteTime < 1) {
