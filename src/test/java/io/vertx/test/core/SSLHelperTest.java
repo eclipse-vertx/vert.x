@@ -173,6 +173,6 @@ public class SSLHelperTest extends VertxTestBase {
 
     helper.getContext((VertxInternal) vertx);
 
-    Assert.assertTrue("Trust Manager was initialised at some point.", completableFuture.isDone());
+    Assert.assertTrue("Assert Trust Manager was initialised at some point.", completableFuture.isDone());
   }
 }
