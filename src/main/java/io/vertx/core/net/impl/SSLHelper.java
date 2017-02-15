@@ -18,7 +18,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
-import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -28,18 +27,10 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.TCPSSLOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
-import java.security.KeyStore;
 import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -266,6 +257,7 @@ public class SSLHelper {
         }
       }
       if (trustMgrFactory != null) {
+        // FIXME Should init before here.
         builder.trustManager(trustMgrFactory);
       }
       if (cipherSuites != null && cipherSuites.size() > 0) {
