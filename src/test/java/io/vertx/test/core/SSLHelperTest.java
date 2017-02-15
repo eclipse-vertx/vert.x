@@ -33,6 +33,7 @@ import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.security.tools.KeyStoreUtil;
 
 import javax.net.ssl.*;
 import java.security.*;
@@ -154,7 +155,11 @@ public class SSLHelperTest extends VertxTestBase {
 
       @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
-        return new TestTrustManagerFactory(() -> completableFuture.complete(null));
+        TestTrustManagerFactory testTrustManagerFactory =
+                new TestTrustManagerFactory(() -> completableFuture.complete(null));
+        KeyStore keyStore = KeyStoreUtil.getCacertsKeyStore();
+        testTrustManagerFactory.init(keyStore);
+        return testTrustManagerFactory;
       }
 
       @Override

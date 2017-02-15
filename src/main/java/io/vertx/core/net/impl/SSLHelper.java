@@ -257,7 +257,6 @@ public class SSLHelper {
         }
       }
       if (trustMgrFactory != null) {
-        // FIXME Should init before here.
         builder.trustManager(trustMgrFactory);
       }
       if (cipherSuites != null && cipherSuites.size() > 0) {
