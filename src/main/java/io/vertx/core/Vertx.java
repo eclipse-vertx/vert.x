@@ -502,7 +502,7 @@ public interface Vertx extends Measured {
    *
    * @param name the name of the worker executor
    * @param poolSize the size of the pool
-   * @param maxExecuteTime the value of max worker execute time, in ms
+   * @param maxExecuteTime the value of max worker execute time, in ns
    * @return the named worker executor
    */
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
