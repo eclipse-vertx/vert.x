@@ -55,8 +55,8 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
       options.addCrlPath("tls/root-ca/crl.pem");
     }
 
-    setOptions(options, trust.get());
-    setOptions(options, cert.get());
+    options.setTrustOptions(trust.get());
+    options.setKeyCertOptions(cert.get());
 
     if (enabledCipherSuites != null) {
       enabledCipherSuites.forEach(options::addEnabledCipherSuite);

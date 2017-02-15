@@ -16,23 +16,36 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.*;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.TrustAllTrustManager;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.ManagerFactoryParameters;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.TrustManagerFactorySpi;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
@@ -347,6 +360,33 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(Cert.CLIENT_PEM, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
   }
 
+  @Test
+  // Test custom trust manager factory
+  public void testCustomTrustManagerFactory() throws Exception {
+    testTLS(Cert.NONE, () -> new TrustOptions() {
+      @Override
+      public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
+        return new TrustManagerFactory(new TrustManagerFactorySpi() {
+          @Override
+          protected void engineInit(KeyStore keyStore) throws KeyStoreException {
+          }
+          @Override
+          protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws InvalidAlgorithmParameterException {
+          }
+          @Override
+          protected TrustManager[] engineGetTrustManagers() {
+            return new TrustManager[]{TrustAllTrustManager.INSTANCE};
+          }
+        }, KeyPairGenerator.getInstance("RSA").getProvider(), KeyPairGenerator.getInstance("RSA").getAlgorithm()) {
+        };
+      }
+      @Override
+      public TrustOptions clone() {
+        return this;
+      }
+    }, Cert.SERVER_JKS, Trust.NONE).pass();
+  }
+
   class TLSTest {
 
     HttpVersion version;
@@ -538,8 +578,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
         options.setUseAlpn(true);
       }
       options.setVerifyHost(clientVerifyHost);
-      setOptions(options, clientTrust);
-      setOptions(options, clientCert);
+      options.setTrustOptions(clientTrust);
+      options.setKeyCertOptions(clientCert);
       for (String suite: clientEnabledCipherSuites) {
         options.addEnabledCipherSuite(suite);
       }
@@ -560,8 +600,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       client = createHttpClient(options);
       HttpServerOptions serverOptions = new HttpServerOptions();
-      setOptions(serverOptions, serverTrust);
-      setOptions(serverOptions, serverCert);
+      serverOptions.setTrustOptions(serverTrust);
+      serverOptions.setKeyCertOptions(serverCert);
       if (requiresClientAuth) {
         serverOptions.setClientAuth(ClientAuth.REQUIRED);
       }
@@ -755,7 +795,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   private void testInvalidTrustStore(TrustOptions options, String expectedPrefix, String expectedSuffix) {
     HttpServerOptions serverOptions = new HttpServerOptions();
-    setOptions(serverOptions, options);
+    serverOptions.setTrustOptions(options);
     testStore(serverOptions, Collections.singletonList(expectedPrefix), expectedSuffix);
   }
 
@@ -794,7 +834,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   public void testCrlInvalidPath() throws Exception {
     HttpClientOptions clientOptions = new HttpClientOptions();
-    setOptions(clientOptions, Trust.SERVER_PEM_ROOT_CA.get());
+    clientOptions.setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);

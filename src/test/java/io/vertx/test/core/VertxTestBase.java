@@ -25,13 +25,11 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TCPSSLOptions;
-import io.vertx.core.net.TrustOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
@@ -180,16 +178,6 @@ public class VertxTestBase extends AsyncTestBase {
       sslOptions.setPfxKeyCertOptions((PfxOptions) options);
     } else {
       sslOptions.setPemKeyCertOptions((PemKeyCertOptions) options);
-    }
-  }
-
-  protected static void setOptions(TCPSSLOptions sslOptions, TrustOptions options) {
-    if (options instanceof JksOptions) {
-      sslOptions.setTrustStoreOptions((JksOptions) options);
-    } else if (options instanceof PfxOptions) {
-      sslOptions.setPfxTrustOptions((PfxOptions) options);
-    } else {
-      sslOptions.setPemTrustOptions((PemTrustOptions) options);
     }
   }
 
