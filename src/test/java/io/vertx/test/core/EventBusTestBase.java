@@ -19,9 +19,14 @@ package io.vertx.test.core;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageCodec;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.json.JsonArray;
@@ -30,6 +35,8 @@ import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
+
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -410,6 +417,119 @@ public abstract class EventBusTestBase extends VertxTestBase {
         }
       });
     });
+    await();
+  }
+
+  @Test
+  public void testSendWhileUnsubscribing() throws Exception {
+    startNodes(2);
+    Vertx vertx0 = vertices[0].exceptionHandler(this::fail);
+
+    Verticle sender = new AbstractVerticle() {
+      boolean stop;
+
+      @Override
+      public void start() throws Exception {
+        getVertx().runOnContext(v -> sendMsg());
+      }
+
+      private void sendMsg() {
+        if (stop) {
+          return;
+        }
+        getVertx().eventBus().send("whatever", "marseille", ar -> {
+          if (!stop && ar.failed()) {
+            stop = true;
+            Throwable cause = ar.cause();
+            assertThat(cause, instanceOf(ReplyException.class));
+            ReplyException replyException = (ReplyException) cause;
+            assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
+            testComplete();
+          } else {
+            getVertx().runOnContext(v -> sendMsg());
+          }
+        });
+      }
+    };
+
+    Verticle receiver = new AbstractVerticle() {
+      boolean unregisterCalled;
+
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        EventBus eventBus = getVertx().eventBus();
+        MessageConsumer<String> consumer = eventBus.consumer("whatever");
+        consumer.handler(m -> {
+          if (!unregisterCalled) {
+            consumer.unregister();
+            unregisterCalled = true;
+          }
+          m.reply("ok");
+        }).completionHandler(startFuture.completer());
+      }
+    };
+
+    CountDownLatch deployLatch = new CountDownLatch(1);
+    vertx0.deployVerticle(receiver, onSuccess(receiverId -> {
+      vertx0.deployVerticle(sender, onSuccess(senderId -> {
+        deployLatch.countDown();
+      }));
+    }));
+    awaitLatch(deployLatch);
+
+    await();
+  }
+
+  @Test
+  public void testPublishWhileUnsubscribing() throws Exception {
+    startNodes(2);
+    Vertx vertx0 = vertices[0].exceptionHandler(this::fail);
+
+    Verticle publisher = new AbstractVerticle() {
+      boolean stop;
+
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        getVertx().eventBus().consumer("stop", m -> {
+          stop = true;
+        }).completionHandler(startFuture.completer());
+        getVertx().runOnContext(v -> publishMsg());
+      }
+
+      private void publishMsg() {
+        if (!stop) {
+          getVertx().eventBus().publish("whatever", "marseille");
+          getVertx().runOnContext(v -> publishMsg());
+        } else {
+          testComplete();
+        }
+      }
+    };
+
+    Verticle receiver = new AbstractVerticle() {
+      boolean unregisterCalled;
+
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        EventBus eventBus = getVertx().eventBus();
+        MessageConsumer<String> consumer = eventBus.consumer("whatever");
+        consumer.handler(ar -> {
+          if (!unregisterCalled) {
+            consumer.unregister(v -> eventBus.send("stop", "stop"));
+            unregisterCalled = true;
+          }
+        }).completionHandler(startFuture.completer());
+      }
+    };
+
+    CountDownLatch deployLatch = new CountDownLatch(1);
+    vertx0.deployVerticle(receiver, onSuccess(receiverId -> {
+      vertx0.deployVerticle(publisher, onSuccess(publisherId -> {
+        deployLatch.countDown();
+      }));
+    }));
+    awaitLatch(deployLatch);
+
     await();
   }
 
