@@ -21,7 +21,6 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
@@ -423,7 +422,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
   @Test
   public void testSendWhileUnsubscribing() throws Exception {
     startNodes(2);
-    Vertx vertx0 = vertices[0].exceptionHandler(this::fail);
 
     Verticle sender = new AbstractVerticle() {
       boolean stop;
@@ -470,67 +468,85 @@ public abstract class EventBusTestBase extends VertxTestBase {
     };
 
     CountDownLatch deployLatch = new CountDownLatch(1);
-    vertx0.deployVerticle(receiver, onSuccess(receiverId -> {
-      vertx0.deployVerticle(sender, onSuccess(senderId -> {
+    vertices[0].exceptionHandler(this::fail).deployVerticle(receiver, onSuccess(receiverId -> {
+      vertices[1].exceptionHandler(this::fail).deployVerticle(sender, onSuccess(senderId -> {
         deployLatch.countDown();
       }));
     }));
     awaitLatch(deployLatch);
 
     await();
+
+    CountDownLatch closeLatch = new CountDownLatch(2);
+    vertices[0].close(v -> closeLatch.countDown());
+    vertices[1].close(v -> closeLatch.countDown());
+    awaitLatch(closeLatch);
   }
 
   @Test
   public void testPublishWhileUnsubscribing() throws Exception {
     startNodes(2);
-    Vertx vertx0 = vertices[0].exceptionHandler(this::fail);
 
     Verticle publisher = new AbstractVerticle() {
       boolean stop;
+      int count;
 
       @Override
       public void start(Future<Void> startFuture) throws Exception {
-        getVertx().eventBus().consumer("stop", m -> {
-          stop = true;
+        getVertx().eventBus().consumer("coord", msg -> {
+          msg.reply("unregister", ar -> {
+            stop = true;
+            if (ar.succeeded()) {
+              testComplete();
+            } else {
+              fail(ar.cause());
+            }
+          });
+          getVertx().runOnContext(v -> publishMsg());
         }).completionHandler(startFuture.completer());
-        getVertx().runOnContext(v -> publishMsg());
       }
 
       private void publishMsg() {
         if (!stop) {
           getVertx().eventBus().publish("whatever", "marseille");
-          getVertx().runOnContext(v -> publishMsg());
-        } else {
-          testComplete();
+          if (count++ == 100 * 1000) {
+            fail("Published too many messages");
+          } else {
+            getVertx().runOnContext(v -> publishMsg());
+          }
         }
       }
     };
 
     Verticle receiver = new AbstractVerticle() {
-      boolean unregisterCalled;
 
       @Override
       public void start(Future<Void> startFuture) throws Exception {
         EventBus eventBus = getVertx().eventBus();
         MessageConsumer<String> consumer = eventBus.consumer("whatever");
         consumer.handler(ar -> {
-          if (!unregisterCalled) {
-            consumer.unregister(v -> eventBus.send("stop", "stop"));
-            unregisterCalled = true;
-          }
+          // Ignore message
         }).completionHandler(startFuture.completer());
+        eventBus.send("coord", "start", onSuccess(reply -> {
+          consumer.unregister(onSuccess(v -> reply.reply("stop")));
+        }));
       }
     };
 
     CountDownLatch deployLatch = new CountDownLatch(1);
-    vertx0.deployVerticle(receiver, onSuccess(receiverId -> {
-      vertx0.deployVerticle(publisher, onSuccess(publisherId -> {
+    vertices[1].exceptionHandler(this::fail).deployVerticle(publisher, onSuccess(publisherId -> {
+      vertices[0].exceptionHandler(this::fail).deployVerticle(receiver, onSuccess(receiverId -> {
         deployLatch.countDown();
       }));
     }));
     awaitLatch(deployLatch);
 
     await();
+
+    CountDownLatch closeLatch = new CountDownLatch(2);
+    vertices[0].close(v -> closeLatch.countDown());
+    vertices[1].close(v -> closeLatch.countDown());
+    awaitLatch(closeLatch);
   }
 
   protected <T> void testSend(T val) {
