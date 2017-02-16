@@ -20,7 +20,6 @@ import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.OpenSslServerContext;
 import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
@@ -29,14 +28,16 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.TrustOptionsImpl;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.security.tools.KeyStoreUtil;
 
-import javax.net.ssl.*;
-import java.security.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.TrustManager;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -151,22 +152,11 @@ public class SSLHelperTest extends VertxTestBase {
 
     CompletableFuture<Object> completableFuture = new CompletableFuture<>();
 
-    TrustOptions trustOptions = new TrustOptions() {
 
-      @Override
-      public TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
-        TestTrustManagerFactory testTrustManagerFactory =
-                new TestTrustManagerFactory(() -> completableFuture.complete(null));
-        KeyStore keyStore = KeyStoreUtil.getCacertsKeyStore();
-        testTrustManagerFactory.init(keyStore);
-        return testTrustManagerFactory;
-      }
-
-      @Override
-      public TrustOptions clone() {
-        return this;
-      }
-    };
+    TrustOptions trustOptions = new TrustOptionsImpl(() -> {
+      completableFuture.complete(null);
+      return new TrustManager[0];
+    }, "RSA");
 
     NetServerOptions netServerOptions = new NetServerOptions()
             .setTrustOptions(trustOptions)
@@ -178,46 +168,6 @@ public class SSLHelperTest extends VertxTestBase {
     helper.getContext((VertxInternal) vertx);
 
     Assert.assertTrue("Assert Trust Manager initialised at some point.", completableFuture.isDone());
-  }
-
-  private class TestTrustManagerFactory extends TrustManagerFactory {
-    TestTrustManagerFactory(Runnable callback) throws NoSuchAlgorithmException {
-      super(new TestTrustManagerFactorySpi(callback),
-              KeyPairGenerator.getInstance("RSA").getProvider(),
-              KeyPairGenerator.getInstance("RSA").getAlgorithm());
-    }
-  }
-
-  private class TestTrustManagerFactorySpi extends TrustManagerFactorySpi {
-
-    private final Runnable callback;
-    private volatile boolean initiated;
-
-    TestTrustManagerFactorySpi(Runnable callback) {
-      this.callback = callback;
-      initiated = false;
-    }
-
-    @Override
-    protected void engineInit(KeyStore keyStore) throws KeyStoreException {
-      callback.run();
-      initiated = true;
-    }
-
-    @Override
-    protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws InvalidAlgorithmParameterException {
-      callback.run();
-      initiated = true;
-    }
-
-    @Override
-    protected TrustManager[] engineGetTrustManagers() {
-      if (initiated) {
-        return new TrustManager[0];
-      } else {
-        throw new Error("Trust Manager was not initiated");
-      }
-    }
   }
 
 }
