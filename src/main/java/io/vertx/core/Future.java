@@ -305,6 +305,32 @@ public interface Future<T> extends AsyncResult<T> {
     };
   }
 
+  /**
+   * Handles a failure of this Future by returning the result of another Future.
+   * If the mapper fails, then the returned future will be failed with this failure.
+   *
+   * @param mapper A function which takes the exception of a failure and returns a new future.
+   * @return A recovered future
+   */
+  default Future<T> recover(Function<? super Throwable, Future<T>> mapper) {
+    Future<T> ret = Future.future();
+    setHandler(ar -> {
+      if (ar.succeeded()) {
+        ret.complete(result());
+      } else {
+        Future<T> mapped;
+        try {
+          mapped = mapper.apply(ar.cause());
+        } catch (Throwable e) {
+          ret.fail(e);
+          return;
+        }
+        mapped.setHandler(ret.completer());
+      }
+    });
+    return ret;
+  }
+
   FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 
 }

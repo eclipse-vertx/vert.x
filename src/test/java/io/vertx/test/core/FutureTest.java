@@ -789,6 +789,35 @@ public class FutureTest extends VertxTestBase {
     assertSame(cause, map2.cause());
   }
 
+  @Test
+  public void testSucceededFutureRecoverWith() {
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> Future.succeededFuture(t.getMessage()));
+    f.complete("yeah");
+    assertTrue(r.succeeded());
+    assertEquals(r.result(), "yeah");
+  }
+
+  @Test
+  public void testFailedFutureRecoverWith() {
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> Future.succeededFuture(t.getMessage()));
+    f.fail("recovered");
+    assertTrue(r.succeeded());
+    assertEquals(r.result(), "recovered");
+  }
+
+  @Test
+  public void testFailedMapperFutureRecoverWith() {
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> {
+      throw new RuntimeException("throw");
+    });
+    f.fail("recovered");
+    assertTrue(r.failed());
+    assertEquals(r.cause().getMessage(), "throw");
+  }
+
   private <T> AsyncResult<T> asyncResult(Future<T> fut) {
     return new AsyncResult<T>() {
       @Override
