@@ -98,10 +98,4 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
     // This test can fail if CPU is busy, so avoid it with EventBus SSL
   }
 
-  @Test
-  @Ignore
-  @Override
-  public void testPublishWhileUnsubscribing() throws Exception {
-    // This test can fail if CPU is busy, so avoid it with EventBus SSL
-  }
 }
