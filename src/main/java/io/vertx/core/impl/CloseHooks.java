@@ -90,9 +90,7 @@ class CloseHooks {
             hook.close(a.completer());
           } catch (Throwable t) {
             log.warn("Failed to run close hooks", t);
-            if (!a.isComplete()) {
-              a.fail(t);
-            }
+            a.fail(t);
           }
         }
       } else {

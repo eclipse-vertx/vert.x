@@ -109,33 +109,35 @@ public interface Future<T> extends AsyncResult<T> {
   Future<T> setHandler(Handler<AsyncResult<T>> handler);
 
   /**
-   * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.
+   * Try to set the result. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
    *
    * @param result  the result
-   * @throws IllegalStateException when the future is already completed
+   * @return false when the future is already completed
    */
-  void complete(T result);
+  boolean complete(T result);
 
   /**
-   * Set a null result. Any handler will be called, if there is one, and the future will be marked as completed.
+   * Try to set the result. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
    *
-   * @throws IllegalStateException when the future is already completed
+   * @return false when the future is already completed
    */
-  void complete();
+  boolean complete();
 
   /**
-   * Set the failure. Any handler will be called, if there is one, and the future will be marked as completed.
+   * Try to set the failure. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
    *
-   * @param throwable  the failure cause
+   * @param cause  the failure cause
+   * @return false when the future is already completed
    */
-  void fail(Throwable throwable);
+  boolean fail(Throwable cause);
 
   /**
-   * Set the failure. Any handler will be called, if there is one, and the future will be marked as completed.
+   * Try to set the failure. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
    *
    * @param failureMessage  the failure message
+   * @return false when the future is already completed
    */
-  void fail(String failureMessage);
+  boolean fail(String failureMessage);
 
   /**
    * The result of the operation. This will be null if the operation failed.

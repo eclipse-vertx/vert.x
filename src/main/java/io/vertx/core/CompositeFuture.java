@@ -186,6 +186,19 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler);
 
   /**
+   * @return false
+   */
+  @Override
+  boolean complete();
+
+  /**
+   * @return false
+   */
+  @Override
+  boolean complete(CompositeFuture result);
+
+
+  /**
    * Returns a cause of a wrapped future
    *
    * @param index the wrapped future index

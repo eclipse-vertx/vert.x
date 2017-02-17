@@ -22,12 +22,13 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Handler;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult<CompositeFuture>> {
+
+  private static final Handler<AsyncResult<CompositeFuture>> NO_HANDLER = c -> {};
 
   public static CompositeFuture all(Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
@@ -39,13 +40,13 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
           synchronized (composite) {
             composite.count++;
             if (!composite.isComplete() && composite.count == len) {
-              handler = composite.setSucceeded();
+              handler = composite.setCompleted(null);
             }
           }
         } else {
           synchronized (composite) {
             if (!composite.isComplete()) {
-              handler = composite.setFailed(ar.cause());
+              handler = composite.setCompleted(ar.cause());
             }
           }
         }
@@ -55,7 +56,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
       });
     }
     if (len == 0) {
-      composite.setSucceeded();
+      composite.setCompleted(null);
     }
     return composite;
   }
@@ -69,14 +70,14 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
         if (ar.succeeded()) {
           synchronized (composite) {
             if (!composite.isComplete()) {
-              handler = composite.setSucceeded();
+              handler = composite.setCompleted(null);
             }
           }
         } else {
           synchronized (composite) {
             composite.count++;
             if (!composite.isComplete() && composite.count == len) {
-              handler = composite.setFailed(ar.cause());
+              handler = composite.setCompleted(ar.cause());
             }
           }
         }
@@ -86,7 +87,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
       });
     }
     if (results.length == 0) {
-      composite.setSucceeded();
+      composite.setCompleted(null);
     }
     return composite;
   }
@@ -116,11 +117,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
           if (!composite.isComplete() && composite.count == len) {
             // Take decision here
             Throwable failure = pred.apply(composite);
-            if (failure == null) {
-              handler = composite.setSucceeded();
-            } else {
-              handler = composite.setFailed(failure);
-            }
+            handler = composite.setCompleted(failure);
           }
         }
         if (handler != null) {
@@ -129,7 +126,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
       });
     }
     if (len == 0) {
-      composite.setSucceeded();
+      composite.setCompleted(null);
     }
     return composite;
   }
@@ -220,49 +217,39 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   }
 
   @Override
-  public void complete(CompositeFuture result) {
-    Handler<AsyncResult<CompositeFuture>> handler = setSucceeded();
+  public boolean complete(CompositeFuture result) {
+    return false;
+  }
+
+  @Override
+  public boolean complete() {
+    return false;
+  }
+
+  @Override
+  public boolean fail(Throwable cause) {
+    Handler<AsyncResult<CompositeFuture>> handler = setCompleted(cause);
     if (handler != null) {
       handler.handle(this);
+      return true;
+    } else {
+      return false;
     }
   }
 
   @Override
-  public void complete() {
-    complete(null);
+  public boolean fail(String failureMessage) {
+    return fail(new NoStackTraceThrowable(failureMessage));
   }
 
-  @Override
-  public void fail(Throwable throwable) {
-    Handler<AsyncResult<CompositeFuture>> handler = setFailed(throwable);
-    if (handler != null) {
-      handler.handle(this);
-    }
-  }
-
-  @Override
-  public void fail(String failureMessage) {
-    fail(new NoStackTraceThrowable(failureMessage));
-  }
-
-  private Handler<AsyncResult<CompositeFuture>> setFailed(Throwable cause) {
+  private Handler<AsyncResult<CompositeFuture>> setCompleted(Throwable cause) {
     synchronized (this) {
       if (completed) {
-        throw new IllegalStateException("Result is already complete: " + (this.cause == null ? "succeeded" : "failed"));
+        return null;
       }
       this.completed = true;
       this.cause = cause;
-      return handler;
-    }
-  }
-
-  private Handler<AsyncResult<CompositeFuture>> setSucceeded() {
-    synchronized (this) {
-      if (completed) {
-        throw new IllegalStateException("Result is already complete: " + (this.cause == null ? "succeeded" : "failed"));
-      }
-      this.completed = true;
-      return handler;
+      return handler != null ? handler : NO_HANDLER;
     }
   }
 
