@@ -292,13 +292,29 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
-   * @return an handler completing this future
+   * @return a handler completing this future
+   * @see #complete(Object)
    */
   @CacheReturn
   default Handler<AsyncResult<T>> completer() {
     return ar -> {
       if (ar.succeeded()) {
         complete(ar.result());
+      } else {
+        fail(ar.cause());
+      }
+    };
+  }
+
+  @CacheReturn
+  /**
+   * @return a handler completing this future with {@code null} on success
+   * @see #complete()
+   */
+  default <U> Handler<AsyncResult<U>> discardingCompleter() {
+    return ar -> {
+      if (ar.succeeded()) {
+        complete();
       } else {
         fail(ar.cause());
       }

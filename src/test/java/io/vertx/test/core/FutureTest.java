@@ -646,7 +646,7 @@ public class FutureTest extends VertxTestBase {
       public boolean isComplete() { throw new UnsupportedOperationException(); }
       public Future<T> setHandler(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
       public void complete(T result) { succeeded = true; this.result = result; }
-      public void complete() { throw new UnsupportedOperationException(); }
+      public void complete() { succeeded = true; }
       public void fail(Throwable throwable) { failed = true; cause = throwable; }
       public void fail(String failureMessage) { throw new UnsupportedOperationException(); }
       public T result() { throw new UnsupportedOperationException(); }
@@ -664,6 +664,15 @@ public class FutureTest extends VertxTestBase {
     failureFuture.completer().handle(failedAsyncResult);
     assertTrue(failureFuture.failed);
     assertEquals(failedAsyncResult.cause(), failureFuture.cause);
+
+    DefaultCompleterTestFuture<Void> voidSuccessFuture = new DefaultCompleterTestFuture<>();
+    voidSuccessFuture.discardingCompleter().handle(succeededAsyncResult);
+    assertTrue(voidSuccessFuture.succeeded);
+
+    DefaultCompleterTestFuture<Void> voidFailureFuture = new DefaultCompleterTestFuture<>();
+    voidFailureFuture.discardingCompleter().handle(failedAsyncResult);
+    assertFalse(voidFailureFuture.succeeded);
+    assertEquals(failedAsyncResult.cause(), voidFailureFuture.cause);
   }
 
   class Checker<T> {
