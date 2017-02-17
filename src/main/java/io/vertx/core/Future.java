@@ -312,7 +312,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param mapper A function which takes the exception of a failure and returns a new future.
    * @return A recovered future
    */
-  default Future<T> recover(Function<? super Throwable, Future<T>> mapper) {
+  default Future<T> recover(Function<Throwable, Future<T>> mapper) {
     Future<T> ret = Future.future();
     setHandler(ar -> {
       if (ar.succeeded()) {
