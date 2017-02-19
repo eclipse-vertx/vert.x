@@ -319,6 +319,7 @@
               </processors>
               <optionMap>
                 <codegen.output>${project.basedir}/src/main</codegen.output>
+                <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
                 <docgen.output>${asciidoc.dir}/java</docgen.output>
                 <maven.groupId>${project.groupId}</maven.groupId>
                 <maven.artifactId>${project.artifactId}</maven.artifactId>
@@ -338,6 +339,7 @@
               </processors>
               <optionMap>
                 <codegen.output>${project.basedir}/src/test</codegen.output>
+                <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
               </optionMap>
             </configuration>
           </execution>
