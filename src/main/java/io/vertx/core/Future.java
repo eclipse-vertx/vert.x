@@ -31,7 +31,7 @@ import java.util.function.Function;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface Future<T> extends AsyncResult<T> {
+public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
 
   /**
    * Create a future that hasn't completed yet
@@ -292,17 +292,20 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * Succeed or fail this future with the {@link AsyncResult} event.
+   *
+   * @param asyncResult the async result to handle
+   */
+  @GenIgnore
+  @Override
+  void handle(AsyncResult<T> asyncResult);
+
+  /**
    * @return an handler completing this future
    */
   @CacheReturn
   default Handler<AsyncResult<T>> completer() {
-    return ar -> {
-      if (ar.succeeded()) {
-        complete(ar.result());
-      } else {
-        fail(ar.cause());
-      }
-    };
+    return this;
   }
 
   /**

@@ -731,6 +731,13 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public void handle(AsyncResult<T> asyncResult) {
+        if (asyncResult.succeeded()) {
+          complete(asyncResult.result());
+        } else {
+          fail(asyncResult.cause());
+        }
+      }
     }
 
     DefaultCompleterTestFuture<Object> successFuture = new DefaultCompleterTestFuture<>();

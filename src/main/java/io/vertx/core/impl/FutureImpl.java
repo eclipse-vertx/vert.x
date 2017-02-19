@@ -130,11 +130,11 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   }
 
   @Override
-  public void handle(AsyncResult<T> ar) {
-    if (ar.succeeded()) {
-      complete(ar.result());
+  public void handle(AsyncResult<T> asyncResult) {
+    if (asyncResult.succeeded()) {
+      complete(asyncResult.result());
     } else {
-      fail(ar.cause());
+      fail(asyncResult.cause());
     }
   }
 
