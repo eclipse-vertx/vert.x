@@ -105,19 +105,38 @@ public interface AsyncResult<T> {
   /**
    * Map the result of this async result to a specific {@code value}.<p>
    *
-   * When this async result succeeds, this {@code value} will succeeeds the async result returned by this method call.<p>
+   * When this async result succeeds, this {@code value} will succeeed the async result returned by this method call.<p>
    *
-   * When this future fails, the failure will be propagated to the returned async result.
+   * When this async result fails, the failure will be propagated to the returned async result.
    *
    * @param value the value that eventually completes the mapped async result
    * @return the mapped async result
    */
   default <V> AsyncResult<V> map(V value) {
-    return new AsyncResult<V>() {
+    return map(t -> value);
+  }
+
+  /**
+   * Apply a {@code mapper} function on this async result.<p>
+   *
+   * The {@code mapper} is called with the failure and this mapper returns a value. This value will complete the result returned by this method call.<p>
+   *
+   * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * When this async result is succeeded, the value will be propagated to the returned future and the {@code mapper}
+   * will not be called.
+   *
+   * @param mapper the mapper function
+   * @return the mapped async result
+   */
+  default AsyncResult<T> orElse(Function<Throwable, T> mapper) {
+    return new AsyncResult<T>() {
       @Override
-      public V result() {
-        if (succeeded()) {
-          return value;
+      public T result() {
+        if (AsyncResult.this.succeeded()) {
+          return AsyncResult.this.result();
+        } else if (AsyncResult.this.failed()) {
+          return mapper.apply(AsyncResult.this.cause());
         } else {
           return null;
         }
@@ -125,18 +144,32 @@ public interface AsyncResult<T> {
 
       @Override
       public Throwable cause() {
-        return AsyncResult.this.cause();
+        return null;
       }
 
       @Override
       public boolean succeeded() {
-        return AsyncResult.this.succeeded();
+        return AsyncResult.this.succeeded() || AsyncResult.this.failed();
       }
 
       @Override
       public boolean failed() {
-        return AsyncResult.this.failed();
+        return false;
       }
     };
+  }
+
+  /**
+   * Map the failure of this async result to a specific {@code value}.<p>
+   *
+   * When this async result fails, this {@code value} will succeeed the async result returned by this method call.<p>
+   *
+   * When this async succeeds, the result will be propagated to the returned async result.
+   *
+   * @param value the value that eventually completes the mapped async result
+   * @return the mapped async result
+   */
+  default AsyncResult<T> orElse(T value) {
+    return orElse(err -> value);
   }
 }

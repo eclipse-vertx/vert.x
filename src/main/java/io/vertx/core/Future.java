@@ -349,6 +349,61 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
     return ret;
   }
 
+  /**
+   * Apply a {@code mapper} function on this future.<p>
+   *
+   * When this future fails, the {@code mapper} will be called with the completed value and this mapper
+   * returns a value. This value will complete the future returned by this method call.<p>
+   *
+   * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * When this future succeeds, the result will be propagated to the returned future and the {@code mapper}
+   * will not be called.
+   *
+   * @param mapper the mapper function
+   * @return the mapped future
+   */
+  default Future<T> orElse(Function<Throwable, T> mapper) {
+    Future<T> ret = Future.future();
+    setHandler(ar -> {
+      if (ar.succeeded()) {
+        ret.complete(result());
+      } else {
+        T value;
+        try {
+          value = mapper.apply(ar.cause());
+        } catch (Throwable e) {
+          ret.fail(e);
+          return;
+        }
+        ret.complete(value);
+      }
+    });
+    return ret;
+  }
+
+  /**
+   * Map the failure of a future to a specific {@code value}.<p>
+   *
+   * When this future fails, this {@code value} will complete the future returned by this method call.<p>
+   *
+   * When this future succeeds, the result will be propagated to the returned future.
+   *
+   * @param value the value that eventually completes the mapped future
+   * @return the mapped future
+   */
+  default Future<T> orElse(T value) {
+    Future<T> ret = Future.future();
+    setHandler(ar -> {
+      if (ar.succeeded()) {
+        ret.complete(result());
+      } else {
+        ret.complete(value);
+      }
+    });
+    return ret;
+  }
+
   FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 
 }
