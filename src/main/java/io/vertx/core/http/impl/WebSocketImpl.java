@@ -42,6 +42,11 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   }
 
   @Override
+  public WebSocketImpl frameHandler(Handler<WebSocketFrame> handler) {
+    return (WebSocketImpl) super.frameHandler(handler);
+  }
+
+  @Override
   public WebSocket handler(Handler<Buffer> handler) {
     synchronized (conn) {
       if (handler != null) {
@@ -108,33 +113,6 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
     synchronized (conn) {
       checkClosed();
       this.closeHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket frameHandler(Handler<WebSocketFrame> handler) {
-    synchronized (conn) {
-      checkClosed();
-      this.frameHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket textMessageHandler(Handler<String> handler) {
-    synchronized (conn) {
-      checkClosed();
-      this.textMessageHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket binaryMessageHandler(Handler<Buffer> handler) {
-    synchronized (conn) {
-      checkClosed();
-      this.binaryMessageHandler = handler;
       return this;
     }
   }

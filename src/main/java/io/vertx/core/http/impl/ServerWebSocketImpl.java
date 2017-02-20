@@ -20,6 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -157,30 +158,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
   }
 
   @Override
-  public ServerWebSocket frameHandler(Handler<WebSocketFrame> handler) {
-    synchronized (conn) {
-      checkClosed();
-      this.frameHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public ServerWebSocket textMessageHandler(Handler<String> handler) {
-    synchronized (conn) {
-      checkClosed();
-      this.textMessageHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public ServerWebSocket binaryMessageHandler(Handler<Buffer> handler) {
-    synchronized (conn) {
-      checkClosed();
-      this.binaryMessageHandler = handler;
-      return this;
-    }
+  public ServerWebSocketImpl frameHandler(Handler<WebSocketFrame> handler) {
+    return (ServerWebSocketImpl) super.frameHandler(handler);
   }
 
   @Override
