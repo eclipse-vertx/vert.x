@@ -50,8 +50,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
 
   public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
                              ConnectionBase conn, boolean supportsContinuation, Runnable connectRunnable,
-                             int maxWebSocketFrameSize) {
-    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize);
+                             int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
+    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.uri = uri;
     this.path = path;
     this.query = query;
@@ -166,6 +166,24 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
   }
 
   @Override
+  public ServerWebSocket textMessageHandler(Handler<String> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.textMessageHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
+  public ServerWebSocket binaryMessageHandler(Handler<Buffer> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.binaryMessageHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
   public ServerWebSocket pause() {
     synchronized (conn) {
       checkClosed();
@@ -249,6 +267,15 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
     synchronized (conn) {
       checkClosed();
       writeMessageInternal(data);
+      return this;
+    }
+  }
+
+  @Override
+  public ServerWebSocket writeTextMessage(String text) {
+    synchronized (conn) {
+      checkClosed();
+      writeTextMessageInternal(text);
       return this;
     }
   }

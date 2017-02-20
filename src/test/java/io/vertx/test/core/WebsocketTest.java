@@ -39,7 +39,9 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1026,6 +1028,130 @@ public class WebsocketTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  @Test
+  public void testNonFragmentedTextMessage2Hybi00() {
+      String messageToSend = TestUtils.randomAlphaString(256);
+      testWriteSingleTextMessage(messageToSend, WebsocketVersion.V00);
+  }
+
+  @Test
+  public void testFragmentedTextMessage2Hybi07() {
+    String messageToSend = TestUtils.randomAlphaString(65536 + 65536 + 256);
+    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V07);
+  }
+
+  @Test
+  public void testFragmentedTextMessage2Hybi08() {
+    String messageToSend = TestUtils.randomAlphaString(65536 + 65536 + 256);
+    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V08);
+  }
+
+  @Test
+  public void testFragmentedTextMessage2Hybi13() {
+    String messageToSend = TestUtils.randomAlphaString(65536 + 65536 + 256);
+    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V13);
+  }
+
+  @Test
+  public void testMaxLengthFragmentedTextMessage() {
+    String messageToSend = TestUtils.randomAlphaString(HttpServerOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE);
+    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V13);
+  }
+
+  @Test
+  public void testFragmentedUnicodeTextMessage2Hybi07() {
+    String messageToSend = TestUtils.randomUnicodeString(65536 + 256);
+    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V07);
+  }
+
+  @Test
+  public void testFragmentedUnicodeTextMessage2Hybi08() {
+    String messageToSend = TestUtils.randomUnicodeString(65536 + 256);
+    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V08);
+  }
+
+  @Test
+  public void testFragmentedUnicodeTextMessage2Hybi13() {
+    String messageToSend = TestUtils.randomUnicodeString(65536 + 256);
+    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V13);
+  }
+
+  @Test
+  public void testTooLargeMessage() {
+    String messageToSend = TestUtils.randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE + 1);
+    SocketMessages socketMessages = testWriteTextMessages(Collections.singletonList(messageToSend), WebsocketVersion.V13);
+    List<String> receivedMessages = socketMessages.getReceivedMessages();
+    List<String> expectedMessages = Collections.emptyList();
+    assertEquals("Should not have received any messages", expectedMessages, receivedMessages);
+    List<Throwable> receivedExceptions = socketMessages.getReceivedExceptions();
+    assertEquals("Should have received a single exception", 1, receivedExceptions.size());
+    assertTrue("Should have received IllegalStateException",
+            receivedExceptions.get(0) instanceof IllegalStateException);
+  }
+
+  @Test
+  public void testContinueAfterTooLargeMessage() {
+    int shortMessageLength = HttpClientOptions.DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    String shortFirstMessage = TestUtils.randomAlphaString(shortMessageLength);
+    String tooLongMiddleMessage = TestUtils.randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE * 2);
+    String shortLastMessage = TestUtils.randomAlphaString(shortMessageLength);
+    List<String> messagesToSend = Arrays.asList(shortFirstMessage, tooLongMiddleMessage, shortLastMessage);
+
+    SocketMessages socketMessages = testWriteTextMessages(messagesToSend, WebsocketVersion.V13);
+    List<String> receivedMessages = socketMessages.getReceivedMessages();
+    List<String> expectedMessages = Arrays.asList(shortFirstMessage, shortLastMessage);
+    assertEquals("Incorrect received messages", expectedMessages, receivedMessages);
+  }
+
+  private void testWriteSingleTextMessage(String messageToSend, WebsocketVersion version) {
+    List<String> messagesToSend = Collections.singletonList(messageToSend);
+    SocketMessages socketMessages = testWriteTextMessages(messagesToSend, version);
+    assertEquals("Did not receive all messages", messagesToSend, socketMessages.getReceivedMessages());
+    List<Throwable> expectedExceptions = Collections.emptyList();
+    assertEquals("Should not have received any exceptions", expectedExceptions, socketMessages.getReceivedExceptions());
+  }
+
+  private SocketMessages testWriteTextMessages(List<String> messagesToSend, WebsocketVersion version) {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      for (String messageToSend : messagesToSend) {
+        ws.writeTextMessage(messageToSend);
+      }
+      ws.close();
+    });
+
+    List<String> receivedMessages = new ArrayList<>();
+    List<Throwable> receivedExceptions = new ArrayList<>();
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> {
+        ws.textMessageHandler(receivedMessages::add);
+        ws.exceptionHandler(receivedExceptions::add);
+        ws.closeHandler(v -> testComplete());
+      });
+    });
+    await();
+    return new SocketMessages(receivedMessages, receivedExceptions);
+  }
+
+  private static class SocketMessages {
+    private final List<String> receivedMessages;
+    private final List<Throwable> receivedExceptions;
+
+    public SocketMessages(List<String> receivedMessages, List<Throwable> receivedExceptions) {
+      this.receivedMessages = receivedMessages;
+      this.receivedExceptions = receivedExceptions;
+    }
+
+    public List<String> getReceivedMessages() {
+      return receivedMessages;
+    }
+
+    public List<Throwable> getReceivedExceptions() {
+      return receivedExceptions;
+    }
   }
 
   @Test

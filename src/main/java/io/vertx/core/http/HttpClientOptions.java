@@ -84,6 +84,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_WEBSOCKET_FRAME_SIZE = 65536;
 
   /**
+   * The default value for maximum websocket messages (could be assembled from multiple frames) is 4 full frames
+   * worth of data
+   */
+  public static final int DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE = 65536 * 4;
+
+  /**
    * The default value for host name = "localhost"
    */
   public static final String DEFAULT_DEFAULT_HOST = "localhost";
@@ -149,6 +155,7 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   private boolean tryUseCompression;
   private int maxWebsocketFrameSize;
+  private int maxWebsocketMessageSize;
   private String defaultHost;
   private int defaultPort;
   private HttpVersion protocolVersion;
@@ -187,6 +194,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.tryUseCompression = other.isTryUseCompression();
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
+    this.maxWebsocketMessageSize = other.maxWebsocketMessageSize;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
@@ -234,6 +242,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    maxWebsocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
@@ -626,6 +635,26 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * Get the maximum websocket message size to use
+   *
+   * @return  the max websocket message size
+   */
+  public int getMaxWebsocketMessageSize() {
+    return maxWebsocketMessageSize;
+  }
+
+  /**
+   * Set the max websocket message size
+   *
+   * @param maxWebsocketMessageSize  the max message size, in bytes
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxWebsocketMessageSize(int maxWebsocketMessageSize) {
+    this.maxWebsocketMessageSize = maxWebsocketMessageSize;
+    return this;
+  }
+
+  /**
    * Get the default host name to be used by this client in requests if none is provided when making the request.
    *
    * @return  the default host name
@@ -890,6 +919,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (maxPoolSize != that.maxPoolSize) return false;
     if (http2MultiplexingLimit != that.http2MultiplexingLimit) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
+    if (maxWebsocketMessageSize != that.maxWebsocketMessageSize) return false;
     if (pipelining != that.pipelining) return false;
     if (pipeliningLimit != that.pipeliningLimit) return false;
     if (tryUseCompression != that.tryUseCompression) return false;
@@ -919,6 +949,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + pipeliningLimit;
     result = 31 * result + (tryUseCompression ? 1 : 0);
     result = 31 * result + maxWebsocketFrameSize;
+    result = 31 * result + maxWebsocketMessageSize;
     result = 31 * result + defaultHost.hashCode();
     result = 31 * result + defaultPort;
     result = 31 * result + protocolVersion.hashCode();
