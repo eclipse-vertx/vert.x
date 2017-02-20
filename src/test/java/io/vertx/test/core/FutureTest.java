@@ -39,6 +39,49 @@ import java.util.function.Function;
 public class FutureTest extends VertxTestBase {
 
   @Test
+  public void testCreateWithHandler() {
+    AtomicInteger count = new AtomicInteger();
+    AtomicReference<Future<String>> ref = new AtomicReference<>();
+    Future<String> f2 = Future.future(f1 -> {
+      assertFalse(f1.isComplete());
+      count.incrementAndGet();
+      ref.set(f1);
+    });
+    assertSame(f2, ref.get());
+    assertEquals(1, count.get());
+    new Checker<>(f2).assertNotCompleted();
+    ref.set(null);
+    count.set(0);
+    f2 = Future.future(f1 -> {
+      count.incrementAndGet();
+      ref.set(f1);
+      f1.complete("the-value");
+    });
+    assertSame(f2, ref.get());
+    assertEquals(1, count.get());
+    new Checker<>(f2).assertSucceeded("the-value");
+    ref.set(null);
+    count.set(0);
+    RuntimeException cause = new RuntimeException();
+    f2 = Future.future(f1 -> {
+      count.incrementAndGet();
+      ref.set(f1);
+      f1.fail(cause);
+    });
+    assertSame(f2, ref.get());
+    assertEquals(1, count.get());
+    new Checker<>(f2).assertFailed(cause);
+    try {
+      Future.future(f -> {
+        throw cause;
+      });
+      fail();
+    } catch (Exception e) {
+      assertSame(cause, e);
+    }
+  }
+
+  @Test
   public void testStateAfterCompletion() {
     Object foo = new Object();
     Future<Object> future = Future.succeededFuture(foo);

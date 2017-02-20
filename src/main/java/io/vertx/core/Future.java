@@ -34,6 +34,19 @@ import java.util.function.Function;
 public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
 
   /**
+   * Create a future that hasn't completed yet and that is passed to the {@code handler} before it is returned.
+   *
+   * @param handler the handler
+   * @param <T> the result type
+   * @return the future.
+   */
+  static <T> Future<T> future(Handler<Future<T>> handler) {
+    Future<T> fut = future();
+    handler.handle(fut);
+    return fut;
+  }
+
+  /**
    * Create a future that hasn't completed yet
    *
    * @param <T>  the result type
