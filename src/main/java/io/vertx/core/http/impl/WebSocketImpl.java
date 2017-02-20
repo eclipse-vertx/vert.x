@@ -16,8 +16,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
@@ -31,9 +29,7 @@ import io.vertx.core.impl.VertxInternal;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
-
-  private Object metric;
+public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
 
   public WebSocketImpl(VertxInternal vertx,
                        ClientConnection conn, boolean supportsContinuation,
@@ -42,140 +38,10 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   }
 
   @Override
-  public WebSocketImpl frameHandler(Handler<WebSocketFrame> handler) {
-    return (WebSocketImpl) super.frameHandler(handler);
-  }
-
-  @Override
-  public WebSocket handler(Handler<Buffer> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkClosed();
-      }
-      this.dataHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket endHandler(Handler<Void> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkClosed();
-      }
-      this.endHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket exceptionHandler(Handler<Throwable> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkClosed();
-      }
-      this.exceptionHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket writeFrame(WebSocketFrame frame) {
-    writeFrameInternal(frame);
-    return this;
-  }
-
-  @Override
-  public WebSocket writeFinalTextFrame(String text) {
-    return writeFrame(WebSocketFrame.textFrame(text, true));
-  }
-
-  @Override
-  public WebSocket writeFinalBinaryFrame(Buffer data) {
-    return writeFrame(WebSocketFrame.binaryFrame(data, true));
-  }
-
-  @Override
-  public WebSocket writeBinaryMessage(Buffer data) {
-    writeMessageInternal(data);
-    return this;
-  }
-
-  @Override
-  public WebSocket writeTextMessage(String text) {
-    writeTextMessageInternal(text);
-    return this;
-  }
-
-
-  @Override
-  public WebSocket closeHandler(Handler<Void> handler) {
-    synchronized (conn) {
-      checkClosed();
-      this.closeHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket pause() {
-    synchronized (conn) {
-      checkClosed();
-      conn.doPause();
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket resume() {
-    synchronized (conn) {
-      checkClosed();
-      conn.doResume();
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket setWriteQueueMaxSize(int maxSize) {
-    synchronized (conn) {
-      checkClosed();
-      conn.doSetWriteQueueMaxSize(maxSize);
-      return this;
-    }
-  }
-
-  @Override
-  public WebSocket write(Buffer data) {
-    writeFrame(WebSocketFrame.binaryFrame(data, true));
-    return this;
-  }
-
-  @Override
-  public WebSocket drainHandler(Handler<Void> handler) {
-    synchronized (conn) {
-      checkClosed();
-      this.drainHandler = handler;
-      return this;
-    }
-  }
-
-  @Override
   void handleClosed() {
     synchronized (conn) {
-      ((ClientConnection) conn).metrics().disconnected(metric);
+      ((ClientConnection) conn).metrics().disconnected(getMetric());
       super.handleClosed();
     }
   }
-
-  void setMetric(Object metric) {
-    synchronized (conn) {
-      this.metric = metric;
-    }
-  }
-
-  @Override
-  public void end() {
-    close();
-  }
-
 }
