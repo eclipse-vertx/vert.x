@@ -1621,8 +1621,9 @@
  *
  * ==== Writing messages to WebSockets
  *
- * If you wish to write a single binary WebSocket message to the WebSocket you can do this with
- * {@link io.vertx.core.http.WebSocket#writeBinaryMessage(io.vertx.core.buffer.Buffer)}:
+ * If you wish to write a single WebSocket message to the WebSocket you can do this with
+ * {@link io.vertx.core.http.WebSocket#writeBinaryMessage(io.vertx.core.buffer.Buffer)} or
+ * {@link io.vertx.core.http.WebSocket#writeTextMessage(java.lang.String)} :
  *
  * [source,$lang]
  * ----

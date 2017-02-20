@@ -761,6 +761,10 @@ Set the maximum requests allowed in the wait queue, any requests beyond the max 
 +++
 Set the max websocket frame size
 +++
+|[[maxWebsocketMessageSize]]`maxWebsocketMessageSize`|`Number (int)`|
++++
+Set the max websocket message size
++++
 |[[metricsName]]`metricsName`|`String`|
 +++
 Set the metrics name identifying the reported metrics, useful for grouping metrics
@@ -995,6 +999,10 @@ Set the maximum length of the initial line for HTTP/1.x (e.g. <code>"GET / HTTP/
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`|`Number (int)`|
 +++
 Set the maximum websocket frames size
++++
+|[[maxWebsocketMessageSize]]`maxWebsocketMessageSize`|`Number (int)`|
++++
+Set the maximum websocket message size
 +++
 |[[openSslEngineOptions]]`openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|

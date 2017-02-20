@@ -191,7 +191,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
-      null, server.options().getMaxWebsocketFrameSize());
+      null, server.options().getMaxWebsocketFrameSize(), server.options().getMaxWebsocketMessageSize());
     ws.setMetric(metrics.upgrade(requestMetric, ws));
     try {
       handshaker.handshake(channel, nettyReq);
