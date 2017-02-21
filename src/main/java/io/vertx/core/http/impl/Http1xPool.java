@@ -17,7 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.vertx.core.Context;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;

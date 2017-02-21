@@ -1577,24 +1577,26 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.close();
     client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
-    HttpClientRequest req = client.get("/somepath", resp -> {
-      Context ctx = Vertx.currentContext();
-      resp.exceptionHandler(err -> {
-        assertOnIOContext(ctx);
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v1 -> {
+      HttpClientRequest req = client.get("/somepath", resp -> {
+        resp.exceptionHandler(err -> {
+          assertSame(ctx, Vertx.currentContext());
+          assertOnIOContext(ctx);
+          complete();
+        });
+      });
+      req.exceptionHandler(err -> {
         complete();
       });
-    });
-    req.exceptionHandler(err -> {
-      complete();
-    });
-    req.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        Context ctx = Vertx.currentContext();
-        assertOnIOContext(ctx);
-        complete();
+      req.connectionHandler(conn -> {
+        conn.closeHandler(v2 -> {
+          assertSame(ctx, Vertx.currentContext());
+          complete();
+        });
       });
+      req.sendHead();
     });
-    req.sendHead();
     await();
   }
 
