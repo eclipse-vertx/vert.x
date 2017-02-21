@@ -1048,7 +1048,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(req -> {
       HttpConnection conn = req.connection();
       conn.closeHandler(v -> {
-        assertOnIOContext(ctx);
+        assertSame(ctx, Vertx.currentContext());
         testComplete();
       });
       req.response().putHeader("Content-Type", "text/plain").end();

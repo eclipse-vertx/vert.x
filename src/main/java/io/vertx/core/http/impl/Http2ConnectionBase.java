@@ -45,7 +45,6 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Map;

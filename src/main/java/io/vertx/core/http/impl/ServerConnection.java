@@ -48,7 +48,6 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.NetworkMetrics;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -362,7 +361,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     }
   }
 
-  protected ContextImpl getContext() {
+  public ContextImpl getContext() {
     return super.getContext();
   }
 

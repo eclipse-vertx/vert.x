@@ -351,10 +351,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     synchronized (conn) {
       cleanupHandlers();
       if (endHandler != null) {
-        endHandler.handle(null);
+        conn.getContext().runOnContext(endHandler);
       }
       if (closeHandler != null) {
-        closeHandler.handle(null);
+        conn.getContext().runOnContext(closeHandler);
       }
     }
   }

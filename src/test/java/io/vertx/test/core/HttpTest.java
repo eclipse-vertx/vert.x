@@ -55,7 +55,6 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -3501,6 +3500,23 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(scheme + "://another_host/custom", resp.request().absoluteURI());
       complete();
     }).setFollowRedirects(true).putHeader("foo", "foo_value").setHost("the_host").end();
+    await();
+  }
+
+  @Test
+  public void testServerResponseCloseHandlerNotHoldingLock() throws Exception {
+    server.requestHandler(req -> {
+      req.response().closeHandler(v -> {
+        assertFalse(Thread.holdsLock(req.connection()));
+        testComplete();
+      });
+      req.response().setChunked(true).write("hello");
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.request().connection().close();
+    });
     await();
   }
 
