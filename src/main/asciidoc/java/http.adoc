@@ -2074,14 +2074,18 @@ client.websocket("/some-uri", websocket -> {
 
 ==== Writing messages to WebSockets
 
-If you wish to write a single binary WebSocket message to the WebSocket you can do this with
-`link:../../apidocs/io/vertx/core/http/WebSocket.html#writeBinaryMessage-io.vertx.core.buffer.Buffer-[writeBinaryMessage]`:
+If you wish to write a single WebSocket message to the WebSocket you can do this with
+`link:../../apidocs/io/vertx/core/http/WebSocket.html#writeBinaryMessage-io.vertx.core.buffer.Buffer-[writeBinaryMessage]` or
+`link:../../apidocs/io/vertx/core/http/WebSocket.html#writeTextMessage-java.lang.String-[writeTextMessage]` :
 
 [source,java]
 ----
 Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
-
 websocket.writeBinaryMessage(buffer);
+
+// Write a simple text message
+String message = "hello";
+websocket.writeTextMessage(message);
 ----
 
 If the WebSocket message is larger than the maximum websocket frame size as configured with

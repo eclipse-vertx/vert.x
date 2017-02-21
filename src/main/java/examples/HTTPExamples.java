@@ -699,10 +699,13 @@ public class HTTPExamples {
   }
 
   public void example55(WebSocket websocket) {
-    // Write a simple message
+    // Write a simple binary message
     Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
-
     websocket.writeBinaryMessage(buffer);
+
+    // Write a simple text message
+    String message = "hello";
+    websocket.writeTextMessage(message);
   }
 
   public void example56(WebSocket websocket, Buffer buffer1, Buffer buffer2, Buffer buffer3) {

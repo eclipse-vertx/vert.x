@@ -37,8 +37,8 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
 
   public WebSocketImpl(VertxInternal vertx,
                        ClientConnection conn, boolean supportsContinuation,
-                       int maxWebSocketFrameSize) {
-    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize);
+                       int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
+    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
   }
 
   @Override
@@ -97,6 +97,13 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   }
 
   @Override
+  public WebSocket writeTextMessage(String text) {
+    writeTextMessageInternal(text);
+    return this;
+  }
+
+
+  @Override
   public WebSocket closeHandler(Handler<Void> handler) {
     synchronized (conn) {
       checkClosed();
@@ -110,6 +117,24 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
     synchronized (conn) {
       checkClosed();
       this.frameHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
+  public WebSocket textMessageHandler(Handler<String> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.textMessageHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
+  public WebSocket binaryMessageHandler(Handler<Buffer> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.binaryMessageHandler = handler;
       return this;
     }
   }

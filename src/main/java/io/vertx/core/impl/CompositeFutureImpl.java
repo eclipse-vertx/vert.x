@@ -259,11 +259,11 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   }
 
   @Override
-  public void handle(AsyncResult<CompositeFuture> ar) {
-    if (ar.succeeded()) {
+  public void handle(AsyncResult<CompositeFuture> asyncResult) {
+    if (asyncResult.succeeded()) {
       complete(this);
     } else {
-      fail(ar.cause());
+      fail(asyncResult.cause());
     }
   }
 }
