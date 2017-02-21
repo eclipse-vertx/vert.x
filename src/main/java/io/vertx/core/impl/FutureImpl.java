@@ -101,19 +101,20 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
     return this;
   }
 
-  /**
-   * Set the result. Any handler will be called, if there is one
-   */
-  public void complete(T result) {
-    checkComplete();
+  @Override
+  public boolean complete(T result) {
+    if (succeeded || failed) {
+      return false;
+    }
     this.result = result;
     succeeded = true;
     checkCallHandler();
+    return true;
   }
 
   @Override
-  public void complete() {
-    complete(null);
+  public boolean complete() {
+    return complete(null);
   }
 
   public void handle(Future<T> ar) {
@@ -138,19 +139,20 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
     }
   }
 
-  /**
-   * Set the failure. Any handler will be called, if there is one
-   */
-  public void fail(Throwable throwable) {
-    checkComplete();
-    this.throwable = throwable != null ? throwable : new NoStackTraceThrowable(null);
+  @Override
+  public boolean fail(Throwable cause) {
+    if (succeeded || failed) {
+      return false;
+    }
+    this.throwable = cause != null ? cause : new NoStackTraceThrowable(null);
     failed = true;
     checkCallHandler();
+    return true;
   }
 
   @Override
-  public void fail(String failureMessage) {
-    fail(new NoStackTraceThrowable(failureMessage));
+  public boolean fail(String failureMessage) {
+    return fail(new NoStackTraceThrowable(failureMessage));
   }
 
   private void checkCallHandler() {
@@ -158,11 +160,4 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
       handler.handle(this);
     }
   }
-
-  private void checkComplete() {
-    if (succeeded || failed) {
-      throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"));
-    }
-  }
-
 }
