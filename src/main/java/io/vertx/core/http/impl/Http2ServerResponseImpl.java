@@ -25,6 +25,7 @@ import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.FunctionHandler;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -41,6 +42,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.ClosedChannelException;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -580,6 +582,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse bodyEndHandler(@Nullable Handler<Void> handler) {
     synchronized (conn) {
       bodyEndHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
+  public HttpServerResponse bodyEndHandler(FunctionHandler<Void> composingHandler) {
+    Objects.requireNonNull(composingHandler, "no null key accepted");
+    synchronized (conn) {
+      this.bodyEndHandler = composingHandler.apply(bodyEndHandler);
       return this;
     }
   }

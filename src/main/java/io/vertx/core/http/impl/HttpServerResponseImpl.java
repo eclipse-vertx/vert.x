@@ -22,6 +22,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.FunctionHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -38,6 +39,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Objects;
 
 /**
  *
@@ -383,6 +385,15 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse bodyEndHandler(Handler<Void> handler) {
     synchronized (conn) {
       this.bodyEndHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
+  public HttpServerResponse bodyEndHandler(FunctionHandler<Void> composingHandler) {
+    Objects.requireNonNull(composingHandler, "no null key accepted");
+    synchronized (conn) {
+      this.bodyEndHandler = composingHandler.apply(bodyEndHandler);
       return this;
     }
   }
