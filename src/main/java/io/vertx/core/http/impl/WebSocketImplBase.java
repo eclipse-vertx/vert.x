@@ -26,8 +26,6 @@ import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 
@@ -40,9 +38,9 @@ import java.util.UUID;
  * we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @param <S> self return type
  */
-public abstract class WebSocketImplBase implements WebSocketBase {
-  private static final Logger log = LoggerFactory.getLogger(WebSocketImplBase.class);
+public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebSocketBase {
 
   private final boolean supportsContinuation;
   private final String textHandlerID;
@@ -51,24 +49,17 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   private final int maxWebSocketMessageSize;
   private final MessageConsumer binaryHandlerRegistration;
   private final MessageConsumer textHandlerRegistration;
+  private Object metric;
+  private Handler<WebSocketFrameInternal> frameHandler;
+  private Handler<Buffer> dataHandler;
+  private Handler<Void> drainHandler;
+  private Handler<Throwable> exceptionHandler;
+  private Handler<Void> closeHandler;
+  private Handler<Void> endHandler;
   protected final ConnectionBase conn;
-
-  private boolean processingPartialTextMessage;
-  private Buffer textMessageBuffer;
-  private boolean processingPartialBinaryMessage;
-  private Buffer binaryMessageBuffer;
-
-  protected Handler<WebSocketFrame> frameHandler;
-  protected Handler<String> textMessageHandler;
-  protected Handler<Buffer> binaryMessageHandler;
-  protected Handler<Buffer> dataHandler;
-  protected Handler<Void> drainHandler;
-  protected Handler<Throwable> exceptionHandler;
-  protected Handler<Void> closeHandler;
-  protected Handler<Void> endHandler;
   protected boolean closed;
 
-  protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
+  WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     this.supportsContinuation = supportsContinuation;
     this.textHandlerID = UUID.randomUUID().toString();
@@ -80,10 +71,6 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     textHandlerRegistration = vertx.eventBus().<String>localConsumer(textHandlerID).handler(textHandler);
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.processingPartialBinaryMessage = false;
-    this.textMessageBuffer = Buffer.buffer(maxWebSocketMessageSize);
-    this.processingPartialBinaryMessage = false;
-    this.binaryMessageBuffer = Buffer.buffer(maxWebSocketMessageSize);
   }
 
   public String binaryHandlerID() {
@@ -119,14 +106,49 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     return conn.remoteAddress();
   }
 
-  public abstract WebSocketBase exceptionHandler(Handler<Throwable> handler);
+  @Override
+  public S writeFinalTextFrame(String text) {
+    return (S) writeFrame(WebSocketFrame.textFrame(text, true));
+  }
 
-  protected void writeMessageInternal(Buffer data) {
+  @Override
+  public S writeFinalBinaryFrame(Buffer data) {
+    return (S) writeFrame(WebSocketFrame.binaryFrame(data, true));
+  }
+
+  @Override
+  public S writeBinaryMessage(Buffer data) {
+    synchronized (conn) {
+      checkClosed();
+      writeMessageInternal(data);
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S writeTextMessage(String text) {
+    synchronized (conn) {
+      checkClosed();
+      writeTextMessageInternal(text);
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S write(Buffer data) {
+    synchronized (conn) {
+      checkClosed();
+      writeFrame(WebSocketFrame.binaryFrame(data, true));
+      return (S) this;
+    }
+  }
+
+  private void writeMessageInternal(Buffer data) {
     checkClosed();
     writePartialMessage(FrameType.BINARY, data, 0);
   }
 
-  protected void writeTextMessageInternal(String text) {
+  private void writeTextMessageInternal(String text) {
     checkClosed();
     Buffer data = Buffer.buffer(text);
     writePartialMessage(FrameType.TEXT, data, 0);
@@ -136,7 +158,7 @@ public abstract class WebSocketImplBase implements WebSocketBase {
    * Splits the provided buffer into multiple frames (which do not exceed the maximum web socket frame size)
    * and writes them in order to the socket.
    */
-  protected void writePartialMessage(FrameType frameType, Buffer data, int offset) {
+  private void writePartialMessage(FrameType frameType, Buffer data, int offset) {
     int end = offset + maxWebSocketFrameSize;
     boolean isFinal;
     if (end >= data.length()) {
@@ -159,26 +181,28 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     }
   }
 
-  protected void writeBinaryFrameInternal(Buffer data) {
+  private void writeBinaryFrameInternal(Buffer data) {
     ByteBuf buf = data.getByteBuf();
     WebSocketFrame frame = new WebSocketFrameImpl(FrameType.BINARY, buf);
     writeFrame(frame);
   }
 
-  protected void writeTextFrameInternal(String str) {
+  private void writeTextFrameInternal(String str) {
     WebSocketFrame frame = new WebSocketFrameImpl(str);
     writeFrame(frame);
   }
 
-  protected void writeFrameInternal(WebSocketFrame frame) {
+  @Override
+  public S writeFrame(WebSocketFrame frame) {
     synchronized (conn) {
       checkClosed();
       conn.reportBytesWritten(frame.binaryData().length());
       conn.writeToChannel(frame);
     }
+    return (S) this;
   }
 
-  protected void checkClosed() {
+  void checkClosed() {
     if (closed) {
       throw new IllegalStateException("WebSocket is closed");
     }
@@ -195,73 +219,116 @@ public abstract class WebSocketImplBase implements WebSocketBase {
       if (frameHandler != null) {
         frameHandler.handle(frame);
       }
+    }
+  }
 
-      if (textMessageHandler != null && (frame.type() == FrameType.TEXT
-        || (processingPartialTextMessage && frame.type() == FrameType.CONTINUATION))) {
-        handleTextFrame(frame);
+  private class FrameAggregator implements Handler<WebSocketFrameInternal> {
+
+    private Handler<String> textMessageHandler;
+    private Handler<Buffer> binaryMessageHandler;
+    private Buffer textMessageBuffer;
+    private Buffer binaryMessageBuffer;
+
+    @Override
+    public void handle(WebSocketFrameInternal frame) {
+      switch (frame.type()) {
+        case TEXT:
+          handleTextFrame(frame);
+          break;
+        case BINARY:
+          handleBinaryFrame(frame);
+          break;
+        case CONTINUATION:
+          if (textMessageBuffer != null && textMessageBuffer.length() > 0) {
+            handleTextFrame(frame);
+          } else if (binaryMessageBuffer != null && binaryMessageBuffer.length() > 0) {
+            handleBinaryFrame(frame);
+          }
+          break;
+      }
+    }
+
+    private void handleTextFrame(WebSocketFrameInternal frame) {
+      Buffer frameBuffer = Buffer.buffer(frame.getBinaryData());
+      if (textMessageBuffer == null) {
+        textMessageBuffer = frameBuffer;
+      } else {
+        textMessageBuffer.appendBuffer(frameBuffer);
+      }
+      if (textMessageBuffer.length() > maxWebSocketMessageSize) {
+        int len = textMessageBuffer.length() - frameBuffer.length();
+        textMessageBuffer = null;
+        String msg = "Cannot process text frame of size " + frameBuffer.length() + ", it would cause message buffer (size " +
+            len + ") to overflow max message size of " + maxWebSocketMessageSize;
+        handleException(new IllegalStateException(msg));
+        return;
+      }
+      if (frame.isFinal()) {
+        String fullMessage = textMessageBuffer.toString();
+        textMessageBuffer = null;
+        if (textMessageHandler != null) {
+          textMessageHandler.handle(fullMessage);
+        }
       }
 
-      if (binaryMessageHandler != null && (frame.type() == FrameType.BINARY
-        || (processingPartialBinaryMessage && frame.type() == FrameType.CONTINUATION))) {
-        handleBinaryFrame(frame);
+    }
+
+    private void handleBinaryFrame(WebSocketFrameInternal frame) {
+      Buffer frameBuffer = Buffer.buffer(frame.getBinaryData());
+      if (binaryMessageBuffer == null) {
+        binaryMessageBuffer = frameBuffer;
+      } else {
+        binaryMessageBuffer.appendBuffer(frameBuffer);
+      }
+      if (binaryMessageBuffer.length() > maxWebSocketMessageSize) {
+        int len = binaryMessageBuffer.length() - frameBuffer.length();
+        binaryMessageBuffer = null;
+        String msg = "Cannot process binary frame of size " + frameBuffer.length() + ", it would cause message buffer (size " +
+            len + ") to overflow max message size of " + maxWebSocketMessageSize;
+        handleException(new IllegalStateException(msg));
+        return;
+      }
+      if (frame.isFinal()) {
+        Buffer fullMessage = binaryMessageBuffer.copy();
+        binaryMessageBuffer = null;
+        if (binaryMessageHandler != null) {
+          binaryMessageHandler.handle(fullMessage);
+        }
       }
     }
   }
 
-  private void handleTextFrame(WebSocketFrameInternal frame) {
-    Buffer frameBuffer = Buffer.buffer(frame.getBinaryData());
-    if (frameBuffer.length() + textMessageBuffer.length() > maxWebSocketMessageSize) {
-      String exception = String.format("Cannot process text frame of size %s, it would cause message buffer (size %s) " +
-          "to overflow max message size of %s",
-        frameBuffer.length(), textMessageBuffer.length(), maxWebSocketMessageSize);
-      log.error(exception);
-      resetTextMessageProcessing();
-      handleException(new IllegalStateException(exception));
-      return;
+  @Override
+  public S frameHandler(Handler<WebSocketFrame> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.frameHandler = (Handler)handler;
+      return (S) this;
     }
-
-    textMessageBuffer.appendBuffer(frameBuffer);
-    if (frame.isFinal()) {
-      String fullMessage = textMessageBuffer.toString();
-      resetTextMessageProcessing();
-      textMessageHandler.handle(fullMessage);
-    } else {
-      processingPartialTextMessage = true;
-    }
-
   }
 
-  private void resetTextMessageProcessing() {
-    textMessageBuffer = Buffer.buffer(maxWebSocketMessageSize);
-    processingPartialTextMessage = false;
+  @Override
+  public WebSocketBase textMessageHandler(Handler<String> handler) {
+    synchronized (conn) {
+      checkClosed();
+      if (frameHandler == null || frameHandler.getClass() != FrameAggregator.class) {
+        frameHandler = new FrameAggregator();
+      }
+      ((FrameAggregator) frameHandler).textMessageHandler = handler;
+      return this;
+    }
   }
 
-  private void handleBinaryFrame(WebSocketFrameInternal frame) {
-    Buffer frameBuffer = Buffer.buffer(frame.getBinaryData());
-    if (frameBuffer.length() + binaryMessageBuffer.length() > maxWebSocketMessageSize) {
-      String exception = String.format("Cannot process binary frame of size %s, it would cause message buffer (size %s) " +
-          "to overflow max message size of %s",
-        frameBuffer.length(), binaryMessageBuffer.length(), maxWebSocketMessageSize);
-      log.error(exception);
-      resetBinaryMessageProcessing();
-      handleException(new IllegalStateException(exception));
-      return;
+  @Override
+  public S binaryMessageHandler(Handler<Buffer> handler) {
+    synchronized (conn) {
+      checkClosed();
+      if (frameHandler == null || frameHandler.getClass() == FrameAggregator.class) {
+        frameHandler = new FrameAggregator();
+      }
+      ((FrameAggregator) frameHandler).binaryMessageHandler = handler;
+      return (S) this;
     }
-
-    binaryMessageBuffer.appendBuffer(frameBuffer);
-    if (frame.isFinal()) {
-      Buffer fullMessage = binaryMessageBuffer.copy();
-      resetBinaryMessageProcessing();
-      binaryMessageHandler.handle(fullMessage);
-    } else {
-      processingPartialBinaryMessage = true;
-    }
-
-  }
-
-  private void resetBinaryMessageProcessing() {
-    binaryMessageBuffer = Buffer.buffer(maxWebSocketMessageSize);
-    processingPartialBinaryMessage = false;
   }
 
   void writable() {
@@ -300,4 +367,94 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     }
   }
 
+  synchronized void setMetric(Object metric) {
+    this.metric = metric;
+  }
+
+  synchronized Object getMetric() {
+    return metric;
+  }
+
+  @Override
+  public S handler(Handler<Buffer> handler) {
+    synchronized (conn) {
+      if (handler != null) {
+        checkClosed();
+      }
+      this.dataHandler = handler;
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S endHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      if (handler != null) {
+        checkClosed();
+      }
+      this.endHandler = handler;
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S exceptionHandler(Handler<Throwable> handler) {
+    synchronized (conn) {
+      if (handler != null) {
+        checkClosed();
+      }
+      this.exceptionHandler = handler;
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S closeHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.closeHandler = handler;
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S drainHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.drainHandler = handler;
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S pause() {
+    synchronized (conn) {
+      checkClosed();
+      conn.doPause();
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S resume() {
+    synchronized (conn) {
+      checkClosed();
+      conn.doResume();
+      return (S) this;
+    }
+  }
+
+  @Override
+  public S setWriteQueueMaxSize(int maxSize) {
+    synchronized (conn) {
+      checkClosed();
+      conn.doSetWriteQueueMaxSize(maxSize);
+      return (S) this;
+    }
+  }
+
+  @Override
+  public void end() {
+    close();
+  }
 }
