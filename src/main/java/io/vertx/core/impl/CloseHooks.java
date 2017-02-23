@@ -87,7 +87,7 @@ class CloseHooks {
             }
           });
           try {
-            hook.close(a.completer());
+            hook.close(a);
           } catch (Throwable t) {
             log.warn("Failed to run close hooks", t);
             a.tryFail(t);

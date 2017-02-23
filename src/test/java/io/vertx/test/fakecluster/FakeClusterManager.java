@@ -269,7 +269,7 @@ public class FakeClusterManager implements ClusterManager {
     @Override
     public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
       Future<V> future = Future.future();
-      putIfAbsent(k, v, future.completer());
+      putIfAbsent(k, v, future);
       future.map(vv -> {
         if (vv == null) vertx.setTimer(timeout, tid -> map.remove(k));
         return vv;

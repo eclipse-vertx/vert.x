@@ -269,7 +269,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
           ret.fail(e);
           return;
         }
-        apply.setHandler(ret.completer());
+        apply.setHandler(ret);
       } else {
         ret.fail(ar.cause());
       }
@@ -369,7 +369,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
           ret.fail(e);
           return;
         }
-        mapped.setHandler(ret.completer());
+        mapped.setHandler(ret);
       }
     });
     return ret;

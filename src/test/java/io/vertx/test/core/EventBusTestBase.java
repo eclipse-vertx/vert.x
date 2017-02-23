@@ -463,7 +463,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
             unregisterCalled = true;
           }
           m.reply("ok");
-        }).completionHandler(startFuture.completer());
+        }).completionHandler(startFuture);
       }
     };
 
