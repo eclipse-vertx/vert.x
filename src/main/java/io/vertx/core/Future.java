@@ -122,19 +122,45 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
   Future<T> setHandler(Handler<AsyncResult<T>> handler);
 
   /**
-   * Try to set the result. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
+   * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.
+   *
+   * @param result  the result
+   */
+  void complete(T result);
+
+  /**
+   *  Set a null result. Any handler will be called, if there is one, and the future will be marked as completed.
+   */
+  void complete();
+
+  /**
+   * Set the failure. Any handler will be called, if there is one, and the future will be marked as completed.
+   *
+   * @param cause  the failure cause
+   */
+  void fail(Throwable cause);
+
+  /**
+   * Try to set the failure. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
+   *
+   * @param failureMessage  the failure message
+   */
+  void fail(String failureMessage);
+
+  /**
+   * Set the failure. Any handler will be called, if there is one, and the future will be marked as completed.
    *
    * @param result  the result
    * @return false when the future is already completed
    */
-  boolean complete(T result);
+  boolean tryComplete(T result);
 
   /**
    * Try to set the result. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
    *
    * @return false when the future is already completed
    */
-  boolean complete();
+  boolean tryComplete();
 
   /**
    * Try to set the failure. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
@@ -142,7 +168,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @param cause  the failure cause
    * @return false when the future is already completed
    */
-  boolean fail(Throwable cause);
+  boolean tryFail(Throwable cause);
 
   /**
    * Try to set the failure. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
@@ -150,7 +176,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @param failureMessage  the failure message
    * @return false when the future is already completed
    */
-  boolean fail(String failureMessage);
+  boolean tryFail(String failureMessage);
 
   /**
    * The result of the operation. This will be null if the operation failed.

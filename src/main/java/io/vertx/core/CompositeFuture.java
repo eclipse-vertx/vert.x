@@ -186,17 +186,18 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler);
 
   /**
-   * @return false
+   * Set this instance as result. Any handler will be called, if there is one, and the future will be marked as completed.
    */
   @Override
-  boolean complete();
+  void complete();
 
   /**
-   * @return false
+   * Try to set this instance as result. When it happens, any handler will be called, if there is one, and the future will be marked as completed.
+   *
+   * @return false when the future is already completed
    */
   @Override
-  boolean complete(CompositeFuture result);
-
+  boolean tryComplete();
 
   /**
    * Returns a cause of a wrapped future
