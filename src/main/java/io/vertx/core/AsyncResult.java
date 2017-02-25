@@ -129,7 +129,7 @@ public interface AsyncResult<T> {
    * @param mapper the mapper function
    * @return the mapped async result
    */
-  default AsyncResult<T> orElse(Function<Throwable, T> mapper) {
+  default AsyncResult<T> otherwise(Function<Throwable, T> mapper) {
     return new AsyncResult<T>() {
       @Override
       public T result() {
@@ -169,7 +169,7 @@ public interface AsyncResult<T> {
    * @param value the value that eventually completes the mapped async result
    * @return the mapped async result
    */
-  default AsyncResult<T> orElse(T value) {
-    return orElse(err -> value);
+  default AsyncResult<T> otherwise(T value) {
+    return otherwise(err -> value);
   }
 }

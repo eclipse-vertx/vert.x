@@ -767,10 +767,10 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testOrElseSuccessWithSuccess() {
+  public void testOtherwiseSuccessWithSuccess() {
     AtomicBoolean called = new AtomicBoolean();
     Future<String> f = Future.future();
-    Future<String> r = f.orElse(t -> {
+    Future<String> r = f.otherwise(t -> {
       called.set(true);
       throw new AssertionError();
     });
@@ -783,9 +783,9 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testOrElseFailureWithSuccess() {
+  public void testOtherwiseFailureWithSuccess() {
     Future<String> f = Future.future();
-    Future<String> r = f.orElse(t -> t.getMessage());
+    Future<String> r = f.otherwise(t -> t.getMessage());
     Checker<String> checker = new Checker<>(r);
     checker.assertNotCompleted();
     f.fail("recovered");
@@ -793,10 +793,10 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testOrElseFails() {
+  public void testOtherwiseFails() {
     RuntimeException cause = new RuntimeException("throw");
     Future<String> f = Future.future();
-    Future<String> r = f.orElse(t -> {
+    Future<String> r = f.otherwise(t -> {
       throw cause;
     });
     Checker<String> checker = new Checker<>(r);
@@ -1024,20 +1024,20 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testUncompletedAsyncResultOrElse() {
+  public void testUncompletedAsyncResultOtherwise() {
     Future<String> f = Future.future();
     AsyncResult<String> res = asyncResult(f);
-    testUncompletedAsyncResultOrElse(res);
+    testUncompletedAsyncResultOtherwise(res);
   }
 
   @Test
-  public void testUncompletedFutureOrElse() {
+  public void testUncompletedFutureOtherwise() {
     Future<String> f = Future.future();
-    testUncompletedAsyncResultOrElse(f);
+    testUncompletedAsyncResultOtherwise(f);
   }
 
-  private void testUncompletedAsyncResultOrElse(AsyncResult<String> res) {
-    AsyncResult<String> ar1 = res.orElse("something-else");
+  private void testUncompletedAsyncResultOtherwise(AsyncResult<String> res) {
+    AsyncResult<String> ar1 = res.otherwise("something-else");
     assertFalse(ar1.succeeded());
     assertFalse(ar1.failed());
     assertNull(ar1.result());
@@ -1045,20 +1045,20 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testUncompletedAsyncResultOrElseApplyFunction() {
+  public void testUncompletedAsyncResultOtherwiseApplyFunction() {
     Future<String> f = Future.future();
     AsyncResult<String> res = asyncResult(f);
-    testUncompletedOrElseApplyFunction(res);
+    testUncompletedOtherwiseApplyFunction(res);
   }
 
   @Test
-  public void testUncompletedFutureOrElseApplyFunction() {
+  public void testUncompletedFutureOtherwiseApplyFunction() {
     Future<String> f = Future.future();
-    testUncompletedOrElseApplyFunction(f);
+    testUncompletedOtherwiseApplyFunction(f);
   }
 
-  private void testUncompletedOrElseApplyFunction(AsyncResult<String> res) {
-    AsyncResult<String> ar1 = res.orElse(Throwable::getMessage);
+  private void testUncompletedOtherwiseApplyFunction(AsyncResult<String> res) {
+    AsyncResult<String> ar1 = res.otherwise(Throwable::getMessage);
     assertFalse(ar1.succeeded());
     assertFalse(ar1.failed());
     assertNull(ar1.result());
@@ -1066,20 +1066,20 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testSucceededAsyncResultOrElse() {
+  public void testSucceededAsyncResultOtherwise() {
     Future<String> f = Future.future();
     AsyncResult<String> res = asyncResult(f);
-    testSucceededOrElse(res, f);
+    testSucceededOtherwise(res, f);
   }
 
   @Test
-  public void testSucceededFutureOrElse() {
+  public void testSucceededFutureOtherwise() {
     Future<String> f = Future.future();
-    testSucceededOrElse(f, f);
+    testSucceededOtherwise(f, f);
   }
 
-  private void testSucceededOrElse(AsyncResult<String> res, Future<String> f) {
-    AsyncResult<String> ar = res.orElse(Throwable::getMessage);
+  private void testSucceededOtherwise(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> ar = res.otherwise(Throwable::getMessage);
     f.complete("foobar");
     assertTrue(ar.succeeded());
     assertFalse(ar.failed());
@@ -1088,20 +1088,20 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testSucceededAsyncResultOrElseApplyFunction() {
+  public void testSucceededAsyncResultOtherwiseApplyFunction() {
     Future<String> f = Future.future();
     AsyncResult<String> res = asyncResult(f);
-    testSucceededOrElseApplyFunction(res, f);
+    testSucceededOtherwiseApplyFunction(res, f);
   }
 
   @Test
-  public void testSucceededFutureOrElseApplyFunction() {
+  public void testSucceededFutureOtherwiseApplyFunction() {
     Future<String> f = Future.future();
-    testSucceededOrElseApplyFunction(f, f);
+    testSucceededOtherwiseApplyFunction(f, f);
   }
 
-  private void testSucceededOrElseApplyFunction(AsyncResult<String> res, Future<String> f) {
-    AsyncResult<String> ar = res.orElse("whatever");
+  private void testSucceededOtherwiseApplyFunction(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> ar = res.otherwise("whatever");
     f.complete("foobar");
     assertTrue(ar.succeeded());
     assertFalse(ar.failed());
@@ -1110,20 +1110,20 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testFailedAsyncResultOrElse() {
+  public void testFailedAsyncResultOtherwise() {
     Future<String> f = Future.future();
     AsyncResult<String> res = asyncResult(f);
-    testFailedOrElse(res, f);
+    testFailedOtherwise(res, f);
   }
 
   @Test
-  public void testFailedFutureOrElse() {
+  public void testFailedFutureOtherwise() {
     Future<String> f = Future.future();
-    testFailedOrElse(f, f);
+    testFailedOtherwise(f, f);
   }
 
-  private void testFailedOrElse(AsyncResult<String> res, Future<String> f) {
-    AsyncResult<String> map1 = res.orElse("something-else");
+  private void testFailedOtherwise(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> map1 = res.otherwise("something-else");
     Throwable cause = new Throwable("the-failure");
     f.fail(cause);
     assertTrue(map1.succeeded());
@@ -1133,20 +1133,20 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testFailedAsyncResultOrElseApplyFunction() {
+  public void testFailedAsyncResultOtherwiseApplyFunction() {
     Future<String> f = Future.future();
     AsyncResult<String> res = asyncResult(f);
-    testFailedOrElseApplyFunction(res, f);
+    testFailedOtherwiseApplyFunction(res, f);
   }
 
   @Test
-  public void testFailedFutureOrElseApplyFunction() {
+  public void testFailedFutureOtherwiseApplyFunction() {
     Future<String> f = Future.future();
-    testFailedOrElseApplyFunction(f, f);
+    testFailedOtherwiseApplyFunction(f, f);
   }
 
-  private void testFailedOrElseApplyFunction(AsyncResult<String> res, Future<String> f) {
-    AsyncResult<String> map1 = res.orElse(Throwable::getMessage);
+  private void testFailedOtherwiseApplyFunction(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> map1 = res.otherwise(Throwable::getMessage);
     Throwable cause = new Throwable("the-failure");
     f.fail(cause);
     assertTrue(map1.succeeded());

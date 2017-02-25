@@ -389,7 +389,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @param mapper the mapper function
    * @return the mapped future
    */
-  default Future<T> orElse(Function<Throwable, T> mapper) {
+  default Future<T> otherwise(Function<Throwable, T> mapper) {
     Future<T> ret = Future.future();
     setHandler(ar -> {
       if (ar.succeeded()) {
@@ -418,7 +418,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @param value the value that eventually completes the mapped future
    * @return the mapped future
    */
-  default Future<T> orElse(T value) {
+  default Future<T> otherwise(T value) {
     Future<T> ret = Future.future();
     setHandler(ar -> {
       if (ar.succeeded()) {
