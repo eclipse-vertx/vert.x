@@ -3504,6 +3504,62 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testCloseHandlerWhenConnectionEnds() throws Exception {
+    server.requestHandler(req -> {
+      req.response().closeHandler(v -> {
+        testComplete();
+      });
+      req.response().end("some-data");
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.handler(v -> {
+        resp.request().connection().close();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testCloseHandlerWhenConnectionClose() throws Exception {
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write("some-data");
+      req.response().closeHandler(v -> {
+        testComplete();
+      });
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.handler(v -> {
+        resp.request().connection().close();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      req.response().closeHandler(v -> {
+        count.incrementAndGet();
+      });
+      req.connection().closeHandler(v -> {
+        assertEquals(1, count.get());
+        testComplete();
+      });
+      req.response().end("some-data");
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.endHandler(v -> {
+        resp.request().connection().close();
+      });
+    });
+    await();
+  }
+
   private TestLoggerFactory testLogging() throws Exception {
     InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
     TestLoggerFactory factory = new TestLoggerFactory();
