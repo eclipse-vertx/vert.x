@@ -323,7 +323,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public S binaryMessageHandler(Handler<Buffer> handler) {
     synchronized (conn) {
       checkClosed();
-      if (frameHandler == null || frameHandler.getClass() == FrameAggregator.class) {
+      if (frameHandler == null || frameHandler.getClass() != FrameAggregator.class) {
         frameHandler = new FrameAggregator();
       }
       ((FrameAggregator) frameHandler).binaryMessageHandler = handler;
