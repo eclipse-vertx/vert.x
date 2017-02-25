@@ -1507,7 +1507,10 @@ public class Http2ServerTest extends Http2TestBase {
         complete();
       });
       req.response().exceptionHandler(err -> {
-        // Called twice : reset + close
+        assertEquals(ctx, Vertx.currentContext());
+        complete();
+      });
+      req.response().closeHandler(err -> {
         assertEquals(ctx, Vertx.currentContext());
         complete();
       });
@@ -1552,6 +1555,10 @@ public class Http2ServerTest extends Http2TestBase {
           assertSame(ctx, Vertx.currentContext());
           complete();
         });
+        resp.closeHandler(v -> {
+          assertSame(ctx, Vertx.currentContext());
+          complete();
+        });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
       });
     });
@@ -1589,7 +1596,12 @@ public class Http2ServerTest extends Http2TestBase {
         complete();
       });
       req.response().exceptionHandler(err -> {
-        // Called twice : reset + close
+        // Called once : reset
+        assertSame(ctx, Vertx.currentContext());
+        complete();
+      });
+      req.response().closeHandler(err -> {
+        // Called once : close
         assertSame(ctx, Vertx.currentContext());
         complete();
       });
@@ -1670,7 +1682,7 @@ public class Http2ServerTest extends Http2TestBase {
         req.exceptionHandler(err -> {
           fail();
         });
-        req.response().exceptionHandler(err -> {
+        req.response().closeHandler(err -> {
           closed.incrementAndGet();
         });
       } else {
@@ -1678,7 +1690,7 @@ public class Http2ServerTest extends Http2TestBase {
         req.exceptionHandler(err -> {
           closed.incrementAndGet();
         });
-        req.response().exceptionHandler(err -> {
+        req.response().closeHandler(err -> {
           closed.incrementAndGet();
         });
         HttpConnection conn = req.connection();
@@ -1708,7 +1720,7 @@ public class Http2ServerTest extends Http2TestBase {
         req.exceptionHandler(err -> {
           fail();
         });
-        req.response().exceptionHandler(err -> {
+        req.response().closeHandler(err -> {
           closed.incrementAndGet();
         });
       } else {
@@ -1716,7 +1728,7 @@ public class Http2ServerTest extends Http2TestBase {
         req.exceptionHandler(err -> {
           fail();
         });
-        req.response().exceptionHandler(err -> {
+        req.response().closeHandler(err -> {
           closed.incrementAndGet();
         });
         HttpConnection conn = req.connection();
@@ -2657,15 +2669,11 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testIdleTimeout() throws Exception {
-    waitFor(5);
+    waitFor(4);
     server.close();
     server = vertx.createHttpServer(serverOptions.setIdleTimeout(2));
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
-        assertTrue(err instanceof ClosedChannelException);
-        complete();
-      });
-      req.response().exceptionHandler(err -> {
         assertTrue(err instanceof ClosedChannelException);
         complete();
       });
