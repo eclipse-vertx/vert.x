@@ -65,7 +65,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private boolean written;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
-  private Handler<Void> closeHandler;
+  private Handler<Void> endHandler;
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
   private boolean chunked;
@@ -262,7 +262,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse closeHandler(Handler<Void> handler) {
     synchronized (conn) {
       checkWritten();
-      this.closeHandler = handler;
+      this.endHandler = handler;
       return this;
     }
   }
@@ -428,6 +428,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (bodyEndHandler != null) {
       bodyEndHandler.handle(null);
     }
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
   }
 
   private void doSendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
@@ -548,8 +551,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   void handleClosed() {
     synchronized (conn) {
-      if (closeHandler != null) {
-        closeHandler.handle(null);
+      if (endHandler != null) {
+        endHandler.handle(null);
       }
     }
   }

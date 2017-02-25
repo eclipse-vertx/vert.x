@@ -40,7 +40,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.ClosedChannelException;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -128,12 +127,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   void handleClose() {
-    if (handleEnded(true)) {
-      handleError(new ClosedChannelException());
-    }
-    if (closeHandler != null) {
-      closeHandler.handle(null);
-    }
+    handleEnded(true);
   }
 
   private void checkHeadWritten() {
@@ -431,7 +425,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private boolean handleEnded(boolean failed) {
+  private void handleEnded(boolean failed) {
     if (!ended) {
       ended = true;
       if (metric != null) {
@@ -443,9 +437,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
           conn.metrics().responseEnd(metric, this);
         }
       }
-      return true;
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
-    return false;
   }
 
   void writabilityChanged() {
