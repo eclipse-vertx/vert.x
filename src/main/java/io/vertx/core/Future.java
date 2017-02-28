@@ -259,6 +259,9 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @return the composed future
    */
   default <U> Future<U> compose(Function<T, Future<U>> mapper) {
+    if (mapper == null) {
+      throw new NullPointerException();
+    }
     Future<U> ret = Future.future();
     setHandler(ar -> {
       if (ar.succeeded()) {
@@ -292,6 +295,9 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @return the mapped future
    */
   default <U> Future<U> map(Function<T, U> mapper) {
+    if (mapper == null) {
+      throw new NullPointerException();
+    }
     Future<U> ret = Future.future();
     setHandler(ar -> {
       if (ar.succeeded()) {
@@ -333,6 +339,22 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
   }
 
   /**
+   * Map the result of a future to {@code null}.<p>
+   *
+   * This is a conveniency for {@code future.map((T) null)} or {@code future.map((Void) null)}.<p>
+   *
+   * When this future succeeds, {@code null} will complete the future returned by this method call.<p>
+   *
+   * When this future fails, the failure will be propagated to the returned future.
+   *
+   * @return the mapped future
+   */
+  @Override
+  default <V> Future<V> mapEmpty() {
+    return (Future<V>) AsyncResult.super.mapEmpty();
+  }
+
+  /**
    * Succeed or fail this future with the {@link AsyncResult} event.
    *
    * @param asyncResult the async result to handle
@@ -357,6 +379,9 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @return A recovered future
    */
   default Future<T> recover(Function<Throwable, Future<T>> mapper) {
+    if (mapper == null) {
+      throw new NullPointerException();
+    }
     Future<T> ret = Future.future();
     setHandler(ar -> {
       if (ar.succeeded()) {
@@ -390,6 +415,9 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @return the mapped future
    */
   default Future<T> otherwise(Function<Throwable, T> mapper) {
+    if (mapper == null) {
+      throw new NullPointerException();
+    }
     Future<T> ret = Future.future();
     setHandler(ar -> {
       if (ar.succeeded()) {
@@ -428,6 +456,21 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
       }
     });
     return ret;
+  }
+
+  /**
+   * Map the failure of a future to {@code null}.<p>
+   *
+   * This is a convenience for {@code future.otherwise((T) null)}.<p>
+   *
+   * When this future fails, the {@code null} value will complete the future returned by this method call.<p>
+   *
+   * When this future succeeds, the result will be propagated to the returned future.
+   *
+   * @return the mapped future
+   */
+  default Future<T> otherwiseEmpty() {
+    return (Future<T>) AsyncResult.super.otherwiseEmpty();
   }
 
   FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);

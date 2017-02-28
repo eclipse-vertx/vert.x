@@ -683,6 +683,16 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testComposeWithNullFunction() {
+    Future<Integer> fut = Future.future();
+    try {
+      fut.compose((Function<Integer, Future<Integer>>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
   public void testMapSuccess() {
     Future<Integer> fut = Future.future();
     Future<String> mapped = fut.map(Object::toString);
@@ -715,6 +725,30 @@ public class FutureTest extends VertxTestBase {
     checker.assertFailed(cause);
   }
 
+  @Test
+  public void testMapWithNullFunction() {
+    Future<Integer> fut = Future.future();
+    try {
+      fut.map((Function<Integer, String>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      asyncResult(fut).map((Function<Integer, String>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
+  public void testMapEmpty() {
+    Future<Integer> fut = Future.future();
+    Future<String> mapped = fut.mapEmpty();
+    Checker<String> checker = new Checker<>(mapped);
+    checker.assertNotCompleted();
+    fut.complete(3);
+    checker.assertSucceeded(null);
+  }
 
   @Test
   public void testRecoverSuccessWithSuccess() {
@@ -764,6 +798,16 @@ public class FutureTest extends VertxTestBase {
     checker.assertNotCompleted();
     f.fail("recovered");
     checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testRecoverWithNullFunction() {
+    Future<Integer> fut = Future.future();
+    try {
+      fut.recover(null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
   }
 
   @Test
@@ -995,6 +1039,16 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testAsyncResultMapEmpty() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map = res.mapEmpty();
+    f.complete("foobar");
+    assertNull(null, map.result());
+    assertNull(map.cause());
+  }
+
+  @Test
   public void testSucceededFutureRecover() {
     Future<String> f = Future.future();
     Future<String> r = f.recover(t -> Future.succeededFuture(t.getMessage()));
@@ -1153,6 +1207,44 @@ public class FutureTest extends VertxTestBase {
     assertFalse(map1.failed());
     assertEquals("the-failure", map1.result());
     assertNull(map1.cause());
+  }
+
+  @Test
+  public void testOtherwiseWithNullFunction() {
+    Future<Integer> fut = Future.future();
+    try {
+      fut.otherwise((Function<Throwable, Integer>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      asyncResult(fut).otherwise((Function<Throwable, Integer>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
+  public void testAsyncResultOtherwiseEmpty() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    testOtherwiseEmpty(res, f);
+  }
+
+  @Test
+  public void testFutureOtherwiseEmpty() {
+    Future<String> f = Future.future();
+    testOtherwiseEmpty(f, f);
+  }
+
+  private void testOtherwiseEmpty(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> otherwise = res.otherwiseEmpty();
+    Throwable cause = new Throwable("the-failure");
+    f.fail(cause);
+    assertTrue(otherwise.succeeded());
+    assertFalse(otherwise.failed());
+    assertEquals(null, otherwise.result());
+    assertNull(otherwise.cause());
   }
 
   private <T> AsyncResult<T> asyncResult(Future<T> fut) {

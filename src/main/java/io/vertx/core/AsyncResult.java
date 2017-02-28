@@ -75,6 +75,9 @@ public interface AsyncResult<T> {
    * @return the mapped async result
    */
   default <U> AsyncResult<U> map(Function<T, U> mapper) {
+    if (mapper == null) {
+      throw new NullPointerException();
+    }
     return new AsyncResult<U>() {
       @Override
       public U result() {
@@ -117,6 +120,21 @@ public interface AsyncResult<T> {
   }
 
   /**
+   * Map the result of this async result to {@code null}.<p>
+   *
+   * This is a convenience for {@code asyncResult.map((T) null)} or {@code asyncResult.map((Void) null)}.<p>
+   *
+   * When this async result succeeds, {@code null} will succeeed the async result returned by this method call.<p>
+   *
+   * When this async result fails, the failure will be propagated to the returned async result.
+   *
+   * @return the mapped async result
+   */
+  default <V> AsyncResult<V> mapEmpty() {
+    return map((V)null);
+  }
+
+  /**
    * Apply a {@code mapper} function on this async result.<p>
    *
    * The {@code mapper} is called with the failure and this mapper returns a value. This value will complete the result returned by this method call.<p>
@@ -130,6 +148,9 @@ public interface AsyncResult<T> {
    * @return the mapped async result
    */
   default AsyncResult<T> otherwise(Function<Throwable, T> mapper) {
+    if (mapper == null) {
+      throw new NullPointerException();
+    }
     return new AsyncResult<T>() {
       @Override
       public T result() {
@@ -171,5 +192,20 @@ public interface AsyncResult<T> {
    */
   default AsyncResult<T> otherwise(T value) {
     return otherwise(err -> value);
+  }
+
+  /**
+   * Map the failure of this async result to {@code null}.<p>
+   *
+   * This is a convenience for {@code asyncResult.otherwise((T) null)}.<p>
+   *
+   * When this async result fails, the {@code null} will succeeed the async result returned by this method call.<p>
+   *
+   * When this async succeeds, the result will be propagated to the returned async result.
+   *
+   * @return the mapped async result
+   */
+  default AsyncResult<T> otherwiseEmpty() {
+    return otherwise(err -> null);
   }
 }
