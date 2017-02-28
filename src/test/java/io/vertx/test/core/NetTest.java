@@ -2653,4 +2653,35 @@ public class NetTest extends VertxTestBase {
     }));
     await();
   }
+
+  @Test
+  public void testSelfSignedCertificate() throws Exception {
+    SelfSignedCertificate certificate = SelfSignedCertificate.create();
+
+    NetServerOptions serverOptions = new NetServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(certificate.keyCertOption())
+      .setTrustOptions(certificate.trustOptions());
+
+    NetClientOptions clientOptions = new NetClientOptions()
+      .setSsl(true)
+      .setKeyCertOptions(certificate.keyCertOption())
+      .setTrustOptions(certificate.trustOptions());
+
+    client = vertx.createNetClient(clientOptions);
+    server = vertx.createNetServer(serverOptions)
+      .connectHandler(socket -> {
+        socket.write("123").end();
+      })
+      .listen(1234, "localhost", onSuccess(s -> {
+        client.connect(1234, "localhost", onSuccess(socket -> {
+          socket.handler(buffer -> {
+            assertEquals("123", buffer.toString());
+            testComplete();
+          });
+        }));
+      }));
+
+    await(2, TimeUnit.SECONDS);
+  }
 }

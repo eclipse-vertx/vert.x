@@ -808,6 +808,42 @@ NetClient client = vertx.createNetClient(options);
 
 Keep in mind that pem configuration, the private key is not crypted.
 
+==== Self-signed certificates for testing and development purposes
+
+It is very often the case that self-signed certificates are required, be it for unit / integration tests or for
+running a development version of an application.
+
+`link:../../apidocs/io/vertx/core/net/SelfSignedCertificate.html[SelfSignedCertificate]` can be used to provide self-signed certificate helpers and
+give `link:../../apidocs/io/vertx/core/net/KeyCertOptions.html[KeyCertOptions]` and `link:../../apidocs/io/vertx/core/net/TrustOptions.html[TrustOptions]` configurations:
+
+[source,java]
+----
+SelfSignedCertificate certificate = SelfSignedCertificate.create();
+
+NetServerOptions serverOptions = new NetServerOptions()
+  .setSsl(true)
+  .setKeyCertOptions(certificate.keyCertOption())
+  .setTrustOptions(certificate.trustOptions());
+
+NetServer server = vertx.createNetServer(serverOptions)
+  .connectHandler(socket -> socket.write("Hello!").end())
+  .listen(1234, "localhost");
+
+NetClientOptions clientOptions = new NetClientOptions()
+  .setSsl(true)
+  .setKeyCertOptions(certificate.keyCertOption())
+  .setTrustOptions(certificate.trustOptions());
+
+NetClient client = vertx.createNetClient(clientOptions);
+client.connect(1234, "localhost", ar -> {
+  if (ar.succeeded()) {
+    ar.result().handler(System.out::println);
+  } else {
+    System.err.println("Woops: " + ar.cause().getMessage());
+  }
+});
+----
+
 ==== Revoking certificate authorities
 
 Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no

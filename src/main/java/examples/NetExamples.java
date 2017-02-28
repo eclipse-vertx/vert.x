@@ -22,6 +22,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.net.*;
 
+import java.security.cert.CertificateException;
+
 /**
  * Created by tim on 19/01/15.
  */
@@ -549,5 +551,32 @@ public class NetExamples {
             .setHost("localhost").setPort(1080)
             .setUsername("username").setPassword("secret"));
     NetClient client = vertx.createNetClient(options);
+  }
+
+  public void example48(Vertx vertx) throws CertificateException {
+    SelfSignedCertificate certificate = SelfSignedCertificate.create();
+
+    NetServerOptions serverOptions = new NetServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(certificate.keyCertOption())
+      .setTrustOptions(certificate.trustOptions());
+
+    NetServer server = vertx.createNetServer(serverOptions)
+      .connectHandler(socket -> socket.write("Hello!").end())
+      .listen(1234, "localhost");
+
+    NetClientOptions clientOptions = new NetClientOptions()
+      .setSsl(true)
+      .setKeyCertOptions(certificate.keyCertOption())
+      .setTrustOptions(certificate.trustOptions());
+
+    NetClient client = vertx.createNetClient(clientOptions);
+    client.connect(1234, "localhost", ar -> {
+      if (ar.succeeded()) {
+        ar.result().handler(System.out::println);
+      } else {
+        System.err.println("Woops: " + ar.cause().getMessage());
+      }
+    });
   }
 }
