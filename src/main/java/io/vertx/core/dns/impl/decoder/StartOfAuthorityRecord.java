@@ -13,7 +13,7 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.dns.impl.netty.decoder.record;
+package io.vertx.core.dns.impl.decoder;
 
 /**
  * Represents an SOA (start of authority) record, which defines global
