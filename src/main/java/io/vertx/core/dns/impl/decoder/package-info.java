@@ -15,7 +15,6 @@
  */
 
 /**
- * Some DNS response packets contain numerous pieces of data that cannot be
- * decoded into a single object such as a {@link java.lang.String}.
+ * Handles the decoding of DNS response packets.
  */
-package io.vertx.core.dns.impl.netty.decoder.record;
+package io.vertx.core.dns.impl.decoder;

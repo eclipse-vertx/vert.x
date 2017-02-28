@@ -16,52 +16,64 @@
 package io.vertx.core.dns.impl;
 
 import io.vertx.core.dns.SrvRecord;
-import io.vertx.core.dns.impl.netty.decoder.record.ServiceRecord;
 
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class SrcRecordImpl implements SrvRecord, Comparable<SrvRecord>{
-  private final ServiceRecord record;
+public final class SrvRecordImpl implements SrvRecord, Comparable<SrvRecord>{
 
-  SrcRecordImpl(ServiceRecord record) {
-    this.record = record;
+  private final int priority;
+  private final int weight;
+  private final int port;
+  private final String name;
+  private final String protocol;
+  private final String service;
+  private final String target;
+
+  public SrvRecordImpl(int priority, int weight, int port, String name, String protocol, String service, String target) {
+    this.priority = priority;
+    this.weight = weight;
+    this.port = port;
+    this.name = name;
+    this.protocol = protocol;
+    this.service = service;
+    this.target = target;
   }
 
   @Override
   public int priority() {
-    return record.priority();
+    return priority;
   }
 
   @Override
   public int weight() {
-    return record.weight();
+    return weight;
   }
 
   @Override
   public int port() {
-    return record.port();
+    return port;
   }
 
   @Override
   public String name() {
-    return record.name();
+    return name;
   }
 
   @Override
   public String protocol() {
-    return record.protocol();
+    return protocol;
   }
 
   @Override
   public String service() {
-    return record.service();
+    return service;
   }
 
   @Override
   public String target() {
-    return record.target();
+    return target;
   }
 
   @Override
