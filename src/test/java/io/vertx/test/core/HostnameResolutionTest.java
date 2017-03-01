@@ -796,4 +796,34 @@ public class HostnameResolutionTest extends VertxTestBase {
       dnsServers.forEach(FakeDNSServer::stop);
     }
   }
+
+
+  @Test
+  public void testServerFailover() throws Exception {
+    FakeDNSServer server = new FakeDNSServer(FakeDNSServer.A_store(Collections.singletonMap("vertx.io", "127.0.0.1"))).port(FakeDNSServer.PORT + 2);
+    try {
+      AddressResolverOptions options = new AddressResolverOptions();
+      options.setOptResourceEnabled(false);
+      options.setMaxQueries(4); // 2 + 2
+      server.start();
+      InetSocketAddress dnsServerAddress = server.localAddress();
+      // First server is unreachable
+      options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + (FakeDNSServer.PORT + 1));
+      // Second server is the failed over server
+      options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
+      AddressResolver resolver = new AddressResolver((VertxImpl) vertx, options);
+      CompletableFuture<InetAddress> result = new CompletableFuture<>();
+      resolver.resolveHostname("vertx.io", ar -> {
+        if (ar.succeeded()) {
+          result.complete(ar.result());
+        } else {
+          result.completeExceptionally(ar.cause());
+        }
+      });
+      String resolved = result.get(10, TimeUnit.SECONDS).getHostAddress();
+      assertEquals("127.0.0.1", resolved);
+    } finally {
+      server.stop();
+    }
+  }
 }
