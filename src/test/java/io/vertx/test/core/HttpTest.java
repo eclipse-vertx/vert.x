@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -34,6 +35,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
@@ -42,6 +44,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.net.NetSocket;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -70,6 +73,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
@@ -3501,6 +3505,100 @@ public abstract class HttpTest extends HttpTestBase {
       complete();
     }).setFollowRedirects(true).putHeader("foo", "foo_value").setHost("the_host").end();
     await();
+  }
+
+  @Test
+  public void testDefaultRedirectHandler() throws Exception {
+    testFoo("http://example.com", "http://example.com");
+    testFoo("http://example.com/somepath", "http://example.com/somepath");
+    testFoo("http://example.com:8000", "http://example.com:8000");
+    testFoo("http://example.com:8000/somepath", "http://example.com:8000/somepath");
+    testFoo("https://example.com", "https://example.com");
+    testFoo("https://example.com/somepath", "https://example.com/somepath");
+    testFoo("https://example.com:8000", "https://example.com:8000");
+    testFoo("https://example.com:8000/somepath", "https://example.com:8000/somepath");
+    testFoo("whatever://example.com", null);
+    testFoo("http://", null);
+    testFoo("http://:8080/somepath", null);
+  }
+
+  private void testFoo(String location, String expected) throws Exception {
+    int status = 301;
+    Map<String, String> headers = Collections.singletonMap("Location", location);
+    HttpMethod method = HttpMethod.GET;
+    String baseURI = "https://localhost:8080";
+    class MockReq implements HttpClientRequest {
+      public HttpClientRequest exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(Buffer data) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setWriteQueueMaxSize(int maxSize) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest drainHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest handler(Handler<HttpClientResponse> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest pause() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest resume() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest endHandler(Handler<Void> endHandler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setFollowRedirects(boolean followRedirects) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setChunked(boolean chunked) { throw new UnsupportedOperationException(); }
+      public boolean isChunked() { return false; }
+      public HttpMethod method() { return method; }
+      public String getRawMethod() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setRawMethod(String method) { throw new UnsupportedOperationException(); }
+      public String absoluteURI() { return baseURI; }
+      public String uri() { throw new UnsupportedOperationException(); }
+      public String path() { throw new UnsupportedOperationException(); }
+      public String query() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setHost(String host) { throw new UnsupportedOperationException(); }
+      public String getHost() { throw new UnsupportedOperationException(); }
+      public MultiMap headers() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putHeader(String name, String value) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(String chunk) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(String chunk, String enc) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest sendHead() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest sendHead(Handler<HttpVersion> completionHandler) { throw new UnsupportedOperationException(); }
+      public void end(String chunk) { throw new UnsupportedOperationException(); }
+      public void end(String chunk, String enc) { throw new UnsupportedOperationException(); }
+      public void end(Buffer chunk) { throw new UnsupportedOperationException(); }
+      public void end() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
+      public boolean reset(long code) { return false; }
+      public HttpConnection connection() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
+      public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
+    }
+    HttpClientRequest req = new MockReq();
+    class MockResp implements HttpClientResponse {
+      public HttpClientResponse resume() { throw new UnsupportedOperationException(); }
+      public HttpClientResponse exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientResponse handler(Handler<Buffer> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientResponse pause() { throw new UnsupportedOperationException(); }
+      public HttpClientResponse endHandler(Handler<Void> endHandler) { throw new UnsupportedOperationException(); }
+      public HttpVersion version() { throw new UnsupportedOperationException(); }
+      public int statusCode() { return status; }
+      public String statusMessage() { throw new UnsupportedOperationException(); }
+      public MultiMap headers() { throw new UnsupportedOperationException(); }
+      public String getHeader(String headerName) { return headers.get(headerName); }
+      public String getHeader(CharSequence headerName) { return getHeader(headerName.toString()); }
+      public String getTrailer(String trailerName) { throw new UnsupportedOperationException(); }
+      public MultiMap trailers() { throw new UnsupportedOperationException(); }
+      public List<String> cookies() { throw new UnsupportedOperationException(); }
+      public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) { throw new UnsupportedOperationException(); }
+      public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) { throw new UnsupportedOperationException(); }
+      public NetSocket netSocket() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest request() { return req; }
+    }
+    MockResp resp = new MockResp();
+    Function<HttpClientResponse, Future<HttpClientRequest>> handler = client.redirectHandler();
+    Future<HttpClientRequest> redirection = handler.apply(resp);
+    if (expected != null) {
+      assertEquals(location, redirection.result().absoluteURI());
+    } else {
+      assertTrue(redirection == null || redirection.failed());
+    }
   }
 
   @Test

@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -37,6 +38,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final String host;
   protected final int port;
   protected final String query;
+  protected final boolean ssl;
   private Handler<Throwable> exceptionHandler;
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
@@ -44,7 +46,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected Throwable exceptionOccurred;
   private Object metric;
 
-  HttpClientRequestBase(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port, String uri) {
     this.client = client;
     this.uri = uri;
     this.method = method;
@@ -52,6 +54,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     this.port = port;
     this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
     this.query = HttpUtils.parseQuery(uri);
+    this.ssl = ssl;
   }
 
   Object metric() {
@@ -67,7 +70,6 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected abstract void checkComplete();
 
   protected String hostHeader() {
-    boolean ssl = client.getOptions().isSsl();
     if ((port == 80 && !ssl) || (port == 443 && ssl)) {
       return host;
     } else {
@@ -77,7 +79,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
 
   @Override
   public String absoluteURI() {
-    return (client.getOptions().isSsl() ? "https://" : "http://") + hostHeader() + uri;
+    return (ssl ? "https://" : "http://") + hostHeader() + uri;
   }
 
   public String query() {

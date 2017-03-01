@@ -64,43 +64,42 @@ import java.util.function.Function;
 public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   private final Function<HttpClientResponse, Future<HttpClientRequest>> DEFAULT_HANDLER = resp -> {
-    int statusCode = resp.statusCode();
-    String location = resp.getHeader(HttpHeaders.LOCATION);
-    if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)) {
-      HttpMethod m = resp.request().method();
-      if (statusCode == 301 || statusCode == 302 || statusCode == 303) {
-        m = HttpMethod.GET;
-      }
-      URI uri;
-      try {
-        uri = HttpUtils.resolveURIReference(resp.request().absoluteURI(), location);
-      } catch (URISyntaxException e) {
-        return null;
-      }
-      boolean ssl;
-      int port = uri.getPort();
-      String protocol = uri.getScheme();
-      char chend = protocol.charAt(protocol.length() - 1);
-      if (chend == 'p') {
-        ssl = false;
-        if (port == -1) {
-          port = 80;
+    try {
+      int statusCode = resp.statusCode();
+      String location = resp.getHeader(HttpHeaders.LOCATION);
+      if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)) {
+        HttpMethod m = resp.request().method();
+        if (statusCode == 301 || statusCode == 302 || statusCode == 303) {
+          m = HttpMethod.GET;
         }
-      } else if (chend == 's') {
-        ssl = true;
-        if (port == -1) {
-          port = 443;
+        URI uri = HttpUtils.resolveURIReference(resp.request().absoluteURI(), location);
+        boolean ssl;
+        int port = uri.getPort();
+        String protocol = uri.getScheme();
+        char chend = protocol.charAt(protocol.length() - 1);
+        if (chend == 'p') {
+          ssl = false;
+          if (port == -1) {
+            port = 80;
+          }
+        } else if (chend == 's') {
+          ssl = true;
+          if (port == -1) {
+            port = 443;
+          }
+        } else {
+          return null;
         }
-      } else {
-        return null;
+        String requestURI = uri.getPath();
+        if (uri.getQuery() != null) {
+          requestURI += "?" + uri.getQuery();
+        }
+        return Future.succeededFuture(createRequest(m, uri.getHost(), port, ssl, requestURI, null));
       }
-      String requestURI = uri.getPath();
-      if (uri.getQuery() != null) {
-        requestURI += "?" + uri.getQuery();
-      }
-      return Future.succeededFuture(doRequest(m, uri.getHost(), port, ssl, requestURI, null));
+      return null;
+    } catch (Exception e) {
+      return Future.failedFuture(e);
     }
-    return null;
   };
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
@@ -457,12 +456,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         port = 443;
       }
     }
-    return doRequest(method, url.getHost(), port, ssl, url.getFile(), null);
+    return createRequest(method, url.getHost(), port, ssl, url.getFile(), null);
   }
 
   @Override
   public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI) {
-    return doRequest(method, host, port, null, requestURI, null);
+    return createRequest(method, host, port, null, requestURI, null);
   }
 
   @Override
@@ -472,7 +471,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClientRequest request(HttpMethod method, RequestOptions options) {
-    return doRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null);
+    return createRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null);
   }
 
   @Override
@@ -936,11 +935,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   private HttpClient requestNow(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    doRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).handler(responseHandler).end();
+    createRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).handler(responseHandler).end();
     return this;
   }
 
-  private HttpClientRequest doRequest(HttpMethod method, String host, int port, Boolean ssl, String relativeURI, MultiMap headers) {
+  private HttpClientRequest createRequest(HttpMethod method, String host, int port, Boolean ssl, String relativeURI, MultiMap headers) {
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");

@@ -43,13 +43,14 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       Http2ClientConnection conn,
       Http2Stream stream,
       HttpClientImpl client,
+      boolean ssl,
       HttpMethod method,
       String rawMethod,
       String uri,
       String host,
       int port,
       MultiMap headers) throws Http2Exception {
-    super(client, method, host, port, uri);
+    super(client, ssl, method, host, port, uri);
     this.conn = conn;
     this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream, false);
     this.rawMethod = rawMethod;
