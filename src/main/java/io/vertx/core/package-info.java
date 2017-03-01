@@ -1282,12 +1282,36 @@
  * The default port of a DNS server is `53`, when a server uses a different port, this port can be set
  * using a colon delimiter: `192.168.0.2:40000`.
  *
- * The resolver can be configured to use an alternative _hosts_ file:
+ * NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
+ * _-Dvertx.disableDnsResolver=true_ activates this behavior
+ *
+ * === Failover
+ *
+ * When a server does not reply in a timely manner, the resolver will try the next one from the list, the search
+ * is limited by {@link io.vertx.core.dns.AddressResolverOptions#setMaxQueries(int)} (the default value is `4` queries).
+ *
+ * A DNS query is considered as failed when the resolver has not received a correct answer within
+ * {@link io.vertx.core.dns.AddressResolverOptions#getQueryTimeout()} milliseconds (the default value is `5` seconds).
+ *
+ * === Round-robin selection
+ *
+ * By default the dns server selection uses the first one, the remaining servers are used for failover.
+ *
+ * You can configure {@link io.vertx.core.dns.AddressResolverOptions#setRoundRobin(boolean)} to `true` to let
+ * the resolver perform a round-robin selection instead. Failover will continue to use the next server in the list.
+ *
+ * === Hosts mapping
+ *
+ * The _hosts_ file of the operating system is used to perform an hostname lookup for an ipaddress.
+ *
+ * An alternative _hosts_ file can be used instead:
  *
  * [source,$lang]
  * ----
  * {@link examples.CoreExamples#configureHosts}
  * ----
+ *
+ * === Search domains
  *
  * By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
  * list can be provided:
@@ -1299,9 +1323,6 @@
  *
  * When a search domain list is used, the threshold for the number of dots is {@code 1} or loaded from `/etc/resolv.conf`
  * on Linux, it can be configured to a specific value with {@link io.vertx.core.dns.AddressResolverOptions#setNdots(int)}.
- *
- * NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
- * _-Dvertx.disableDnsResolver=true_ activates this behavior
  *
  * == High Availability and Fail-Over
  *
