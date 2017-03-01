@@ -283,7 +283,7 @@ public class ClusteredEventBus extends EventBusImpl {
         });
       });
 
-      subs.removeAll(ci -> !members.contains(ci.nodeId), removeResult -> {
+      subs.removeAllMatching(ci -> !members.contains(ci.nodeId), removeResult -> {
         if (removeResult.failed()) {
           log.warn("Error removing subs", removeResult.cause());
         }

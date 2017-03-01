@@ -369,11 +369,11 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void removeAllForValue(final V v, Handler<AsyncResult<Void>> completionHandler) {
-      removeAll(v::equals, completionHandler);
+      removeAllMatching(v::equals, completionHandler);
     }
 
     @Override
-    public void removeAll(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler) {
+    public void removeAllMatching(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler) {
       workerExecutor.executeBlocking(fut -> {
         Iterator<Map.Entry<K, ChoosableSet<V>>> mapIter = map.entrySet().iterator();
         while (mapIter.hasNext()) {
