@@ -560,7 +560,7 @@ public class NetExamples {
 
     NetServerOptions serverOptions = new NetServerOptions()
       .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOption())
+      .setKeyCertOptions(certificate.keyCertOptions())
       .setTrustOptions(certificate.trustOptions());
 
     NetServer server = vertx.createNetServer(serverOptions)
@@ -569,7 +569,7 @@ public class NetExamples {
 
     NetClientOptions clientOptions = new NetClientOptions()
       .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOption())
+      .setKeyCertOptions(certificate.keyCertOptions())
       .setTrustOptions(certificate.trustOptions());
 
     NetClient client = vertx.createNetClient(clientOptions);
@@ -593,7 +593,7 @@ public class NetExamples {
 
     vertx.createHttpServer(new HttpServerOptions()
       .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOption())
+      .setKeyCertOptions(certificate.keyCertOptions())
       .setTrustOptions(certificate.trustOptions()))
       .requestHandler(req -> req.response().end("Hello!"))
       .listen(8080);

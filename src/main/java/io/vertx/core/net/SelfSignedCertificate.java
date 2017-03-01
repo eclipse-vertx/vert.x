@@ -38,7 +38,7 @@ public interface SelfSignedCertificate {
    *
    * @return a {@link PemKeyCertOptions} based on the generated certificate.
    */
-  PemKeyCertOptions keyCertOption();
+  PemKeyCertOptions keyCertOptions();
 
   /**
    * {@link TrustOptions} provider.

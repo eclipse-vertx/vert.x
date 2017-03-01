@@ -2662,12 +2662,12 @@ public class NetTest extends VertxTestBase {
 
     NetServerOptions serverOptions = new NetServerOptions()
       .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOption())
+      .setKeyCertOptions(certificate.keyCertOptions())
       .setTrustOptions(certificate.trustOptions());
 
     NetClientOptions clientOptions = new NetClientOptions()
       .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOption())
+      .setKeyCertOptions(certificate.keyCertOptions())
       .setTrustOptions(certificate.trustOptions());
 
     NetClientOptions clientTrustAllOptions = new NetClientOptions()

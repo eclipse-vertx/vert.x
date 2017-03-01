@@ -32,7 +32,7 @@ public class SelfSignedCertificateImpl implements SelfSignedCertificate {
   }
 
   @Override
-  public PemKeyCertOptions keyCertOption() {
+  public PemKeyCertOptions keyCertOptions() {
     return new PemKeyCertOptions()
       .setKeyPath(certificate.privateKey().getAbsolutePath())
       .setCertPath(certificate.certificate().getAbsolutePath());
