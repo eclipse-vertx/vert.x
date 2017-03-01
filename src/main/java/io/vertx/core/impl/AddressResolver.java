@@ -26,6 +26,7 @@ import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.NameResolver;
 import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.resolver.dns.DnsNameResolverBuilder;
+import io.netty.resolver.dns.DnsServerAddressStream;
 import io.netty.resolver.dns.DnsServerAddresses;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -47,9 +48,11 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -89,10 +92,9 @@ public class AddressResolver {
 
     if (!DISABLE_DNS_RESOLVER) {
 
-      DnsServerAddresses nameServerAddresses;
       List<String> dnsServers = options.getServers();
+      List<InetSocketAddress> serverList = new ArrayList<>();
       if (dnsServers != null && dnsServers.size() > 0) {
-        List<InetSocketAddress> serverList = new ArrayList<>();
         for (String dnsServer : dnsServers) {
           int sep = dnsServer.indexOf(':');
           String ipAddress;
@@ -110,10 +112,19 @@ public class AddressResolver {
             throw new VertxException(e);
           }
         }
-        nameServerAddresses = DnsServerAddresses.sequential(serverList);
       } else {
-        nameServerAddresses = DnsServerAddresses.defaultAddresses();
+        DnsServerAddressStream stream = DnsServerAddresses.defaultAddresses().stream();
+        Set<InetSocketAddress> all = new HashSet<>();
+        while (true) {
+          InetSocketAddress address = stream.next();
+          if (all.contains(address)) {
+            break;
+          }
+          serverList.add(address);
+          all.add(address);
+        }
       }
+      DnsServerAddresses nameServerAddresses = options.isRoundRobin() ? DnsServerAddresses.rotational(serverList) : DnsServerAddresses.sequential(serverList);
 
       Map<String, InetAddress> entries;
       if (options.getHostsPath() != null) {

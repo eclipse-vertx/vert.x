@@ -57,6 +57,9 @@ public class AddressResolverOptionsConverter {
     if (json.getValue("rdFlag") instanceof Boolean) {
       obj.setRdFlag((Boolean)json.getValue("rdFlag"));
     }
+    if (json.getValue("roundRobin") instanceof Boolean) {
+      obj.setRoundRobin((Boolean)json.getValue("roundRobin"));
+    }
     if (json.getValue("searchDomains") instanceof JsonArray) {
       json.getJsonArray("searchDomains").forEach(item -> {
         if (item instanceof String)
@@ -86,6 +89,7 @@ public class AddressResolverOptionsConverter {
     json.put("optResourceEnabled", obj.isOptResourceEnabled());
     json.put("queryTimeout", obj.getQueryTimeout());
     json.put("rdFlag", obj.getRdFlag());
+    json.put("roundRobin", obj.isRoundRobin());
     if (obj.getSearchDomains() != null) {
       JsonArray array = new JsonArray();
       obj.getSearchDomains().forEach(item -> array.add(item));

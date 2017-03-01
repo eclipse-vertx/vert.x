@@ -50,6 +50,7 @@ public class AddressResolverOptions {
   public static final int DEFAULT_MAX_QUERIES = 3;
   public static final boolean DEFAULT_RD_FLAG = true;
   public static final List<String> DEFAULT_SEACH_DOMAINS = null;
+  public static final boolean DEFAULT_ROUND_ROBIN = false;
 
   /**
    * The default ndots value = -1 (loads the value from the OS on Linux otherwise use the value 1)
@@ -68,6 +69,7 @@ public class AddressResolverOptions {
   private boolean rdFlag;
   private List<String> searchDomains;
   private int ndots;
+  private boolean roundRobin;
 
   public AddressResolverOptions() {
     servers = DEFAULT_SERVERS;
@@ -80,6 +82,7 @@ public class AddressResolverOptions {
     rdFlag = DEFAULT_RD_FLAG;
     searchDomains = null;
     ndots = DEFAULT_NDOTS;
+    roundRobin = DEFAULT_ROUND_ROBIN;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
@@ -381,6 +384,23 @@ public class AddressResolverOptions {
     return this;
   }
 
+  /**
+   * @return the value {@code true} when the dns server selection uses round robin
+   */
+  public boolean isRoundRobin() {
+    return roundRobin;
+  }
+
+  /**
+   * Set to {@code true} to enable round-robin selection of the dns server to use.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public AddressResolverOptions setRoundRobin(boolean roundRobin) {
+    this.roundRobin = roundRobin;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -395,7 +415,8 @@ public class AddressResolverOptions {
     if (rdFlag != that.rdFlag) return false;
     if (!Objects.equals(searchDomains, that.searchDomains)) return false;
     if (ndots != that.ndots) return false;
-    return servers != null ? servers.equals(that.servers) : that.servers == null;
+    if  (servers != null ? !servers.equals(that.servers) : that.servers != null) return false;
+    return roundRobin == that.roundRobin;
   }
 
   @Override
@@ -410,6 +431,7 @@ public class AddressResolverOptions {
     result = 31 * result + (searchDomains != null ? searchDomains.hashCode() : 0);
     result = 31 * result + ndots;
     result = 31 * result + Boolean.hashCode(rdFlag);
+    result = 31 * result + Boolean.hashCode(roundRobin);
     return result;
   }
 

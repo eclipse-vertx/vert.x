@@ -65,6 +65,10 @@ Set the query timeout in milliseconds, i.e the amount of time after a query is c
 +++
 Set the DNS queries <i>Recursion Desired</i> flag value.
 +++
+|[[roundRobin]]`roundRobin`|`Boolean`|
++++
+Set to <code>true</code> to enable round-robin selection of the dns server to use.
++++
 |[[searchDomains]]`searchDomains`|`Array of String`|
 +++
 Set the lists of DNS search domains.
