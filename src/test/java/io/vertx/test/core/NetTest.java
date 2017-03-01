@@ -2656,6 +2656,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSelfSignedCertificate() throws Exception {
+    CountDownLatch latch = new CountDownLatch(2);
+
     SelfSignedCertificate certificate = SelfSignedCertificate.create();
 
     NetServerOptions serverOptions = new NetServerOptions()
@@ -2668,20 +2670,34 @@ public class NetTest extends VertxTestBase {
       .setKeyCertOptions(certificate.keyCertOption())
       .setTrustOptions(certificate.trustOptions());
 
-    client = vertx.createNetClient(clientOptions);
+    NetClientOptions clientTrustAllOptions = new NetClientOptions()
+      .setSsl(true)
+      .setTrustAll(true);
+
     server = vertx.createNetServer(serverOptions)
       .connectHandler(socket -> {
         socket.write("123").end();
       })
       .listen(1234, "localhost", onSuccess(s -> {
+
+        client = vertx.createNetClient(clientOptions);
         client.connect(1234, "localhost", onSuccess(socket -> {
           socket.handler(buffer -> {
             assertEquals("123", buffer.toString());
-            testComplete();
+            latch.countDown();
           });
         }));
+
+        client = vertx.createNetClient(clientTrustAllOptions);
+        client.connect(1234, "localhost", onSuccess(socket -> {
+          socket.handler(buffer -> {
+            assertEquals("123", buffer.toString());
+            latch.countDown();
+          });
+        }));
+
       }));
 
-    await(2, TimeUnit.SECONDS);
+    awaitLatch(latch);
   }
 }

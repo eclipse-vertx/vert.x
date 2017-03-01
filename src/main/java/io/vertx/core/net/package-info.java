@@ -595,7 +595,21 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.NetExamples#example48(io.vertx.core.Vertx)}
+ * {@link examples.NetExamples#example48}
+ * ----
+ *
+ * The client can also be configured to trust all certificates:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example49}
+ * ----
+ *
+ * Note that self-signed certificates also work for other TCP protocols like HTTPS:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example50}
  * ----
  *
  * ==== Revoking certificate authorities
