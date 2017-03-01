@@ -52,11 +52,13 @@ import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Predicate;
 
 /**
  * An event bus implementation that clusters with other Vert.x nodes
@@ -283,7 +285,7 @@ public class ClusteredEventBus extends EventBusImpl {
         });
       });
 
-      subs.removeAllMatching(ci -> !members.contains(ci.nodeId), removeResult -> {
+      subs.removeAllMatching((Serializable & Predicate<ClusterNodeInfo>) ci -> !members.contains(ci.nodeId), removeResult -> {
         if (removeResult.failed()) {
           log.warn("Error removing subs", removeResult.cause());
         }
