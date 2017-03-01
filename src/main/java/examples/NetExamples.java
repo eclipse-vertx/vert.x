@@ -573,7 +573,7 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(clientOptions);
     client.connect(1234, "localhost", ar -> {
       if (ar.succeeded()) {
-        ar.result().handler(System.out::println);
+        ar.result().handler(buffer -> System.out.println(buffer));
       } else {
         System.err.println("Woops: " + ar.cause().getMessage());
       }
