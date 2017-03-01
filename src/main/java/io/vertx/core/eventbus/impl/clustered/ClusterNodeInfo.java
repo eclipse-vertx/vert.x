@@ -16,6 +16,8 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
+import io.vertx.core.net.impl.ServerID;
+
 import java.io.Serializable;
 
 /**
@@ -26,16 +28,14 @@ public class ClusterNodeInfo implements Serializable {
   private static final long serialVersionUID = 1L;
 
   public String nodeId;
-  public String host;
-  public int port;
+  public ServerID serverID;
 
   public ClusterNodeInfo() {
   }
 
-  public ClusterNodeInfo(String nodeId, String host, int port) {
+  public ClusterNodeInfo(String nodeId, ServerID serverID) {
     this.nodeId = nodeId;
-    this.host = host;
-    this.port = port;
+    this.serverID = serverID;
   }
 
   @Override
@@ -45,21 +45,19 @@ public class ClusterNodeInfo implements Serializable {
 
     ClusterNodeInfo that = (ClusterNodeInfo) o;
 
-    if (port != that.port) return false;
     if (nodeId != null ? !nodeId.equals(that.nodeId) : that.nodeId != null) return false;
-    return host != null ? host.equals(that.host) : that.host == null;
+    return serverID != null ? serverID.equals(that.serverID) : that.serverID == null;
   }
 
   @Override
   public int hashCode() {
     int result = nodeId != null ? nodeId.hashCode() : 0;
-    result = 31 * result + (host != null ? host.hashCode() : 0);
-    result = 31 * result + port;
+    result = 31 * result + (serverID != null ? serverID.hashCode() : 0);
     return result;
   }
 
   @Override
   public String toString() {
-    return nodeId + ":" + host + ":" + port;
+    return nodeId + ":" + serverID.toString();
   }
 }

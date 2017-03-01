@@ -146,7 +146,7 @@ public class ClusteredEventBus extends EventBusImpl {
             int serverPort = getClusterPublicPort(options, server.actualPort());
             String serverHost = getClusterPublicHost(options);
             serverID = new ServerID(serverPort, serverHost);
-            nodeInfo = new ClusterNodeInfo(clusterManager.getNodeID(), serverHost, serverPort);
+            nodeInfo = new ClusterNodeInfo(clusterManager.getNodeID(), serverID);
             haManager.addDataToAHAInfo(SERVER_ID_HA_KEY, new JsonObject().put("host", serverID.host).put("port", serverID.port));
             if (resultHandler != null) {
               started = true;
@@ -345,7 +345,7 @@ public class ClusteredEventBus extends EventBusImpl {
     if (sendContext.message.isSend()) {
       // Choose one
       ClusterNodeInfo ci = subs.choose();
-      ServerID sid = ci == null ? null : new ServerID(ci.port, ci.host);
+      ServerID sid = ci == null ? null : ci.serverID;
       if (sid != null && !sid.equals(serverID)) {  //We don't send to this node
         metrics.messageSent(address, false, false, true);
         sendRemote(sid, sendContext.message);
@@ -358,10 +358,9 @@ public class ClusteredEventBus extends EventBusImpl {
       boolean local = false;
       boolean remote = false;
       for (ClusterNodeInfo ci : subs) {
-        ServerID sid = new ServerID(ci.port, ci.host);
-        if (!sid.equals(serverID)) {  //We don't send to this node
+        if (!ci.serverID.equals(serverID)) {  //We don't send to this node
           remote = true;
-          sendRemote(sid, sendContext.message);
+          sendRemote(ci.serverID, sendContext.message);
         } else {
           local = true;
         }
