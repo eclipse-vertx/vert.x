@@ -587,10 +587,12 @@
  *
  * ==== Self-signed certificates for testing and development purposes
  *
+ * CAUTION: Do not use this in production settings, and note that the generated keys are very insecure.
+ *
  * It is very often the case that self-signed certificates are required, be it for unit / integration tests or for
  * running a development version of an application.
  *
- * {@link io.vertx.core.net.SelfSignedCertificate} can be used to provide self-signed certificate helpers and
+ * {@link io.vertx.core.net.SelfSignedCertificate} can be used to provide self-signed PEM certificate helpers and
  * give {@link io.vertx.core.net.KeyCertOptions} and {@link io.vertx.core.net.TrustOptions} configurations:
  *
  * [source,$lang]

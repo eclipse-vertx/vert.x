@@ -48,6 +48,25 @@ public interface SelfSignedCertificate {
   PemTrustOptions trustOptions();
 
   /**
+   * Filesystem path to the private key.
+   *
+   * @return the absolute path to the private key.
+   */
+  String privateKeyPath();
+
+  /**
+   * Filesystem path to the certificate.
+   *
+   * @return the absolute path to the certificate.
+   */
+  String certificatePath();
+
+  /**
+   * Delete the private key and certificate files.
+   */
+  void delete();
+
+  /**
    * Create a new {@code SelfSignedCertificate} instance.
    *
    * @return a new instance.

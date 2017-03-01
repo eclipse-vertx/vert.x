@@ -34,13 +34,27 @@ public class SelfSignedCertificateImpl implements SelfSignedCertificate {
   @Override
   public PemKeyCertOptions keyCertOptions() {
     return new PemKeyCertOptions()
-      .setKeyPath(certificate.privateKey().getAbsolutePath())
-      .setCertPath(certificate.certificate().getAbsolutePath());
+      .setKeyPath(privateKeyPath())
+      .setCertPath(certificatePath());
   }
 
   @Override
   public PemTrustOptions trustOptions() {
-    return new PemTrustOptions()
-      .addCertPath(certificate.certificate().getAbsolutePath());
+    return new PemTrustOptions().addCertPath(certificatePath());
+  }
+
+  @Override
+  public String privateKeyPath() {
+    return certificate.privateKey().getAbsolutePath();
+  }
+
+  @Override
+  public String certificatePath() {
+    return certificate.certificate().getAbsolutePath();
+  }
+
+  @Override
+  public void delete() {
+    certificate.delete();
   }
 }
