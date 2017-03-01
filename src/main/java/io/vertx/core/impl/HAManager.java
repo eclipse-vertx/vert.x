@@ -143,6 +143,9 @@ public class HAManager {
     haInfo.put("group", this.group);
     this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
+    synchronized (haInfo) {
+      clusterMap.put(nodeID, haInfo.encode());
+    }
     clusterManager.nodeListener(new NodeListener() {
       @Override
       public void nodeAdded(String nodeID) {
@@ -154,7 +157,6 @@ public class HAManager {
         HAManager.this.nodeLeft(leftNodeID);
       }
     });
-    clusterMap.put(nodeID, haInfo.encode());
     quorumTimerID = vertx.setPeriodic(QUORUM_CHECK_PERIOD, tid -> checkHADeployments());
     // Call check quorum to compute whether we have an initial quorum
     synchronized (this) {
