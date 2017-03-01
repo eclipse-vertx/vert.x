@@ -47,7 +47,7 @@ public class AddressResolverOptions {
   public static final int DEFAULT_CACHE_MAX_TIME_TO_LIVE = Integer.MAX_VALUE;
   public static final int DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE = 0;
   public static final int DEFAULT_QUERY_TIMEOUT = 5000;
-  public static final int DEFAULT_MAX_QUERIES = 3;
+  public static final int DEFAULT_MAX_QUERIES = 4;
   public static final boolean DEFAULT_RD_FLAG = true;
   public static final List<String> DEFAULT_SEACH_DOMAINS = null;
   public static final boolean DEFAULT_ROUND_ROBIN = false;
