@@ -16,19 +16,26 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Closeable;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
@@ -71,10 +78,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         return null;
       }
       boolean ssl;
-      if ("http".equals(uri.getScheme())) {
+      int port = uri.getPort();
+      String protocol = uri.getScheme();
+      char chend = protocol.charAt(protocol.length() - 1);
+      if (chend == 'p') {
         ssl = false;
-      } else if ("https".equals(uri.getScheme())) {
+        if (port == -1) {
+          port = 80;
+        }
+      } else if (chend == 's') {
         ssl = true;
+        if (port == -1) {
+          port = 443;
+        }
       } else {
         return null;
       }
@@ -82,7 +98,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       if (uri.getQuery() != null) {
         requestURI += "?" + uri.getQuery();
       }
-      return Future.succeededFuture(doRequest(m, uri.getHost(), uri.getPort(), ssl, requestURI, null));
+      return Future.succeededFuture(doRequest(m, uri.getHost(), port, ssl, requestURI, null));
     }
     return null;
   };
