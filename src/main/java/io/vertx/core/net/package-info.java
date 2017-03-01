@@ -585,6 +585,35 @@
  *
  * Keep in mind that pem configuration, the private key is not crypted.
  *
+ * ==== Self-signed certificates for testing and development purposes
+ *
+ * CAUTION: Do not use this in production settings, and note that the generated keys are very insecure.
+ *
+ * It is very often the case that self-signed certificates are required, be it for unit / integration tests or for
+ * running a development version of an application.
+ *
+ * {@link io.vertx.core.net.SelfSignedCertificate} can be used to provide self-signed PEM certificate helpers and
+ * give {@link io.vertx.core.net.KeyCertOptions} and {@link io.vertx.core.net.TrustOptions} configurations:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example48}
+ * ----
+ *
+ * The client can also be configured to trust all certificates:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example49}
+ * ----
+ *
+ * Note that self-signed certificates also work for other TCP protocols like HTTPS:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example50}
+ * ----
+ *
  * ==== Revoking certificate authorities
  *
  * Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
