@@ -318,6 +318,21 @@ public class DNSTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testLookup4CNAME() throws Exception {
+    final String cname = "cname.vertx.io";
+    final String ip = "10.0.0.1";
+    DnsClient dns = prepareDns(FakeDNSServer.testLookup4CNAME(cname, ip));
+
+    dns.lookup4("vertx.io", ar -> {
+      String result = ar.result();
+      assertEquals(ip, result);
+      testComplete();
+    });
+    await();
+    dnsServer.stop();
+  }
+
   private DnsClient prepareDns(FakeDNSServer server) throws Exception {
     dnsServer = server;
     dnsServer.start();
