@@ -149,7 +149,7 @@ or when end of request is reached if it's an HTTP request, or when the connectio
 
 `WriteStream` is implemented by `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`, `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`
 `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`,
-`link:../../apidocs/io/vertx/core/datagram/PacketWritestream.html[PacketWritestream]` and `link:../../apidocs/io/vertx/core/eventbus/MessageProducer.html[MessageProducer]`
+and `link:../../apidocs/io/vertx/core/eventbus/MessageProducer.html[MessageProducer]`
 
 Functions:
 

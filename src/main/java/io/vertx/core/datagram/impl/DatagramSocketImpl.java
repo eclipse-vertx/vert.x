@@ -29,7 +29,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.datagram.PacketWritestream;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -40,6 +39,7 @@ import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.streams.WriteStream;
 
 import java.net.*;
 import java.util.Objects;
@@ -245,7 +245,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public PacketWritestream sender(int port, String host) {
+  public WriteStream<Buffer> sender(int port, String host) {
     Arguments.requireInRange(port, 0, 65535, "port p must be in range 0 <= p <= 65535");
     Objects.requireNonNull(host, "no null host accepted");
     return new PacketWriteStreamImpl(this, port, host);

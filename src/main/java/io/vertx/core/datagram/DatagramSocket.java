@@ -58,14 +58,14 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
-   * Returns a {@link io.vertx.core.datagram.PacketWritestream} able to send {@link Buffer} to the
+   * Returns a {@code WriteStream<Buffer>} able to send {@link Buffer} to the
    * {@link io.vertx.core.net.SocketAddress}.
    *
    * @param port the port of the remote peer
    * @param host the host address of the remote peer
    * @return the write stream for sending packets
    */
-  PacketWritestream sender(int port, String host);
+  WriteStream<Buffer> sender(int port, String host);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using UTF8 encoding.

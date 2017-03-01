@@ -121,7 +121,7 @@
  *
  * `WriteStream` is implemented by {@link io.vertx.core.http.HttpClientRequest}, {@link io.vertx.core.http.HttpServerResponse}
  * {@link io.vertx.core.http.WebSocket}, {@link io.vertx.core.net.NetSocket}, {@link io.vertx.core.file.AsyncFile},
- * {@link io.vertx.core.datagram.PacketWritestream} and {@link io.vertx.core.eventbus.MessageProducer}
+ * and {@link io.vertx.core.eventbus.MessageProducer}
  *
  * Functions:
  *
