@@ -44,6 +44,7 @@ import org.apache.mina.transport.socket.DatagramSessionConfig;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -302,6 +303,35 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
+  public static FakeDNSServer testLookup4CNAME(final String cname, final String ip) {
+    return new FakeDNSServer(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord)
+          throws org.apache.directory.server.dns.DnsException {
+        // use LinkedHashSet since the order of the result records has to be preserved to make sure the unit test fails
+        Set<ResourceRecord> set = new LinkedHashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.CNAME);
+        rm.put(DnsAttribute.DOMAIN_NAME, cname);
+        set.add(rm.getEntry());
+
+        ResourceRecordModifier rm2 = new ResourceRecordModifier();
+        rm2.setDnsClass(RecordClass.IN);
+        rm2.setDnsName(cname);
+        rm2.setDnsTtl(100);
+        rm2.setDnsType(RecordType.A);
+        rm2.put(DnsAttribute.IP_ADDRESS, ip);
+        set.add(rm2.getEntry());
+
+        return set;
+      }
+    });
+  }
+
   @Override
   public void start() throws IOException {
     UdpTransport transport = new UdpTransport("127.0.0.1", PORT);
@@ -312,7 +342,7 @@ public final class FakeDNSServer extends DnsServer {
     acceptor.setHandler(new DnsProtocolHandler(this, store) {
       @Override
       public void sessionCreated(IoSession session) throws Exception {
-        // USe our own codec to support AAAA testing
+        // Use our own codec to support AAAA testing
         session.getFilterChain().addFirst("codec",
           new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
       }

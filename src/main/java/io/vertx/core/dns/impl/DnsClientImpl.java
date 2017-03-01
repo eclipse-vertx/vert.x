@@ -245,9 +245,11 @@ public final class DnsClientImpl implements DnsClient {
 
                   List<T> records = new ArrayList<>(count);
                   for (int idx = 0;idx < count;idx++) {
-                    DnsRecord a = msg.recordAt(DnsSection.ANSWER);
+                    DnsRecord a = msg.recordAt(DnsSection.ANSWER, idx);
                     T record = RecordDecoder.decode(a);
-                    records.add(record);
+                    if (isRequestedType(a.type(), types)) {
+                      records.add(record);
+                    }
                   }
 
                   if (records.size() > 0 && (records.get(0) instanceof MxRecordImpl || records.get(0) instanceof SrvRecordImpl)) {
@@ -259,6 +261,15 @@ public final class DnsClientImpl implements DnsClient {
                   setFailure(result, new DnsException(code));
                 }
                 ctx.close();
+              }
+
+              private boolean isRequestedType(DnsRecordType dnsRecordType, DnsRecordType[] types) {
+                for (DnsRecordType t : types) {
+                  if (t.equals(dnsRecordType)) {
+                    return true;
+                  }
+                }
+                return false;
               }
 
               @Override
