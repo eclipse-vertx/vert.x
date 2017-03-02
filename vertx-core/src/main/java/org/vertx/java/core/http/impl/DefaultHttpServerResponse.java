@@ -450,6 +450,21 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     }
   }
 
+  public boolean isHeadWritten()
+  {
+    return headWritten;
+  }
+
+  public boolean isWritten()
+  {
+    return written;
+  }
+
+  public boolean isClosed()
+  {
+    return closed;
+  }
+
   private void checkWritten() {
     if (written) {
       throw new IllegalStateException("Response has already been written");

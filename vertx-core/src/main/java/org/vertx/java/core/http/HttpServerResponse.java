@@ -211,4 +211,19 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    */
   void close();
 
+  /**
+   * Is the response head written already?
+   */
+  public boolean isHeadWritten();
+
+  /**
+   * Is the response body written already?
+   */
+  public boolean isWritten();
+
+  /**
+   * Is the response closed?
+   */
+  public boolean isClosed();
+
 }
