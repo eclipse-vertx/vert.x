@@ -374,7 +374,12 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
     if (curMatch.doesMatch) {
       if (curMatch.requiresAuth) {
-        final String sessionID = message.getString("sessionID");
+        String sessionIdString = null;
+        JsonObject messageBody = message.getObject("body");
+        if (messageBody != null) {
+          sessionIdString = messageBody.getString("sessionID");
+        }
+        final String sessionID = sessionIdString;
         if (sessionID != null) {
           authorise(message, sessionID, new AsyncResultHandler<Boolean>() {
             public void handle(AsyncResult<Boolean> res) {
