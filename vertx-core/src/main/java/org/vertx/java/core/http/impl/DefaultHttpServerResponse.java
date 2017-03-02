@@ -100,6 +100,12 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
+  public HttpServerResponse setStatus(HttpResponseStatus status) {
+    this.response.setStatus(status);
+    return this;
+  }
+
+  @Override
   public String getStatusMessage() {
     return response.getStatus().reasonPhrase();
   }
@@ -339,7 +345,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     File file = new File(PathAdjuster.adjust(vertx, filename));
     if (!file.exists()) {
       if (notFoundResource != null) {
-        setStatusCode(HttpResponseStatus.NOT_FOUND.code());
+        setStatus(HttpResponseStatus.NOT_FOUND);
         sendFile(notFoundResource, (String) null, resultHandler);
       } else {
         sendNotFound();
@@ -421,13 +427,13 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   private void sendForbidden() {
-    setStatusCode(HttpResponseStatus.FORBIDDEN.code());
+    setStatus(HttpResponseStatus.FORBIDDEN);
     putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE, org.vertx.java.core.http.HttpHeaders.TEXT_HTML);
     end(FORBIDDEN);
   }
 
   private void sendNotFound() {
-    setStatusCode(HttpResponseStatus.NOT_FOUND.code());
+    setStatus(HttpResponseStatus.NOT_FOUND);
     putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE, org.vertx.java.core.http.HttpHeaders.TEXT_HTML);
     end(NOT_FOUND);
   }
