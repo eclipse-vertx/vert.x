@@ -745,16 +745,16 @@ public class HostnameResolutionTest extends VertxTestBase {
   }
 
   @Test
-  public void testRoundRobinServerSelection() throws Exception {
+  public void testRotationalServerSelection() throws Exception {
     testServerSelection(true);
   }
 
   @Test
-  public void testSameServerSelection() throws Exception {
+  public void testFirstServerSelection() throws Exception {
     testServerSelection(false);
   }
 
-  private void testServerSelection(boolean roundRobin) throws Exception {
+  private void testServerSelection(boolean rotateServers) throws Exception {
     int num = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE + 4;
     List<FakeDNSServer> dnsServers = new ArrayList<>();
     try {
@@ -765,7 +765,7 @@ public class HostnameResolutionTest extends VertxTestBase {
         dnsServers.add(server);
       }
       AddressResolverOptions options = new AddressResolverOptions();
-      options.setRotateServers(roundRobin);
+      options.setRotateServers(rotateServers);
       options.setOptResourceEnabled(false);
       for (int i = 0; i < num; i++) {
         InetSocketAddress dnsServerAddress = dnsServers.get(i).localAddress();
@@ -783,7 +783,7 @@ public class HostnameResolutionTest extends VertxTestBase {
         });
         String resolved = result.get(10, TimeUnit.SECONDS).getHostAddress();
         int expected;
-        if (roundRobin) {
+        if (rotateServers) {
           // Expect from [1,...,DEFAULT_EVENT_LOOP_POOL_SIZE[ as we round robin but then we cache the result
           // so it checks that round robin cross event loops
           expected = 1 + i % VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE;
