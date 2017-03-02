@@ -194,6 +194,16 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse closeHandler(@Nullable Handler<Void> handler);
 
   /**
+   * Set a close handler for the response. This will be called when the response is ended or if the underlying connection
+   * closes before the response ends.
+   *
+   * @param handler  the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse endHandler(@Nullable Handler<Void> handler);
+
+  /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *
    * @param chunk  the string to write

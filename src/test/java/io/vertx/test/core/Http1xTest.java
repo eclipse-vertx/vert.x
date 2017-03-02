@@ -1029,6 +1029,13 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 
+  @Override
+  public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
+    testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(0);
+  }
+
+  // Extra tests
+
   @Test
   public void testTimedOutWaiterDoesntConnect() throws Exception {
     long responseDelay = 300;

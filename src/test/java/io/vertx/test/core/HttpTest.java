@@ -3621,7 +3621,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testCloseHandlerWhenConnectionEnds() throws Exception {
     server.requestHandler(req -> {
-      req.response().closeHandler(v -> {
+      req.response().endHandler(v -> {
         testComplete();
       });
       req.response().end("some-data");
@@ -3653,14 +3653,21 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
-    AtomicInteger count = new AtomicInteger();
+  public abstract void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception;
+
+  protected void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(int expected) throws Exception {
+    AtomicInteger closeCount = new AtomicInteger();
+    AtomicInteger endCount = new AtomicInteger();
     server.requestHandler(req -> {
       req.response().closeHandler(v -> {
-        count.incrementAndGet();
+        closeCount.incrementAndGet();
+      });
+      req.response().endHandler(v -> {
+        endCount.incrementAndGet();
       });
       req.connection().closeHandler(v -> {
-        assertEquals(1, count.get());
+        assertEquals(expected, closeCount.get());
+        assertEquals(1, endCount.get());
         testComplete();
       });
       req.response().end("some-data");

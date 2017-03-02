@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -66,6 +67,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
+  private Handler<Void> endHandler;
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
   private boolean chunked;
@@ -268,6 +270,15 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
+    synchronized (conn) {
+      checkWritten();
+      this.endHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
   public HttpServerResponseImpl write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
     return write(buf);
@@ -428,8 +439,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (bodyEndHandler != null) {
       bodyEndHandler.handle(null);
     }
-    if (closeHandler != null) {
-      closeHandler.handle(null);
+    if (endHandler != null) {
+      endHandler.handle(null);
     }
   }
 
@@ -551,6 +562,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   void handleClosed() {
     synchronized (conn) {
+      if (endHandler != null) {
+        conn.getContext().runOnContext(endHandler);
+      }
       if (closeHandler != null) {
         conn.getContext().runOnContext(closeHandler);
       }

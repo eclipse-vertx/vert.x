@@ -68,6 +68,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
   private Handler<Void> closeHandler;
+  private Handler<Void> endHandler;
   private long bytesWritten;
   private int numPush;
   private boolean inHandler;
@@ -301,6 +302,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
+    synchronized (conn) {
+      checkEnded();
+      endHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
   public HttpServerResponse writeContinue() {
     synchronized (conn) {
       checkHeadWritten();
@@ -436,6 +446,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
           conn.reportBytesWritten(bytesWritten);
           conn.metrics().responseEnd(metric, this);
         }
+      }
+      if (endHandler != null) {
+        conn.getContext().runOnContext(endHandler);
       }
       if (closeHandler != null) {
         conn.getContext().runOnContext(closeHandler);

@@ -1497,7 +1497,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testStreamError() throws Exception {
-    waitFor(4);
+    waitFor(5);
     Future<Void> when = Future.future();
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
@@ -1510,7 +1510,11 @@ public class Http2ServerTest extends Http2TestBase {
         assertEquals(ctx, Vertx.currentContext());
         complete();
       });
-      req.response().closeHandler(err -> {
+      req.response().closeHandler(v -> {
+        assertEquals(ctx, Vertx.currentContext());
+        complete();
+      });
+      req.response().endHandler(v -> {
         assertEquals(ctx, Vertx.currentContext());
         complete();
       });
@@ -1543,7 +1547,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testPromiseStreamError() throws Exception {
     Context ctx = vertx.getOrCreateContext();
-    waitFor(2);
+    waitFor(3);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/wibble", ar -> {
@@ -1556,6 +1560,10 @@ public class Http2ServerTest extends Http2TestBase {
           complete();
         });
         resp.closeHandler(v -> {
+          assertSame(ctx, Vertx.currentContext());
+          complete();
+        });
+        resp.endHandler(v -> {
           assertSame(ctx, Vertx.currentContext());
           complete();
         });
@@ -1587,7 +1595,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testConnectionDecodeError() throws Exception {
     Context ctx = vertx.getOrCreateContext();
-    waitFor(5);
+    waitFor(6);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
@@ -1600,7 +1608,12 @@ public class Http2ServerTest extends Http2TestBase {
         assertSame(ctx, Vertx.currentContext());
         complete();
       });
-      req.response().closeHandler(err -> {
+      req.response().closeHandler(v -> {
+        // Called once : close
+        assertSame(ctx, Vertx.currentContext());
+        complete();
+      });
+      req.response().endHandler(v -> {
         // Called once : close
         assertSame(ctx, Vertx.currentContext());
         complete();
@@ -1685,6 +1698,9 @@ public class Http2ServerTest extends Http2TestBase {
         req.response().closeHandler(err -> {
           closed.incrementAndGet();
         });
+        req.response().endHandler(err -> {
+          closed.incrementAndGet();
+        });
       } else {
         assertEquals(0, status.getAndIncrement());
         req.exceptionHandler(err -> {
@@ -1693,9 +1709,12 @@ public class Http2ServerTest extends Http2TestBase {
         req.response().closeHandler(err -> {
           closed.incrementAndGet();
         });
+        req.response().endHandler(err -> {
+          closed.incrementAndGet();
+        });
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
-          assertEquals(3, closed.get());
+          assertEquals(5, closed.get());
           assertEquals(1, status.get());
           complete();
         });
@@ -1723,6 +1742,9 @@ public class Http2ServerTest extends Http2TestBase {
         req.response().closeHandler(err -> {
           closed.incrementAndGet();
         });
+        req.response().endHandler(err -> {
+          closed.incrementAndGet();
+        });
       } else {
         assertEquals(0, status.getAndIncrement());
         req.exceptionHandler(err -> {
@@ -1731,9 +1753,12 @@ public class Http2ServerTest extends Http2TestBase {
         req.response().closeHandler(err -> {
           closed.incrementAndGet();
         });
+        req.response().endHandler(err -> {
+          closed.incrementAndGet();
+        });
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
-          assertEquals(2, closed.get());
+          assertEquals(4, closed.get());
           assertEquals(1, status.getAndIncrement());
           complete();
         });
@@ -1994,6 +2019,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertIllegalStateException(() -> resp.sendFile("the-file.txt"));
       assertIllegalStateException(() -> resp.reset(0));
       assertIllegalStateException(() -> resp.closeHandler(v -> {}));
+      assertIllegalStateException(() -> resp.endHandler(v -> {}));
       assertIllegalStateException(() -> resp.drainHandler(v -> {}));
       assertIllegalStateException(() -> resp.exceptionHandler(err -> {}));
       assertIllegalStateException(resp::writeQueueFull);
@@ -2669,7 +2695,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testIdleTimeout() throws Exception {
-    waitFor(4);
+    waitFor(5);
     server.close();
     server = vertx.createHttpServer(serverOptions.setIdleTimeout(2));
     server.requestHandler(req -> {
@@ -2678,6 +2704,9 @@ public class Http2ServerTest extends Http2TestBase {
         complete();
       });
       req.response().closeHandler(v -> {
+        complete();
+      });
+      req.response().endHandler(v -> {
         complete();
       });
       req.connection().closeHandler(v -> {
