@@ -16,6 +16,7 @@
 
 package io.vertx.core.net.impl;
 
+import io.vertx.core.VertxException;
 import io.vertx.core.net.*;
 
 import java.security.cert.CertificateException;
@@ -27,8 +28,12 @@ public class SelfSignedCertificateImpl implements SelfSignedCertificate {
 
   private final io.netty.handler.ssl.util.SelfSignedCertificate certificate;
 
-  public SelfSignedCertificateImpl() throws CertificateException {
-    certificate = new io.netty.handler.ssl.util.SelfSignedCertificate();
+  public SelfSignedCertificateImpl() {
+    try {
+      certificate = new io.netty.handler.ssl.util.SelfSignedCertificate();
+    } catch (CertificateException e) {
+      throw new VertxException(e);
+    }
   }
 
   @Override
