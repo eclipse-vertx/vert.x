@@ -47,7 +47,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private static final long DEFAULT_REPLY_TIMEOUT = 30 * 1000;
   private static final int DEFAULT_MAX_ADDRESS_LENGTH = 200;
   private static final int DEFAULT_MAX_HANDLERS_PER_SOCKET = 1000;
-  private static final long DEFAULT_PING_TIMEOUT = 10 * 1000;
+  private static final long DEFAULT_PING_TIMEOUT = 20 * 1000;
 
   private final Map<String, Auth> authCache = new HashMap<>();
   private final Map<SockJSSocket, SockInfo> sockInfos = new HashMap<>();
