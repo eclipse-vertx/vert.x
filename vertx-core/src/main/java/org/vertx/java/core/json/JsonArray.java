@@ -93,6 +93,15 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     return this;
   }
 
+  public byte[] getBinary(int index) {
+    Object item = list.get(index);
+    if (item instanceof String) {
+      return org.vertx.java.core.json.impl.Base64.decode((String) item);
+    } else {
+      throw new VertxException("Object at index " + index + " was not stored as a binary.");
+    }
+  }
+
   public JsonArray add(Object value) {
     if (value == null) {
       list.add(null);
@@ -108,6 +117,8 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
       addBoolean((Boolean)value);
     } else if (value instanceof byte[]) {
       addBinary((byte[])value);
+    } else if (value instanceof Enum) {
+      addString(value.toString());
     } else {
       throw new VertxException("Cannot add objects of class " + value.getClass() +" to JsonArray");
     }
