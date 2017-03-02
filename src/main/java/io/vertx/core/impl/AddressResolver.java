@@ -124,7 +124,7 @@ public class AddressResolver {
           all.add(address);
         }
       }
-      DnsServerAddresses nameServerAddresses = options.isRoundRobin() ? DnsServerAddresses.rotational(serverList) : DnsServerAddresses.sequential(serverList);
+      DnsServerAddresses nameServerAddresses = options.isRotateServers() ? DnsServerAddresses.rotational(serverList) : DnsServerAddresses.sequential(serverList);
 
       Map<String, InetAddress> entries;
       if (options.getHostsPath() != null) {

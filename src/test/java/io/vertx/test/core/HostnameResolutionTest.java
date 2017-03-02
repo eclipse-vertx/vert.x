@@ -765,7 +765,7 @@ public class HostnameResolutionTest extends VertxTestBase {
         dnsServers.add(server);
       }
       AddressResolverOptions options = new AddressResolverOptions();
-      options.setRoundRobin(roundRobin);
+      options.setRotateServers(roundRobin);
       options.setOptResourceEnabled(false);
       for (int i = 0; i < num; i++) {
         InetSocketAddress dnsServerAddress = dnsServers.get(i).localAddress();

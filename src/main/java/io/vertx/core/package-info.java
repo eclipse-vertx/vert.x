@@ -1293,12 +1293,15 @@
  * A DNS query is considered as failed when the resolver has not received a correct answer within
  * {@link io.vertx.core.dns.AddressResolverOptions#getQueryTimeout()} milliseconds (the default value is `5` seconds).
  *
- * === Round-robin selection
+ * === Server list rotation
  *
  * By default the dns server selection uses the first one, the remaining servers are used for failover.
  *
- * You can configure {@link io.vertx.core.dns.AddressResolverOptions#setRoundRobin(boolean)} to `true` to let
- * the resolver perform a round-robin selection instead. Failover will continue to use the next server in the list.
+ * You can configure {@link io.vertx.core.dns.AddressResolverOptions#setRotateServers(boolean)} to `true` to let
+ * the resolver perform a round-robin selection instead. It spreads the query load among the servers and avoids
+ * all lookup to hit the first server of the list.
+ *
+ * Failover still applies and will use the next server in the list.
  *
  * === Hosts mapping
  *

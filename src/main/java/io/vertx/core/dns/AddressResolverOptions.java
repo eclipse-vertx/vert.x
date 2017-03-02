@@ -50,7 +50,7 @@ public class AddressResolverOptions {
   public static final int DEFAULT_MAX_QUERIES = 4;
   public static final boolean DEFAULT_RD_FLAG = true;
   public static final List<String> DEFAULT_SEACH_DOMAINS = null;
-  public static final boolean DEFAULT_ROUND_ROBIN = false;
+  public static final boolean DEFAULT_ROTATE_SERVERS = false;
 
   /**
    * The default ndots value = -1 (loads the value from the OS on Linux otherwise use the value 1)
@@ -69,7 +69,7 @@ public class AddressResolverOptions {
   private boolean rdFlag;
   private List<String> searchDomains;
   private int ndots;
-  private boolean roundRobin;
+  private boolean rotateServers;
 
   public AddressResolverOptions() {
     servers = DEFAULT_SERVERS;
@@ -82,7 +82,7 @@ public class AddressResolverOptions {
     rdFlag = DEFAULT_RD_FLAG;
     searchDomains = null;
     ndots = DEFAULT_NDOTS;
-    roundRobin = DEFAULT_ROUND_ROBIN;
+    rotateServers = DEFAULT_ROTATE_SERVERS;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
@@ -387,17 +387,18 @@ public class AddressResolverOptions {
   /**
    * @return the value {@code true} when the dns server selection uses round robin
    */
-  public boolean isRoundRobin() {
-    return roundRobin;
+  public boolean isRotateServers() {
+    return rotateServers;
   }
 
   /**
-   * Set to {@code true} to enable round-robin selection of the dns server to use.
+   * Set to {@code true} to enable round-robin selection of the dns server to use. It spreads the query load
+   * among the servers and avoids all lookup to hit the first server of the list.
    *
    * @return a reference to this, so the API can be used fluently
    */
-  public AddressResolverOptions setRoundRobin(boolean roundRobin) {
-    this.roundRobin = roundRobin;
+  public AddressResolverOptions setRotateServers(boolean rotateServers) {
+    this.rotateServers = rotateServers;
     return this;
   }
 
@@ -416,7 +417,7 @@ public class AddressResolverOptions {
     if (!Objects.equals(searchDomains, that.searchDomains)) return false;
     if (ndots != that.ndots) return false;
     if  (servers != null ? !servers.equals(that.servers) : that.servers != null) return false;
-    return roundRobin == that.roundRobin;
+    return rotateServers == that.rotateServers;
   }
 
   @Override
@@ -431,7 +432,7 @@ public class AddressResolverOptions {
     result = 31 * result + (searchDomains != null ? searchDomains.hashCode() : 0);
     result = 31 * result + ndots;
     result = 31 * result + Boolean.hashCode(rdFlag);
-    result = 31 * result + Boolean.hashCode(roundRobin);
+    result = 31 * result + Boolean.hashCode(rotateServers);
     return result;
   }
 
