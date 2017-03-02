@@ -140,7 +140,7 @@ public class HAManager {
     haInfo.put("group", this.group);
     this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
-    clusterManager.nodeListener(new NodeListener() {
+    clusterManager.addNodeListener(new NodeListener() {
       @Override
       public void nodeAdded(String nodeID) {
         HAManager.this.nodeAdded(nodeID);
