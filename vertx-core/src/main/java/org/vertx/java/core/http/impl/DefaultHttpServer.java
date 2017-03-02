@@ -18,6 +18,7 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
@@ -45,6 +46,9 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
@@ -114,6 +118,8 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  
+  private int idleTimeout;
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
@@ -191,6 +197,19 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             @Override
             protected void initChannel(Channel ch) throws Exception {
               ChannelPipeline pipeline = ch.pipeline();
+              if (DefaultHttpServer.this.getIdleTimeout() > 0) {
+                  pipeline.addLast("idleChecker", new IdleStateHandler(0, 0, DefaultHttpServer.this.getIdleTimeout()));
+                  pipeline.addLast("IdleDisconnector", new ChannelDuplexHandler() {
+                      @Override
+                      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                          if (evt instanceof IdleStateEvent) {
+                              if (((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
+                                  ctx.close();
+                              }
+                          }
+                      }
+                  });
+              }
               if (tcpHelper.isSSL()) {
                 pipeline.addLast("ssl", tcpHelper.createSslHandler(vertx, false));
               }
@@ -806,4 +825,16 @@ public class DefaultHttpServer implements HttpServer, Closeable {
       ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
     }
   }
+
+    @Override
+    public HttpServer setIdleTimeout(int timeoutSeconds) {
+        this.idleTimeout = timeoutSeconds;
+        return this;
+    }
+    
+    @Override
+    public int getIdleTimeout() {
+        return this.idleTimeout;
+    }
+    
 }

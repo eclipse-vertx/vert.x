@@ -28,4 +28,21 @@ public interface ServerTCPSupport<T> extends TCPSupport<T> {
    * @return The accept backlog
    */
   int getAcceptBacklog();
+  
+  /**
+   * Set idle timeout seconds. Default to 0 if not set, which means no idle timeout.
+   * 
+   * @param timeoutSeconds
+   *            idle timeout in seconds
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  T setIdleTimeout(int timeoutSeconds);
+  
+  /**
+   * Retrieve idle timeout seconds.
+   * 
+   * @return idle timeout seconds
+   */
+  int getIdleTimeout();
+  
 }

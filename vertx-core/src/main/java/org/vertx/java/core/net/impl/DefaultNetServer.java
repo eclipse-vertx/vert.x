@@ -26,6 +26,9 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -71,6 +74,8 @@ public class DefaultNetServer implements NetServer, Closeable {
   private String host;
   private volatile int port;
   private ChannelFuture bindFuture;
+  
+  private int idleTimeout;
 
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
@@ -125,6 +130,19 @@ public class DefaultNetServer implements NetServer, Closeable {
           @Override
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
+            if (DefaultNetServer.this.getIdleTimeout() > 0) {
+                pipeline.addLast("idleChecker", new IdleStateHandler(0, 0, DefaultNetServer.this.getIdleTimeout()));
+                pipeline.addLast("IdleDisconnector", new ChannelDuplexHandler() {
+                    @Override
+                    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                        if (evt instanceof IdleStateEvent) {
+                            if (((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
+                                ctx.close();
+                            }
+                        }
+                    }
+                });
+            }
             if (tcpHelper.isSSL()) {
               SslHandler sslHandler = tcpHelper.createSslHandler(vertx, false);
               pipeline.addLast("ssl", sslHandler);
@@ -572,4 +590,15 @@ public class DefaultNetServer implements NetServer, Closeable {
       handler.handler.handle(sock);
     }
   }
+
+    @Override
+    public NetServer setIdleTimeout(int timeoutSeconds) {
+        this.idleTimeout = timeoutSeconds;
+        return this;
+    }
+    
+    @Override
+    public int getIdleTimeout() {
+        return this.idleTimeout;
+    }
 }
