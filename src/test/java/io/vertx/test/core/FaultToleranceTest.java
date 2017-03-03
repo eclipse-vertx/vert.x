@@ -42,6 +42,7 @@ public abstract class FaultToleranceTest extends VertxTestBase {
   private final AtomicLong externalNodesStarted = new AtomicLong();
   private final AtomicLong pongsReceived = new AtomicLong();
   private final AtomicLong noHandlersErrors = new AtomicLong();
+  protected long timeoutMs = 60_000;
 
   @Test
   public void testFaultTolerance() throws Exception {
@@ -66,12 +67,12 @@ public abstract class FaultToleranceTest extends VertxTestBase {
       Process process = startExternalNode(i);
       externalNodes.add(process);
     }
-    waitUntil(() -> externalNodesStarted.get() == NODE_COUNT, 60_000);
+    waitUntil(() -> externalNodesStarted.get() == NODE_COUNT, timeoutMs);
 
     JsonArray message1 = new JsonArray();
     IntStream.range(0, NODE_COUNT).forEach(message1::add);
     vertx.eventBus().publish("ping", message1);
-    waitUntil(() -> pongsReceived.get() == NODE_COUNT * NODE_COUNT * ADDRESSES_COUNT, 60_000);
+    waitUntil(() -> pongsReceived.get() == NODE_COUNT * NODE_COUNT * ADDRESSES_COUNT, timeoutMs);
 
     for (int i = 0; i < NODE_COUNT - 1; i++) {
       externalNodes.get(i).destroyForcibly();
@@ -81,17 +82,17 @@ public abstract class FaultToleranceTest extends VertxTestBase {
     pongsReceived.set(0);
     JsonArray message2 = new JsonArray().add(NODE_COUNT - 1);
     vertx.eventBus().publish("ping", message2);
-    waitUntil(() -> pongsReceived.get() == ADDRESSES_COUNT, 60_000);
+    waitUntil(() -> pongsReceived.get() == ADDRESSES_COUNT, timeoutMs);
 
     JsonArray message3 = new JsonArray();
     IntStream.range(0, NODE_COUNT - 1).forEach(message3::add);
     vertx.eventBus().publish("ping", message3);
-    waitUntil(() -> noHandlersErrors.get() == (NODE_COUNT - 1) * ADDRESSES_COUNT, 60_000);
+    waitUntil(() -> noHandlersErrors.get() == (NODE_COUNT - 1) * ADDRESSES_COUNT, timeoutMs);
   }
 
   protected void waitForClusterStability(VertxInternal vertx) throws Exception {
     ClusterManager clusterManager = vertx.getClusterManager();
-    waitUntil(() -> clusterManager.getNodes().size() == 2, 60_000);
+    waitUntil(() -> clusterManager.getNodes().size() == 2, timeoutMs);
   }
 
   private Process startExternalNode(int id) throws Exception {
