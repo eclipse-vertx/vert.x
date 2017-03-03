@@ -28,14 +28,17 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static java.util.concurrent.TimeUnit.*;
 
@@ -122,10 +125,10 @@ public class HAManager {
   private long quorumTimerID;
   private volatile boolean attainedQuorum;
   private volatile FailoverCompleteHandler failoverCompleteHandler;
-  private volatile FailoverCompleteHandler nodeCrashedHandler;
   private volatile boolean failDuringFailover;
   private volatile boolean stopped;
   private volatile boolean killed;
+  private Consumer<Set<String>> clusterViewChangedHandler;
 
   public HAManager(VertxInternal vertx, DeploymentManager deploymentManager,
                    ClusterManager clusterManager, int quorumSize, String group, boolean enabled) {
@@ -140,6 +143,9 @@ public class HAManager {
     haInfo.put("group", this.group);
     this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
+    synchronized (haInfo) {
+      clusterMap.put(nodeID, haInfo.encode());
+    }
     clusterManager.nodeListener(new NodeListener() {
       @Override
       public void nodeAdded(String nodeID) {
@@ -151,7 +157,6 @@ public class HAManager {
         HAManager.this.nodeLeft(leftNodeID);
       }
     });
-    clusterMap.put(nodeID, haInfo.encode());
     quorumTimerID = vertx.setPeriodic(QUORUM_CHECK_PERIOD, tid -> checkHADeployments());
     // Call check quorum to compute whether we have an initial quorum
     synchronized (this) {
@@ -248,8 +253,8 @@ public class HAManager {
     this.failoverCompleteHandler = failoverCompleteHandler;
   }
 
-  public void setNodeCrashedHandler(FailoverCompleteHandler removeSubsHandler) {
-    this.nodeCrashedHandler = removeSubsHandler;
+  public void setClusterViewChangedHandler(Consumer<Set<String>> handler) {
+    this.clusterViewChangedHandler = handler;
   }
 
   public boolean isKilled() {
@@ -284,7 +289,8 @@ public class HAManager {
   // A node has joined the cluster
   // synchronize this in case the cluster manager is naughty and calls it concurrently
   private synchronized void nodeAdded(final String nodeID) {
-     // This is not ideal but we need to wait for the group information to appear - and this will be shortly
+    addHaInfoIfLost();
+    // This is not ideal but we need to wait for the group information to appear - and this will be shortly
     // after the node has been added
     checkQuorumWhenAdded(nodeID, System.currentTimeMillis());
   }
@@ -292,9 +298,11 @@ public class HAManager {
   // A node has left the cluster
   // synchronize this in case the cluster manager is naughty and calls it concurrently
   private synchronized void nodeLeft(String leftNodeID) {
+    addHaInfoIfLost();
 
     checkQuorum();
     if (attainedQuorum) {
+      checkSubs(leftNodeID);
 
       // Check for failover
       String sclusterInfo = clusterMap.get(leftNodeID);
@@ -303,7 +311,6 @@ public class HAManager {
         // Clean close - do nothing
       } else {
         JsonObject clusterInfo = new JsonObject(sclusterInfo);
-        checkRemoveSubs(leftNodeID, clusterInfo);
         checkFailover(leftNodeID, clusterInfo);
       }
 
@@ -314,9 +321,16 @@ public class HAManager {
       for (Map.Entry<String, String> entry: clusterMap.entrySet()) {
         if (!leftNodeID.equals(entry.getKey()) && !nodes.contains(entry.getKey())) {
           JsonObject haInfo = new JsonObject(entry.getValue());
-          checkRemoveSubs(entry.getKey(), haInfo);
           checkFailover(entry.getKey(), haInfo);
         }
+      }
+    }
+  }
+
+  private void addHaInfoIfLost() {
+    if (clusterManager.getNodes().contains(nodeID) && !clusterMap.containsKey(nodeID)) {
+      synchronized (haInfo) {
+        clusterMap.put(nodeID, haInfo.encode());
       }
     }
   }
@@ -324,6 +338,9 @@ public class HAManager {
   private synchronized void checkQuorumWhenAdded(final String nodeID, final long start) {
     if (clusterMap.containsKey(nodeID)) {
       checkQuorum();
+      if (attainedQuorum) {
+        checkSubs(nodeID);
+      }
     } else {
       vertx.setTimer(200, tid -> {
         // This can block on a monitor so it needs to run as a worker
@@ -479,37 +496,45 @@ public class HAManager {
         }
         // Failover is complete! We can now remove the failed node from the cluster map
         clusterMap.remove(failedNodeID);
-        callFailoverCompleteHandler(failedNodeID, theHAInfo, true);
+        runOnContextAndWait(() -> {
+          if (failoverCompleteHandler != null) {
+            failoverCompleteHandler.handle(failedNodeID, theHAInfo, true);
+          }
+        });
       }
     } catch (Throwable t) {
       log.error("Failed to handle failover", t);
-      callFailoverCompleteHandler(failedNodeID, theHAInfo, false);
+      runOnContextAndWait(() -> {
+        if (failoverCompleteHandler != null) {
+          failoverCompleteHandler.handle(failedNodeID, theHAInfo, false);
+        }
+      });
     }
   }
 
-  private void checkRemoveSubs(String failedNodeID, JsonObject theHAInfo) {
+  private void checkSubs(String failedNodeID) {
+    if (clusterViewChangedHandler == null) {
+      return;
+    }
     String chosen = chooseHashedNode(null, failedNodeID.hashCode());
     if (chosen != null && chosen.equals(this.nodeID)) {
-      callFailoverCompleteHandler(nodeCrashedHandler, failedNodeID, theHAInfo, true);
+      runOnContextAndWait(() -> clusterViewChangedHandler.accept(new HashSet<>(clusterManager.getNodes())));
     }
   }
 
-  private void callFailoverCompleteHandler(String nodeID, JsonObject haInfo, boolean result) {
-    callFailoverCompleteHandler(failoverCompleteHandler, nodeID, haInfo, result);
-  }
-
-  private void callFailoverCompleteHandler(FailoverCompleteHandler handler, String nodeID, JsonObject haInfo, boolean result) {
-    if (handler != null) {
-      CountDownLatch latch = new CountDownLatch(1);
-      // The testsuite requires that this is called on a Vert.x thread
-      vertx.runOnContext(v -> {
-        handler.handle(nodeID, haInfo, result);
-        latch.countDown();
-      });
+  private void runOnContextAndWait(Runnable runnable) {
+    CountDownLatch latch = new CountDownLatch(1);
+    // The testsuite requires that this is called on a Vert.x thread
+    vertx.runOnContext(v -> {
       try {
-        latch.await(30, TimeUnit.SECONDS);
-      } catch (InterruptedException ignore) {
+        runnable.run();
+      } finally {
+        latch.countDown();
       }
+    });
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException ignore) {
     }
   }
 
@@ -580,6 +605,4 @@ public class HAManager {
       return null;
     }
   }
-
-
 }
