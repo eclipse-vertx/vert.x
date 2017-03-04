@@ -44,12 +44,39 @@ public class AddressResolverOptions {
    */
   public static final boolean DEFAULT_OPT_RESOURCE_ENABLED = true;
 
+  /**
+   * The default value for the negative cache min TTL = 0
+   */
   public static final int DEFAULT_CACHE_MIN_TIME_TO_LIVE = 0;
+
+  /**
+   * The default value for the negative cache max TTL = 0x7fffffff
+   */
   public static final int DEFAULT_CACHE_MAX_TIME_TO_LIVE = Integer.MAX_VALUE;
+
+  /**
+   * The default value for the negative cache TTL = 0
+   */
   public static final int DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE = 0;
+
+  /**
+   * The default value for the query timeout in millis = 5000
+   */
   public static final int DEFAULT_QUERY_TIMEOUT = 5000;
+
+  /**
+   * The default value for the max dns queries per query = 4
+   */
   public static final int DEFAULT_MAX_QUERIES = 4;
+
+  /**
+   * The default value of the rd flag = true
+   */
   public static final boolean DEFAULT_RD_FLAG = true;
+
+  /**
+   * The default value of search domains = null
+   */
   public static final List<String> DEFAULT_SEACH_DOMAINS = null;
 
   /**
@@ -85,7 +112,7 @@ public class AddressResolverOptions {
     queryTimeout = DEFAULT_QUERY_TIMEOUT;
     maxQueries = DEFAULT_MAX_QUERIES;
     rdFlag = DEFAULT_RD_FLAG;
-    searchDomains = null;
+    searchDomains = DEFAULT_SEACH_DOMAINS;
     ndots = DEFAULT_NDOTS;
     rotateServers = DEFAULT_ROTATE_SERVERS;
   }
