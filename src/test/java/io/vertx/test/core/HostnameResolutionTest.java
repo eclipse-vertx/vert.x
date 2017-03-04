@@ -686,6 +686,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testParseResolvConf() {
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options"));
     assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots: 4"));
     assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\noptions ndots: 4"));
     assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("boptions ndots: 4"));
@@ -712,6 +713,13 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4_"));
 
     assertEquals(2, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\noptions ndots:2"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4 debug"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options debug ndots:4"));
+
+    assertEquals(false, AddressResolver.parseRotateOptionFromResolvConf("options"));
+    assertEquals(true, AddressResolver.parseRotateOptionFromResolvConf("options rotate"));
+    assertEquals(true, AddressResolver.parseRotateOptionFromResolvConf("options rotate\n"));
+    assertEquals(false, AddressResolver.parseRotateOptionFromResolvConf("options\nrotate"));
   }
 
   @Test

@@ -62,13 +62,20 @@ import java.util.regex.Pattern;
  */
 public class AddressResolver {
 
-  private static final int DEFAULT_NDOTS;
-  private static final Pattern NDOTS_OPTIONS_PATTERN = Pattern.compile("^[ \\t\\f]*options[ \\t\\f]+ndots:[ \\t\\f]*(\\d)+(?=$|\\s)", Pattern.MULTILINE);
+  private static Pattern resolvOption(String regex) {
+    return Pattern.compile("^[ \\t\\f]*options[^\n]+" + regex + "(?=$|\\s)", Pattern.MULTILINE);
+  }
+
+  public static final int DEFAULT_NDOTS_RESOLV_OPTION;
+  public static final boolean DEFAULT_ROTATE_RESOLV_OPTION;
+  private static final Pattern NDOTS_OPTIONS_PATTERN = resolvOption("ndots:[ \\t\\f]*(\\d)+");
+  private static final Pattern ROTATE_OPTIONS_PATTERN = resolvOption("rotate");
   private static final String DISABLE_DNS_RESOLVER_PROP_NAME = "vertx.disableDnsResolver";
   private static final boolean DISABLE_DNS_RESOLVER = Boolean.getBoolean(DISABLE_DNS_RESOLVER_PROP_NAME);
 
   static {
     int ndots = 1;
+    boolean rotate = false;
     if (ExecUtils.isLinux()) {
       File f = new File("/etc/resolv.conf");
       if (f.exists() && f.isFile()) {
@@ -78,11 +85,13 @@ public class AddressResolver {
           if (ndotsOption != -1) {
             ndots = ndotsOption;
           }
+          rotate = parseRotateOptionFromResolvConf(conf);
         } catch (IOException ignore) {
         }
       }
     }
-    DEFAULT_NDOTS = ndots;
+    DEFAULT_NDOTS_RESOLV_OPTION = ndots;
+    DEFAULT_ROTATE_RESOLV_OPTION = rotate;
   }
 
   private final Vertx vertx;
@@ -177,7 +186,7 @@ public class AddressResolver {
                 builder.searchDomains(options.getSearchDomains());
                 int ndots = options.getNdots();
                 if (ndots == -1) {
-                  ndots = DEFAULT_NDOTS;
+                  ndots = DEFAULT_NDOTS_RESOLV_OPTION;
                 }
                 builder.ndots(ndots);
               }
@@ -271,5 +280,10 @@ public class AddressResolver {
       ndots = Integer.parseInt(matcher.group(1));
     }
     return ndots;
+  }
+
+  public static boolean parseRotateOptionFromResolvConf(String s) {
+    Matcher matcher = ROTATE_OPTIONS_PATTERN.matcher(s);
+    return matcher.find();
   }
 }

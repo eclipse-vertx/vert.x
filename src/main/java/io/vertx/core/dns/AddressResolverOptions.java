@@ -18,6 +18,7 @@ package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -50,12 +51,16 @@ public class AddressResolverOptions {
   public static final int DEFAULT_MAX_QUERIES = 4;
   public static final boolean DEFAULT_RD_FLAG = true;
   public static final List<String> DEFAULT_SEACH_DOMAINS = null;
-  public static final boolean DEFAULT_ROTATE_SERVERS = false;
 
   /**
-   * The default ndots value = -1 (loads the value from the OS on Linux otherwise use the value 1)
+   * The default ndots value = loads the value from the OS on Linux otherwise use the value 1
    */
-  public static final int DEFAULT_NDOTS = -1;
+  public static final int DEFAULT_NDOTS = AddressResolver.DEFAULT_NDOTS_RESOLV_OPTION;
+
+  /**
+   * The default servers rotate value = loads the value from the OS on Linux otherwise use the value false
+   */
+  public static final boolean DEFAULT_ROTATE_SERVERS = AddressResolver.DEFAULT_ROTATE_RESOLV_OPTION;
 
   private String hostsPath;
   private Buffer hostsValue;
