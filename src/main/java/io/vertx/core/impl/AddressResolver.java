@@ -26,6 +26,7 @@ import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.NameResolver;
 import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.resolver.dns.DnsNameResolverBuilder;
+import io.netty.resolver.dns.DnsServerAddressStream;
 import io.netty.resolver.dns.DnsServerAddresses;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -47,9 +48,11 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,13 +62,20 @@ import java.util.regex.Pattern;
  */
 public class AddressResolver {
 
-  private static final int DEFAULT_NDOTS;
-  private static final Pattern NDOTS_OPTIONS_PATTERN = Pattern.compile("^[ \\t\\f]*options[ \\t\\f]+ndots:[ \\t\\f]*(\\d)+(?=$|\\s)", Pattern.MULTILINE);
+  private static Pattern resolvOption(String regex) {
+    return Pattern.compile("^[ \\t\\f]*options[^\n]+" + regex + "(?=$|\\s)", Pattern.MULTILINE);
+  }
+
+  public static final int DEFAULT_NDOTS_RESOLV_OPTION;
+  public static final boolean DEFAULT_ROTATE_RESOLV_OPTION;
+  private static final Pattern NDOTS_OPTIONS_PATTERN = resolvOption("ndots:[ \\t\\f]*(\\d)+");
+  private static final Pattern ROTATE_OPTIONS_PATTERN = resolvOption("rotate");
   private static final String DISABLE_DNS_RESOLVER_PROP_NAME = "vertx.disableDnsResolver";
   private static final boolean DISABLE_DNS_RESOLVER = Boolean.getBoolean(DISABLE_DNS_RESOLVER_PROP_NAME);
 
   static {
     int ndots = 1;
+    boolean rotate = false;
     if (ExecUtils.isLinux()) {
       File f = new File("/etc/resolv.conf");
       if (f.exists() && f.isFile()) {
@@ -75,11 +85,13 @@ public class AddressResolver {
           if (ndotsOption != -1) {
             ndots = ndotsOption;
           }
+          rotate = parseRotateOptionFromResolvConf(conf);
         } catch (IOException ignore) {
         }
       }
     }
-    DEFAULT_NDOTS = ndots;
+    DEFAULT_NDOTS_RESOLV_OPTION = ndots;
+    DEFAULT_ROTATE_RESOLV_OPTION = rotate;
   }
 
   private final Vertx vertx;
@@ -89,10 +101,9 @@ public class AddressResolver {
 
     if (!DISABLE_DNS_RESOLVER) {
 
-      DnsServerAddresses nameServerAddresses;
       List<String> dnsServers = options.getServers();
+      List<InetSocketAddress> serverList = new ArrayList<>();
       if (dnsServers != null && dnsServers.size() > 0) {
-        List<InetSocketAddress> serverList = new ArrayList<>();
         for (String dnsServer : dnsServers) {
           int sep = dnsServer.indexOf(':');
           String ipAddress;
@@ -110,10 +121,19 @@ public class AddressResolver {
             throw new VertxException(e);
           }
         }
-        nameServerAddresses = DnsServerAddresses.sequential(serverList);
       } else {
-        nameServerAddresses = DnsServerAddresses.defaultAddresses();
+        DnsServerAddressStream stream = DnsServerAddresses.defaultAddresses().stream();
+        Set<InetSocketAddress> all = new HashSet<>();
+        while (true) {
+          InetSocketAddress address = stream.next();
+          if (all.contains(address)) {
+            break;
+          }
+          serverList.add(address);
+          all.add(address);
+        }
       }
+      DnsServerAddresses nameServerAddresses = options.isRotateServers() ? DnsServerAddresses.rotational(serverList) : DnsServerAddresses.sequential(serverList);
 
       Map<String, InetAddress> entries;
       if (options.getHostsPath() != null) {
@@ -166,7 +186,7 @@ public class AddressResolver {
                 builder.searchDomains(options.getSearchDomains());
                 int ndots = options.getNdots();
                 if (ndots == -1) {
-                  ndots = DEFAULT_NDOTS;
+                  ndots = DEFAULT_NDOTS_RESOLV_OPTION;
                 }
                 builder.ndots(ndots);
               }
@@ -260,5 +280,10 @@ public class AddressResolver {
       ndots = Integer.parseInt(matcher.group(1));
     }
     return ndots;
+  }
+
+  public static boolean parseRotateOptionFromResolvConf(String s) {
+    Matcher matcher = ROTATE_OPTIONS_PATTERN.matcher(s);
+    return matcher.find();
   }
 }

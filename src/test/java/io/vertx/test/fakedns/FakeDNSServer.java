@@ -42,6 +42,7 @@ import org.apache.mina.transport.socket.DatagramAcceptor;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -54,14 +55,35 @@ import java.util.stream.Collectors;
  */
 public final class FakeDNSServer extends DnsServer {
 
+  public static RecordStore A_store(Map<String, String> entries) {
+    return questionRecord -> entries.entrySet().stream().map(entry -> {
+      ResourceRecordModifier rm = new ResourceRecordModifier();
+      rm.setDnsClass(RecordClass.IN);
+      rm.setDnsName(entry.getKey());
+      rm.setDnsTtl(100);
+      rm.setDnsType(RecordType.A);
+      rm.put(DnsAttribute.IP_ADDRESS, entry.getValue());
+      return rm.getEntry();
+    }).collect(Collectors.toSet());
+  }
+
   public static final int PORT = 53530;
 
+  private int port = PORT;
   private final RecordStore store;
   private DatagramAcceptor acceptor;
 
-
-  private FakeDNSServer(RecordStore store) {
+  public FakeDNSServer(RecordStore store) {
     this.store = store;
+  }
+
+  public InetSocketAddress localAddress() {
+    return (InetSocketAddress) getTransports()[0].getAcceptor().getLocalAddress();
+  }
+
+  public FakeDNSServer port(int p) {
+    port = p;
+    return this;
   }
 
   public static FakeDNSServer testResolveA(final String ipAddress) {
@@ -69,20 +91,7 @@ public final class FakeDNSServer extends DnsServer {
   }
 
   public static FakeDNSServer testResolveA(Map<String, String> entries) {
-    return new FakeDNSServer(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        return entries.entrySet().stream().map(entry -> {
-          ResourceRecordModifier rm = new ResourceRecordModifier();
-          rm.setDnsClass(RecordClass.IN);
-          rm.setDnsName(entry.getKey());
-          rm.setDnsTtl(100);
-          rm.setDnsType(RecordType.A);
-          rm.put(DnsAttribute.IP_ADDRESS, entry.getValue());
-          return rm.getEntry();
-        }).collect(Collectors.toSet());
-      }
-    });
+    return new FakeDNSServer(A_store(entries));
   }
 
   public static FakeDNSServer testResolveAAAA(final String ipAddress) {
@@ -286,21 +295,7 @@ public final class FakeDNSServer extends DnsServer {
   }
 
   public static FakeDNSServer testResolveASameServer(final String ipAddress) {
-    return new FakeDNSServer(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.A);
-        rm.put(DnsAttribute.IP_ADDRESS, ipAddress);
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return new FakeDNSServer(A_store(Collections.singletonMap("vertx.io", ipAddress)));
   }
 
   public static FakeDNSServer testLookup4CNAME(final String cname, final String ip) {
@@ -334,7 +329,7 @@ public final class FakeDNSServer extends DnsServer {
 
   @Override
   public void start() throws IOException {
-    UdpTransport transport = new UdpTransport("127.0.0.1", PORT);
+    UdpTransport transport = new UdpTransport("127.0.0.1", port);
     setTransports( transport );
 
     acceptor = transport.getAcceptor();
