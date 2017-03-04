@@ -1258,6 +1258,27 @@
  * ----
  * {@link examples.CoreExamples#example18}
  * ----
+ *
+ * [[netty-logging]]
+ * === Netty logging
+ *
+ * When configuring logging, you should care about configuring Netty logging as well.
+ *
+ * Netty does not rely on external logging configuration (e.g system properties) and instead implements a logging
+ * configuration based on the logging libraries visible from the Netty classes:
+ *
+ * - use `SLF4J` library if it is visible
+ * - otherwise use `Log4j` if it is visible
+ * - otherwise fallback `java.util.logging`
+ *
+ * The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly
+ * on `io.netty.util.internal.logging.InternalLoggerFactory`:
+ *
+ * [source,java]
+ * ----
+ * // Force logging to Log4j
+ * InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
+ * ----
  * 
  * === Troubleshooting
  * 
@@ -1271,10 +1292,10 @@
  * SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
  * ----
  * 
- * It means that you have SLF4J-API in your classpath but no actual binding. Messages logged with SLF4J will be dropped. You should add a binding to your 
- * classpath. Check https://www.slf4j.org/manual.html#swapping to pick a binding and configure it.
+ * It means that you have SLF4J-API in your classpath but no actual binding. Messages logged with SLF4J will be dropped.
+ * You should add a binding to your classpath. Check https://www.slf4j.org/manual.html#swapping to pick a binding and configure it.
  * 
- * Be aware that Netty looks for the SLF4-API jar and uses it by default. Check the Netty documentation to configure Netty logging.
+ * Be aware that Netty looks for the SLF4-API jar and uses it by default.
  * 
  * ==== Connection reset by peer
  * 
@@ -1285,8 +1306,8 @@
  * SEVERE: java.io.IOException: Connection reset by peer
  * ----
  * 
- * It means that the client is reseting the HTTP connection instead of closing it. This message also indicates that you may have not consumed the complete 
- * payload (the connection was cut before you were able to).
+ * It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
+ * may have not consumed the complete payload (the connection was cut before you were able to).
  *
  * == Host name resolution
  *

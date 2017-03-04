@@ -313,21 +313,7 @@
  * - logging is not performed by Vert.x logging but by Netty
  * - this is *not* a production feature
  *
- * Netty will try to locate the following logger implementations, in the following order:
- *
- * - Slf4j
- * - Log4j
- * - JDK
- *
- * The presense of the slf4j or log4j classes on the classpath is enough to pick up the logging implementation.
- *
- * The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly:
- *
- * [source,java]
- * ----
- * // Force logging to Log4j
- * InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
- * ----
+ * You should read the <<netty-logging>> section.
  *
  * [[ssl]]
  * === Configuring servers and clients to work with SSL/TLS
