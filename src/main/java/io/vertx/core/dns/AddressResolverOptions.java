@@ -130,6 +130,7 @@ public class AddressResolverOptions {
     this.rdFlag = other.rdFlag;
     this.searchDomains = other.searchDomains != null ? new ArrayList<>(other.searchDomains) : null;
     this.ndots = other.ndots;
+    this.rotateServers = other.rotateServers;
   }
 
   public AddressResolverOptions(JsonObject json) {
