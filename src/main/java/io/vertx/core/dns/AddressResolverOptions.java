@@ -82,12 +82,12 @@ public class AddressResolverOptions {
   /**
    * The default ndots value = loads the value from the OS on Linux otherwise use the value 1
    */
-  public static final int DEFAULT_NDOTS = AddressResolver.DEFAULT_NDOTS_RESOLV_OPTION;
+  public static final int DEFAULT_NDOTS = AddressResolver.DEFAULT_RESOLV_CONF.getNdots();
 
   /**
    * The default servers rotate value = loads the value from the OS on Linux otherwise use the value false
    */
-  public static final boolean DEFAULT_ROTATE_SERVERS = AddressResolver.DEFAULT_ROTATE_RESOLV_OPTION;
+  public static final boolean DEFAULT_ROTATE_SERVERS = AddressResolver.DEFAULT_RESOLV_CONF.isRotate();
 
   private String hostsPath;
   private Buffer hostsValue;

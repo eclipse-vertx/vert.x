@@ -1,0 +1,3 @@
+nameserver 8.8.8.8
+nameserver 8.8.8.9
+options debug timeout:1

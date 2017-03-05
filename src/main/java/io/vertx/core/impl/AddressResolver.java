@@ -45,7 +45,6 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -54,44 +53,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class AddressResolver {
 
-  private static Pattern resolvOption(String regex) {
-    return Pattern.compile("^[ \\t\\f]*options[^\n]+" + regex + "(?=$|\\s)", Pattern.MULTILINE);
-  }
-
-  public static final int DEFAULT_NDOTS_RESOLV_OPTION;
-  public static final boolean DEFAULT_ROTATE_RESOLV_OPTION;
-  private static final Pattern NDOTS_OPTIONS_PATTERN = resolvOption("ndots:[ \\t\\f]*(\\d)+");
-  private static final Pattern ROTATE_OPTIONS_PATTERN = resolvOption("rotate");
+  public static final ResolvConf DEFAULT_RESOLV_CONF;
   private static final String DISABLE_DNS_RESOLVER_PROP_NAME = "vertx.disableDnsResolver";
   private static final boolean DISABLE_DNS_RESOLVER = Boolean.getBoolean(DISABLE_DNS_RESOLVER_PROP_NAME);
 
   static {
-    int ndots = 1;
-    boolean rotate = false;
     if (ExecUtils.isLinux()) {
-      File f = new File("/etc/resolv.conf");
-      if (f.exists() && f.isFile()) {
-        try {
-          String conf = new String(Files.readAllBytes(f.toPath()));
-          int ndotsOption = parseNdotsOptionFromResolvConf(conf);
-          if (ndotsOption != -1) {
-            ndots = ndotsOption;
-          }
-          rotate = parseRotateOptionFromResolvConf(conf);
-        } catch (IOException ignore) {
-        }
-      }
+      DEFAULT_RESOLV_CONF = ResolvConf.load(System.getenv("RES_OPTIONS"), "/etc/resolv.conf");
+    } else {
+      DEFAULT_RESOLV_CONF = ResolvConf.DEFAULT;
     }
-    DEFAULT_NDOTS_RESOLV_OPTION = ndots;
-    DEFAULT_ROTATE_RESOLV_OPTION = rotate;
   }
 
   private final Vertx vertx;
@@ -186,7 +163,7 @@ public class AddressResolver {
                 builder.searchDomains(options.getSearchDomains());
                 int ndots = options.getNdots();
                 if (ndots == -1) {
-                  ndots = DEFAULT_NDOTS_RESOLV_OPTION;
+                  ndots = DEFAULT_RESOLV_CONF.getNdots();
                 }
                 builder.ndots(ndots);
               }
@@ -271,19 +248,5 @@ public class AddressResolver {
       resolverGroup.close();
       doneHandler.handle(null);
     }
-  }
-
-  public static int parseNdotsOptionFromResolvConf(String s) {
-    int ndots = -1;
-    Matcher matcher = NDOTS_OPTIONS_PATTERN.matcher(s);
-    while (matcher.find()) {
-      ndots = Integer.parseInt(matcher.group(1));
-    }
-    return ndots;
-  }
-
-  public static boolean parseRotateOptionFromResolvConf(String s) {
-    Matcher matcher = ROTATE_OPTIONS_PATTERN.matcher(s);
-    return matcher.find();
   }
 }
