@@ -16,9 +16,7 @@
 
 package io.vertx.core.impl;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 import java.io.FileNotFoundException;
 import java.net.URL;
@@ -29,9 +27,6 @@ import static org.junit.Assert.*;
  * @author Thomas Segismont
  */
 public class ResolvConfTest {
-
-  @Rule
-  public TestName testName = new TestName();
 
   @Test
   public void testEnv() throws Exception {
