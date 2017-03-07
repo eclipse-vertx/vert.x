@@ -3273,4 +3273,110 @@ public class Http1xTest extends HttpTest {
       server.close();
     }
   }
+
+  @Test
+  public void testInvalidTrailerInHttpServerRequest() throws Exception {
+    testHttpServerRequestDecodeError(so -> {
+      so.write("0\r\n"); // Empty chunk
+      // Send large trailer
+      for (int i = 0;i < 2000;i++) {
+        so.write("01234567");
+      }
+    }, errors -> {
+      assertEquals(1, errors.size());
+      assertEquals(TooLongFrameException.class, errors.get(0).getClass());
+    });
+  }
+
+  @Test
+  public void testInvalidChunkInHttpServerRequest() throws Exception {
+    testHttpServerRequestDecodeError(so -> {
+      so.write("invalid\r\n"); // Empty chunk
+    }, errors -> {
+      assertEquals(1, errors.size());
+      assertEquals(NumberFormatException.class, errors.get(0).getClass());
+    });
+  }
+
+  private void testHttpServerRequestDecodeError(Handler<NetSocket> bodySender, Handler<List<Throwable>> errorsChecker) throws Exception {
+    AtomicReference<NetSocket> current = new AtomicReference<>();
+    server.requestHandler(req -> {
+      List<Throwable> errors = new ArrayList<>();
+      req.exceptionHandler(errors::add);
+      req.response().closeHandler(v -> {
+        errorsChecker.handle(errors);
+        testComplete();
+      });
+      bodySender.handle(current.get());
+    });
+    startServer();
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+      current.set(so);
+      so.write("POST /somepath HTTP/1.1\r\n");
+      so.write("Transfer-Encoding: chunked\r\n");
+      so.write("\r\n");
+    }));
+    await();
+  }
+
+  @Test
+  public void testInvalidChunkInHttpClientResponse() throws Exception {
+    server.requestHandler(req -> {
+      NetSocket so = req.netSocket();
+      so.write("HTTP/1.1 200 OK\r\n");
+      so.write("Transfer-Encoding: chunked\r\n");
+      so.write("\r\n");
+      so.write("invalid\r\n"); // Empty chunk
+    });
+    AtomicInteger status = new AtomicInteger();
+    testHttpClientResponseDecodeError(err -> {
+      switch (status.incrementAndGet()) {
+        case 1:
+          assertTrue(err instanceof NumberFormatException);
+          break;
+        case 2:
+          assertTrue(err instanceof VertxException);
+          assertTrue(err.getMessage().equals("Connection was closed"));
+          testComplete();
+          break;
+      }
+    });
+  }
+
+  @Test
+  public void testInvalidTrailersInHttpClientResponse() throws Exception {
+    server.requestHandler(req -> {
+      NetSocket so = req.netSocket();
+      so.write("HTTP/1.1 200 OK\r\n");
+      so.write("Transfer-Encoding: chunked\r\n");
+      so.write("\r\n");
+      so.write("0\r\n"); // Empty chunk
+      // Send large trailer
+      for (int i = 0;i < 2000;i++) {
+        so.write("01234567");
+      }
+    });
+    AtomicInteger status = new AtomicInteger();
+    testHttpClientResponseDecodeError(err -> {
+      switch (status.incrementAndGet()) {
+        case 1:
+          assertTrue(err instanceof TooLongFrameException);
+          break;
+        case 2:
+          assertTrue(err instanceof VertxException);
+          assertTrue(err.getMessage().equals("Connection was closed"));
+          testComplete();
+          break;
+      }
+    });
+  }
+
+  private void testHttpClientResponseDecodeError(Handler<Throwable> errorHandler) throws Exception {
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.exceptionHandler(errorHandler);
+    });
+    await();
+  }
 }

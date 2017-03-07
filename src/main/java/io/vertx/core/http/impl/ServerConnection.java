@@ -397,46 +397,49 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private void processMessage(Object msg) {
 
-    if (msg instanceof HttpRequest) {
-      HttpRequest request = (HttpRequest) msg;
-      DecoderResult result = ((HttpObject) msg).getDecoderResult();
+    if (msg instanceof HttpObject) {
+      HttpObject obj = (HttpObject) msg;
+      DecoderResult result = obj.decoderResult();
       if (result.isFailure()) {
         Throwable cause = result.cause();
         if (cause instanceof TooLongFrameException) {
           String causeMsg = cause.getMessage();
           HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
-          DefaultFullHttpResponse resp = new DefaultFullHttpResponse(request.protocolVersion(), status);
+          DefaultFullHttpResponse resp = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
           writeToChannel(resp);
         }
+        // That will close the connection as it is considered as unusable
         channel.pipeline().fireExceptionCaught(result.cause());
         return;
       }
-      if (server.options().isHandle100ContinueAutomatically()) {
-        if (HttpHeaders.is100ContinueExpected(request)) {
-          write100Continue();
+      if (msg instanceof HttpRequest) {
+        HttpRequest request = (HttpRequest) msg;
+        if (server.options().isHandle100ContinueAutomatically()) {
+          if (HttpHeaders.is100ContinueExpected(request)) {
+            write100Continue();
+          }
         }
+        HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
+        HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
+        handleRequest(req, resp);
       }
-      HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
-      handleRequest(req, resp);
-    }
-    if (msg instanceof HttpContent) {
+      if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
-      if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.content());
-        handleChunk(buff);
-      }
-
-      //TODO chunk trailers
-      if (msg instanceof LastHttpContent) {
-        if (!paused) {
-          handleEnd();
-        } else {
-          // Requeue
-          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+        if (chunk.content().isReadable()) {
+          Buffer buff = Buffer.buffer(chunk.content());
+          handleChunk(buff);
         }
-      }
-    } else if (msg instanceof WebSocketFrameInternal) {
+
+        //TODO chunk trailers
+        if (msg instanceof LastHttpContent) {
+          if (!paused) {
+            handleEnd();
+          } else {
+            // Requeue
+            pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+          }
+        }
+      }    } else if (msg instanceof WebSocketFrameInternal) {
       WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
       handleWsFrame(frame);
     }
