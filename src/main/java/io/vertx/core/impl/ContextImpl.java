@@ -18,14 +18,22 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Starter;
+import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -119,7 +127,7 @@ public abstract class ContextImpl implements ContextInternal {
 
   @Override
   public WorkerExecutor createWorkerExecutor() {
-    return new WorkerExecutorImpl(this, workerPool, false);
+    return new WorkerExecutorImpl(this.owner(), workerPool, false);
   }
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
