@@ -2,7 +2,6 @@
 
 The described `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` and `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` classes are _untyped_,
 meaning that the only get String values.
-
 `link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` and `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` let you specify a _type_, so the
 (String) raw value is converted to the specified type.
 
