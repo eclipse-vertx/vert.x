@@ -26,12 +26,12 @@ import java.util.concurrent.ExecutorService;
  */
 class WorkerPool {
 
-  private final OrderedExecutorFactory orderedFact;
+//  private final OrderedExecutorFactory orderedFact;
   private final ExecutorService pool;
   private final PoolMetrics metrics;
 
   WorkerPool(ExecutorService pool, PoolMetrics metrics) {
-    this.orderedFact = new OrderedExecutorFactory(pool);
+//    this.orderedFact = new OrderedExecutorFactory(pool);
     this.pool = pool;
     this.metrics = metrics;
   }
@@ -40,9 +40,9 @@ class WorkerPool {
     return pool;
   }
 
-  Executor createOrderedExecutor() {
-    return orderedFact.getExecutor();
-  }
+//  Executor createOrderedExecutor() {
+//    return orderedFact.getExecutor();
+//  }
 
   PoolMetrics metrics() {
     return metrics;

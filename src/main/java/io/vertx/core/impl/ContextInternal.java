@@ -17,9 +17,11 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -39,15 +41,10 @@ public interface ContextInternal extends Context {
   EventLoop nettyEventLoop();
 
   /**
-   * Create a worker executor using the underlying worker pool of the context.
-   *
-   * The executor does not have to be closed, as the worker pool is managed by the context itself.
-   *
-   * It should be used when a separate executor per context is needed.
-   *
-   * @return a new worker executor
+   * Like {@link #executeBlocking(Handler, boolean, Handler)} but uses the {@code queue} to order the tasks instead
+   * of the internal queue of this context.
    */
-  WorkerExecutor createWorkerExecutor();
+  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler);
 
   /**
    * Execute the context task and switch on this context if necessary, this also associates the

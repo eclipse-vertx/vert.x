@@ -35,13 +35,11 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
   private final Vertx vertx;
   private final WorkerPool pool;
   private boolean closed;
-  private final Executor workerExec;
   private final boolean releaseOnClose;
 
   public WorkerExecutorImpl(Vertx vertx, WorkerPool pool, boolean releaseOnClose) {
     this.vertx = vertx;
     this.pool = pool;
-    this.workerExec = pool.createOrderedExecutor();
     this.releaseOnClose = releaseOnClose;
   }
 
@@ -70,7 +68,7 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
       throw new IllegalStateException("Worker executor closed");
     }
     ContextImpl context = (ContextImpl) vertx.getOrCreateContext();
-    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? workerExec : pool.executor(), pool.metrics());
+    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, pool.executor(), context.orderedTasks, pool.metrics());
   }
 
   @Override

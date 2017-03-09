@@ -72,30 +72,33 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     int num = 1000;
     AtomicReference<Thread> t = new AtomicReference<>();
     CountDownLatch submitted = new CountDownLatch(1);
-    for (int i = 0;i < num;i++) {
-      boolean first = i == 0;
-      boolean last = i == num - 1;
-      worker.executeBlocking(fut -> {
-        if (first) {
-          try {
-            awaitLatch(submitted);
-          } catch (InterruptedException e) {
-            fail(e);
-            return;
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      for (int i = 0;i < num;i++) {
+        boolean first = i == 0;
+        boolean last = i == num - 1;
+        worker.executeBlocking(fut -> {
+          if (first) {
+            try {
+              awaitLatch(submitted);
+            } catch (InterruptedException e) {
+              fail(e);
+              return;
+            }
+            assertNull(t.get());
+            t.set(Thread.currentThread());
+          } else {
+            assertEquals(t.get(), Thread.currentThread());
           }
-          assertNull(t.get());
-          t.set(Thread.currentThread());
-        } else {
-          assertEquals(t.get(), Thread.currentThread());
-        }
-        assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
-        fut.complete(null);
-      }, ar -> {
-        if (last) {
-          testComplete();
-        }
-      });
-    }
+          assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
+          fut.complete(null);
+        }, ar -> {
+          if (last) {
+            testComplete();
+          }
+        });
+      }
+    });
     submitted.countDown();
     await();
   }

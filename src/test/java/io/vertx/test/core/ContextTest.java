@@ -322,6 +322,7 @@ public class ContextTest extends VertxTestBase {
     await();
   }
 
+/*
   @Test
   public void testContextInternalCreateWorkerExecutor() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
@@ -345,4 +346,5 @@ public class ContextTest extends VertxTestBase {
     });
     await();
   }
+*/
 }

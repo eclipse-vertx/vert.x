@@ -22,6 +22,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -315,16 +317,17 @@ public class FakeClusterManager implements ClusterManager {
   private class FakeAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
 
     private final ConcurrentMap<K, ChoosableSet<V>> map;
-    private final WorkerExecutor workerExecutor;
+    private final TaskQueue taskQueue;
 
     public FakeAsyncMultiMap(ConcurrentMap<K, ChoosableSet<V>> map) {
-      workerExecutor = vertx.getOrCreateContext().createWorkerExecutor();
+      taskQueue = new TaskQueue();
       this.map = map;
     }
 
     @Override
     public void add(final K k, final V v, Handler<AsyncResult<Void>> completionHandler) {
-      workerExecutor.executeBlocking(fut -> {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      ctx.executeBlocking(fut -> {
         ChoosableSet<V> vals = map.get(k);
         if (vals == null) {
           vals = new ChoosableSet<>(1);
@@ -335,23 +338,25 @@ public class FakeClusterManager implements ClusterManager {
         }
         vals.add(v);
         fut.complete();
-      }, completionHandler);
+      }, taskQueue, completionHandler);
     }
 
     @Override
     public void get(final K k, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
-      workerExecutor.executeBlocking(fut -> {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      ctx.executeBlocking(fut -> {
         ChoosableIterable<V> it = map.get(k);
         if (it == null) {
           it = new ChoosableSet<V>(0);
         }
         fut.complete(it);
-      }, asyncResultHandler);
+      }, taskQueue, asyncResultHandler);
     }
 
     @Override
     public void remove(final K k, final V v, Handler<AsyncResult<Boolean>> completionHandler) {
-      workerExecutor.executeBlocking(fut -> {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      ctx.executeBlocking(fut -> {
           ChoosableSet<V> vals = map.get(k);
           boolean found = false;
           if (vals != null) {
@@ -364,7 +369,7 @@ public class FakeClusterManager implements ClusterManager {
             }
           }
           fut.complete(found);
-        }, completionHandler);
+        }, taskQueue, completionHandler);
     }
 
     @Override
@@ -374,7 +379,8 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void removeAllMatching(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler) {
-      workerExecutor.executeBlocking(fut -> {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      ctx.executeBlocking(fut -> {
         Iterator<Map.Entry<K, ChoosableSet<V>>> mapIter = map.entrySet().iterator();
         while (mapIter.hasNext()) {
           Map.Entry<K, ChoosableSet<V>> entry = mapIter.next();
@@ -391,7 +397,7 @@ public class FakeClusterManager implements ClusterManager {
           }
         }
         fut.complete();
-      }, completionHandler);
+      }, taskQueue, completionHandler);
     }
   }
 }
