@@ -64,8 +64,8 @@ public abstract class ContextImpl implements ContextInternal {
   private volatile Handler<Throwable> exceptionHandler;
   protected final WorkerPool workerPool;
   protected final WorkerPool internalBlockingPool;
-  protected final Executor orderedInternalPoolExec;
-  protected final Executor workerExec;
+  final TaskQueue orderedTasks;
+  protected final TaskQueue internalOrderedTasks;
 
   protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
@@ -84,8 +84,8 @@ public abstract class ContextImpl implements ContextInternal {
     this.owner = vertx;
     this.workerPool = workerPool;
     this.internalBlockingPool = internalBlockingPool;
-    this.orderedInternalPoolExec = internalBlockingPool.createOrderedExecutor();
-    this.workerExec = workerPool.createOrderedExecutor();
+    this.orderedTasks = new TaskQueue();
+    this.internalOrderedTasks = new TaskQueue();
     this.closeHooks = new CloseHooks(log);
   }
 
@@ -123,11 +123,6 @@ public abstract class ContextImpl implements ContextInternal {
 
   public void removeCloseHook(Closeable hook) {
     closeHooks.remove(hook);
-  }
-
-  @Override
-  public WorkerExecutor createWorkerExecutor() {
-    return new WorkerExecutorImpl(this.owner(), workerPool, false);
   }
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
@@ -237,12 +232,12 @@ public abstract class ContextImpl implements ContextInternal {
 
   // Execute an internal task on the internal blocking ordered executor
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, null, resultHandler, orderedInternalPoolExec, internalBlockingPool.metrics());
+    executeBlocking(action, null, resultHandler, internalBlockingPool.executor(), internalOrderedTasks, internalBlockingPool.metrics());
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(null, blockingCodeHandler, resultHandler, ordered ? workerExec : workerPool.executor(), workerPool.metrics());
+    executeBlocking(null, blockingCodeHandler, resultHandler, workerPool.executor(), ordered ? orderedTasks : null, workerPool.metrics());
   }
 
   @Override
@@ -250,12 +245,17 @@ public abstract class ContextImpl implements ContextInternal {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 
+  @Override
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(null, blockingCodeHandler, resultHandler, workerPool.executor(), queue, workerPool.metrics());
+  }
+
   <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
-      Executor exec, PoolMetrics metrics) {
+      Executor exec, TaskQueue queue, PoolMetrics metrics) {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     try {
-      exec.execute(() -> {
+      Runnable command = () -> {
         VertxThread current = (VertxThread) Thread.currentThread();
         Object execMetric = null;
         if (metrics != null) {
@@ -286,7 +286,12 @@ public abstract class ContextImpl implements ContextInternal {
         if (resultHandler != null) {
           runOnContext(v -> res.setHandler(resultHandler));
         }
-      });
+      };
+      if (queue != null) {
+        queue.execute(command, exec);
+      } else {
+        exec.execute(command);
+      }
     } catch (RejectedExecutionException e) {
       // Pool is already shut down
       if (metrics != null) {
