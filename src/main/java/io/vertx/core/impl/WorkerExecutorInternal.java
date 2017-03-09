@@ -24,5 +24,5 @@ import io.vertx.core.WorkerExecutor;
  */
 public interface WorkerExecutorInternal extends WorkerExecutor {
   // TODO Can we get rid of this?
-  Vertx owner();
+  Vertx vertx();
 }

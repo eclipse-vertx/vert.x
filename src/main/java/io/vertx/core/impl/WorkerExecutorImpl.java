@@ -57,7 +57,7 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
   }
 
   @Override
-  public Vertx owner() {
+  public Vertx vertx() {
     return vertx;
   }
 
