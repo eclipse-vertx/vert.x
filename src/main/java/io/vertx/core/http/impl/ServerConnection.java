@@ -21,6 +21,8 @@ import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -32,12 +34,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -404,8 +401,16 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
         Throwable cause = result.cause();
         if (cause instanceof TooLongFrameException) {
           String causeMsg = cause.getMessage();
+          HttpVersion version;
+          if (msg instanceof HttpRequest) {
+            version = ((HttpRequest) msg).protocolVersion();
+          } else if (currentRequest != null) {
+            version = currentRequest.version() == io.vertx.core.http.HttpVersion.HTTP_1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+          } else {
+            version = HttpVersion.HTTP_1_1;
+          }
           HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
-          DefaultFullHttpResponse resp = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
+          DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
           writeToChannel(resp);
         }
         // That will close the connection as it is considered as unusable
