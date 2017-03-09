@@ -21,6 +21,8 @@ import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -32,12 +34,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -397,46 +394,57 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private void processMessage(Object msg) {
 
-    if (msg instanceof HttpRequest) {
-      HttpRequest request = (HttpRequest) msg;
-      DecoderResult result = ((HttpObject) msg).getDecoderResult();
+    if (msg instanceof HttpObject) {
+      HttpObject obj = (HttpObject) msg;
+      DecoderResult result = obj.decoderResult();
       if (result.isFailure()) {
         Throwable cause = result.cause();
         if (cause instanceof TooLongFrameException) {
           String causeMsg = cause.getMessage();
+          HttpVersion version;
+          if (msg instanceof HttpRequest) {
+            version = ((HttpRequest) msg).protocolVersion();
+          } else if (currentRequest != null) {
+            version = currentRequest.version() == io.vertx.core.http.HttpVersion.HTTP_1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+          } else {
+            version = HttpVersion.HTTP_1_1;
+          }
           HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
-          DefaultFullHttpResponse resp = new DefaultFullHttpResponse(request.protocolVersion(), status);
+          DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
           writeToChannel(resp);
         }
+        // That will close the connection as it is considered as unusable
         channel.pipeline().fireExceptionCaught(result.cause());
         return;
       }
-      if (server.options().isHandle100ContinueAutomatically()) {
-        if (HttpHeaders.is100ContinueExpected(request)) {
-          write100Continue();
+      if (msg instanceof HttpRequest) {
+        HttpRequest request = (HttpRequest) msg;
+        if (server.options().isHandle100ContinueAutomatically()) {
+          if (HttpHeaders.is100ContinueExpected(request)) {
+            write100Continue();
+          }
         }
+        HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
+        HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
+        handleRequest(req, resp);
       }
-      HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
-      handleRequest(req, resp);
-    }
-    if (msg instanceof HttpContent) {
+      if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
-      if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.content());
-        handleChunk(buff);
-      }
-
-      //TODO chunk trailers
-      if (msg instanceof LastHttpContent) {
-        if (!paused) {
-          handleEnd();
-        } else {
-          // Requeue
-          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+        if (chunk.content().isReadable()) {
+          Buffer buff = Buffer.buffer(chunk.content());
+          handleChunk(buff);
         }
-      }
-    } else if (msg instanceof WebSocketFrameInternal) {
+
+        //TODO chunk trailers
+        if (msg instanceof LastHttpContent) {
+          if (!paused) {
+            handleEnd();
+          } else {
+            // Requeue
+            pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+          }
+        }
+      }    } else if (msg instanceof WebSocketFrameInternal) {
       WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
       handleWsFrame(frame);
     }
