@@ -36,7 +36,7 @@ public interface WorkerExecutor extends Measured {
    * Executes the blocking code in the handler {@code blockingCodeHandler} using a thread from the worker pool.
    * <p>
    * When the code is complete the handler {@code resultHandler} will be called with the result on the original context
-   * (e.g. on the original event loop of the caller).
+   * (i.e. on the original event loop of the caller).
    * <p>
    * A {@code Future} instance is passed into {@code blockingCodeHandler}. When the blocking code successfully completes,
    * the handler should call the {@link Future#complete} or {@link Future#complete(Object)} method, or the {@link Future#fail}

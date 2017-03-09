@@ -16,11 +16,13 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 
 /**
  * @author Thomas Segismont
  */
 public interface WorkerExecutorInternal extends WorkerExecutor {
-  ContextImpl getContext();
+  // TODO Can we get rid of this?
+  Vertx vertx();
 }

@@ -20,6 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -31,15 +32,15 @@ import java.util.concurrent.Executor;
  */
 class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorInternal {
 
-  private final ContextImpl context;
-  final WorkerPool pool;
+  private final Vertx vertx;
+  private final WorkerPool pool;
   private boolean closed;
   private final Executor workerExec;
   private final boolean releaseOnClose;
 
-  public WorkerExecutorImpl(ContextImpl context, WorkerPool pool, boolean releaseOnClose) {
+  public WorkerExecutorImpl(Vertx vertx, WorkerPool pool, boolean releaseOnClose) {
+    this.vertx = vertx;
     this.pool = pool;
-    this.context = context;
     this.workerExec = pool.createOrderedExecutor();
     this.releaseOnClose = releaseOnClose;
   }
@@ -56,8 +57,8 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
   }
 
   @Override
-  public ContextImpl getContext() {
-    return context;
+  public Vertx vertx() {
+    return vertx;
   }
 
   public WorkerPool getPool() {
@@ -68,6 +69,7 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
     if (closed) {
       throw new IllegalStateException("Worker executor closed");
     }
+    ContextImpl context = (ContextImpl) vertx.getOrCreateContext();
     context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? workerExec : pool.executor(), pool.metrics());
   }
 
