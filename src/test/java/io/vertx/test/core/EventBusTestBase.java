@@ -343,28 +343,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendFromWorker() throws Exception {
-    String expectedBody = TestUtils.randomAlphaString(20);
-    CountDownLatch receivedLatch = new CountDownLatch(1);
-    startNodes(2);
-    vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
-      assertEquals(expectedBody, msg.body());
-      receivedLatch.countDown();
-    }).completionHandler(ar -> {
-      assertTrue(ar.succeeded());
-      vertices[0].deployVerticle(new AbstractVerticle() {
-        @Override
-        public void start() throws Exception {
-          vertices[0].eventBus().send(ADDRESS1, expectedBody);
-          awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
-          testComplete();
-        }
-      }, new DeploymentOptions().setWorker(true));
-    });
-    await();
-  }
-
-  @Test
   public void testReplyFromWorker() throws Exception {
     String expectedBody = TestUtils.randomAlphaString(20);
     startNodes(2);
