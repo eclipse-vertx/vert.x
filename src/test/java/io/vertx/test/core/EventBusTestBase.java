@@ -401,7 +401,9 @@ public abstract class EventBusTestBase extends VertxTestBase {
   @Test
   public void testNoHandlersCallbackContext() {
     startNodes(2);
-    waitFor(3);
+    waitFor(4);
+
+    // On an "external" thread
     vertices[0].eventBus().send("blah", "blah", ar -> {
       assertTrue(ar.failed());
       if (ar.cause() instanceof ReplyException) {
@@ -413,6 +415,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
       assertTrue("Not an EL thread", Context.isOnEventLoopThread());
       complete();
     });
+
+    // On a EL context
     vertices[0].runOnContext(v -> {
       Context ctx = vertices[0].getOrCreateContext();
       vertices[0].eventBus().send("blah", "blah", ar -> {
@@ -427,6 +431,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
         complete();
       });
     });
+
+    // On a Worker context
     vertices[0].deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -444,6 +450,23 @@ public abstract class EventBusTestBase extends VertxTestBase {
         });
       }
     }, new DeploymentOptions().setWorker(true));
+
+    // Inside executeBlocking
+    vertices[0].executeBlocking(fut -> {
+      vertices[0].eventBus().send("blah", "blah", ar -> {
+        assertTrue(ar.failed());
+        if (ar.cause() instanceof ReplyException) {
+          ReplyException cause = (ReplyException) ar.cause();
+          assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
+        } else {
+          fail(ar.cause());
+        }
+        assertTrue("Not an EL thread", Context.isOnEventLoopThread());
+        complete();
+      });
+      fut.complete();
+    }, false, null);
+
     await();
   }
 
