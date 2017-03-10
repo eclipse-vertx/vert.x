@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Verticle;
@@ -394,6 +395,55 @@ public abstract class EventBusTestBase extends VertxTestBase {
         }
       });
     });
+    await();
+  }
+
+  @Test
+  public void testNoHandlersCallbackContext() {
+    startNodes(2);
+    waitFor(3);
+    vertices[0].eventBus().send("blah", "blah", ar -> {
+      assertTrue(ar.failed());
+      if (ar.cause() instanceof ReplyException) {
+        ReplyException cause = (ReplyException) ar.cause();
+        assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
+      } else {
+        fail(ar.cause());
+      }
+      assertTrue("Not an EL thread", Context.isOnEventLoopThread());
+      complete();
+    });
+    vertices[0].runOnContext(v -> {
+      Context ctx = vertices[0].getOrCreateContext();
+      vertices[0].eventBus().send("blah", "blah", ar -> {
+        assertTrue(ar.failed());
+        if (ar.cause() instanceof ReplyException) {
+          ReplyException cause = (ReplyException) ar.cause();
+          assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
+        } else {
+          fail(ar.cause());
+        }
+        assertSame(ctx, vertices[0].getOrCreateContext());
+        complete();
+      });
+    });
+    vertices[0].deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        Context ctx = getVertx().getOrCreateContext();
+        vertices[0].eventBus().send("blah", "blah", ar -> {
+          assertTrue(ar.failed());
+          if (ar.cause() instanceof ReplyException) {
+            ReplyException cause = (ReplyException) ar.cause();
+            assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
+          } else {
+            fail(ar.cause());
+          }
+          assertSame(ctx, getVertx().getOrCreateContext());
+          complete();
+        });
+      }
+    }, new DeploymentOptions().setWorker(true));
     await();
   }
 
