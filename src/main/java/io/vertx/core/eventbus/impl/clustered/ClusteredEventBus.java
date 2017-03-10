@@ -254,7 +254,6 @@ public class ClusteredEventBus extends EventBusImpl {
     Context context = Vertx.currentContext();
     if (context == null || !context.isEventLoopContext()) {
       // Guarantees the order when there is no current context
-      // Or, when there is a worker context, makes sure message can be sent instantly
       sendNoContext.runOnContext(v -> {
         subs.get(address, resultHandler);
       });
