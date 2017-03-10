@@ -251,8 +251,7 @@ public class ClusteredEventBus extends EventBusImpl {
         log.error("Failed to send message", asyncResult.cause());
       }
     };
-    Context context = Vertx.currentContext();
-    if (context == null || !context.isEventLoopContext()) {
+    if (Vertx.currentContext() == null) {
       // Guarantees the order when there is no current context
       sendNoContext.runOnContext(v -> {
         subs.get(address, resultHandler);
