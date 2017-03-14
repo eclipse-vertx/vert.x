@@ -36,6 +36,7 @@ import io.vertx.core.spi.cluster.NodeListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -69,11 +70,11 @@ public class FakeClusterManager implements ClusterManager {
       throw new IllegalStateException("Node has already joined!");
     }
     nodes.put(nodeID, node);
-    nodes.forEach((nid, cm) -> {
-      if (!nid.equals(nodeID)) {
-        new Thread(() -> cm.memberAdded(nodeID)).start();
+    for (Map.Entry<String, FakeClusterManager> entry : new HashSet<>(nodes.entrySet())) {
+      if (!entry.getKey().equals(nodeID)) {
+        new Thread(() -> entry.getValue().memberAdded(nodeID)).start();
       }
-    });
+    }
   }
 
   private synchronized void memberAdded(String nodeID) {
@@ -90,9 +91,11 @@ public class FakeClusterManager implements ClusterManager {
 
   private static void doLeave(String nodeID) {
     nodes.remove(nodeID);
-    nodes.forEach((nid, cm) -> {
-      new Thread(() -> cm.memberRemoved(nodeID)).start();
-    });
+    for (Map.Entry<String, FakeClusterManager> entry : new HashSet<>(nodes.entrySet())) {
+      if (!entry.getKey().equals(nodeID)) {
+        new Thread(() -> entry.getValue().memberRemoved(nodeID)).start();
+      }
+    }
   }
 
   private synchronized void memberRemoved(String nodeID) {
