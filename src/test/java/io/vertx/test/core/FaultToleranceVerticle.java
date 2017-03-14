@@ -19,12 +19,13 @@ package io.vertx.test.core;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,13 +34,15 @@ import java.util.List;
  * @author Thomas Segismont
  */
 public class FaultToleranceVerticle extends AbstractVerticle {
+  private static final Logger log = LoggerFactory.getLogger(FaultToleranceVerticle.class);
 
+  private int id;
   private int numAddresses;
 
   @Override
   public void start() throws Exception {
     JsonObject config = config();
-    int id = config.getInteger("id");
+    id = config.getInteger("id");
     numAddresses = config.getInteger("addressesCount");
     List<Future> registrationFutures = new ArrayList<>(numAddresses);
     for (int i = 0; i < numAddresses; i++) {
@@ -62,7 +65,7 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     for (int i = 0; i < jsonArray.size(); i++) {
       int node = jsonArray.getInteger(i);
       for (int j = 0; j < numAddresses; j++) {
-        vertx.eventBus().send(createAddress(node, j), "ping", new DeliveryOptions().setSendTimeout(1000), ar -> {
+        vertx.eventBus().send(createAddress(node, j), "ping", ar -> {
           if (ar.succeeded()) {
             vertx.eventBus().send("control", "pong");
           } else {
@@ -71,8 +74,10 @@ public class FaultToleranceVerticle extends AbstractVerticle {
               ReplyException replyException = (ReplyException) cause;
               if (replyException.failureType() == ReplyFailure.NO_HANDLERS) {
                 vertx.eventBus().send("control", "noHandlers");
+                return;
               }
             }
+            log.error("Unexpected error during ping (id=" + id + ")", cause);
           }
         });
       }

@@ -28,26 +28,30 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
+
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @author Thomas Segismont
  */
 public abstract class FaultToleranceTest extends VertxTestBase {
 
-  private static final int NODE_COUNT = 3;
-  private static final int ADDRESSES_COUNT = 10;
+  protected static final int NODE_COUNT = 3;
+  protected static final int ADDRESSES_COUNT = 10;
 
-  private final List<Process> externalNodes = new ArrayList<>();
-  private final AtomicLong externalNodesStarted = new AtomicLong();
-  private final AtomicLong pongsReceived = new AtomicLong();
-  private final AtomicLong noHandlersErrors = new AtomicLong();
+  protected final List<Process> externalNodes = new ArrayList<>();
+  protected final AtomicLong externalNodesStarted = new AtomicLong();
+  protected final AtomicLong pongsReceived = new AtomicLong();
+  protected final AtomicLong noHandlersErrors = new AtomicLong();
   protected long timeoutMs = 60_000;
+  protected VertxInternal vertx;
 
   @Test
   public void testFaultTolerance() throws Exception {
     startNodes(1);
-    VertxInternal vertx = (VertxInternal) vertices[0];
+    vertx = (VertxInternal) vertices[0];
 
     vertx.eventBus().<String>consumer("control", msg -> {
       switch (msg.body()) {
@@ -66,36 +70,49 @@ public abstract class FaultToleranceTest extends VertxTestBase {
     for (int i = 0; i < NODE_COUNT; i++) {
       Process process = startExternalNode(i);
       externalNodes.add(process);
+      afterNodeStarted(i, process);
     }
-    waitUntil(() -> externalNodesStarted.get() == NODE_COUNT, timeoutMs);
+    afterNodesStarted();
 
     JsonArray message1 = new JsonArray();
     IntStream.range(0, NODE_COUNT).forEach(message1::add);
     vertx.eventBus().publish("ping", message1);
-    waitUntil(() -> pongsReceived.get() == NODE_COUNT * NODE_COUNT * ADDRESSES_COUNT, timeoutMs);
+    assertEqualsEventually("All pongs", Long.valueOf(NODE_COUNT * NODE_COUNT * ADDRESSES_COUNT), pongsReceived::get);
 
     for (int i = 0; i < NODE_COUNT - 1; i++) {
-      externalNodes.get(i).destroyForcibly();
+      Process process = externalNodes.get(i);
+      process.destroyForcibly();
+      afterNodeKilled(i, process);
     }
-    waitForClusterStability(vertx);
+    afterNodesKilled();
 
     pongsReceived.set(0);
     JsonArray message2 = new JsonArray().add(NODE_COUNT - 1);
     vertx.eventBus().publish("ping", message2);
-    waitUntil(() -> pongsReceived.get() == ADDRESSES_COUNT, timeoutMs);
+    assertEqualsEventually("Survivor pongs", Long.valueOf(ADDRESSES_COUNT), pongsReceived::get);
 
     JsonArray message3 = new JsonArray();
     IntStream.range(0, NODE_COUNT - 1).forEach(message3::add);
     vertx.eventBus().publish("ping", message3);
-    waitUntil(() -> noHandlersErrors.get() == (NODE_COUNT - 1) * ADDRESSES_COUNT, timeoutMs);
+    assertEqualsEventually("Dead errors", Long.valueOf((NODE_COUNT - 1) * ADDRESSES_COUNT), noHandlersErrors::get);
   }
 
-  protected void waitForClusterStability(VertxInternal vertx) throws Exception {
+  protected void afterNodeStarted(int i, Process process) throws Exception {
+  }
+
+  protected void afterNodesStarted() throws Exception {
+    assertEqualsEventually("Nodes ready", Long.valueOf(NODE_COUNT), externalNodesStarted::get);
+  }
+
+  protected void afterNodeKilled(int i, Process process) throws Exception {
+  }
+
+  protected void afterNodesKilled() throws Exception {
     ClusterManager clusterManager = vertx.getClusterManager();
-    waitUntil(() -> clusterManager.getNodes().size() == 2, timeoutMs);
+    assertEqualsEventually("Remaining members", Integer.valueOf(2), () -> clusterManager.getNodes().size());
   }
 
-  private Process startExternalNode(int id) throws Exception {
+  protected Process startExternalNode(int id) throws Exception {
     String javaHome = System.getProperty("java.home");
     String classpath = System.getProperty("java.class.path");
     List<String> command = new ArrayList<>();
@@ -114,6 +131,20 @@ public abstract class FaultToleranceTest extends VertxTestBase {
 
   protected List<String> getExternalNodeSystemProperties() {
     return Collections.emptyList();
+  }
+
+  protected void assertEqualsEventually(String msg, Object expected, Supplier<Object> actual) {
+    for (long start = System.currentTimeMillis(); System.currentTimeMillis() - start < timeoutMs; ) {
+      Object act = actual.get();
+      if (expected == null ? act == null : expected.equals(act)) {
+        return;
+      }
+      try {
+        MILLISECONDS.sleep(100);
+      } catch (InterruptedException ignored) {
+      }
+    }
+    assertEquals(msg, expected, actual.get());
   }
 
   @Override
