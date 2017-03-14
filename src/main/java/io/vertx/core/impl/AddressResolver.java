@@ -42,6 +42,11 @@ public class AddressResolver {
     return Pattern.compile("^[ \\t\\f]*options[^\n]+" + regex + "(?=$|\\s)", Pattern.MULTILINE);
   }
 
+  private static final Pattern NDOTS_OPTIONS_PATTERN = resolvOption("ndots:[ \\t\\f]*(\\d)+");
+  private static final Pattern ROTATE_OPTIONS_PATTERN = resolvOption("rotate");
+  public static final int DEFAULT_NDOTS_RESOLV_OPTION;
+  public static final boolean DEFAULT_ROTATE_RESOLV_OPTION;
+
   static {
     int ndots = 1;
     boolean rotate = false;
@@ -55,18 +60,13 @@ public class AddressResolver {
             ndots = ndotsOption;
           }
           rotate = parseRotateOptionFromResolvConf(conf);
-        } catch (IOException ignore) {
+        } catch (Throwable ignore) {
         }
       }
     }
     DEFAULT_NDOTS_RESOLV_OPTION = ndots;
     DEFAULT_ROTATE_RESOLV_OPTION = rotate;
   }
-
-  public static final int DEFAULT_NDOTS_RESOLV_OPTION;
-  public static final boolean DEFAULT_ROTATE_RESOLV_OPTION;
-  private static final Pattern NDOTS_OPTIONS_PATTERN = resolvOption("ndots:[ \\t\\f]*(\\d)+");
-  private static final Pattern ROTATE_OPTIONS_PATTERN = resolvOption("rotate");
 
   private final Vertx vertx;
   private final AddressResolverGroup<InetSocketAddress> resolverGroup;
