@@ -21,7 +21,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxInternal;
@@ -44,7 +43,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
@@ -52,19 +50,18 @@ public class FakeClusterManager implements ClusterManager {
 
   private static Map<String, FakeClusterManager> nodes = Collections.synchronizedMap(new LinkedHashMap<>());
 
-  private static List<NodeListener> nodeListeners = new CopyOnWriteArrayList<>();
   private static ConcurrentMap<String, ConcurrentMap> asyncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, ConcurrentMap> asyncMultiMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, AsynchronousLock> locks = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, AtomicLong> counters = new ConcurrentHashMap<>();
 
-  private volatile String nodeID;
-  private volatile NodeListener nodeListener;
-  private volatile VertxInternal vertx;
+  private String nodeID;
+  private NodeListener nodeListener;
+  private VertxInternal vertx;
 
   public void setVertx(Vertx vertx) {
-    this.vertx = (VertxInternal)vertx;
+    this.vertx = (VertxInternal) vertx;
   }
 
   private static void doJoin(String nodeID, FakeClusterManager node) {
@@ -72,31 +69,42 @@ public class FakeClusterManager implements ClusterManager {
       throw new IllegalStateException("Node has already joined!");
     }
     nodes.put(nodeID, node);
-    for (NodeListener listener: new ArrayList<>(nodeListeners)) {
-      if (listener != null) {
-        listener.nodeAdded(nodeID);
+    nodes.forEach((nid, cm) -> {
+      if (!nid.equals(nodeID)) {
+        new Thread(() -> cm.memberAdded(nodeID)).start();
+      }
+    });
+  }
+
+  private synchronized void memberAdded(String nodeID) {
+    if (isActive()) {
+      try {
+        if (nodeListener != null) {
+          nodeListener.nodeAdded(nodeID);
+        }
+      } catch (Throwable t) {
+        t.printStackTrace();
       }
     }
   }
 
   private static void doLeave(String nodeID) {
     nodes.remove(nodeID);
-    for (NodeListener listener: new ArrayList<>(nodeListeners)) {
-      if (listener != null) {
-        listener.nodeLeft(nodeID);
+    nodes.forEach((nid, cm) -> {
+      new Thread(() -> cm.memberRemoved(nodeID)).start();
+    });
+  }
+
+  private synchronized void memberRemoved(String nodeID) {
+    if (isActive()) {
+      try {
+        if (nodeListener != null) {
+          nodeListener.nodeLeft(nodeID);
+        }
+      } catch (Throwable t) {
+        t.printStackTrace();
       }
     }
-  }
-
-  private static void doAddNodeListener(NodeListener listener) {
-    if (nodeListeners.contains(listener)) {
-      throw new IllegalStateException("Listener already registered!");
-    }
-    nodeListeners.add(listener);
-  }
-
-  private static void doRemoveNodeListener(NodeListener listener) {
-    nodeListeners.remove(listener);
   }
 
   @Override
@@ -109,6 +117,7 @@ public class FakeClusterManager implements ClusterManager {
         map = prevMap;
       }
     }
+    @SuppressWarnings("unchecked")
     ConcurrentMap<K, ChoosableSet<V>> theMap = map;
     vertx.runOnContext(v -> resultHandler.handle(Future.succeededFuture(new FakeAsyncMultiMap<>(theMap))));
   }
@@ -123,21 +132,24 @@ public class FakeClusterManager implements ClusterManager {
         map = prevMap;
       }
     }
+    @SuppressWarnings("unchecked")
     ConcurrentMap<K, V> theMap = map;
     vertx.runOnContext(v -> resultHandler.handle(Future.succeededFuture(new FakeAsyncMap<>(theMap))));
   }
 
   @Override
   public <K, V> Map<K, V> getSyncMap(String name) {
-    Map<K, V> map = (Map<K, V>)syncMaps.get(name);
+    Map map = syncMaps.get(name);
     if (map == null) {
       map = new ConcurrentHashMap<>();
-      Map<K, V> prevMap = (Map<K, V>)syncMaps.putIfAbsent(name, map);
+      Map prevMap = syncMaps.putIfAbsent(name, map);
       if (prevMap != null) {
         map = prevMap;
       }
     }
-    return map;
+    @SuppressWarnings("unchecked")
+    Map<K, V> theMap = map;
+    return theMap;
   }
 
   @Override
@@ -175,32 +187,42 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public void nodeListener(NodeListener listener) {
-    doAddNodeListener(listener);
     this.nodeListener = listener;
   }
 
   @Override
   public void join(Handler<AsyncResult<Void>> resultHandler) {
-    this.nodeID = UUID.randomUUID().toString();
-    doJoin(nodeID, this);
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> {
-      resultHandler.handle(Future.succeededFuture());
-    });
+    vertx.executeBlocking(fut -> {
+      synchronized (this) {
+        try {
+          this.nodeID = UUID.randomUUID().toString();
+          doJoin(nodeID, this);
+        } catch (Throwable t) {
+          fut.fail(t);
+        }
+      }
+      fut.complete();
+    }, resultHandler);
   }
 
   @Override
   public void leave(Handler<AsyncResult<Void>> resultHandler) {
-    if (nodeID != null) {
-      if (nodeListener != null) {
-        doRemoveNodeListener(nodeListener);
-        nodeListener = null;
+    vertx.executeBlocking(fut -> {
+      synchronized (this) {
+        try {
+          if (nodeID != null) {
+            if (nodeListener != null) {
+              nodeListener = null;
+            }
+            doLeave(nodeID);
+            this.nodeID = null;
+          }
+        } catch (Throwable t) {
+          fut.fail(t);
+        }
       }
-      doLeave(nodeID);
-      this.nodeID = null;
-    }
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture()));
+      fut.complete();
+    }, resultHandler);
   }
 
   @Override
@@ -210,7 +232,6 @@ public class FakeClusterManager implements ClusterManager {
 
   public static void reset() {
     nodes.clear();
-    nodeListeners.clear();
     asyncMaps.clear();
     asyncMultiMaps.clear();
     locks.clear();
@@ -347,7 +368,7 @@ public class FakeClusterManager implements ClusterManager {
       ctx.executeBlocking(fut -> {
         ChoosableIterable<V> it = map.get(k);
         if (it == null) {
-          it = new ChoosableSet<V>(0);
+          it = new ChoosableSet<>(0);
         }
         fut.complete(it);
       }, taskQueue, asyncResultHandler);
@@ -357,19 +378,19 @@ public class FakeClusterManager implements ClusterManager {
     public void remove(final K k, final V v, Handler<AsyncResult<Boolean>> completionHandler) {
       ContextInternal ctx = vertx.getOrCreateContext();
       ctx.executeBlocking(fut -> {
-          ChoosableSet<V> vals = map.get(k);
-          boolean found = false;
-          if (vals != null) {
-            boolean removed = vals.remove(v);
-            if (removed) {
-              if (vals.isEmpty()) {
-                map.remove(k);
-              }
-              found = true;
+        ChoosableSet<V> vals = map.get(k);
+        boolean found = false;
+        if (vals != null) {
+          boolean removed = vals.remove(v);
+          if (removed) {
+            if (vals.isEmpty()) {
+              map.remove(k);
             }
+            found = true;
           }
-          fut.complete(found);
-        }, taskQueue, completionHandler);
+        }
+        fut.complete(found);
+      }, taskQueue, completionHandler);
     }
 
     @Override
