@@ -17,15 +17,14 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.DecoderResult;
 
 /**
  * Helper wrapper class which allows to assemble a LastHttpContent and a HttpResponse into one "packet" and so more
@@ -36,7 +35,7 @@ import io.netty.handler.codec.DecoderResult;
 class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHttpResponse {
 
   public AssembledFullHttpResponse(HttpResponse response, LastHttpContent content) {
-    this(response, content.content(), content.trailingHeaders(), content.getDecoderResult());
+    this(response, content.content(), content.trailingHeaders(), content.decoderResult());
   }
 
   public AssembledFullHttpResponse(HttpResponse response) {

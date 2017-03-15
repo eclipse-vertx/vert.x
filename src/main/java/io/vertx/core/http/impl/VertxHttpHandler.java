@@ -19,20 +19,19 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxHandler;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -52,7 +51,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
         ByteBuf newBuf = safeBuffer(content, allocator);
         if (msg instanceof LastHttpContent) {
           LastHttpContent last = (LastHttpContent) msg;
-          return new AssembledLastHttpContent(newBuf, last.trailingHeaders(), last.getDecoderResult());
+          return new AssembledLastHttpContent(newBuf, last.trailingHeaders(), last.decoderResult());
         } else {
           return new DefaultHttpContent(newBuf);
         }

@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -33,12 +32,12 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.HttpFrame;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -48,6 +47,8 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
+
+import static io.netty.handler.codec.http.HttpHeaderValues.*;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -102,7 +103,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public io.vertx.core.http.HttpVersion version() {
     if (version == null) {
-      io.netty.handler.codec.http.HttpVersion nettyVersion = request.getProtocolVersion();
+      io.netty.handler.codec.http.HttpVersion nettyVersion = request.protocolVersion();
       if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
         version = HttpVersion.HTTP_1_0;
       } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
@@ -318,12 +319,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       checkEnded();
       if (expect) {
         if (decoder == null) {
-          String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+          String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
           if (contentType != null) {
-            HttpMethod method = request.getMethod();
-            String lowerCaseContentType = contentType.toLowerCase();
-            boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
-            if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
+            HttpMethod method = request.method();
+            if ((isUrlEncoded(contentType) || isFormData(contentType)) &&
               (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
                 || method.equals(HttpMethod.DELETE))) {
               decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.vertx(), this, () -> uploadHandler), request);
@@ -335,6 +334,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       }
       return this;
     }
+  }
+
+  private boolean isFormData(String contentType) {
+    return MULTIPART_FORM_DATA.regionMatches(true, 0, contentType, 0, MULTIPART_FORM_DATA.length());
+  }
+
+  private boolean isUrlEncoded(String contentType) {
+    return APPLICATION_X_WWW_FORM_URLENCODED.regionMatches(true, 0, contentType, 0, APPLICATION_X_WWW_FORM_URLENCODED.length());
   }
 
   @Override

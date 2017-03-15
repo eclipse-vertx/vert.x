@@ -45,7 +45,6 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
-import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
@@ -78,10 +77,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertIllegalStateException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
-import static java.util.Collections.singletonList;
+import static io.vertx.test.core.TestUtils.*;
+import static java.util.Collections.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -3646,7 +3643,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testFoo(String location, String expected) throws Exception {
     int status = 301;
-    Map<String, String> headers = Collections.singletonMap("Location", location);
+    MultiMap headers = MultiMap.caseInsensitiveMultiMap().add(HttpHeaders.LOCATION, location);
     HttpMethod method = HttpMethod.GET;
     String baseURI = "https://localhost:8080";
     class MockReq implements HttpClientRequest {

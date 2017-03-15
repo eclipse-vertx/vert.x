@@ -88,9 +88,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -1223,7 +1221,7 @@ public class Http1xTest extends HttpTest {
         setMaxPoolSize(1));
     AtomicInteger count = new AtomicInteger();
     String data = "GET /somepath HTTP/1.1\r\n" +
-        "Host: localhost:8080\r\n" +
+      "host: localhost:8080\r\n" +
         "\r\n";
     NetServer server = vertx.createNetServer(new NetServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST));
     server.connectHandler(so -> {
@@ -2412,7 +2410,7 @@ public class Http1xTest extends HttpTest {
     AtomicInteger count = new AtomicInteger(0);
     CompletableFuture<Void> sendResp = new CompletableFuture<>();
     NetServer server  = vertx.createNetServer();
-    String match = "GET /somepath HTTP/1.1\r\nHost: localhost:8080\r\n\r\n";
+    String match = "GET /somepath HTTP/1.1\r\nhost: localhost:8080\r\n\r\n";
     server.connectHandler(so -> {
       StringBuilder content = new StringBuilder();
       so.handler(buff -> {
@@ -2982,7 +2980,7 @@ public class Http1xTest extends HttpTest {
         so.handler(buff -> {
           total.appendBuffer(buff);
           if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-              "Host: localhost:8080\r\n" +
+            "host: localhost:8080\r\n" +
               "\r\n")) {
             so.write(
                 "HTTP/1.1 200 OK\r\n" +
@@ -3039,10 +3037,10 @@ public class Http1xTest extends HttpTest {
       so.handler(buff -> {
         total.appendBuffer(buff);
         if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-            "Host: localhost:8080\r\n" +
+          "host: localhost:8080\r\n" +
             "\r\n" +
             "POST /somepath HTTP/1.1\r\n" +
-            "Host: localhost:8080\r\n" +
+          "host: localhost:8080\r\n" +
             "\r\n")) {
           reset.complete(null);
           so.write(
@@ -3113,7 +3111,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "Host: localhost:8080\r\n" +
+                "host: localhost:8080\r\n" +
                   "\r\n")) {
                 so.closeHandler(v -> {
                   closed.set(true);
@@ -3125,7 +3123,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "Host: localhost:8080\r\n" +
+                "host: localhost:8080\r\n" +
                   "\r\n")) {
                 so.write(
                     "HTTP/1.1 200 OK\r\n" +
@@ -3206,7 +3204,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "Host: localhost:8080\r\n" +
+                "host: localhost:8080\r\n" +
                   "\r\n")) {
                 so.write(Buffer.buffer(
                     "HTTP/1.1 200 OK\r\n" +
@@ -3224,7 +3222,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "Host: localhost:8080\r\n" +
+                "host: localhost:8080\r\n" +
                   "\r\n")) {
                 so.write(
                     "HTTP/1.1 200 OK\r\n" +
@@ -3310,7 +3308,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "Host: localhost:8080\r\n" +
+                "host: localhost:8080\r\n" +
                   "\r\n")) {
                 requestReceived.complete(null);
                 so.write(Buffer.buffer(
@@ -3329,7 +3327,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "Host: localhost:8080\r\n" +
+                "host: localhost:8080\r\n" +
                   "\r\n")) {
                 so.write(
                     "HTTP/1.1 200 OK\r\n" +

@@ -17,8 +17,7 @@ import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -79,7 +78,7 @@ public class ServerHandler extends VertxHttpHandler<ServerConnection> {
       return null;
     }
 
-    if (request.getMethod() != HttpMethod.GET) {
+    if (request.method() != HttpMethod.GET) {
       HttpServerImpl.sendError(null, METHOD_NOT_ALLOWED, ch);
       return null;
     }

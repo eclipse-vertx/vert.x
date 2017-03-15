@@ -15,11 +15,11 @@
  */
 package io.vertx.core.datagram.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.MaxMessagesRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
@@ -45,7 +45,11 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.WriteStream;
 
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Objects;
 
 /**
@@ -76,7 +80,8 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
     }
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
-    channel.config().setMaxMessagesPerRead(1);
+    MaxMessagesRecvByteBufAllocator bufAllocator = channel.config().getRecvByteBufAllocator();
+    bufAllocator.maxMessagesPerRead(1);
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     context.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {

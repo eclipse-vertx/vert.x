@@ -18,10 +18,17 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
+import io.netty.handler.codec.http.EmptyHttpHeaders;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -29,9 +36,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -85,7 +92,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
     this.vertx = vertx;
     this.conn = conn;
-    this.version = request.getProtocolVersion();
+    this.version = request.protocolVersion();
     this.headers = new VertxHttpHeaders();
     this.status = HttpResponseStatus.OK;
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
@@ -407,7 +414,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         if (trailing == null) {
           resp = new DefaultFullHttpResponse(version, status, data, headers, EmptyHttpHeaders.INSTANCE);
         } else {
-          resp = new AssembledFullHttpResponse(new DefaultHttpResponse(version, status, headers), data, trailing.trailingHeaders(), trailing.getDecoderResult());
+          resp = new AssembledFullHttpResponse(new DefaultHttpResponse(version, status, headers), data, trailing.trailingHeaders(), trailing.decoderResult());
         }
       } else {
         resp = new AssembledFullHttpResponse(new DefaultHttpResponse(version, status, headers));
@@ -423,7 +430,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         LastHttpContent content;
         if (trailing != null) {
-          content = new AssembledLastHttpContent(data, trailing.trailingHeaders(), trailing.getDecoderResult());
+          content = new AssembledLastHttpContent(data, trailing.trailingHeaders(), trailing.decoderResult());
         } else {
           content = new DefaultLastHttpContent(data, false);
         }
