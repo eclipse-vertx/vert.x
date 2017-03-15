@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.*;
 
+import com.jayway.jsonpath.PathNotFoundException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -78,6 +80,18 @@ public class JsonObjectTest {
       // OK
     }
 
+  }
+
+  @Test
+  public void testGetByPath() {
+    jsonObject.put("level1", new JsonObject().put("level2", new JsonObject().put("value1", "abc")));
+    String value = jsonObject.getByPath("$.level1.level2.value1");
+    assertEquals("The resolved value did not match with the expected one.", "abc", value);
+  }
+
+  @Test(expected = PathNotFoundException.class)
+  public void testGetByBogusPath() {
+    jsonObject.getByPath("$.level1.levelbogus.value1");
   }
 
   @Test
