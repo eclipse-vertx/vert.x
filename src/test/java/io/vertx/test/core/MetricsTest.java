@@ -1005,6 +1005,7 @@ public class MetricsTest extends VertxTestBase {
     });
 
     await();
+    waitUntilNoFail(() -> count + 1 == metrics.numberOfCompletedTasks());
 
     // The verticle deployment is also executed on the worker thread pool
     assertEquals(count + 1, metrics.numberOfSubmittedTask());

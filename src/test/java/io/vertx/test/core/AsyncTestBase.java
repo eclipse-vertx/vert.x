@@ -596,11 +596,21 @@ public class AsyncTestBase {
     waitUntil(supplier, 10000);
   }
 
+  protected void waitUntilNoFail(BooleanSupplier supplier) {
+    waitUntilNoFail(supplier, 10000);
+  }
+
   protected void waitUntil(BooleanSupplier supplier, long timeout) {
+    if (!waitUntilNoFail(supplier, timeout)) {
+      throw new IllegalStateException("Timed out");
+    }
+  }
+
+  protected boolean waitUntilNoFail(BooleanSupplier supplier, long timeout) {
     long start = System.currentTimeMillis();
     while (true) {
       if (supplier.getAsBoolean()) {
-        break;
+        return true;
       }
       try {
         Thread.sleep(10);
@@ -608,7 +618,7 @@ public class AsyncTestBase {
       }
       long now = System.currentTimeMillis();
       if (now - start > timeout) {
-        throw new IllegalStateException("Timed out");
+        return false;
       }
     }
   }
