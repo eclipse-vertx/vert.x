@@ -34,6 +34,7 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -470,12 +471,21 @@ public abstract class EventBusTestBase extends VertxTestBase {
     await();
   }
 
+  private long burnCpu() {
+    long res = 1;
+    for (int i = 2; i <= 2000; i++) {
+      res = res * i;
+    }
+    return res;
+  }
+
   @Test
   public void testSendWhileUnsubscribing() throws Exception {
     startNodes(2);
 
+    AtomicBoolean unregistered = new AtomicBoolean();
+
     Verticle sender = new AbstractVerticle() {
-      boolean stop;
 
       @Override
       public void start() throws Exception {
@@ -483,21 +493,19 @@ public abstract class EventBusTestBase extends VertxTestBase {
       }
 
       private void sendMsg() {
-        if (stop) {
-          return;
-        }
-        getVertx().eventBus().send("whatever", "marseille", ar -> {
-          if (!stop && ar.failed()) {
-            stop = true;
+        if (!unregistered.get()) {
+          getVertx().eventBus().send("whatever", "marseille");
+          burnCpu();
+          getVertx().runOnContext(v -> sendMsg());
+        } else {
+          getVertx().eventBus().send("whatever", "marseille", ar -> {
             Throwable cause = ar.cause();
             assertThat(cause, instanceOf(ReplyException.class));
             ReplyException replyException = (ReplyException) cause;
             assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
             testComplete();
-          } else {
-            getVertx().runOnContext(v -> sendMsg());
-          }
-        });
+          });
+        }
       }
     };
 
@@ -510,7 +518,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
         MessageConsumer<String> consumer = eventBus.consumer("whatever");
         consumer.handler(m -> {
           if (!unregisterCalled) {
-            consumer.unregister();
+            consumer.unregister(v -> unregistered.set(true));
             unregisterCalled = true;
           }
           m.reply("ok");
