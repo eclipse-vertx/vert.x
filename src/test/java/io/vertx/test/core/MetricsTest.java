@@ -16,7 +16,14 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -24,11 +31,33 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.PoolMetrics;
-import io.vertx.test.fakemetrics.*;
+import io.vertx.test.fakemetrics.EndpointMetric;
+import io.vertx.test.fakemetrics.FakeDatagramSocketMetrics;
+import io.vertx.test.fakemetrics.FakeEventBusMetrics;
+import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
+import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
+import io.vertx.test.fakemetrics.FakeMetricsBase;
+import io.vertx.test.fakemetrics.FakeMetricsFactory;
+import io.vertx.test.fakemetrics.FakePoolMetrics;
+import io.vertx.test.fakemetrics.FakeVertxMetrics;
+import io.vertx.test.fakemetrics.HandlerMetric;
+import io.vertx.test.fakemetrics.HttpClientMetric;
+import io.vertx.test.fakemetrics.HttpServerMetric;
+import io.vertx.test.fakemetrics.PacketMetric;
+import io.vertx.test.fakemetrics.ReceivedMessage;
+import io.vertx.test.fakemetrics.SentMessage;
+import io.vertx.test.fakemetrics.SocketMetric;
+import io.vertx.test.fakemetrics.WebSocketMetric;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -44,7 +73,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.Is.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -978,15 +1007,15 @@ public class MetricsTest extends VertxTestBase {
     await();
 
     // The verticle deployment is also executed on the worker thread pool
-    assertEquals(metrics.numberOfSubmittedTask(), count + 1);
-    assertEquals(metrics.numberOfCompletedTasks(), count + 1);
-    assertTrue(hadIdle.get());
-    assertTrue(hadWaitingQueue.get());
-    assertTrue(hadRunning.get());
+    assertEquals(count + 1, metrics.numberOfSubmittedTask());
+    assertEquals(count + 1, metrics.numberOfCompletedTasks());
+    assertTrue("Had no idle threads", hadIdle.get());
+    assertTrue("Had no waiting tasks", hadWaitingQueue.get());
+    assertTrue("Had running tasks", hadRunning.get());
 
-    assertEquals(metrics.numberOfIdleThreads(), getOptions().getWorkerPoolSize());
-    assertEquals(metrics.numberOfRunningTasks(), 0);
-    assertEquals(metrics.numberOfWaitingTasks(), 0);
+    assertEquals(getOptions().getWorkerPoolSize(), metrics.numberOfIdleThreads());
+    assertEquals(0, metrics.numberOfRunningTasks());
+    assertEquals(0, metrics.numberOfWaitingTasks());
   }
 
   @Test
