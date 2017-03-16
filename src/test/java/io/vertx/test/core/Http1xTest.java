@@ -243,6 +243,11 @@ public class Http1xTest extends HttpTest {
     assertEquals(false,options.isSendUnmaskedFrames());
     assertEquals(options,options.setSendUnmaskedFrames(true));
     assertEquals(true,options.isSendUnmaskedFrames());
+
+    assertEquals(HttpClientOptions.DEFAULT_INITIAL_BUFFER_SIZE_HTTP_DECODER, options.getInitialBufferSizeHttpDecoder());
+    assertEquals(options, options.setInitialBufferSizeHttpDecoder(256));
+    assertEquals(256, options.getInitialBufferSizeHttpDecoder());
+    assertIllegalArgumentException(() -> options.setInitialBufferSizeHttpDecoder(-1));
   }
 
   @Test
@@ -384,6 +389,12 @@ public class Http1xTest extends HttpTest {
     assertFalse(options.isDecompressionSupported());
     assertEquals(options, options.setDecompressionSupported(true));
     assertTrue(options.isDecompressionSupported());
+
+    assertEquals(HttpServerOptions.DEFAULT_INITIAL_BUFFER_SIZE_HTTP_DECODER, options.getInitialBufferSizeHttpDecoder());
+    assertEquals(options, options.setInitialBufferSizeHttpDecoder(256));
+    assertEquals(256, options.getInitialBufferSizeHttpDecoder());
+    assertIllegalArgumentException(() -> options.setInitialBufferSizeHttpDecoder(-1));
+
   }
 
   @Test
@@ -430,6 +441,7 @@ public class Http1xTest extends HttpTest {
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     boolean sendUnmaskedFrame = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
+    int initialSizeBufferHttpDecoder = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -469,6 +481,7 @@ public class Http1xTest extends HttpTest {
     options.setHttp2ClearTextUpgrade(h2cUpgrade);
     options.setLocalAddress(localAddress);
     options.setSendUnmaskedFrames(sendUnmaskedFrame);
+    options.setInitialBufferSizeHttpDecoder(initialSizeBufferHttpDecoder);
     HttpClientOptions copy = new HttpClientOptions(options);
     checkCopyHttpClientOptions(options, copy);
     HttpClientOptions copy2 = new HttpClientOptions(options.toJson());
@@ -558,6 +571,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
     assertEquals(def.isHttp2ClearTextUpgrade(), json.isHttp2ClearTextUpgrade());
     assertEquals(def.getLocalAddress(), json.getLocalAddress());
+    assertEquals(def.getInitialBufferSizeHttpDecoder(), json.getInitialBufferSizeHttpDecoder());
   }
 
   @Test
@@ -608,6 +622,7 @@ public class Http1xTest extends HttpTest {
     boolean h2cUpgrade = rand.nextBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
+    int initialBufferSizeHttpDecoder = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -652,7 +667,8 @@ public class Http1xTest extends HttpTest {
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
       .put("http2ClearTextUpgrade", h2cUpgrade)
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
-      .put("localAddress", localAddress);
+      .put("localAddress", localAddress)
+      .put("initialBufferSizeHttpDecoder", initialBufferSizeHttpDecoder);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -707,6 +723,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(h2cUpgrade, options.isHttp2ClearTextUpgrade());
     assertEquals(localAddress, options.getLocalAddress());
+    assertEquals(initialBufferSizeHttpDecoder, options.getInitialBufferSizeHttpDecoder());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -765,6 +782,7 @@ public class Http1xTest extends HttpTest {
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean decompressionSupported = rand.nextBoolean();
     boolean acceptUnmaskedFrames = rand.nextBoolean();
+    int initialSizeBufferHttpDecoder = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -796,6 +814,7 @@ public class Http1xTest extends HttpTest {
     options.setAlpnVersions(alpnVersions);
     options.setDecompressionSupported(decompressionSupported);
     options.setAcceptUnmaskedFrames(acceptUnmaskedFrames);
+    options.setInitialBufferSizeHttpDecoder(initialSizeBufferHttpDecoder);
 
     HttpServerOptions copy = new HttpServerOptions(options);
     checkCopyHttpServerOptions(options, copy);
@@ -843,6 +862,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(options.getAlpnVersions(), copy.getAlpnVersions());
     assertEquals(options.isDecompressionSupported(), copy.isDecompressionSupported());
     assertEquals(options.isAcceptUnmaskedFrames(), copy.isAcceptUnmaskedFrames());
+    assertEquals(options.getInitialBufferSizeHttpDecoder(), copy.getInitialBufferSizeHttpDecoder());
   }
 
   @Test
@@ -874,6 +894,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getHttp2ConnectionWindowSize(), json.getHttp2ConnectionWindowSize());
     assertEquals(def.isDecompressionSupported(), json.isDecompressionSupported());
     assertEquals(def.isAcceptUnmaskedFrames(), json.isAcceptUnmaskedFrames());
+    assertEquals(def.getInitialBufferSizeHttpDecoder(), json.getInitialBufferSizeHttpDecoder());
   }
 
   @Test
@@ -920,6 +941,7 @@ public class Http1xTest extends HttpTest {
     boolean openSslSessionCacheEnabled = TestUtils.randomBoolean();
     boolean decompressionSupported = TestUtils.randomBoolean();
     boolean acceptUnmaskedFrames = TestUtils.randomBoolean();
+    int initialBufferSizeHttpDecoder = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -960,7 +982,8 @@ public class Http1xTest extends HttpTest {
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
       .put("decompressionSupported", decompressionSupported)
-      .put("acceptUnmaskedFrames", acceptUnmaskedFrames);
+      .put("acceptUnmaskedFrames", acceptUnmaskedFrames)
+      .put("initialBufferSizeHttpDecoder", initialBufferSizeHttpDecoder);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -1010,6 +1033,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(decompressionSupported, options.isDecompressionSupported());
     assertEquals(acceptUnmaskedFrames, options.isAcceptUnmaskedFrames());
+    assertEquals(initialBufferSizeHttpDecoder, options.getInitialBufferSizeHttpDecoder());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

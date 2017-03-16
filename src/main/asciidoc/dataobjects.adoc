@@ -715,6 +715,10 @@ Set a client limit of the number concurrent streams for each HTTP/2 connection, 
 Set the idle timeout, in seconds. zero means don't timeout.
  This determines if a connection will timeout and be closed if no data is received within the timeout.
 +++
+|[[initialBufferSizeHttpDecoder]]`initialBufferSizeHttpDecoder`|`Number (int)`|
++++
+set to <code>initialBufferSizeHttpDecoder</code> the initial buffer of the HttpDecoder.
++++
 |[[initialSettings]]`initialSettings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|
 +++
 Set the HTTP/2 connection settings immediately sent by to the server when the client connects.
@@ -921,10 +925,10 @@ This method allows to set the compression level to be used in http1.x/2 response
  
  While one can think that best value is always the maximum compression ratio, 
  there's a trade-off to consider: the most compressed level requires the most
- computatinal work to compress/decompress data, e.g. more dictionary lookups and loops.
+ computational work to compress/decompress data, e.g. more dictionary lookups and loops.
  
  E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
- and latency on resource serving due to CPU overload, and, however - as the comptational work is required also client side 
+ and latency on resource serving due to CPU overload, and, however - as the computational work is required also client side
  while decompressing - setting an higher compression level can result in an overall higher page load time
  especially nowadays when many clients are handled mobile devices with a low CPU profile.
  
@@ -975,6 +979,10 @@ Set the default HTTP/2 connection window size. It overrides the initial window
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
  This determines if a connection will timeout and be closed if no data is received within the timeout.
++++
+|[[initialBufferSizeHttpDecoder]]`initialBufferSizeHttpDecoder`|`Number (int)`|
++++
+Set the initial buffer size for the HTTP decoder
 +++
 |[[initialSettings]]`initialSettings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|
 +++
