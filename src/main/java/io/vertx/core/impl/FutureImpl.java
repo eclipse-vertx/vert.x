@@ -118,15 +118,14 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   @Override
   public void fail(Throwable cause) {
     if (!tryFail(cause)) {
-      throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"));
+      throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"), cause);
     }
   }
 
   @Override
   public void fail(String failureMessage) {
-    if (!tryFail(failureMessage)) {
-      throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"));
-    }
+    NoStackTraceThrowable cause = new NoStackTraceThrowable(failureMessage);
+    fail(cause);
   }
 
   @Override

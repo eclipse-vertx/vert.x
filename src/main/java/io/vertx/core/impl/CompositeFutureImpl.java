@@ -17,8 +17,8 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 import java.util.function.Function;
@@ -226,22 +226,26 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   @Override
   public void complete(CompositeFuture result) {
     if (!tryComplete(result)) {
-      throw new IllegalStateException("Result is already complete: " + (this.cause == null ? "succeeded" : "failed"));
+      String msg = "Result is already complete: " + (this.cause == null ? "succeeded" : "failed");
+      if (result.succeeded()) {
+        throw new IllegalStateException(msg);
+      } else {
+        throw new IllegalStateException(msg, result.cause());
+      }
     }
   }
 
   @Override
   public void fail(Throwable cause) {
     if (!tryFail(cause)) {
-      throw new IllegalStateException("Result is already complete: " + (this.cause == null ? "succeeded" : "failed"));
+      throw new IllegalStateException("Result is already complete: " + (this.cause == null ? "succeeded" : "failed"), cause);
     }
   }
 
   @Override
   public void fail(String failureMessage) {
-    if (!tryFail(failureMessage)) {
-      throw new IllegalStateException("Result is already complete: " + (this.cause == null ? "succeeded" : "failed"));
-    }
+    NoStackTraceThrowable cause = new NoStackTraceThrowable(failureMessage);
+    fail(cause);
   }
 
   @Override
