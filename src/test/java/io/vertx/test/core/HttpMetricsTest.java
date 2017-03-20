@@ -118,10 +118,10 @@ public class HttpMetricsTest extends HttpTestBase {
     });
     awaitLatch(latch);
     client.close();
-    waitUntil(() -> !serverMetric.get().socket.connected.get());
+    assertWaitUntil(() -> !serverMetric.get().socket.connected.get());
     assertEquals(contentLength, serverMetric.get().socket.bytesRead.get());
     assertEquals(contentLength, serverMetric.get().socket.bytesWritten.get());
-    waitUntil(() -> !clientMetric.get().socket.connected.get());
+    assertWaitUntil(() -> !clientMetric.get().socket.connected.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesRead.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesWritten.get());
   }

@@ -592,21 +592,21 @@ public class AsyncTestBase {
     assertTrue(latch.await(10, TimeUnit.SECONDS));
   }
 
+  protected void assertWaitUntil(BooleanSupplier supplier) {
+    assertWaitUntil(supplier, 10000);
+  }
+
   protected void waitUntil(BooleanSupplier supplier) {
     waitUntil(supplier, 10000);
   }
 
-  protected void waitUntilNoFail(BooleanSupplier supplier) {
-    waitUntilNoFail(supplier, 10000);
-  }
-
-  protected void waitUntil(BooleanSupplier supplier, long timeout) {
-    if (!waitUntilNoFail(supplier, timeout)) {
+  protected void assertWaitUntil(BooleanSupplier supplier, long timeout) {
+    if (!waitUntil(supplier, timeout)) {
       throw new IllegalStateException("Timed out");
     }
   }
 
-  protected boolean waitUntilNoFail(BooleanSupplier supplier, long timeout) {
+  protected boolean waitUntil(BooleanSupplier supplier, long timeout) {
     long start = System.currentTimeMillis();
     while (true) {
       if (supplier.getAsBoolean()) {

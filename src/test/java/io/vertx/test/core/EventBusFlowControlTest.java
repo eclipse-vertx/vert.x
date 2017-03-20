@@ -8,9 +8,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.MessageProducer;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -162,9 +160,9 @@ public class EventBusFlowControlTest extends VertxTestBase {
       prod.send(val);
     }
     consumer.resume();
-    waitUntil(() -> !prod.writeQueueFull());
+    assertWaitUntil(() -> !prod.writeQueueFull());
     int theCount = count;
-    waitUntil(() -> sequence.size() == theCount);
+    assertWaitUntil(() -> sequence.size() == theCount);
     while (expected.size() > 0) {
       assertEquals(expected.removeFirst(), sequence.poll());
     }

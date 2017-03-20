@@ -16,9 +16,19 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -29,7 +39,12 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -235,7 +250,7 @@ public class DeploymentTest extends VertxTestBase {
   public void testDeployFromTestThreadNoHandler() throws Exception {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle);
-    waitUntil(() -> vertx.deploymentIDs().size() == 1);
+    assertWaitUntil(() -> vertx.deploymentIDs().size() == 1);
   }
 
   @Test
@@ -513,7 +528,7 @@ public class DeploymentTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       vertx.undeploy(ar.result());
     });
-    waitUntil(() -> vertx.deploymentIDs().isEmpty());
+    assertWaitUntil(() -> vertx.deploymentIDs().isEmpty());
   }
 
   @Test
@@ -686,7 +701,7 @@ public class DeploymentTest extends VertxTestBase {
         deployLatch.countDown();
     }));
     awaitLatch(deployLatch);
-    waitUntil(() -> deployCount.get() == numInstances);
+    assertWaitUntil(() -> deployCount.get() == numInstances);
     assertEquals(1, vertx.deploymentIDs().size());
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
     Set<Verticle> verticles = deployment.getVerticles();
@@ -698,7 +713,7 @@ public class DeploymentTest extends VertxTestBase {
       undeployLatch.countDown();
     }));
     awaitLatch(undeployLatch);
-    waitUntil(() -> deployCount.get() == numInstances);
+    assertWaitUntil(() -> deployCount.get() == numInstances);
     assertTrue(vertx.deploymentIDs().isEmpty());
   }
 
@@ -1292,7 +1307,7 @@ public class DeploymentTest extends VertxTestBase {
     });
     awaitLatch(latch);
     // Wait until two entries in the map
-    waitUntil(() -> countMap.size() == 2);
+    assertWaitUntil(() -> countMap.size() == 2);
     assertEquals(count1, countMap.get(deploymentID1.get()).intValue());
     assertEquals(count2, countMap.get(deploymentID2.get()).intValue());
   }

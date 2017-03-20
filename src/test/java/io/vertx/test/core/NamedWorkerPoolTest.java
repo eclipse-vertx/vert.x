@@ -31,7 +31,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -58,7 +57,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     });
     // Use regular assertions because the thread name does not start with "vert.x-"
     // and it confuses the VertxTestBase asserts
-    waitUntil(() -> threadName.get() != null);
+    assertWaitUntil(() -> threadName.get() != null);
     assertTrue(onVertxThread.get());
     assertTrue(onWorkerThread.get());
     assertFalse(onEventLoopThread.get());
@@ -160,11 +159,11 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       thread.set(Thread.currentThread());
     }, ar -> {
     });
-    waitUntil(() -> thread.get() != null);
+    assertWaitUntil(() -> thread.get() != null);
     worker1.close();
     assertNotSame(thread.get().getState(), Thread.State.TERMINATED);
     worker2.close();
-    waitUntil(() -> thread.get().getState() == Thread.State.TERMINATED);
+    assertWaitUntil(() -> thread.get().getState() == Thread.State.TERMINATED);
   }
 
   @Test
@@ -182,10 +181,10 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         });
       }
     }, onSuccess(deploymentIdRef::complete));
-    waitUntil(() -> thread.get() != null);
+    assertWaitUntil(() -> thread.get() != null);
     String deploymentId = deploymentIdRef.get(20, TimeUnit.SECONDS);
     vertx.undeploy(deploymentId, onSuccess(v -> {}));
-    waitUntil(() -> thread.get().getState() == Thread.State.TERMINATED);
+    assertWaitUntil(() -> thread.get().getState() == Thread.State.TERMINATED);
   }
 
   @Test
@@ -207,7 +206,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         }));
       }
     }, new DeploymentOptions().setWorkerPoolName(poolName), onSuccess(v -> {}));
-    waitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
+    assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
   }
 
   @Test
@@ -228,7 +227,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         });
       }
     }, new DeploymentOptions().setWorker(true).setWorkerPoolName(poolName), onSuccess(deployment::set));
-    waitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
+    assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
   }
 
   @Test
