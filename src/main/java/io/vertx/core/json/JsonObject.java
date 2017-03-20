@@ -18,7 +18,6 @@ package io.vertx.core.json;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -40,7 +39,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterSerializable {
+public class JsonObject extends JsonStructure implements Iterable<Map.Entry<String, Object>> {
 
   private Map<String, Object> map;
 
@@ -674,6 +673,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @return the string encoding.
    */
+  @Override
   public String encode() {
     return Json.encode(map);
   }
@@ -684,6 +684,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @return the pretty string encoding.
    */
+  @Override
   public String encodePrettily() {
     return Json.encodePrettily(map);
   }
@@ -693,6 +694,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @return a copy of the object
    */
+  @Override
   public JsonObject copy() {
     Map<String, Object> copiedMap = new HashMap<>(map.size());
     for (Map.Entry<String, Object> entry: map.entrySet()) {
@@ -735,6 +737,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Get the number of entries in the JSON object
    * @return the number of entries
    */
+  @Override
   public int size() {
     return map.size();
   }
@@ -743,6 +746,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Remove all the entries in this JSON object
    */
   @Fluent
+  @Override
   public JsonObject clear() {
     map.clear();
     return this;
@@ -753,6 +757,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @return true if it has zero entries, false if not.
    */
+  @Override
   public boolean isEmpty() {
     return map.isEmpty();
   }
