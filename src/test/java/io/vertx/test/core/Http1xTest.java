@@ -17,19 +17,60 @@
 package io.vertx.test.core;
 
 import io.netty.handler.codec.TooLongFrameException;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.ConnectionPoolTooBusyException;
+import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.*;
+import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetworkOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -2025,31 +2066,32 @@ public class Http1xTest extends HttpTest {
       }
       request.response().end();
     });
-    server.listen(10000);
-    HttpClient httpClient = vertx.createHttpClient();
-    HttpClientRequest clientRequest = httpClient.get(10000, "localhost", "/");
-    clientRequest.handler(resp -> {
-      resp.handler(b -> {
-        readBuffer.appendBuffer(b);
-        for (int i = 0; i < 64; i++) {
-          vertx.setTimer(1, n -> {
-            try {
-              Thread.sleep(0);
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
+    server.listen(10000, onSuccess(hs -> {
+      HttpClient httpClient = vertx.createHttpClient();
+      HttpClientRequest clientRequest = httpClient.get(10000, "localhost", "/");
+      clientRequest.handler(resp -> {
+        resp.handler(b -> {
+          readBuffer.appendBuffer(b);
+          for (int i = 0; i < 64; i++) {
+            vertx.setTimer(1, n -> {
+              try {
+                Thread.sleep(0);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+            });
+          }
+          ;
+          resp.endHandler(v -> {
+            byte[] expectedData = buffer.getBytes();
+            byte[] actualData = readBuffer.getBytes();
+            assertTrue(Arrays.equals(expectedData, actualData));
+            testComplete();
           });
-        }
-        ;
-        resp.endHandler(v -> {
-          byte[] expectedData = buffer.getBytes();
-          byte[] actualData = readBuffer.getBytes();
-          assertTrue(Arrays.equals(expectedData, actualData));
-          testComplete();
         });
       });
-    });
-    clientRequest.end();
+      clientRequest.end();
+    }));
     await();
   }
 

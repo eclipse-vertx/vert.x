@@ -24,9 +24,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.net.NetServer;
 import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.test.core.tls.Cert;
 import org.junit.Test;
 
@@ -257,7 +255,7 @@ public class Http2Test extends HttpTest {
       resumeLatch.complete(null);
     });
     resumeLatch.get(20, TimeUnit.SECONDS);
-    waitUntil(() -> !req2.writeQueueFull());
+    assertWaitUntil(() -> !req2.writeQueueFull());
     req1.end();
     req2.end(buffer);
     await();

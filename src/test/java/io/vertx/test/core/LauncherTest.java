@@ -16,22 +16,23 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.*;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Launcher;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.launcher.commands.HelloCommand;
 import io.vertx.core.impl.launcher.commands.RunCommand;
 import io.vertx.core.impl.launcher.commands.VersionCommand;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.metrics.impl.DummyVertxMetrics;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.launcher.Command;
-import io.vertx.core.spi.metrics.VertxMetrics;
-import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -103,7 +104,7 @@ public class LauncherTest extends VertxTestBase {
     MyLauncher launcher = new MyLauncher();
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
     launcher.assertHooksInvoked();
   }
@@ -151,7 +152,7 @@ public class LauncherTest extends VertxTestBase {
     MyLauncher launcher = new MyLauncher();
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-instances", String.valueOf(instances)};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == instances);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == instances);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
     launcher.assertHooksInvoked();
   }
@@ -161,7 +162,7 @@ public class LauncherTest extends VertxTestBase {
     MyLauncher launcher = new MyLauncher();
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
     launcher.assertHooksInvoked();
   }
@@ -171,7 +172,7 @@ public class LauncherTest extends VertxTestBase {
     MyLauncher launcher = new MyLauncher();
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-ha"};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
     launcher.assertHooksInvoked();
   }
@@ -189,7 +190,7 @@ public class LauncherTest extends VertxTestBase {
     Launcher launcher = new Launcher();
     String[] args = new String[0];
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
 
     cleanup(launcher);
@@ -218,7 +219,7 @@ public class LauncherTest extends VertxTestBase {
     Launcher launcher = new Launcher();
     String[] args = {"-cluster", "-worker", "-instances=10"};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 10);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 10);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
 
     cleanup(launcher);
@@ -238,7 +239,7 @@ public class LauncherTest extends VertxTestBase {
     HelloCommand.called = false;
     String[] args = {"--name=vert.x"};
     launcher.dispatch(args);
-    waitUntil(() -> HelloCommand.called);
+    assertWaitUntil(() -> HelloCommand.called);
   }
 
   @Test
@@ -255,7 +256,7 @@ public class LauncherTest extends VertxTestBase {
     HelloCommand.called = false;
     String[] args = {"--name=vert.x"};
     launcher.dispatch(args);
-    waitUntil(() -> HelloCommand.called);
+    assertWaitUntil(() -> HelloCommand.called);
   }
 
   @Test
@@ -272,7 +273,7 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", TestVerticle.class.getName(), "--name=vert.x"};
     Launcher launcher = new Launcher();
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     cleanup(launcher);
   }
@@ -290,7 +291,7 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {TestVerticle.class.getName()};
     Launcher launcher = new Launcher();
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     cleanup(launcher);
   }
@@ -301,7 +302,7 @@ public class LauncherTest extends VertxTestBase {
     MySecondLauncher launcher = new MySecondLauncher();
     String[] args = new String[0];
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
   }
 
@@ -310,7 +311,7 @@ public class LauncherTest extends VertxTestBase {
     MySecondLauncher launcher = new MySecondLauncher();
     String[] args = {"-cluster", "-worker"};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
   }
 
@@ -389,7 +390,7 @@ public class LauncherTest extends VertxTestBase {
     JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", conf.encode()};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(conf, TestVerticle.conf);
   }
 
@@ -406,7 +407,7 @@ public class LauncherTest extends VertxTestBase {
     Files.write(tempFile, conf.encode().getBytes());
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(conf, TestVerticle.conf);
   }
 
@@ -436,7 +437,7 @@ public class LauncherTest extends VertxTestBase {
       args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
     }
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     VertxOptions opts = launcher.getVertxOptions();
 
@@ -473,7 +474,7 @@ public class LauncherTest extends VertxTestBase {
     } finally {
       Thread.currentThread().setContextClassLoader(oldCL);
     }
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     VertxOptions opts = launcher.getVertxOptions();
     CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
     assertEquals("customPropertyValue", custom.getCustomProperty());
@@ -489,7 +490,7 @@ public class LauncherTest extends VertxTestBase {
     MyLauncher launcher = new MyLauncher();
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     VertxOptions opts = launcher.getVertxOptions();
     VertxOptions def = new VertxOptions();
@@ -509,7 +510,7 @@ public class LauncherTest extends VertxTestBase {
     MyLauncher launcher = new MyLauncher();
     String[] args =  {"run", "java:" + TestVerticle.class.getCanonicalName()};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     VertxOptions opts = launcher.getVertxOptions();
     VertxOptions def = new VertxOptions();
@@ -525,21 +526,21 @@ public class LauncherTest extends VertxTestBase {
     int instances = 10;
     launcher.dispatch(launcher, new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(),
         "-instances", "10"});
-    waitUntil(() -> TestVerticle.instanceCount.get() == instances);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == instances);
   }
 
   @Test
   public void testBare() throws Exception {
     MyLauncher launcher = new MyLauncher();
     launcher.dispatch(new String[] {"bare"});
-    waitUntil(() -> launcher.afterStartingVertxInvoked);
+    assertWaitUntil(() -> launcher.afterStartingVertxInvoked);
   }
 
   @Test
   public void testBareAlias() throws Exception {
     MyLauncher launcher = new MyLauncher();
     launcher.dispatch(new String[] {"-ha"});
-    waitUntil(() -> launcher.afterStartingVertxInvoked);
+    assertWaitUntil(() -> launcher.afterStartingVertxInvoked);
   }
 
   class MyLauncher extends Launcher {
