@@ -36,7 +36,6 @@ import io.vertx.core.spi.cluster.NodeListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -70,9 +69,11 @@ public class FakeClusterManager implements ClusterManager {
       throw new IllegalStateException("Node has already joined!");
     }
     nodes.put(nodeID, node);
-    for (Map.Entry<String, FakeClusterManager> entry : new HashSet<>(nodes.entrySet())) {
-      if (!entry.getKey().equals(nodeID)) {
-        new Thread(() -> entry.getValue().memberAdded(nodeID)).start();
+    synchronized (nodes) {
+      for (Map.Entry<String, FakeClusterManager> entry : nodes.entrySet()) {
+        if (!entry.getKey().equals(nodeID)) {
+          new Thread(() -> entry.getValue().memberAdded(nodeID)).start();
+        }
       }
     }
   }
@@ -91,9 +92,11 @@ public class FakeClusterManager implements ClusterManager {
 
   private static void doLeave(String nodeID) {
     nodes.remove(nodeID);
-    for (Map.Entry<String, FakeClusterManager> entry : new HashSet<>(nodes.entrySet())) {
-      if (!entry.getKey().equals(nodeID)) {
-        new Thread(() -> entry.getValue().memberRemoved(nodeID)).start();
+    synchronized (nodes) {
+      for (Map.Entry<String, FakeClusterManager> entry : nodes.entrySet()) {
+        if (!entry.getKey().equals(nodeID)) {
+          new Thread(() -> entry.getValue().memberRemoved(nodeID)).start();
+        }
       }
     }
   }
@@ -185,7 +188,11 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public List<String> getNodes() {
-    return new ArrayList<>(nodes.keySet());
+    ArrayList<String> res;
+    synchronized (nodes) {
+      res = new ArrayList<>(nodes.keySet());
+    }
+    return res;
   }
 
   @Override
@@ -197,12 +204,8 @@ public class FakeClusterManager implements ClusterManager {
   public void join(Handler<AsyncResult<Void>> resultHandler) {
     vertx.executeBlocking(fut -> {
       synchronized (this) {
-        try {
-          this.nodeID = UUID.randomUUID().toString();
-          doJoin(nodeID, this);
-        } catch (Throwable t) {
-          fut.fail(t);
-        }
+        this.nodeID = UUID.randomUUID().toString();
+        doJoin(nodeID, this);
       }
       fut.complete();
     }, resultHandler);
@@ -212,16 +215,12 @@ public class FakeClusterManager implements ClusterManager {
   public void leave(Handler<AsyncResult<Void>> resultHandler) {
     vertx.executeBlocking(fut -> {
       synchronized (this) {
-        try {
-          if (nodeID != null) {
-            if (nodeListener != null) {
-              nodeListener = null;
-            }
-            doLeave(nodeID);
-            this.nodeID = null;
+        if (nodeID != null) {
+          if (nodeListener != null) {
+            nodeListener = null;
           }
-        } catch (Throwable t) {
-          fut.fail(t);
+          doLeave(nodeID);
+          this.nodeID = null;
         }
       }
       fut.complete();
