@@ -176,7 +176,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           if (discardHandler != null) {
             discardHandler.handle(message);
           } else {
-            log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer");
+            log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer. address: " + address);
           }
         }
         return;
