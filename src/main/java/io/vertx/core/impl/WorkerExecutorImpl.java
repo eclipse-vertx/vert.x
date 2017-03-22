@@ -25,8 +25,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
-import java.util.concurrent.Executor;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -68,7 +66,7 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
       throw new IllegalStateException("Worker executor closed");
     }
     ContextImpl context = (ContextImpl) vertx.getOrCreateContext();
-    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, pool.executor(), context.orderedTasks, pool.metrics());
+    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, pool.executor(), ordered ? context.orderedTasks : null, pool.metrics());
   }
 
   @Override
