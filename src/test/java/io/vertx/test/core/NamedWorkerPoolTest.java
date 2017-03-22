@@ -110,21 +110,24 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName);
     CountDownLatch latch1 = new CountDownLatch(num);
     CountDownLatch latch2 = new CountDownLatch(1);
-    for (int i = 0;i < num;i++) {
-      worker.executeBlocking(fut -> {
-        latch1.countDown();
-        try {
-          awaitLatch(latch2);
-        } catch (InterruptedException e) {
-          fail(e);
-          return;
-        }
-        assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
-        fut.complete(null);
-      }, false, ar -> {
-        complete();
-      });
-    }
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      for (int i = 0; i < num; i++) {
+        worker.executeBlocking(fut -> {
+          latch1.countDown();
+          try {
+            awaitLatch(latch2);
+          } catch (InterruptedException e) {
+            fail(e);
+            return;
+          }
+          assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
+          fut.complete(null);
+        }, false, ar -> {
+          complete();
+        });
+      }
+    });
     awaitLatch(latch1);
     latch2.countDown();
     await();
