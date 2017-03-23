@@ -349,6 +349,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private synchronized void handleEnd() {
+    dataHandler = null;
     if (endHandler != null) {
       checkContext();
       endHandler.handle(null);

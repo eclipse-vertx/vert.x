@@ -1565,6 +1565,20 @@ public class FileSystemTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testResumeFileInEndHandler() throws Exception {
+    createFileWithJunk("some-file.dat", 10000);
+    vertx.fileSystem().open("pom.xml", new OpenOptions(), onSuccess(file -> {
+      file.endHandler($ -> {
+        file.pause();
+        file.resume();
+        complete();
+      });
+      file.handler(b -> {});
+    }));
+    await();
+  }
+
   private Handler<AsyncResult<Void>> createHandler(boolean shouldPass, Handler<Void> afterOK) {
     return ar -> {
       if (ar.failed()) {
