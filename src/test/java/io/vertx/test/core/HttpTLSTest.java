@@ -1089,13 +1089,19 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String[] contents = {
         "",
         "-----BEGIN PRIVATE KEY-----",
+        "-----BEGIN RSA PRIVATE KEY-----",
         "-----BEGIN PRIVATE KEY-----\n-----END PRIVATE KEY-----",
-        "-----BEGIN PRIVATE KEY-----\n*\n-----END PRIVATE KEY-----"
+        "-----BEGIN RSA PRIVATE KEY-----\n-----END RSA PRIVATE KEY-----",
+        "-----BEGIN PRIVATE KEY-----\n*\n-----END PRIVATE KEY-----",
+        "-----BEGIN RSA PRIVATE KEY-----\n*\n-----END RSA PRIVATE KEY-----"
     };
     String[] messages = {
-        "Missing -----BEGIN PRIVATE KEY----- delimiter",
+        "Missing -----BEGIN PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY----- delimiter",
         "Missing -----END PRIVATE KEY----- delimiter",
+        "Missing -----END RSA PRIVATE KEY----- delimiter",
         "Empty pem file",
+        "Empty pem file",
+        "Input byte[] should at least have 2 bytes for base64 bytes",
         "Input byte[] should at least have 2 bytes for base64 bytes"
     };
     for (int i = 0;i < contents.length;i++) {

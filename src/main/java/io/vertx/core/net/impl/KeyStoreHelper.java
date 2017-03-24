@@ -24,6 +24,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
 
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -41,21 +42,26 @@ import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -65,6 +71,9 @@ public class KeyStoreHelper {
 
   // Dummy password for encrypting pem based stores in memory
   private static final String DUMMY_PASSWORD = "dummy";
+
+  private static final Pattern BEGIN_PATTERN = Pattern.compile("-----BEGIN ([A-Z ]+)-----");
+  private static final Pattern END_PATTERN = Pattern.compile("-----END ([A-Z ]+)-----");
 
   public static KeyStoreHelper create(VertxInternal vertx, KeyCertOptions options) throws Exception {
     if (options instanceof JksOptions) {
@@ -280,13 +289,29 @@ public class KeyStoreHelper {
     return keyStore;
   }
 
-  public static PrivateKey loadPrivateKey(Buffer keyValue) throws Exception {
+  private static PrivateKey loadPrivateKey(Buffer keyValue) throws Exception {
     if (keyValue == null) {
       throw new RuntimeException("Missing private key path");
     }
-    byte[] value = loadPems(keyValue, "PRIVATE KEY").get(0);
     KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
-    return rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(value));
+    List<PrivateKey> pems = loadPems(keyValue, (delimiter, content) -> {
+      try {
+        switch (delimiter) {
+          case "RSA PRIVATE KEY":
+            return Collections.singletonList(rsaKeyFactory.generatePrivate(PrivateKeyParser.getRSAKeySpec(content)));
+          case "PRIVATE KEY":
+            return Collections.singletonList(rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
+          default:
+            return Collections.emptyList();
+        }
+      } catch (InvalidKeySpecException e) {
+        throw new VertxException(e);
+      }
+    });
+    if (pems.isEmpty()) {
+      throw new RuntimeException("Missing -----BEGIN PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY----- delimiter");
+    }
+    return pems.get(0);
   }
 
   private static KeyStore loadCA(Stream<Buffer> certValues) throws Exception {
@@ -302,32 +327,34 @@ public class KeyStoreHelper {
     return keyStore;
   }
 
-  private static List<byte[]> loadPems(Buffer data, String delimiter) throws IOException {
+  private static <P> List<P> loadPems(Buffer data, BiFunction<String, byte[], Collection<P>> pemFact) throws IOException {
     String pem = data.toString();
-    String beginDelimiter = "-----BEGIN " + delimiter + "-----";
-    String endDelimiter = "-----END " + delimiter + "-----";
-    List<byte[]> pems = new ArrayList<>();
-    int index = 0;
+    List<P> pems = new ArrayList<>();
+    Matcher beginMatcher = BEGIN_PATTERN.matcher(pem);
+    Matcher endMatcher = END_PATTERN.matcher(pem);
     while (true) {
-      index = pem.indexOf(beginDelimiter, index);
-      if (index == -1) {
+      boolean begin = beginMatcher.find();
+      if (!begin) {
         break;
       }
-      index += beginDelimiter.length();
-      int end = pem.indexOf(endDelimiter, index);
-      if (end == -1) {
-        throw new RuntimeException("Missing " + endDelimiter + " delimiter");
+      String beginDelimiter = beginMatcher.group(1);
+      boolean end = endMatcher.find();
+      if (!end) {
+        throw new RuntimeException("Missing -----END " + beginDelimiter + "----- delimiter");
+      } else {
+        String endDelimiter = endMatcher.group(1);
+        if (!beginDelimiter.equals(endDelimiter)) {
+          throw new RuntimeException("Missing -----END " + beginDelimiter + "----- delimiter");
+        } else {
+          String content = pem.substring(beginMatcher.end(), endMatcher.start());
+          content = content.replaceAll("\\s", "");
+          if (content.length() == 0) {
+            throw new RuntimeException("Empty pem file");
+          }
+          Collection<P> pemItems = pemFact.apply(endDelimiter, Base64.getDecoder().decode(content));
+          pems.addAll(pemItems);
+        }
       }
-      String content = pem.substring(index, end);
-      content = content.replaceAll("\\s", "");
-      if (content.length() == 0) {
-        throw new RuntimeException("Empty pem file");
-      }
-      index = end + 1;
-      pems.add(Base64.getDecoder().decode(content));
-    }
-    if (pems.isEmpty()) {
-      throw new RuntimeException("Missing " + beginDelimiter + " delimiter");
     }
     return pems;
   }
@@ -336,13 +363,21 @@ public class KeyStoreHelper {
     if (buffer == null) {
       throw new RuntimeException("Missing X.509 certificate path");
     }
-    List<byte[]> pems = loadPems(buffer, "CERTIFICATE");
     CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-    List<X509Certificate> certs = new ArrayList<>(pems.size());
-    for (byte[] pem : pems) {
-      for (Certificate cert : certFactory.generateCertificates(new ByteArrayInputStream(pem))) {
-        certs.add((X509Certificate) cert);
+    List<X509Certificate> certs = loadPems(buffer, (delimiter, content) -> {
+      try {
+        switch (delimiter) {
+          case "CERTIFICATE":
+            return (Collection<X509Certificate>) certFactory.generateCertificates(new ByteArrayInputStream(content));
+          default:
+            return Collections.emptyList();
+        }
+      } catch (CertificateException e) {
+        throw new VertxException(e);
       }
+    });
+    if (certs.isEmpty()) {
+      throw new RuntimeException("Missing -----BEGIN CERTIFICATE----- delimiter");
     }
     return certs.toArray(new X509Certificate[certs.size()]);
   }
