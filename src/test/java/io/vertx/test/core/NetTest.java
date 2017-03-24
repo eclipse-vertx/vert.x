@@ -1794,11 +1794,12 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListen() {
     server.connectHandler(NetSocket::close);
-    server.listen();
-    client.connect(1234, "localhost", onSuccess(so -> {
-      so.closeHandler(v -> {
-        testComplete();
-      });
+    server.listen(onSuccess(ns -> {
+      client.connect(1234, "localhost", onSuccess(so -> {
+        so.closeHandler(v -> {
+          testComplete();
+        });
+      }));
     }));
     await();
   }
