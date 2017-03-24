@@ -45,7 +45,8 @@ public interface AsyncMultiMap<K, V> {
   void add(K k, V v, Handler<AsyncResult<Void>> completionHandler);
 
   /**
-   * Get the values from the map for the key.
+   * Get the values from the map for the key. If the key isn't in the map, an empty {@link ChoosableIterable} must
+   * be returned.
    * @param k The key
    * @param resultHandler This will be called with the list of values for the key. The type of the values returned
    *                      must be {@link ChoosableIterable}
