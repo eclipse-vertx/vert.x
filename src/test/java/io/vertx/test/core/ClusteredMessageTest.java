@@ -82,7 +82,7 @@ public class ClusteredMessageTest extends VertxTestBase {
         }
 
         @Override
-        public int expectedLength() {
+        public int expectedLength(S s) {
             return 0;
         }
     }
@@ -122,7 +122,7 @@ public class ClusteredMessageTest extends VertxTestBase {
         }
 
         @Override
-        public int expectedLength() {
+        public int expectedLength(S s) {
             return length;
         }
     }

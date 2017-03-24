@@ -101,7 +101,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   }
 
   public Buffer encodeToWire() {
-    Buffer buffer = Buffer.buffer(estimateMessagePrefixLength() + messageCodec.expectedLength());
+    Buffer buffer = Buffer.buffer(estimateMessagePrefixLength() + messageCodec.expectedLength(sentBody));
     buffer.appendInt(0);
     buffer.appendByte(WIRE_PROTOCOL_VERSION);
     byte systemCodecID = messageCodec.systemCodecID();

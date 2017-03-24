@@ -90,7 +90,7 @@ public interface MessageCodec<S, R> {
    * 
    * @return the expected size in bytes
    */
-  default int expectedLength() {
+  default int expectedLength(S s) {
     return 512;
   }
 }
