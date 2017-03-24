@@ -23,9 +23,8 @@ import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.SharedData;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -52,6 +51,98 @@ public class LocalSharedDataTest extends VertxTestBase {
     map.close();
     LocalMap<String, String> map4 = sharedData.getLocalMap("foo");
     assertFalse(map4 == map3);
+  }
+
+  @Test
+  public void testLocalMaps() {
+    LocalMap<String, String> map = sharedData.getLocalMap("test-map");
+    assertNotNull(map);
+    assertTrue(map.isEmpty());
+    assertEquals(map.size(), 0);
+    assertEquals(map.entrySet().size(), 0);
+    assertEquals(map.values().size(), 0);
+    assertEquals(map.keySet().size(), 0);
+
+    assertEquals(map.getOrDefault("foo", "miss"), "miss");
+    assertNull(map.putIfAbsent("foo", "there"));
+    assertNotNull(map.putIfAbsent("foo", "there"));
+    assertEquals(map.getOrDefault("foo", "miss"), "there");
+    assertEquals(map.get("foo"), "there");
+    assertNull(map.get("missing"));
+
+    assertFalse(map.isEmpty());
+    assertEquals(map.size(), 1);
+    assertEquals(map.entrySet().size(), 1);
+    assertEquals(map.values().size(), 1);
+    assertEquals(map.keySet().size(), 1);
+
+    assertFalse(map.removeIfPresent("missing", "nope"));
+    assertTrue(map.removeIfPresent("foo", "there"));
+
+    assertNull(map.put("foo", "there"));
+    assertFalse(map.replaceIfPresent("missing", "nope", "something"));
+    assertTrue(map.replaceIfPresent("foo", "there", "something"));
+    assertEquals(map.get("foo"), "something");
+
+    map.compute("foo", (k, v) -> "something else");
+    assertEquals(map.get("foo"), "something else");
+    map.compute("bar", (k, v) -> v == null ? "was null" : "was not null");
+    assertEquals(map.get("bar"), "was null");
+
+    map.computeIfAbsent("foo", (k) -> "was not there");
+    assertEquals(map.get("foo"), "something else");
+    map.computeIfAbsent("baz", (k) -> "was not there");
+    assertEquals(map.get("baz"), "was not there");
+
+    assertEquals(map.remove("baz"), "was not there");
+
+    map.computeIfPresent("foo", (k, v) -> v.equals("something else") ? "replaced" : "wrong");
+    assertEquals(map.get("foo"), "replaced");
+
+    map.computeIfAbsent("foo", k -> "was not there");
+    assertEquals(map.get("foo"), "replaced");
+    map.computeIfAbsent("baz", k -> "was not there");
+    assertTrue(map.remove("baz", "was not there"));
+
+    assertTrue(map.toString().contains("bar"));
+    assertTrue(map.toString().contains("replaced"));
+
+    AtomicInteger count = new AtomicInteger();
+    map.forEach((k, v) -> count.incrementAndGet());
+    assertEquals(count.get(), 2);
+
+    Map<String, String> another = new HashMap<>();
+    another.put("foo", "value");
+    another.put("new", "another value");
+    map.putAll(another);
+
+    assertTrue(map.containsKey("new"));
+    assertTrue(map.containsValue("value"));
+
+    map.merge("new", "another value", (k, v) -> "replaced");
+    assertEquals(map.get("new"), "replaced");
+    map.merge("bar", "another value", (k, v) -> "inserted");
+    assertEquals(map.get("bar"), "inserted");
+
+    map.replace("bar", "replaced");
+    assertEquals(map.get("bar"), "replaced");
+    map.replace("bar", "replaced", "replaced 2");
+    assertEquals(map.get("bar"), "replaced 2");
+    map.replace("bar", "replaced", "replaced 2");
+    assertEquals(map.get("bar"), "replaced 2");
+
+    map.replaceAll((k, v) -> {
+      if (k.equals("new")) {
+        return "new";
+      }
+      return v;
+    });
+    assertEquals(map.get("new"), "new");
+
+    map.clear();
+    assertTrue(map.isEmpty());
+
+    map.close();
   }
 
   @Test
