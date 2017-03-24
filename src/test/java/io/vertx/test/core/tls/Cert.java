@@ -18,6 +18,7 @@ public interface Cert<K extends KeyCertOptions> extends Supplier<K> {
   Cert<PfxOptions> SERVER_PKCS12 = () -> new PfxOptions().setPath("tls/server-keystore.p12").setPassword("wibble");
   Cert<PfxOptions> CLIENT_PKCS12 = () -> new PfxOptions().setPath("tls/client-keystore.p12").setPassword("wibble");
   Cert<PemKeyCertOptions> SERVER_PEM = () -> new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert.pem");
+  Cert<PemKeyCertOptions> SERVER_PEM_RSA = () -> new PemKeyCertOptions().setKeyPath("tls/server-key-pkcs1.pem").setCertPath("tls/server-cert.pem");
   Cert<PemKeyCertOptions> CLIENT_PEM = () -> new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert.pem");
   Cert<JksOptions> SERVER_JKS_ROOT_CA = () -> new JksOptions().setPath("tls/server-keystore-root-ca.jks").setPassword("wibble");
   Cert<PfxOptions> SERVER_PKCS12_ROOT_CA = () -> new PfxOptions().setPath("tls/server-keystore-root-ca.p12").setPassword("wibble");
