@@ -80,4 +80,17 @@ public interface MessageCodec<S, R> {
    * @return -1 for a user codec.
    */
   byte systemCodecID();
+
+  /**
+   * Used for buffer pre-allocation before serialization.
+   * Should approximately or exactly match the total number bytes written 
+   * by {@link #encodeToWire(Buffer, Object)}.
+   * 
+   * Defaults to 512.
+   * 
+   * @return the expected size in bytes
+   */
+  default int expectedLength() {
+    return 512;
+  }
 }

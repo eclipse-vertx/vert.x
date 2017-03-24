@@ -101,8 +101,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   }
 
   public Buffer encodeToWire() {
-    int length = 1024; // TODO make this configurable
-    Buffer buffer = Buffer.buffer(length);
+    Buffer buffer = Buffer.buffer(estimateMessagePrefixLength() + messageCodec.expectedLength());
     buffer.appendInt(0);
     buffer.appendByte(WIRE_PROTOCOL_VERSION);
     byte systemCodecID = messageCodec.systemCodecID();
@@ -180,6 +179,17 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     sender = new ServerID(senderPort, senderHost);
     wireBuffer = buffer;
     fromWire = true;
+  }
+  
+  public int estimateMessagePrefixLength() {
+    int constant = 23;
+    int headersLength = headers == null ? 4 : 8 + 48 * headers.size();
+    return constant + 
+            messageCodec.name().length() + 
+            address.length() +
+            (replyAddress == null ? 0 : replyAddress.length()) + 
+            sender.host.length() +
+            headersLength;
   }
 
   private void decodeBody() {
