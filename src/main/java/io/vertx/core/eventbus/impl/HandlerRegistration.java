@@ -212,7 +212,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       theHandler.handle(message);
       metrics.endHandleMessage(metric, null);
     } catch (Exception e) {
-      log.error("Failed to handleMessage", e);
+      log.error("Failed to handleMessage. address: " + message.address(), e);
       metrics.endHandleMessage(metric, e);
       throw e;
     }
