@@ -31,8 +31,13 @@ final class HttpChunkContentCompressor extends HttpContentCompressor {
     if (msg instanceof ByteBuf) {
       // convert ByteBuf to HttpContent to make it work with compression. This is needed as we use the
       // ChunkedWriteHandler to send files when compression is enabled.
-      msg =  new DefaultHttpContent((ByteBuf) msg);
+      msg = new DefaultHttpContent((ByteBuf) msg);
     }
     super.write(ctx, msg, promise);
   }
+
+  HttpChunkContentCompressor(int compressionLevel) {
+    super(compressionLevel);
+  }
+
 }

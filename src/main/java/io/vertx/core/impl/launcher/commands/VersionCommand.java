@@ -39,6 +39,8 @@ public class VersionCommand extends DefaultCommand {
 
   private static final Logger log = LoggerFactory.getLogger(VersionCommand.class);
 
+  private static String version;
+
   @Override
   public void run() throws CLIException {
     log.info(getVersion());
@@ -49,13 +51,16 @@ public class VersionCommand extends DefaultCommand {
    *
    * @return the version
    */
-  public String getVersion() {
-    try (InputStream is = getClass().getClassLoader().getResourceAsStream("vertx-version.txt")) {
+  public static String getVersion() {
+    if (version != null) {
+      return version;
+    }
+    try (InputStream is = VersionCommand.class.getClassLoader().getResourceAsStream("vertx-version.txt")) {
       if (is == null) {
         throw new IllegalStateException("Cannot find vertx-version.txt on classpath");
       }
       try (Scanner scanner = new Scanner(is, "UTF-8").useDelimiter("\\A")) {
-        return scanner.hasNext() ? scanner.next() : "";
+        return version = scanner.hasNext() ? scanner.next().trim() : "";
       }
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());

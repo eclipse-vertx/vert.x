@@ -57,6 +57,9 @@ public class AddressResolverOptionsConverter {
     if (json.getValue("rdFlag") instanceof Boolean) {
       obj.setRdFlag((Boolean)json.getValue("rdFlag"));
     }
+    if (json.getValue("rotateServers") instanceof Boolean) {
+      obj.setRotateServers((Boolean)json.getValue("rotateServers"));
+    }
     if (json.getValue("searchDomains") instanceof JsonArray) {
       json.getJsonArray("searchDomains").forEach(item -> {
         if (item instanceof String)
@@ -86,19 +89,16 @@ public class AddressResolverOptionsConverter {
     json.put("optResourceEnabled", obj.isOptResourceEnabled());
     json.put("queryTimeout", obj.getQueryTimeout());
     json.put("rdFlag", obj.getRdFlag());
+    json.put("rotateServers", obj.isRotateServers());
     if (obj.getSearchDomains() != null) {
-      json.put("searchDomains", new JsonArray(
-          obj.getSearchDomains().
-              stream().
-              map(item -> item).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getSearchDomains().forEach(item -> array.add(item));
+      json.put("searchDomains", array);
     }
     if (obj.getServers() != null) {
-      json.put("servers", new JsonArray(
-          obj.getServers().
-              stream().
-              map(item -> item).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getServers().forEach(item -> array.add(item));
+      json.put("servers", array);
     }
   }
 }

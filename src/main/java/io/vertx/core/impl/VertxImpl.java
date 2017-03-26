@@ -22,8 +22,17 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.TimeoutStream;
+import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -50,6 +59,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetClientImpl;
+import io.vertx.core.net.impl.NetServerBase;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
@@ -65,8 +75,18 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -96,7 +116,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final DeploymentManager deploymentManager;
   private final FileResolver fileResolver;
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
-  private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
+  private final Map<ServerID, NetServerBase> sharedNetServers = new HashMap<>();
   private final WorkerPool workerPool;
   private final WorkerPool internalBlockingPool;
   private final ThreadFactory eventLoopThreadFactory;
@@ -162,6 +182,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.clusterManager.join(ar -> {
         if (ar.failed()) {
           log.error("Failed to join cluster", ar.cause());
+          resultHandler.handle(Future.failedFuture(ar.cause()));
         } else {
           // Provide a memory barrier as we are setting from a different thread
           synchronized (VertxImpl.this) {
@@ -203,7 +224,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * @return The FileSystem implementation for the OS
    */
   protected FileSystem getFileSystem() {
-  	return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
+    return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
   }
 
   @Override
@@ -320,7 +341,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return sharedHttpServers;
   }
 
-  public Map<ServerID, NetServerImpl> sharedNetServers() {
+  public Map<ServerID, NetServerBase> sharedNetServers() {
     return sharedNetServers;
   }
 
@@ -488,7 +509,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             closeClusterManager(ar4 -> {
               // Copy set to prevent ConcurrentModificationException
               Set<HttpServer> httpServers = new HashSet<>(sharedHttpServers.values());
-              Set<NetServer> netServers = new HashSet<>(sharedNetServers.values());
+              Set<NetServerBase> netServers = new HashSet<>(sharedNetServers.values());
               sharedHttpServers.clear();
               sharedNetServers.clear();
 
@@ -508,7 +529,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
               for (HttpServer server : httpServers) {
                 server.close(serverCloseHandler);
               }
-              for (NetServer server : netServers) {
+              for (NetServerBase server : netServers) {
                 server.close(serverCloseHandler);
               }
               if (serverCount == 0) {
@@ -659,7 +680,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public synchronized void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
     if (haManager() != null) {
-      haManager.setFailoverCompleteHandler(failoverCompleteHandler);
+      haManager().setFailoverCompleteHandler(failoverCompleteHandler);
     }
   }
 
@@ -706,6 +727,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
       workerPool.close();
       internalBlockingPool.close();
+      new ArrayList<>(namedWorkerPools.values()).forEach(WorkerPool::close);
 
       acceptorEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
         @Override
@@ -889,22 +911,29 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   class SharedWorkerPool extends WorkerPool {
 
-    private final ExecutorService workerExec;
     private final String name;
     private int refCount = 1;
 
-    public SharedWorkerPool(String name, ExecutorService workerExec, PoolMetrics workerMetrics) {
+    SharedWorkerPool(String name, ExecutorService workerExec, PoolMetrics workerMetrics) {
       super(workerExec, workerMetrics);
-      this.workerExec = workerExec;
       this.name = name;
+    }
+
+    @Override
+    void close() {
+      synchronized (VertxImpl.this) {
+        if (refCount > 0) {
+          refCount = 0;
+          super.close();
+        }
+      }
     }
 
     void release() {
       synchronized (VertxImpl.this) {
         if (--refCount == 0) {
           releaseWorkerExecutor(name);
-          close();
-          workerExec.shutdownNow();
+          super.close();
         }
       }
     }
@@ -922,7 +951,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
-    if (maxExecuteTime < 1) {
+    if (poolSize < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
     if (maxExecuteTime < 1) {
@@ -937,7 +966,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       sharedWorkerPool.refCount++;
     }
     ContextImpl context = getOrCreateContext();
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool, true);
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, sharedWorkerPool, true);
     context.addCloseHook(namedExec);
     return namedExec;
   }

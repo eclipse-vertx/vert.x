@@ -62,7 +62,7 @@ public class HATest extends VertxTestBase {
     });
     awaitLatch(latch);
     kill(0);
-    waitUntil(() -> vertices[1].deploymentIDs().size() == 1);
+    assertWaitUntil(() -> vertices[1].deploymentIDs().size() == 1);
     checkDeploymentExists(1, "java:" + HAVerticle1.class.getName(), options);
   }
 
@@ -78,7 +78,7 @@ public class HATest extends VertxTestBase {
       testComplete();
     });
     // Shouldn't deploy until a quorum is obtained
-    waitUntil(() -> vertx1.deploymentIDs().isEmpty());
+    assertWaitUntil(() -> vertx1.deploymentIDs().isEmpty());
     vertx2 = startVertx(2);
     // Now should be deployed
     await();
@@ -102,17 +102,17 @@ public class HATest extends VertxTestBase {
       assertTrue(vertx2.deploymentIDs().contains(ar.result()));
       ;
     });
-    waitUntil(() -> vertx1.deploymentIDs().size() == 1 && vertx2.deploymentIDs().size() == 1);
+    assertWaitUntil(() -> vertx1.deploymentIDs().size() == 1 && vertx2.deploymentIDs().size() == 1);
     // Now close vertx3 - quorum should then be lost and verticles undeployed
     CountDownLatch latch = new CountDownLatch(1);
     vertx3.close(ar -> {
       latch.countDown();
     });
     awaitLatch(latch);
-    waitUntil(() -> vertx1.deploymentIDs().isEmpty() && vertx2.deploymentIDs().isEmpty());
+    assertWaitUntil(() -> vertx1.deploymentIDs().isEmpty() && vertx2.deploymentIDs().isEmpty());
     // Now re-instate the quorum
     vertx4 = startVertx(3);
-    waitUntil(() -> vertx1.deploymentIDs().size() == 1 && vertx2.deploymentIDs().size() == 1);
+    assertWaitUntil(() -> vertx1.deploymentIDs().size() == 1 && vertx2.deploymentIDs().size() == 1);
 
   }
 
@@ -180,7 +180,7 @@ public class HATest extends VertxTestBase {
     });
     ((VertxInternal)vertx3).simulateKill();
     awaitLatch(latch3);
-    waitUntil(() -> vertx2.deploymentIDs().size() == 1);
+    assertWaitUntil(() -> vertx2.deploymentIDs().size() == 1);
   }
 
   @Test
@@ -335,7 +335,7 @@ public class HATest extends VertxTestBase {
 
     vertx3 = startVertx("group1", 2);
     // Now should deploy
-    waitUntil(() -> vertx1.deploymentIDs().size() == 1);
+    assertWaitUntil(() -> vertx1.deploymentIDs().size() == 1);
 
     vertx2.deployVerticle("java:" + HAVerticle1.class.getName(), new DeploymentOptions().setHa(true), ar -> {
       assertTrue(ar.succeeded());
@@ -349,7 +349,7 @@ public class HATest extends VertxTestBase {
 
     vertx4 = startVertx("group2", 2);
     // Now should deploy
-    waitUntil(() -> vertx2.deploymentIDs().size() == 1);
+    assertWaitUntil(() -> vertx2.deploymentIDs().size() == 1);
 
     // Noow stop vertx4
     CountDownLatch latch = new CountDownLatch(1);
@@ -358,7 +358,7 @@ public class HATest extends VertxTestBase {
     });
 
     awaitLatch(latch);
-    waitUntil(() -> vertx2.deploymentIDs().isEmpty());
+    assertWaitUntil(() -> vertx2.deploymentIDs().isEmpty());
 
     assertTrue(vertx1.deploymentIDs().size() == 1);
 
@@ -369,7 +369,7 @@ public class HATest extends VertxTestBase {
 
     awaitLatch(latch2);
 
-    waitUntil(() -> vertx1.deploymentIDs().isEmpty());
+    assertWaitUntil(() -> vertx1.deploymentIDs().isEmpty());
   }
 
   protected Vertx startVertx() throws Exception {
@@ -418,10 +418,16 @@ public class HATest extends VertxTestBase {
   protected void kill(int pos) {
     VertxInternal v = (VertxInternal)vertices[pos];
     v.executeBlocking(fut -> {
-      v.simulateKill();
-      fut.complete();
-    }, ar -> {
-      assertTrue(ar.succeeded());
+      try {
+        v.simulateKill();
+        fut.complete();
+      } catch (Exception e) {
+        fut.fail(e);
+      }
+    }, false, ar -> {
+      if (!ar.succeeded()) {
+        fail(ar.cause());
+      }
     });
   }
 

@@ -133,6 +133,29 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testMessageConsumerCloseHookIsClosedCorrectly() {
+    Vertx vertx = Vertx.vertx();
+    EventBus eb = vertx.eventBus();
+    vertx.deployVerticle(new AbstractVerticle() {
+      MessageConsumer consumer;
+      @Override
+      public void start() throws Exception {
+        context.exceptionHandler(err -> {
+          fail("Unexpected exception");
+        });
+        consumer = eb.<String>consumer(ADDRESS1).handler(msg -> {});
+      }
+    }, onSuccess(deploymentID -> {
+      vertx.undeploy(deploymentID, onSuccess(v -> {
+        vertx.setTimer(10, id -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testRegisterLocal1() {
     String str = TestUtils.randomUnicodeString(100);
     eb.<String>localConsumer(ADDRESS1).handler((Message<String> msg) -> {
@@ -924,6 +947,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
     eb.<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
+        assertTrue(msg.isSend());
         assertEquals(received, msg.body());
         if (options != null && options.getHeaders() != null) {
           assertNotNull(msg.headers());
@@ -969,6 +993,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     eb.send(ADDRESS1, str, onSuccess((Message<R> reply) -> {
       if (consumer == null) {
+        assertTrue(reply.isSend());
         assertEquals(received, reply.body());
         if (options != null && options.getHeaders() != null) {
           assertNotNull(reply.headers());
@@ -992,6 +1017,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       @Override
       public void handle(Message<T> msg) {
         if (consumer == null) {
+          assertFalse(msg.isSend());
           assertEquals(val, msg.body());
         } else {
           consumer.accept(msg.body());

@@ -22,6 +22,8 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JksOptions;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -35,13 +37,14 @@ public class Http2TestBase extends HttpTestBase {
         .setUseAlpn(true)
         .setSsl(true)
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-        .setKeyStoreOptions((JksOptions) TLSCert.JKS.getServerKeyCertOptions());
+        .setKeyStoreOptions(Cert.SERVER_JKS.get());
   };
 
   static HttpClientOptions createHttp2ClientOptions() {
     return new HttpClientOptions().
         setUseAlpn(true).
-        setTrustStoreOptions((JksOptions) TLSCert.JKS.getClientTrustOptions()).
+        setSsl(true).
+        setTrustStoreOptions(Trust.SERVER_JKS.get()).
         setProtocolVersion(HttpVersion.HTTP_2);
   }
 

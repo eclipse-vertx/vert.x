@@ -18,18 +18,20 @@ package io.vertx.test.core;
 
 import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.test.core.tls.Cert;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -51,6 +53,11 @@ public class Http2Test extends HttpTest {
   @Override
   protected HttpClientOptions createBaseClientOptions() {
     return Http2TestBase.createHttp2ClientOptions();
+  }
+
+  @Override
+  public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
+    testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(1);
   }
 
   // Extra test
@@ -130,7 +137,7 @@ public class Http2Test extends HttpTest {
         .setUseAlpn(true)
         .setSsl(true)
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-        .setPemKeyCertOptions((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setSslEngineOptions(new OpenSSLEngineOptions());
+        .setPemKeyCertOptions(Cert.SERVER_PEM.get()).setSslEngineOptions(new OpenSSLEngineOptions());
     server.close();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
@@ -248,9 +255,33 @@ public class Http2Test extends HttpTest {
       resumeLatch.complete(null);
     });
     resumeLatch.get(20, TimeUnit.SECONDS);
-    waitUntil(() -> !req2.writeQueueFull());
+    assertWaitUntil(() -> !req2.writeQueueFull());
     req1.end();
     req2.end(buffer);
+    await();
+  }
+
+  @Test
+  public void testResetClientRequestNotYetSent() throws Exception {
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(1)));
+    AtomicInteger numReq = new AtomicInteger();
+    server.requestHandler(req -> {
+      assertEquals(0, numReq.getAndIncrement());
+      req.response().end();
+      complete();
+    });
+    startServer();
+    HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      fail();
+    });
+    post.setChunked(true).write(TestUtils.randomBuffer(1024));
+    assertTrue(post.reset());
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(1, numReq.get());
+      complete();
+    });
     await();
   }
 }

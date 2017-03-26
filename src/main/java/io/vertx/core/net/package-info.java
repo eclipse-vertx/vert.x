@@ -313,21 +313,7 @@
  * - logging is not performed by Vert.x logging but by Netty
  * - this is *not* a production feature
  *
- * Netty will try to locate the following logger implementations, in the following order:
- *
- * - Slf4j
- * - Log4j
- * - JDK
- *
- * The presense of the slf4j or log4j classes on the classpath is enough to pick up the logging implementation.
- *
- * The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly:
- *
- * [source,java]
- * ----
- * // Force logging to SLF4J
- * InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
- * ----
+ * You should read the <<netty-logging>> section.
  *
  * [[ssl]]
  * === Configuring servers and clients to work with SSL/TLS
@@ -584,6 +570,35 @@
  * ----
  *
  * Keep in mind that pem configuration, the private key is not crypted.
+ *
+ * ==== Self-signed certificates for testing and development purposes
+ *
+ * CAUTION: Do not use this in production settings, and note that the generated keys are very insecure.
+ *
+ * It is very often the case that self-signed certificates are required, be it for unit / integration tests or for
+ * running a development version of an application.
+ *
+ * {@link io.vertx.core.net.SelfSignedCertificate} can be used to provide self-signed PEM certificate helpers and
+ * give {@link io.vertx.core.net.KeyCertOptions} and {@link io.vertx.core.net.TrustOptions} configurations:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example48}
+ * ----
+ *
+ * The client can also be configured to trust all certificates:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example49}
+ * ----
+ *
+ * Note that self-signed certificates also work for other TCP protocols like HTTPS:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example50}
+ * ----
  *
  * ==== Revoking certificate authorities
  *

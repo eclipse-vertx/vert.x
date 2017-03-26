@@ -35,6 +35,8 @@ public interface KeyCertOptions {
 
   /**
    * Create and return the key manager factory for these options.
+   * <p>
+   * The returned key manager factory should be already initialized and ready to use.
    *
    * @param vertx the vertx instance
    * @return the key manager factory

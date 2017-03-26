@@ -18,7 +18,7 @@ package io.vertx.test.core;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.vertx.core.AsyncResultHandler;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -53,6 +53,7 @@ import java.nio.file.attribute.UserPrincipal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.test.core.TestUtils.*;
@@ -647,7 +648,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void testProps(String fileName, boolean link, boolean shouldPass,
                          Handler<FileProps> afterOK) throws Exception {
-    AsyncResultHandler<FileProps> handler = ar -> {
+    Handler<AsyncResult<FileProps>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
           fail(ar.cause().getMessage());
@@ -869,7 +870,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void testMkdir(String dirName, String perms, boolean createParents,
                          boolean shouldPass, Handler<Void> afterOK) throws Exception {
-    AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
+    Handler<AsyncResult<Void>> handler = createHandler(shouldPass, afterOK);
     if (createParents) {
       if (perms != null) {
         vertx.fileSystem().mkdirs(testDir + pathSep + dirName, perms, handler);
@@ -948,7 +949,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void testReadDir(String dirName, String filter, boolean shouldPass,
                            Handler<List<String>> afterOK) throws Exception {
-    AsyncResultHandler<List<String>> handler = ar -> {
+    Handler<AsyncResult<List<String>>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
           fail(ar.cause().getMessage());
@@ -1396,7 +1397,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void testCreateFile(String perms, boolean shouldPass) throws Exception {
     String fileName = "some-file.dat";
-    AsyncResultHandler<Void> handler = ar -> {
+    Handler<AsyncResult<Void>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
           fail(ar.cause().getMessage());
@@ -1546,7 +1547,39 @@ public class FileSystemTest extends VertxTestBase {
     await();
   }
 
-  private AsyncResultHandler<Void> createHandler(boolean shouldPass, Handler<Void> afterOK) {
+  @Test
+  public void testDrainNotCalledAfterClose() throws Exception {
+    String fileName = "some-file.dat";
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
+      Buffer buf = TestUtils.randomBuffer(1024 * 1024);
+      file.write(buf);
+      AtomicBoolean drainAfterClose = new AtomicBoolean();
+      file.drainHandler(v -> {
+        drainAfterClose.set(true);
+      });
+      file.close(ar -> {
+        assertFalse(drainAfterClose.get());
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testResumeFileInEndHandler() throws Exception {
+    createFileWithJunk("some-file.dat", 10000);
+    vertx.fileSystem().open("pom.xml", new OpenOptions(), onSuccess(file -> {
+      file.endHandler($ -> {
+        file.pause();
+        file.resume();
+        complete();
+      });
+      file.handler(b -> {});
+    }));
+    await();
+  }
+
+  private Handler<AsyncResult<Void>> createHandler(boolean shouldPass, Handler<Void> afterOK) {
     return ar -> {
       if (ar.failed()) {
         if (shouldPass) {

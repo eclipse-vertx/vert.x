@@ -75,7 +75,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     this.headers = headers;
   }
 
-  HttpClientRequestBase request() {
+  @Override
+  public HttpClientRequestBase request() {
     return request;
   }
 
@@ -258,6 +259,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
             handleException(t);
           }
         }
+        request.handleResponseEnd();
       }
     }
   }

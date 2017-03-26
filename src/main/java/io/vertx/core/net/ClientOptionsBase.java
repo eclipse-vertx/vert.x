@@ -48,6 +48,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private boolean trustAll;
   private String metricsName;
   private ProxyOptions proxyOptions;
+  private String localAddress;
 
   /**
    * Default constructor
@@ -68,6 +69,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.trustAll = other.isTrustAll();
     this.metricsName = other.metricsName;
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
+    this.localAddress = other.localAddress;
   }
 
   /**
@@ -81,11 +83,23 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     ClientOptionsBaseConverter.fromJson(json, this);
   }
 
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    ClientOptionsBaseConverter.toJson(this, json);
+    return json;
+  }
+
   private void init() {
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     this.trustAll = DEFAULT_TRUST_ALL;
     this.metricsName = DEFAULT_METRICS_NAME;
     this.proxyOptions = null;
+    this.localAddress = null;
   }
 
   /**
@@ -167,6 +181,25 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return proxyOptions;
   }
 
+  /**
+   * @return the local interface to bind for network connections.
+   */
+  public String getLocalAddress() {
+    return localAddress;
+  }
+
+  /**
+   * Set the local interface to bind for network connections. When the local address is null,
+   * it will pick any local address, the default local address is null.
+   *
+   * @param localAddress the local address
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setLocalAddress(String localAddress) {
+    this.localAddress = localAddress;
+    return this;
+  }
+
   @Override
   public ClientOptionsBase setLogActivity(boolean logEnabled) {
     return (ClientOptionsBase) super.setLogActivity(logEnabled);
@@ -184,6 +217,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     if (trustAll != that.trustAll) return false;
     if (!Objects.equals(metricsName, that.metricsName)) return false;
     if (!Objects.equals(proxyOptions, that.proxyOptions)) return false;
+    if (!Objects.equals(localAddress, that.localAddress)) return false;
 
     return true;
   }
@@ -195,6 +229,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     result = 31 * result + (trustAll ? 1 : 0);
     result = 31 * result + (metricsName != null ? metricsName.hashCode() : 0);
     result = 31 * result + (proxyOptions != null ? proxyOptions.hashCode() : 0);
+    result = 31 * result + (localAddress != null ? localAddress.hashCode() : 0);
     return result;
   }
 }

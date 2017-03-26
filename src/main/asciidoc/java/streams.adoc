@@ -127,9 +127,8 @@ Let's now look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 `ReadStream` is implemented by `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]`, `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`,
 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`, `link:../../apidocs/io/vertx/core/http/HttpServerFileUpload.html[HttpServerFileUpload]`,
-`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`, `link:../../apidocs/io/vertx/core/http/HttpServerRequestStream.html[HttpServerRequestStream]`,
-`link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]`, `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:../../apidocs/io/vertx/core/net/NetSocketStream.html[NetSocketStream]`,
-`link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:../../apidocs/io/vertx/core/http/WebSocketStream.html[WebSocketStream]`, `link:../../apidocs/io/vertx/core/TimeoutStream.html[TimeoutStream]`,
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`, `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]`,
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:../../apidocs/io/vertx/core/TimeoutStream.html[TimeoutStream]`,
 `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`.
 
 Functions:
@@ -150,7 +149,7 @@ or when end of request is reached if it's an HTTP request, or when the connectio
 
 `WriteStream` is implemented by `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`, `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`
 `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`,
-`link:../../apidocs/io/vertx/core/datagram/PacketWritestream.html[PacketWritestream]` and `link:../../apidocs/io/vertx/core/eventbus/MessageProducer.html[MessageProducer]`
+and `link:../../apidocs/io/vertx/core/eventbus/MessageProducer.html[MessageProducer]`
 
 Functions:
 

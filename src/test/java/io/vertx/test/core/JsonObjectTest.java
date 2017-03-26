@@ -1147,6 +1147,47 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testMergeInDepth0() {
+    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\" }}");
+    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    obj1.mergeIn(obj2, 0);
+    assertEquals(1, obj1.size());
+    assertEquals(1, obj1.getJsonObject("foo").size());
+    assertEquals("flurb", obj1.getJsonObject("foo").getString("bar"));
+  }
+
+  @Test
+  public void testMergeInFlat() {
+    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\", \"eek\": 32 }}");
+    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    obj1.mergeIn(obj2, false);
+    assertEquals(1, obj1.size());
+    assertEquals(1, obj1.getJsonObject("foo").size());
+    assertEquals("eek", obj1.getJsonObject("foo").getString("bar"));
+  }
+
+  @Test
+  public void testMergeInDepth1() {
+    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
+    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    obj1.mergeIn(obj2, 1);
+    assertEquals(2, obj1.size());
+    assertEquals(1, obj1.getJsonObject("flurb").size());
+    assertEquals("flurb1", obj1.getJsonObject("flurb").getString("bar"));
+  }
+
+  @Test
+  public void testMergeInDepth2() {
+    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
+    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    obj1.mergeIn(obj2, 2);
+    assertEquals(2, obj1.size());
+    assertEquals(2, obj1.getJsonObject("flurb").size());
+    assertEquals("foo", obj1.getJsonObject("flurb").getString("eek"));
+    assertEquals("flurb1", obj1.getJsonObject("flurb").getString("bar"));
+  }
+
+  @Test
   public void testEncode() throws Exception {
     jsonObject.put("mystr", "foo");
     jsonObject.put("mycharsequence", new StringBuilder("oob"));
@@ -1658,6 +1699,29 @@ public class JsonObjectTest {
     removed = obj.remove("array");
     assertTrue(removed instanceof JsonArray);
     assertEquals(((JsonArray) removed).getDouble(0), 1.0, 0.0);
+  }
+
+  @Test
+  public void testOrder() {
+    List<String> expectedKeys = new ArrayList<>();
+    int size = 100;
+    StringBuilder sb = new StringBuilder("{");
+    for (int i = 0;i < size;i++) {
+      sb.append("\"key-").append(i).append("\":").append(i).append(",");
+      expectedKeys.add("key-" + i);
+    }
+    sb.setCharAt(sb.length() - 1, '}');
+    JsonObject obj = new JsonObject(sb.toString());
+    List<String> keys = new ArrayList<>();
+
+    // ordered because of Jackson uses a LinkedHashMap
+    obj.forEach(e -> keys.add(e.getKey()));
+    assertEquals(expectedKeys, keys);
+    keys.clear();
+
+    // Ordered because we preserve the LinkedHashMap
+    obj.copy().forEach(e -> keys.add(e.getKey()));
+    assertEquals(expectedKeys, keys);
   }
 
   private void testStreamCorrectTypes(JsonObject object) {

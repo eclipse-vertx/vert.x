@@ -73,11 +73,9 @@ public class OptionConverter {
       json.put("argName", obj.getArgName());
     }
     if (obj.getChoices() != null) {
-      json.put("choices", new JsonArray(
-          obj.getChoices().
-              stream().
-              map(item -> item).
-              collect(java.util.stream.Collectors.toList())));
+      JsonArray array = new JsonArray();
+      obj.getChoices().forEach(item -> array.add(item));
+      json.put("choices", array);
     }
     if (obj.getDefaultValue() != null) {
       json.put("defaultValue", obj.getDefaultValue());

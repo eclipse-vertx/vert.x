@@ -23,6 +23,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -102,6 +103,22 @@ public class TestDataObject {
   private Map<String, JsonArray> jsonArrayMap;
   private Map<String, HttpMethod> httpMethodMap;
   private Map<String, Object> objectMap;
+
+  private Map<String, String> keyedStringValues = new HashMap<>();
+  private Map<String, Boolean> keyedBoxedBooleanValues = new HashMap<>();
+  private Map<String, Byte> keyedBoxedByteValues = new HashMap<>();
+  private Map<String, Short> keyedBoxedShortValues = new HashMap<>();
+  private Map<String, Integer> keyedBoxedIntValues = new HashMap<>();
+  private Map<String, Long> keyedBoxedLongValues = new HashMap<>();
+  private Map<String, Float> keyedBoxedFloatValues = new HashMap<>();
+  private Map<String, Double> keyedBoxedDoubleValues = new HashMap<>();
+  private Map<String, Character> keyedBoxedCharValues = new HashMap<>();
+  private Map<String, AggregatedDataObject> keyedDataObjectValues = new HashMap<>();
+  private Map<String, Buffer> keyedBufferValues = new HashMap<>();
+  private Map<String, JsonObject> keyedJsonObjectValues = new HashMap<>();
+  private Map<String, JsonArray> keyedJsonArrayValues = new HashMap<>();
+  private Map<String, HttpMethod> keyedEnumValues = new HashMap<>();
+  private Map<String, Object> keyedObjectValues = new HashMap<>();
 
   public TestDataObject() {
   }
@@ -712,6 +729,141 @@ public class TestDataObject {
 
   public TestDataObject setObjectMap(Map<String, Object> objectMap) {
     this.objectMap = objectMap;
+    return this;
+  }
+
+  public Map<String, String> getKeyedStringValues() {
+    return keyedStringValues;
+  }
+
+  public TestDataObject addKeyedStringValue(String name, String value) {
+    this.keyedStringValues.put(name, value);
+    return this;
+  }
+
+  public Map<String, Boolean> getKeyedBoxedBooleanValues() {
+    return keyedBoxedBooleanValues;
+  }
+
+  public TestDataObject addKeyedBoxedBooleanValue(String key, Boolean value) {
+    keyedBoxedBooleanValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Byte> getKeyedBoxedByteValues() {
+    return keyedBoxedByteValues;
+  }
+
+  public TestDataObject addKeyedBoxedByteValue(String key, Byte value) {
+    keyedBoxedByteValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Short> getKeyedBoxedShortValues() {
+    return keyedBoxedShortValues;
+  }
+
+  public TestDataObject addKeyedBoxedShortValue(String key, Short value) {
+    keyedBoxedShortValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Integer> getKeyedBoxedIntValues() {
+    return keyedBoxedIntValues;
+  }
+
+  public TestDataObject addKeyedBoxedIntValue(String key, Integer value) {
+    keyedBoxedIntValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Long> getKeyedBoxedLongValues() {
+    return keyedBoxedLongValues;
+  }
+
+  public TestDataObject addKeyedBoxedLongValue(String key, Long value) {
+    keyedBoxedLongValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Float> getKeyedBoxedFloatValues() {
+    return keyedBoxedFloatValues;
+  }
+
+  public TestDataObject addKeyedBoxedFloatValue(String key, Float value) {
+    keyedBoxedFloatValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Double> getKeyedBoxedDoubleValues() {
+    return keyedBoxedDoubleValues;
+  }
+
+  public TestDataObject addKeyedBoxedDoubleValue(String key, Double value) {
+    keyedBoxedDoubleValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Character> getKeyedBoxedCharValues() {
+    return keyedBoxedCharValues;
+  }
+
+  public TestDataObject addKeyedBoxedCharValue(String key, Character value) {
+    keyedBoxedCharValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, AggregatedDataObject> getKeyedDataObjectValues() {
+    return keyedDataObjectValues;
+  }
+
+  public TestDataObject addKeyedDataObjectValue(String key, AggregatedDataObject value) {
+    keyedDataObjectValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Buffer> getKeyedBufferValues() {
+    return keyedBufferValues;
+  }
+
+  public TestDataObject addKeyedBufferValue(String key, Buffer value) {
+    keyedBufferValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, JsonObject> getKeyedJsonObjectValues() {
+    return keyedJsonObjectValues;
+  }
+
+  public TestDataObject addKeyedJsonObjectValue(String key, JsonObject value) {
+    keyedJsonObjectValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, JsonArray> getKeyedJsonArrayValues() {
+    return keyedJsonArrayValues;
+  }
+
+  public TestDataObject addKeyedJsonArrayValue(String key, JsonArray value) {
+    keyedJsonArrayValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, HttpMethod> getKeyedEnumValues() {
+    return keyedEnumValues;
+  }
+
+  public TestDataObject addKeyedEnumValue(String key, HttpMethod value) {
+    keyedEnumValues.put(key, value);
+    return this;
+  }
+
+  public Map<String, Object> getKeyedObjectValues() {
+    return keyedObjectValues;
+  }
+
+  public TestDataObject addKeyedObjectValue(String key, Object value) {
+    keyedObjectValues.put(key, value);
     return this;
   }
 }

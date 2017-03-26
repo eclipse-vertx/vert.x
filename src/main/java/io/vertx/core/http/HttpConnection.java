@@ -16,12 +16,14 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * Represents an HTTP connection.
@@ -233,5 +235,17 @@ public interface HttpConnection {
    */
   @Fluent
   HttpConnection exceptionHandler(Handler<Throwable> handler);
+
+  /**
+   * @return the remote address for this connection
+   */
+  @CacheReturn
+  SocketAddress remoteAddress();
+
+  /**
+   * @return the remote address for this connection
+   */
+  @CacheReturn
+  SocketAddress localAddress();
 
 }

@@ -19,7 +19,10 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -30,14 +33,8 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -92,11 +89,10 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   private boolean sentCheck;
   private long bytesRead;
   private long bytesWritten;
-  private Object metric;
 
   ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
                    WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
-    super(vertx, channel, context, metrics);
+    super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.server = server;
     this.handshaker = handshaker;
@@ -104,12 +100,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   @Override
-  protected synchronized Object metric() {
-    return metric;
-  }
-
-  synchronized void metric(Object metric) {
-    this.metric = metric;
+  public HttpServerMetrics metrics() {
+    return metrics;
   }
 
   public synchronized void pause() {
@@ -195,7 +187,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
-      null, server.options().getMaxWebsocketFrameSize());
+      null, server.options().getMaxWebsocketFrameSize(), server.options().getMaxWebsocketMessageSize());
     ws.setMetric(metrics.upgrade(requestMetric, ws));
     try {
       handshaker.handshake(channel, nettyReq);
@@ -218,7 +210,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics, metric);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics);
+    socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
@@ -237,7 +230,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       pipeline.remove("chunkedWriter");
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(channel, socket, connectionMap) {
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
@@ -260,6 +253,12 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
         }
         super.channelRead(chctx, msg);
       }
+
+      @Override
+      protected void handleMsgReceived(Object msg) {
+        ByteBuf buf = (ByteBuf) msg;
+        conn.handleDataReceived(Buffer.buffer(buf));
+      }
     });
 
     // check if the encoder can be removed yet or not.
@@ -280,7 +279,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     this.currentRequest = req;
     pendingResponse = resp;
     if (metrics.isEnabled()) {
-      requestMetric = metrics.requestBegin(metric, req);
+      requestMetric = metrics.requestBegin(metric(), req);
     }
     if (requestHandler != null) {
       requestHandler.handle(req);
@@ -359,7 +358,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     }
   }
 
-  protected ContextImpl getContext() {
+  public ContextImpl getContext() {
     return super.getContext();
   }
 
@@ -395,39 +394,57 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private void processMessage(Object msg) {
 
-    if (msg instanceof HttpRequest) {
-      HttpRequest request = (HttpRequest) msg;
-      DecoderResult result = ((HttpObject) msg).getDecoderResult();
+    if (msg instanceof HttpObject) {
+      HttpObject obj = (HttpObject) msg;
+      DecoderResult result = obj.decoderResult();
       if (result.isFailure()) {
+        Throwable cause = result.cause();
+        if (cause instanceof TooLongFrameException) {
+          String causeMsg = cause.getMessage();
+          HttpVersion version;
+          if (msg instanceof HttpRequest) {
+            version = ((HttpRequest) msg).protocolVersion();
+          } else if (currentRequest != null) {
+            version = currentRequest.version() == io.vertx.core.http.HttpVersion.HTTP_1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+          } else {
+            version = HttpVersion.HTTP_1_1;
+          }
+          HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
+          DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
+          writeToChannel(resp);
+        }
+        // That will close the connection as it is considered as unusable
         channel.pipeline().fireExceptionCaught(result.cause());
         return;
       }
-      if (server.options().isHandle100ContinueAutomatically()) {
-        if (HttpHeaders.is100ContinueExpected(request)) {
-          write100Continue();
+      if (msg instanceof HttpRequest) {
+        HttpRequest request = (HttpRequest) msg;
+        if (server.options().isHandle100ContinueAutomatically()) {
+          if (HttpHeaders.is100ContinueExpected(request)) {
+            write100Continue();
+          }
         }
+        HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
+        HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
+        handleRequest(req, resp);
       }
-      HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
-      handleRequest(req, resp);
-    }
-    if (msg instanceof HttpContent) {
+      if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
-      if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.content());
-        handleChunk(buff);
-      }
-
-      //TODO chunk trailers
-      if (msg instanceof LastHttpContent) {
-        if (!paused) {
-          handleEnd();
-        } else {
-          // Requeue
-          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+        if (chunk.content().isReadable()) {
+          Buffer buff = Buffer.buffer(chunk.content());
+          handleChunk(buff);
         }
-      }
-    } else if (msg instanceof WebSocketFrameInternal) {
+
+        //TODO chunk trailers
+        if (msg instanceof LastHttpContent) {
+          if (!paused) {
+            handleEnd();
+          } else {
+            // Requeue
+            pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+          }
+        }
+      }    } else if (msg instanceof WebSocketFrameInternal) {
       WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
       handleWsFrame(frame);
     }
@@ -439,19 +456,17 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
       sentCheck = true;
-      vertx.runOnContext(new VoidHandler() {
-        public void handle() {
-          sentCheck = false;
-          if (!paused) {
-            Object msg = pending.poll();
-            if (msg != null) {
-              processMessage(msg);
-            }
-            if (channelPaused && pending.isEmpty()) {
-              //Resume the actual channel
-              ServerConnection.super.doResume();
-              channelPaused = false;
-            }
+      vertx.runOnContext(v -> {
+        sentCheck = false;
+        if (!paused) {
+          Object msg = pending.poll();
+          if (msg != null) {
+            processMessage(msg);
+          }
+          if (channelPaused && pending.isEmpty()) {
+            //Resume the actual channel
+            ServerConnection.super.doResume();
+            channelPaused = false;
           }
         }
       });

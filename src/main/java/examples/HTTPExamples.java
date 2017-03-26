@@ -16,6 +16,7 @@
 
 package examples;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -554,6 +555,47 @@ public class HTTPExamples {
     });
   }
 
+  public void exampleFollowRedirect01(HttpClient client) {
+
+    client.get("some-uri", response -> {
+      System.out.println("Received response with status code " + response.statusCode());
+    }).setFollowRedirects(true).end();
+  }
+
+  public void exampleFollowRedirect02(Vertx vertx) {
+
+    HttpClient client = vertx.createHttpClient(
+        new HttpClientOptions()
+            .setMaxRedirects(32));
+
+    client.get("some-uri", response -> {
+      System.out.println("Received response with status code " + response.statusCode());
+    }).setFollowRedirects(true).end();
+  }
+
+  private String resolveURI(String base, String uriRef) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void exampleFollowRedirect03(HttpClient client) {
+
+    client.redirectHandler(response -> {
+
+      // Only follow 301 code
+      if (response.statusCode() == 301 && response.getHeader("Location") != null) {
+
+        // Compute the redirect URI
+        String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
+
+        // Create a new ready to use request that the client will use
+        return Future.succeededFuture(client.getAbs(absoluteURI));
+      }
+
+      // We don't redirect
+      return null;
+    });
+  }
+
   public void example50(HttpClient client) {
 
     HttpClientRequest request = client.put("some-uri", response -> {
@@ -657,10 +699,13 @@ public class HTTPExamples {
   }
 
   public void example55(WebSocket websocket) {
-    // Write a simple message
+    // Write a simple binary message
     Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
-
     websocket.writeBinaryMessage(buffer);
+
+    // Write a simple text message
+    String message = "hello";
+    websocket.writeTextMessage(message);
   }
 
   public void example56(WebSocket websocket, Buffer buffer1, Buffer buffer2, Buffer buffer3) {
@@ -732,6 +777,16 @@ public class HTTPExamples {
           System.out.println(body.toString("ISO-8859-1"));
         });
       });
+    });
+  }
+
+  public void setSSLPerRequest(HttpClient client) {
+    client.getNow(new RequestOptions()
+        .setHost("localhost")
+        .setPort(8080)
+        .setURI("/")
+        .setSsl(true), response -> {
+      System.out.println("Received response with status code " + response.statusCode());
     });
   }
 

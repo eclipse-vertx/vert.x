@@ -16,6 +16,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
 
@@ -54,9 +55,17 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   private final Http2Headers headers;
   private Set<String> names;
-  private List<Map.Entry<String, String>> entries;
 
   public Http2HeadersAdaptor(Http2Headers headers) {
+
+    List<CharSequence> cookies = headers.getAll(HttpHeaderNames.COOKIE);
+    if (cookies != null && cookies.size() > 1) {
+      // combine the cookie values into 1 header entry.
+      // https://tools.ietf.org/html/rfc7540#section-8.1.2.5
+      String value = cookies.stream().collect(Collectors.joining("; "));
+      headers.set(HttpHeaderNames.COOKIE, value);
+    }
+
     this.headers = headers;
   }
 
@@ -86,13 +95,10 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public List<Map.Entry<String, String>> entries() {
-    if (entries == null) {
-      entries = headers.names()
-          .stream()
-          .map(name -> new AbstractMap.SimpleEntry<>(name.toString(), headers.get(name).toString()))
-          .collect(Collectors.toList());
-    }
-    return entries;
+    return headers.names()
+        .stream()
+        .map(name -> new AbstractMap.SimpleEntry<>(name.toString(), headers.get(name).toString()))
+        .collect(Collectors.toList());
   }
 
   @Override

@@ -19,19 +19,39 @@ package io.vertx.core.http.impl;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
-import io.netty.handler.codec.http2.*;
+import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
@@ -40,18 +60,33 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.*;
-import io.vertx.core.http.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
-import io.vertx.core.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.impl.*;
+import io.vertx.core.net.impl.AsyncResolveConnectHelper;
+import io.vertx.core.net.impl.HandlerHolder;
+import io.vertx.core.net.impl.HandlerManager;
+import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.net.impl.VertxEventLoopGroup;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -62,11 +97,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static io.netty.handler.codec.http.HttpVersion.*;
 
 /**
  * This class is thread-safe
@@ -94,8 +130,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<HttpHandler> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private final HandlerManager<Handler<ServerWebSocket>> wsHandlerManager = new HandlerManager<>(availableWorkers);
-  private final ServerWebSocketStreamImpl wsStream = new ServerWebSocketStreamImpl();
-  private final HttpServerRequestStreamImpl requestStream = new HttpServerRequestStreamImpl();
+  private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
+  private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
   private final String subProtocols;
   private String serverOrigin;
@@ -109,6 +145,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private ContextImpl listenContext;
   private HttpServerMetrics metrics;
   private boolean logEnabled;
+  private Handler<Throwable> connectionExceptionHandler;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
@@ -123,6 +160,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.subProtocols = options.getWebsocketSubProtocols();
     this.logEnabled = options.getLogActivity();
+    connectionExceptionHandler = t -> {log.trace("Connection failure", t);};
   }
 
   @Override
@@ -132,7 +170,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public HttpServerRequestStream requestStream() {
+  public ReadStream<HttpServerRequest> requestStream() {
     return requestStream;
   }
 
@@ -162,7 +200,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public ServerWebSocketStream websocketStream() {
+  public ReadStream<ServerWebSocket> websocketStream() {
     return wsStream;
   }
 
@@ -210,7 +248,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       this.actualPort = port; // Will be updated on bind for a wildcard port
       id = new ServerID(port, host);
       HttpServerImpl shared = vertx.sharedHttpServers().get(id);
-      if (shared == null) {
+      if (shared == null || port == 0) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
@@ -304,13 +342,26 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return this;
   }
 
+  // Visible for testing
+  public HttpServerImpl setConnectionExceptionHandler(Handler<Throwable> connectionExceptionHandler) {
+    Objects.requireNonNull(connectionExceptionHandler, "connectionExceptionHandler");
+    this.connectionExceptionHandler = connectionExceptionHandler;
+    return this;
+  }
+
   private VertxHttp2ConnectionHandler<Http2ServerConnection> createHttp2Handler(HandlerHolder<HttpHandler> holder, Channel ch) {
     return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
         .connectionMap(connectionMap2)
         .server(true)
         .useCompression(options.isCompressionSupported())
+        .useDecompression(options.isDecompressionSupported())
+        .compressionLevel(options.getCompressionLevel())
         .initialSettings(options.getInitialSettings())
-        .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics))
+        .connectionFactory(connHandler -> {
+          Http2ServerConnection conn = new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          return conn;
+        })
         .logEnabled(logEnabled)
         .build();
   }
@@ -325,8 +376,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
         , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
+    if (options.isDecompressionSupported()) {
+      pipeline.addLast("inflater", new HttpContentDecompressor(true));
+    }
     if (options.isCompressionSupported()) {
-      pipeline.addLast("deflater", new HttpChunkContentCompressor());
+      pipeline.addLast("deflater", new HttpChunkContentCompressor(options.getCompressionLevel()));
     }
     if (sslHelper.isSSL() || options.isCompressionSupported()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
@@ -372,9 +426,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       Handler<Void> requestEndHandler = requestStream.endHandler();
       requestStream.endHandler(null);
       Handler<AsyncResult<Void>> next = done;
-      done = new AsyncResultHandler<Void>() {
-        @Override
-        public void handle(AsyncResult<Void> event) {
+      done = event -> {
           if (event.succeeded()) {
             if (wsEndHandler != null) {
               wsEndHandler.handle(event.result());
@@ -386,7 +438,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           if (next != null) {
             next.handle(event);
           }
-        }
       };
     }
 
@@ -754,7 +805,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
             theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
-            connectRunnable, options.getMaxWebsocketFrameSize());
+            connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
           ws.setMetric(metrics.connected(wsConn.metric(), ws));
           wsConn.handleWebsocketConnect(ws);
           if (!ws.isRejected()) {
@@ -791,7 +842,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
       WebSocketServerHandshakerFactory factory =
         new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
-          options.getMaxWebsocketFrameSize());
+          options.getMaxWebsocketFrameSize(),options.isAcceptUnmaskedFrames());
       WebSocketServerHandshaker shake = factory.newHandshaker(request);
 
       if (shake == null) {
@@ -860,7 +911,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     In practice synchronized overhead should be close to zero assuming most access is from the same thread due
     to biased locks
   */
-  private class HttpStreamHandler<R extends ReadStream<C>, C extends ReadStream<?>> implements ReadStream<C> {
+  private class HttpStreamHandler<C extends ReadStream<Buffer>> implements ReadStream<C> {
 
     private Handler<C> handler;
     private boolean paused;
@@ -885,55 +936,49 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    public R handler(Handler<C> handler) {
+    public ReadStream handler(Handler<C> handler) {
       synchronized (HttpServerImpl.this) {
         if (listening) {
           throw new IllegalStateException("Please set handler before server is listening");
         }
         this.handler = handler;
-        return (R) this;
+        return this;
       }
     }
 
     @Override
-    public R pause() {
+    public ReadStream pause() {
       synchronized (HttpServerImpl.this) {
         if (!paused) {
           paused = true;
         }
-        return (R) this;
+        return this;
       }
     }
 
     @Override
-    public R resume() {
+    public ReadStream resume() {
       synchronized (HttpServerImpl.this) {
         if (paused) {
           paused = false;
         }
-        return (R) this;
+        return this;
       }
     }
 
     @Override
-    public R endHandler(Handler<Void> endHandler) {
+    public ReadStream endHandler(Handler<Void> endHandler) {
       synchronized (HttpServerImpl.this) {
         this.endHandler = endHandler;
-        return (R) this;
+        return this;
       }
     }
 
     @Override
-    public R exceptionHandler(Handler<Throwable> handler) {
+    public ReadStream exceptionHandler(Handler<Throwable> handler) {
       // Should we use it in the server close exception handler ?
-      return (R) this;
+      return this;
     }
-  }
-
-  class HttpServerRequestStreamImpl extends HttpStreamHandler<HttpServerRequestStream, HttpServerRequest> implements HttpServerRequestStream {
-  }
-
-  class ServerWebSocketStreamImpl extends HttpStreamHandler<ServerWebSocketStream, ServerWebSocket> implements ServerWebSocketStream {
   }
 
   class HttpHandler {
@@ -1019,5 +1064,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       ctx.fireChannelRead(buf);
       ctx.pipeline().remove(this);
     }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+      Channel channel = ctx.channel();
+      channel.close();
+      HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(channel.eventLoop());
+      reqHandler.context.executeFromIO(() -> HttpServerImpl.this.connectionExceptionHandler.handle(cause));
   }
+}
 }

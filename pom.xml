@@ -13,22 +13,17 @@
   ~      http://www.opensource.org/licenses/apache2.0.php
   ~
   ~  You may elect to redistribute this code under either of these licenses.
-  -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>9</version>
+    <version>10</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>3.4.0-SNAPSHOT</version>
+  <version>3.4.2-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -53,7 +48,8 @@
 
   <properties>
 
-    <netty.version>4.1.4.Final</netty.version>
+    <netty.version>4.1.8.Final</netty.version>
+    <tcnative.version>1.1.33.Fork26</tcnative.version>
     <jackson.version>2.7.4</jackson.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
@@ -62,8 +58,8 @@
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>3.4.0-SNAPSHOT</stack.version>
-    <jetty.alpnAgent.version>2.0.3</jetty.alpnAgent.version>
+    <stack.version>3.4.2-SNAPSHOT</stack.version>
+    <jetty.alpnAgent.version>2.0.6</jetty.alpnAgent.version>
     <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
 
   </properties>
@@ -205,7 +201,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>1.1.33.Fork19</version>
+      <version>${tcnative.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -215,40 +211,6 @@
 
     <pluginManagement>
       <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>default-compile</id>
-              <configuration>
-                <annotationProcessors>
-                  <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
-                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-                </annotationProcessors>
-                <compilerArgs>
-                  <arg>-Adocgen.output=${asciidoc.dir}/java</arg>
-                  <arg>-AoutputDirectory=${project.basedir}/src/main</arg>
-                  <arg>-Amaven.groupId=${project.groupId}</arg>
-                  <arg>-Amaven.artifactId=${project.artifactId}</arg>
-                  <arg>-Amaven.version=${project.version}</arg>
-                </compilerArgs>
-                <generatedSourcesDirectory>${generated.dir}</generatedSourcesDirectory>
-              </configuration>
-            </execution>
-            <execution>
-              <id>default-testCompile</id>
-              <configuration>
-                <annotationProcessors>
-                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-                </annotationProcessors>
-                <compilerArgs>
-                  <arg>-AoutputDirectory=${project.basedir}/src/test</arg>
-                </compilerArgs>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -261,6 +223,7 @@
               <additionalClasspathElement>${basedir}/src/test/resources/webroot5.zip</additionalClasspathElement>
             </additionalClasspathElements>
             <systemPropertyVariables>
+              <!--<javax.net.debug>ssl</javax.net.debug>-->
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
               <buildDirectory>${project.build.directory}</buildDirectory>
               <vertxVersion>${project.version}</vertxVersion>
@@ -324,11 +287,90 @@
             </execution>
           </executions>
         </plugin>
-
-
       </plugins>
     </pluginManagement>
     <plugins>
+
+      <plugin>
+        <groupId>org.bsc.maven</groupId>
+        <artifactId>maven-processor-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <systemProperties>
+            <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
+          </systemProperties>
+        </configuration>
+        <executions>
+          <execution>
+            <id>generate-sources</id>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <processors>
+                <processor>io.vertx.codegen.CodeGenProcessor</processor>
+                <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
+              </processors>
+              <optionMap>
+                <codegen.output>${project.basedir}/src/main</codegen.output>
+                <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
+                <docgen.output>${asciidoc.dir}/java</docgen.output>
+                <maven.groupId>${project.groupId}</maven.groupId>
+                <maven.artifactId>${project.artifactId}</maven.artifactId>
+                <maven.version>${project.version}</maven.version>
+              </optionMap>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-test-sources</id>
+            <goals>
+              <goal>process-test</goal>
+            </goals>
+            <phase>generate-test-sources</phase>
+            <configuration>
+              <processors>
+                <processor>io.vertx.codegen.CodeGenProcessor</processor>
+              </processors>
+              <optionMap>
+                <codegen.output>${project.basedir}/src/test</codegen.output>
+                <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
+              </optionMap>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${generated.dir}</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-test-source</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.basedir}/src/test/generated</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
       <!-- Tests that require to run with different JVM settings -->
       <plugin>
@@ -447,31 +489,47 @@
               </includes>
             </configuration>
           </execution>
-        </executions>
-      </plugin>
-
-      <!-- Transform the Asciidoctor to html -->
-      <plugin>
-        <groupId>org.asciidoctor</groupId>
-        <artifactId>asciidoctor-maven-plugin</artifactId>
-        <executions>
+          <!-- Check some netty compat (dns / http2) with unstable classes -->
+          <!-- Uncomment to run them, you need to have also the dependencies in the repo as they won't be downloaded automatically -->
+          <!-- It is possible to have them easily by running the build with -Dnetty.version=4.1.9.Final -Dtcnative.version=2.0.0.Final -->
+<!--
           <execution>
+            <id>netty-4.1.9-compat</id>
             <goals>
-              <goal>process-asciidoc</goal>
+              <goal>integration-test</goal>
             </goals>
-            <phase>package</phase>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/test/it/NettyCompatTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-common</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-buffer</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-transport</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-handler</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-handler-proxy</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-handler-codec-http</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-handler-codec-http2</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-resolver</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-resolver-dns</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-common/4.1.9.Final/netty-common-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-buffer/4.1.9.Final/netty-buffer-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-transport/4.1.9.Final/netty-transport-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-handler/4.1.9.Final/netty-handler-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-handler-proxy/4.1.9.Final/netty-handler-proxy-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-codec-http/4.1.9.Final/netty-codec-http-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-codec-http2/4.1.9.Final/netty-codec-http2-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-resolver/4.1.9.Final/netty-resolver-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-resolver-dns/4.1.9.Final/netty-resolver-dns-4.1.9.Final.jar</additionalClasspathElement>
+                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-tcnative-boringssl-static/2.0.0.Final/netty-tcnative-boringssl-static-2.0.0.Final.jar</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
           </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>javadoc</goal>
-            </goals>
-          </execution>
+-->
         </executions>
       </plugin>
       <plugin>
@@ -594,6 +652,39 @@
             </plugin>
           </plugins>
         </pluginManagement>
+      </build>
+    </profile>
+
+    <!-- Documentation generation : activate with -Pdocs -->
+    <profile>
+      <id>docs</id>
+      <build>
+        <plugins>
+          <!-- Transform the Asciidoctor to html -->
+          <plugin>
+            <groupId>org.asciidoctor</groupId>
+            <artifactId>asciidoctor-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>process-asciidoc</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>javadoc</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
       </build>
     </profile>
   </profiles>

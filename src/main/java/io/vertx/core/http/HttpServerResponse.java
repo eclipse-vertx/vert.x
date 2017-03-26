@@ -184,14 +184,29 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value);
 
   /**
-   * Set a close handler for the response. This will be called if the underlying connection closes before the response
-   * is complete.
+   * Set a close handler for the response, this is called when the underlying connection is closed and the response
+   * was still using the connection.
+   * <p>
+   * For HTTP/1.x it is called when the connection is closed before {@code end()} is called, therefore it is not
+   * guaranteed to be called.
+   * <p>
+   * For HTTP/2 it is called when the related stream is closed, and therefore it will be always be called.
    *
    * @param handler  the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   HttpServerResponse closeHandler(@Nullable Handler<Void> handler);
+
+  /**
+   * Set an end handler for the response. This will be called when the response is disposed to allow consistent cleanup
+   * of the response.
+   *
+   * @param handler  the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse endHandler(@Nullable Handler<Void> handler);
 
   /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.

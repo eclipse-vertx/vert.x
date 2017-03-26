@@ -18,6 +18,7 @@ package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -43,18 +44,50 @@ public class AddressResolverOptions {
    */
   public static final boolean DEFAULT_OPT_RESOURCE_ENABLED = true;
 
+  /**
+   * The default value for the negative cache min TTL = 0
+   */
   public static final int DEFAULT_CACHE_MIN_TIME_TO_LIVE = 0;
+
+  /**
+   * The default value for the negative cache max TTL = 0x7fffffff
+   */
   public static final int DEFAULT_CACHE_MAX_TIME_TO_LIVE = Integer.MAX_VALUE;
+
+  /**
+   * The default value for the negative cache TTL = 0
+   */
   public static final int DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE = 0;
+
+  /**
+   * The default value for the query timeout in millis = 5000
+   */
   public static final int DEFAULT_QUERY_TIMEOUT = 5000;
-  public static final int DEFAULT_MAX_QUERIES = 3;
+
+  /**
+   * The default value for the max dns queries per query = 4
+   */
+  public static final int DEFAULT_MAX_QUERIES = 4;
+
+  /**
+   * The default value of the rd flag = true
+   */
   public static final boolean DEFAULT_RD_FLAG = true;
+
+  /**
+   * The default value of search domains = null
+   */
   public static final List<String> DEFAULT_SEACH_DOMAINS = null;
 
   /**
-   * The default ndots value = -1 (loads the value from the OS on Linux otherwise use the value 1)
+   * The default ndots value = loads the value from the OS on Linux otherwise use the value 1
    */
-  public static final int DEFAULT_NDOTS = -1;
+  public static final int DEFAULT_NDOTS = AddressResolver.DEFAULT_NDOTS_RESOLV_OPTION;
+
+  /**
+   * The default servers rotate value = loads the value from the OS on Linux otherwise use the value false
+   */
+  public static final boolean DEFAULT_ROTATE_SERVERS = AddressResolver.DEFAULT_ROTATE_RESOLV_OPTION;
 
   private String hostsPath;
   private Buffer hostsValue;
@@ -68,6 +101,7 @@ public class AddressResolverOptions {
   private boolean rdFlag;
   private List<String> searchDomains;
   private int ndots;
+  private boolean rotateServers;
 
   public AddressResolverOptions() {
     servers = DEFAULT_SERVERS;
@@ -78,8 +112,9 @@ public class AddressResolverOptions {
     queryTimeout = DEFAULT_QUERY_TIMEOUT;
     maxQueries = DEFAULT_MAX_QUERIES;
     rdFlag = DEFAULT_RD_FLAG;
-    searchDomains = null;
+    searchDomains = DEFAULT_SEACH_DOMAINS;
     ndots = DEFAULT_NDOTS;
+    rotateServers = DEFAULT_ROTATE_SERVERS;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
@@ -95,6 +130,7 @@ public class AddressResolverOptions {
     this.rdFlag = other.rdFlag;
     this.searchDomains = other.searchDomains != null ? new ArrayList<>(other.searchDomains) : null;
     this.ndots = other.ndots;
+    this.rotateServers = other.rotateServers;
   }
 
   public AddressResolverOptions(JsonObject json) {
@@ -381,6 +417,24 @@ public class AddressResolverOptions {
     return this;
   }
 
+  /**
+   * @return the value {@code true} when the dns server selection uses round robin
+   */
+  public boolean isRotateServers() {
+    return rotateServers;
+  }
+
+  /**
+   * Set to {@code true} to enable round-robin selection of the dns server to use. It spreads the query load
+   * among the servers and avoids all lookup to hit the first server of the list.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public AddressResolverOptions setRotateServers(boolean rotateServers) {
+    this.rotateServers = rotateServers;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -395,7 +449,8 @@ public class AddressResolverOptions {
     if (rdFlag != that.rdFlag) return false;
     if (!Objects.equals(searchDomains, that.searchDomains)) return false;
     if (ndots != that.ndots) return false;
-    return servers != null ? servers.equals(that.servers) : that.servers == null;
+    if  (servers != null ? !servers.equals(that.servers) : that.servers != null) return false;
+    return rotateServers == that.rotateServers;
   }
 
   @Override
@@ -410,6 +465,7 @@ public class AddressResolverOptions {
     result = 31 * result + (searchDomains != null ? searchDomains.hashCode() : 0);
     result = 31 * result + ndots;
     result = 31 * result + Boolean.hashCode(rdFlag);
+    result = 31 * result + Boolean.hashCode(rotateServers);
     return result;
   }
 

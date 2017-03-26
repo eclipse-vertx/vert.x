@@ -35,6 +35,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -62,8 +63,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private final String writeHandlerID;
   private final MessageConsumer registration;
   private final SSLHelper helper;
-  private final boolean client;
-  private Object metric;
+  private final String host;
+  private final int port;
+  private final TCPMetrics metrics;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
@@ -71,23 +73,26 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private boolean paused = false;
   private ChannelFuture writeFuture;
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, TCPMetrics metrics, Object metric) {
-    super(vertx, channel, context, metrics);
+  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context,
+                       SSLHelper helper, TCPMetrics metrics) {
+    this(vertx, channel, null, 0, context, helper, metrics);
+  }
+
+  public NetSocketImpl(VertxInternal vertx, Channel channel, String host, int port, ContextImpl context,
+                       SSLHelper helper, TCPMetrics metrics) {
+    super(vertx, channel, context);
     this.helper = helper;
-    this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
-    this.metric = metric;
+    this.host = host;
+    this.port = port;
+    this.metrics = metrics;
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
   }
 
-  protected synchronized void setMetric(Object metric) {
-    this.metric = metric;
-  }
-
   @Override
-  protected synchronized Object metric() {
-    return metric;
+  public TCPMetrics metrics() {
+    return metrics;
   }
 
   @Override
@@ -246,8 +251,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   public synchronized NetSocket upgradeToSsl(final Handler<Void> handler) {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
-
-      sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
+      if (host != null) {
+        sslHandler = helper.createSslHandler(vertx, host, port);
+      } else {
+        sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
+      }
       channel.pipeline().addFirst("ssl", sslHandler);
     }
     sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {
@@ -294,7 +302,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
   }
 
-  synchronized void handleDataReceived(Buffer data) {
+  public synchronized void handleDataReceived(Buffer data) {
     checkContext();
     if (paused) {
       if (pendingData == null) {
@@ -306,6 +314,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
     if (pendingData != null) {
       data = pendingData.appendBuffer(data);
+      pendingData = null;
     }
     reportBytesRead(data.length());
     if (dataHandler != null) {

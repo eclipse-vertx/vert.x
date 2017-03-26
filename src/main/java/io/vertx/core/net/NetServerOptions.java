@@ -88,6 +88,17 @@ public class NetServerOptions extends TCPSSLOptions {
     NetServerOptionsConverter.fromJson(json, this);
   }
 
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    NetServerOptionsConverter.toJson(this, json);
+    return json;
+  }
+
   @Override
   public NetServerOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);

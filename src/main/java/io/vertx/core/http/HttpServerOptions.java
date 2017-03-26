@@ -43,11 +43,22 @@ public class HttpServerOptions extends NetServerOptions {
    * Default value of whether compression is supported = false
    */
   public static final boolean DEFAULT_COMPRESSION_SUPPORTED = false;
+  
+  /**
+   * Default gzip/deflate compression level = 6 (Netty legacy)
+   */
+  public static final int DEFAULT_COMPRESSION_LEVEL = 6;
 
   /**
    * Default max websocket framesize = 65536
    */
   public static final int DEFAULT_MAX_WEBSOCKET_FRAME_SIZE = 65536;
+
+  /**
+   * Default max websocket message size (could be assembled from multiple frames) is 4 full frames
+   * worth of data
+   */
+  public static final int DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE = 65536 * 4;
 
   /**
    * Default max HTTP chunk size = 8192
@@ -84,8 +95,20 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
 
+  /**
+   * Default value of whether decompression is supported = false
+   */
+  public static final boolean DEFAULT_DECOMPRESSION_SUPPORTED = false;
+
+  /**
+   * Default WebSocket Masked bit is true as depicted by RFC. PerformingUnMasking will be false
+   */
+  public static final boolean DEFAULT_ACCEPT_UNMASKED_FRAMES = false;
+
   private boolean compressionSupported;
+  private int compressionLevel;
   private int maxWebsocketFrameSize;
+  private int maxWebsocketMessageSize;
   private String websocketSubProtocols;
   private boolean handle100ContinueAutomatically;
   private int maxChunkSize;
@@ -94,6 +117,8 @@ public class HttpServerOptions extends NetServerOptions {
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private int http2ConnectionWindowSize;
+  private boolean decompressionSupported;
+  private boolean acceptUnmaskedFrames;
 
   /**
    * Default constructor
@@ -112,7 +137,9 @@ public class HttpServerOptions extends NetServerOptions {
   public HttpServerOptions(HttpServerOptions other) {
     super(other);
     this.compressionSupported = other.isCompressionSupported();
+    this.compressionLevel = other.getCompressionLevel();
     this.maxWebsocketFrameSize = other.getMaxWebsocketFrameSize();
+    this.maxWebsocketMessageSize = other.getMaxWebsocketMessageSize();
     this.websocketSubProtocols = other.getWebsocketSubProtocols();
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.maxChunkSize = other.getMaxChunkSize();
@@ -121,6 +148,8 @@ public class HttpServerOptions extends NetServerOptions {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
+    this.decompressionSupported = other.isDecompressionSupported();
+    this.acceptUnmaskedFrames = other.isAcceptUnmaskedFrames();
   }
 
   /**
@@ -135,9 +164,22 @@ public class HttpServerOptions extends NetServerOptions {
     HttpServerOptionsConverter.fromJson(json, this);
   }
 
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    HttpServerOptionsConverter.toJson(this, json);
+    return json;
+  }
+
   private void init() {
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
+    compressionLevel = DEFAULT_COMPRESSION_LEVEL;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    maxWebsocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
@@ -145,6 +187,8 @@ public class HttpServerOptions extends NetServerOptions {
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
+    decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
+    acceptUnmaskedFrames = DEFAULT_ACCEPT_UNMASKED_FRAMES;
   }
 
   @Override
@@ -326,20 +370,78 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return true if the server supports compression
+   * @return true if the server supports gzip/deflate compression
    */
   public boolean isCompressionSupported() {
     return compressionSupported;
   }
 
   /**
-   * Set whether the server supports compression
+   * Set whether the server should support gzip/deflate compression 
+   * (serving compressed responses to clients advertising support for them with Accept-Encoding header)
    *
-   * @param compressionSupported true if compression supported
+   * @param compressionSupported true to enable compression support
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setCompressionSupported(boolean compressionSupported) {
     this.compressionSupported = compressionSupported;
+    return this;
+  }
+
+  /**
+   * 
+   * @return the server gzip/deflate 'compression level' to be used in responses when client and server support is turned on
+   */
+  public int getCompressionLevel() {
+    return this.compressionLevel;
+  }
+  
+
+  /** 
+   * This method allows to set the compression level to be used in http1.x/2 response bodies 
+   * when compression support is turned on (@see setCompressionSupported) and the client advertises
+   * to support {@code deflate/gzip} compression in the {@code Accept-Encoding} header
+   * 
+   * default value is : 6 (Netty legacy)
+   * 
+   * The compression level determines how much the data is compressed on a scale from 1 to 9,
+   * where '9' is trying to achieve the maximum compression ratio while '1' instead is giving
+   * priority to speed instead of compression ratio using some algorithm optimizations and skipping 
+   * pedantic loops that usually gives just little improvements
+   * 
+   * While one can think that best value is always the maximum compression ratio, 
+   * there's a trade-off to consider: the most compressed level requires the most
+   * computatinal work to compress/decompress data, e.g. more dictionary lookups and loops.
+   * 
+   * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
+   * and latency on resource serving due to CPU overload, and, however - as the comptational work is required also client side 
+   * while decompressing - setting an higher compression level can result in an overall higher page load time
+   * especially nowadays when many clients are handled mobile devices with a low CPU profile.
+   * 
+   * see also: http://www.gzip.org/algorithm.txt
+   * 
+   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9 slower algorithm but better compression ratio 
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setCompressionLevel(int compressionLevel) {
+    this.compressionLevel = compressionLevel;
+    return this;
+  }
+
+  public boolean isAcceptUnmaskedFrames() {
+    return acceptUnmaskedFrames;
+  }
+
+  /**
+   * Set true when the server accepts unmasked frame.
+   * As default Server doesn't accept unmasked frame, you can bypass this behaviour (RFC 6455) setting true
+   * It's set to false as default.
+   *
+   * @param acceptUnmaskedFrames  true if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setAcceptUnmaskedFrames(boolean acceptUnmaskedFrames) {
+    this.acceptUnmaskedFrames = acceptUnmaskedFrames;
     return this;
   }
 
@@ -358,6 +460,24 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setMaxWebsocketFrameSize(int maxWebsocketFrameSize) {
     this.maxWebsocketFrameSize = maxWebsocketFrameSize;
+    return this;
+  }
+
+  /**
+   * @return  the maximum websocket message size
+   */
+  public int getMaxWebsocketMessageSize() {
+    return maxWebsocketMessageSize;
+  }
+
+  /**
+   * Set the maximum websocket message size
+   *
+   * @param maxWebsocketMessageSize  the maximum message size in bytes.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setMaxWebsocketMessageSize(int maxWebsocketMessageSize) {
+    this.maxWebsocketMessageSize = maxWebsocketMessageSize;
     return this;
   }
 
@@ -421,7 +541,7 @@ public class HttpServerOptions extends NetServerOptions {
   public int getMaxInitialLineLength() {
     return maxInitialLineLength;
   }
-	
+
   /**
    * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    * 
@@ -432,14 +552,14 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxInitialLineLength = maxInitialLineLength;
     return this;
   }
-	
+
   /**
    * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
     return maxHeaderSize;
   }
-	
+
   /**
    * Set the maximum length of all headers for HTTP/1.x .
    *
@@ -514,6 +634,24 @@ public class HttpServerOptions extends NetServerOptions {
     return (HttpServerOptions) super.setLogActivity(logEnabled);
   }
 
+  /**
+   * @return true if the server supports decompression
+   */
+  public boolean isDecompressionSupported() {
+    return decompressionSupported;
+  }
+
+  /**
+   * Set whether the server supports decompression
+   *
+   * @param decompressionSupported true if decompression supported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setDecompressionSupported(boolean decompressionSupported) {
+    this.decompressionSupported = decompressionSupported;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -524,6 +662,7 @@ public class HttpServerOptions extends NetServerOptions {
 
     if (compressionSupported != that.compressionSupported) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
+    if (maxWebsocketMessageSize != that.maxWebsocketMessageSize) return false;
     if (handle100ContinueAutomatically != that.handle100ContinueAutomatically) return false;
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxInitialLineLength != that.maxInitialLineLength) return false;
@@ -531,7 +670,11 @@ public class HttpServerOptions extends NetServerOptions {
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
+    if (decompressionSupported != that.decompressionSupported) return false;
+    if (acceptUnmaskedFrames != that.acceptUnmaskedFrames) return false;
+
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
+
   }
 
   @Override
@@ -539,6 +682,7 @@ public class HttpServerOptions extends NetServerOptions {
     int result = super.hashCode();
     result = 31 * result + (compressionSupported ? 1 : 0);
     result = 31 * result + maxWebsocketFrameSize;
+    result = 31 * result + maxWebsocketMessageSize;
     result = 31 * result + (websocketSubProtocols != null ? websocketSubProtocols.hashCode() : 0);
     result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     result = 31 * result + (handle100ContinueAutomatically ? 1 : 0);
@@ -547,6 +691,8 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + maxHeaderSize;
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + http2ConnectionWindowSize;
+    result = 31 * result + (decompressionSupported ? 1 : 0);
+    result = 31 * result + (acceptUnmaskedFrames ? 1 : 0);
     return result;
   }
 }

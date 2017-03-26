@@ -65,6 +65,11 @@ Set the query timeout in milliseconds, i.e the amount of time after a query is c
 +++
 Set the DNS queries <i>Recursion Desired</i> flag value.
 +++
+|[[rotateServers]]`rotateServers`|`Boolean`|
++++
+Set to <code>true</code> to enable round-robin selection of the dns server to use. It spreads the query load
+ among the servers and avoids all lookup to hit the first server of the list.
++++
 |[[searchDomains]]`searchDomains`|`Array of String`|
 +++
 Set the lists of DNS search domains.
@@ -166,6 +171,11 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[localAddress]]`localAddress`|`String`|
++++
+Set the local interface to bind for network connections. When the local address is null,
+ it will pick any local address, the default local address is null.
++++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -234,7 +244,7 @@ Set whether all server certificates should be trusted
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -545,7 +555,7 @@ Set whether all server certificates should be trusted.
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -575,7 +585,7 @@ Set the additional debug data
 +++
 |[[errorCode]]`errorCode`|`Number (long)`|
 +++
-@return the  error code
+
 +++
 |[[lastStreamId]]`lastStreamId`|`Number (int)`|
 +++
@@ -614,7 +624,7 @@ Set the  HTTP/2 setting
 +++
 Set the  HTTP/2 setting
 +++
-|[[maxHeaderListSize]]`maxHeaderListSize`|`Number (int)`|
+|[[maxHeaderListSize]]`maxHeaderListSize`|`Number (long)`|
 +++
 Set the  HTTP/2 setting
 +++
@@ -718,6 +728,11 @@ Set whether keep alive is enabled on the client
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[localAddress]]`localAddress`|`String`|
++++
+Set the local interface to bind for network connections. When the local address is null,
+ it will pick any local address, the default local address is null.
++++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -726,9 +741,21 @@ Set to true to enabled network activity logging: Netty's pipeline is configured 
 +++
 Set the maximum HTTP chunk size
 +++
+|[[maxHeaderSize]]`maxHeaderSize`|`Number (int)`|
++++
+Set the maximum length of all headers for HTTP/1.x .
++++
+|[[maxInitialLineLength]]`maxInitialLineLength`|`Number (int)`|
++++
+Set the maximum length of the initial line for HTTP/1.x (e.g. <code>"HTTP/1.1 200 OK"</code>)
++++
 |[[maxPoolSize]]`maxPoolSize`|`Number (int)`|
 +++
 Set the maximum pool size for connections
++++
+|[[maxRedirects]]`maxRedirects`|`Number (int)`|
++++
+Set to <code>maxRedirects</code> the maximum number of redirection a request can follow.
 +++
 |[[maxWaitQueueSize]]`maxWaitQueueSize`|`Number (int)`|
 +++
@@ -738,6 +765,10 @@ Set the maximum requests allowed in the wait queue, any requests beyond the max 
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`|`Number (int)`|
 +++
 Set the max websocket frame size
++++
+|[[maxWebsocketMessageSize]]`maxWebsocketMessageSize`|`Number (int)`|
++++
+Set the max websocket message size
 +++
 |[[metricsName]]`metricsName`|`String`|
 +++
@@ -789,6 +820,12 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sendUnmaskedFrames]]`sendUnmaskedFrames`|`Boolean`|
++++
+Set true when the client wants to skip frame masking.
+ You may want to set it true on server by server websocket communication: In this case you are by passing RFC6455 protocol.
+ It's false as default.
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -815,7 +852,7 @@ Set whether all server certificates should be trusted
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[tryUseCompression]]`tryUseCompression`|`Boolean`|
 +++
@@ -851,6 +888,12 @@ Set whether hostname verification is enabled
 +++
 Set the accept back log
 +++
+|[[acceptUnmaskedFrames]]`acceptUnmaskedFrames`|`Boolean`|
++++
+Set true when the server accepts unmasked frame.
+ As default Server doesn't accept unmasked frame, you can bypass this behaviour (RFC 6455) setting true
+ It's set to false as default.
++++
 |[[alpnVersions]]`alpnVersions`|`Array of link:enums.html#HttpVersion[HttpVersion]`|
 +++
 Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
@@ -863,9 +906,34 @@ Set whether client auth is required
 +++
 Set whether client auth is required
 +++
+|[[compressionLevel]]`compressionLevel`|`Number (int)`|
++++
+This method allows to set the compression level to be used in http1.x/2 response bodies 
+ when compression support is turned on (@see setCompressionSupported) and the client advertises
+ to support <code>deflate/gzip</code> compression in the <code>Accept-Encoding</code> header
+ 
+ default value is : 6 (Netty legacy)
+ 
+ The compression level determines how much the data is compressed on a scale from 1 to 9,
+ where '9' is trying to achieve the maximum compression ratio while '1' instead is giving
+ priority to speed instead of compression ratio using some algorithm optimizations and skipping 
+ pedantic loops that usually gives just little improvements
+ 
+ While one can think that best value is always the maximum compression ratio, 
+ there's a trade-off to consider: the most compressed level requires the most
+ computatinal work to compress/decompress data, e.g. more dictionary lookups and loops.
+ 
+ E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
+ and latency on resource serving due to CPU overload, and, however - as the comptational work is required also client side 
+ while decompressing - setting an higher compression level can result in an overall higher page load time
+ especially nowadays when many clients are handled mobile devices with a low CPU profile.
+ 
+ see also: http://www.gzip.org/algorithm.txt
++++
 |[[compressionSupported]]`compressionSupported`|`Boolean`|
 +++
-Set whether the server supports compression
+Set whether the server should support gzip/deflate compression 
+ (serving compressed responses to clients advertising support for them with Accept-Encoding header)
 +++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
@@ -874,6 +942,10 @@ Add a CRL path
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
 Add a CRL value
++++
+|[[decompressionSupported]]`decompressionSupported`|`Boolean`|
++++
+Set whether the server supports decompression
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
@@ -933,6 +1005,10 @@ Set the maximum length of the initial line for HTTP/1.x (e.g. <code>"GET / HTTP/
 +++
 Set the maximum websocket frames size
 +++
+|[[maxWebsocketMessageSize]]`maxWebsocketMessageSize`|`Number (int)`|
++++
+Set the maximum websocket message size
++++
 |[[openSslEngineOptions]]`openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
@@ -988,7 +1064,7 @@ Set the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -1018,7 +1094,7 @@ Set the websocket subprotocols supported by the server.
 ^|Name | Type ^| Description
 |[[alpnAvailable]]`alpnAvailable`|`Boolean`|
 +++
-@return if alpn support is available via the JDK SSL engine
+
 +++
 |===
 
@@ -1132,6 +1208,11 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[localAddress]]`localAddress`|`String`|
++++
+Set the local interface to bind for network connections. When the local address is null,
+ it will pick any local address, the default local address is null.
++++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -1208,7 +1289,7 @@ Set whether all server certificates should be trusted
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -1333,7 +1414,7 @@ Set the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
@@ -1349,7 +1430,6 @@ Set whether Netty pooled buffers are enabled
 == NetworkOptions
 
 ++++
- @author <a href="http://tfox.org">Tim Fox</a>
 ++++
 '''
 
@@ -1447,11 +1527,11 @@ Set whether the file is to be opened for writing
 ^|Name | Type ^| Description
 |[[alpnAvailable]]`alpnAvailable`|`Boolean`|
 +++
-@return when alpn support is available via OpenSSL engine
+
 +++
 |[[available]]`available`|`Boolean`|
 +++
-@return when OpenSSL is available
+
 +++
 |[[sessionCacheEnabled]]`sessionCacheEnabled`|`Boolean`|
 +++
@@ -1517,7 +1597,7 @@ Sets whether or not this option can receive several values.
 +++
 |[[name]]`name`|`String`|
 +++
-@return the option name. It returns the long name if set, the short name otherwise. It cannot return <code>null</code> for valid option
+
 +++
 |[[required]]`required`|`Boolean`|
 +++
@@ -1733,6 +1813,36 @@ Set proxy username.
 +++
 |===
 
+[[RequestOptions]]
+== RequestOptions
+
+++++
+ Options describing how an link will make connect to make a request.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[host]]`host`|`String`|
++++
+Set the host name to be used by the client request.
++++
+|[[port]]`port`|`Number (int)`|
++++
+Set the port to be used by the client request.
++++
+|[[ssl]]`ssl`|`Boolean`|
++++
+Set whether SSL/TLS is enabled
++++
+|[[uri]]`uri`|`String`|
++++
+Set the request relative URI
++++
+|===
+
 [[TCPSSLOptions]]
 == TCPSSLOptions
 
@@ -1826,7 +1936,7 @@ Set the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
-Set the trust options in jks format, aka Java trustore
+Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++

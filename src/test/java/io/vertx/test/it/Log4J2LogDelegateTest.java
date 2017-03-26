@@ -202,4 +202,18 @@ public class Log4J2LogDelegateTest {
     assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
+  // test that line numbers and method name are logged correctly
+  // we use anonymous class instead of a lambda since we have to know the calling method name
+  @Test
+  public void testMethodName() {
+    Logger logger = LoggerFactory.getLogger("my-log4j2-logger");
+    String result = recording.execute(new Runnable() {
+      @Override
+      public void run() {
+        logger.warn("hello");
+      }
+    });
+    assertTrue(result.contains(".run:"));
+  }
+  
 }

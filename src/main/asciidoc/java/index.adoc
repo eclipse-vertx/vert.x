@@ -337,11 +337,13 @@ NOTE: the configuration is set when the worker pool is created
 == Async coordination
 
 Coordination of multiple asynchronous results can be achieved with Vert.x `link:../../apidocs/io/vertx/core/Future.html[futures]`. It
-supports concurrent composition (run several async operations in parallel and join) and sequential composition
+supports concurrent composition (run several async operations in parallel) and sequential composition
 (chain async operations).
 
+=== Concurrent composition
+
 `link:../../apidocs/io/vertx/core/CompositeFuture.html#all-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.all]` takes several futures arguments (up to 6) and returns a future that is
-_succeeded_ when all the futures are and _failed_ otherwise:
+_succeeded_ when all the futures are and _failed_ when at least one of the futures is failed:
 
 [source,java]
 ----
@@ -360,26 +362,25 @@ CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
 });
 ----
 
-The operations run concurrently, and are joined. The `link:../../apidocs/io/vertx/core/Handler.html[Handler]` attached to the returned future is
-invoked upon completion of the composition. If one of the operation fails (one of the passed future is marked
-as a failure), the resulting future is marked as failed too. If all the operations succeed, the resulting future
-is completed with a success.
+The operations run concurrently, the `link:../../apidocs/io/vertx/core/Handler.html[Handler]` attached to the returned future is invoked upon
+completion of the composition. When one of the operation fails (one of the passed future is marked as a failure),
+the resulting future is marked as failed too. When all the operations succeed, the resulting future is completed
+with a success.
 
 Alternatively, you can pass a list (potentially empty) of futures:
 
 [source,java]
 ----
-CompositeFuture.all(Arrays.asList(f1, f2, f3));
+CompositeFuture.all(Arrays.asList(future1, future2, future3));
 ----
 
-While the `all` composition _waits_ until all futures are completed (or one fails), the `any` composition
-_waits_ for the first completed future. `link:../../apidocs/io/vertx/core/CompositeFuture.html#any-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.any]` takes several futures arguments
-(up to 6) and returns a future that is _succeeded_ if one of the futures is, and _failed_ otherwise:
+While the `all` composition _waits_ until all futures are successful (or one fails), the `any` composition
+_waits_ for the first succeeded future. `link:../../apidocs/io/vertx/core/CompositeFuture.html#any-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.any]` takes several futures
+arguments (up to 6) and returns a future that is succeeded when one of the futures is, and failed when
+all the futures are failed:
 
 [source,java]
 ----
-Future<String> future1 = Future.future();
-Future<String> future2 = Future.future();
 CompositeFuture.any(future1, future2).setHandler(ar -> {
   if (ar.succeeded()) {
     // At least one is succeeded
@@ -395,6 +396,31 @@ A list of futures can be used also:
 ----
 CompositeFuture.any(Arrays.asList(f1, f2, f3));
 ----
+
+The `join` composition _waits_ until all futures are completed, either with a success or a failure.
+`link:../../apidocs/io/vertx/core/CompositeFuture.html#join-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.join]` takes several futures arguments (up to 6) and returns a future that is
+succeeded when all the futures are succeeded, and failed when all the futures are completed and at least one of
+them is failed:
+
+[source,java]
+----
+CompositeFuture.join(future1, future2, future3).setHandler(ar -> {
+  if (ar.succeeded()) {
+    // All succeeded
+  } else {
+    // All completed and at least one failed
+  }
+});
+----
+
+A list of futures can be used also:
+
+[source,java]
+----
+CompositeFuture.join(Arrays.asList(future1, future2, future3));
+----
+
+=== Sequential composition
 
 While `all` and `any` are implementing concurrent composition, `link:../../apidocs/io/vertx/core/Future.html#compose-io.vertx.core.Handler-io.vertx.core.Future-[compose]` can be used
 for chaining futures (so sequential composition).
@@ -414,11 +440,9 @@ fut1.compose(v -> {
   return fut2;
 }).compose(v -> {
           // When the file is written (fut2), execute this:
-          Future<Void> fut3 = Future.future();
-          fs.move("/foo", "/bar", fut3.completer());
+          fs.move("/foo", "/bar", startFuture.completer());
         },
-        // mark the start future as completed when all the chain has been completed,
-        // or mark it as failed if any step fails.
+        // mark startFuture it as failed if any step fails.
         startFuture);
 ----
 
@@ -426,10 +450,10 @@ In this example, 3 operations are chained:
 
 1. a file is created (`fut1`)
 2. something is written in the file (`fut2`)
-3. the file is moved (`fut3`)
+3. the file is moved (`startFuture`)
 
-When these 3 steps are successful, the final future (`startFuture`) is completed with a success. However, if one
-of the steps fails, the final future is completed with a failure.
+When these 3 steps are successful, the final future (`startFuture`) is succeeded. However, if one
+of the steps fails, the final future is failed.
 
 This example uses:
 
@@ -1092,7 +1116,7 @@ dies. To create a _bare_ instance, launch:
 
 [source]
 ----
-vertx -ha
+vertx bare
 ----
 
 Depending on your cluster configuration, you may have to append the `cluster-host` and `cluster-port` parameters.
@@ -1335,6 +1359,56 @@ logger.info("something happened");
 logger.error("oops!", exception);
 ----
 
+[[netty-logging]]
+=== Netty logging
+
+When configuring logging, you should care about configuring Netty logging as well.
+
+Netty does not rely on external logging configuration (e.g system properties) and instead implements a logging
+configuration based on the logging libraries visible from the Netty classes:
+
+- use `SLF4J` library if it is visible
+- otherwise use `Log4j` if it is visible
+- otherwise fallback `java.util.logging`
+
+The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly
+on `io.netty.util.internal.logging.InternalLoggerFactory`:
+
+[source,java]
+----
+// Force logging to Log4j
+InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
+----
+
+=== Troubleshooting
+
+==== SLF4J warning at startup
+
+If, when you start your application, you see the following message:
+
+----
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+----
+
+It means that you have SLF4J-API in your classpath but no actual binding. Messages logged with SLF4J will be dropped.
+You should add a binding to your classpath. Check https://www.slf4j.org/manual.html#swapping to pick a binding and configure it.
+
+Be aware that Netty looks for the SLF4-API jar and uses it by default.
+
+==== Connection reset by peer
+
+If your logs show a bunch of:
+
+----
+io.vertx.core.net.impl.ConnectionBase
+SEVERE: java.io.IOException: Connection reset by peer
+----
+
+It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
+may have not consumed the complete payload (the connection was cut before you were able to).
+
 == Host name resolution
 
 Vert.x uses an an address resolver for resolving host name into IP addresses instead of
@@ -1363,7 +1437,32 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
 The default port of a DNS server is `53`, when a server uses a different port, this port can be set
 using a colon delimiter: `192.168.0.2:40000`.
 
-The resolver can be configured to use an alternative _hosts_ file:
+NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
+_-Dvertx.disableDnsResolver=true_ activates this behavior
+
+=== Failover
+
+When a server does not reply in a timely manner, the resolver will try the next one from the list, the search
+is limited by `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setMaxQueries-int-[setMaxQueries]` (the default value is `4` queries).
+
+A DNS query is considered as failed when the resolver has not received a correct answer within
+`link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#getQueryTimeout--[getQueryTimeout]` milliseconds (the default value is `5` seconds).
+
+=== Server list rotation
+
+By default the dns server selection uses the first one, the remaining servers are used for failover.
+
+You can configure `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setRotateServers-boolean-[setRotateServers]` to `true` to let
+the resolver perform a round-robin selection instead. It spreads the query load among the servers and avoids
+all lookup to hit the first server of the list.
+
+Failover still applies and will use the next server in the list.
+
+=== Hosts mapping
+
+The _hosts_ file of the operating system is used to perform an hostname lookup for an ipaddress.
+
+An alternative _hosts_ file can be used instead:
 
 [source,java]
 ----
@@ -1373,6 +1472,8 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
             setHostsPath("/path/to/hosts"))
 );
 ----
+
+=== Search domains
 
 By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
 list can be provided:
@@ -1387,9 +1488,6 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
 
 When a search domain list is used, the threshold for the number of dots is `1` or loaded from `/etc/resolv.conf`
 on Linux, it can be configured to a specific value with `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setNdots-int-[setNdots]`.
-
-NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
-_-Dvertx.disableDnsResolver=true_ activates this behavior
 
 == High Availability and Fail-Over
 
@@ -1451,7 +1549,7 @@ To specify an HA group you use the `-hagroup` switch when running the verticle, 
 
 [source]
 ----
-vertx run my-verticle.js -ha -ha-group my-group
+vertx run my-verticle.js -ha -hagroup my-group
 ----
 
 Let's look at an example:
@@ -1664,3 +1762,35 @@ When you use the `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` clas
 `stop` command
 * `14` if the system configuration is not meeting the system requirement (shc as java not found)
 * `15` if the main verticle cannot be deployed
+
+== Configuring Vert.x cache
+
+When Vert.x needs to read a file from the classpath (embedded in a fat jar, in a jar form the classpath or a file
+that is on the classpath), it copies it to a cache directory. The reason behind this is simple: reading a file
+from a jar or from an input stream is blocking. So to avoid to pay the price every time, Vert.x copies the file to
+its cache directory and reads it from there every subsequent read. This behavior can be configured.
+
+First, by default, Vert.x uses `$CWD/.vertx` as cache directory. It creates a unique directory inside this one to
+avoid conflicts. This location can be configured by using the `vertx.cacheDirBase` system property. For instance
+if the current working directory is not writable (such as in an immutable container context), launch your
+application with:
+
+[source]
+----
+vertx run my.Verticle -Dvertx.cacheDirBase=/tmp/vertx-cache
+# or
+java -jar my-fat.jar vertx.cacheDirBase=/tmp/vertx-cache
+----
+
+IMPORTANT: the directory must be **writable**.
+
+When you are editing resources such as HTML, CSS or JavaScript, this cache mechanism can be annoying as it serves
+only the first version of the file (and so you won't see your edits if you reload your page). To avoid this
+behavior, launch your application with `-Dvertx.disableFileCaching=true`. With this setting, Vert.x still uses
+the cache, but always refresh the version stored in the cache with the original source. So if you edit a file
+served from the classpath and refresh your browser, Vert.x reads it from the classpath, copies it to the cache
+directory and serves it from there. Do not use this setting in production, it can kill your performances.
+
+Finally, you can disable completely the cache by using `-Dvertx.disableFileCPResolving=true`. This setting is not
+without consequences. Vert.x would be unable to read any files from the classpath (only from the file system). Be
+very careful when using this settings.

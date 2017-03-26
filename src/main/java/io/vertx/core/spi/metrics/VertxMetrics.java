@@ -126,12 +126,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different {@code TCPMetrics}
    * instances.
    *
-   * @param server       the Vert.x net server
    * @param localAddress localAddress the local address the net socket is listening on
-   * @param options      the options used to create the {@link io.vertx.core.net.NetServer}
+   * @param options      the options used to create the {@link NetServer}
    * @return the net server metrics SPI
    */
-  TCPMetrics<?> createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options);
+  TCPMetrics<?> createMetrics(SocketAddress localAddress, NetServerOptions options);
 
   /**
    * Provides the net client metrics SPI when a net client is created.<p/>

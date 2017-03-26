@@ -85,6 +85,11 @@ public class JksOptions implements KeyCertOptions, TrustOptions, Cloneable {
     JksOptionsConverter.fromJson(json, this);
   }
 
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     JksOptionsConverter.toJson(this, json);

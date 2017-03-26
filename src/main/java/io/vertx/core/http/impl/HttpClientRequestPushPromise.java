@@ -22,7 +22,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
@@ -36,10 +35,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   private final Http2ClientConnection conn;
   private final Http2ClientConnection.Http2ClientStream stream;
-  private final HttpMethod method;
   private final String rawMethod;
-  private final String uri;
-  private final String host;
   private final MultiMap headers;
   private Handler<HttpClientResponse> respHandler;
 
@@ -47,18 +43,17 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       Http2ClientConnection conn,
       Http2Stream stream,
       HttpClientImpl client,
+      boolean ssl,
       HttpMethod method,
       String rawMethod,
       String uri,
       String host,
+      int port,
       MultiMap headers) throws Http2Exception {
-    super(client, method, host, uri);
+    super(client, ssl, method, host, port, uri);
     this.conn = conn;
     this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream, false);
-    this.method = method;
     this.rawMethod = rawMethod;
-    this.uri = uri;
-    this.host = host;
     this.headers = headers;
   }
 
@@ -72,7 +67,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  protected void doHandleResponse(HttpClientResponseImpl resp) {
+  protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
     synchronized (getLock()) {
       if (respHandler != null) {
         respHandler.handle(resp);
@@ -103,9 +98,10 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public void reset(long code) {
+  public boolean reset(long code) {
     synchronized (conn) {
-      stream.reset(code);
+      stream.resetRequest(code);
+      return true;
     }
   }
 
@@ -171,6 +167,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public HttpClientRequest endHandler(Handler<Void> endHandler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest setFollowRedirects(boolean followRedirect) {
     throw new IllegalStateException();
   }
 

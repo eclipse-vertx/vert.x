@@ -67,6 +67,13 @@ public interface Message<T> {
   String replyAddress();
 
   /**
+   * Signals if this message represents a send or publish event.
+   *
+   * @return true if this is a send.
+   */
+  boolean isSend();
+
+  /**
    * Reply to this message.
    * <p>
    * If the message was sent specifying a reply handler, that handler will be

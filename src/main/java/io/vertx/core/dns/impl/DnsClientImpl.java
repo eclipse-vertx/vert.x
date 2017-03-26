@@ -25,6 +25,14 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.handler.codec.dns.DatagramDnsQuery;
+import io.netty.handler.codec.dns.DatagramDnsQueryEncoder;
+import io.netty.handler.codec.dns.DatagramDnsResponseDecoder;
+import io.netty.handler.codec.dns.DefaultDnsQuestion;
+import io.netty.handler.codec.dns.DnsRecord;
+import io.netty.handler.codec.dns.DnsRecordType;
+import io.netty.handler.codec.dns.DnsResponse;
+import io.netty.handler.codec.dns.DnsSection;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -33,16 +41,7 @@ import io.vertx.core.dns.DnsException;
 import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
-import io.vertx.core.dns.impl.netty.DnsEntry;
-import io.vertx.core.dns.impl.netty.DnsQuery;
-import io.vertx.core.dns.impl.netty.DnsQueryEncoder;
-import io.vertx.core.dns.impl.netty.DnsQuestion;
-import io.vertx.core.dns.impl.netty.DnsResource;
-import io.vertx.core.dns.impl.netty.DnsResponse;
-import io.vertx.core.dns.impl.netty.DnsResponseDecoder;
-import io.vertx.core.dns.impl.netty.decoder.RecordDecoderFactory;
-import io.vertx.core.dns.impl.netty.decoder.record.MailExchangerRecord;
-import io.vertx.core.dns.impl.netty.decoder.record.ServiceRecord;
+import io.vertx.core.dns.impl.decoder.RecordDecoder;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
@@ -53,7 +52,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
@@ -87,56 +85,51 @@ public final class DnsClientImpl implements DnsClient {
       @Override
       protected void initChannel(DatagramChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast(new DnsQueryEncoder());
-        pipeline.addLast(new DnsResponseDecoder());
+        pipeline.addLast(new DatagramDnsQueryEncoder());
+        pipeline.addLast(new DatagramDnsResponseDecoder());
       }
     });
   }
 
   @Override
   public DnsClient lookup4(String name, Handler<AsyncResult<String>> handler) {
-    lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_A);
+    lookupSingle(name, handler, DnsRecordType.A);
     return this;
   }
 
   @Override
   public DnsClient lookup6(String name, Handler<AsyncResult<String>> handler) {
-    lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_AAAA);
+    lookupSingle(name, handler, DnsRecordType.AAAA);
     return this;
   }
 
   @Override
   public DnsClient lookup(String name, Handler<AsyncResult<String>> handler) {
-    lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
+    lookupSingle(name, handler, DnsRecordType.A, DnsRecordType.AAAA);
     return this;
   }
 
   @Override
   public DnsClient resolveA(String name, Handler<AsyncResult<List<String>>> handler) {
-    lookup(name, handler, DnsEntry.TYPE_A);
+    lookupList(name, handler, DnsRecordType.A);
     return this;
   }
 
   @Override
   public DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String> >> handler) {
-    lookup(name, handler, DnsEntry.TYPE_CNAME);
+    lookupList(name, handler, DnsRecordType.CNAME);
     return this;
   }
 
   @Override
   public DnsClient resolveMX(String name, Handler<AsyncResult<List<MxRecord>>> handler) {
-    lookup(name, new ConvertingHandler<MailExchangerRecord, MxRecord>(handler, MxRecordComparator.INSTANCE) {
-      @Override
-      protected MxRecord convert(MailExchangerRecord entry) {
-        return new MxRecordImpl(entry);
-      }
-    }, DnsEntry.TYPE_MX);
+    lookupList(name, handler, DnsRecordType.MX);
     return this;
   }
 
   @Override
   public DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler) {
-    lookup(name, new Handler<AsyncResult>() {
+    lookupList(name, new Handler<AsyncResult<List<String>>>() {
       @SuppressWarnings("unchecked")
       @Override
       public void handle(AsyncResult event) {
@@ -151,36 +144,31 @@ public final class DnsClientImpl implements DnsClient {
           handler.handle(Future.succeededFuture(txts));
         }
       }
-    }, DnsEntry.TYPE_TXT);
+    }, DnsRecordType.TXT);
     return this;
   }
 
   @Override
   public DnsClient resolvePTR(String name, Handler<AsyncResult<String>> handler) {
-    lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_PTR);
+    lookupSingle(name, handler, DnsRecordType.PTR);
     return this;
   }
 
   @Override
   public DnsClient resolveAAAA(String name, Handler<AsyncResult<List<String>>> handler) {
-    lookup(name, handler, DnsEntry.TYPE_AAAA);
+    lookupList(name, handler, DnsRecordType.AAAA);
     return this;
   }
 
   @Override
   public DnsClient resolveNS(String name, Handler<AsyncResult<List<String>>> handler) {
-    lookup(name, handler, DnsEntry.TYPE_NS);
+    lookupList(name, handler, DnsRecordType.NS);
     return this;
   }
 
   @Override
   public DnsClient resolveSRV(String name, Handler<AsyncResult<List<SrvRecord>>> handler) {
-    lookup(name, new ConvertingHandler<ServiceRecord, SrvRecord>(handler, SrvRecordComparator.INSTANCE) {
-      @Override
-      protected SrvRecord convert(ServiceRecord entry) {
-        return new SrcRecordImpl(entry);
-      }
-    }, DnsEntry.TYPE_SRV);
+    lookupList(name, handler, DnsRecordType.SRV);
     return this;
   }
 
@@ -213,14 +201,7 @@ public final class DnsClientImpl implements DnsClient {
       }
       reverseName.append(".in-addr.arpa");
 
-      return resolvePTR(reverseName.toString(), ar -> {
-          if (ar.failed()) {
-            handler.handle(Future.failedFuture(ar.cause()));
-          } else {
-            String result = ar.result();
-            handler.handle(Future.succeededFuture(result));
-          }
-        });
+      return resolvePTR(reverseName.toString(), handler);
     } catch (UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
@@ -229,22 +210,26 @@ public final class DnsClientImpl implements DnsClient {
     return this;
   }
 
+  private <T> void lookupSingle(String name, Handler<AsyncResult<T>> handler, DnsRecordType... types) {
+    this.<T>lookupList(name, ar -> handler.handle(ar.map(result -> result.isEmpty() ? null : result.get(0))), types);
+  }
+
   @SuppressWarnings("unchecked")
-  private void lookup(String name, Handler handler, int... types) {
-    Future result = Future.future();
+  private <T> void lookupList(String name, Handler<AsyncResult<List<T>>> handler, DnsRecordType... types) {
+    Future<List<T>> result = Future.future();
     result.setHandler(handler);
     lookup(name, result, types);
   }
 
   @SuppressWarnings("unchecked")
-  private void lookup(String name, Future result, int... types) {
+  private <T> void lookup(String name, Future<List<T>> result, DnsRecordType... types) {
     Objects.requireNonNull(name, "no null name accepted");
     bootstrap.connect(dnsServer).addListener(new RetryChannelFutureListener(result) {
       @Override
       public void onSuccess(ChannelFuture future) throws Exception {
-        DnsQuery query = new DnsQuery(ThreadLocalRandom.current().nextInt());
-        for (int type: types) {
-          query.addQuestion(new DnsQuestion(name, type));
+        DatagramDnsQuery query = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt());
+        for (DnsRecordType type: types) {
+          query.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
         }
         future.channel().writeAndFlush(query).addListener(new RetryChannelFutureListener(result) {
           @Override
@@ -252,29 +237,44 @@ public final class DnsClientImpl implements DnsClient {
             future.channel().pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
               @Override
               protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
-                DnsResponseCode code = DnsResponseCode.valueOf(msg.getHeader().getResponseCode());
+                DnsResponseCode code = DnsResponseCode.valueOf(msg.code().intValue());
 
                 if (code == DnsResponseCode.NOERROR) {
-                  List<DnsResource> resources = msg.getAnswers();
-                  List<Object> records = new ArrayList<>(resources.size());
-                  for (DnsResource resource : msg.getAnswers()) {
-                    Object record = RecordDecoderFactory.getFactory().decode(resource.type(), msg, resource);
-                    if (record instanceof InetAddress) {
-                      record = ((InetAddress)record).getHostAddress();
+
+                  int count = msg.count(DnsSection.ANSWER);
+
+                  List<T> records = new ArrayList<>(count);
+                  for (int idx = 0;idx < count;idx++) {
+                    DnsRecord a = msg.recordAt(DnsSection.ANSWER, idx);
+                    T record = RecordDecoder.decode(a);
+                    if (isRequestedType(a.type(), types)) {
+                      records.add(record);
                     }
-                    records.add(record);
+                  }
+
+                  if (records.size() > 0 && (records.get(0) instanceof MxRecordImpl || records.get(0) instanceof SrvRecordImpl)) {
+                    Collections.sort((List) records);
                   }
 
                   setResult(result, records);
                 } else {
-                  setResult(result, new DnsException(code));
+                  setFailure(result, new DnsException(code));
                 }
                 ctx.close();
               }
 
+              private boolean isRequestedType(DnsRecordType dnsRecordType, DnsRecordType[] types) {
+                for (DnsRecordType t : types) {
+                  if (t.equals(dnsRecordType)) {
+                    return true;
+                  }
+                }
+                return false;
+              }
+
               @Override
               public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                setResult(result, cause);
+                setFailure(result, cause);
                 ctx.close();
               }
             });
@@ -285,7 +285,7 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @SuppressWarnings("unchecked")
-  private void setResult(Future r, Object result) {
+  private <T> void setResult(Future<List<T>> r, List<T> result) {
     if (r.isComplete()) {
       return;
     }
@@ -298,56 +298,14 @@ public final class DnsClientImpl implements DnsClient {
     });
   }
 
-  private static class HandlerAdapter<T> implements Handler<AsyncResult<List<T>>> {
-    private final Handler handler;
-
-    HandlerAdapter(Handler handler) {
-      this.handler = handler;
+  @SuppressWarnings("unchecked")
+  private <T> void setFailure(Future<List<T>> r, Throwable err) {
+    if (r.isComplete()) {
+      return;
     }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void handle(AsyncResult<List<T>> event) {
-      if (event.failed()) {
-        handler.handle(event);
-      } else {
-        List<T> result = event.result();
-        if (result.isEmpty()) {
-          handler.handle(Future.succeededFuture());
-        } else {
-          handler.handle(Future.succeededFuture(result.get(0)));
-        }
-      }
-    }
-  }
-
-  protected abstract class ConvertingHandler<F, T> implements Handler<AsyncResult<List<F>>> {
-    private final Handler handler;
-    private final Comparator comparator;
-
-    ConvertingHandler(Handler<AsyncResult<List<T>>> handler, Comparator comparator) {
-      this.handler = handler;
-      this.comparator = comparator;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void handle(AsyncResult<List<F>> event) {
-      if (event.failed()) {
-        handler.handle(event);
-      } else {
-        List records = (List) event.result();
-        for (int i = 0; i < records.size(); i++) {
-          F record = (F) records.get(i);
-          records.set(i, convert(record));
-        }
-
-        Collections.sort(records, comparator);
-        handler.handle(Future.succeededFuture(records));
-      }
-    }
-
-    protected abstract T convert(F entry);
+    actualCtx.executeFromIO(() -> {
+      r.fail(err);
+    });
   }
 
   private abstract class RetryChannelFutureListener implements ChannelFutureListener {

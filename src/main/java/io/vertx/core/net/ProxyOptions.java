@@ -85,6 +85,17 @@ public class ProxyOptions {
   }
 
   /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    ProxyOptionsConverter.toJson(this, json);
+    return json;
+  }
+
+  /**
    * Get proxy host.
    *
    * @return  proxy hosts

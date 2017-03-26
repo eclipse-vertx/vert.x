@@ -17,18 +17,46 @@
 package io.vertx.test.core;
 
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.*;
+import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetworkOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.SelfSignedCertificate;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -41,7 +69,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.util.*;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -50,8 +83,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -813,7 +845,7 @@ public class NetTest extends VertxTestBase {
       final int numConnections = 100;
       final AtomicInteger connCount = new AtomicInteger(0);
       for (int i = 0; i < numConnections; i++) {
-        AsyncResultHandler<NetSocket> handler = res -> {
+        Handler<AsyncResult<NetSocket>> handler = res -> {
           if (res.succeeded()) {
             res.result().close();
             if (connCount.incrementAndGet() == numConnections) {
@@ -1747,6 +1779,32 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testListenOnPortNoHandler() {
+    server.connectHandler(NetSocket::close);
+    server.listen(1234, onSuccess(ns -> {
+      client.connect(1234, "localhost", onSuccess(so -> {
+        so.closeHandler(v -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testListen() {
+    server.connectHandler(NetSocket::close);
+    server.listen(onSuccess(ns -> {
+      client.connect(1234, "localhost", onSuccess(so -> {
+        so.closeHandler(v -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testListenTwice2() {
     server.connectHandler(sock -> {
     });
@@ -1964,7 +2022,7 @@ public class NetTest extends VertxTestBase {
   public void testReadStreamPauseResume() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
-    NetSocketStream socketStream = server.connectStream();
+    ReadStream<NetSocket> socketStream = server.connectStream();
     AtomicBoolean paused = new AtomicBoolean();
     socketStream.handler(so -> {
       assertTrue(!paused.get());
@@ -2004,7 +2062,7 @@ public class NetTest extends VertxTestBase {
   public void testNetSocketStreamCallbackIsAsync() {
     this.server = vertx.createNetServer(new NetServerOptions());
     AtomicInteger done = new AtomicInteger();
-    NetSocketStream stream = server.connectStream();
+    ReadStream<NetSocket> stream = server.connectStream();
     stream.handler(req -> {});
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
@@ -2220,8 +2278,8 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
-  // TODO: this test probably doesn't make sense since it sets HostnameVerification
-  // but also trustAll, which turns off the whole ssl cert checking
+  // this test sets HostnameVerification but also trustAll, it fails if hostname is
+  // incorrect but does not verify the certificate validity
 
   @Test
   public void testHostVerificationHttpsMatching() {
@@ -2299,11 +2357,6 @@ public class NetTest extends VertxTestBase {
    */
   @Test
   public void testWithSocks5Proxy() {
-    server.close();
-    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
-
-    NetServer server = vertx.createNetServer(options);
-
     NetClientOptions clientOptions = new NetClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
@@ -2333,11 +2386,6 @@ public class NetTest extends VertxTestBase {
    */
   @Test
   public void testWithSocks5ProxyAuth() {
-    server.close();
-    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
-
-    NetServer server = vertx.createNetServer(options);
-
     NetClientOptions clientOptions = new NetClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setPort(11080)
             .setUsername("username").setPassword("username"));
@@ -2350,13 +2398,85 @@ public class NetTest extends VertxTestBase {
       server.listen(ar -> {
         assertTrue(ar.succeeded());
         client.connect(1234, "localhost", ar2 -> {
-          if (ar2.failed()) {
-            log.warn("failed", ar2.cause());
-          }
           assertTrue(ar2.succeeded());
-          // make sure we have gone through the proxy
-          assertEquals("localhost:1234", proxy.getLastUri());
           testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  /**
+   * test socks5 proxy when accessing ssl server port with correct cert.
+   */
+  @Test
+  public void testConnectSSLWithSocks5Proxy() {
+    server.close();
+    NetServerOptions options = new NetServerOptions()
+        .setPort(1234)
+        .setHost("localhost")
+        .setSsl(true)
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get());
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setHostnameVerificationAlgorithm("HTTPS")
+        .setSsl(true)
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("127.0.0.1").setPort(11080))
+        .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new SocksProxy(null);
+    proxy.start(vertx, v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        client.connect(1234, "localhost", ar2 -> {
+          assertTrue(ar2.succeeded());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  /**
+   * test socks5 proxy for accessing ssl server port with upgradeToSsl.
+   * https://github.com/eclipse/vert.x/issues/1602
+   */
+  @Test
+  public void testUpgradeSSLWithSocks5Proxy() {
+    server.close();
+    NetServerOptions options = new NetServerOptions()
+        .setPort(1234)
+        .setHost("localhost")
+        .setSsl(true)
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get());
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setHostnameVerificationAlgorithm("HTTPS")
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("127.0.0.1").setPort(11080))
+        .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new SocksProxy(null);
+    proxy.start(vertx, v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        client.connect(1234, "localhost", ar2 -> {
+          assertTrue(ar2.succeeded());
+          NetSocket ns = ar2.result();
+          ns.exceptionHandler(th -> {
+            fail(th);
+          });
+          ns.upgradeToSsl(v2 -> {
+            // failure would occur before upgradeToSsl completes
+            testComplete();
+          });
         });
       });
     });
@@ -2366,15 +2486,10 @@ public class NetTest extends VertxTestBase {
   /**
    * test http connect proxy for accessing a arbitrary server port
    * note that this may not work with a "real" proxy since there are usually access rules defined
-   * that limit the target host and ports (e.g. connecting to localhost may not be allowed)
+   * that limit the target host and ports (e.g. connecting to localhost or to port 25 may not be allowed)
    */
   @Test
   public void testWithHttpConnectProxy() {
-    server.close();
-    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
-
-    NetServer server = vertx.createNetServer(options);
-
     NetClientOptions clientOptions = new NetClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setPort(13128));
     NetClient client = vertx.createNetClient(clientOptions);
@@ -2404,11 +2519,6 @@ public class NetTest extends VertxTestBase {
    */
   @Test
   public void testWithSocks4aProxy() {
-    server.close();
-    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
-
-    NetServer server = vertx.createNetServer(options);
-
     NetClientOptions clientOptions = new NetClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
@@ -2438,11 +2548,6 @@ public class NetTest extends VertxTestBase {
    */
   @Test
   public void testWithSocks4aProxyAuth() {
-    server.close();
-    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
-
-    NetServer server = vertx.createNetServer(options);
-
     NetClientOptions clientOptions = new NetClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080)
             .setUsername("username"));
@@ -2473,11 +2578,6 @@ public class NetTest extends VertxTestBase {
    */
   @Test
   public void testWithSocks4LocalResolver() {
-    server.close();
-    NetServerOptions options = new NetServerOptions().setHost("localhost").setPort(1234);
-
-    NetServer server = vertx.createNetServer(options);
-
     NetClientOptions clientOptions = new NetClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
@@ -2506,12 +2606,12 @@ public class NetTest extends VertxTestBase {
   public void testTLSHostnameCertCheckCorrect() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
-        .setKeyCertOptions(TLSCert.JKS_ROOT_CA.getServerKeyCertOptions()));
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
     server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
 
       NetClientOptions options = new NetClientOptions()
           .setHostnameVerificationAlgorithm("HTTPS")
-          .setTrustOptions(TLSCert.JKS_ROOT_CA.getClientTrustOptions());
+          .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
 
       NetClient client = vertx.createNetClient(options);
 
@@ -2537,12 +2637,12 @@ public class NetTest extends VertxTestBase {
   public void testTLSHostnameCertCheckIncorrect() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
-        .setKeyCertOptions(TLSCert.JKS_ROOT_CA.getServerKeyCertOptions()));
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
     server.connectHandler(netSocket -> netSocket.close()).listen(ar -> {
 
       NetClientOptions options = new NetClientOptions()
           .setHostnameVerificationAlgorithm("HTTPS")
-          .setTrustOptions(TLSCert.JKS_ROOT_CA.getClientTrustOptions());
+          .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
 
       NetClient client = vertx.createNetClient(options);
 
@@ -2564,4 +2664,70 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testClientLocalAddress() throws Exception {
+    String expectedAddress = InetAddress.getLocalHost().getHostAddress();
+    NetClientOptions clientOptions = new NetClientOptions().setLocalAddress(expectedAddress);
+    client.close();
+    client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+      assertEquals(expectedAddress, sock.remoteAddress().host());
+      sock.close();
+    });
+    server.listen(1234, "localhost", onSuccess(v -> {
+      client.connect(1234, "localhost", onSuccess(socket -> {
+        socket.closeHandler(v2 -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testSelfSignedCertificate() throws Exception {
+    CountDownLatch latch = new CountDownLatch(2);
+
+    SelfSignedCertificate certificate = SelfSignedCertificate.create();
+
+    NetServerOptions serverOptions = new NetServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(certificate.keyCertOptions())
+      .setTrustOptions(certificate.trustOptions());
+
+    NetClientOptions clientOptions = new NetClientOptions()
+      .setSsl(true)
+      .setKeyCertOptions(certificate.keyCertOptions())
+      .setTrustOptions(certificate.trustOptions());
+
+    NetClientOptions clientTrustAllOptions = new NetClientOptions()
+      .setSsl(true)
+      .setTrustAll(true);
+
+    server = vertx.createNetServer(serverOptions)
+      .connectHandler(socket -> {
+        socket.write("123").end();
+      })
+      .listen(1234, "localhost", onSuccess(s -> {
+
+        client = vertx.createNetClient(clientOptions);
+        client.connect(1234, "localhost", onSuccess(socket -> {
+          socket.handler(buffer -> {
+            assertEquals("123", buffer.toString());
+            latch.countDown();
+          });
+        }));
+
+        client = vertx.createNetClient(clientTrustAllOptions);
+        client.connect(1234, "localhost", onSuccess(socket -> {
+          socket.handler(buffer -> {
+            assertEquals("123", buffer.toString());
+            latch.countDown();
+          });
+        }));
+
+      }));
+
+    awaitLatch(latch);
+  }
 }

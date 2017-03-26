@@ -93,6 +93,17 @@ public abstract class NetworkOptions {
   }
 
   /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    NetworkOptionsConverter.toJson(this, json);
+    return json;
+  }
+
+  /**
    * Return the TCP send buffer size, in bytes.
    *
    * @return the send buffer size

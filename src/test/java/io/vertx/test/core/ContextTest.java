@@ -23,9 +23,12 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.TaskQueue;
 import org.junit.Test;
 
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -323,26 +326,37 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testContextInternalCreateWorkerExecutor() {
+  public void testInternalExecuteBlockingWithQueue() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    WorkerExecutor executor1 = context.createWorkerExecutor();
-    WorkerExecutor executor2 = context.createWorkerExecutor();
-    executor1.executeBlocking(fut1 -> {
-      CountDownLatch latch = new CountDownLatch(1);
-      executor2.executeBlocking(fut2 -> {
-        fut2.complete();
-      }, ar -> {
-        latch.countDown();
-      });
-      try {
-        awaitLatch(latch);
-      } catch (InterruptedException e) {
-        fail(e);
+    TaskQueue[] queues = new TaskQueue[] { new TaskQueue(), new TaskQueue()};
+    AtomicReference<Thread>[] current = new AtomicReference[queues.length];
+    waitFor(queues.length);
+    for (int i = 0;i < queues.length;i++) {
+      current[i] = new AtomicReference<>();
+    }
+    CyclicBarrier barrier = new CyclicBarrier(queues.length);
+    int numTasks = 10;
+    for (int i = 0;i < numTasks;i++) {
+      int ival = i;
+      for (int j = 0;j < queues.length;j++) {
+        int jval = j;
+        context.executeBlocking(fut -> {
+          if (ival == 0) {
+            current[jval].set(Thread.currentThread());
+          } else {
+            assertSame(Thread.currentThread(), current[jval].get());
+          }
+          try {
+            barrier.await();
+          } catch (Exception e) {
+            fail(e);
+          }
+          if (ival == numTasks - 1) {
+            complete();
+          }
+        }, queues[j], ar -> {});
       }
-      fut1.complete();
-    }, ar -> {
-      testComplete();
-    });
+    }
     await();
   }
 }

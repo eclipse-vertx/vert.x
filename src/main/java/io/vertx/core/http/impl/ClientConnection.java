@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
@@ -44,6 +43,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.net.URI;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -76,8 +76,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private final Http1xPool pool;
   private final Object endpointMetric;
   // Requests can be pipelined so we need a queue to keep track of requests
-  private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
-  private final Object metric;
+  private final Deque<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
 
@@ -87,29 +86,24 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
+  private boolean reset;
   private boolean paused;
   private Buffer pausedChunk;
 
   ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
-    super(client.getVertx(), channel, context, metrics);
+    super(client.getVertx(), channel, context);
     this.client = client;
     this.ssl = ssl;
     this.host = host;
     this.port = port;
     this.pool = pool;
     this.metrics = metrics;
-    this.metric = metrics.connected(remoteAddress(), remoteName());
     this.version = version;
     this.endpointMetric = endpointMetric;
   }
 
-  @Override
-  protected Object metric() {
-    return metric;
-  }
-
-  protected HttpClientMetrics metrics() {
+  public HttpClientMetrics metrics() {
     return metrics;
   }
 
@@ -142,7 +136,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         nettyHeaders = null;
       }
       handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
-                                                                  nettyHeaders, maxWebSocketFrameSize);
+                                                                  nettyHeaders, maxWebSocketFrameSize,!client.getOptions().isSendUnmaskedFrames(),false);
       ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(channel).addListener(future -> {
@@ -187,6 +181,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         if (msg instanceof HttpResponse) {
           HttpResponse resp = (HttpResponse) msg;
           if (resp.getStatus().code() != 101) {
+            handshaker = null;
+            close();
             handleException(new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code()));
             return;
           }
@@ -244,7 +240,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       // Need to set context before constructor is called as writehandler registration needs this
       ContextImpl.setContext(context);
       WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation,
-                                                  client.getOptions().getMaxWebsocketFrameSize());
+                                                  client.getOptions().getMaxWebsocketFrameSize(),
+                                                  client.getOptions().getMaxWebsocketMessageSize());
       ws = webSocket;
       handshaker.finishHandshake(channel, response);
       context.executeFromIO(() -> {
@@ -300,14 +297,18 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
       vertxVersion = HttpVersion.HTTP_1_1;
     } else {
-      throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
+      vertxVersion = null;
     }
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
     if (metrics.isEnabled()) {
       metrics.responseBegin(requestForResponse.metric(), nResp);
     }
-    requestForResponse.handleResponse(nResp);
+    if (vertxVersion != null) {
+      requestForResponse.handleResponse(nResp);
+    } else {
+      requestForResponse.handleException(new IllegalStateException("Unsupported HTTP version: " + nettyVersion));
+    }
   }
 
   public void doPause() {
@@ -349,7 +350,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     if (metrics.isEnabled()) {
       HttpClientRequestBase req = currentResponse.request();
       Object reqMetric = req.metric();
-      if (req.exceptionOccurred) {
+      if (req.exceptionOccurred != null) {
         metrics.requestReset(reqMetric);
       } else {
         metrics.responseEnd(reqMetric, currentResponse);
@@ -377,7 +378,18 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         // currently Vertx forces the Connection header if keepalive is enabled for 1.0
         close = true;
       }
-      pool.responseEnded(this, close);
+
+      if (close) {
+        pool.responseEnded(this, true);
+      } else {
+        if (reset) {
+          if (requests.isEmpty()) {
+            pool.responseEnded(this, true);
+          }
+        } else {
+          pool.responseEnded(this, false);
+        }
+      }
     }
     currentResponse = null;
   }
@@ -425,8 +437,21 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     return super.getContext();
   }
 
-  public void reset(long code) {
-    throw new UnsupportedOperationException("HTTP/1.x request cannot be reset");
+  public void resetRequest(long code) {
+    if (!reset) {
+      reset = true;
+      currentRequest = null;
+      requests.removeLast();
+      if (requests.size() == 0) {
+        pool.responseEnded(this, true);
+      }
+    }
+  }
+
+  @Override
+  public void resetResponse(long code) {
+    reset = true;
+    pool.responseEnded(this, true);
   }
 
   private HttpRequest createRequest(HttpVersion version, HttpMethod method, String rawMethod, String uri, MultiMap headers) {
@@ -518,7 +543,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       throw new IllegalStateException("Connection is already writing a request");
     }
     if (metrics.isEnabled()) {
-      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric, localAddress(), remoteAddress(), req);
+      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric(), localAddress(), remoteAddress(), req);
       req.metric(reqMetric);
     }
     this.currentRequest = req;
@@ -550,7 +575,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   public NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics, metric);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), metrics);
+    socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
@@ -564,7 +590,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler(channel, socket, connectionMap) {
+    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
@@ -589,6 +615,12 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
           return;
         }
         super.channelRead(chctx, msg);
+      }
+
+      @Override
+      protected void handleMsgReceived(Object msg) {
+        ByteBuf buf = (ByteBuf) msg;
+        conn.handleDataReceived(Buffer.buffer(buf));
       }
     });
     return socket;

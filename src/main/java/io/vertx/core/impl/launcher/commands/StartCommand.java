@@ -22,10 +22,8 @@ import io.vertx.core.impl.launcher.CommandLineUtils;
 import io.vertx.core.spi.launcher.DefaultCommand;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A command starting a vert.x application in the background.
@@ -99,11 +97,22 @@ public class StartCommand extends DefaultCommand {
     ProcessBuilder builder = new ProcessBuilder();
     addJavaCommand(cmd);
 
+    // Must be called only once !
+    List<String> cliArguments = getArguments();
+
     // Add the classpath to env.
     builder.environment().put("CLASSPATH", System.getProperty("java.class.path"));
 
     if (launcher != null) {
       ExecUtils.addArgument(cmd, launcher);
+      // Do we have a valid command ?
+      Optional<String> maybeCommand = cliArguments.stream()
+          .filter(arg -> executionContext.launcher().getCommandNames().contains(arg))
+          .findFirst();
+      if (! maybeCommand.isPresent()) {
+        // No command, add `run`
+        ExecUtils.addArgument(cmd, "run");
+      }
     } else if (isLaunchedAsFatJar()) {
       ExecUtils.addArgument(cmd, "-jar");
       ExecUtils.addArgument(cmd, CommandLineUtils.getJar());
@@ -113,7 +122,7 @@ public class StartCommand extends DefaultCommand {
       ExecUtils.addArgument(cmd, "run");
     }
 
-    getArguments().stream().forEach(arg -> ExecUtils.addArgument(cmd, arg));
+    cliArguments.forEach(arg -> ExecUtils.addArgument(cmd, arg));
 
     try {
       builder.command(cmd);

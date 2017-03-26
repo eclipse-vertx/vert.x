@@ -138,12 +138,13 @@ public class MessageImpl<U, V> implements Message<V> {
     }
   }
 
-  public void setReplyAddress(String replyAddress) {
-    this.replyAddress = replyAddress;
+  @Override
+  public boolean isSend() {
+    return send;
   }
 
-  public boolean send() {
-    return send;
+  public void setReplyAddress(String replyAddress) {
+    this.replyAddress = replyAddress;
   }
 
   public MessageCodec<U, V> codec() {

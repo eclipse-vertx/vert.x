@@ -16,21 +16,37 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.*;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.TrustAllTrustManager;
+import io.vertx.test.core.tls.Cert;
+import io.vertx.test.core.tls.Trust;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.ManagerFactoryParameters;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.TrustManagerFactorySpi;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -51,229 +67,241 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().pass();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().pass();
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPKCS12() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.PKCS12, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PKCS12, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPEM() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.PEM, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PEM, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertJKSRootCAWithJKSRootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS_ROOT_CA, TLSCert.JKS_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS_ROOT_CA, Cert.SERVER_JKS_ROOT_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertJKSRootCAWithPKCS12RootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PKCS12_ROOT_CA, TLSCert.JKS_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PKCS12_ROOT_CA, Cert.SERVER_JKS_ROOT_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertJKSRootRootCAWithPEMRootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.JKS_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA, Cert.SERVER_JKS_ROOT_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertPKCS12RootCAWithJKSRootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS_ROOT_CA, TLSCert.PKCS12_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS_ROOT_CA, Cert.SERVER_PKCS12_ROOT_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertPKCS12RootCAWithPKCS12RootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PKCS12_ROOT_CA, TLSCert.PKCS12_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PKCS12_ROOT_CA, Cert.SERVER_PKCS12_ROOT_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertPKCS12RootCAWithPEMRootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PKCS12_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA, Cert.SERVER_PKCS12_ROOT_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertPEMRootCAWithJKSRootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS_ROOT_CA, Cert.SERVER_PEM_ROOT_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertPEMRootCAWithPKCS12RootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PKCS12_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PKCS12_ROOT_CA, Cert.SERVER_PEM_ROOT_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts via a root CA (not trust all)
   public void testTLSClientTrustServerCertPEMRootCAWithPEMRootCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA, Cert.SERVER_PEM_ROOT_CA, Trust.NONE).pass();
+  }
+
+  // These two tests should be grouped in same method - todo later
+  @Test
+  // Server specifies cert that the client trusts via a root CA that is in a multi pem store (not trust all)
+  public void testTLSClientTrustServerCertMultiPemWithPEMRootCA() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA_AND_OTHER_CA, Cert.SERVER_PEM_ROOT_CA, Trust.NONE).pass();
+  }
+  @Test
+  // Server specifies cert that the client trusts via a other CA that is in a multi pem store (not trust all)
+  public void testTLSClientTrustServerCertMultiPemWithPEMOtherCA() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA_AND_OTHER_CA, Cert.SERVER_PEM_OTHER_CA, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert chain that the client trusts via a CA (not trust all)
   public void testTLSClientTrustServerCertPEMRootCAWithPEMCAChain() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_CA_CHAIN, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA, Cert.SERVER_PEM_CA_CHAIN, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies intermediate cert that the client doesn't trust because it is missing the intermediate CA signed by the root CA
   public void testTLSClientUntrustedServerCertPEMRootCAWithPEMCA() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_CA, TLSCert.NONE).fail();
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA, Cert.SERVER_PEM_INT_CA, Trust.NONE).fail();
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPKCS12ServerCert() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PKCS12, TLSCert.JKS, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PKCS12, Cert.SERVER_JKS, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPEMServerCert() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM, TLSCert.JKS, TLSCert.NONE).pass();
+    testTLS(Cert.NONE, Trust.SERVER_PEM, Cert.SERVER_JKS, Trust.NONE).pass();
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).fail();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).fail();
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServerPEM() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.PEM, TLSCert.NONE).fail();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_PEM, Trust.NONE).fail();
   }
 
   @Test
   // Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(TLSCert.JKS, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).pass();
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).pass();
   }
 
   @Test
   // Client specifies cert even though it's not required
   public void testTLSClientCertNotRequiredPEM() throws Exception {
-    testTLS(TLSCert.JKS, TLSCert.JKS, TLSCert.PEM, TLSCert.JKS).pass();
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_PEM, Trust.CLIENT_JKS).pass();
   }
 
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(TLSCert.JKS, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).requiresClientAuth().pass();
   }
 
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertRequiredPKCS12() throws Exception {
-    testTLS(TLSCert.JKS, TLSCert.JKS, TLSCert.JKS, TLSCert.PKCS12).requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_PKCS12).requiresClientAuth().pass();
   }
 
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertRequiredPEM() throws Exception {
-    testTLS(TLSCert.JKS, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM).requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_PEM).requiresClientAuth().pass();
   }
 
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertPKCS12Required() throws Exception {
-    testTLS(TLSCert.PKCS12, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_PKCS12, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).requiresClientAuth().pass();
   }
 
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertPEMRequired() throws Exception {
-    testTLS(TLSCert.PEM, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_PEM, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).requiresClientAuth().pass();
   }
 
   @Test
   // Client specifies cert by CA and it is required
   public void testTLSClientCertPEM_CARequired() throws Exception {
-    testTLS(TLSCert.PEM_ROOT_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_ROOT_CA).requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_PEM_ROOT_CA, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_PEM_ROOT_CA).requiresClientAuth().pass();
   }
 
   @Test
   // Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).requiresClientAuth().fail();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).requiresClientAuth().fail();
   }
 
   @Test
   // Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(TLSCert.JKS, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).requiresClientAuth().fail();
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).requiresClientAuth().fail();
   }
 
   @Test
   // Server specifies cert that the client does not trust via a revoked certificate of the CA
   public void testTLSClientRevokedServerCert() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM_ROOT_CA, TLSCert.PEM_ROOT_CA, TLSCert.NONE).clientUsesCrl().fail();
+    testTLS(Cert.NONE, Trust.SERVER_PEM_ROOT_CA, Cert.SERVER_PEM_ROOT_CA, Trust.NONE).clientUsesCrl().fail();
   }
 
   @Test
   // Client specifies cert that the server does not trust via a revoked certificate of the CA
   public void testTLSRevokedClientCertServer() throws Exception {
-    testTLS(TLSCert.PEM_ROOT_CA, TLSCert.JKS, TLSCert.JKS, TLSCert.PEM_ROOT_CA).requiresClientAuth().clientUsesCrl().fail();
+    testTLS(Cert.CLIENT_PEM_ROOT_CA, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_PEM_ROOT_CA).requiresClientAuth().serverUsesCrl().fail();
   }
 
   @Test
   // Specify some matching cipher suites
   public void testTLSMatchingCipherSuites() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledCipherSuites(ENABLED_CIPHER_SUITES).pass();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledCipherSuites(ENABLED_CIPHER_SUITES).pass();
   }
 
   @Test
   // Specify some non matching cipher suites
   public void testTLSNonMatchingCipherSuites() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledCipherSuites(new String[]{"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"}).clientEnabledCipherSuites(new String[]{"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"}).fail();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledCipherSuites(new String[]{"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"}).clientEnabledCipherSuites(new String[]{"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"}).fail();
   }
 
   @Test
   // Specify some matching TLS protocols
   public void testTLSMatchingProtocolVersions() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
   }
 
   @Test
   // Specify some matching TLS protocols
   public void testTLSInvalidProtocolVersion() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"HelloWorld"}).fail();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"HelloWorld"}).fail();
   }
 
   @Test
   // Specify some non matching TLS protocols
   public void testTLSNonMatchingProtocolVersions() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello"}).fail();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello"}).fail();
   }
 
   @Test
   // Test host verification with a CN matching localhost
   public void testTLSVerifyMatchingHost() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().clientVerifyHost().pass();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().clientVerifyHost().pass();
   }
 
   @Test
   // Test host verification with a CN NOT matching localhost
   public void testTLSVerifyNonMatchingHost() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.MIM, TLSCert.NONE).clientTrustAll().clientVerifyHost().fail();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_MIM, Trust.NONE).clientTrustAll().clientVerifyHost().fail();
   }
 
   // OpenSSL tests
@@ -281,73 +309,102 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Server uses OpenSSL with JKS
   public void testTLSClientTrustServerCertJKSOpenSSL() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).serverOpenSSL().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverOpenSSL().pass();
   }
 
   @Test
   // Server uses OpenSSL with PKCS12
   public void testTLSClientTrustServerCertPKCS12OpenSSL() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.PKCS12, TLSCert.NONE).serverOpenSSL().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PKCS12, Trust.NONE).serverOpenSSL().pass();
   }
 
   @Test
   // Server uses OpenSSL with PEM
   public void testTLSClientTrustServerCertPEMOpenSSL() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.PEM, TLSCert.NONE).serverOpenSSL().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PEM, Trust.NONE).serverOpenSSL().pass();
   }
 
   @Test
   // Client trusts OpenSSL with PEM
   public void testTLSClientTrustServerCertWithJKSOpenSSL() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).clientOpenSSL().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithPKCS12OpenSSL() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PKCS12, TLSCert.JKS, TLSCert.NONE).clientOpenSSL().pass();
+    testTLS(Cert.NONE, Trust.SERVER_PKCS12, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithPEMOpenSSL() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.PEM, TLSCert.JKS, TLSCert.NONE).clientOpenSSL().pass();
+    testTLS(Cert.NONE, Trust.SERVER_PEM, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertRequiredOpenSSL() throws Exception {
-    testTLS(TLSCert.JKS, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).clientOpenSSL().requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
   }
 
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertPKCS12RequiredOpenSSL() throws Exception {
-    testTLS(TLSCert.PKCS12, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).clientOpenSSL().requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_PKCS12, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
   }
 
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertPEMRequiredOpenSSL() throws Exception {
-    testTLS(TLSCert.PEM, TLSCert.JKS, TLSCert.JKS, TLSCert.JKS).clientOpenSSL().requiresClientAuth().pass();
+    testTLS(Cert.CLIENT_PEM, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
+  }
+
+  @Test
+  // Test custom trust manager factory
+  public void testCustomTrustManagerFactory() throws Exception {
+    testTLS(Cert.NONE, () -> new TrustOptions() {
+      @Override
+      public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
+        return new TrustManagerFactory(new TrustManagerFactorySpi() {
+          @Override
+          protected void engineInit(KeyStore keyStore) throws KeyStoreException {
+          }
+          @Override
+          protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws InvalidAlgorithmParameterException {
+          }
+          @Override
+          protected TrustManager[] engineGetTrustManagers() {
+            return new TrustManager[]{TrustAllTrustManager.INSTANCE};
+          }
+        }, KeyPairGenerator.getInstance("RSA").getProvider(), KeyPairGenerator.getInstance("RSA").getAlgorithm()) {
+        };
+      }
+      @Override
+      public TrustOptions clone() {
+        return this;
+      }
+    }, Cert.SERVER_JKS, Trust.NONE).pass();
   }
 
   class TLSTest {
 
     HttpVersion version;
-    TLSCert clientCert;
-    TLSCert clientTrust;
-    TLSCert serverCert;
-    TLSCert serverTrust;
+    KeyCertOptions clientCert;
+    TrustOptions clientTrust;
     boolean clientTrustAll;
     boolean clientUsesCrl;
     boolean clientUsesAlpn;
     boolean clientOpenSSL;
     boolean clientVerifyHost = true;
+    boolean clientSSL = true;
     boolean requiresClientAuth;
+    KeyCertOptions serverCert;
+    TrustOptions serverTrust;
     boolean serverUsesCrl;
     boolean serverOpenSSL;
     boolean serverUsesAlpn;
+    boolean serverSSL = true;
     boolean useProxy;
     boolean useProxyAuth;
     boolean useSocksProxy;
@@ -356,14 +413,23 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String[] clientEnabledSecureTransportProtocol   = new String[0];
     String[] serverEnabledSecureTransportProtocol   = new String[0];
     private String connectHostname;
+    private boolean followRedirects;
+    private Function<HttpClient, HttpClientRequest> requestProvider = client -> {
+      String httpHost;
+      if (connectHostname != null) {
+        httpHost = connectHostname;
+      } else {
+        httpHost = DEFAULT_HTTP_HOST;
+      }
+      return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
+    };
 
-
-    public TLSTest(TLSCert clientCert, TLSCert clientTrust, TLSCert serverCert, TLSCert serverTrust) {
+    public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
       this.version = HttpVersion.HTTP_1_1;
-      this.clientCert = clientCert;
-      this.clientTrust = clientTrust;
-      this.serverCert = serverCert;
-      this.serverTrust = serverTrust;
+      this.clientCert = clientCert.get();
+      this.clientTrust = clientTrust.get();
+      this.serverCert = serverCert.get();
+      this.serverTrust = serverTrust.get();
     }
 
     TLSTest version(HttpVersion version) {
@@ -461,6 +527,31 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
+    TLSTest requestOptions(RequestOptions requestOptions) {
+      this.requestProvider = client -> client.request(HttpMethod.POST, requestOptions);
+      return this;
+    }
+
+    TLSTest requestProvider(Function<HttpClient, HttpClientRequest> requestProvider) {
+      this.requestProvider = requestProvider;
+      return this;
+    }
+
+    TLSTest clientSSL(boolean ssl) {
+      clientSSL = ssl;
+      return this;
+    }
+
+    TLSTest serverSSL(boolean ssl) {
+      serverSSL = ssl;
+      return this;
+    }
+
+    TLSTest followRedirects(boolean follow) {
+      followRedirects = follow;
+      return this;
+    }
+
     void pass() {
       run(true);
     }
@@ -473,7 +564,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       server.close();
       HttpClientOptions options = new HttpClientOptions();
       options.setProtocolVersion(version);
-      options.setSsl(true);
+      options.setSsl(clientSSL);
       if (clientTrustAll) {
         options.setTrustAll(true);
       }
@@ -487,8 +578,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
         options.setUseAlpn(true);
       }
       options.setVerifyHost(clientVerifyHost);
-      setOptions(options, clientTrust.getClientTrustOptions());
-      setOptions(options, clientCert.getClientKeyCertOptions());
+      options.setTrustOptions(clientTrust);
+      options.setKeyCertOptions(clientCert);
       for (String suite: clientEnabledCipherSuites) {
         options.addEnabledCipherSuite(suite);
       }
@@ -502,7 +593,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
         } else {
           proxyOptions = new ProxyOptions().setHost("localhost").setPort(13128).setType(ProxyType.HTTP);
         }
-
         if (useProxyAuth) {
           proxyOptions.setUsername("username").setPassword("username");
         }
@@ -510,9 +600,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       client = createHttpClient(options);
       HttpServerOptions serverOptions = new HttpServerOptions();
-      serverOptions.setSsl(true);
-      setOptions(serverOptions, serverTrust.getServerTrustOptions());
-      setOptions(serverOptions, serverCert.getServerKeyCertOptions());
+      serverOptions.setTrustOptions(serverTrust);
+      serverOptions.setKeyCertOptions(serverCert);
       if (requiresClientAuth) {
         serverOptions.setClientAuth(ClientAuth.REQUIRED);
       }
@@ -525,6 +614,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (serverUsesAlpn) {
         serverOptions.setUseAlpn(true);
       }
+      if (serverSSL) {
+        serverOptions.setSsl(true);
+      }
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
       }
@@ -535,24 +627,29 @@ public abstract class HttpTLSTest extends HttpTestBase {
       server.requestHandler(req -> {
         assertEquals(version, req.version());
         req.bodyHandler(buffer -> {
-          assertEquals(true, req.isSSL());
+          assertEquals(serverSSL, req.isSSL());
           assertEquals("foo", buffer.toString());
           req.response().end("bar");
         });
       });
       server.listen(ar -> {
         assertTrue(ar.succeeded());
-
         String httpHost;
         if (connectHostname != null) {
           httpHost = connectHostname;
         } else {
           httpHost = DEFAULT_HTTP_HOST;
         }
-        HttpClientRequest req = client.request(HttpMethod.GET, 4043, httpHost, DEFAULT_TEST_URI, response -> {
-          response.version();
-          response.bodyHandler(data -> assertEquals("bar", data.toString()));
-          testComplete();
+        HttpClientRequest req = requestProvider.apply(client);
+        req.setFollowRedirects(followRedirects);
+        req.handler(response -> {
+          if (shouldPass) {
+            response.version();
+            response.bodyHandler(data -> assertEquals("bar", data.toString()));
+            testComplete();
+          } else {
+            HttpTLSTest.this.fail("Should not get a response");
+          }
         });
         req.exceptionHandler(t -> {
           if (shouldPass) {
@@ -573,61 +670,61 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   abstract HttpClient createHttpClient(HttpClientOptions options);
 
-  protected TLSTest testTLS(TLSCert clientCert, TLSCert clientTrust,
-                          TLSCert serverCert, TLSCert serverTrust) throws Exception {
+  protected TLSTest testTLS(Cert<?> clientCert, Trust<?> clientTrust,
+                          Cert<?> serverCert, Trust<?> serverTrust) throws Exception {
     return new TLSTest(clientCert, clientTrust, serverCert, serverTrust);
   }
 
   @Test
   public void testJKSInvalidPath() {
-    testInvalidKeyStore(((JksOptions) TLSCert.JKS.getServerKeyCertOptions()).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: ", "invalid.jks");
+    testInvalidKeyStore(Cert.SERVER_JKS.get().setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: ", "invalid.jks");
   }
 
   @Test
   public void testJKSMissingPassword() {
-    testInvalidKeyStore(((JksOptions) TLSCert.JKS.getServerKeyCertOptions()).setPassword(null), "Password must not be null", null);
+    testInvalidKeyStore(Cert.SERVER_JKS.get().setPassword(null), "Password must not be null", null);
   }
 
   @Test
   public void testJKSInvalidPassword() {
-    testInvalidKeyStore(((JksOptions) TLSCert.JKS.getServerKeyCertOptions()).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect", null);
+    testInvalidKeyStore(Cert.SERVER_JKS.get().setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect", null);
   }
 
   @Test
   public void testPKCS12InvalidPath() {
-    testInvalidKeyStore(((PfxOptions) TLSCert.PKCS12.getServerKeyCertOptions()).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: ", "invalid.p12");
+    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: ", "invalid.p12");
   }
 
   @Test
   public void testPKCS12MissingPassword() {
-    testInvalidKeyStore(((PfxOptions) TLSCert.PKCS12.getServerKeyCertOptions()).setPassword(null), "Get Key failed: null", null);
+    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPassword(null), "Get Key failed: null", null);
   }
 
   @Test
   public void testPKCS12InvalidPassword() {
-    testInvalidKeyStore(((PfxOptions) TLSCert.PKCS12.getServerKeyCertOptions()).setPassword("wrongpassword"), Arrays.asList(
+    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPassword("wrongpassword"), Arrays.asList(
         "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded",
         "keystore password was incorrect"), null);
   }
 
   @Test
   public void testKeyCertMissingKeyPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setKeyPath(null), "Missing private key", null);
+    testInvalidKeyStore(Cert.SERVER_PEM.get().setKeyPath(null), "Missing private key", null);
   }
 
   @Test
   public void testKeyCertInvalidKeyPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
+    testInvalidKeyStore(Cert.SERVER_PEM.get().setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
   }
 
   @Test
   public void testKeyCertMissingCertPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setCertPath(null), "Missing X.509 certificate", null);
+    testInvalidKeyStore(Cert.SERVER_PEM.get().setCertPath(null), "Missing X.509 certificate", null);
   }
 
   @Test
   public void testKeyCertInvalidCertPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
+    testInvalidKeyStore(Cert.SERVER_PEM.get().setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
   }
 
   @Test
@@ -648,7 +745,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidKeyStore(((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setKeyPath(file.toString()), expectedMessage, null);
+      testInvalidKeyStore(Cert.SERVER_PEM.get().setKeyPath(file.toString()), expectedMessage, null);
     }
   }
 
@@ -698,7 +795,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   private void testInvalidTrustStore(TrustOptions options, String expectedPrefix, String expectedSuffix) {
     HttpServerOptions serverOptions = new HttpServerOptions();
-    setOptions(serverOptions, options);
+    serverOptions.setTrustOptions(options);
     testStore(serverOptions, Collections.singletonList(expectedPrefix), expectedSuffix);
   }
 
@@ -737,7 +834,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   public void testCrlInvalidPath() throws Exception {
     HttpClientOptions clientOptions = new HttpClientOptions();
-    setOptions(clientOptions, TLSCert.PEM_ROOT_CA.getClientTrustOptions());
+    clientOptions.setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);
@@ -755,7 +852,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Access https server via connect proxy
   public void testHttpsProxy() throws Exception {
     startProxy(null, ProxyType.HTTP);
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
     assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
@@ -765,14 +862,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Check that proxy auth fails if it is missing
   public void testHttpsProxyAuthFail() throws Exception {
     startProxy("username", ProxyType.HTTP);
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().fail();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().fail();
   }
 
   @Test
   // Access https server via connect proxy with proxy auth required
   public void testHttpsProxyAuth() throws Exception {
     startProxy("username", ProxyType.HTTP);
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().useProxyAuth().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
     assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
@@ -785,7 +882,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testHttpsProxyUnknownHost() throws Exception {
     startProxy(null, ProxyType.HTTP);
     proxy.setForceUri("localhost:4043");
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy()
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
@@ -796,7 +893,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Access https server via socks5 proxy
   public void testHttpsSocks() throws Exception {
     startProxy(null, ProxyType.SOCKS5);
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useSocksProxy().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().useSocksProxy().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
   }
@@ -805,7 +902,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Access https server via socks5 proxy with authentication
   public void testHttpsSocksAuth() throws Exception {
     startProxy("username", ProxyType.SOCKS5);
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useSocksProxy().useProxyAuth().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().useSocksProxy().useProxyAuth().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
   }
@@ -817,10 +914,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSocksProxyUnknownHost() throws Exception {
     startProxy(null, ProxyType.SOCKS5);
     proxy.setForceUri("localhost:4043");
-    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useSocksProxy()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().useSocksProxy()
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
   }
-
 }

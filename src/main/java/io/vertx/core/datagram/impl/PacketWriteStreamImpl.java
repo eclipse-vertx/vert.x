@@ -20,7 +20,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
-import io.vertx.core.datagram.PacketWritestream;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -28,7 +27,7 @@ import io.vertx.core.streams.WriteStream;
  *
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-class PacketWriteStreamImpl implements PacketWritestream, Handler<AsyncResult<DatagramSocket>> {
+class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<DatagramSocket>> {
 
   private DatagramSocketImpl datagramSocket;
   private Handler<Throwable> exceptionHandler;
@@ -49,19 +48,19 @@ class PacketWriteStreamImpl implements PacketWritestream, Handler<AsyncResult<Da
   }
 
   @Override
-  public PacketWritestream exceptionHandler(Handler<Throwable> handler) {
+  public PacketWriteStreamImpl exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     return this;
   }
 
   @Override
-  public PacketWritestream write(Buffer data) {
+  public PacketWriteStreamImpl write(Buffer data) {
     datagramSocket.send(data, port, host, this);
     return this;
   }
 
   @Override
-  public PacketWritestream setWriteQueueMaxSize(int maxSize) {
+  public PacketWriteStreamImpl setWriteQueueMaxSize(int maxSize) {
     return this;
   }
 
@@ -71,7 +70,7 @@ class PacketWriteStreamImpl implements PacketWritestream, Handler<AsyncResult<Da
   }
 
   @Override
-  public PacketWritestream drainHandler(Handler<Void> handler) {
+  public PacketWriteStreamImpl drainHandler(Handler<Void> handler) {
     return this;
   }
 

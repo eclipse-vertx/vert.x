@@ -52,6 +52,172 @@ public final class HttpUtils {
   private HttpUtils() {
   }
 
+  private static int indexOfSlash(CharSequence str, int start) {
+    for (int i = start; i < str.length(); i++) {
+      if (str.charAt(i) == '/') {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  private static boolean matches(CharSequence path, int start, String what) {
+    return matches(path, start, what, false);
+  }
+
+  private static boolean matches(CharSequence path, int start, String what, boolean exact) {
+    if (exact) {
+      if (path.length() - start != what.length()) {
+        return false;
+      }
+    }
+
+    if (path.length() - start >= what.length()) {
+      for (int i = 0; i < what.length(); i++) {
+        if (path.charAt(start + i) != what.charAt(i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Removed dots as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
+   *
+   * There are 2 extra transformations that are not part of the spec but kept for backwards compatibility:
+   *
+   * double slash // will be converted to single slash and the path will always start with slash.
+   *
+   * @param path raw path
+   * @return normalized path
+   */
+  public static String removeDots(CharSequence path) {
+
+    if (path == null) {
+      return null;
+    }
+
+    final StringBuilder obuf = new StringBuilder(path.length());
+
+    int i = 0;
+    while (i < path.length()) {
+      // remove dots as described in
+      // http://tools.ietf.org/html/rfc3986#section-5.2.4
+      if (matches(path, i, "./")) {
+        i += 2;
+      } else if (matches(path, i, "../")) {
+        i += 3;
+      } else if (matches(path, i, "/./")) {
+        // preserve last slash
+        i += 2;
+      } else if (matches(path, i,"/.", true)) {
+        path = "/";
+        i = 0;
+      } else if (matches(path, i, "/../")) {
+        // preserve last slash
+        i += 3;
+        int pos = obuf.lastIndexOf("/");
+        if (pos != -1) {
+          obuf.delete(pos, obuf.length());
+        }
+      } else if (matches(path, i, "/..", true)) {
+        path = "/";
+        i = 0;
+        int pos = obuf.lastIndexOf("/");
+        if (pos != -1) {
+          obuf.delete(pos, obuf.length());
+        }
+      } else if (matches(path, i, ".", true) || matches(path, i, "..", true)) {
+        break;
+      } else {
+        if (path.charAt(i) == '/') {
+          i++;
+          // Not standard!!!
+          // but common // -> /
+          if (obuf.length() == 0 || obuf.charAt(obuf.length() - 1) != '/') {
+            obuf.append('/');
+          }
+        }
+        int pos = indexOfSlash(path, i);
+        if (pos != -1) {
+          obuf.append(path, i, pos);
+          i = pos;
+        } else {
+          obuf.append(path, i, path.length());
+          break;
+        }
+      }
+    }
+
+    return obuf.toString();
+  }
+
+  /**
+   * Resolve an URI reference as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>
+   */
+  public static URI resolveURIReference(String base, String ref) throws URISyntaxException {
+    return resolveURIReference(URI.create(base), ref);
+  }
+
+  /**
+   * Resolve an URI reference as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>
+   */
+  public static URI resolveURIReference(URI base, String ref) throws URISyntaxException {
+    URI _ref = URI.create(ref);
+    String scheme;
+    String authority;
+    String path;
+    String query;
+    if (_ref.getScheme() != null) {
+      scheme = _ref.getScheme();
+      authority = _ref.getAuthority();
+      path = removeDots(_ref.getPath());
+      query = _ref.getQuery();
+    } else {
+      if (_ref.getAuthority() != null) {
+        authority = _ref.getAuthority();
+        path = _ref.getPath();
+        query = _ref.getQuery();
+      } else {
+        if (_ref.getPath().length() == 0) {
+          path = base.getPath();
+          if (_ref.getQuery() != null) {
+            query = _ref.getQuery();
+          } else {
+            query = base.getQuery();
+          }
+        } else {
+          if (_ref.getPath().startsWith("/")) {
+            path = removeDots(_ref.getPath());
+          } else {
+            // Merge paths
+            String mergedPath;
+            String basePath = base.getPath();
+            if (base.getAuthority() != null && basePath.length() == 0) {
+              mergedPath = "/" + _ref.getPath();
+            } else {
+              int index = basePath.lastIndexOf('/');
+              if (index > -1) {
+                mergedPath = basePath.substring(0, index + 1) + _ref.getPath();
+              } else {
+                mergedPath = _ref.getPath();
+              }
+            }
+            path = removeDots(mergedPath);
+          }
+          query = _ref.getQuery();
+        }
+        authority = base.getAuthority();
+      }
+      scheme = base.getScheme();
+    }
+    return new URI(scheme, authority, path, query, _ref.getFragment());
+  }
+
   /**
    * Extract the path out of the uri.
    */
@@ -139,7 +305,7 @@ public final class HttpUtils {
         nettySettings.maxFrameSize(vertxSettings.getMaxFrameSize());
       }
       if (vertxSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
-        nettySettings.maxHeaderListSize((int)(long) vertxSettings.getMaxHeaderListSize());
+        nettySettings.maxHeaderListSize(vertxSettings.getMaxHeaderListSize());
       }
       Map<Integer, Long> extraSettings = vertxSettings.getExtraSettings();
       if (extraSettings != null) {
@@ -155,7 +321,7 @@ public final class HttpUtils {
     converted.pushEnabled(settings.isPushEnabled());
     converted.maxFrameSize(settings.getMaxFrameSize());
     converted.initialWindowSize(settings.getInitialWindowSize());
-    converted.headerTableSize((int)(long)settings.getHeaderTableSize());
+    converted.headerTableSize(settings.getHeaderTableSize());
     converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
     converted.maxHeaderListSize(settings.getMaxHeaderListSize());
     if (settings.getExtraSettings() != null) {
@@ -176,7 +342,7 @@ public final class HttpUtils {
     if (maxConcurrentStreams != null) {
       converted.setMaxConcurrentStreams(maxConcurrentStreams);
     }
-    Integer maxHeaderListSize = settings.maxHeaderListSize();
+    Long maxHeaderListSize = settings.maxHeaderListSize();
     if (maxHeaderListSize != null) {
       converted.setMaxHeaderListSize(maxHeaderListSize);
     }
@@ -190,7 +356,7 @@ public final class HttpUtils {
     }
     Long headerTableSize = settings.headerTableSize();
     if (headerTableSize != null) {
-      converted.setHeaderTableSize((int)(long) headerTableSize);
+      converted.setHeaderTableSize(headerTableSize);
     }
     settings.forEach((key, value) -> {
       if (key > 6) {

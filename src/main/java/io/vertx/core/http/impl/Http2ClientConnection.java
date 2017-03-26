@@ -41,6 +41,7 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.NetworkMetrics;
 
 import java.util.Map;
 
@@ -54,7 +55,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   final Http2Pool http2Pool;
   final HttpClientMetrics metrics;
   final Object queueMetric;
-  final Object metric;
   int streamCount;
 
   public Http2ClientConnection(Http2Pool http2Pool,
@@ -63,11 +63,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
                                Channel channel,
                                VertxHttp2ConnectionHandler connHandler,
                                HttpClientMetrics metrics) {
-    super(channel, context, connHandler, metrics);
+    super(channel, context, connHandler);
     this.http2Pool = http2Pool;
     this.metrics = metrics;
-    this.metric = metrics.connected(remoteAddress(), remoteName());
     this.queueMetric = queueMetric;
+  }
+
+  @Override
+  public HttpClientMetrics metrics() {
+    return metrics;
   }
 
   @Override
@@ -94,11 +98,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Http2ClientStream clientStream = new Http2ClientStream(this, stream, writable);
     streams.put(clientStream.stream.id(), clientStream);
     return clientStream;
-  }
-
-  @Override
-  protected Object metric() {
-    return metric;
   }
 
   @Override
@@ -130,9 +129,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           String host = headers.authority() != null ? headers.authority().toString() : null;
           MultiMap headersMap = new Http2HeadersAdaptor(headers);
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, method, rawMethod, uri, host, headersMap);
+          int port = remoteAddress().port();
+          HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, isSsl(), method, rawMethod, uri, host, port, headersMap);
           if (metrics.isEnabled()) {
-            pushReq.metric(metrics.responsePushed(queueMetric, metric, localAddress(), remoteAddress(), pushReq));
+            pushReq.metric(metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq));
           }
           streams.put(promisedStreamId, pushReq.getStream());
           pushHandler.handle(pushReq);
@@ -172,7 +172,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     void handleEnd(MultiMap trailers) {
       if (conn.metrics.isEnabled()) {
-        if (request.exceptionOccurred) {
+        if (request.exceptionOccurred != null) {
           conn.metrics.requestReset(request.metric());
         } else {
           conn.metrics.responseEnd(request.metric(), response);
@@ -314,7 +314,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
       if (conn.metrics.isEnabled()) {
-        request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric, conn.localAddress(), conn.remoteAddress(), request));
+        request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
       writeHeaders(h, end && content == null);
       if (content != null) {
@@ -370,7 +370,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void reset(long code) {
+    public void resetRequest(long code) {
       if (!(requestEnded && responseEnded)) {
         requestEnded = true;
         responseEnded = true;
@@ -379,6 +379,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           conn.metrics.requestReset(request.metric());
         }
       }
+    }
+
+    @Override
+    public void resetResponse(long code) {
+      resetRequest(code);
     }
 
     @Override

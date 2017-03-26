@@ -98,6 +98,41 @@ public class ConnectionManager {
     return metrics;
   }
 
+  static final class ConnectionKey {
+
+    private final boolean ssl;
+    private final int port;
+    private final String host;
+
+    public ConnectionKey(boolean ssl, int port, String host) {
+      this.ssl = ssl;
+      this.host = host;
+      this.port = port;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      ConnectionKey that = (ConnectionKey) o;
+
+      if (ssl != that.ssl) return false;
+      if (port != that.port) return false;
+      if (host != null ? !host.equals(that.host) : that.host != null) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = ssl ? 1 : 0;
+      result = 31 * result + (host != null ? host.hashCode() : 0);
+      result = 31 * result + port;
+      return result;
+    }
+  }
+
   /**
    * The queue manager manages the connection queues for a given usage, the idea is to split
    * queues for HTTP requests and websockets. A websocket uses a pool of connections
@@ -107,9 +142,9 @@ public class ConnectionManager {
   private class QueueManager {
 
     private final Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<>();
-    private final Map<TargetAddress, ConnQueue> queueMap = new ConcurrentHashMap<>();
+    private final Map<ConnectionKey, ConnQueue> queueMap = new ConcurrentHashMap<>();
 
-    ConnQueue getConnQueue(TargetAddress address, HttpVersion version) {
+    ConnQueue getConnQueue(ConnectionKey address, HttpVersion version) {
       return queueMap.computeIfAbsent(address, targetAddress -> new ConnQueue(version, this, targetAddress));
     }
 
@@ -124,17 +159,17 @@ public class ConnectionManager {
     }
   }
 
-  public void getConnectionForWebsocket(int port, String host, Waiter waiter) {
-    TargetAddress address = new TargetAddress(host, port);
+  public void getConnectionForWebsocket(boolean ssl, int port, String host, Waiter waiter) {
+    ConnectionKey address = new ConnectionKey(ssl, port, host);
     ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);
   }
 
-  public void getConnectionForRequest(HttpVersion version, int port, String host, Waiter waiter) {
+  public void getConnectionForRequest(boolean ssl, HttpVersion version, int port, String host, Waiter waiter) {
     if (!keepAlive && pipelining) {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
-      TargetAddress address = new TargetAddress(host, port);
+      ConnectionKey address = new ConnectionKey(ssl, port, host);
       ConnQueue connQueue = requestQM.getConnQueue(address, version);
       connQueue.getConnection(waiter);
     }
@@ -144,33 +179,6 @@ public class ConnectionManager {
     wsQM.close();
     requestQM.close();
     metrics.close();
-  }
-
-  static class TargetAddress {
-    final String host;
-    final int port;
-
-    TargetAddress(String host, int port) {
-      this.host = host;
-      this.port = port;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      TargetAddress that = (TargetAddress) o;
-      if (port != that.port) return false;
-      if (host != null ? !host.equals(that.host) : that.host != null) return false;
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = host != null ? host.hashCode() : 0;
-      result = 31 * result + port;
-      return result;
-    }
   }
 
   /**
@@ -186,14 +194,14 @@ public class ConnectionManager {
   public class ConnQueue {
 
     private final QueueManager mgr;
-    private final TargetAddress address;
+    private final ConnectionKey address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
     private Pool<HttpClientConnection> pool;
     private int connCount;
     private final int maxSize;
     final Object metric;
 
-    ConnQueue(HttpVersion version, QueueManager mgr, TargetAddress address) {
+    ConnQueue(HttpVersion version, QueueManager mgr, ConnectionKey address) {
       this.address = address;
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
@@ -276,7 +284,7 @@ public class ConnectionManager {
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
       bootstrap.channel(NioSocketChannel.class);
-      connector.connect(this, bootstrap, context, pool.version(), address.host, address.port, waiter);
+      connector.connect(this, bootstrap, context, address.ssl, pool.version(), address.host, address.port, waiter);
     }
 
     /**
@@ -399,6 +407,7 @@ public class ConnectionManager {
         ConnQueue queue,
         Bootstrap bootstrap,
         ContextImpl context,
+        boolean ssl,
         HttpVersion version,
         String host,
         int port,
@@ -408,7 +417,7 @@ public class ConnectionManager {
 
       ChannelProvider channelProvider;
       // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
-      if (options.getProxyOptions() == null || !options.isSsl() && options.getProxyOptions().getType()==ProxyType.HTTP ) {
+      if (options.getProxyOptions() == null || !ssl && options.getProxyOptions().getType()==ProxyType.HTTP ) {
         channelProvider = ChannelProvider.INSTANCE;
       } else {
         channelProvider = ProxyChannelProvider.INSTANCE;
@@ -437,7 +446,7 @@ public class ConnectionManager {
             }
           });
         } else {
-          if (options.isSsl()) {
+          if (ssl) {
             pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
           }
           if (version == HttpVersion.HTTP_2) {
@@ -489,7 +498,7 @@ public class ConnectionManager {
 
         if (res.succeeded()) {
           Channel ch = res.result();
-          if (options.isSsl()) {
+          if (ssl) {
             // TCP connected, so now we must do the SSL handshake
             SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
             io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
@@ -524,6 +533,9 @@ public class ConnectionManager {
     }
 
     void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
+      if (options.getLocalAddress() != null) {
+        bootstrap.localAddress(options.getLocalAddress(), 0);
+      }
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
       if (options.getSendBufferSize() != -1) {
         bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
@@ -554,7 +566,7 @@ public class ConnectionManager {
       if (logEnabled) {
         pipeline.addLast("logging", new LoggingHandler());
       }
-      pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
+      pipeline.addLast("codec", new HttpClientCodec(options.getMaxInitialLineLength(), options.getMaxHeaderSize(), options.getMaxChunkSize(), false, false));
       if (options.isTryUseCompression()) {
         pipeline.addLast("inflater", new HttpContentDecompressor(true));
       }

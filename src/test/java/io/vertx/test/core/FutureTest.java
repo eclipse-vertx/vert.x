@@ -31,11 +31,55 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FutureTest extends VertxTestBase {
+
+  @Test
+  public void testCreateWithHandler() {
+    AtomicInteger count = new AtomicInteger();
+    AtomicReference<Future<String>> ref = new AtomicReference<>();
+    Future<String> f2 = Future.future(f1 -> {
+      assertFalse(f1.isComplete());
+      count.incrementAndGet();
+      ref.set(f1);
+    });
+    assertSame(f2, ref.get());
+    assertEquals(1, count.get());
+    new Checker<>(f2).assertNotCompleted();
+    ref.set(null);
+    count.set(0);
+    f2 = Future.future(f1 -> {
+      count.incrementAndGet();
+      ref.set(f1);
+      f1.complete("the-value");
+    });
+    assertSame(f2, ref.get());
+    assertEquals(1, count.get());
+    new Checker<>(f2).assertSucceeded("the-value");
+    ref.set(null);
+    count.set(0);
+    RuntimeException cause = new RuntimeException();
+    f2 = Future.future(f1 -> {
+      count.incrementAndGet();
+      ref.set(f1);
+      f1.fail(cause);
+    });
+    assertSame(f2, ref.get());
+    assertEquals(1, count.get());
+    new Checker<>(f2).assertFailed(cause);
+    try {
+      Future.future(f -> {
+        throw cause;
+      });
+      fail();
+    } catch (Exception e) {
+      assertSame(cause, e);
+    }
+  }
 
   @Test
   public void testStateAfterCompletion() {
@@ -70,16 +114,19 @@ public class FutureTest extends VertxTestBase {
         fail();
       } catch (IllegalStateException ignore) {
       }
+      assertFalse(future.tryComplete(new Object()));
       try {
         future.complete(null);
         fail();
       } catch (IllegalStateException ignore) {
       }
+      assertFalse(future.tryComplete(null));
       try {
         future.fail(new Exception());
         fail();
       } catch (IllegalStateException ignore) {
       }
+      assertFalse(future.tryFail(new Exception()));
     }
   }
 
@@ -167,7 +214,7 @@ public class FutureTest extends VertxTestBase {
       handler.handle(Future.succeededFuture("the-result"));
     };
     Future<String> fut = Future.future();
-    consumer.accept(fut.completer());
+    consumer.accept(fut);
     assertTrue(fut.isComplete());
     assertTrue(fut.succeeded());
     assertEquals("the-result", fut.result());
@@ -180,7 +227,7 @@ public class FutureTest extends VertxTestBase {
       handler.handle(Future.failedFuture(cause));
     };
     Future<String> fut = Future.future();
-    consumer.accept(fut.completer());
+    consumer.accept(fut);
     assertTrue(fut.isComplete());
     assertTrue(fut.failed());
     assertEquals(cause, fut.cause());
@@ -196,12 +243,38 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testFailurFutureWithNullFailure() {
+  public void testFailureFutureWithNullFailure() {
     Future<String> future = Future.future();
     future.fail((Throwable)null);
     Checker<String> checker = new Checker<>(future);
     NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
     assertNull(failure.getMessage());
+  }
+
+  @Test
+  public void testCompositeComplete() {
+    CompositeFuture composite = CompositeFuture.all(Future.future(), Future.future());
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    composite.complete(composite);
+    checker.assertSucceeded(composite);
+    composite = CompositeFuture.all(Future.future(), Future.future());
+    checker = new Checker<>(composite);
+    composite.complete();
+    checker.assertSucceeded(composite);
+  }
+
+  @Test
+  public void testCompositeFail() {
+    Throwable cause = new Throwable();
+    Future<Object> f1 = Future.future();
+    Future<Object> f2 = Future.future();
+    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    composite.fail(cause);
+    checker.assertFailed(cause);
+    f1.complete();
+    f2.complete();
+    checker.assertFailed(cause);
   }
 
   @Test
@@ -220,16 +293,16 @@ public class FutureTest extends VertxTestBase {
     CompositeFuture composite = all.apply(f1, f2);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertNotCompleted();
-    assertEquals(null, composite.<String>result(0));
-    assertEquals(null, composite.<Integer>result(1));
+    assertEquals(null, composite.<String>resultAt(0));
+    assertEquals(null, composite.<Integer>resultAt(1));
     f1.complete("something");
     checker.assertNotCompleted();
-    assertEquals("something", composite.result(0));
-    assertEquals(null, composite.<Integer>result(1));
+    assertEquals("something", composite.resultAt(0));
+    assertEquals(null, composite.<Integer>resultAt(1));
     f2.complete(3);
     checker.assertSucceeded(composite);
-    assertEquals("something", composite.result(0));
-    assertEquals(3, (int)composite.result(1));
+    assertEquals("something", composite.resultAt(0));
+    assertEquals(3, (int)composite.resultAt(1));
   }
 
   @Test
@@ -257,8 +330,8 @@ public class FutureTest extends VertxTestBase {
     Exception cause = new Exception();
     f2.fail(cause);
     checker.assertFailed(cause);
-    assertEquals("s", composite.result(0));
-    assertEquals(null, composite.<Integer>result(1));
+    assertEquals("s", composite.resultAt(0));
+    assertEquals(null, composite.<Integer>resultAt(1));
   }
 
   @Test
@@ -312,8 +385,8 @@ public class FutureTest extends VertxTestBase {
     CompositeFuture composite = any.apply(f1, f2);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertNotCompleted();
-    assertEquals(null, composite.<String>result(0));
-    assertEquals(null, composite.<Integer>result(1));
+    assertEquals(null, composite.<String>resultAt(0));
+    assertEquals(null, composite.<Integer>resultAt(1));
     f1.complete("something");
     checker.assertSucceeded(composite);
     f2.complete(3);
@@ -404,6 +477,104 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testJoinSucceeded() {
+    testJoinSucceeded(CompositeFuture::join);
+  }
+
+  @Test
+  public void testJoinSucceededWithList() {
+    testJoinSucceeded((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+  }
+
+  private void testJoinSucceeded(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = join.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    f1.complete("foo");
+    checker.assertNotCompleted();
+    f2.complete();
+    checker.assertSucceeded(composite);
+  }
+
+  @Test
+  public void testJoinFailed1() {
+    testJoinFailed1(CompositeFuture::join);
+  }
+
+  @Test
+  public void testJoinFailed1WithList() {
+    testJoinFailed1((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+  }
+
+  private void testJoinFailed1(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = join.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    f1.complete("foo");
+    checker.assertNotCompleted();
+    Throwable cause = new Throwable();
+    f2.fail(cause);
+    assertSame(checker.assertFailed(), cause);
+  }
+
+  @Test
+  public void testJoinFailed2() {
+    testJoinFailed2(CompositeFuture::join);
+  }
+
+  @Test
+  public void testJoinFailed2WithList() {
+    testJoinFailed2((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+  }
+
+  private void testJoinFailed2(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = join.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    Throwable cause = new Throwable();
+    f1.fail(cause);
+    checker.assertNotCompleted();
+    f2.complete(10);
+    assertSame(cause, checker.assertFailed());
+  }
+
+  @Test
+  public void testJoinFailed3() {
+    testJoinFailed3(CompositeFuture::join);
+  }
+
+  @Test
+  public void testJoinFailed3WithList() {
+    testJoinFailed3((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+  }
+
+  private void testJoinFailed3(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = join.apply(f1, f2);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertNotCompleted();
+    Throwable cause1 = new Throwable();
+    f1.fail(cause1);
+    checker.assertNotCompleted();
+    Throwable cause2 = new Throwable();
+    f2.fail(cause2);
+    assertSame(cause1, checker.assertFailed());
+  }
+
+  @Test
+  public void testJoinWithEmptyList() {
+    CompositeFuture composite = CompositeFuture.join(Collections.emptyList());
+    assertTrue(composite.isComplete());
+  }
+
+  @Test
   public void testCompositeFutureToList() {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
@@ -416,23 +587,48 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testComposeSucceed() {
+  public void testComposeSuccessToSuccess() {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
     Checker<Integer> checker = new Checker<>(f2);
     f1.compose(string -> f2.complete(string.length()), f2);
+    checker.assertNotCompleted();
     f1.complete("abcdef");
     checker.assertSucceeded(6);
 
+    AtomicReference<String> ref = new AtomicReference<>();
+    Future<Integer> c = Future.future();
     Future<String> f3 = Future.future();
-    Future<Integer> f4 = f3.compose(string -> Future.succeededFuture(string.length()));
+    Future<Integer> f4 = f3.compose(string -> {
+      ref.set(string);
+      return c;
+    });
     checker = new Checker<>(f4);
     f3.complete("abcdef");
+    checker.assertNotCompleted();
+    assertEquals("abcdef", ref.get());
+    c.complete(6);
     checker.assertSucceeded(6);
   }
 
   @Test
-  public void testComposeFail() {
+  public void testComposeSuccessToFailure() {
+    Throwable cause = new Throwable();
+    AtomicReference<String> ref = new AtomicReference<>();
+    Future<Integer> c = Future.future();
+    Future<String> f3 = Future.future();
+    Future<Integer> f4 = f3.compose(string -> {
+      ref.set(string);
+      return c;
+    });
+    Checker<Integer> checker = new Checker<>(f4);
+    f3.complete("abcdef");
+    c.fail(cause);
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testComposeFailure() {
     Exception cause = new Exception();
 
     Future<String> f1 = Future.future();
@@ -450,7 +646,7 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testComposeHandlerFail() {
+  public void testComposeFails() {
     RuntimeException cause = new RuntimeException();
 
     Future<String> f1 = Future.future();
@@ -468,7 +664,7 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testComposeHandlerFailAfterCompletion() {
+  public void testComposeFailsAfterCompletion() {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
     Checker<Integer> checker = new Checker<>(f2);
@@ -487,26 +683,38 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testMapSucceeded() {
+  public void testComposeWithNullFunction() {
+    Future<Integer> fut = Future.future();
+    try {
+      fut.compose((Function<Integer, Future<Integer>>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
+  public void testMapSuccess() {
     Future<Integer> fut = Future.future();
     Future<String> mapped = fut.map(Object::toString);
     Checker<String> checker = new Checker<>(mapped);
+    checker.assertNotCompleted();
     fut.complete(3);
     checker.assertSucceeded("3");
   }
 
   @Test
-  public void testMapFailed() {
+  public void testMapFailure() {
     Throwable cause = new Throwable();
     Future<Integer> fut = Future.future();
     Future<String> mapped = fut.map(Object::toString);
     Checker<String> checker = new Checker<>(mapped);
+    checker.assertNotCompleted();
     fut.fail(cause);
     checker.assertFailed(cause);
   }
 
   @Test
-  public void testMapperFailure() {
+  public void testMapFails() {
     RuntimeException cause = new RuntimeException();
     Future<Integer> fut = Future.future();
     Future<Object> mapped = fut.map(i -> {
@@ -518,6 +726,130 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapWithNullFunction() {
+    Future<Integer> fut = Future.future();
+    try {
+      fut.map((Function<Integer, String>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      asyncResult(fut).map((Function<Integer, String>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
+  public void testMapEmpty() {
+    Future<Integer> fut = Future.future();
+    Future<String> mapped = fut.mapEmpty();
+    Checker<String> checker = new Checker<>(mapped);
+    checker.assertNotCompleted();
+    fut.complete(3);
+    checker.assertSucceeded(null);
+  }
+
+  @Test
+  public void testRecoverSuccessWithSuccess() {
+    AtomicBoolean called = new AtomicBoolean();
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> {
+      called.set(true);
+      throw new AssertionError();
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    f.complete("yeah");
+    assertTrue(r.succeeded());
+    checker.assertSucceeded("yeah");
+    assertFalse(called.get());
+  }
+
+  @Test
+  public void testRecoverFailureWithSuccess() {
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> Future.succeededFuture(t.getMessage()));
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    f.fail("recovered");
+    checker.assertSucceeded("recovered");
+  }
+
+  @Test
+  public void testRecoverFailureWithFailure() {
+    Throwable cause = new Throwable();
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> Future.failedFuture(cause));
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    f.fail("recovered");
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testRecoverFailureFails() {
+    RuntimeException cause = new RuntimeException("throw");
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> {
+      throw cause;
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    f.fail("recovered");
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testRecoverWithNullFunction() {
+    Future<Integer> fut = Future.future();
+    try {
+      fut.recover(null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
+  public void testOtherwiseSuccessWithSuccess() {
+    AtomicBoolean called = new AtomicBoolean();
+    Future<String> f = Future.future();
+    Future<String> r = f.otherwise(t -> {
+      called.set(true);
+      throw new AssertionError();
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    f.complete("yeah");
+    assertTrue(r.succeeded());
+    checker.assertSucceeded("yeah");
+    assertFalse(called.get());
+  }
+
+  @Test
+  public void testOtherwiseFailureWithSuccess() {
+    Future<String> f = Future.future();
+    Future<String> r = f.otherwise(t -> t.getMessage());
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    f.fail("recovered");
+    checker.assertSucceeded("recovered");
+  }
+
+  @Test
+  public void testOtherwiseFails() {
+    RuntimeException cause = new RuntimeException("throw");
+    Future<String> f = Future.future();
+    Future<String> r = f.otherwise(t -> {
+      throw cause;
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    f.fail("recovered");
+    checker.assertFailed(cause);
+  }
+
+  @Test
   public void testDefaultCompleter() {
     AsyncResult<Object> succeededAsyncResult = new AsyncResult<Object>() {
       Object result = new Object();
@@ -525,6 +857,8 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { return true; }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> AsyncResult<U> map(Function<Object, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> AsyncResult<V> map(V value) { throw new UnsupportedOperationException(); }
     };
 
     AsyncResult<Object> failedAsyncResult = new AsyncResult<Object>() {
@@ -533,6 +867,8 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { return cause; }
       public boolean succeeded() { return false; }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> AsyncResult<U> map(Function<Object, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> AsyncResult<V> map(V value) { throw new UnsupportedOperationException(); }
     };
 
     class DefaultCompleterTestFuture<T> implements Future<T> {
@@ -542,14 +878,56 @@ public class FutureTest extends VertxTestBase {
       Throwable cause;
       public boolean isComplete() { throw new UnsupportedOperationException(); }
       public Future<T> setHandler(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
-      public void complete(T result) { succeeded = true; this.result = result; }
-      public void complete() { throw new UnsupportedOperationException(); }
-      public void fail(Throwable throwable) { failed = true; cause = throwable; }
-      public void fail(String failureMessage) { throw new UnsupportedOperationException(); }
+
+      public void complete(T result) {
+        if (!tryComplete(result)) {
+          throw new IllegalStateException();
+        }
+      }
+      public void complete() {
+        if (!tryComplete()) {
+          throw new IllegalStateException();
+        }
+      }
+      public void fail(Throwable cause) {
+        if (!tryFail(cause)) {
+          throw new IllegalStateException();
+        }
+      }
+      public void fail(String failureMessage) {
+        if (!tryFail(failureMessage)) {
+          throw new IllegalStateException();
+        }
+      }
+      public boolean tryComplete(T result) {
+        if (succeeded || failed) {
+          return false;
+        }
+        succeeded = true;
+        this.result = result;
+        return true;
+      }
+      public boolean tryComplete() { throw new UnsupportedOperationException(); }
+      public boolean tryFail(Throwable cause) {
+        if (succeeded || failed) {
+          return false;
+        }
+        failed = true;
+        this.cause = cause;
+        return true;
+      }
+      public boolean tryFail(String failureMessage) { throw new UnsupportedOperationException(); }
       public T result() { throw new UnsupportedOperationException(); }
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public void handle(AsyncResult<T> asyncResult) {
+        if (asyncResult.succeeded()) {
+          complete(asyncResult.result());
+        } else {
+          fail(asyncResult.cause());
+        }
+      }
     }
 
     DefaultCompleterTestFuture<Object> successFuture = new DefaultCompleterTestFuture<>();
@@ -621,29 +999,275 @@ public class FutureTest extends VertxTestBase {
     }
   }
 
-  /*
-  private <T> void assertSucceeded(Future<T> future, T expected) {
-    assertTrue(future.isComplete());
-    assertTrue(future.succeeded());
-    assertFalse(future.failed());
-    assertNull(future.cause());
-    assertEquals(expected, future.result());
+  @Test
+  public void testUncompletedAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    assertNull(map1.result());
+    assertNull(map1.cause());
+    assertNull(map2.result());
+    assertNull(map2.cause());
   }
 
-  private <T> void assertFailed(Future<T> future, Throwable expected) {
-    assertTrue(future.isComplete());
-    assertFalse(future.succeeded());
-    assertTrue(future.failed());
-    assertEquals(expected, future.cause());
-    assertEquals(null, future.result());
+  @Test
+  public void testSucceededAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    f.complete("foobar");
+    assertEquals(6, (int)map1.result());
+    assertNull(map1.cause());
+    assertEquals(17, (int)map2.result());
+    assertNull(map2.cause());
   }
 
-  private <T> void assertNotCompleted(Future<T> future) {
-    assertFalse(future.isComplete());
-    assertFalse(future.succeeded());
-    assertFalse(future.failed());
-    assertNull(future.cause());
-    assertNull(future.result());
+  @Test
+  public void testFailedAsyncResultMap() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map1 = res.map(String::length);
+    AsyncResult<Integer> map2 = res.map(17);
+    Throwable cause = new Throwable();
+    f.fail(cause);
+    assertNull(map1.result());
+    assertSame(cause, map1.cause());
+    assertNull(map2.result());
+    assertSame(cause, map2.cause());
   }
-*/
+
+  @Test
+  public void testAsyncResultMapEmpty() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    AsyncResult<Integer> map = res.mapEmpty();
+    f.complete("foobar");
+    assertNull(null, map.result());
+    assertNull(map.cause());
+  }
+
+  @Test
+  public void testSucceededFutureRecover() {
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> Future.succeededFuture(t.getMessage()));
+    f.complete("yeah");
+    assertTrue(r.succeeded());
+    assertEquals(r.result(), "yeah");
+  }
+
+  @Test
+  public void testFailedFutureRecover() {
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> Future.succeededFuture(t.getMessage()));
+    f.fail("recovered");
+    assertTrue(r.succeeded());
+    assertEquals(r.result(), "recovered");
+  }
+
+  @Test
+  public void testFailedMapperFutureRecover() {
+    Future<String> f = Future.future();
+    Future<String> r = f.recover(t -> {
+      throw new RuntimeException("throw");
+    });
+    f.fail("recovered");
+    assertTrue(r.failed());
+    assertEquals(r.cause().getMessage(), "throw");
+  }
+
+  @Test
+  public void testUncompletedAsyncResultOtherwise() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    testUncompletedAsyncResultOtherwise(res);
+  }
+
+  @Test
+  public void testUncompletedFutureOtherwise() {
+    Future<String> f = Future.future();
+    testUncompletedAsyncResultOtherwise(f);
+  }
+
+  private void testUncompletedAsyncResultOtherwise(AsyncResult<String> res) {
+    AsyncResult<String> ar1 = res.otherwise("something-else");
+    assertFalse(ar1.succeeded());
+    assertFalse(ar1.failed());
+    assertNull(ar1.result());
+    assertNull(ar1.cause());
+  }
+
+  @Test
+  public void testUncompletedAsyncResultOtherwiseApplyFunction() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    testUncompletedOtherwiseApplyFunction(res);
+  }
+
+  @Test
+  public void testUncompletedFutureOtherwiseApplyFunction() {
+    Future<String> f = Future.future();
+    testUncompletedOtherwiseApplyFunction(f);
+  }
+
+  private void testUncompletedOtherwiseApplyFunction(AsyncResult<String> res) {
+    AsyncResult<String> ar1 = res.otherwise(Throwable::getMessage);
+    assertFalse(ar1.succeeded());
+    assertFalse(ar1.failed());
+    assertNull(ar1.result());
+    assertNull(ar1.cause());
+  }
+
+  @Test
+  public void testSucceededAsyncResultOtherwise() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    testSucceededOtherwise(res, f);
+  }
+
+  @Test
+  public void testSucceededFutureOtherwise() {
+    Future<String> f = Future.future();
+    testSucceededOtherwise(f, f);
+  }
+
+  private void testSucceededOtherwise(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> ar = res.otherwise(Throwable::getMessage);
+    f.complete("foobar");
+    assertTrue(ar.succeeded());
+    assertFalse(ar.failed());
+    assertEquals("foobar", ar.result());
+    assertNull(ar.cause());
+  }
+
+  @Test
+  public void testSucceededAsyncResultOtherwiseApplyFunction() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    testSucceededOtherwiseApplyFunction(res, f);
+  }
+
+  @Test
+  public void testSucceededFutureOtherwiseApplyFunction() {
+    Future<String> f = Future.future();
+    testSucceededOtherwiseApplyFunction(f, f);
+  }
+
+  private void testSucceededOtherwiseApplyFunction(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> ar = res.otherwise("whatever");
+    f.complete("foobar");
+    assertTrue(ar.succeeded());
+    assertFalse(ar.failed());
+    assertEquals("foobar", ar.result());
+    assertNull(ar.cause());
+  }
+
+  @Test
+  public void testFailedAsyncResultOtherwise() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    testFailedOtherwise(res, f);
+  }
+
+  @Test
+  public void testFailedFutureOtherwise() {
+    Future<String> f = Future.future();
+    testFailedOtherwise(f, f);
+  }
+
+  private void testFailedOtherwise(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> map1 = res.otherwise("something-else");
+    Throwable cause = new Throwable("the-failure");
+    f.fail(cause);
+    assertTrue(map1.succeeded());
+    assertFalse(map1.failed());
+    assertEquals("something-else", map1.result());
+    assertNull(map1.cause());
+  }
+
+  @Test
+  public void testFailedAsyncResultOtherwiseApplyFunction() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    testFailedOtherwiseApplyFunction(res, f);
+  }
+
+  @Test
+  public void testFailedFutureOtherwiseApplyFunction() {
+    Future<String> f = Future.future();
+    testFailedOtherwiseApplyFunction(f, f);
+  }
+
+  private void testFailedOtherwiseApplyFunction(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> map1 = res.otherwise(Throwable::getMessage);
+    Throwable cause = new Throwable("the-failure");
+    f.fail(cause);
+    assertTrue(map1.succeeded());
+    assertFalse(map1.failed());
+    assertEquals("the-failure", map1.result());
+    assertNull(map1.cause());
+  }
+
+  @Test
+  public void testOtherwiseWithNullFunction() {
+    Future<Integer> fut = Future.future();
+    try {
+      fut.otherwise((Function<Throwable, Integer>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      asyncResult(fut).otherwise((Function<Throwable, Integer>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
+  public void testAsyncResultOtherwiseEmpty() {
+    Future<String> f = Future.future();
+    AsyncResult<String> res = asyncResult(f);
+    testOtherwiseEmpty(res, f);
+  }
+
+  @Test
+  public void testFutureOtherwiseEmpty() {
+    Future<String> f = Future.future();
+    testOtherwiseEmpty(f, f);
+  }
+
+  private void testOtherwiseEmpty(AsyncResult<String> res, Future<String> f) {
+    AsyncResult<String> otherwise = res.otherwiseEmpty();
+    Throwable cause = new Throwable("the-failure");
+    f.fail(cause);
+    assertTrue(otherwise.succeeded());
+    assertFalse(otherwise.failed());
+    assertEquals(null, otherwise.result());
+    assertNull(otherwise.cause());
+  }
+
+  private <T> AsyncResult<T> asyncResult(Future<T> fut) {
+    return new AsyncResult<T>() {
+      @Override
+      public T result() {
+        return fut.result();
+      }
+
+      @Override
+      public Throwable cause() {
+        return fut.cause();
+      }
+
+      @Override
+      public boolean succeeded() {
+        return fut.succeeded();
+      }
+
+      @Override
+      public boolean failed() {
+        return fut.failed();
+      }
+    };
+  }
 }

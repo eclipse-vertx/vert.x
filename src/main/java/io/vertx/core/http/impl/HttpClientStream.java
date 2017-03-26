@@ -52,7 +52,8 @@ interface HttpClientStream {
   void doPause();
   void doResume();
 
-  void reset(long code);
+  void resetRequest(long code);
+  void resetResponse(long code);
 
   void beginRequest(HttpClientRequestImpl request);
   void endRequest();

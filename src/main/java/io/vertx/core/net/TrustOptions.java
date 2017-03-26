@@ -35,6 +35,8 @@ public interface TrustOptions {
 
   /**
    * Create and return the trust manager factory for these options.
+   * <p>
+   * The returned trust manager factory should be already initialized and ready to use.
    *
    * @param vertx the vertx instance
    * @return the trust manager factory

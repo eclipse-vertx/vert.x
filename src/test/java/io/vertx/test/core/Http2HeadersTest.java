@@ -25,6 +25,8 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -89,6 +91,19 @@ public class Http2HeadersTest {
     map.set("bar", "bar_value");
     map.remove((CharSequence) "Bar");
     assertHeaderNames();
+  }
+
+  @Test
+  public void testEntries() {
+    map.set("foo", Arrays.<String>asList("foo_value_1", "foo_value_2"));
+    List<Map.Entry<String, String>> entries = map.entries();
+    assertEquals(entries.size(), 1);
+    assertEquals("foo", entries.get(0).getKey());
+    assertEquals("foo_value_1", entries.get(0).getValue());
+    map.set("bar", "bar_value");
+    Map<String, String> collected = map.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    assertEquals("foo_value_1", collected.get("foo"));
+    assertEquals("bar_value", collected.get("bar"));
   }
 
   private void assertHeaderNames(String... expected) {

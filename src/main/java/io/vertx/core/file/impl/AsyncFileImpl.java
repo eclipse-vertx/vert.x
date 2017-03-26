@@ -148,9 +148,10 @@ public class AsyncFileImpl implements AsyncFile {
     Handler<AsyncResult<Void>> wrapped = ar -> {
       if (ar.succeeded()) {
         checkContext();
-        checkDrained();
         if (writesOutstanding == 0 && closedDeferred != null) {
           closedDeferred.run();
+        } else {
+          checkDrained();
         }
         if (handler != null) {
           handler.handle(ar);
@@ -348,6 +349,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private synchronized void handleEnd() {
+    dataHandler = null;
     if (endHandler != null) {
       checkContext();
       endHandler.handle(null);
@@ -459,16 +461,15 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
-    Future<Void> res = Future.future();
-    try {
-      ch.close();
-      res.complete(null);
-    } catch (IOException e) {
-      res.fail(e);
-    }
-    if (handler != null) {
-      vertx.runOnContext(v -> handler.handle(res));
-    }
+    ContextImpl handlerContext = vertx.getOrCreateContext();
+    handlerContext.executeBlocking(res -> {
+      try {
+        ch.close();
+        res.complete(null);
+      } catch (IOException e) {
+        res.fail(e);
+      }
+    }, handler);
   }
 
   private synchronized void closeInternal(Handler<AsyncResult<Void>> handler) {

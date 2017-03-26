@@ -26,7 +26,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.impl.NetServerBase;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -57,15 +57,15 @@ public interface VertxInternal extends Vertx {
 
   Map<ServerID, HttpServerImpl> sharedHttpServers();
 
-  Map<ServerID, NetServerImpl> sharedNetServers();
+  Map<ServerID, NetServerBase> sharedNetServers();
 
   VertxMetrics metricsSPI();
 
-	/**
-	 * Get the current context
-	 * @return the context
-	 */
-	ContextImpl getContext();
+  /**
+   * Get the current context
+   * @return the context
+   */
+  ContextImpl getContext();
 
   /**
    * @return event loop context

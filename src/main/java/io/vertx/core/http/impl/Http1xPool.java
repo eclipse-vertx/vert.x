@@ -17,7 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.vertx.core.Context;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
@@ -120,7 +119,9 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
     ClientConnection conn = new ClientConnection(version, client, queue.metric, ch,
         ssl, host, port, context, this, metrics);
-    metrics.endpointConnected(queue.metric, conn.metric());
+    Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+    conn.metric(metric);
+    metrics.endpointConnected(queue.metric, metric);
     ClientHandler handler = ch.pipeline().get(ClientHandler.class);
     handler.conn = conn;
     synchronized (queue) {

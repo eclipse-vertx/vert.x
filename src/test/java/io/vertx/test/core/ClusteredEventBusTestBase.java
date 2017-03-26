@@ -18,19 +18,12 @@ package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.*;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -54,6 +47,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
 
     MessageConsumer<T> reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
+        assertTrue(msg.isSend());
         assertEquals(received, msg.body());
         if (options != null) {
           assertNotNull(msg.headers());
@@ -109,6 +103,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, str, onSuccess((Message<R> reply) -> {
         if (consumer == null) {
+          assertTrue(reply.isSend());
           assertEquals(received, reply.body());
           if (options != null && options.getHeaders() != null) {
             assertNotNull(reply.headers());
@@ -164,6 +159,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       @Override
       public void handle(Message<T> msg) {
         if (consumer == null) {
+          assertFalse(msg.isSend());
           assertEquals(val, msg.body());
         } else {
           consumer.accept(msg.body());

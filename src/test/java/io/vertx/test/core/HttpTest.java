@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -34,6 +35,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
@@ -42,6 +44,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.net.NetSocket;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -54,6 +57,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,6 +73,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
@@ -3104,6 +3109,576 @@ public abstract class HttpTest extends HttpTestBase {
     } else {
       assertTrue(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
     }
+  }
+
+  @Test
+  public void testClientLocalAddress() throws Exception {
+    String expectedAddress = InetAddress.getLocalHost().getHostAddress();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setLocalAddress(expectedAddress));
+    server.requestHandler(req -> {
+      assertEquals(expectedAddress, req.remoteAddress().host());
+      req.response().end();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectGetOn301() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn301() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn301() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectGetOn302() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn302() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn302() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectGetOn303() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn303() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn303() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectNotOn304() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 304, 304, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+  }
+
+  @Test
+  public void testFollowRedirectGetOn307() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn307() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn307() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectWithRelativeLocation() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "/another", "http://localhost:8080/another");
+  }
+
+  private void testFollowRedirect(
+      HttpMethod method,
+      HttpMethod expectedMethod,
+      int statusCode,
+      int expectedStatus,
+      int expectedRequests,
+      String location,
+      String expectedURI) throws Exception {
+    String s;
+    if (createBaseServerOptions().isSsl() && location.startsWith("http://")) {
+      s = "https://" + location.substring("http://".length());
+    } else {
+      s = location;
+    }
+    String t;
+    if (createBaseServerOptions().isSsl() && expectedURI.startsWith("http://")) {
+      t = "https://" + expectedURI.substring("http://".length());
+    } else {
+      t = expectedURI;
+    }
+    AtomicInteger numRequests = new AtomicInteger();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      if (numRequests.getAndIncrement() == 0) {
+        resp.setStatusCode(statusCode);
+        if (s != null) {
+          resp.putHeader(HttpHeaders.LOCATION, s);
+        }
+        resp.end();
+      } else {
+        assertEquals(t, req.absoluteURI());
+        assertEquals("foo_value", req.getHeader("foo"));
+        assertEquals(expectedMethod, req.method());
+        resp.end();
+      }
+    });
+    startServer();
+    client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(resp.request().absoluteURI(), t);
+      assertEquals(expectedRequests, numRequests.get());
+      assertEquals(expectedStatus, resp.statusCode());
+      testComplete();
+    }).
+        putHeader("foo", "foo_value").
+        setFollowRedirects(true).
+        end();
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectWithBody() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(2048);
+    AtomicBoolean redirected = new AtomicBoolean();
+    server.requestHandler(req -> {
+      req.bodyHandler(body -> {
+        assertEquals(HttpMethod.PUT, req.method());
+        assertEquals(body, expected);
+        if (redirected.compareAndSet(false, true)) {
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+        } else {
+          req.response().end();
+        }
+      });
+    });
+    startServer();
+    client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true).end(expected);
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectWithChunkedBody() throws Exception {
+    Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    Buffer expected = Buffer.buffer().appendBuffer(buff1).appendBuffer(buff2);
+    AtomicBoolean redirected = new AtomicBoolean();
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      boolean redirect = redirected.compareAndSet(false, true);
+      if (redirect) {
+        latch.countDown();
+      }
+      req.bodyHandler(body -> {
+        assertEquals(HttpMethod.PUT, req.method());
+        assertEquals(body, expected);
+        if (redirect) {
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+        } else {
+          req.response().end();
+        }
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true)
+      .setChunked(true)
+      .write(buff1);
+    awaitLatch(latch);
+    req.end(buff2);
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectWithRequestNotEnded() throws Exception {
+    testFollowRedirectWithRequestNotEnded(false);
+  }
+
+  @Test
+  public void testFollowRedirectWithRequestNotEndedFailing() throws Exception {
+    testFollowRedirectWithRequestNotEnded(true);
+  }
+
+  private void testFollowRedirectWithRequestNotEnded(boolean expectFail) throws Exception {
+    Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    Buffer expected = Buffer.buffer().appendBuffer(buff1).appendBuffer(buff2);
+    AtomicBoolean redirected = new AtomicBoolean();
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      boolean redirect = redirected.compareAndSet(false, true);
+      if (redirect) {
+        Buffer body = Buffer.buffer();
+        req.handler(buff -> {
+          if (body.length() == 0) {
+            HttpServerResponse resp = req.response();
+            resp.setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever");
+            if (expectFail) {
+              resp.setChunked(true).write("whatever");
+              vertx.runOnContext(v -> {
+                resp.close();
+              });
+            } else {
+              resp.end();
+            }
+            latch.countDown();
+          }
+          body.appendBuffer(buff);
+        });
+        req.endHandler(v -> {
+          assertEquals(expected, body);
+        });
+      } else {
+        req.response().end();
+      }
+    });
+    startServer();
+    AtomicBoolean called = new AtomicBoolean();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true)
+        .exceptionHandler(err -> {
+          if (expectFail) {
+            if (called.compareAndSet(false, true)) {
+              testComplete();
+            }
+          } else {
+            fail(err);
+          }
+        })
+        .setChunked(true)
+        .write(buff1);
+    awaitLatch(latch);
+    // Wait so we end the request while having received the server response (but we can't be notified)
+    if (!expectFail) {
+      Thread.sleep(500);
+      req.end(buff2);
+    }
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectSendHeadThenBody() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    AtomicBoolean redirected = new AtomicBoolean();
+    server.requestHandler(req -> {
+      req.bodyHandler(body -> {
+        assertEquals(HttpMethod.PUT, req.method());
+        assertEquals(body, expected);
+        if (redirected.compareAndSet(false, true)) {
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "/whatever").end();
+        } else {
+          req.response().end();
+        }
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true);
+    req.putHeader("Content-Length", "" + expected.length());
+    req.exceptionHandler(this::fail);
+    req.sendHead(v -> {
+      req.end(expected);
+    });
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectLimit() throws Exception {
+    AtomicInteger redirects = new AtomicInteger();
+    server.requestHandler(req -> {
+      int val = redirects.incrementAndGet();
+      if (val > 16) {
+        fail();
+      } else {
+        req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/otherpath").end();
+      }
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(16, redirects.get());
+      assertEquals(301, resp.statusCode());
+      assertEquals("/otherpath", resp.request().path());
+      testComplete();
+    }).setFollowRedirects(true).end();
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectPropagatesTimeout() throws Exception {
+    AtomicInteger redirections = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (redirections.getAndIncrement()) {
+        case 0:
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+          break;
+      }
+    });
+    startServer();
+    AtomicBoolean done = new AtomicBoolean();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      fail();
+    }).setFollowRedirects(true)
+      .exceptionHandler(err -> {
+        if (done.compareAndSet(false, true)) {
+          assertEquals(2, redirections.get());
+          testComplete();
+        }
+      })
+      .setTimeout(500).end();
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectHost() throws Exception {
+    String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
+    waitFor(2);
+    AtomicInteger redirections = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (redirections.getAndIncrement()) {
+        case 0:
+          req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
+          break;
+        case 1:
+          assertEquals(scheme + "://the_host/whatever", req.absoluteURI());
+          req.response().end();
+          complete();
+          break;
+      }
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(scheme + "://the_host/whatever", resp.request().absoluteURI());
+      complete();
+    }).setFollowRedirects(true).setHost("the_host").end();
+    await();
+  }
+
+  @Test
+  public void testFollowRedirectWithCustomHandler() throws Exception {
+    String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
+    waitFor(2);
+    AtomicInteger redirections = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (redirections.getAndIncrement()) {
+        case 0:
+          req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
+          break;
+        case 1:
+          assertEquals(scheme + "://another_host/custom", req.absoluteURI());
+          req.response().end();
+          complete();
+          break;
+      }
+    });
+    startServer();
+    client.redirectHandler(resp -> {
+      Future<HttpClientRequest> fut = Future.future();
+      vertx.setTimer(25, id -> {
+        HttpClientRequest req = client.getAbs(scheme + "://localhost:8080/custom");
+        req.putHeader("foo", "foo_another");
+        req.setHost("another_host");
+        fut.complete(req);
+      });
+      return fut;
+    });
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(scheme + "://another_host/custom", resp.request().absoluteURI());
+      complete();
+    }).setFollowRedirects(true).putHeader("foo", "foo_value").setHost("the_host").end();
+    await();
+  }
+
+  @Test
+  public void testDefaultRedirectHandler() throws Exception {
+    testFoo("http://example.com", "http://example.com");
+    testFoo("http://example.com/somepath", "http://example.com/somepath");
+    testFoo("http://example.com:8000", "http://example.com:8000");
+    testFoo("http://example.com:8000/somepath", "http://example.com:8000/somepath");
+    testFoo("https://example.com", "https://example.com");
+    testFoo("https://example.com/somepath", "https://example.com/somepath");
+    testFoo("https://example.com:8000", "https://example.com:8000");
+    testFoo("https://example.com:8000/somepath", "https://example.com:8000/somepath");
+    testFoo("whatever://example.com", null);
+    testFoo("http://", null);
+    testFoo("http://:8080/somepath", null);
+  }
+
+  private void testFoo(String location, String expected) throws Exception {
+    int status = 301;
+    Map<String, String> headers = Collections.singletonMap("Location", location);
+    HttpMethod method = HttpMethod.GET;
+    String baseURI = "https://localhost:8080";
+    class MockReq implements HttpClientRequest {
+      public HttpClientRequest exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(Buffer data) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setWriteQueueMaxSize(int maxSize) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest drainHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest handler(Handler<HttpClientResponse> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest pause() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest resume() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest endHandler(Handler<Void> endHandler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setFollowRedirects(boolean followRedirects) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setChunked(boolean chunked) { throw new UnsupportedOperationException(); }
+      public boolean isChunked() { return false; }
+      public HttpMethod method() { return method; }
+      public String getRawMethod() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setRawMethod(String method) { throw new UnsupportedOperationException(); }
+      public String absoluteURI() { return baseURI; }
+      public String uri() { throw new UnsupportedOperationException(); }
+      public String path() { throw new UnsupportedOperationException(); }
+      public String query() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setHost(String host) { throw new UnsupportedOperationException(); }
+      public String getHost() { throw new UnsupportedOperationException(); }
+      public MultiMap headers() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putHeader(String name, String value) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(String chunk) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(String chunk, String enc) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest sendHead() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest sendHead(Handler<HttpVersion> completionHandler) { throw new UnsupportedOperationException(); }
+      public void end(String chunk) { throw new UnsupportedOperationException(); }
+      public void end(String chunk, String enc) { throw new UnsupportedOperationException(); }
+      public void end(Buffer chunk) { throw new UnsupportedOperationException(); }
+      public void end() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
+      public boolean reset(long code) { return false; }
+      public HttpConnection connection() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
+      public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
+    }
+    HttpClientRequest req = new MockReq();
+    class MockResp implements HttpClientResponse {
+      public HttpClientResponse resume() { throw new UnsupportedOperationException(); }
+      public HttpClientResponse exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientResponse handler(Handler<Buffer> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientResponse pause() { throw new UnsupportedOperationException(); }
+      public HttpClientResponse endHandler(Handler<Void> endHandler) { throw new UnsupportedOperationException(); }
+      public HttpVersion version() { throw new UnsupportedOperationException(); }
+      public int statusCode() { return status; }
+      public String statusMessage() { throw new UnsupportedOperationException(); }
+      public MultiMap headers() { throw new UnsupportedOperationException(); }
+      public String getHeader(String headerName) { return headers.get(headerName); }
+      public String getHeader(CharSequence headerName) { return getHeader(headerName.toString()); }
+      public String getTrailer(String trailerName) { throw new UnsupportedOperationException(); }
+      public MultiMap trailers() { throw new UnsupportedOperationException(); }
+      public List<String> cookies() { throw new UnsupportedOperationException(); }
+      public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) { throw new UnsupportedOperationException(); }
+      public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) { throw new UnsupportedOperationException(); }
+      public NetSocket netSocket() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest request() { return req; }
+    }
+    MockResp resp = new MockResp();
+    Function<HttpClientResponse, Future<HttpClientRequest>> handler = client.redirectHandler();
+    Future<HttpClientRequest> redirection = handler.apply(resp);
+    if (expected != null) {
+      assertEquals(location, redirection.result().absoluteURI());
+    } else {
+      assertTrue(redirection == null || redirection.failed());
+    }
+  }
+
+  @Test
+  public void testServerResponseCloseHandlerNotHoldingLock() throws Exception {
+    server.requestHandler(req -> {
+      req.response().closeHandler(v -> {
+        assertFalse(Thread.holdsLock(req.connection()));
+        testComplete();
+      });
+      req.response().setChunked(true).write("hello");
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.request().connection().close();
+    });
+    await();
+  }
+
+  @Test
+  public void testCloseHandlerWhenConnectionEnds() throws Exception {
+    server.requestHandler(req -> {
+      req.response().endHandler(v -> {
+        testComplete();
+      });
+      req.response().end("some-data");
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.handler(v -> {
+        resp.request().connection().close();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testCloseHandlerWhenConnectionClose() throws Exception {
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write("some-data");
+      req.response().closeHandler(v -> {
+        testComplete();
+      });
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.handler(v -> {
+        resp.request().connection().close();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public abstract void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception;
+
+  protected void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(int expected) throws Exception {
+    AtomicInteger closeCount = new AtomicInteger();
+    AtomicInteger endCount = new AtomicInteger();
+    server.requestHandler(req -> {
+      req.response().closeHandler(v -> {
+        closeCount.incrementAndGet();
+      });
+      req.response().endHandler(v -> {
+        endCount.incrementAndGet();
+      });
+      req.connection().closeHandler(v -> {
+        assertEquals(expected, closeCount.get());
+        assertEquals(1, endCount.get());
+        testComplete();
+      });
+      req.response().end("some-data");
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.endHandler(v -> {
+        resp.request().connection().close();
+      });
+    });
+    await();
   }
 
   private TestLoggerFactory testLogging() throws Exception {

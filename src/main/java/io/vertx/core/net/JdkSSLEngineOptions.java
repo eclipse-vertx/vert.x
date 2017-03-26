@@ -41,6 +41,10 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   public JdkSSLEngineOptions(JdkSSLEngineOptions that) {
   }
 
+  public JsonObject toJson() {
+    return new JsonObject();
+  }
+
   @Override
   public int hashCode() {
     return 0;
