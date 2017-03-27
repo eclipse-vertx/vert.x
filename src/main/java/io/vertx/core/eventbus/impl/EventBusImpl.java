@@ -16,8 +16,22 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.*;
-import io.vertx.core.eventbus.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageCodec;
+import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.MessageProducer;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.eventbus.SendContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -454,6 +468,11 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     @Override
     public boolean send() {
       return message.isSend();
+    }
+
+    @Override
+    public Object sentBody() {
+      return message.sentBody;
     }
   }
 
