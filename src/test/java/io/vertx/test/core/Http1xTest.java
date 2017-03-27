@@ -3421,4 +3421,36 @@ public class Http1xTest extends HttpTest {
     });
     await();
   }
+
+  @Test
+  public void testRequestTimeoutIsNotDelayedAfterResponseIsReceived() throws Exception {
+    int n = 6;
+    waitFor(n);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(n));
+        for (int i = 0;i < n;i++) {
+          AtomicBoolean responseReceived = new AtomicBoolean();
+          client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+            try {
+              Thread.sleep(150);
+            } catch (InterruptedException e) {
+              fail(e);
+            }
+            responseReceived.set(true);
+            // Complete later, if some timeout tasks have been queued, this will be executed after
+            vertx.runOnContext(v -> complete());
+          }).exceptionHandler(err -> {
+            fail("Was not expecting to get a timeout after the response is received");
+          }).setTimeout(500).end();
+        }
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
 }
