@@ -87,6 +87,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -777,10 +778,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     final long timerID;
     final ContextImpl context;
     final java.util.concurrent.Future<?> future;
+    final AtomicBoolean cancelled;
 
     boolean cancel() {
-      metrics.timerEnded(timerID, true);
-      return future.cancel(false);
+      if (cancelled.compareAndSet(false, true)) {
+        metrics.timerEnded(timerID, true);
+        future.cancel(false);
+        return true;
+      } else {
+        return false;
+      }
     }
 
     InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, long delay, ContextImpl context) {
@@ -788,6 +795,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
+      this.cancelled = new AtomicBoolean();
       EventLoop el = context.nettyEventLoop();
       Runnable toRun = () -> context.runOnContext(this);
       if (periodic) {
@@ -799,12 +807,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     public void handle(Void v) {
-      try {
-        handler.handle(timerID);
-      } finally {
-        if (!periodic) {
-          // Clean up after it's fired
-          cleanupNonPeriodic();
+      if (!cancelled.get()) {
+        try {
+          handler.handle(timerID);
+        } finally {
+          if (!periodic) {
+            // Clean up after it's fired
+            cleanupNonPeriodic();
+          }
         }
       }
     }
