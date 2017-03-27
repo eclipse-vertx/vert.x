@@ -605,6 +605,7 @@ public class BufferTest {
     Buffer b = Buffer.buffer(bytes);
 
     assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
+    assertEquals(100, b.getBytes(0, 99).length);
   }
 
   @Test
