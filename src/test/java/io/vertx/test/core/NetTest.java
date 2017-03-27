@@ -21,6 +21,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -2728,6 +2729,86 @@ public class NetTest extends VertxTestBase {
 
       }));
 
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testWorkerClient() throws Exception {
+    String expected = TestUtils.randomAlphaString(2000);
+    server.connectHandler(so -> {
+      so.write(expected).close();
+    });
+    startServer();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        NetClient client = vertx.createNetClient();
+        client.connect(1234, "localhost", onSuccess(so ->{
+          Buffer received = Buffer.buffer();
+          so.handler(received::appendBuffer);
+          so.closeHandler(v -> {
+            assertEquals(expected, received.toString());
+            testComplete();
+          });
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }));
+
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testWorkerServer() throws Exception {
+    String expected = TestUtils.randomAlphaString(2000);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        NetServer server = vertx.createNetServer();
+        server.connectHandler(so -> {
+          Buffer received = Buffer.buffer();
+          so.handler(received::appendBuffer);
+          so.closeHandler(v -> {
+            assertEquals(expected, received.toString());
+            testComplete();
+          });
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        });
+        server.listen(1234, ar -> startFuture.handle(ar.mapEmpty()));
+      }
+    }, new DeploymentOptions().setWorker(true), onSuccess(v -> {
+      client.connect(1234, "localhost", onSuccess(so -> {
+        so.write(expected).close();
+      }));
+    }));
+    await();
+  }
+
+  protected void startServer() throws Exception {
+    startServer(vertx.getOrCreateContext());
+  }
+
+  protected void startServer(NetServer server) throws Exception {
+    startServer(vertx.getOrCreateContext(), server);
+  }
+
+  protected void startServer(Context context) throws Exception {
+    startServer(context, server);
+  }
+
+  protected void startServer(Context context, NetServer server) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    context.runOnContext(v -> {
+      server.listen(onSuccess(s -> latch.countDown()));
+    });
     awaitLatch(latch);
   }
 }
