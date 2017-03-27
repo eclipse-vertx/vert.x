@@ -74,21 +74,21 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   /**
    * Did it succeeed?
    */
-  public boolean succeeded() {
+  public synchronized boolean succeeded() {
     return succeeded;
   }
 
   /**
    * Did it fail?
    */
-  public boolean failed() {
+  public synchronized boolean failed() {
     return failed;
   }
 
   /**
    * Has it completed?
    */
-  public boolean isComplete() {
+  public synchronized boolean isComplete() {
     return failed || succeeded;
   }
 
@@ -96,8 +96,14 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
    * Set a handler for the result. It will get called when it's complete
    */
   public Future<T> setHandler(Handler<AsyncResult<T>> handler) {
-    this.handler = handler;
-    checkCallHandler();
+    boolean callHandler;
+    synchronized (this) {
+      this.handler = handler;
+      callHandler = isComplete();
+    }
+    if (callHandler) {
+      handler.handle(this);
+    }
     return this;
   }
 
@@ -131,12 +137,18 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
 
   @Override
   public boolean tryComplete(T result) {
-    if (succeeded || failed) {
-      return false;
+    Handler<AsyncResult<T>> h;
+    synchronized (this) {
+      if (succeeded || failed) {
+        return false;
+      }
+      this.result = result;
+      succeeded = true;
+      h = handler;
     }
-    this.result = result;
-    succeeded = true;
-    checkCallHandler();
+    if (h != null) {
+      h.handle(this);
+    }
     return true;
   }
 
@@ -169,12 +181,18 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
 
   @Override
   public boolean tryFail(Throwable cause) {
-    if (succeeded || failed) {
-      return false;
+    Handler<AsyncResult<T>> h;
+    synchronized (this) {
+      if (succeeded || failed) {
+        return false;
+      }
+      this.throwable = cause != null ? cause : new NoStackTraceThrowable(null);
+      failed = true;
+      h = handler;
     }
-    this.throwable = cause != null ? cause : new NoStackTraceThrowable(null);
-    failed = true;
-    checkCallHandler();
+    if (h != null) {
+      h.handle(this);
+    }
     return true;
   }
 
@@ -183,9 +201,4 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
     return tryFail(new NoStackTraceThrowable(failureMessage));
   }
 
-  private void checkCallHandler() {
-    if (handler != null && isComplete()) {
-      handler.handle(this);
-    }
-  }
 }
