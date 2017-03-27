@@ -47,22 +47,22 @@ public class FailedFuture<T> implements Future<T> {
 
   @Override
   public void complete(T result) {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: failed");
   }
 
   @Override
   public void complete() {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: failed");
   }
 
   @Override
   public void fail(Throwable cause) {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: failed");
   }
 
   @Override
   public void fail(String failureMessage) {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: failed");
   }
 
   @Override
@@ -107,6 +107,6 @@ public class FailedFuture<T> implements Future<T> {
 
   @Override
   public void handle(AsyncResult<T> asyncResult) {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: failed");
   }
 }

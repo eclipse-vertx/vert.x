@@ -22,11 +22,11 @@ import io.vertx.core.Handler;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SucceededFuture<T> implements Future<T> {
+class SucceededFuture<T> implements Future<T> {
 
   private final T result;
 
-  public SucceededFuture(T result) {
+  SucceededFuture(T result) {
     this.result = result;
   }
 
@@ -43,22 +43,22 @@ public class SucceededFuture<T> implements Future<T> {
 
   @Override
   public void complete(T result) {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: succeeded");
   }
 
   @Override
   public void complete() {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: succeeded");
   }
 
   @Override
   public void fail(Throwable cause) {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: succeeded");
   }
 
   @Override
   public void fail(String failureMessage) {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: succeeded");
   }
 
   @Override
@@ -103,6 +103,6 @@ public class SucceededFuture<T> implements Future<T> {
 
   @Override
   public void handle(AsyncResult<T> asyncResult) {
-    throw new IllegalStateException();
+    throw new IllegalStateException("Result is already complete: succeeded");
   }
 }
