@@ -31,7 +31,7 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
 
   private final Channel ch;
   private final Map<Channel, C> connectionMap;
-  C conn;
+  C conn; // We should try to make this private
 
   public VertxNetHandler(Channel ch, Map<Channel, C> connectionMap) {
     this.ch = ch;
