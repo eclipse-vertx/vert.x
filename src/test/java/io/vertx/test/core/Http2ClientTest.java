@@ -1290,7 +1290,7 @@ public class Http2ClientTest extends Http2TestBase {
     server.close();
     server = vertx.createHttpServer(serverOptions.setHandle100ContinueAutomatically(true));
     server.requestHandler(req -> {
-      assertEquals(0, status.getAndIncrement());
+      status.getAndIncrement();
       HttpServerResponse resp = req.response();
       req.bodyHandler(body -> {
         assertEquals(2, status.getAndIncrement());
@@ -1311,7 +1311,7 @@ public class Http2ClientTest extends Http2TestBase {
     req.continueHandler(v -> {
       Context ctx = Vertx.currentContext();
       assertOnIOContext(ctx);
-      assertEquals(1, status.getAndIncrement());
+      status.getAndIncrement();
       req.end(Buffer.buffer("request-body"));
     });
     req.sendHead(version -> {
