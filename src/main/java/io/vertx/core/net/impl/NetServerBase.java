@@ -304,7 +304,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
     }
 
     @Override
-    protected void handleMsgReceived(Object msg) {
+    protected void handleMsgReceived(C conn, Object msg) {
       NetServerBase.this.handleMsgReceived(conn, msg);
     }
 

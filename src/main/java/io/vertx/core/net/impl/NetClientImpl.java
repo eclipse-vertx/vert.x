@@ -192,7 +192,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       }
       pipeline.addLast("handler", new VertxNetHandler<NetSocketImpl>(ch, socketMap) {
         @Override
-        protected void handleMsgReceived(Object msg) {
+        protected void handleMsgReceived(NetSocketImpl conn, Object msg) {
           ByteBuf buf = (ByteBuf) msg;
           conn.handleDataReceived(Buffer.buffer(buf));
         }
