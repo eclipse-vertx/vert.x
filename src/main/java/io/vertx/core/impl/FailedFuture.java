@@ -26,10 +26,18 @@ public class FailedFuture<T> implements Future<T> {
 
   private final Throwable cause;
 
-  FailedFuture(Throwable cause) {
-    this.cause = cause;
+  /**
+   * Create a future that has already failed
+   * @param t the throwable
+   */
+  FailedFuture(Throwable t) {
+    cause = t != null ? t : new NoStackTraceThrowable(null);
   }
 
+  /**
+   * Create a future that has already failed
+   * @param failureMessage the failure message
+   */
   FailedFuture(String failureMessage) {
     this(new NoStackTraceThrowable(failureMessage));
   }

@@ -34,30 +34,6 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   }
 
   /**
-   * Create a future that has already failed
-   * @param t the throwable
-   */
-  FutureImpl(Throwable t) {
-    fail(t != null ? t : new NoStackTraceThrowable(null));
-  }
-
-  /**
-   * Create a future that has already failed
-   * @param failureMessage the failure message
-   */
-  FutureImpl(String failureMessage) {
-    this(new NoStackTraceThrowable(failureMessage));
-  }
-
-  /**
-   * Create a future that has already succeeded
-   * @param result the result
-   */
-  FutureImpl(T result) {
-    complete(result);
-  }
-
-  /**
    * The result of the operation. This will be null if the operation failed.
    */
   public T result() {

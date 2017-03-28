@@ -26,6 +26,10 @@ class SucceededFuture<T> implements Future<T> {
 
   private final T result;
 
+  /**
+   * Create a future that has already succeeded
+   * @param result the result
+   */
   SucceededFuture(T result) {
     this.result = result;
   }
