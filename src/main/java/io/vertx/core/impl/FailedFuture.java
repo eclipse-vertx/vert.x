@@ -117,4 +117,9 @@ public class FailedFuture<T> implements Future<T> {
   public void handle(AsyncResult<T> asyncResult) {
     throw new IllegalStateException("Result is already complete: failed");
   }
+
+  @Override
+  public String toString() {
+    return "Future{cause=" + cause.getMessage() + "}";
+  }
 }

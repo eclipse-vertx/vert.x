@@ -109,4 +109,9 @@ class SucceededFuture<T> implements Future<T> {
   public void handle(AsyncResult<T> asyncResult) {
     throw new IllegalStateException("Result is already complete: succeeded");
   }
+
+  @Override
+  public String toString() {
+    return "Future{result=" + result + "}";
+  }
 }

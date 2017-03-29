@@ -177,4 +177,16 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
     return tryFail(new NoStackTraceThrowable(failureMessage));
   }
 
+  @Override
+  public String toString() {
+    synchronized (this) {
+      if (succeeded) {
+        return "Future{result=" + result + "}";
+      }
+      if (failed) {
+        return "Future{cause=" + throwable.getMessage() + "}";
+      }
+      return "Future{unresolved}";
+    }
+  }
 }
