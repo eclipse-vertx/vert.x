@@ -97,8 +97,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           }
         });
       }
+      submitted.countDown();
     });
-    submitted.countDown();
     await();
   }
 
