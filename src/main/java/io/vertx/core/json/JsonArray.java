@@ -203,6 +203,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * @param pos  the position in the array
    * @return  the byte[], or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to String
+   * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
    */
   public byte[] getBinary(int pos) {
     String val = (String)list.get(pos);
@@ -224,6 +225,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * @param pos  the position in the array
    * @return  the Instant, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to String
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISODATE encoded value
    */
   public Instant getInstant(int pos) {
     String val = (String)list.get(pos);

@@ -259,7 +259,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param key  the key to return the value for
    * @return the value or null if no value for that key
    * @throws java.lang.ClassCastException if the value is not a String
-   * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISODATE encoded value
    */
   public Instant getInstant(String key) {
     Objects.requireNonNull(key);
