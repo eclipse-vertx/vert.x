@@ -218,15 +218,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * Get the Instant at position {@code pos} in the array.
    * <p>
    * JSON itself has no notion of a temporal types, this extension complies to the RFC-7493, so this method assumes
-   * there is a String value and it contains an ISODATE encoded data and time such as "2017-04-03T10:25:41Z", which it
-   * decodes if found and returns.
+   * there is a String value and it contains an ISO 8601 encoded data and time format such as "2017-04-03T10:25:41Z",
+   * which it decodes if found and returns.
    * <p>
    * This method should be used in conjunction with {@link #add(Instant)}
    *
    * @param pos  the position in the array
    * @return  the Instant, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to String
-   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISODATE encoded value
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
    */
   public Instant getInstant(int pos) {
     String val = (String)list.get(pos);
