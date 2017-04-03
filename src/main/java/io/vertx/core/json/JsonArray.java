@@ -217,8 +217,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Get the Instant at position {@code pos} in the array.
    * <p>
-   * JSON itself has no notion of a temporal types, so this method assumes there is a String value and
-   * it contains a ISOString encoded date, which it decodes if found and returns.
+   * JSON itself has no notion of a temporal types, this extension complies to the RFC-7493, so this method assumes
+   * there is a String value and it contains an ISODATE encoded data and time such as "2017-04-03T10:25:41Z", which it
+   * decodes if found and returns.
    * <p>
    * This method should be used in conjunction with {@link #add(Instant)}
    *
