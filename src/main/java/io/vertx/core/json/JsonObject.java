@@ -251,15 +251,16 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Get the instant value with the specified key.
    * <p>
-   * JSON itself has no notion of a date, this extension complies to the RFC-7493, so this method assumes there is a
-   * String value with the key and it contains a ISODATE encoded date, which it decodes if found and returns.
+   * JSON itself has no notion of a temporal types, this extension complies to the RFC-7493, so this method assumes
+   * there is a String value with the key and it contains an ISO 8601 encoded date and time format
+   * such as "2017-04-03T10:25:41Z", which it decodes if found and returns.
    * <p>
    * This method should be used in conjunction with {@link #put(String, java.time.Instant)}
    *
    * @param key  the key to return the value for
    * @return the value or null if no value for that key
    * @throws java.lang.ClassCastException if the value is not a String
-   * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
    */
   public Instant getInstant(String key) {
     Objects.requireNonNull(key);
@@ -648,7 +649,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Put a Instant into the JSON object with the specified key.
    * <p>
-   * JSON extension RFC7493, instant will first be encoded to ISODATE String.
+   * JSON extension RFC7493, instant will first be encoded to ISO 8601 date and time
+   * String such as "2017-04-03T10:25:41Z".
    *
    * @param key  the key
    * @param value  the value
