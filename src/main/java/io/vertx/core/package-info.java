@@ -56,9 +56,11 @@
  *
  * == In the beginning there was Vert.x
  *
- * NOTE: Much of this is Java specific - need someway of swapping in language specific parts
+ * ////
+ * TODO Much of this is Java specific - need someway of swapping in language specific parts
+ * ////
  *
- * You can't do much in Vert.x-land unless you can commune with a {@link io.vertx.core.Vertx} object!
+ * You can't do much in Vert.x-land unless you can communicate with a {@link io.vertx.core.Vertx} object!
  *
  * It's the control centre of Vert.x and is how you do pretty much everything, including creating clients and servers,
  * getting a reference to the event bus, setting timers, as well as many other things.
@@ -71,8 +73,6 @@
  * ----
  * {@link examples.CoreExamples#example1}
  * ----
- *
- * If you're using Verticles
  *
  * NOTE: Most applications will only need a single Vert.x instance, but it's possible to create multiple Vert.x instances if you
  * require, for example, isolation between the event bus or different groups of servers and clients.
