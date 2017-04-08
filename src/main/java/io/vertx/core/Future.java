@@ -211,6 +211,38 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
   boolean failed();
 
   /**
+   * Compose this future with a {@code mapper} function.<p>
+   *
+   * When this future (the one on which {@code compose} is called) completes, the {@code mapper} will be called with
+   * the result and this mapper returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * This can be used to implement e.g. "finally" clauses, but can also modify the result and/or postpone it.<p>
+   *
+   * @param mapper the mapper function
+   * @return the composed future
+   */
+  default <U> Future<U> composeResult(Function<AsyncResult<T>, Future<U>> mapper) {
+    if (mapper == null) {
+      throw new NullPointerException();
+    }
+    Future<U> ret = Future.future();
+    setHandler(ar -> {
+      Future<U> apply;
+      try {
+        apply = mapper.apply(ar);
+      } catch (Throwable e) {
+        ret.fail(e);
+        return;
+      }
+      apply.setHandler(ret);
+    });
+    return ret;
+  }
+
+  /**
    * Compose this future with a provided {@code next} future.<p>
    *
    * When this (the one on which {@code compose} is called) future succeeds, the {@code handler} will be called with
