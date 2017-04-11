@@ -101,9 +101,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
+  public synchronized void handleClosed() {
+    http2Pool.discard(this);
+    super.handleClosed();
+  }
+
+  @Override
   public boolean isValid() {
     Http2Connection conn = handler.connection();
-    return !conn.goAwaySent() && !conn.goAwayReceived();
+    return !isClosed() && !conn.goAwaySent() && !conn.goAwayReceived();
   }
 
   @Override
