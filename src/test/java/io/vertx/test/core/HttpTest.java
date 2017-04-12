@@ -79,6 +79,7 @@ import java.util.stream.IntStream;
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static java.util.Collections.singletonList;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -283,6 +284,22 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(200, resp.statusCode());
         testComplete();
       }).putHeader("foo", "bar").end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testPutHeaderReplacesPreviousHeaders() throws Exception {
+    server.requestHandler(req ->
+      req.response()
+        .putHeader("Location", "http://example1.org")
+        .putHeader("location", "http://example2.org")
+        .end());
+    server.listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(singletonList("http://example2.org"), resp.headers().getAll("LocatioN"));
+        testComplete();
+       }).end();
     }));
     await();
   }

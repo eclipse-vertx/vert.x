@@ -214,7 +214,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse putHeader(String name, String value) {
     synchronized (conn) {
       checkHeadWritten();
-      headers().add(name, value);
+      headers().set(name, value);
       return this;
     }
   }
@@ -223,7 +223,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
     synchronized (conn) {
       checkHeadWritten();
-      headers().add(name, value);
+      headers().set(name, value);
       return this;
     }
   }
@@ -232,7 +232,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse putHeader(String name, Iterable<String> values) {
     synchronized (conn) {
       checkHeadWritten();
-      headers().add(name, values);
+      headers().set(name, values);
       return this;
     }
   }
@@ -241,7 +241,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
     synchronized (conn) {
       checkHeadWritten();
-      headers().add(name, values);
+      headers().set(name, values);
       return this;
     }
   }
