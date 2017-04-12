@@ -51,10 +51,16 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public static final ClientAuth DEFAULT_CLIENT_AUTH = ClientAuth.NONE;
 
+  /**
+   * Default value of whether the server supports SNI = false
+   */
+  public static final boolean DEFAULT_SNI = false;
+
   private int port;
   private String host;
   private int acceptBacklog;
-  private ClientAuth clientAuth = DEFAULT_CLIENT_AUTH;
+  private ClientAuth clientAuth;
+  private boolean sni;
 
   /**
    * Default constructor
@@ -75,6 +81,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.host = other.getHost();
     this.acceptBacklog = other.getAcceptBacklog();
     this.clientAuth = other.getClientAuth();
+    this.sni = other.getSni();
   }
 
   /**
@@ -348,6 +355,24 @@ public class NetServerOptions extends TCPSSLOptions {
     return (NetServerOptions) super.setLogActivity(logEnabled);
   }
 
+  /**
+   *
+   * @return true if the server supports Server Name Indication
+   */
+  public boolean getSni() {
+    return sni;
+  }
+
+  /**
+   * Set whether the server supports Server Name Indiciation
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetServerOptions setSni(boolean sni) {
+    this.sni = sni;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -371,6 +396,7 @@ public class NetServerOptions extends TCPSSLOptions {
     result = 31 * result + (host != null ? host.hashCode() : 0);
     result = 31 * result + acceptBacklog;
     result = 31 * result + clientAuth.hashCode();
+    result = 31 * result + (sni ? 1 : 0);
     return result;
   }
 
@@ -379,6 +405,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.host = DEFAULT_HOST;
     this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
     this.clientAuth = DEFAULT_CLIENT_AUTH;
+    this.sni = DEFAULT_SNI;
   }
 
 }

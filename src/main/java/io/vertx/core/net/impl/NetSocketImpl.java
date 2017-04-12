@@ -35,7 +35,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -252,9 +251,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
       if (host != null) {
-        sslHandler = helper.createSslHandler(vertx, host, port);
+        sslHandler = new SslHandler(helper.createEngine(vertx, host, port));
       } else {
-        sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
+        sslHandler = new SslHandler(helper.createEngine(vertx, this.remoteName(), this.remoteAddress().port()));
       }
       channel.pipeline().addFirst("ssl", sslHandler);
     }

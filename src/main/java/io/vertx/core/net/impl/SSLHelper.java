@@ -18,7 +18,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
-import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -39,12 +38,13 @@ import io.vertx.core.net.TrustOptions;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
-import java.security.KeyStore;
 import java.security.cert.CRL;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -142,6 +142,7 @@ public class SSLHelper {
   private String endpointIdentificationAlgorithm = "";
 
   private SslContext sslContext;
+  private Map<Certificate, SslContext> sslContextMap = new ConcurrentHashMap<>();
   private boolean openSslSessionCacheEnabled = true;
 
   public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -237,21 +238,26 @@ public class SSLHelper {
     If you don't specify a key store, and don't specify a system property no key store will be used
     You can override this by specifying the javax.echo.ssl.keyStore system property
      */
-  private SslContext createContext(VertxInternal vertx) {
+  private SslContext createContext(VertxInternal vertx, X509KeyManager mgr) {
     try {
-      KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx);
       TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx);
       SslContextBuilder builder;
       if (client) {
         builder = SslContextBuilder.forClient();
+        KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx);
         if (keyMgrFactory != null) {
           builder.keyManager(keyMgrFactory);
         }
       } else {
-        if (keyMgrFactory == null) {
-          throw new VertxException("Key/certificate is mandatory for SSL");
+        if (mgr != null) {
+          builder = SslContextBuilder.forServer(mgr.getPrivateKey(null), "wibble", mgr.getCertificateChain(null));
+        } else {
+          KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx);
+          if (keyMgrFactory == null) {
+            throw new VertxException("Key/certificate is mandatory for SSL");
+          }
+          builder = SslContextBuilder.forServer(keyMgrFactory);
         }
-        builder = SslContextBuilder.forServer(keyMgrFactory);
       }
       Collection<String> cipherSuites = enabledCipherSuites;
       if (openSsl) {
@@ -279,7 +285,14 @@ public class SSLHelper {
             applicationProtocols.stream().map(PROTOCOL_NAME_MAPPING::get).collect(Collectors.toList())
         ));
       }
-      return builder.build();
+      SslContext ctx = builder.build();
+      if (ctx instanceof OpenSslServerContext){
+        SSLSessionContext sslSessionContext = ctx.sessionContext();
+        if (sslSessionContext instanceof OpenSslServerSessionContext){
+          ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(openSslSessionCacheEnabled);
+        }
+      }
+      return ctx;
     } catch (Exception e) {
       throw new VertxException(e);
     }
@@ -374,7 +387,7 @@ public class SSLHelper {
     };
   }
 
-  private SslHandler createHandler(SSLEngine engine, boolean client) {
+  private void configureEngine(SSLEngine engine, boolean client, String serverName) {
     if (enabledCipherSuites != null && !enabledCipherSuites.isEmpty()) {
       String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);
       engine.setEnabledCipherSuites(toUse);
@@ -409,36 +422,62 @@ public class SSLHelper {
       sslParameters.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
       engine.setSSLParameters(sslParameters);
     }
-    return new SslHandler(engine);
+    if (serverName != null) {
+      SSLParameters sslParameters = engine.getSSLParameters();
+      sslParameters.setServerNames(Collections.singletonList(new SNIHostName(serverName)));
+      engine.setSSLParameters(sslParameters);
+    }
   }
 
   public SslContext getContext(VertxInternal vertx) {
-    if (sslContext == null) {
-      sslContext = createContext(vertx);
-      if (sslContext instanceof OpenSslServerContext){
-        SSLSessionContext sslSessionContext = sslContext.sessionContext();
-        if (sslSessionContext instanceof OpenSslServerSessionContext){
-          ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(openSslSessionCacheEnabled);
-        }
+    return getContext(vertx, null);
+  }
+
+  public SslContext getContext(VertxInternal vertx, String serverName) {
+    if (serverName == null) {
+      if (sslContext == null) {
+        sslContext = createContext(vertx, null);
       }
+      return sslContext;
+    } else {
+      X509KeyManager mgr;
+      try {
+        mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+      return sslContextMap.computeIfAbsent(mgr.getCertificateChain(null)[0], s -> createContext(vertx, mgr));
     }
-    return sslContext;
   }
 
   // This is called to validate some of the SSL params as that only happens when the context is created
   public synchronized void validate(VertxInternal vertx) {
     if (ssl) {
-      getContext(vertx);
+      getContext(vertx, null);
     }
   }
 
-  public SslHandler createSslHandler(VertxInternal vertx, String host, int port) {
-    SSLEngine engine = getContext(vertx).newEngine(ByteBufAllocator.DEFAULT, host, port);
-    return createHandler(engine, client);
+  public SSLEngine createEngine(SslContext sslContext, VertxInternal vertx) {
+    SSLEngine engine = sslContext.newEngine(ByteBufAllocator.DEFAULT);
+    configureEngine(engine, false, null);
+    return engine;
   }
 
-  public SslHandler createSslHandler(VertxInternal vertx) {
-    SSLEngine engine = getContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
-    return createHandler(engine, client);
+  public SSLEngine createEngine(VertxInternal vertx, String host, int port, String serverName) {
+    SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT, host, port);
+    configureEngine(engine, client, serverName);
+    return engine;
+  }
+
+  public SSLEngine createEngine(VertxInternal vertx, String host, int port) {
+    SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT, host, port);
+    configureEngine(engine, client, null);
+    return engine;
+  }
+
+  public SSLEngine createEngine(VertxInternal vertx) {
+    SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT);
+    configureEngine(engine, client, null);
+    return engine;
   }
 }

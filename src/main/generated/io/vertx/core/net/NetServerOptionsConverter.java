@@ -42,6 +42,9 @@ public class NetServerOptionsConverter {
     if (json.getValue("port") instanceof Number) {
       obj.setPort(((Number)json.getValue("port")).intValue());
     }
+    if (json.getValue("sni") instanceof Boolean) {
+      obj.setSni((Boolean)json.getValue("sni"));
+    }
   }
 
   public static void toJson(NetServerOptions obj, JsonObject json) {
@@ -54,5 +57,6 @@ public class NetServerOptionsConverter {
       json.put("host", obj.getHost());
     }
     json.put("port", obj.getPort());
+    json.put("sni", obj.getSni());
   }
 }

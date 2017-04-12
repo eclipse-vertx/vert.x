@@ -24,5 +24,7 @@ public interface Trust<T extends TrustOptions> extends Supplier<T> {
   Trust<PemTrustOptions> SERVER_PEM_ROOT_CA = () -> new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
   Trust<PemTrustOptions> CLIENT_PEM_ROOT_CA = () -> new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
   Trust<PemTrustOptions> SERVER_PEM_ROOT_CA_AND_OTHER_CA = () -> new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem").addCertPath("tls/other-ca/ca-cert.pem");
+  Trust<JksOptions> SNI_JKS_HOST1 = () -> new JksOptions().setPath("tls/sni-truststore-host1.jks").setPassword("wibble");
+  Trust<JksOptions> SNI_JKS_HOST2 = () -> new JksOptions().setPath("tls/sni-truststore-host2.jks").setPassword("wibble");
 
 }

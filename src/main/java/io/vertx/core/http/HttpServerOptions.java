@@ -634,6 +634,10 @@ public class HttpServerOptions extends NetServerOptions {
     return (HttpServerOptions) super.setLogActivity(logEnabled);
   }
 
+  public HttpServerOptions setSni(boolean sni) {
+    return (HttpServerOptions) super.setSni(sni);
+  }
+
   /**
    * @return true if the server supports decompression
    */

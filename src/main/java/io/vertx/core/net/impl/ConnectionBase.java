@@ -259,7 +259,7 @@ public abstract class ConnectionBase {
 
   public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
     if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = channel.pipeline().context("ssl");
+      ChannelHandlerContext sslHandlerContext = channel.pipeline().context(SslHandler.class);
       assert sslHandlerContext != null;
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession().getPeerCertificateChain();

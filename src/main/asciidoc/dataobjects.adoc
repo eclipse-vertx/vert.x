@@ -1042,6 +1042,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sni]]`sni`|`Boolean`|
++++
+Set whether the server supports Server Name Indiciation
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -1391,6 +1395,10 @@ Set the value of reuse address
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
++++
+|[[sni]]`sni`|`Boolean`|
++++
+Set whether the server supports Server Name Indiciation
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++

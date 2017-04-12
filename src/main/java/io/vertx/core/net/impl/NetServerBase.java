@@ -22,6 +22,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.channel.FixedRecvByteBufAllocator;
@@ -30,6 +31,7 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
@@ -326,16 +328,21 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
       }
 
       if (sslHelper.isSSL()) {
-        SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
-
-        io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-        fut.addListener(future -> {
+        GenericFutureListener<io.netty.util.concurrent.Future<? super Channel>> handshakeListener = future -> {
           if (future.isSuccess()) {
             connected(ch, handler);
           } else {
             log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + future.cause());
           }
-        });
+        };
+        ChannelOutboundHandler sslHandler;
+        if (options.getSni()) {
+          sslHandler = new VertxSniHandler(sslHelper, vertx, handshakeListener);
+        } else {
+          sslHandler = new SslHandler(sslHelper.createEngine(vertx));
+          ((SslHandler)sslHandler).handshakeFuture().addListener(handshakeListener);
+        }
+        ch.pipeline().addFirst("ssl", sslHandler);
       } else {
         connected(ch, handler);
       }

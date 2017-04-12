@@ -209,3 +209,14 @@ keytool -certreq -alias test-store -file client-csr.pem -keystore client-keystor
 2) Sign the client cert with the root CA and convert it to the X.509 format
 
 openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -in client-csr.pem | openssl x509 -out client-cert-root-ca.pem -outform PEM
+
+
+
+# Self signed server->client using SNI
+
+keytool -genkey -alias test-host1 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host1 -keypass wibble -storepass wibble
+keytool -genkey -alias test-host2 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host2 -keypass wibble -storepass wibble
+keytool -export -alias test-host1 -file host1.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
+keytool -export -alias test-host2 -file host2.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
+keytool -import -trustcacerts -alias test-host1 -file host1.crt -keystore sni-truststore-host1.jks -keypass wibble -storepass wibble
+keytool -import -trustcacerts -alias test-host2 -file host2.crt -keystore sni-truststore2-host2.jks -keypass wibble -storepass wibble
