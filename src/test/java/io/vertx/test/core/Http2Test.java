@@ -16,14 +16,19 @@
 
 package io.vertx.test.core;
 
+import io.netty.channel.Channel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.tls.Cert;
 import org.junit.Test;
@@ -31,7 +36,9 @@ import org.junit.Test;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -282,6 +289,32 @@ public class Http2Test extends HttpTest {
       assertEquals(1, numReq.get());
       complete();
     });
+    await();
+  }
+
+  @Test
+  public void testDiscardConnectionWhenChannelBecomesInactive() throws Exception {
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      if (count.getAndIncrement() == 0) {
+        Http2ServerConnection a = (Http2ServerConnection) req.connection();
+        NioSocketChannel channel = (NioSocketChannel) a.channel();
+        channel.shutdown();
+      } else {
+        req.response().end();
+      }
+    });
+    startServer();
+    AtomicBoolean closed = new AtomicBoolean();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      fail();
+    }).connectionHandler(conn -> conn.closeHandler(v -> closed.set(true))).end();
+    assertWaitUntil(closed::get);
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      testComplete();
+    }).exceptionHandler(err -> {
+      fail();
+    }).end();
     await();
   }
 }

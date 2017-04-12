@@ -22,6 +22,7 @@ import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
@@ -117,6 +118,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public synchronized void handleClosed() {
+    closed = true;
     super.handleClosed();
   }
 
@@ -455,6 +457,14 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public synchronized Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http2ConnectionBase) super.exceptionHandler(handler);
+  }
+
+
+  /**
+   * @return the Netty channel - for internal usage only
+   */
+  public Channel channel() {
+    return channel;
   }
 
   // Private
