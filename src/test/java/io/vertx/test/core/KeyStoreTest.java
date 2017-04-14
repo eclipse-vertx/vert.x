@@ -19,10 +19,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -36,7 +32,6 @@ import org.junit.Test;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509KeyManager;
 import java.security.KeyStore;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -406,26 +401,4 @@ public class KeyStoreTest extends VertxTestBase {
     assertNotNull(abc);
   }
 */
-
-  @Test
-  public void testNetSocket() throws Exception {
-    KeyCertOptions jksOptions = Cert.SNI_JKS.get();
-    JksOptions clientOptions = Trust.SNI_JKS_HOST2.get();
-    NetClient client = vertx.createNetClient(new NetClientOptions().setTrustStoreOptions(clientOptions).setSsl(true));
-    NetServer server = vertx.createNetServer(new NetServerOptions().setKeyCertOptions(jksOptions).setSsl(true).setSni(true));
-    server.connectHandler(so -> {
-      so.handler(so::write);
-      so.closeHandler(v -> testComplete());
-    });
-    server.listen(1234, onSuccess(v -> {
-      client.connect(1234, "localhost", "host2", onSuccess(so -> {
-        so.write("hello");
-        so.handler(buff -> {
-          assertEquals("hello", buff.toString());
-          so.close();
-        });
-      }));
-    }));
-    await();
-  }
 }

@@ -1146,81 +1146,141 @@ public class NetTest extends VertxTestBase {
   @Test
   // StartTLS
   public void testStartTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, true, true);
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, true);
   }
 
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false);
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, false);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(false, true, true, false, false, false, true, false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE, false, false, true, false);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(false, false, true, false, false, false, false, false);
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, false, false);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(true, true, true, true, false, false, true, false);
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, false, false, true, false);
   }
 
   @Test
   //Client specifies cert and it's not required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(true, true, true, true, true, false, true, false);
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, true, false, true, false);
   }
 
   @Test
   //Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(false, true, true, true, true, false, false, false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, true, false, false, false);
   }
 
   @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(true, true, true, false, true, false, false, false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE, true, false, false, false);
   }
 
   @Test
   // Specify some cipher suites
   public void testTLSCipherSuites() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false, ENABLED_CIPHER_SUITES);
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, false, ENABLED_CIPHER_SUITES);
   }
 
   @Test
   // Specify some bogus protocol
   public void testInvalidTlsProtocolVersion() throws Exception {
-    testTLS(false, false, true, false, false, true, false, false, new String[0],
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, false, false, new String[0],
     new String[]{"TLSv1.999"});
   }
 
   @Test
   // Specify a valid protocol
   public void testSpecificTlsProtocolVersion() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false, new String[0],
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, false, new String[0],
         new String[]{"TLSv1.2"});
   }
 
-  void testTLS(boolean clientCert, boolean clientTrust,
-    boolean serverCert, boolean serverTrust,
+  @Test
+  // SNI without server name should use the first keystore entry
+  public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry1() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI without server name should use the first keystore entry
+  public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry2() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(false);
+    await();
+  }
+
+  @Test
+  // SNI returns the certificate for the indicated server name
+  public void testSniWithServerName1() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("host1");
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI returns the certificate for the indicated server name
+  public void testSniWithServerName2() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("host2");
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI present an unknown server
+  public void testSniWithUnknownServer1() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("another");
+    test.run(false);
+    await();
+  }
+
+  @Test
+  // SNI present an unknown server
+  public void testSniWithUnknownServer2() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("another");
+    test.run(false);
+    await();
+  }
+
+  void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
+               Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,
     boolean shouldPass, boolean startTLS) throws Exception {
         testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
         shouldPass, startTLS, new String[0], new String[0]);
   }
 
-  void testTLS(boolean clientCert, boolean clientTrust,
-    boolean serverCert, boolean serverTrust,
+  void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
+               Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,
     boolean shouldPass, boolean startTLS,
     String[] enabledCipherSuites) throws Exception {
@@ -1228,152 +1288,228 @@ public class NetTest extends VertxTestBase {
         shouldPass, startTLS, enabledCipherSuites, new String[0]);
     }
 
-
-  void testTLS(boolean clientCert, boolean clientTrust,
-               boolean serverCert, boolean serverTrust,
+  void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
+               Cert<?> serverCert, Trust<?> serverTrust,
                boolean requireClientAuth, boolean clientTrustAll,
                boolean shouldPass, boolean startTLS,
                String[] enabledCipherSuites,
                String[] enabledSecureTransportProtocols) throws Exception {
-    server.close();
-    NetServerOptions options = new NetServerOptions();
-    if (!startTLS) {
-      options.setSsl(true);
-    }
-    if (serverTrust) {
-      options.setTrustStoreOptions(new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble"));
-    }
-    if (serverCert) {
-      options.setKeyStoreOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
-    }
-    if (requireClientAuth) {
-      options.setClientAuth(ClientAuth.REQUIRED);
-    }
-    for (String suite: enabledCipherSuites) {
-      options.addEnabledCipherSuite(suite);
-    }
-    for (String protocol : enabledSecureTransportProtocols) {
-      options.addEnabledSecureTransportProtocol(protocol);
+    TLSTest test = new TLSTest()
+        .clientCert(clientCert)
+        .clientTrust(clientTrust)
+        .serverCert(serverCert)
+        .serverTrust(serverTrust)
+        .requireClientAuth(requireClientAuth)
+        .clientTrustAll(clientTrustAll)
+        .startTLS(startTLS)
+        .enabledCipherSuites(enabledCipherSuites)
+        .enabledSecureTransportProtocols(enabledSecureTransportProtocols);
+    test.run(shouldPass);
+    await();
+  }
+
+  class TLSTest {
+
+    Cert<?> clientCert = Cert.NONE;
+    Trust<?> clientTrust = Trust.NONE;
+    Cert<?> serverCert = Cert.NONE;
+    Trust<?> serverTrust = Trust.NONE;
+    boolean requireClientAuth;
+    boolean clientTrustAll;
+    boolean startTLS;
+    String[] enabledCipherSuites = new String[0];
+    String[] enabledSecureTransportProtocols = new String[0];
+    boolean sni;
+    String serverName;
+
+    public TLSTest clientCert(Cert<?> clientCert) {
+      this.clientCert = clientCert;
+      return this;
     }
 
-    Consumer<NetSocket> certificateChainChecker = socket -> {
-      try {
-        X509Certificate[] certs = socket.peerCertificateChain();
-        if (clientCert) {
-          assertNotNull(certs);
-          assertEquals(1, certs.length);
-        } else {
-          assertNull(certs);
-        }
-      } catch (SSLPeerUnverifiedException e) {
-        assertTrue(clientTrust || clientTrustAll);
-      }
-    };
+    public TLSTest clientTrust(Trust<?> clientTrust) {
+      this.clientTrust = clientTrust;
+      return this;
+    }
 
-    options.setPort(4043);
-    server = vertx.createNetServer(options);
-    Handler<NetSocket> serverHandler = socket -> {
-      if (socket.isSsl()) {
-        certificateChainChecker.accept(socket);
-      }
-      AtomicBoolean upgradedServer = new AtomicBoolean();
-      AtomicInteger upgradedServerCount = new AtomicInteger();
-      socket.handler(buff -> {
-        socket.write(buff); // echo the data
-        if (startTLS) {
-          if (upgradedServer.compareAndSet(false, true)) {
-            assertFalse(socket.isSsl());
-            socket.upgradeToSsl(v -> {
-              certificateChainChecker.accept(socket);
-              upgradedServerCount.incrementAndGet();
-              assertTrue(socket.isSsl());
-            });
-          } else {
-            assertTrue(socket.isSsl());
-            assertEquals(1, upgradedServerCount.get());
-          }
-        } else {
-          assertTrue(socket.isSsl());
-        }
-      });
-    };
-    server.connectHandler(serverHandler).listen(ar -> {
-      client.close();
-      NetClientOptions clientOptions = new NetClientOptions();
+    public TLSTest serverCert(Cert<?> serverCert) {
+      this.serverCert = serverCert;
+      return this;
+    }
+
+    public TLSTest serverTrust(Trust<?> serverTrust) {
+      this.serverTrust = serverTrust;
+      return this;
+    }
+
+    public TLSTest requireClientAuth(boolean requireClientAuth) {
+      this.requireClientAuth = requireClientAuth;
+      return this;
+    }
+
+    public TLSTest clientTrustAll(boolean clientTrustAll) {
+      this.clientTrustAll = clientTrustAll;
+      return this;
+    }
+
+    public TLSTest startTLS(boolean startTLS) {
+      this.startTLS = startTLS;
+      return this;
+    }
+
+    public TLSTest enabledCipherSuites(String[] enabledCipherSuites) {
+      this.enabledCipherSuites = enabledCipherSuites;
+      return this;
+    }
+
+    public TLSTest enabledSecureTransportProtocols(String[] enabledSecureTransportProtocols) {
+      this.enabledSecureTransportProtocols = enabledSecureTransportProtocols;
+      return this;
+    }
+
+    public TLSTest serverName(String serverName) {
+      this.serverName = serverName;
+      return this;
+    }
+
+    public TLSTest sni(boolean sni) {
+      this.sni = sni;
+      return this;
+    }
+
+    void run(boolean shouldPass) {
+      server.close();
+      NetServerOptions options = new NetServerOptions();
       if (!startTLS) {
-        clientOptions.setSsl(true);
+        options.setSsl(true);
       }
-      if (clientTrustAll) {
-        clientOptions.setTrustAll(true);
-      }
-      if (clientTrust) {
-        clientOptions.setTrustStoreOptions(new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble"));
-      }
-      if (clientCert) {
-        clientOptions.setKeyStoreOptions(new JksOptions().setPath("tls/client-keystore.jks").setPassword("wibble"));
+      options.setTrustOptions(serverTrust.get());
+      options.setKeyCertOptions(serverCert.get());
+      if (requireClientAuth) {
+        options.setClientAuth(ClientAuth.REQUIRED);
       }
       for (String suite: enabledCipherSuites) {
-        clientOptions.addEnabledCipherSuite(suite);
+        options.addEnabledCipherSuite(suite);
       }
       for (String protocol : enabledSecureTransportProtocols) {
-        clientOptions.addEnabledSecureTransportProtocol(protocol);
+        options.addEnabledSecureTransportProtocol(protocol);
       }
-      client = vertx.createNetClient(clientOptions);
-      client.connect(4043, "localhost", ar2 -> {
-        if (ar2.succeeded()) {
-          if (!shouldPass) {
-            fail("Should not connect");
-            return;
-          }
-          final int numChunks = 100;
-          final int chunkSize = 100;
-          final List<Buffer> toSend = new ArrayList<>();
-          final Buffer expected = Buffer.buffer();
-          for (int i = 0; i< numChunks;i++) {
-            Buffer chunk = TestUtils.randomBuffer(chunkSize);
-            toSend.add(chunk);
-            expected.appendBuffer(chunk);
-          }
-          final Buffer received = Buffer.buffer();
-          final NetSocket socket = ar2.result();
+      options.setSni(sni);
 
-          final AtomicBoolean upgradedClient = new AtomicBoolean();
-          socket.handler(buffer -> {
-            received.appendBuffer(buffer);
-            if (received.length() == expected.length()) {
-              assertEquals(expected, received);
-              testComplete();
-            }
-            if (startTLS && !upgradedClient.get()) {
-              upgradedClient.set(true);
+      Consumer<NetSocket> certificateChainChecker = socket -> {
+        try {
+          X509Certificate[] certs = socket.peerCertificateChain();
+          if (clientCert != Cert.NONE) {
+            assertNotNull(certs);
+            assertEquals(1, certs.length);
+          } else {
+            assertNull(certs);
+          }
+        } catch (SSLPeerUnverifiedException e) {
+          assertTrue(clientTrust.get() != Trust.NONE || clientTrustAll);
+        }
+      };
+
+      options.setPort(4043);
+      server = vertx.createNetServer(options);
+      Handler<NetSocket> serverHandler = socket -> {
+        if (socket.isSsl()) {
+          certificateChainChecker.accept(socket);
+        }
+        AtomicBoolean upgradedServer = new AtomicBoolean();
+        AtomicInteger upgradedServerCount = new AtomicInteger();
+        socket.handler(buff -> {
+          socket.write(buff); // echo the data
+          if (startTLS) {
+            if (upgradedServer.compareAndSet(false, true)) {
               assertFalse(socket.isSsl());
               socket.upgradeToSsl(v -> {
+                certificateChainChecker.accept(socket);
+                upgradedServerCount.incrementAndGet();
                 assertTrue(socket.isSsl());
-                // Now send the rest
-                for (int i = 1; i < numChunks; i++) {
-                  socket.write(toSend.get(i));
-                }
               });
             } else {
               assertTrue(socket.isSsl());
+              assertEquals(1, upgradedServerCount.get());
             }
-          });
-
-          //Now send some data
-          int numToSend = startTLS ? 1 : numChunks;
-          for (int i = 0; i < numToSend; i++) {
-            socket.write(toSend.get(i));
-          }
-        } else {
-          if (shouldPass) {
-            fail("Should not fail to connect");
           } else {
-            testComplete();
+            assertTrue(socket.isSsl());
           }
+        });
+      };
+      server.connectHandler(serverHandler).listen(ar -> {
+        client.close();
+        NetClientOptions clientOptions = new NetClientOptions();
+        if (!startTLS) {
+          clientOptions.setSsl(true);
         }
+        if (clientTrustAll) {
+          clientOptions.setTrustAll(true);
+        }
+        clientOptions.setTrustOptions(clientTrust.get());
+        clientOptions.setKeyCertOptions(clientCert.get());
+        for (String suite: enabledCipherSuites) {
+          clientOptions.addEnabledCipherSuite(suite);
+        }
+        for (String protocol : enabledSecureTransportProtocols) {
+          clientOptions.addEnabledSecureTransportProtocol(protocol);
+        }
+        client = vertx.createNetClient(clientOptions);
+        client.connect(4043, "localhost", serverName, ar2 -> {
+          if (ar2.succeeded()) {
+            if (!shouldPass) {
+              fail("Should not connect");
+              return;
+            }
+            final int numChunks = 100;
+            final int chunkSize = 100;
+            final List<Buffer> toSend = new ArrayList<>();
+            final Buffer expected = Buffer.buffer();
+            for (int i = 0; i< numChunks;i++) {
+              Buffer chunk = TestUtils.randomBuffer(chunkSize);
+              toSend.add(chunk);
+              expected.appendBuffer(chunk);
+            }
+            final Buffer received = Buffer.buffer();
+            final NetSocket socket = ar2.result();
+
+            final AtomicBoolean upgradedClient = new AtomicBoolean();
+            socket.handler(buffer -> {
+              received.appendBuffer(buffer);
+              if (received.length() == expected.length()) {
+                assertEquals(expected, received);
+                testComplete();
+              }
+              if (startTLS && !upgradedClient.get()) {
+                upgradedClient.set(true);
+                assertFalse(socket.isSsl());
+                socket.upgradeToSsl(v -> {
+                  assertTrue(socket.isSsl());
+                  // Now send the rest
+                  for (int i = 1; i < numChunks; i++) {
+                    socket.write(toSend.get(i));
+                  }
+                });
+              } else {
+                assertTrue(socket.isSsl());
+              }
+            });
+
+            //Now send some data
+            int numToSend = startTLS ? 1 : numChunks;
+            for (int i = 0; i < numToSend; i++) {
+              socket.write(toSend.get(i));
+            }
+          } else {
+            if (shouldPass) {
+              fail("Should not fail to connect");
+            } else {
+              testComplete();
+            }
+          }
+        });
       });
-    });
-    await();
+    }
   }
 
   @Test
