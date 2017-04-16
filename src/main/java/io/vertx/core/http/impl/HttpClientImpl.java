@@ -150,7 +150,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     HttpClientMetrics metrics = vertx.metricsSPI().createMetrics(this, options);
     connectionManager = new ConnectionManager(this, metrics);
     ProxyOptions proxyOptions = options.getProxyOptions();
-    useProxy = !options.isSsl() && proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP;
+    useProxy = proxyOptions != null && proxyOptions.getType() == ProxyType.HTTP;
   }
 
   @Override
@@ -945,7 +945,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
     HttpClientRequest req;
-    if (useProxy) {
+    if (useProxy && !ssl) {
       relativeURI = "http://" + host + (port != 80 ? ":" + port : "") + relativeURI;
       ProxyOptions proxyOptions = options.getProxyOptions();
       if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
