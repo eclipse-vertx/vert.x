@@ -945,7 +945,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
     HttpClientRequest req;
-    if (useProxy && !ssl) {
+    if (useProxy && (ssl==null || !ssl)) {
       relativeURI = "http://" + host + (port != 80 ? ":" + port : "") + relativeURI;
       ProxyOptions proxyOptions = options.getProxyOptions();
       if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
