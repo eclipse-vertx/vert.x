@@ -26,6 +26,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.*;
 
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+import javax.security.cert.X509Certificate;
 import java.io.ByteArrayOutputStream;
 import java.util.EnumSet;
 import java.util.Random;
@@ -374,4 +377,14 @@ public class TestUtils {
     );
   }
 
+  public static String cnOf(X509Certificate cert) throws Exception {
+    String dn = cert.getSubjectDN().getName();
+    LdapName ldapDN = new LdapName(dn);
+    for (Rdn rdn : ldapDN.getRdns()) {
+      if (rdn.getType().equalsIgnoreCase("cn")) {
+        return rdn.getValue().toString();
+      }
+    }
+    return null;
+  }
 }

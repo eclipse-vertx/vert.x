@@ -436,7 +436,7 @@ public class ConnectionManager {
         boolean useAlpn = options.isUseAlpn();
         if (useAlpn) {
           SslHandler sslHandler = new SslHandler(sslHelper.createEngine(client.getVertx(), host, port, serverName));
-          ch.pipeline().addLast(sslHandler);
+          ch.pipeline().addLast("ssl", sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
             @Override
             protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {

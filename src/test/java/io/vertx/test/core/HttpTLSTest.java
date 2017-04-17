@@ -22,7 +22,6 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.TrustAllTrustManager;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
@@ -30,8 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.TrustManager;
@@ -50,7 +47,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -416,34 +412,29 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .requestOptions(new RequestOptions().setSsl(true).setServerName("host1").setPort(4043).setHost("host1"))
         .pass()
         .clientPeerCert();
-    assertEquals("localhost", getCN(cert));
-  }
-
-  public static String getCN(X509Certificate cert) throws Exception {
-    String dn = cert.getSubjectDN().getName();
-    LdapName ldapDN = new LdapName(dn);
-    for (Rdn rdn : ldapDN.getRdns()) {
-      if (rdn.getType().equalsIgnoreCase("cn")) {
-        return rdn.getValue().toString();
-      }
-    }
-    return null;
+    assertEquals("localhost", TestUtils.cnOf(cert));
   }
 
   @Test
   // Client provides SNI and server responds with a matching certificate for the indicated server name
   public void testTLSClientIndicatesServerNameAndTrustsServerCert1() throws Exception {
-    testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
         .serverUsesSni()
-        .requestOptions(new RequestOptions().setSsl(true).setServerName("host1").setPort(4043).setHost("host1")).pass();
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("host1").setPort(4043).setHost("host1"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("host1", TestUtils.cnOf(cert));
   }
 
   @Test
   // Client provides SNI and server responds with a matching certificate for the indicated server name
   public void testTLSClientIndicatesServerNameAndTrustsServerCert2() throws Exception {
-    testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverUsesSni()
-        .requestOptions(new RequestOptions().setSsl(true).setServerName("host2").setPort(4043).setHost("host2")).pass();
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("host2").setPort(4043).setHost("host2"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("host2", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -457,10 +448,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Client provides SNI unknown to the server and server responds with the default certificate (first)
   public void testTLSClientIndicatesServerNameUnknownToServerAndTrustsServerDefaultCert() throws Exception {
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SNI_JKS, Trust.NONE)
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SNI_JKS, Trust.NONE)
         .serverUsesSni()
         .clientVerifyHost(false)
-        .requestOptions(new RequestOptions().setSsl(true).setServerName("unknown").setPort(4043).setHost("unknown")).pass();
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("unknown").setPort(4043).setHost("unknown"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("localhost", TestUtils.cnOf(cert));
   }
 
   class TLSTest {
@@ -726,15 +720,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
         }
         HttpClientRequest req = requestProvider.apply(client);
         req.setFollowRedirects(followRedirects);
-        req.connectionHandler(conn -> {
+        req.handler(response -> {
+          HttpConnection conn = response.request().connection();
           if (conn.isSsl()) {
             try {
               clientPeerCert = conn.peerCertificateChain()[0];
             } catch (SSLPeerUnverifiedException ignore) {
             }
           }
-        });
-        req.handler(response -> {
           if (shouldPass) {
             response.version();
             response.bodyHandler(data -> assertEquals("bar", data.toString()));

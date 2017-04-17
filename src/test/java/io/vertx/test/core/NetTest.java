@@ -1219,6 +1219,7 @@ public class NetTest extends VertxTestBase {
         .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
     await();
+    assertEquals("localhost", cnOf(test.clientPeerCert()));
   }
 
   @Test
@@ -1239,6 +1240,7 @@ public class NetTest extends VertxTestBase {
         .serverCert(Cert.SNI_JKS).sni(true).serverName("host1");
     test.run(true);
     await();
+    assertEquals("host1", cnOf(test.clientPeerCert()));
   }
 
   @Test
@@ -1249,6 +1251,7 @@ public class NetTest extends VertxTestBase {
         .serverCert(Cert.SNI_JKS).sni(true).serverName("host2");
     test.run(true);
     await();
+    assertEquals("host2", cnOf(test.clientPeerCert()));
   }
 
   @Test
@@ -1259,6 +1262,7 @@ public class NetTest extends VertxTestBase {
         .serverCert(Cert.SNI_JKS).sni(true).serverName("unknown");
     test.run(true);
     await();
+    assertEquals("localhost", cnOf(test.clientPeerCert()));
   }
 
   @Test
@@ -1321,6 +1325,7 @@ public class NetTest extends VertxTestBase {
     String[] enabledSecureTransportProtocols = new String[0];
     boolean sni;
     String serverName;
+    X509Certificate clientPeerCert;
 
     public TLSTest clientCert(Cert<?> clientCert) {
       this.clientCert = clientCert;
@@ -1375,6 +1380,10 @@ public class NetTest extends VertxTestBase {
     public TLSTest sni(boolean sni) {
       this.sni = sni;
       return this;
+    }
+
+    public X509Certificate clientPeerCert() {
+      return clientPeerCert;
     }
 
     void run(boolean shouldPass) {
@@ -1472,6 +1481,13 @@ public class NetTest extends VertxTestBase {
             }
             final Buffer received = Buffer.buffer();
             final NetSocket socket = ar2.result();
+
+            if (socket.isSsl()) {
+              try {
+                clientPeerCert = socket.peerCertificateChain()[0];
+              } catch (SSLPeerUnverifiedException ignore) {
+              }
+            }
 
             final AtomicBoolean upgradedClient = new AtomicBoolean();
             socket.handler(buffer -> {
