@@ -36,6 +36,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
@@ -2705,22 +2706,35 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testHttpProxyRequest() throws Exception {
     startProxy(null, ProxyType.HTTP);
-
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+    testHttpProxyRequest2(client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/"));
+  }
 
+  @Test
+  public void testHttpProxyRequestOverrideClientSsl() throws Exception {
+    startProxy(null, ProxyType.HTTP);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+    testHttpProxyRequest2(client.get(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080)));
+  }
+
+  private void testHttpProxyRequest2(HttpClientRequest clientReq) throws Exception {
     server.requestHandler(req -> {
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      clientReq.handler(resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
-      }).exceptionHandler(th -> fail(th)).end();
+      });
+      clientReq.exceptionHandler(this::fail);
+      clientReq.end();
     }));
     await();
   }
