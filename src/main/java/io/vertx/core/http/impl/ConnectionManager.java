@@ -55,6 +55,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import javax.net.ssl.SSLHandshakeException;
 import java.util.ArrayDeque;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -100,11 +101,13 @@ public class ConnectionManager {
 
   static final class ConnectionKey {
 
+    private final String serverName;
     private final boolean ssl;
     private final int port;
     private final String host;
 
-    public ConnectionKey(boolean ssl, int port, String host) {
+    public ConnectionKey(String serverName, boolean ssl, int port, String host) {
+      this.serverName = serverName;
       this.ssl = ssl;
       this.host = host;
       this.port = port;
@@ -117,9 +120,10 @@ public class ConnectionManager {
 
       ConnectionKey that = (ConnectionKey) o;
 
+      if (!Objects.equals(serverName, that.serverName)) return false;
       if (ssl != that.ssl) return false;
       if (port != that.port) return false;
-      if (host != null ? !host.equals(that.host) : that.host != null) return false;
+      if (!Objects.equals(host, that.host)) return false;
 
       return true;
     }
@@ -127,6 +131,7 @@ public class ConnectionManager {
     @Override
     public int hashCode() {
       int result = ssl ? 1 : 0;
+      result = 31 * result + (serverName != null ? serverName.hashCode() : 0);
       result = 31 * result + (host != null ? host.hashCode() : 0);
       result = 31 * result + port;
       return result;
@@ -160,16 +165,16 @@ public class ConnectionManager {
   }
 
   public void getConnectionForWebsocket(boolean ssl, int port, String host, Waiter waiter) {
-    ConnectionKey address = new ConnectionKey(ssl, port, host);
+    ConnectionKey address = new ConnectionKey(null, ssl, port, host);
     ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);
   }
 
-  public void getConnectionForRequest(boolean ssl, HttpVersion version, int port, String host, Waiter waiter) {
+  public void getConnectionForRequest(String serverName, boolean ssl, HttpVersion version, int port, String host, Waiter waiter) {
     if (!keepAlive && pipelining) {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
-      ConnectionKey address = new ConnectionKey(ssl, port, host);
+      ConnectionKey address = new ConnectionKey(serverName, ssl, port, host);
       ConnQueue connQueue = requestQM.getConnQueue(address, version);
       connQueue.getConnection(waiter);
     }
@@ -284,7 +289,7 @@ public class ConnectionManager {
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
       bootstrap.channel(NioSocketChannel.class);
-      connector.connect(this, bootstrap, context, address.ssl, pool.version(), address.host, address.port, waiter);
+      connector.connect(this, bootstrap, context, address.serverName, address.ssl, pool.version(), address.host, address.port, waiter);
     }
 
     /**
@@ -407,6 +412,7 @@ public class ConnectionManager {
         ConnQueue queue,
         Bootstrap bootstrap,
         ContextImpl context,
+        String serverName,
         boolean ssl,
         HttpVersion version,
         String host,
@@ -429,7 +435,7 @@ public class ConnectionManager {
         ChannelPipeline pipeline = ch.pipeline();
         boolean useAlpn = options.isUseAlpn();
         if (useAlpn) {
-          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(client.getVertx(), host, port));
+          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(client.getVertx(), host, port, serverName));
           ch.pipeline().addLast(sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
             @Override
@@ -447,7 +453,7 @@ public class ConnectionManager {
           });
         } else {
           if (ssl) {
-            pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx, host, port)));
+            pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx, host, port, serverName)));
           }
           if (version == HttpVersion.HTTP_2) {
             if (options.isHttp2ClearTextUpgrade()) {

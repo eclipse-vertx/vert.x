@@ -27,6 +27,7 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.codegen.annotations.Nullable;
@@ -46,6 +47,8 @@ import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayDeque;
@@ -496,6 +499,15 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   //
 
+
+  public boolean isSsl() {
+    return channel.pipeline().get(SslHandler.class) != null;
+  }
+
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return getPeerCertificateChain();
+  }
 
   @Override
   public synchronized ServerConnection closeHandler(Handler<Void> handler) {

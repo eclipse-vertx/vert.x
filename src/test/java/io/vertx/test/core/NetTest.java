@@ -1215,7 +1215,7 @@ public class NetTest extends VertxTestBase {
   // SNI without server name should use the first keystore entry
   public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry1() throws Exception {
     TLSTest test = new TLSTest()
-        .clientTrust(Trust.SNI_JKS_HOST1)
+        .clientTrust(Trust.SERVER_JKS)
         .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
     await();
@@ -1225,7 +1225,7 @@ public class NetTest extends VertxTestBase {
   // SNI without server name should use the first keystore entry
   public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry2() throws Exception {
     TLSTest test = new TLSTest()
-        .clientTrust(Trust.SNI_JKS_HOST2)
+        .clientTrust(Trust.SNI_JKS_HOST1)
         .serverCert(Cert.SNI_JKS).sni(true);
     test.run(false);
     await();
@@ -1255,9 +1255,9 @@ public class NetTest extends VertxTestBase {
   // SNI present an unknown server
   public void testSniWithUnknownServer1() throws Exception {
     TLSTest test = new TLSTest()
-        .clientTrust(Trust.SNI_JKS_HOST1)
-        .serverCert(Cert.SNI_JKS).sni(true).serverName("another");
-    test.run(false);
+        .clientTrust(Trust.SERVER_JKS)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("unknown");
+    test.run(true);
     await();
   }
 
@@ -1266,7 +1266,7 @@ public class NetTest extends VertxTestBase {
   public void testSniWithUnknownServer2() throws Exception {
     TLSTest test = new TLSTest()
         .clientTrust(Trust.SNI_JKS_HOST2)
-        .serverCert(Cert.SNI_JKS).sni(true).serverName("another");
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("unknown");
     test.run(false);
     await();
   }

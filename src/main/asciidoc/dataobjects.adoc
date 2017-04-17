@@ -1841,6 +1841,10 @@ Set the host name to be used by the client request.
 +++
 Set the port to be used by the client request.
 +++
+|[[serverName]]`serverName`|`String`|
++++
+Set the SNI server name to be used by the client connection.
++++
 |[[ssl]]`ssl`|`Boolean`|
 +++
 Set whether SSL/TLS is enabled

@@ -87,6 +87,7 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
+import io.vertx.core.net.impl.VertxSniHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -264,20 +265,15 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
-                pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx)));
-                if (options.isUseAlpn()) {
-                  pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
-                    @Override
-                    protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
-                      if (protocol.equals("http/1.1")) {
-                        configureHttp1(pipeline);
-                      } else {
-                        handleHttp2(ch);
-                      }
+                if (options.getSni()) {
+                  pipeline.addLast(new VertxSniHandler(sslHelper, vertx, fut -> {
+                    if (fut.isSuccess()) {
+                      postSSLConfig(pipeline);
                     }
-                  });
+                  }));
                 } else {
-                  configureHttp1(pipeline);
+                  pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx)));
+                  postSSLConfig(pipeline);
                 }
               } else {
                 if (DISABLE_HC2) {
@@ -364,6 +360,23 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         })
         .logEnabled(logEnabled)
         .build();
+  }
+
+  private void postSSLConfig(ChannelPipeline pipeline) {
+    if (options.isUseAlpn()) {
+      pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
+        @Override
+        protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
+          if (protocol.equals("http/1.1")) {
+            configureHttp1(pipeline);
+          } else {
+            handleHttp2(pipeline.channel());
+          }
+        }
+      });
+    } else {
+      configureHttp1(pipeline);
+    }
   }
 
   private void configureHttp1(ChannelPipeline pipeline) {

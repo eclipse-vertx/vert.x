@@ -51,7 +51,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
   private final VertxInternal vertx;
-  private final int port;
+  private final String serverName;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
@@ -77,12 +77,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private long written;
   private CaseInsensitiveHeaders headers;
 
-  HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port,
+  HttpClientRequestImpl(HttpClientImpl client, boolean ssl, String serverName, HttpMethod method, String host, int port,
                         String relativeURI, VertxInternal vertx) {
     super(client, ssl, method, host, port, relativeURI);
     this.chunked = false;
     this.vertx = vertx;
-    this.port = port;
+    this.serverName = serverName;
   }
 
   @Override
@@ -732,7 +732,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnectionForRequest(ssl, port, host, waiter);
+      client.getConnectionForRequest(serverName, ssl, port, host, waiter);
       connecting = true;
     }
   }

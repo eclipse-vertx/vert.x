@@ -446,6 +446,9 @@ public class SSLHelper {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
+      if (mgr == null) {
+        return sslContext;
+      }
       return sslContextMap.computeIfAbsent(mgr.getCertificateChain(null)[0], s -> createContext(vertx, mgr));
     }
   }

@@ -21,6 +21,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
@@ -41,6 +42,8 @@ import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -708,5 +711,16 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   @Override
   public ClientConnection exceptionHandler(Handler<Throwable> handler) {
     return (ClientConnection) super.exceptionHandler(handler);
+  }
+
+  @Override
+  public boolean isSsl() {
+    return channel.pipeline().get(SslHandler.class) != null;
+  }
+
+
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return getPeerCertificateChain();
   }
 }

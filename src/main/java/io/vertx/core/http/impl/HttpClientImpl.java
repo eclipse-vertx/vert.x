@@ -93,7 +93,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         if (uri.getQuery() != null) {
           requestURI += "?" + uri.getQuery();
         }
-        return Future.succeededFuture(createRequest(m, uri.getHost(), port, ssl, requestURI, null));
+        return Future.succeededFuture(createRequest(null, m, uri.getHost(), port, ssl, requestURI, null));
       }
       return null;
     } catch (Exception e) {
@@ -454,12 +454,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         port = 443;
       }
     }
-    return createRequest(method, url.getHost(), port, ssl, url.getFile(), null);
+    return createRequest(null, method, url.getHost(), port, ssl, url.getFile(), null);
   }
 
   @Override
   public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI) {
-    return createRequest(method, host, port, null, requestURI, null);
+    return createRequest(null, method, host, port, null, requestURI, null);
   }
 
   @Override
@@ -469,7 +469,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClientRequest request(HttpMethod method, RequestOptions options) {
-    return createRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null);
+    return createRequest(options.getServerName(), method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null);
   }
 
   @Override
@@ -904,8 +904,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     });
   }
 
-  void getConnectionForRequest(boolean ssl, int port, String host, Waiter waiter) {
-    connectionManager.getConnectionForRequest(ssl, options.getProtocolVersion(), port, host, waiter);
+  void getConnectionForRequest(String serverName, boolean ssl, int port, String host, Waiter waiter) {
+    connectionManager.getConnectionForRequest(serverName, ssl, options.getProtocolVersion(), port, host, waiter);
   }
 
   /**
@@ -933,11 +933,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   private HttpClient requestNow(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    createRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).handler(responseHandler).end();
+    createRequest(null, method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).handler(responseHandler).end();
     return this;
   }
 
-  private HttpClientRequest createRequest(HttpMethod method, String host, int port, Boolean ssl, String relativeURI, MultiMap headers) {
+  private HttpClientRequest createRequest(String serverName, HttpMethod method, String host, int port, Boolean ssl, String relativeURI, MultiMap headers) {
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
@@ -955,11 +955,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-      req = new HttpClientRequestImpl(this, useSSL, method, proxyOptions.getHost(), proxyOptions.getPort(),
+      req = new HttpClientRequestImpl(this, useSSL, serverName, method, proxyOptions.getHost(), proxyOptions.getPort(),
           relativeURI, vertx);
       req.setHost(host + (port != 80 ? ":" + port : ""));
     } else {
-      req = new HttpClientRequestImpl(this, useSSL, method, host, port, relativeURI, vertx);
+      req = new HttpClientRequestImpl(this, useSSL, serverName, method, host, port, relativeURI, vertx);
     }
     if (headers != null) {
       req.headers().setAll(headers);

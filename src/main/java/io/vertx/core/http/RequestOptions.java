@@ -46,6 +46,12 @@ public class RequestOptions {
    */
   public static final String DEFAULT_URI = "";
 
+  /**
+   * SNI default serve name = null
+   */
+  public static final String DEFAULT_SERVER_NAME = null;
+
+  private String serverName;
   private String host;
   private int port;
   private boolean ssl;
@@ -55,6 +61,7 @@ public class RequestOptions {
    * Default constructor
    */
   public RequestOptions() {
+    serverName = DEFAULT_SERVER_NAME;
     host = DEFAULT_HOST;
     port = DEFAULT_PORT;
     ssl = DEFAULT_SSL;
@@ -84,6 +91,25 @@ public class RequestOptions {
     setPort(json.getInteger("port", DEFAULT_PORT));
     setSsl(json.getBoolean("ssl", DEFAULT_SSL));
     setURI(json.getString("uri", DEFAULT_URI));
+  }
+
+  /**
+   * Get the SNI server name to be used by the client connection.
+   *
+   * @return  the SNI server name
+   */
+  public String getServerName() {
+    return serverName;
+  }
+
+  /**
+   * Set the SNI server name to be used by the client connection.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setServerName(String serverName) {
+    this.serverName = serverName;
+    return this;
   }
 
   /**

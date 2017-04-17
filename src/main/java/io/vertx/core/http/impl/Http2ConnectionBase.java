@@ -47,6 +47,8 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Objects;
@@ -132,8 +134,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     // Handled by HTTP/2
   }
 
-  boolean isSsl() {
+  public boolean isSsl() {
     return channel.pipeline().get(SslHandler.class) != null;
+  }
+
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return getPeerCertificateChain();
   }
 
   synchronized boolean isClosed() {
@@ -458,7 +465,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public synchronized Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http2ConnectionBase) super.exceptionHandler(handler);
   }
-
 
   /**
    * @return the Netty channel - for internal usage only

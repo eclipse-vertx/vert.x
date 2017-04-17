@@ -18,9 +18,11 @@ package io.vertx.test.core;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.TrustAllTrustManager;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
@@ -28,10 +30,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import javax.net.ssl.ManagerFactoryParameters;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.TrustManagerFactorySpi;
+import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -40,12 +46,11 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -55,6 +60,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
+
+  @Override
+  protected VertxOptions getOptions() {
+    VertxOptions options = super.getOptions();
+    options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
+        "127.0.0.1 host1\n" +
+        "127.0.0.1 host2\n" +
+        "127.0.0.1 unknown"));
+    return options;
+  }
 
   @Override
   protected void tearDown() throws Exception {
@@ -387,6 +402,67 @@ public abstract class HttpTLSTest extends HttpTestBase {
     }, Cert.SERVER_JKS, Trust.NONE).pass();
   }
 
+  @Test
+  // Client provides SNI but server ignores it and provides a different cerficate
+  public void testTLSClientIndicatesServerNameIgnoredAndDoesNotTrustServerCert() throws Exception {
+    testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SERVER_JKS, Trust.NONE)
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("host1").setPort(4043).setHost("host1")).fail();
+  }
+
+  @Test
+  // Client provides SNI but server ignores it and provides a different cerficate - check we get a certificate
+  public void testTLSClientIndicatesServerNameIgnoredAndTrustsServerCert() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientVerifyHost(false)
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("host1").setPort(4043).setHost("host1"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("localhost", getCN(cert));
+  }
+
+  public static String getCN(X509Certificate cert) throws Exception {
+    String dn = cert.getSubjectDN().getName();
+    LdapName ldapDN = new LdapName(dn);
+    for (Rdn rdn : ldapDN.getRdns()) {
+      if (rdn.getType().equalsIgnoreCase("cn")) {
+        return rdn.getValue().toString();
+      }
+    }
+    return null;
+  }
+
+  @Test
+  // Client provides SNI and server responds with a matching certificate for the indicated server name
+  public void testTLSClientIndicatesServerNameAndTrustsServerCert1() throws Exception {
+    testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+        .serverUsesSni()
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("host1").setPort(4043).setHost("host1")).pass();
+  }
+
+  @Test
+  // Client provides SNI and server responds with a matching certificate for the indicated server name
+  public void testTLSClientIndicatesServerNameAndTrustsServerCert2() throws Exception {
+    testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
+        .serverUsesSni()
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("host2").setPort(4043).setHost("host2")).pass();
+  }
+
+  @Test
+  // Client provides SNI unknown to the server and server responds with the default certificate (first)
+  public void testTLSClientIndicatesServerNameUnknownToServerAndDoesNotTrustServerDefaultCert() throws Exception {
+    testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+        .serverUsesSni()
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("unknown").setPort(4043).setHost("unknown")).fail();
+  }
+
+  @Test
+  // Client provides SNI unknown to the server and server responds with the default certificate (first)
+  public void testTLSClientIndicatesServerNameUnknownToServerAndTrustsServerDefaultCert() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SNI_JKS, Trust.NONE)
+        .serverUsesSni()
+        .clientVerifyHost(false)
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("unknown").setPort(4043).setHost("unknown")).pass();
+  }
+
   class TLSTest {
 
     HttpVersion version;
@@ -414,6 +490,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String[] serverEnabledSecureTransportProtocol   = new String[0];
     private String connectHostname;
     private boolean followRedirects;
+    private boolean serverUsesSni;
     private Function<HttpClient, HttpClientRequest> requestProvider = client -> {
       String httpHost;
       if (connectHostname != null) {
@@ -423,6 +500,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
     };
+    X509Certificate clientPeerCert;
 
     public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
       this.version = HttpVersion.HTTP_1_1;
@@ -497,6 +575,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
+    TLSTest serverUsesSni() {
+      serverUsesSni = true;
+      return this;
+    }
+
     TLSTest clientUsesAlpn() {
       clientUsesAlpn = true;
       return this;
@@ -552,15 +635,19 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
-    void pass() {
-      run(true);
+    public X509Certificate clientPeerCert() {
+      return clientPeerCert;
     }
 
-    void fail() {
-      run(false);
+    TLSTest pass() {
+      return run(true);
     }
 
-    void run(boolean shouldPass) {
+    TLSTest fail() {
+      return run(false);
+    }
+
+    TLSTest run(boolean shouldPass) {
       server.close();
       HttpClientOptions options = new HttpClientOptions();
       options.setProtocolVersion(version);
@@ -611,12 +698,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (serverOpenSSL) {
         serverOptions.setOpenSslEngineOptions(new OpenSSLEngineOptions());
       }
-      if (serverUsesAlpn) {
-        serverOptions.setUseAlpn(true);
-      }
-      if (serverSSL) {
-        serverOptions.setSsl(true);
-      }
+      serverOptions.setUseAlpn(serverUsesAlpn);
+      serverOptions.setSsl(serverSSL);
+      serverOptions.setSni(serverUsesSni);
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
       }
@@ -642,6 +726,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
         }
         HttpClientRequest req = requestProvider.apply(client);
         req.setFollowRedirects(followRedirects);
+        req.connectionHandler(conn -> {
+          if (conn.isSsl()) {
+            try {
+              clientPeerCert = conn.peerCertificateChain()[0];
+            } catch (SSLPeerUnverifiedException ignore) {
+            }
+          }
+        });
         req.handler(response -> {
           if (shouldPass) {
             response.version();
@@ -662,8 +754,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
         req.end("foo");
       });
       await();
+      return this;
     }
-
   }
 
   abstract HttpServer createHttpServer(HttpServerOptions options);
