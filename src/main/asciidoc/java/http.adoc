@@ -1421,7 +1421,7 @@ client.redirectHandler(response -> {
   if (response.statusCode() == 301 && response.getHeader("Location") != null) {
 
     // Compute the redirect URI
-    String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
+    String absoluteURI = resolver.resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
 
     // Create a new ready to use request that the client will use
     return Future.succeededFuture(client.getAbs(absoluteURI));

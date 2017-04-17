@@ -21,7 +21,19 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.streams.Pump;
@@ -573,11 +585,7 @@ public class HTTPExamples {
     }).setFollowRedirects(true).end();
   }
 
-  private String resolveURI(String base, String uriRef) {
-    throw new UnsupportedOperationException();
-  }
-
-  public void exampleFollowRedirect03(HttpClient client) {
+  public void exampleFollowRedirect03(HttpClient client, URIResolver resolver) {
 
     client.redirectHandler(response -> {
 
@@ -585,7 +593,7 @@ public class HTTPExamples {
       if (response.statusCode() == 301 && response.getHeader("Location") != null) {
 
         // Compute the redirect URI
-        String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
+        String absoluteURI = resolver.resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
 
         // Create a new ready to use request that the client will use
         return Future.succeededFuture(client.getAbs(absoluteURI));
@@ -594,6 +602,10 @@ public class HTTPExamples {
       // We don't redirect
       return null;
     });
+  }
+
+  interface URIResolver {
+    String resolveURI(String base, String uriRef);
   }
 
   public void example50(HttpClient client) {
