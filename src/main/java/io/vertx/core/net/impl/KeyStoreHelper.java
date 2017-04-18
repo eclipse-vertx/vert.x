@@ -44,12 +44,14 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -128,11 +130,10 @@ public class KeyStoreHelper {
 
   private final String password;
   private final KeyStore store;
+  private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
   private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
 
   public KeyStoreHelper(KeyStore ks, String password) throws Exception {
-
-    //
     Enumeration<String> en = ks.aliases();
     while (en.hasMoreElements()) {
       String alias = en.nextElement();
@@ -145,15 +146,15 @@ public class KeyStoreHelper {
           if (rdn.getType().equalsIgnoreCase("cn")) {
             String name = rdn.getValue().toString();
             PrivateKey key = (PrivateKey) ks.getKey(alias, password != null ? password.toCharArray() : null);
-            Certificate[] certificateChain = ks.getCertificateChain(alias);
-            List<X509Certificate> list = new ArrayList<>();
-            if (certificateChain != null) {
-              for (Certificate certificate : certificateChain) {
-                if (certificate instanceof X509Certificate) {
-                  list.add((X509Certificate) certificate);
-                }
-              }
+            Certificate[] tmp = ks.getCertificateChain(alias);
+            if (tmp == null) {
+              // It's a private key
+              continue;
             }
+            List<X509Certificate> chain = Arrays.asList(tmp)
+                .stream()
+                .map(c -> (X509Certificate)c)
+                .collect(Collectors.toList());
             X509KeyManager mgr = new X509KeyManager() {
               @Override
               public String[] getClientAliases(String s, Principal[] principals) {
@@ -173,19 +174,22 @@ public class KeyStoreHelper {
               }
               @Override
               public X509Certificate[] getCertificateChain(String s) {
-                return list.toArray(new X509Certificate[list.size()]);
+                return chain.toArray(new X509Certificate[chain.size()]);
               }
               @Override
               public PrivateKey getPrivateKey(String s) {
                 return key;
               }
             };
-            mgrMap.put(name, mgr);
+            if (name.startsWith("*.")) {
+              wildcardMgrMap.put(name.substring(2), mgr);
+            } else {
+              mgrMap.put(name, mgr);
+            }
           }
         }
       }
     }
-
     this.store = ks;
     this.password = password;
   }
@@ -197,7 +201,15 @@ public class KeyStoreHelper {
   }
 
   public X509KeyManager getKeyMgr(String serverName) {
-    return mgrMap.get(serverName);
+    X509KeyManager mgr = mgrMap.get(serverName);
+    if (mgr == null && !wildcardMgrMap.isEmpty()) {
+      int index = serverName.indexOf('.') + 1;
+      if (index > 0) {
+        String s = serverName.substring(index);
+        mgr = wildcardMgrMap.get(s);
+      }
+    }
+    return mgr;
   }
 
   public KeyManager[] getKeyMgr() throws Exception {

@@ -217,7 +217,10 @@ openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert r
 cp server-keystore.jks sni-keystore.jks
 keytool -genkey -alias test-host1 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host1 -keypass wibble -storepass wibble
 keytool -genkey -alias test-host2 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host2 -keypass wibble -storepass wibble
+keytool -genkey -alias test-host3 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=*.host3 -keypass wibble -storepass wibble
 keytool -export -alias test-host1 -file host1.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
 keytool -export -alias test-host2 -file host2.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
+keytool -export -alias test-host3 -file host3.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
 keytool -import -trustcacerts -alias test-host1 -file host1.crt -keystore sni-truststore-host1.jks -keypass wibble -storepass wibble
 keytool -import -trustcacerts -alias test-host2 -file host2.crt -keystore sni-truststore-host2.jks -keypass wibble -storepass wibble
+keytool -import -trustcacerts -alias test-host2 -file host3.crt -keystore sni-truststore-host3.jks -keypass wibble -storepass wibble

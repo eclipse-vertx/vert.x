@@ -63,6 +63,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
         "127.0.0.1 host1\n" +
         "127.0.0.1 host2\n" +
+        "127.0.0.1 sub.host3\n" +
         "127.0.0.1 unknown"));
     return options;
   }
@@ -455,6 +456,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .pass()
         .clientPeerCert();
     assertEquals("localhost", TestUtils.cnOf(cert));
+  }
+
+  @Test
+  // Client provides SNI matched on the server by a wildcard certificate
+  public void testTLSClientIndicatesServerNameMatchedByWildcardCertificate() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST3, Cert.SNI_JKS, Trust.NONE)
+        .serverUsesSni()
+        .clientVerifyHost(false)
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("sub.host3").setPort(4043).setHost("sub.host3"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("*.host3", TestUtils.cnOf(cert));
   }
 
   class TLSTest {
