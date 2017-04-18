@@ -46,10 +46,12 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -140,51 +142,66 @@ public class KeyStoreHelper {
       Certificate cert = ks.getCertificate(alias);
       if (cert instanceof X509Certificate) {
         X509Certificate x509Cert = (X509Certificate) cert;
+        Collection<List<?>> ans = x509Cert.getSubjectAlternativeNames();
+        List<String> domains = new ArrayList<>();
+        if (ans != null) {
+          for (List<?> l : ans) {
+            if (l.size() == 2 && l.get(0) instanceof Number && ((Number) l.get(0)).intValue() == 2) {
+              String dns = l.get(1).toString();
+              domains.add(dns);
+            }
+          }
+        }
         String dn = x509Cert.getSubjectX500Principal().getName();
         LdapName ldapDN = new LdapName(dn);
         for (Rdn rdn : ldapDN.getRdns()) {
           if (rdn.getType().equalsIgnoreCase("cn")) {
             String name = rdn.getValue().toString();
-            PrivateKey key = (PrivateKey) ks.getKey(alias, password != null ? password.toCharArray() : null);
-            Certificate[] tmp = ks.getCertificateChain(alias);
-            if (tmp == null) {
-              // It's a private key
-              continue;
+            domains.add(name);
+          }
+        }
+        if (domains.size() > 0) {
+          PrivateKey key = (PrivateKey) ks.getKey(alias, password != null ? password.toCharArray() : null);
+          Certificate[] tmp = ks.getCertificateChain(alias);
+          if (tmp == null) {
+            // It's a private key
+            continue;
+          }
+          List<X509Certificate> chain = Arrays.asList(tmp)
+              .stream()
+              .map(c -> (X509Certificate)c)
+              .collect(Collectors.toList());
+          X509KeyManager mgr = new X509KeyManager() {
+            @Override
+            public String[] getClientAliases(String s, Principal[] principals) {
+              throw new UnsupportedOperationException();
             }
-            List<X509Certificate> chain = Arrays.asList(tmp)
-                .stream()
-                .map(c -> (X509Certificate)c)
-                .collect(Collectors.toList());
-            X509KeyManager mgr = new X509KeyManager() {
-              @Override
-              public String[] getClientAliases(String s, Principal[] principals) {
-                throw new UnsupportedOperationException();
-              }
-              @Override
-              public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
-                throw new UnsupportedOperationException();
-              }
-              @Override
-              public String[] getServerAliases(String s, Principal[] principals) {
-                throw new UnsupportedOperationException();
-              }
-              @Override
-              public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
-                throw new UnsupportedOperationException();
-              }
-              @Override
-              public X509Certificate[] getCertificateChain(String s) {
-                return chain.toArray(new X509Certificate[chain.size()]);
-              }
-              @Override
-              public PrivateKey getPrivateKey(String s) {
-                return key;
-              }
-            };
-            if (name.startsWith("*.")) {
-              wildcardMgrMap.put(name.substring(2), mgr);
+            @Override
+            public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+              throw new UnsupportedOperationException();
+            }
+            @Override
+            public String[] getServerAliases(String s, Principal[] principals) {
+              throw new UnsupportedOperationException();
+            }
+            @Override
+            public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
+              throw new UnsupportedOperationException();
+            }
+            @Override
+            public X509Certificate[] getCertificateChain(String s) {
+              return chain.toArray(new X509Certificate[chain.size()]);
+            }
+            @Override
+            public PrivateKey getPrivateKey(String s) {
+              return key;
+            }
+          };
+          for (String domain : domains) {
+            if (domain.startsWith("*.")) {
+              wildcardMgrMap.put(domain.substring(2), mgr);
             } else {
-              mgrMap.put(name, mgr);
+              mgrMap.put(domain, mgr);
             }
           }
         }
