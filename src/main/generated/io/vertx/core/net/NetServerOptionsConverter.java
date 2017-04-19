@@ -57,6 +57,6 @@ public class NetServerOptionsConverter {
       json.put("host", obj.getHost());
     }
     json.put("port", obj.getPort());
-    json.put("sni", obj.getSni());
+    json.put("sni", obj.isSni());
   }
 }

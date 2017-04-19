@@ -81,7 +81,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.host = other.getHost();
     this.acceptBacklog = other.getAcceptBacklog();
     this.clientAuth = other.getClientAuth();
-    this.sni = other.getSni();
+    this.sni = other.isSni();
   }
 
   /**
@@ -359,7 +359,7 @@ public class NetServerOptions extends TCPSSLOptions {
    *
    * @return true if the server supports Server Name Indication
    */
-  public boolean getSni() {
+  public boolean isSni() {
     return sni;
   }
 

@@ -179,7 +179,7 @@ public class SSLHelper {
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
-    this.sni = options.getSni();
+    this.sni = options.isSni();
   }
 
   public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -213,7 +213,7 @@ public class SSLHelper {
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.openSslSessionCacheEnabled = (options.getSslEngineOptions() instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) options.getSslEngineOptions()).isSessionCacheEnabled();
-    this.sni = options.getSni();
+    this.sni = options.isSni();
   }
 
   public boolean isSSL() {

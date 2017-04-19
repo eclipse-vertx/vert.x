@@ -265,7 +265,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
-                if (options.getSni()) {
+                if (options.isSni()) {
                   VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
                   pipeline.addLast(sniHandler);
                   postSSLConfig(pipeline);
