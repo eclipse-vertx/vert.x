@@ -70,7 +70,7 @@ public class VertxSniHandler extends SniHandler {
   protected void replaceHandler(ChannelHandlerContext ctx, String hostname, SslContext sslContext) throws Exception {
     SslHandler sslHandler = null;
     try {
-      SSLEngine engine = helper.createEngine(sslContext, vertx);
+      SSLEngine engine = helper.createEngine(sslContext);
       sslHandler = new SslHandler(engine);
       ctx.pipeline().replace(this, "ssl", sslHandler);
       Future<Channel> fut = sslHandler.handshakeFuture();

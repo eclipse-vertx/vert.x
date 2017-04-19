@@ -467,7 +467,7 @@ public class SSLHelper {
     }
   }
 
-  public SSLEngine createEngine(SslContext sslContext, VertxInternal vertx) {
+  public SSLEngine createEngine(SslContext sslContext) {
     SSLEngine engine = sslContext.newEngine(ByteBufAllocator.DEFAULT);
     configureEngine(engine, false, null);
     return engine;
