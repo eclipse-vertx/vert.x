@@ -126,6 +126,7 @@ public class SSLHelper {
   private static final String[] DEFAULT_ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
 
   private boolean ssl;
+  private boolean sni;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
   private boolean trustAll;
@@ -178,6 +179,7 @@ public class SSLHelper {
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
+    this.sni = options.getSni();
   }
 
   public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
@@ -211,10 +213,15 @@ public class SSLHelper {
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.openSslSessionCacheEnabled = (options.getSslEngineOptions() instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) options.getSslEngineOptions()).isSessionCacheEnabled();
+    this.sni = options.getSni();
   }
 
   public boolean isSSL() {
     return ssl;
+  }
+
+  public boolean isSNI() {
+    return sni;
   }
 
   public ClientAuth getClientAuth() {

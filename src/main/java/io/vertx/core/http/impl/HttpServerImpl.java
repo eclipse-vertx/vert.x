@@ -257,12 +257,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         applyConnectionOptions(bootstrap);
         sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
-          ChannelHandlerContext ctx;
-          @Override
-          public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-            this.ctx = ctx;
-            super.handlerAdded(ctx);
-          }
           @Override
             protected void initChannel(Channel ch) throws Exception {
               if (requestStream.isPaused() || wsStream.isPaused()) {
@@ -272,7 +266,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
                 if (options.getSni()) {
-                  VertxSniHandler sniHandler = new VertxSniHandler(ctx, sslHelper, vertx);
+                  VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
                   pipeline.addLast(sniHandler);
                   postSSLConfig(pipeline);
                 } else {

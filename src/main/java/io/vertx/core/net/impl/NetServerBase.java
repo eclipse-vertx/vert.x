@@ -328,7 +328,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
       if (sslHelper.isSSL()) {
         io.netty.util.concurrent.Future<Channel> handshakeFuture;
         if (options.getSni()) {
-          VertxSniHandler sniHandler = new VertxSniHandler(ctx, sslHelper, vertx);
+          VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
           handshakeFuture = sniHandler.handshakeFuture();
           ch.pipeline().addFirst("ssl", sniHandler);
         } else {

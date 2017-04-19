@@ -1275,6 +1275,18 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  // SNI returns the certificate for the indicated server name
+  public void testSniWithServerNameStartTLS() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .startTLS(true)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("host1");
+    test.run(true);
+    await();
+    assertEquals("host1", cnOf(test.clientPeerCert()));
+  }
+
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
                Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,
@@ -1499,13 +1511,22 @@ public class NetTest extends VertxTestBase {
               if (startTLS && !upgradedClient.get()) {
                 upgradedClient.set(true);
                 assertFalse(socket.isSsl());
-                socket.upgradeToSsl(v -> {
+                Handler<Void> handler = v -> {
                   assertTrue(socket.isSsl());
+                  try {
+                    clientPeerCert = socket.peerCertificateChain()[0];
+                  } catch (SSLPeerUnverifiedException ignore) {
+                  }
                   // Now send the rest
                   for (int i = 1; i < numChunks; i++) {
                     socket.write(toSend.get(i));
                   }
-                });
+                };
+                if (serverName != null) {
+                  socket.upgradeToSsl(serverName, handler);
+                } else {
+                  socket.upgradeToSsl(handler);
+                }
               } else {
                 assertTrue(socket.isSsl());
               }

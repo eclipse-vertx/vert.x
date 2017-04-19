@@ -21,8 +21,9 @@ import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.impl.VertxInternal;
 
@@ -35,19 +36,34 @@ public class VertxSniHandler extends SniHandler {
 
   private final SSLHelper helper;
   private final VertxInternal vertx;
+  private ChannelHandlerContext context;
   private final Promise<Channel> handshakeFuture;
 
-  public VertxSniHandler(ChannelHandlerContext ctx, SSLHelper helper, VertxInternal vertx) {
+  public VertxSniHandler(SSLHelper helper, VertxInternal vertx) {
     super(input -> {
       return helper.getContext(vertx, input);
     });
     this.helper = helper;
     this.vertx = vertx;
-    this.handshakeFuture = ctx.executor().newPromise();
+    this.handshakeFuture = new DefaultPromise<Channel>() {
+      @Override
+      protected EventExecutor executor() {
+        ChannelHandlerContext ctx = context;
+        if (ctx == null) {
+          throw new IllegalStateException();
+        }
+        return ctx.executor();
+      }
+    };
   }
 
   public Future<Channel> handshakeFuture() {
     return handshakeFuture;
+  }
+
+  @Override
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    context = ctx;
   }
 
   @Override
