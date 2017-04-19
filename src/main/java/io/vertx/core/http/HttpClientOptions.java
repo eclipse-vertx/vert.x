@@ -144,6 +144,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_REDIRECTS = 16;
 
+  /*
+   * Default sni = false
+   */
+  public static final boolean DEFAULT_SNI = false;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -168,6 +173,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean http2ClearTextUpgrade;
   private boolean sendUnmaskedFrames;
   private int maxRedirects;
+  private boolean sni;
 
   /**
    * Default constructor
@@ -207,6 +213,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
     this.maxRedirects = other.maxRedirects;
+    this.sni = other.sni;
   }
 
   /**
@@ -255,6 +262,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     sendUnmaskedFrames = DEFAULT_SEND_UNMASKED_FRAMES;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
+    sni = DEFAULT_SNI;
   }
 
   @Override
@@ -885,6 +893,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setMaxRedirects(int maxRedirects) {
     this.maxRedirects = maxRedirects;
+    return this;
+  }
+
+  /**
+   * @return wether the client should use SNI on TLS/SSL connections
+   */
+  public boolean isSni() {
+    return sni;
+  }
+
+  /**
+   * Set wether the client should present the request host with the Server Name Indication when using TLS/SSL connections.
+   *
+   * @param sni true when the client should use SNI on TLS/SSL connections
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setSni(boolean sni) {
+    this.sni = sni;
     return this;
   }
 

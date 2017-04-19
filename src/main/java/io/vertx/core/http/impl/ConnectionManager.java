@@ -101,13 +101,11 @@ public class ConnectionManager {
 
   static final class ConnectionKey {
 
-    private final String serverName;
     private final boolean ssl;
     private final int port;
     private final String host;
 
-    public ConnectionKey(String serverName, boolean ssl, int port, String host) {
-      this.serverName = serverName;
+    public ConnectionKey(boolean ssl, int port, String host) {
       this.ssl = ssl;
       this.host = host;
       this.port = port;
@@ -120,7 +118,6 @@ public class ConnectionManager {
 
       ConnectionKey that = (ConnectionKey) o;
 
-      if (!Objects.equals(serverName, that.serverName)) return false;
       if (ssl != that.ssl) return false;
       if (port != that.port) return false;
       if (!Objects.equals(host, that.host)) return false;
@@ -131,7 +128,6 @@ public class ConnectionManager {
     @Override
     public int hashCode() {
       int result = ssl ? 1 : 0;
-      result = 31 * result + (serverName != null ? serverName.hashCode() : 0);
       result = 31 * result + (host != null ? host.hashCode() : 0);
       result = 31 * result + port;
       return result;
@@ -149,8 +145,9 @@ public class ConnectionManager {
     private final Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<>();
     private final Map<ConnectionKey, ConnQueue> queueMap = new ConcurrentHashMap<>();
 
-    ConnQueue getConnQueue(ConnectionKey address, HttpVersion version) {
-      return queueMap.computeIfAbsent(address, targetAddress -> new ConnQueue(version, this, targetAddress));
+    ConnQueue getConnQueue(String peerHost, boolean ssl, int port, String host, HttpVersion version) {
+      ConnectionKey key = new ConnectionKey(ssl, port, ssl && peerHost != null ? peerHost : host);
+      return queueMap.computeIfAbsent(key, targetAddress -> new ConnQueue(version, this, peerHost, host, port, ssl, key));
     }
 
     public void close() {
@@ -165,17 +162,15 @@ public class ConnectionManager {
   }
 
   public void getConnectionForWebsocket(boolean ssl, int port, String host, Waiter waiter) {
-    ConnectionKey address = new ConnectionKey(null, ssl, port, host);
-    ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
+    ConnQueue connQueue = wsQM.getConnQueue(host, ssl, port, host, HttpVersion.HTTP_1_1);
     connQueue.getConnection(waiter);
   }
 
-  public void getConnectionForRequest(String serverName, boolean ssl, HttpVersion version, int port, String host, Waiter waiter) {
+  public void getConnectionForRequest(HttpVersion version, String peerHost, boolean ssl, int port, String host, Waiter waiter) {
     if (!keepAlive && pipelining) {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
-      ConnectionKey address = new ConnectionKey(serverName, ssl, port, host);
-      ConnQueue connQueue = requestQM.getConnQueue(address, version);
+      ConnQueue connQueue = requestQM.getConnQueue(peerHost, ssl, port, host, version);
       connQueue.getConnection(waiter);
     }
   }
@@ -199,15 +194,23 @@ public class ConnectionManager {
   public class ConnQueue {
 
     private final QueueManager mgr;
-    private final ConnectionKey address;
+    private final String peerHost;
+    private final boolean ssl;
+    private final int port;
+    private final String host;
+    private final ConnectionKey key;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
     private Pool<HttpClientConnection> pool;
     private int connCount;
     private final int maxSize;
     final Object metric;
 
-    ConnQueue(HttpVersion version, QueueManager mgr, ConnectionKey address) {
-      this.address = address;
+    ConnQueue(HttpVersion version, QueueManager mgr, String peerHost, String host, int port, boolean ssl, ConnectionKey key) {
+      this.key = key;
+      this.host = host;
+      this.port = port;
+      this.ssl = ssl;
+      this.peerHost = peerHost;
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
         maxSize = options.getHttp2MaxPoolSize();
@@ -216,7 +219,7 @@ public class ConnectionManager {
         maxSize = options.getMaxPoolSize();
         pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize());
       }
-      this.metric = ConnectionManager.this.metrics.createEndpoint(address.host, address.port, maxSize);
+      this.metric = ConnectionManager.this.metrics.createEndpoint(host, port, maxSize);
     }
 
     public synchronized void getConnection(Waiter waiter) {
@@ -289,7 +292,7 @@ public class ConnectionManager {
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
       bootstrap.channel(NioSocketChannel.class);
-      connector.connect(this, bootstrap, context, address.serverName, address.ssl, pool.version(), address.host, address.port, waiter);
+      connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, waiter);
     }
 
     /**
@@ -318,9 +321,9 @@ public class ConnectionManager {
         createNewConnection(waiter);
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
-        mgr.queueMap.remove(address);
+        mgr.queueMap.remove(key);
         if (ConnectionManager.this.metrics.isEnabled()) {
-          ConnectionManager.this.metrics.closeEndpoint(address.host, address.port, metric);
+          ConnectionManager.this.metrics.closeEndpoint(host, port, metric);
         }
       }
     }
@@ -412,7 +415,7 @@ public class ConnectionManager {
         ConnQueue queue,
         Bootstrap bootstrap,
         ContextImpl context,
-        String serverName,
+        String peerHost,
         boolean ssl,
         HttpVersion version,
         String host,
@@ -435,7 +438,7 @@ public class ConnectionManager {
         ChannelPipeline pipeline = ch.pipeline();
         boolean useAlpn = options.isUseAlpn();
         if (useAlpn) {
-          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(client.getVertx(), host, port, serverName));
+          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(client.getVertx(), peerHost, port, options.isSni() ? peerHost : null));
           ch.pipeline().addLast("ssl", sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
             @Override
@@ -453,7 +456,7 @@ public class ConnectionManager {
           });
         } else {
           if (ssl) {
-            pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx, host, port, serverName)));
+            pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx, peerHost, port, options.isSni() ? peerHost : null)));
           }
           if (version == HttpVersion.HTTP_2) {
             if (options.isHttp2ClearTextUpgrade()) {

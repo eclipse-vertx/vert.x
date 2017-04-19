@@ -346,7 +346,7 @@ public class Http2ClientTest extends Http2TestBase {
       testComplete();
     })
         .setHost("localhost:4444")
-        .exceptionHandler(err -> fail())
+        .exceptionHandler(this::fail)
         .end();
     await();
   }
@@ -1374,7 +1374,7 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
-    }).setHost("whatever.com").sendHead();
+    }).sendHead();
     await();
   }
 
@@ -1431,7 +1431,7 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
-    }).setHost("whatever.com").sendHead();
+    }).sendHead();
     await();
   }
 

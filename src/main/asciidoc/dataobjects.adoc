@@ -826,6 +826,10 @@ Set true when the client wants to skip frame masking.
  You may want to set it true on server by server websocket communication: In this case you are by passing RFC6455 protocol.
  It's false as default.
 +++
+|[[sni]]`sni`|`Boolean`|
++++
+Set wether the client should present the request host with the Server Name Indication when using TLS/SSL connections.
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -1840,10 +1844,6 @@ Set the host name to be used by the client request.
 |[[port]]`port`|`Number (int)`|
 +++
 Set the port to be used by the client request.
-+++
-|[[serverName]]`serverName`|`String`|
-+++
-Set the SNI server name to be used by the client connection.
 +++
 |[[ssl]]`ssl`|`Boolean`|
 +++

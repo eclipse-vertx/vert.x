@@ -16,19 +16,9 @@
 package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -411,24 +401,4 @@ public class KeyStoreTest extends VertxTestBase {
     assertNotNull(abc);
   }
 */
-
-  @Test
-  public void testHttpServerRequest() throws Exception {
-    KeyCertOptions jksOptions = Cert.SNI_JKS.get();
-    JksOptions clientOptions = Trust.SNI_JKS_HOST2.get();
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setTrustStoreOptions(clientOptions).setSsl(true).setVerifyHost(false));
-    HttpServer server = vertx.createHttpServer(new HttpServerOptions().setKeyCertOptions(jksOptions).setSsl(true).setSni(true));
-    server.requestHandler(request -> {
-      request.response().end();
-    });
-    server.listen(1234, onSuccess(v -> {
-      HttpClientRequest req = client.get(new RequestOptions().setServerName("host2").setHost("localhost").setPort(1234).setSsl(true));
-      req.handler(resp -> {
-        testComplete();
-      });
-      req.exceptionHandler(this::fail);
-      req.end();
-    }));
-    await();
-  }
 }
