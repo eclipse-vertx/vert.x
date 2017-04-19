@@ -1163,8 +1163,6 @@ public class Http2ClientTest extends Http2TestBase {
           if (err instanceof Http2Exception) {
             complete();
           }
-/*
-*/
         }).sendHead();
       });
       await();
