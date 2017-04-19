@@ -23,6 +23,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.Promise;
 import io.vertx.core.impl.VertxInternal;
 
 import javax.net.ssl.SSLEngine;
@@ -34,15 +35,19 @@ public class VertxSniHandler extends SniHandler {
 
   private final SSLHelper helper;
   private final VertxInternal vertx;
-  private final GenericFutureListener<Future<? super Channel>> handshakeListener;
+  private final Promise<Channel> handshakeFuture;
 
-  public VertxSniHandler(SSLHelper helper, VertxInternal vertx, GenericFutureListener<Future<? super Channel>> handshakeListener) {
+  public VertxSniHandler(ChannelHandlerContext ctx, SSLHelper helper, VertxInternal vertx) {
     super(input -> {
       return helper.getContext(vertx, input);
     });
     this.helper = helper;
     this.vertx = vertx;
-    this.handshakeListener = handshakeListener;
+    this.handshakeFuture = ctx.executor().newPromise();
+  }
+
+  public Future<Channel> handshakeFuture() {
+    return handshakeFuture;
   }
 
   @Override
@@ -53,7 +58,13 @@ public class VertxSniHandler extends SniHandler {
       sslHandler = new SslHandler(engine);
       ctx.pipeline().replace(this, "ssl", sslHandler);
       Future<Channel> fut = sslHandler.handshakeFuture();
-      fut.addListener(handshakeListener);
+      fut.addListener(future -> {
+        if (future.isSuccess()) {
+          handshakeFuture.setSuccess(ctx.channel());
+        } else {
+          handshakeFuture.setFailure(future.cause());
+        }
+      });
       sslHandler = null;
     } finally {
       // Since the SslHandler was not inserted into the pipeline the ownership of the SSLEngine was not
