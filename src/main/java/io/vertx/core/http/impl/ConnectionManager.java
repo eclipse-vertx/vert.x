@@ -146,7 +146,7 @@ public class ConnectionManager {
     private final Map<ConnectionKey, ConnQueue> queueMap = new ConcurrentHashMap<>();
 
     ConnQueue getConnQueue(String peerHost, boolean ssl, int port, String host, HttpVersion version) {
-      ConnectionKey key = new ConnectionKey(ssl, port, ssl && peerHost != null ? peerHost : host);
+      ConnectionKey key = new ConnectionKey(ssl, port, peerHost);
       return queueMap.computeIfAbsent(key, targetAddress -> new ConnQueue(version, this, peerHost, host, port, ssl, key));
     }
 
