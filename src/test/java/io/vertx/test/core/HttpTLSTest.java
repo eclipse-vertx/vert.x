@@ -524,6 +524,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
     assertEquals("host5", TestUtils.cnOf(cert));
   }
 
+  @Test
+  public void testTLSClientIndicatesServerNameWithALPN() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+        .serverUsesSni()
+        .clientUsesAlpn()
+        .serverUsesAlpn()
+        .requestOptions(new RequestOptions().setSsl(true).setServerName("host1").setPort(4043).setHost("host1"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("host1", TestUtils.cnOf(cert));
+  }
+
   class TLSTest {
 
     HttpVersion version;
