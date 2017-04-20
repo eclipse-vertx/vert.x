@@ -16,6 +16,8 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -60,6 +62,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1142,19 +1145,27 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testRequestWrite() {
-    Buffer body = TestUtils.randomBuffer(1000);
-
+    int times = 3;
+    int padding = 5;
+    byte[] body = TestUtils.randomByteArray(5 + 1000);
     server.requestHandler(req -> {
       req.bodyHandler(buff -> {
-        assertEquals(body, buff);
+        Buffer total = Buffer.buffer();
+        for (int i = 0;i < times;i++) {
+          total.appendBytes(body, padding, body.length - padding);
+        }
+        assertEquals(total, buff);
         testComplete();
       });
     });
-
     server.listen(onSuccess(s -> {
       HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.setChunked(true);
-      req.write(body);
+      for (int i = 0;i < times;i++) {
+        Buffer buffer = Buffer.buffer(Unpooled.copiedBuffer(body).slice(padding, body.length - padding));
+        assertEquals(buffer.getByteBuf().readerIndex(), padding);
+        req.write(buffer);
+      }
       req.end();
     }));
 

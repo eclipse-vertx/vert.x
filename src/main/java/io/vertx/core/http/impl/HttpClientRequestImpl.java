@@ -848,10 +848,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             pending = (CompositeByteBuf) pendingChunks;
           } else {
             pending = Unpooled.compositeBuffer();
-            pending.addComponent(pendingChunks).writerIndex(pendingChunks.writerIndex());
+            pending.addComponent(true, pendingChunks);
             pendingChunks = pending;
           }
-          pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
+          pending.addComponent(true, buff);
         }
       }
       connect(null);
