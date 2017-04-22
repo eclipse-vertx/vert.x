@@ -16,8 +16,6 @@
 
 package io.vertx.test.core;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -62,7 +60,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1146,25 +1143,25 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testRequestWrite() {
     int times = 3;
-    int padding = 5;
-    byte[] body = TestUtils.randomByteArray(5 + 1000);
+    Buffer chunk = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> {
       req.bodyHandler(buff -> {
-        Buffer total = Buffer.buffer();
+        Buffer expected = Buffer.buffer();
         for (int i = 0;i < times;i++) {
-          total.appendBytes(body, padding, body.length - padding);
+          expected.appendBuffer(chunk);
         }
-        assertEquals(total, buff);
+        assertEquals(expected, buff);
         testComplete();
       });
     });
     server.listen(onSuccess(s -> {
       HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.setChunked(true);
+      int padding = 5;
       for (int i = 0;i < times;i++) {
-        Buffer buffer = Buffer.buffer(Unpooled.copiedBuffer(body).slice(padding, body.length - padding));
-        assertEquals(buffer.getByteBuf().readerIndex(), padding);
-        req.write(buffer);
+        Buffer paddedChunk = TestUtils.leftPad(padding, chunk);
+        assertEquals(paddedChunk.getByteBuf().readerIndex(), padding);
+        req.write(paddedChunk);
       }
       req.end();
     }));
@@ -3277,6 +3274,15 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectWithBody() throws Exception {
+    testFollowRedirectWithBody(Function.identity());
+  }
+
+  @Test
+  public void testFollowRedirectWithPaddedBody() throws Exception {
+    testFollowRedirectWithBody(buff -> TestUtils.leftPad(1, buff));
+  }
+
+  private void testFollowRedirectWithBody(Function<Buffer, Buffer> translator) throws Exception {
     Buffer expected = TestUtils.randomBuffer(2048);
     AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
@@ -3294,7 +3300,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
       testComplete();
-    }).setFollowRedirects(true).end(expected);
+    }).setFollowRedirects(true).end(translator.apply(expected));
     await();
   }
 

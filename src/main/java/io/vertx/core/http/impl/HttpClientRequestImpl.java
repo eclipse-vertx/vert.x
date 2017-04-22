@@ -819,7 +819,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
     if (end) {
       if (buff != null && !chunked && !contentLengthSet()) {
-        headers().set(CONTENT_LENGTH, String.valueOf(buff.writerIndex()));
+        headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
       }
     } else {
       if (!chunked && !contentLengthSet()) {
@@ -834,7 +834,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (cachedChunks == null) {
           cachedChunks = Unpooled.compositeBuffer();
         }
-        cachedChunks.addComponent(buff).writerIndex(cachedChunks.writerIndex() + buff.writerIndex());
+        cachedChunks.addComponent(true, buff);
       }
     }
 

@@ -19,6 +19,8 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
@@ -362,6 +364,14 @@ public class TestUtils {
         ((PfxOptions) trustOptions).setPassword(pfxPassword);
     }
     return trustOptions;
+  }
+
+  public static Buffer leftPad(int padding, Buffer buffer) {
+    return Buffer.buffer(Unpooled.buffer()
+        .writerIndex(padding)
+        .readerIndex(padding)
+        .writeBytes(buffer.getByteBuf())
+    );
   }
 
 }
