@@ -356,8 +356,7 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   /**
-   *
-   * @return true if the server supports Server Name Indication
+   * @return wether the server supports Server Name Indication
    */
   public boolean isSni() {
     return sni;
@@ -385,6 +384,7 @@ public class NetServerOptions extends TCPSSLOptions {
     if (clientAuth != that.clientAuth) return false;
     if (port != that.port) return false;
     if (host != null ? !host.equals(that.host) : that.host != null) return false;
+    if (sni != that.sni) return false;
 
     return true;
   }
@@ -407,5 +407,4 @@ public class NetServerOptions extends TCPSSLOptions {
     this.clientAuth = DEFAULT_CLIENT_AUTH;
     this.sni = DEFAULT_SNI;
   }
-
 }

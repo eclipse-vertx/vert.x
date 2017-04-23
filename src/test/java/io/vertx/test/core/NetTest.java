@@ -327,12 +327,16 @@ public class NetTest extends VertxTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
     assertEquals(false, options.isUseAlpn());
-    assertEquals(options, options.setUseAlpn(false));
-    assertEquals(false, options.isUseAlpn());
+    assertEquals(options, options.setUseAlpn(true));
+    assertEquals(true, options.isUseAlpn());
 
     assertNull(options.getSslEngineOptions());
     assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
+
+    assertFalse(options.isSni());
+    assertEquals(options, options.setSni(true));
+    assertTrue(options.isSni());
 
     testComplete();
   }
@@ -586,6 +590,7 @@ public class NetTest extends VertxTestBase {
     boolean useAlpn = TestUtils.randomBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     SSLEngineOptions sslEngine = TestUtils.randomBoolean() ? new JdkSSLEngineOptions() : new OpenSSLEngineOptions();
+    boolean sni = TestUtils.randomBoolean();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -607,6 +612,7 @@ public class NetTest extends VertxTestBase {
     options.setAcceptBacklog(acceptBacklog);
     options.setUseAlpn(useAlpn);
     options.setSslEngineOptions(sslEngine);
+    options.setSni(sni);
 
     NetServerOptions copy = new NetServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
@@ -634,6 +640,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(acceptBacklog, copy.getAcceptBacklog());
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngineOptions());
+    assertEquals(sni, copy.isSni());
   }
 
   @Test
@@ -659,6 +666,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
+    assertEquals(def.isSni(), json.isSni());
   }
 
   @Test
@@ -692,6 +700,7 @@ public class NetTest extends VertxTestBase {
     boolean useAlpn = TestUtils.randomBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     String sslEngine = TestUtils.randomBoolean() ? "jdkSslEngineOptions" : "openSslEngineOptions";
+    boolean sni = TestUtils.randomBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -713,7 +722,8 @@ public class NetTest extends VertxTestBase {
       .put("acceptBacklog", acceptBacklog)
       .put("useAlpn", useAlpn)
       .put(sslEngine, new JsonObject())
-      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
+      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
+      .put("sni", sni);
 
     NetServerOptions options = new NetServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -751,6 +761,7 @@ public class NetTest extends VertxTestBase {
         fail();
         break;
     }
+    assertEquals(sni, options.isSni());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
