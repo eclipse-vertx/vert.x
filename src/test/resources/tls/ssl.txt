@@ -251,3 +251,36 @@ keytool -import -trustcacerts -alias test-host5 -file host5.crt -keystore sni-tr
 1) Transform JKS to PKCS12
 
 keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore sni-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
+
+## Self signed PEM
+
+1) Extract each keycert as a PKCS12 store
+
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host1-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host1
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host2-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host2
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host3-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host3
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host4-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host4
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host5-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host5
+
+2) Extract each private key from the PCS12 store and convert it to PKCS8 format
+
+openssl pkcs12 -in host1-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host1-key.pem -nocrypt
+openssl pkcs12 -in host2-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host2-key.pem -nocrypt
+openssl pkcs12 -in host3-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host3-key.pem -nocrypt
+openssl pkcs12 -in host4-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host4-key.pem -nocrypt
+openssl pkcs12 -in host5-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host5-key.pem -nocrypt
+
+3) Extract each X.509 certificate from the PCS12 store
+
+openssl pkcs12 -in host1-keystore.p12 -nokeys -out host1-cert.pem
+openssl pkcs12 -in host2-keystore.p12 -nokeys -out host2-cert.pem
+openssl pkcs12 -in host3-keystore.p12 -nokeys -out host3-cert.pem
+openssl pkcs12 -in host4-keystore.p12 -nokeys -out host4-cert.pem
+openssl pkcs12 -in host5-keystore.p12 -nokeys -out host5-cert.pem
+
+4) Remove the temporary PKCS12 stores
+rm host1-keystore.p12
+rm host2-keystore.p12
+rm host3-keystore.p12
+rm host4-keystore.p12
+rm host5-keystore.p12

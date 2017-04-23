@@ -15,6 +15,7 @@
  */
 package io.vertx.core.net.impl;
 
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.PemTrustOptions;
@@ -49,6 +50,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -89,25 +91,17 @@ public class KeyStoreHelper {
       return new KeyStoreHelper(loadJKSOrPKCS12("PKCS12", pkcs12.getPassword(), value), pkcs12.getPassword());
     } else if (options instanceof PemKeyCertOptions) {
       PemKeyCertOptions keyCert = (PemKeyCertOptions) options;
-      Supplier<Buffer> key = () -> {
-        if (keyCert.getKeyPath() != null) {
-          return vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyCert.getKeyPath()).getAbsolutePath());
-        } else if (keyCert.getKeyValue() != null) {
-          return keyCert.getKeyValue();
-        } else {
-          throw new RuntimeException("Missing private key");
-        }
-      };
-      Supplier<Buffer> cert = () -> {
-        if (keyCert.getCertPath() != null) {
-          return vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyCert.getCertPath()).getAbsolutePath());
-        } else if (keyCert.getCertValue() != null) {
-          return keyCert.getCertValue();
-        } else {
-          throw new RuntimeException("Missing X.509 certificate");
-        }
-      };
-      return new KeyStoreHelper(loadKeyCert(key, cert), DUMMY_PASSWORD);
+      List<Buffer> keys = new ArrayList<>();
+      for (String keyPath : keyCert.getKeyPaths()) {
+        keys.add(vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyPath).getAbsolutePath()));
+      }
+      keys.addAll(keyCert.getKeyValues());
+      List<Buffer> certs = new ArrayList<>();
+      for (String certPath : keyCert.getCertPaths()) {
+        certs.add(vertx.fileSystem().readFileBlocking(vertx.resolveFile(certPath).getAbsolutePath()));
+      }
+      certs.addAll(keyCert.getCertValues());
+      return new KeyStoreHelper(loadKeyCert(keys, certs), DUMMY_PASSWORD);
     } else {
       return null;
     }
@@ -267,26 +261,32 @@ public class KeyStoreHelper {
     return ks;
   }
 
-  private static KeyStore loadKeyCert(Supplier<Buffer> keyValue, Supplier<Buffer> certValue) throws Exception {
+  private static KeyStore loadKeyCert(List<Buffer> keyValue, List<Buffer> certValue) throws Exception {
+    if (keyValue.size() < certValue.size()) {
+      throw new VertxException("Missing private key");
+    } else if (keyValue.size() > certValue.size()) {
+      throw new VertxException("Missing X.509 certificate");
+    }
     KeyStore keyStore = KeyStore.getInstance("jks");
     keyStore.load(null, null);
-    PrivateKey key = loadPrivateKey(keyValue);
-    Certificate[] chain = loadCerts(certValue);
-    keyStore.setEntry("dummy-entry", new KeyStore.PrivateKeyEntry(key, chain), new KeyStore.PasswordProtection(DUMMY_PASSWORD.toCharArray()));
+    Iterator<Buffer> keyValueIt = keyValue.iterator();
+    Iterator<Buffer> certValueIt = certValue.iterator();
+    int index = 0;
+    while (keyValueIt.hasNext() && certValueIt.hasNext()) {
+      PrivateKey key = loadPrivateKey(keyValueIt.next());
+      Certificate[] chain = loadCerts(certValueIt.next());
+      keyStore.setEntry("dummy-entry-" + index++, new KeyStore.PrivateKeyEntry(key, chain), new KeyStore.PasswordProtection(DUMMY_PASSWORD.toCharArray()));
+    }
     return keyStore;
   }
 
-  public static PrivateKey loadPrivateKey(Supplier<Buffer> keyValue) throws Exception {
+  public static PrivateKey loadPrivateKey(Buffer keyValue) throws Exception {
     if (keyValue == null) {
       throw new RuntimeException("Missing private key path");
     }
-    byte[] value = loadPems(keyValue.get(), "PRIVATE KEY").get(0);
+    byte[] value = loadPems(keyValue, "PRIVATE KEY").get(0);
     KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
     return rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(value));
-  }
-
-  public static X509Certificate[] loadCerts(Supplier<Buffer> certValue) throws Exception {
-    return KeyStoreHelper.loadCerts(certValue.get());
   }
 
   private static KeyStore loadCA(Stream<Buffer> certValues) throws Exception {
