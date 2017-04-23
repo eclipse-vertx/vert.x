@@ -392,6 +392,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  // Client provides SNI and server responds with a matching certificate for the indicated server name
+  public void testSNITrustPKCS12() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_PKCS12, Trust.NONE)
+        .serverSni()
+        .clientSni()
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host1"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("host1", TestUtils.cnOf(cert));
+  }
+
+  @Test
   // Client provides SNI but server ignores it and provides a different cerficate
   public void testSNIServerIgnoresExtension1() throws Exception {
     testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
@@ -447,8 +459,31 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  // Client provides SNI matched on the server by a wildcard certificate
+  public void testSNIWildcardMatchPKCS12() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST3, Cert.SNI_PKCS12, Trust.NONE)
+        .serverSni()
+        .clientSni()
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("sub.host3"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("*.host3", TestUtils.cnOf(cert));
+  }
+
+  @Test
   public void testSNISubjectAlternativeNameMatch1() throws Exception {
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST4, Cert.SNI_JKS, Trust.NONE)
+        .serverSni()
+        .clientSni()
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host4"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("host4 certificate", TestUtils.cnOf(cert));
+  }
+
+  @Test
+  public void testSNISubjectAlternativeNameMatch1PKCS12() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST4, Cert.SNI_PKCS12, Trust.NONE)
         .serverSni()
         .clientSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host4"))
@@ -469,8 +504,30 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  public void testSNISubjectAlternativeNameMatch2PKCS12() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST4, Cert.SNI_PKCS12, Trust.NONE)
+        .serverSni()
+        .clientSni()
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("www.host4"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("host4 certificate", TestUtils.cnOf(cert));
+  }
+
+  @Test
   public void testSNISubjectAlternativeNameWildcardMatch() throws Exception {
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST5, Cert.SNI_JKS, Trust.NONE)
+        .serverSni()
+        .clientSni()
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("www.host5"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("host5", TestUtils.cnOf(cert));
+  }
+
+  @Test
+  public void testSNISubjectAlternativeNameWildcardMatchPKCS12() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST5, Cert.SNI_PKCS12, Trust.NONE)
         .serverSni()
         .clientSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("www.host5"))
@@ -490,8 +547,30 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  public void testSNISubjectAltenativeNameCNMatch1PKCS12() throws Exception {
+    testTLS(Cert.NONE, Trust.SNI_JKS_HOST5, Cert.SNI_PKCS12, Trust.NONE)
+        .serverSni()
+        .clientSni()
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host5"))
+        .fail()
+        .clientPeerCert();
+  }
+
+  @Test
   public void testSNISubjectAltenativeNameCNMatch2() throws Exception {
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST5, Cert.SNI_JKS, Trust.NONE)
+        .serverSni()
+        .clientSni()
+        .clientVerifyHost(false)
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host5"))
+        .pass()
+        .clientPeerCert();
+    assertEquals("host5", TestUtils.cnOf(cert));
+  }
+
+  @Test
+  public void testSNISubjectAltenativeNameCNMatch2PKCS12() throws Exception {
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST5, Cert.SNI_PKCS12, Trust.NONE)
         .serverSni()
         .clientSni()
         .clientVerifyHost(false)
