@@ -18,6 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
@@ -25,6 +26,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 
 /**
  * Base WebSocket implementation.
@@ -192,4 +196,16 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   @CacheReturn
   SocketAddress localAddress();
 
+  /**
+   * @return true if this {@link io.vertx.core.http.HttpConnection} is encrypted via SSL/TLS.
+   */
+  boolean isSsl();
+
+  /**
+   * @return an array of the peer certificates. Returns null if connection is
+   *         not SSL.
+   * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  @GenIgnore
+  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 }

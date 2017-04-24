@@ -24,7 +24,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOutboundHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -36,7 +35,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
@@ -283,17 +281,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       }
     }));
     return this;
-  }
-
-  @Override
-  public boolean isSsl() {
-    return channel.pipeline().get(SslHandler.class) != null;
-  }
-
-
-  @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return getPeerCertificateChain();
   }
 
   @Override

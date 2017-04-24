@@ -257,7 +257,11 @@ public abstract class ConnectionBase {
     return writeFuture;
   }
 
-  public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
+  public boolean isSsl() {
+    return channel.pipeline().get(SslHandler.class) != null;
+  }
+
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     if (isSSL()) {
       ChannelHandlerContext sslHandlerContext = channel.pipeline().context("ssl");
       assert sslHandlerContext != null;

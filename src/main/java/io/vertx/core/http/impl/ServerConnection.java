@@ -27,7 +27,6 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.codegen.annotations.Nullable;
@@ -499,15 +498,6 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   //
 
-
-  public boolean isSsl() {
-    return channel.pipeline().get(SslHandler.class) != null;
-  }
-
-  @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return getPeerCertificateChain();
-  }
 
   @Override
   public synchronized ServerConnection closeHandler(Handler<Void> handler) {
