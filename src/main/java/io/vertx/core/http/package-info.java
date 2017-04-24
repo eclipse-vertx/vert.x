@@ -1558,26 +1558,19 @@
  * Likewise {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod, java.lang.String)} scheme
  * also overrides the default client setting.
  *
- * === Server Name Indication (SNI)
+ * ==== Server Name Indication (SNI)
  *
- * Server Name Indication (SNI) is a TLS extension by which a client specifies an hostname attempting to connect: during
- * the TLS handshake the clients gives a server name and the server can use it to respond with a specific certificate
- * for this server name instead of the default deployed certificate. SNI is mostly used for virtual hosting purposes.
- *
- * You can enable SNI on the server by setting {@link io.vertx.core.http.HttpServerOptions#setSni(boolean)} to `true` and
- * configured the server with multiple key/certificate pairs.
- *
- * When SNI is active, the server uses the certificate CN or SAN DNS (Subject Alternative Name with DNS) to find the certificate to use
- * with an exact match (`www.example.com`) or a wildcard match (`*.example.com`).
+ * Vert.x http servers can be configured to use SNI in exactly the same way as net servers.
  *
  * You can enable SNI on the client by setting {@link io.vertx.core.http.HttpClientOptions#setSni(boolean)} to `true`.
  *
- * When SNI is active, the client will present the hostname as _server name_ during the TLS connect.
+ * When SNI is active, the client will present the actual hostname as _server name_ during the TLS handshake.
  *
  * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#useSNIInClient}
  * ----
+ *
  * === WebSockets
  *
  * http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like

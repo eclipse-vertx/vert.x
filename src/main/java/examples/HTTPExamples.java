@@ -23,10 +23,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.streams.Pump;
+
+import java.util.Arrays;
 
 /**
  * Created by tim on 09/01/15.
@@ -796,6 +799,7 @@ public class HTTPExamples {
 
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
         .setTrustStoreOptions(trustOptions)
+        .setSsl(true)
         .setSni(true)
     );
 
