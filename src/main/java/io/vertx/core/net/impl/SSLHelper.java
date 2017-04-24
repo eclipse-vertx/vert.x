@@ -257,7 +257,7 @@ public class SSLHelper {
         }
       } else {
         if (mgr != null) {
-          builder = SslContextBuilder.forServer(mgr.getPrivateKey(null), "wibble", mgr.getCertificateChain(null));
+          builder = SslContextBuilder.forServer(mgr.getPrivateKey(null), null, mgr.getCertificateChain(null));
         } else {
           KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx);
           if (keyMgrFactory == null) {
