@@ -947,10 +947,11 @@ options = new NetServerOptions().
   setOpenSslEngineOptions(new OpenSSLEngineOptions());
 ----
 
-==== Application-Layer Protocol Negotiation
+==== Application-Layer Protocol Negotiation (ALPN)
 
-ALPN is a TLS extension for applicationl layer protocol negotitation. It is used by HTTP/2: during the TLS handshake
-the client gives the list of application protocols it accepts and the server responds with a protocol it supports.
+Application-Layer Protocol Negotiation (ALPN) is a TLS extension for application layer protocol negotiation. It is used by
+HTTP/2: during the TLS handshake the client gives the list of application protocols it accepts and the server responds
+with a protocol it supports.
 
 Java 8 does not supports ALPN out of the box, so ALPN should be enabled by other means:
 
