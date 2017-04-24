@@ -744,9 +744,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean serverOpenSSL;
     boolean serverUsesAlpn;
     boolean serverSSL = true;
-    boolean useProxy;
+    ProxyType proxyType;
     boolean useProxyAuth;
-    boolean useSocksProxy;
     String[] clientEnabledCipherSuites = new String[0];
     String[] serverEnabledCipherSuites = new String[0];
     String[] clientEnabledSecureTransportProtocol   = new String[0];
@@ -859,18 +858,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
-    TLSTest useProxy() {
-      useProxy = true;
+    TLSTest useProxy(ProxyType type) {
+      proxyType = type;
       return this;
     }
 
     TLSTest useProxyAuth() {
       useProxyAuth = true;
-      return this;
-    }
-
-    TLSTest useSocksProxy() {
-      useSocksProxy = true;
       return this;
     }
 
@@ -943,9 +937,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
       for (String protocols: clientEnabledSecureTransportProtocol) {
         options.addEnabledSecureTransportProtocol(protocols);
       }
-      if (useProxy) {
+      if (proxyType != null) {
         ProxyOptions proxyOptions;
-        if (useSocksProxy) {
+        if (proxyType == ProxyType.SOCKS5) {
           proxyOptions = new ProxyOptions().setHost("localhost").setPort(11080).setType(ProxyType.SOCKS5);
         } else {
           proxyOptions = new ProxyOptions().setHost("localhost").setPort(13128).setType(ProxyType.HTTP);
@@ -1209,31 +1203,61 @@ public abstract class HttpTLSTest extends HttpTestBase {
     }
   }
 
+  // Proxy tests
+
   @Test
   // Access https server via connect proxy
   public void testHttpsProxy() throws Exception {
-    startProxy(null, ProxyType.HTTP);
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().pass();
+    testProxy(ProxyType.HTTP);
+    assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.getLastMethod());
+  }
+
+  private void testProxy(ProxyType proxyType) throws Exception {
+    startProxy(null, proxyType);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(proxyType).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
-    assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
+  }
+
+  @Test
+  // Access https server via connect proxy
+  public void testHttpsProxyWithSNI() throws Exception {
+    testProxyWithSNI(ProxyType.HTTP);
+    assertEquals("Host header doesn't contain target host", "host1:4043", proxy.getLastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.getLastMethod());
+  }
+
+  private void testProxyWithSNI(ProxyType proxyType) throws Exception {
+    startProxy(null, proxyType);
+    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+        .serverSni()
+        .clientSni()
+        .useProxy(proxyType)
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host1"))
+        .pass()
+        .clientPeerCert();
+    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
+    assertEquals("hostname resolved but it shouldn't be", "host1:4043", proxy.getLastUri());
+    assertEquals("host1", TestUtils.cnOf(cert));
   }
 
   @Test
   // Check that proxy auth fails if it is missing
   public void testHttpsProxyAuthFail() throws Exception {
     startProxy("username", ProxyType.HTTP);
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().fail();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).fail();
   }
 
   @Test
   // Access https server via connect proxy with proxy auth required
   public void testHttpsProxyAuth() throws Exception {
     startProxy("username", ProxyType.HTTP);
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().useProxyAuth().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).useProxyAuth().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
     assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.getLastMethod());
   }
 
   @Test
@@ -1243,27 +1267,31 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testHttpsProxyUnknownHost() throws Exception {
     startProxy(null, ProxyType.HTTP);
     proxy.setForceUri("localhost:4043");
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP)
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
     assertEquals("Host header doesn't contain target host", "doesnt-resolve.host-name:4043", proxy.getLastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.getLastMethod());
   }
 
   @Test
   // Access https server via socks5 proxy
   public void testHttpsSocks() throws Exception {
-    startProxy(null, ProxyType.SOCKS5);
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().useSocksProxy().pass();
-    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
-    assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
+    testProxy(ProxyType.SOCKS5);
+  }
+
+  @Test
+  // Access https server via socks5 proxy
+  public void testHttpsSocksWithSNI() throws Exception {
+    testProxyWithSNI(ProxyType.SOCKS5);
   }
 
   @Test
   // Access https server via socks5 proxy with authentication
   public void testHttpsSocksAuth() throws Exception {
     startProxy("username", ProxyType.SOCKS5);
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().useSocksProxy().useProxyAuth().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.SOCKS5).useProxyAuth().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "localhost:4043", proxy.getLastUri());
   }
@@ -1275,7 +1303,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSocksProxyUnknownHost() throws Exception {
     startProxy(null, ProxyType.SOCKS5);
     proxy.setForceUri("localhost:4043");
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy().useSocksProxy()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.SOCKS5)
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
