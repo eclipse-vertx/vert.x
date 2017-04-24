@@ -22,8 +22,10 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
+import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.streams.Pump;
 
 /**
@@ -790,4 +792,24 @@ public class HTTPExamples {
     });
   }
 
+  public void useSNIInClient(Vertx vertx, JksOptions trustOptions) {
+
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+        .setTrustStoreOptions(trustOptions)
+        .setSni(true)
+    );
+
+    // Send www.example.com server name
+    client.getNow(443, "www.example.com", "/somepath", resp -> {
+    });
+  }
+
+  public void sniHost(HttpClient client) {
+    // Use an HTTP proxy
+    HttpClientRequest request = client.get(443, "the.proxy", "/somepath", resp -> {
+    });
+
+    // Set the host header and the server name to www.example.com server and connect
+    request.setHost("www.example.com").end();
+  }
 }
