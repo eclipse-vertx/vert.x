@@ -2018,19 +2018,6 @@ HttpClient client = vertx.createHttpClient(new HttpClientOptions()
 client.getNow(443, "www.example.com", "/somepath", resp -> {
 });
 ----
-
-You can use the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#setHost-java.lang.String-[setHost]` to change the server name
-value along with the `host` header
-
-[source,java]
-----
-HttpClientRequest request = client.get(443, "the.proxy", "/somepath", resp -> {
-});
-
-// Set the host header and the server name to www.example.com server and connect
-request.setHost("www.example.com").end();
-----
-
 === WebSockets
 
 http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like

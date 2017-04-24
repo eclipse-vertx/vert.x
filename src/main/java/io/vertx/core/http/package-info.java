@@ -1578,15 +1578,6 @@
  * ----
  * {@link examples.HTTPExamples#useSNIInClient}
  * ----
- *
- * You can use the {@link io.vertx.core.http.HttpClientRequest#setHost(java.lang.String)} to change the server name
- * value along with the `host` header
- *
- * [source,$lang]
- * ----
- * {@link examples.HTTPExamples#sniHost(io.vertx.core.http.HttpClient)}
- * ----
- *
  * === WebSockets
  *
  * http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like

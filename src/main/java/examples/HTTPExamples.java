@@ -803,13 +803,4 @@ public class HTTPExamples {
     client.getNow(443, "www.example.com", "/somepath", resp -> {
     });
   }
-
-  public void sniHost(HttpClient client) {
-    // Use an HTTP proxy
-    HttpClientRequest request = client.get(443, "the.proxy", "/somepath", resp -> {
-    });
-
-    // Set the host header and the server name to www.example.com server and connect
-    request.setHost("www.example.com").end();
-  }
 }
