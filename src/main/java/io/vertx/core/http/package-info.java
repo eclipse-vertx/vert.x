@@ -1570,7 +1570,7 @@
  * When SNI is active, the server uses the certificate CN or SAN DNS (Subject Alternative Name with DNS) to find the certificate to use
  * with an exact match (`www.example.com`) or a wildcard match (`*.example.com`).
  *
- * You can enable SNI on the client by by setting {@link io.vertx.core.http.HttpClientOptions#setSni(boolean)} to true.
+ * You can enable SNI on the client by setting {@link io.vertx.core.http.HttpClientOptions#setSni(boolean)} to true.
  *
  * When SNI is active, the client will present the hostname as server name during the TLS connect.
  *
