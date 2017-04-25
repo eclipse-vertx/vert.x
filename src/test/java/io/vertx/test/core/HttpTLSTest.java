@@ -697,6 +697,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
     assertEquals("host1", TestUtils.cnOf(cert));
   }
 
+  @Test
+  public void testSNIClientDisabled() throws Exception {
+    testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+        .serverSni()
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host1"))
+        .fail()
+        .clientPeerCert();
+  }
+
+
   // Other tests
 
   @Test
