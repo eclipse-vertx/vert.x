@@ -698,14 +698,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  public void testSNIClientDisabled() throws Exception {
-    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+  public void testSNIClientDisabledIsActuallyEnabled() throws Exception {
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST3, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
-        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host1"))
-        .fail();
-    assertNull(test.indicatedServerName);
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("sub.host3"))
+        .pass();
+    assertEquals("sub.host3", test.indicatedServerName);
   }
-
 
   // Other tests
 
