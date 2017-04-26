@@ -69,7 +69,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         "127.0.0.1 www.host4.com\n" +
         "127.0.0.1 host5.com\n" +
         "127.0.0.1 www.host5.com\n" +
-        "127.0.0.1 unknown"));
+        "127.0.0.1 unknown.com"));
     return options;
   }
 
@@ -436,19 +436,19 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSNIUnknownServerName1() throws Exception {
     testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
-        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("unknown")).fail();
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("unknown.com")).fail();
   }
 
   @Test
   // Client provides SNI unknown to the server and server responds with the default certificate (first)
   public void testSNIUnknownServerName2() throws Exception {
-    X509Certificate cert = testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SNI_JKS, Trust.NONE)
+    TLSTest test = testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
         .clientVerifyHost(false)
-        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("unknown"))
-        .pass()
-        .clientPeerCert();
-    assertEquals("localhost", TestUtils.cnOf(cert));
+        .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("unknown.com"))
+        .pass();
+    assertEquals("localhost", TestUtils.cnOf(test.clientPeerCert()));
+    assertEquals("unknown.com", test.indicatedServerName);
   }
 
   @Test
