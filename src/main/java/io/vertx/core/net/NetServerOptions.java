@@ -356,7 +356,7 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return wether the server supports Server Name Indication
+   * @return whether the server supports Server Name Indication
    */
   public boolean isSni() {
     return sni;

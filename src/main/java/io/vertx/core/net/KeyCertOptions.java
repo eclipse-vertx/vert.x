@@ -58,6 +58,12 @@ public interface KeyCertOptions {
    *   <li>{@link X509KeyManager#getCertificateChain(String)} returns the certificate chain for the indicated server name,
    *   the {@code alias} parameter will be {@code null}.</li>
    * </ul>
+   *
+   * The mapper is only used when the server has SNI enabled and the client indicated a server name.
+   * <p>
+   * The returned function may return null in which case the default key manager provided by {@link #getKeyManagerFactory(Vertx)}
+   * will be used.
+   *
    */
   default Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
     KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, this);
