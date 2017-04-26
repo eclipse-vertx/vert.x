@@ -272,6 +272,14 @@ public abstract class ConnectionBase {
     }
   }
 
+  public String indicatedServerName() {
+    if (channel.hasAttr(VertxSniHandler.SERVER_NAME_ATTR)) {
+      return channel.attr(VertxSniHandler.SERVER_NAME_ATTR).get();
+    } else {
+      return null;
+    }
+  }
+
   public String remoteName() {
     InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
     if (addr == null) return null;

@@ -287,4 +287,9 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     return conn.peerCertificateChain();
   }
+
+  @Override
+  public String indicatedServerName() {
+    return conn.indicatedServerName();
+  }
 }

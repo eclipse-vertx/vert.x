@@ -241,5 +241,12 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
+
+  /**
+   * Returns the SNI server name presented during the SSL handshake by the client.
+   *
+   * @return the indicated server name
+   */
+  String indicatedServerName();
 }
 

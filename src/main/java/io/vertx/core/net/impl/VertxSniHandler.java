@@ -20,6 +20,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
@@ -34,8 +36,9 @@ import javax.net.ssl.SSLEngine;
  */
 public class VertxSniHandler extends SniHandler {
 
+  public static AttributeKey<String> SERVER_NAME_ATTR = AttributeKey.valueOf("sniServerName");
+
   private final SSLHelper helper;
-  private final VertxInternal vertx;
   private ChannelHandlerContext context;
   private final Promise<Channel> handshakeFuture;
 
@@ -44,7 +47,6 @@ public class VertxSniHandler extends SniHandler {
       return helper.getContext(vertx, input);
     });
     this.helper = helper;
-    this.vertx = vertx;
     this.handshakeFuture = new DefaultPromise<Channel>() {
       @Override
       protected EventExecutor executor() {
@@ -76,6 +78,8 @@ public class VertxSniHandler extends SniHandler {
       Future<Channel> fut = sslHandler.handshakeFuture();
       fut.addListener(future -> {
         if (future.isSuccess()) {
+          Attribute<String> val = ctx.channel().attr(SERVER_NAME_ATTR);
+          val.set(hostname);
           handshakeFuture.setSuccess(ctx.channel());
         } else {
           handshakeFuture.setFailure(future.cause());

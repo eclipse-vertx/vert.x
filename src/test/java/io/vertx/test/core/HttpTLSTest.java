@@ -382,13 +382,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Client provides SNI and server responds with a matching certificate for the indicated server name
   public void testSNITrust() throws Exception {
-    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
         .clientSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host1"))
-        .pass()
-        .clientPeerCert();
-    assertEquals("host1", TestUtils.cnOf(cert));
+        .pass();
+    assertEquals("host1", TestUtils.cnOf(test.clientPeerCert()));
+    assertEquals("host1", test.indicatedServerName);
   }
 
   @Test
@@ -461,13 +461,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Client provides SNI matched on the server by a wildcard certificate
   public void testSNIWildcardMatch() throws Exception {
-    X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST3, Cert.SNI_JKS, Trust.NONE)
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST3, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
         .clientSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("sub.host3"))
-        .pass()
-        .clientPeerCert();
-    assertEquals("*.host3", TestUtils.cnOf(cert));
+        .pass();
+    assertEquals("*.host3", TestUtils.cnOf(test.clientPeerCert()));
+    assertEquals("sub.host3", test.indicatedServerName);
   }
 
   @Test
@@ -699,11 +699,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testSNIClientDisabled() throws Exception {
-    testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host1"))
-        .fail()
-        .clientPeerCert();
+        .fail();
+    assertNull(test.indicatedServerName);
   }
 
 
@@ -774,6 +774,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
     };
     X509Certificate clientPeerCert;
+    String indicatedServerName;
 
     public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
       this.version = HttpVersion.HTTP_1_1;
@@ -983,6 +984,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       server = createHttpServer(serverOptions.setPort(4043));
       server.requestHandler(req -> {
+        indicatedServerName = req.connection().indicatedServerName();
         assertEquals(version, req.version());
         req.bodyHandler(buffer -> {
           assertEquals(serverSSL, req.isSSL());

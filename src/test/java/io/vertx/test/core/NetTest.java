@@ -1252,6 +1252,7 @@ public class NetTest extends VertxTestBase {
     test.run(true);
     await();
     assertEquals("host1", cnOf(test.clientPeerCert()));
+    assertEquals("host1", test.indicatedServerName);
   }
 
   @Test
@@ -1349,6 +1350,7 @@ public class NetTest extends VertxTestBase {
     boolean sni;
     String serverName;
     X509Certificate clientPeerCert;
+    String indicatedServerName;
 
     public TLSTest clientCert(Cert<?> clientCert) {
       this.clientCert = clientCert;
@@ -1445,6 +1447,7 @@ public class NetTest extends VertxTestBase {
       options.setPort(4043);
       server = vertx.createNetServer(options);
       Handler<NetSocket> serverHandler = socket -> {
+        indicatedServerName = socket.indicatedServerName();
         if (socket.isSsl()) {
           certificateChainChecker.accept(socket);
         }
@@ -1454,6 +1457,7 @@ public class NetTest extends VertxTestBase {
           socket.write(buff); // echo the data
           if (startTLS) {
             if (upgradedServer.compareAndSet(false, true)) {
+              indicatedServerName = socket.indicatedServerName();
               assertFalse(socket.isSsl());
               socket.upgradeToSsl(v -> {
                 certificateChainChecker.accept(socket);
