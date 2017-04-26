@@ -684,6 +684,11 @@ Add an enabled cipher suite, appended to the ordered suites.
 +++
 Add an enabled SSL/TLS protocols, appended to the ordered protocols.
 +++
+|[[forceSni]]`forceSni`|`Boolean`|
++++
+By default, the server name is only sent for Fully Qualified Domain Name (FQDN), setting
+ this property to <code>true</code> forces the server name to be always sent.
++++
 |[[http2ClearTextUpgrade]]`http2ClearTextUpgrade`|`Boolean`|
 +++
 Set to <code>true</code> when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, and <code>false</code>
@@ -825,10 +830,6 @@ Set the TCP send buffer size
 Set true when the client wants to skip frame masking.
  You may want to set it true on server by server websocket communication: In this case you are by passing RFC6455 protocol.
  It's false as default.
-+++
-|[[sni]]`sni`|`Boolean`|
-+++
-Set wether the client should present the request host with the Server Name Indication when using TLS/SSL connections.
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++

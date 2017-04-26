@@ -223,11 +223,11 @@ cp server-keystore.jks sni-keystore.jks
 2) Add a few extra keys for host1-host5 top level domains for SNI
 
 keytool -genkey -alias test-host1 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host1 -keypass wibble -storepass wibble
-keytool -genkey -alias test-host2 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host2 -keypass wibble -storepass wibble
-keytool -genkey -alias test-host3 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=*.host3 -keypass wibble -storepass wibble
-keytool -genkey -alias test-host4 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host4 certificate" -ext san=dns:host4,dns:www.host4 -keypass wibble -storepass wibble
+keytool -genkey -alias test-host2 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host2.com -keypass wibble -storepass wibble
+keytool -genkey -alias test-host3 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=*.host3.com -keypass wibble -storepass wibble
+keytool -genkey -alias test-host4 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host4.com certificate" -ext san=dns:host4.com,dns:www.host4.com -keypass wibble -storepass wibble
 # note this can only by done using the KeyStore Explorer GUI (because of https://bugs.openjdk.java.net/browse/JDK-8007706)
-keytool -genkey -alias test-host5 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host5" -ext san=dns:*.host5 -keypass wibble -storepass wibble
+keytool -genkey -alias test-host5 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host5.com" -ext san=dns:*.host5.com -keypass wibble -storepass wibble
 
 3) Extract the cerfificate for the host1-host5 domains
 

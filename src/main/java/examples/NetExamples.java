@@ -630,8 +630,8 @@ public class NetExamples {
         .setSsl(true)
     );
 
-    // Connect to 'localhost' and present 'host1' server name
-    client.connect(1234, "localhost", "host1", res -> {
+    // Connect to 'localhost' and present 'server.name' server name
+    client.connect(1234, "localhost", "server.name", res -> {
       if (res.succeeded()) {
         System.out.println("Connected!");
         NetSocket socket = res.result();

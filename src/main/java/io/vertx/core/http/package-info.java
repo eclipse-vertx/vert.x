@@ -1562,14 +1562,7 @@
  *
  * Vert.x http servers can be configured to use SNI in exactly the same way as net servers.
  *
- * You can enable SNI on the client by setting {@link io.vertx.core.http.HttpClientOptions#setSni(boolean)} to `true`.
- *
- * When SNI is active, the client will present the actual hostname as _server name_ during the TLS handshake.
- *
- * [source,$lang]
- * ----
- * {@link examples.HTTPExamples#useSNIInClient}
- * ----
+ * Vert.x http client will present the actual hostname as _server name_ during the TLS handshake.
  *
  * === WebSockets
  *

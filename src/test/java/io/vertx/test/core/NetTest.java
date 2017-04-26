@@ -24,6 +24,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -104,6 +105,17 @@ public class NetTest extends VertxTestBase {
     super.setUp();
     client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
     server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost"));
+  }
+
+  @Override
+  protected VertxOptions getOptions() {
+    VertxOptions options = super.getOptions();
+    options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
+        "127.0.0.1 localhost\n" +
+        "127.0.0.1 host1\n" +
+        "127.0.0.1 host2.com\n" +
+        "127.0.0.1 example.com"));
+    return options;
   }
 
   protected void awaitClose(NetServer server) throws InterruptedException {
@@ -1244,26 +1256,60 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  // SNI returns the certificate for the indicated server name
-  public void testSniWithServerName1() throws Exception {
+  public void testSniImplicitServerName() throws Exception {
     TLSTest test = new TLSTest()
-        .clientTrust(Trust.SNI_JKS_HOST1)
-        .serverCert(Cert.SNI_JKS).sni(true).serverName("host1");
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .host("host2.com")
+        .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
     await();
-    assertEquals("host1", cnOf(test.clientPeerCert()));
-    assertEquals("host1", test.indicatedServerName);
+    assertEquals("host2.com", cnOf(test.clientPeerCert()));
+    assertEquals("host2.com", test.indicatedServerName);
   }
 
   @Test
-  // SNI returns the certificate for the indicated server name
-  public void testSniWithServerName2() throws Exception {
+  public void testSniImplicitServerNameDisabledForShortname1() throws Exception {
     TLSTest test = new TLSTest()
-        .clientTrust(Trust.SNI_JKS_HOST2)
-        .serverCert(Cert.SNI_JKS).sni(true).serverName("host2");
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .host("host1")
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(false);
+    await();
+  }
+
+  @Test
+  public void testSniImplicitServerNameDisabledForShortname2() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SERVER_JKS)
+        .host("host1")
+        .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
     await();
-    assertEquals("host2", cnOf(test.clientPeerCert()));
+    assertEquals("localhost", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  public void testSniForceShortname() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .host("host1")
+        .serverName("host1")
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+    assertEquals("host1", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  public void testSniOverrideServerName() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .host("example.com")
+        .serverName("host2.com")
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+    assertEquals("host2.com", cnOf(test.clientPeerCert()));
   }
 
   @Test
@@ -1348,6 +1394,7 @@ public class NetTest extends VertxTestBase {
     String[] enabledCipherSuites = new String[0];
     String[] enabledSecureTransportProtocols = new String[0];
     boolean sni;
+    String host = "localhost";
     String serverName;
     X509Certificate clientPeerCert;
     String indicatedServerName;
@@ -1394,6 +1441,11 @@ public class NetTest extends VertxTestBase {
 
     public TLSTest enabledSecureTransportProtocols(String[] enabledSecureTransportProtocols) {
       this.enabledSecureTransportProtocols = enabledSecureTransportProtocols;
+      return this;
+    }
+
+    public TLSTest host(String host) {
+      this.host = host;
       return this;
     }
 
@@ -1491,7 +1543,7 @@ public class NetTest extends VertxTestBase {
           clientOptions.addEnabledSecureTransportProtocol(protocol);
         }
         client = vertx.createNetClient(clientOptions);
-        client.connect(4043, "localhost", serverName, ar2 -> {
+        client.connect(4043, host, serverName, ar2 -> {
           if (ar2.succeeded()) {
             if (!shouldPass) {
               fail("Should not connect");

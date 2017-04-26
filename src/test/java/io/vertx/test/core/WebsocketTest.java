@@ -395,7 +395,6 @@ public class WebsocketTest extends VertxTestBase {
     HttpClientOptions options = new HttpClientOptions();
     options.setSsl(clientSsl);
     options.setTrustAll(clientTrustAll);
-    options.setSni(sni);
     if (clientUsesCrl) {
       options.addCrlPath("tls/root-ca/crl.pem");
     }

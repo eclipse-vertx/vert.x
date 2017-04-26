@@ -438,7 +438,7 @@ public class ConnectionManager {
         ChannelPipeline pipeline = ch.pipeline();
         boolean useAlpn = options.isUseAlpn();
         if (useAlpn) {
-          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(client.getVertx(), peerHost, port, options.isSni() ? peerHost : null));
+          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(client.getVertx(), peerHost, port, options.isForceSni() ? peerHost : null));
           ch.pipeline().addLast("ssl", sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
             @Override
@@ -456,7 +456,7 @@ public class ConnectionManager {
           });
         } else {
           if (ssl) {
-            pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx, peerHost, port, options.isSni() ? peerHost : null)));
+            pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx, peerHost, port, options.isForceSni() ? peerHost : null)));
           }
           if (version == HttpVersion.HTTP_2) {
             if (options.isHttp2ClearTextUpgrade()) {

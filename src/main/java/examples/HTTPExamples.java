@@ -23,13 +23,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.TrustOptions;
 import io.vertx.core.streams.Pump;
-
-import java.util.Arrays;
 
 /**
  * Created by tim on 09/01/15.
@@ -792,19 +788,6 @@ public class HTTPExamples {
         .setURI("/")
         .setSsl(true), response -> {
       System.out.println("Received response with status code " + response.statusCode());
-    });
-  }
-
-  public void useSNIInClient(Vertx vertx, JksOptions trustOptions) {
-
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions()
-        .setTrustStoreOptions(trustOptions)
-        .setSsl(true)
-        .setSni(true)
-    );
-
-    // Send www.example.com server name
-    client.getNow(443, "www.example.com", "/somepath", resp -> {
     });
   }
 }

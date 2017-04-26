@@ -991,7 +991,9 @@ NetServer netServer = vertx.createNetServer(new NetServerOptions()
 );
 ----
 
-You can provide a server name when connecting a socket.
+The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
+
+You can provide an explicit server name when connecting a socket
 
 [source,java]
 ----
@@ -1000,8 +1002,8 @@ NetClient client = vertx.createNetClient(new NetClientOptions()
     .setSsl(true)
 );
 
-// Connect to 'localhost' and present 'host1' server name
-client.connect(1234, "localhost", "host1", res -> {
+// Connect to 'localhost' and present 'server.name' server name
+client.connect(1234, "localhost", "server.name", res -> {
   if (res.succeeded()) {
     System.out.println("Connected!");
     NetSocket socket = res.result();
@@ -1010,6 +1012,12 @@ client.connect(1234, "localhost", "host1", res -> {
   }
 });
 ----
+
+It can be used for different purposes:
+
+* present a server name different than the server host
+* present a server name while connecting to an IP
+* force to present a server name when using shortname
 
 ==== Application-Layer Protocol Negotiation (ALPN)
 

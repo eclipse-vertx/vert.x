@@ -41,6 +41,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("defaultPort") instanceof Number) {
       obj.setDefaultPort(((Number)json.getValue("defaultPort")).intValue());
     }
+    if (json.getValue("forceSni") instanceof Boolean) {
+      obj.setForceSni((Boolean)json.getValue("forceSni"));
+    }
     if (json.getValue("http2ClearTextUpgrade") instanceof Boolean) {
       obj.setHttp2ClearTextUpgrade((Boolean)json.getValue("http2ClearTextUpgrade"));
     }
@@ -95,9 +98,6 @@ public class HttpClientOptionsConverter {
     if (json.getValue("sendUnmaskedFrames") instanceof Boolean) {
       obj.setSendUnmaskedFrames((Boolean)json.getValue("sendUnmaskedFrames"));
     }
-    if (json.getValue("sni") instanceof Boolean) {
-      obj.setSni((Boolean)json.getValue("sni"));
-    }
     if (json.getValue("tryUseCompression") instanceof Boolean) {
       obj.setTryUseCompression((Boolean)json.getValue("tryUseCompression"));
     }
@@ -116,6 +116,7 @@ public class HttpClientOptionsConverter {
       json.put("defaultHost", obj.getDefaultHost());
     }
     json.put("defaultPort", obj.getDefaultPort());
+    json.put("forceSni", obj.isForceSni());
     json.put("http2ClearTextUpgrade", obj.isHttp2ClearTextUpgrade());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
@@ -138,7 +139,6 @@ public class HttpClientOptionsConverter {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
-    json.put("sni", obj.isSni());
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
   }

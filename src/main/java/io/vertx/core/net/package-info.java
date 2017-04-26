@@ -686,12 +686,20 @@
  * {@link examples.NetExamples#configureSNIServerWithPems}
  * ----
  *
- * You can provide a server name when connecting a socket.
+ * The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
+ *
+ * You can provide an explicit server name when connecting a socket
  *
  * [source,$lang]
  * ----
  * {@link examples.NetExamples#useSNIInClient}
  * ----
+ *
+ * It can be used for different purposes:
+ *
+ * * present a server name different than the server host
+ * * present a server name while connecting to an IP
+ * * force to present a server name when using shortname
  *
  * ==== Application-Layer Protocol Negotiation (ALPN)
  *
