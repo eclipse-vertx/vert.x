@@ -293,7 +293,7 @@
  *
  * A worker verticle is always executed with a thread from the worker pool.
  *
- * By default blocking code is executed on the Vert.x blocking code pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
+ * By default blocking code is executed on the Vert.x worker pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
  *
  * Additional pools can be created for different purposes:
  *
