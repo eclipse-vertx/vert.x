@@ -137,11 +137,10 @@ public interface VertxMetrics extends Metrics, Measured {
    * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param client  the Vert.x net client
-   * @param options the options used to create the {@link io.vertx.core.net.NetClient}
+   * @param options the options used to create the {@link NetClient}
    * @return the net client metrics SPI
    */
-  TCPMetrics<?> createMetrics(NetClient client, NetClientOptions options);
+  TCPMetrics<?> createMetrics(NetClientOptions options);
 
   /**
    * Provides the datagram/udp metrics SPI when a datagram socket is created.<p/>
