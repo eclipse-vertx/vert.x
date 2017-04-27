@@ -97,7 +97,7 @@ public class WebsocketTest extends VertxTestBase {
     VertxOptions options = super.getOptions();
     options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
         "127.0.0.1 localhost\n" +
-        "127.0.0.1 host1"));
+        "127.0.0.1 host2.com"));
     return options;
   }
 
@@ -230,8 +230,8 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithSNI() throws Exception {
-    testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE, false, false, false, false, true, true, true, true, new String[0],
-        client -> client.websocketStream(4043, "host1", "/"));
+    testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE, false, false, false, false, true, true, true, true, new String[0],
+        client -> client.websocketStream(4043, "host2.com", "/"));
   }
 
   @Test
@@ -437,7 +437,7 @@ public class WebsocketTest extends VertxTestBase {
           if (clientSsl && sni) {
             try {
               X509Certificate clientPeerCert = ws.peerCertificateChain()[0];
-              assertEquals("host1", cnOf(clientPeerCert));
+              assertEquals("host2.com", cnOf(clientPeerCert));
             } catch (Exception err) {
               fail(err);
             }
