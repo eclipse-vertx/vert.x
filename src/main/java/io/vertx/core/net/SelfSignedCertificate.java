@@ -19,8 +19,6 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.impl.SelfSignedCertificateImpl;
 
-import java.security.cert.CertificateException;
-
 /**
  * A self-signed certificate helper for testing and development purposes.
  * <p>
@@ -71,5 +69,15 @@ public interface SelfSignedCertificate {
    */
   static SelfSignedCertificate create() {
     return new SelfSignedCertificateImpl();
+  }
+
+  /**
+   * Create a new {@code SelfSignedCertificate} instance with a fully-qualified domain name,
+   *
+   * @param fqdn a fully qualified domain name.
+   * @return a new instance.
+   */
+  static SelfSignedCertificate create(String fqdn) {
+    return new SelfSignedCertificateImpl(fqdn);
   }
 }

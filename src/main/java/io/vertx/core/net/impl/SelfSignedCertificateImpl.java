@@ -36,6 +36,14 @@ public class SelfSignedCertificateImpl implements SelfSignedCertificate {
     }
   }
 
+  public SelfSignedCertificateImpl(String fqdn) {
+    try {
+      certificate = new io.netty.handler.ssl.util.SelfSignedCertificate(fqdn);
+    } catch (CertificateException e) {
+      throw new VertxException(e);
+    }
+  }
+
   @Override
   public PemKeyCertOptions keyCertOptions() {
     return new PemKeyCertOptions()
