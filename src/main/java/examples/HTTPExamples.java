@@ -22,6 +22,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
+import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.streams.Pump;
@@ -789,5 +790,4 @@ public class HTTPExamples {
       System.out.println("Received response with status code " + response.statusCode());
     });
   }
-
 }

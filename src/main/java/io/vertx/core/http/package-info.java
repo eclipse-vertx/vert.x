@@ -1558,6 +1558,12 @@
  * Likewise {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod, java.lang.String)} scheme
  * also overrides the default client setting.
  *
+ * ==== Server Name Indication (SNI)
+ *
+ * Vert.x http servers can be configured to use SNI in exactly the same way as net servers.
+ *
+ * Vert.x http client will present the actual hostname as _server name_ during the TLS handshake.
+ *
  * === WebSockets
  *
  * http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like

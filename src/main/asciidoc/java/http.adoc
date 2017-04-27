@@ -1991,6 +1991,12 @@ client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reus
 Likewise `link:../../apidocs/io/vertx/core/http/HttpClient.html#requestAbs-io.vertx.core.http.HttpMethod-java.lang.String-[requestAbs]` scheme
 also overrides the default client setting.
 
+==== Server Name Indication (SNI)
+
+Vert.x http servers can be configured to use SNI in exactly the same way as net servers.
+
+Vert.x http client will present the actual hostname as _server name_ during the TLS handshake.
+
 === WebSockets
 
 http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like

@@ -96,7 +96,14 @@ public class NetClientImpl implements NetClient, MetricsProvider {
 
   public synchronized NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler) {
     checkClosed();
-    connect(port, host, connectHandler, options.getReconnectAttempts());
+    connect(port, host, null, connectHandler, options.getReconnectAttempts());
+    return this;
+  }
+
+  @Override
+  public NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
+    checkClosed();
+    connect(port, host, serverName, connectHandler, options.getReconnectAttempts());
     return this;
   }
 
@@ -153,7 +160,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
   }
 
-  private void connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler,
+  private void connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler,
       int remainingAttempts) {
     Objects.requireNonNull(host, "No null host accepted");
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
@@ -175,7 +182,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     Handler<Channel> channelInitializer = ch -> {
 
       if (sslHelper.isSSL()) {
-        SslHandler sslHandler = sslHelper.createSslHandler(vertx, host, port);
+        SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx, host, port, serverName));
         ch.pipeline().addLast("ssl", sslHandler);
       }
 
@@ -226,7 +233,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
-                connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+                connect(port, host, serverName, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
             );
           });
         } else {

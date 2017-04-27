@@ -271,7 +271,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.getPeerCertificateChain();
+    return conn.peerCertificateChain();
   }
 
   @Override

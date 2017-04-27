@@ -657,6 +657,50 @@
  * {@link examples.NetExamples#exampleSSLEngine}
  * ----
  *
+ * ==== Server Name Indication (SNI)
+ *
+ * Server Name Indication (SNI) is a TLS extension by which a client specifies an hostname attempting to connect: during
+ * the TLS handshake the clients gives a server name and the server can use it to respond with a specific certificate
+ * for this server name instead of the default deployed certificate.
+ *
+ * When SNI is active the server uses
+ *
+ * * the certificate CN or SAN DNS (Subject Alternative Name with DNS) to do an exact match, e.g `www.example.com`
+ * * the certificate CN or SAN DNS certificate to match a wildcard name, e.g `*.example.com`
+ * * otherwise the first certificate when the client does not present a server name or the presenter server name cannot be matched
+ *
+ * You can enable SNI on the server by setting {@link io.vertx.core.net.NetServerOptions#setSni(boolean)} to `true` and
+ * configured the server with multiple key/certificate pairs.
+ *
+ * Java KeyStore files or PKCS12 files can store multiple key/cert pairs out of the box.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#configureSNIServer}
+ * ----
+ *
+ * {@link io.vertx.core.net.PemKeyCertOptions} can be configured to hold multiple entries:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#configureSNIServerWithPems}
+ * ----
+ *
+ * The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
+ *
+ * You can provide an explicit server name when connecting a socket
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#useSNIInClient}
+ * ----
+ *
+ * It can be used for different purposes:
+ *
+ * * present a server name different than the server host
+ * * present a server name while connecting to an IP
+ * * force to present a server name when using shortname
+ *
  * ==== Application-Layer Protocol Negotiation (ALPN)
  *
  * Application-Layer Protocol Negotiation (ALPN) is a TLS extension for application layer protocol negotiation. It is used by

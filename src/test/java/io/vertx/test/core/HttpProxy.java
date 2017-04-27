@@ -47,6 +47,7 @@ public class HttpProxy extends TestProxyBase {
   private int error = 0;
 
   private MultiMap lastRequestHeaders = null;
+  private HttpMethod lastMethod;
 
   public HttpProxy(String username) {
     super(username);
@@ -84,6 +85,7 @@ public class HttpProxy extends TestProxyBase {
           request.response().setStatusCode(403).end("invalid request");
         } else {
           lastUri = uri;
+          lastMethod = HttpMethod.CONNECT;
           if (forceUri != null) {
             uri = forceUri;
           }
@@ -119,6 +121,7 @@ public class HttpProxy extends TestProxyBase {
         }
       } else if (method == HttpMethod.GET) {
         lastUri = request.uri();
+        lastMethod = HttpMethod.GET;
         HttpClient client = vertx.createHttpClient();
         HttpClientRequest clientRequest = client.getAbs(request.uri(), resp -> {
           for (String name : resp.headers().names()) {
@@ -169,6 +172,11 @@ public class HttpProxy extends TestProxyBase {
   @Override
   public int getPort() {
     return PORT;
+  }
+
+  @Override
+  public HttpMethod getLastMethod() {
+    return lastMethod;
   }
 
   @Override

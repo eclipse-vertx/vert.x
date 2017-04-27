@@ -30,29 +30,69 @@ public class PemKeyCertOptionsConverter {
     if (json.getValue("certPath") instanceof String) {
       obj.setCertPath((String)json.getValue("certPath"));
     }
+    if (json.getValue("certPaths") instanceof JsonArray) {
+      java.util.ArrayList<java.lang.String> list = new java.util.ArrayList<>();
+      json.getJsonArray("certPaths").forEach( item -> {
+        if (item instanceof String)
+          list.add((String)item);
+      });
+      obj.setCertPaths(list);
+    }
     if (json.getValue("certValue") instanceof String) {
       obj.setCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)json.getValue("certValue"))));
+    }
+    if (json.getValue("certValues") instanceof JsonArray) {
+      java.util.ArrayList<io.vertx.core.buffer.Buffer> list = new java.util.ArrayList<>();
+      json.getJsonArray("certValues").forEach( item -> {
+        if (item instanceof String)
+          list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+      });
+      obj.setCertValues(list);
     }
     if (json.getValue("keyPath") instanceof String) {
       obj.setKeyPath((String)json.getValue("keyPath"));
     }
+    if (json.getValue("keyPaths") instanceof JsonArray) {
+      java.util.ArrayList<java.lang.String> list = new java.util.ArrayList<>();
+      json.getJsonArray("keyPaths").forEach( item -> {
+        if (item instanceof String)
+          list.add((String)item);
+      });
+      obj.setKeyPaths(list);
+    }
     if (json.getValue("keyValue") instanceof String) {
       obj.setKeyValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)json.getValue("keyValue"))));
+    }
+    if (json.getValue("keyValues") instanceof JsonArray) {
+      java.util.ArrayList<io.vertx.core.buffer.Buffer> list = new java.util.ArrayList<>();
+      json.getJsonArray("keyValues").forEach( item -> {
+        if (item instanceof String)
+          list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+      });
+      obj.setKeyValues(list);
     }
   }
 
   public static void toJson(PemKeyCertOptions obj, JsonObject json) {
-    if (obj.getCertPath() != null) {
-      json.put("certPath", obj.getCertPath());
+    if (obj.getCertPaths() != null) {
+      JsonArray array = new JsonArray();
+      obj.getCertPaths().forEach(item -> array.add(item));
+      json.put("certPaths", array);
     }
-    if (obj.getCertValue() != null) {
-      json.put("certValue", obj.getCertValue().getBytes());
+    if (obj.getCertValues() != null) {
+      JsonArray array = new JsonArray();
+      obj.getCertValues().forEach(item -> array.add(item.getBytes()));
+      json.put("certValues", array);
     }
-    if (obj.getKeyPath() != null) {
-      json.put("keyPath", obj.getKeyPath());
+    if (obj.getKeyPaths() != null) {
+      JsonArray array = new JsonArray();
+      obj.getKeyPaths().forEach(item -> array.add(item));
+      json.put("keyPaths", array);
     }
-    if (obj.getKeyValue() != null) {
-      json.put("keyValue", obj.getKeyValue().getBytes());
+    if (obj.getKeyValues() != null) {
+      JsonArray array = new JsonArray();
+      obj.getKeyValues().forEach(item -> array.add(item.getBytes()));
+      json.put("keyValues", array);
     }
   }
 }

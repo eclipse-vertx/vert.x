@@ -904,8 +904,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     });
   }
 
-  void getConnectionForRequest(boolean ssl, int port, String host, Waiter waiter) {
-    connectionManager.getConnectionForRequest(ssl, options.getProtocolVersion(), port, host, waiter);
+  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host, Waiter waiter) {
+    connectionManager.getConnectionForRequest(options.getProtocolVersion(), peerHost, ssl, port, host, waiter);
   }
 
   /**

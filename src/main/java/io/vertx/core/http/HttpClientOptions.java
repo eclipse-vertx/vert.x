@@ -144,6 +144,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_REDIRECTS = 16;
 
+  /*
+   * Default force SNI = false
+   */
+  public static final boolean DEFAULT_FORCE_SNI = false;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -168,6 +173,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean http2ClearTextUpgrade;
   private boolean sendUnmaskedFrames;
   private int maxRedirects;
+  private boolean forceSni;
 
   /**
    * Default constructor
@@ -207,6 +213,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
     this.maxRedirects = other.maxRedirects;
+    this.forceSni = other.forceSni;
   }
 
   /**
@@ -255,6 +262,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     sendUnmaskedFrames = DEFAULT_SEND_UNMASKED_FRAMES;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
+    forceSni = DEFAULT_FORCE_SNI;
   }
 
   @Override
@@ -885,6 +893,25 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setMaxRedirects(int maxRedirects) {
     this.maxRedirects = maxRedirects;
+    return this;
+  }
+
+  /**
+   * @return whether the client should always use SNI on TLS/SSL connections
+   */
+  public boolean isForceSni() {
+    return forceSni;
+  }
+
+  /**
+   * By default, the server name is only sent for Fully Qualified Domain Name (FQDN), setting
+   * this property to {@code true} forces the server name to be always sent.
+   *
+   * @param forceSni true when the client should always use SNI on TLS/SSL connections
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setForceSni(boolean forceSni) {
+    this.forceSni = forceSni;
     return this;
   }
 

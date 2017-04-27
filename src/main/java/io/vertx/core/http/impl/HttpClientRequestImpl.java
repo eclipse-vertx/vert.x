@@ -51,7 +51,6 @@ import static io.vertx.core.http.HttpHeaders.*;
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
   private final VertxInternal vertx;
-  private final int port;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
@@ -82,7 +81,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     super(client, ssl, method, host, port, relativeURI);
     this.chunked = false;
     this.vertx = vertx;
-    this.port = port;
   }
 
   @Override
@@ -729,10 +727,22 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
       };
 
+      String peerHost;
+      if (hostHeader != null) {
+        int idx = hostHeader.lastIndexOf(':');
+        if (idx != -1) {
+          peerHost = hostHeader.substring(0, idx);
+        } else {
+          peerHost = hostHeader;
+        }
+      } else {
+        peerHost = host;
+      }
+
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnectionForRequest(ssl, port, host, waiter);
+      client.getConnectionForRequest(peerHost, ssl, port, host, waiter);
       connecting = true;
     }
   }

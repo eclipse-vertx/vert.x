@@ -274,12 +274,22 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   }
 
   @Override
+  public NetSocket upgradeToSsl(String serverName, Handler<Void> handler) {
+    throw new UnsupportedOperationException("Cannot upgrade HTTP/2 stream to SSL");
+  }
+
+  @Override
   public boolean isSsl() {
     return conn.isSsl();
   }
 
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.getPeerCertificateChain();
+    return conn.peerCertificateChain();
+  }
+
+  @Override
+  public String indicatedServerName() {
+    return conn.indicatedServerName();
   }
 }

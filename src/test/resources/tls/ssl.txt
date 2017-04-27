@@ -209,3 +209,78 @@ keytool -certreq -alias test-store -file client-csr.pem -keystore client-keystor
 2) Sign the client cert with the root CA and convert it to the X.509 format
 
 openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -in client-csr.pem | openssl x509 -out client-cert-root-ca.pem -outform PEM
+
+
+
+# Self signed server->client using SNI
+
+## JKS (Java KeyStore)
+
+1) Copy the server-keystore to reuse the localhost cerfificate
+
+cp server-keystore.jks sni-keystore.jks
+
+2) Add a few extra keys for host1-host5 top level domains for SNI
+
+keytool -genkey -alias test-host1 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host1 -keypass wibble -storepass wibble
+keytool -genkey -alias test-host2 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host2.com -keypass wibble -storepass wibble
+keytool -genkey -alias test-host3 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=*.host3.com -keypass wibble -storepass wibble
+keytool -genkey -alias test-host4 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host4.com certificate" -ext san=dns:host4.com,dns:www.host4.com -keypass wibble -storepass wibble
+# note this can only by done using the KeyStore Explorer GUI (because of https://bugs.openjdk.java.net/browse/JDK-8007706)
+keytool -genkey -alias test-host5 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host5.com" -ext san=dns:*.host5.com -keypass wibble -storepass wibble
+
+3) Extract the cerfificate for the host1-host5 domains
+
+keytool -export -alias test-host1 -file host1.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
+keytool -export -alias test-host2 -file host2.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
+keytool -export -alias test-host3 -file host3.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
+keytool -export -alias test-host4 -file host4.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
+keytool -export -alias test-host5 -file host5.crt -keystore sni-keystore.jks -keypass wibble -storepass wibble
+
+4) Create trust stores for the host1-host5 domains
+
+keytool -import -trustcacerts -alias test-host1 -file host1.crt -keystore sni-truststore-host1.jks -keypass wibble -storepass wibble
+keytool -import -trustcacerts -alias test-host2 -file host2.crt -keystore sni-truststore-host2.jks -keypass wibble -storepass wibble
+keytool -import -trustcacerts -alias test-host3 -file host3.crt -keystore sni-truststore-host3.jks -keypass wibble -storepass wibble
+keytool -import -trustcacerts -alias test-host4 -file host4.crt -keystore sni-truststore-host4.jks -keypass wibble -storepass wibble
+keytool -import -trustcacerts -alias test-host5 -file host5.crt -keystore sni-truststore-host5.jks -keypass wibble -storepass wibble
+
+
+## Self signed PKCS12
+
+1) Transform JKS to PKCS12
+
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore sni-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
+
+## Self signed PEM
+
+1) Extract each keycert as a PKCS12 store
+
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host1-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host1
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host2-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host2
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host3-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host3
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host4-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host4
+keytool -importkeystore -srckeystore sni-keystore.jks -destkeystore host5-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble -alias test-host5
+
+2) Extract each private key from the PCS12 store and convert it to PKCS8 format
+
+openssl pkcs12 -in host1-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host1-key.pem -nocrypt
+openssl pkcs12 -in host2-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host2-key.pem -nocrypt
+openssl pkcs12 -in host3-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host3-key.pem -nocrypt
+openssl pkcs12 -in host4-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host4-key.pem -nocrypt
+openssl pkcs12 -in host5-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out host5-key.pem -nocrypt
+
+3) Extract each X.509 certificate from the PCS12 store
+
+openssl pkcs12 -in host1-keystore.p12 -nokeys -out host1-cert.pem
+openssl pkcs12 -in host2-keystore.p12 -nokeys -out host2-cert.pem
+openssl pkcs12 -in host3-keystore.p12 -nokeys -out host3-cert.pem
+openssl pkcs12 -in host4-keystore.p12 -nokeys -out host4-cert.pem
+openssl pkcs12 -in host5-keystore.p12 -nokeys -out host5-cert.pem
+
+4) Remove the temporary PKCS12 stores
+rm host1-keystore.p12
+rm host2-keystore.p12
+rm host3-keystore.p12
+rm host4-keystore.p12
+rm host5-keystore.p12

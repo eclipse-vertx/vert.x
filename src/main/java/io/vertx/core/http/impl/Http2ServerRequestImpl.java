@@ -370,7 +370,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.getPeerCertificateChain();
+    return conn.peerCertificateChain();
   }
 
   @Override

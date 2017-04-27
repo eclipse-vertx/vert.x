@@ -67,6 +67,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +82,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.*;
@@ -3465,6 +3467,64 @@ public class Http1xTest extends HttpTest {
         }
       }
     }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testPerPeerPooling() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setMaxPoolSize(1)
+        .setKeepAlive(true)
+        .setPipelining(false));
+    testPerPeerPooling(i -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath").setHost("host" + i));
+  }
+
+  @Test
+  public void testPerPeerPoolingWithProxy() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setMaxPoolSize(1)
+        .setKeepAlive(true)
+        .setPipelining(false).setProxyOptions(new ProxyOptions()
+            .setType(ProxyType.HTTP)
+            .setHost(DEFAULT_HTTP_HOST)
+            .setPort(DEFAULT_HTTP_PORT)));
+    testPerPeerPooling(i -> client.get(80, "host" + i, "/somepath"));
+  }
+
+  private void testPerPeerPooling(Function<Integer, HttpClientRequest> requestProvider) throws Exception {
+    // Even though we use the same server host, we pool per peer host
+    waitFor(2);
+    int numPeers = 3;
+    int numRequests = 5;
+    Map<String, HttpServerResponse> map = new HashMap<>();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      assertFalse(map.containsKey(req.host()));
+      map.put(req.host(), req.response());
+      if (map.size() == numPeers) {
+        map.values().forEach(HttpServerResponse::end);
+        map.clear();
+        if (count.incrementAndGet() == numRequests) {
+          complete();
+        }
+      }
+    });
+    startServer();
+    AtomicInteger remaining = new AtomicInteger(numPeers * numRequests);
+    for (int i = 0;i < numPeers;i++) {
+      for (int j = 0;j < numRequests;j++) {
+        HttpClientRequest req = requestProvider.apply(i);
+        req.handler(resp -> {
+          assertEquals(200, resp.statusCode());
+          if (remaining.decrementAndGet() == 0) {
+            complete();
+          }
+        });
+        req.end();
+      }
+    }
     await();
   }
 }

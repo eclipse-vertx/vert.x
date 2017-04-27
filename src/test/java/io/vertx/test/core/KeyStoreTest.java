@@ -33,6 +33,7 @@ import org.junit.Test;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import java.security.KeyStore;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -194,49 +195,106 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
-  public void testKeyCertOptionsJson() throws Exception {
+  public void testPemKeyCertOptionsJson() throws Exception {
     PemKeyCertOptions options = new PemKeyCertOptions(new JsonObject());
     assertEquals(null, options.getKeyPath());
     assertEquals(null, options.getKeyValue());
     assertEquals(null, options.getCertPath());
     assertEquals(null, options.getCertValue());
 
-    String keyPath = TestUtils.randomAlphaString(100);
-    String keyValue = TestUtils.randomAlphaString(100);
-    String certPath = TestUtils.randomAlphaString(100);
-    String certValue = TestUtils.randomAlphaString(100);
+    String keyPath1 = TestUtils.randomAlphaString(100);
+    Buffer keyValue1 = Buffer.buffer(TestUtils.randomAlphaString(100));
+    String certPath1 = TestUtils.randomAlphaString(100);
+    Buffer certValue1 = Buffer.buffer(TestUtils.randomAlphaString(100));
     options = new PemKeyCertOptions(new JsonObject().
-        put("keyPath", keyPath).
-        put("keyValue", keyValue.getBytes()).
-        put("certPath", certPath).
-        put("certValue", certValue.getBytes()));
-    assertEquals(keyPath, options.getKeyPath());
-    assertEquals(Buffer.buffer(keyValue), options.getKeyValue());
-    assertEquals(certPath, options.getCertPath());
-    assertEquals(Buffer.buffer(certValue), options.getCertValue());
+        put("keyPath", keyPath1).
+        put("keyValue", keyValue1.getBytes()).
+        put("certPath", certPath1).
+        put("certValue", certValue1.getBytes()));
+    assertEquals(keyPath1, options.getKeyPath());
+    assertEquals(keyValue1, options.getKeyValue());
+    assertEquals(certPath1, options.getCertPath());
+    assertEquals(certValue1, options.getCertValue());
+    assertEquals(Collections.singletonList(keyPath1), options.getKeyPaths());
+    assertEquals(Collections.singletonList(keyValue1), options.getKeyValues());
+    assertEquals(Collections.singletonList(certPath1), options.getCertPaths());
+    assertEquals(Collections.singletonList(certValue1), options.getCertValues());
+
+    String keyPath2 = TestUtils.randomAlphaString(100);
+    Buffer keyValue2 = Buffer.buffer(TestUtils.randomAlphaString(100));
+    String certPath2 = TestUtils.randomAlphaString(100);
+    Buffer certValue2 = Buffer.buffer(TestUtils.randomAlphaString(100));
+    options = new PemKeyCertOptions(new JsonObject().
+        put("keyPaths", new JsonArray().add(keyPath1).add(keyPath2)).
+        put("keyValues", new JsonArray().add(keyValue1.getBytes()).add(keyValue2.getBytes())).
+        put("certPaths", new JsonArray().add(certPath1).add(certPath2)).
+        put("certValues", new JsonArray().add(certValue1.getBytes()).add(certValue2.getBytes())));
+    assertEquals(keyPath1, options.getKeyPath());
+    assertEquals(keyValue1, options.getKeyValue());
+    assertEquals(certPath1, options.getCertPath());
+    assertEquals(certValue1, options.getCertValue());
+    assertEquals(Arrays.asList(keyPath1, keyPath2), options.getKeyPaths());
+    assertEquals(Arrays.asList(keyValue1, keyValue2), options.getKeyValues());
+    assertEquals(Arrays.asList(certPath1, certPath2), options.getCertPaths());
+    assertEquals(Arrays.asList(certValue1, certValue2), options.getCertValues());
   }
 
   @Test
-  public void testCopyKeyCertOptions() throws Exception {
+  public void testCopyPemKeyCertOptions() throws Exception {
     PemKeyCertOptions options = new PemKeyCertOptions(new JsonObject());
-    String keyPath = TestUtils.randomAlphaString(100);
-    Buffer keyValue = Buffer.buffer(TestUtils.randomAlphaString(100));
-    String certPath = TestUtils.randomAlphaString(100);
-    Buffer certValue = Buffer.buffer(TestUtils.randomAlphaString(100));
-    options.setKeyPath(keyPath);
-    options.setKeyValue(keyValue);
-    options.setCertPath(certPath);
-    options.setCertValue(certValue);
+    String keyPath1 = TestUtils.randomAlphaString(100);
+    Buffer keyValue1 = Buffer.buffer(TestUtils.randomAlphaString(100));
+    String certPath1 = TestUtils.randomAlphaString(100);
+    Buffer certValue1 = Buffer.buffer(TestUtils.randomAlphaString(100));
+    options.setKeyPath(keyPath1);
+    options.setKeyValue(keyValue1);
+    options.setCertPath(certPath1);
+    options.setCertValue(certValue1);
     options = new PemKeyCertOptions(options);
-    assertEquals(keyPath, options.getKeyPath());
-    assertEquals(keyValue, options.getKeyValue());
-    assertEquals(certPath, options.getCertPath());
-    assertEquals(certValue, options.getCertValue());
+    assertEquals(keyPath1, options.getKeyPath());
+    assertEquals(keyValue1, options.getKeyValue());
+    assertEquals(certPath1, options.getCertPath());
+    assertEquals(certValue1, options.getCertValue());
+    assertEquals(Collections.singletonList(keyPath1), options.getKeyPaths());
+    assertEquals(Collections.singletonList(keyValue1), options.getKeyValues());
+    assertEquals(Collections.singletonList(certPath1), options.getCertPaths());
+    assertEquals(Collections.singletonList(certValue1), options.getCertValues());
     options = new PemKeyCertOptions(options.toJson());
-    assertEquals(keyPath, options.getKeyPath());
-    assertEquals(keyValue, options.getKeyValue());
-    assertEquals(certPath, options.getCertPath());
-    assertEquals(certValue, options.getCertValue());
+    assertEquals(keyPath1, options.getKeyPath());
+    assertEquals(keyValue1, options.getKeyValue());
+    assertEquals(certPath1, options.getCertPath());
+    assertEquals(certValue1, options.getCertValue());
+    assertEquals(Collections.singletonList(keyPath1), options.getKeyPaths());
+    assertEquals(Collections.singletonList(keyValue1), options.getKeyValues());
+    assertEquals(Collections.singletonList(certPath1), options.getCertPaths());
+    assertEquals(Collections.singletonList(certValue1), options.getCertValues());
+
+    String keyPath2 = TestUtils.randomAlphaString(100);
+    Buffer keyValue2 = Buffer.buffer(TestUtils.randomAlphaString(100));
+    String certPath2 = TestUtils.randomAlphaString(100);
+    Buffer certValue2 = Buffer.buffer(TestUtils.randomAlphaString(100));
+    options.addKeyPath(keyPath2);
+    options.addKeyValue(keyValue2);
+    options.addCertPath(certPath2);
+    options.addCertValue(certValue2);
+    options = new PemKeyCertOptions(options);
+    assertEquals(keyPath1, options.getKeyPath());
+    assertEquals(keyValue1, options.getKeyValue());
+    assertEquals(certPath1, options.getCertPath());
+    assertEquals(certValue1, options.getCertValue());
+    assertEquals(Arrays.asList(keyPath1, keyPath2), options.getKeyPaths());
+    assertEquals(Arrays.asList(keyValue1, keyValue2), options.getKeyValues());
+    assertEquals(Arrays.asList(certPath1, certPath2), options.getCertPaths());
+    assertEquals(Arrays.asList(certValue1, certValue2), options.getCertValues());
+    options = new PemKeyCertOptions(options.toJson());
+    assertEquals(keyPath1, options.getKeyPath());
+    assertEquals(keyValue1, options.getKeyValue());
+    assertEquals(certPath1, options.getCertPath());
+    assertEquals(certValue1, options.getCertValue());
+    assertEquals(Arrays.asList(keyPath1, keyPath2), options.getKeyPaths());
+    assertEquals(Arrays.asList(keyValue1, keyValue2), options.getKeyValues());
+    assertEquals(Arrays.asList(certPath1,certPath2), options.getCertPaths());
+    assertEquals(Arrays.asList(certValue1, certValue2), options.getCertValues());
   }
 
   @Test
@@ -377,10 +435,10 @@ public class KeyStoreTest extends VertxTestBase {
 
   private void testKeyStore(KeyCertOptions options) throws Exception {
     KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, options);
-    KeyStore keyStore = helper.loadStore((VertxInternal) vertx);
+    KeyStore keyStore = helper.store();
     Enumeration<String> aliases = keyStore.aliases();
     assertTrue(aliases.hasMoreElements());
-    KeyManager[] keyManagers = helper.getKeyMgrs((VertxInternal) vertx);
+    KeyManager[] keyManagers = helper.getKeyMgr();
     assertTrue(keyManagers.length > 0);
   }
 
@@ -389,4 +447,16 @@ public class KeyStoreTest extends VertxTestBase {
     TrustManager[] keyManagers = helper.getTrustMgrs((VertxInternal) vertx);
     assertTrue(keyManagers.length > 0);
   }
+
+/*
+  @Test
+  public void testFoo() throws Exception {
+
+    KeyCertOptions jksOptions = new JksOptions().setPath("server-sni-keystore.jks").setPassword("wibble");
+    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, jksOptions);
+    assertNull(helper.getKeyMgr("does.not.exist"));
+    X509KeyManager abc = helper.getKeyMgr("host1");
+    assertNotNull(abc);
+  }
+*/
 }
