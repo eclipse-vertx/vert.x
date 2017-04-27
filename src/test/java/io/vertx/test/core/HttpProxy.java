@@ -120,10 +120,13 @@ public class HttpProxy extends TestProxyBase {
           });
         }
       } else if (method == HttpMethod.GET) {
-        lastUri = request.uri();
+        lastUri = uri;
         lastMethod = HttpMethod.GET;
+        if (forceUri != null) {
+          uri = forceUri;
+        }
         HttpClient client = vertx.createHttpClient();
-        HttpClientRequest clientRequest = client.getAbs(request.uri(), resp -> {
+        HttpClientRequest clientRequest = client.getAbs(uri, resp -> {
           for (String name : resp.headers().names()) {
             request.response().putHeader(name, resp.headers().getAll(name));
           }
