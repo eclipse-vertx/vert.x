@@ -668,6 +668,10 @@ Add a CRL path
 +++
 Add a CRL value
 +++
+|[[decoderInitialBufferSize]]`decoderInitialBufferSize`|`Number (int)`|
++++
+set to <code>initialBufferSizeHttpDecoder</code> the initial buffer of the HttpDecoder.
++++
 |[[defaultHost]]`defaultHost`|`String`|
 +++
 Set the default host name to be used by this client in requests if none is provided when making the request.
@@ -926,10 +930,10 @@ This method allows to set the compression level to be used in http1.x/2 response
  
  While one can think that best value is always the maximum compression ratio, 
  there's a trade-off to consider: the most compressed level requires the most
- computatinal work to compress/decompress data, e.g. more dictionary lookups and loops.
+ computational work to compress/decompress data, e.g. more dictionary lookups and loops.
  
  E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
- and latency on resource serving due to CPU overload, and, however - as the comptational work is required also client side 
+ and latency on resource serving due to CPU overload, and, however - as the computational work is required also client side
  while decompressing - setting an higher compression level can result in an overall higher page load time
  especially nowadays when many clients are handled mobile devices with a low CPU profile.
  
@@ -947,6 +951,10 @@ Add a CRL path
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
 Add a CRL value
++++
+|[[decoderInitialBufferSize]]`decoderInitialBufferSize`|`Number (int)`|
++++
+Set the initial buffer size for the HTTP decoder
 +++
 |[[decompressionSupported]]`decompressionSupported`|`Boolean`|
 +++

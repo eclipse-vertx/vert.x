@@ -575,7 +575,8 @@ public class ConnectionManager {
       if (logEnabled) {
         pipeline.addLast("logging", new LoggingHandler());
       }
-      pipeline.addLast("codec", new HttpClientCodec(options.getMaxInitialLineLength(), options.getMaxHeaderSize(), options.getMaxChunkSize(), false, false));
+      pipeline.addLast("codec", new HttpClientCodec(options.getMaxInitialLineLength(), options.getMaxHeaderSize(),
+              options.getMaxChunkSize(), false, false, options.getDecoderInitialBufferSize()));
       if (options.isTryUseCompression()) {
         pipeline.addLast("inflater", new HttpContentDecompressor(true));
       }

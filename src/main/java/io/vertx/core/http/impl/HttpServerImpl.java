@@ -384,7 +384,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("flashpolicy", new FlashPolicyHandler());
     }
     pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
-        , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
+        , options.getMaxHeaderSize(), options.getMaxChunkSize(), false, options.getDecoderInitialBufferSize()));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
     if (options.isDecompressionSupported()) {
       pipeline.addLast("inflater", new HttpContentDecompressor(true));

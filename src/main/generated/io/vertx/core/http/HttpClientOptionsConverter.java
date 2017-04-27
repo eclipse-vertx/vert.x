@@ -35,6 +35,9 @@ public class HttpClientOptionsConverter {
       });
       obj.setAlpnVersions(list);
     }
+    if (json.getValue("decoderInitialBufferSize") instanceof Number) {
+      obj.setDecoderInitialBufferSize(((Number)json.getValue("decoderInitialBufferSize")).intValue());
+    }
     if (json.getValue("defaultHost") instanceof String) {
       obj.setDefaultHost((String)json.getValue("defaultHost"));
     }
@@ -112,6 +115,7 @@ public class HttpClientOptionsConverter {
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
     }
+    json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }
