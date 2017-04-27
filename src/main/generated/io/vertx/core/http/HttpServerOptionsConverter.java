@@ -53,6 +53,9 @@ public class HttpServerOptionsConverter {
     if (json.getValue("http2ConnectionWindowSize") instanceof Number) {
       obj.setHttp2ConnectionWindowSize(((Number)json.getValue("http2ConnectionWindowSize")).intValue());
     }
+    if (json.getValue("initialBufferSizeHttpDecoder") instanceof Number) {
+      obj.setInitialBufferSizeHttpDecoder(((Number)json.getValue("initialBufferSizeHttpDecoder")).intValue());
+    }
     if (json.getValue("initialSettings") instanceof JsonObject) {
       obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
     }
@@ -88,6 +91,7 @@ public class HttpServerOptionsConverter {
     json.put("decompressionSupported", obj.isDecompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
+    json.put("initialBufferSizeHttpDecoder", obj.getInitialBufferSizeHttpDecoder());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }

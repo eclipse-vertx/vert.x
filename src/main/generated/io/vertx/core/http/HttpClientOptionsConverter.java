@@ -53,6 +53,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("http2MultiplexingLimit") instanceof Number) {
       obj.setHttp2MultiplexingLimit(((Number)json.getValue("http2MultiplexingLimit")).intValue());
     }
+    if (json.getValue("initialBufferSizeHttpDecoder") instanceof Number) {
+      obj.setInitialBufferSizeHttpDecoder(((Number)json.getValue("initialBufferSizeHttpDecoder")).intValue());
+    }
     if (json.getValue("initialSettings") instanceof JsonObject) {
       obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
     }
@@ -117,6 +120,7 @@ public class HttpClientOptionsConverter {
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
     json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
+    json.put("initialBufferSizeHttpDecoder", obj.getInitialBufferSizeHttpDecoder());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }

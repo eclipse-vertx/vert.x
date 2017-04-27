@@ -18,6 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
@@ -144,6 +145,12 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_REDIRECTS = 16;
 
+  /**
+   * Default initial buffer size for HttpObjectDecoder = 128 bytes
+   */
+  public static final int DEFAULT_INITIAL_BUFFER_SIZE_HTTP_DECODER = 128;
+
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -168,6 +175,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean http2ClearTextUpgrade;
   private boolean sendUnmaskedFrames;
   private int maxRedirects;
+  private int initialBufferSizeHttpDecoder;
 
   /**
    * Default constructor
@@ -207,6 +215,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
     this.maxRedirects = other.maxRedirects;
+    this.initialBufferSizeHttpDecoder = other.getInitialBufferSizeHttpDecoder();
   }
 
   /**
@@ -255,6 +264,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     sendUnmaskedFrames = DEFAULT_SEND_UNMASKED_FRAMES;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
+    initialBufferSizeHttpDecoder = DEFAULT_INITIAL_BUFFER_SIZE_HTTP_DECODER;
   }
 
   @Override
@@ -906,6 +916,22 @@ public class HttpClientOptions extends ClientOptionsBase {
     return (HttpClientOptions) super.setLogActivity(logEnabled);
   }
 
+  /**
+   * @return the initial buffer size for the HTTP decoder
+   */
+  public int getInitialBufferSizeHttpDecoder() { return initialBufferSizeHttpDecoder; }
+
+  /**
+   * set to {@code initialBufferSizeHttpDecoder} the initial buffer of the HttpDecoder.
+   * @param initialBufferSizeHttpDecoder the initial buffer size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setInitialBufferSizeHttpDecoder(int initialBufferSizeHttpDecoder) {
+    Arguments.require(initialBufferSizeHttpDecoder > 0, "initialBufferSizeHttpDecoder must be > 0");
+    this.initialBufferSizeHttpDecoder = initialBufferSizeHttpDecoder;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -934,6 +960,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
     if (sendUnmaskedFrames != that.sendUnmaskedFrames) return false;
     if (maxRedirects != that.maxRedirects) return false;
+    if (initialBufferSizeHttpDecoder != that.initialBufferSizeHttpDecoder) return false;
 
     return true;
   }
@@ -961,6 +988,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + http2ConnectionWindowSize;
     result = 31 * result + (sendUnmaskedFrames ? 1 : 0);
     result = 31 * result + maxRedirects;
+    result = 31 * result + initialBufferSizeHttpDecoder;
     return result;
   }
+
 }
