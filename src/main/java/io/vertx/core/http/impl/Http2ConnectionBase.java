@@ -45,8 +45,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Objects;
