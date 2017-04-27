@@ -443,15 +443,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Boolean ssl = false;
     int port = url.getPort();
     String protocol = url.getProtocol();
-    if (port == -1) {
-      if ("ftp".equals(protocol)) {
+    if ("ftp".equals(protocol)) {
+      if (port == -1) {
         port = 21;
-      } else {
-        char chend = protocol.charAt(protocol.length() - 1);
-        if (chend == 'p') {
+      }
+    } else {
+      char chend = protocol.charAt(protocol.length() - 1);
+      if (chend == 'p') {
+        if (port == -1) {
           port = 80;
-        } else if (chend == 's'){
-          ssl = true;
+        }
+      } else if (chend == 's'){
+        ssl = true;
+        if (port == -1) {
           port = 443;
         }
       }
