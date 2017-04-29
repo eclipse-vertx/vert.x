@@ -25,6 +25,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -41,11 +42,11 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(int initialSizeHint) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
+    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE)).order(ByteOrder.nativeOrder());
   }
 
   BufferImpl(byte[] bytes) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
+    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).order(ByteOrder.nativeOrder()).writeBytes(bytes);
   }
 
   BufferImpl(String str, String enc) {
@@ -207,6 +208,11 @@ public class BufferImpl implements Buffer {
   public String getString(int start, int end) {
     byte[] bytes = getBytes(start, end);
     return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  @Override
+  public ByteOrder getByteOrder() {
+    return buffer.order();
   }
 
   public Buffer appendBuffer(Buffer buff) {
@@ -452,6 +458,12 @@ public class BufferImpl implements Buffer {
 
   public Buffer setString(int pos, String str, String enc) {
     return setBytes(pos, str, Charset.forName(enc));
+  }
+
+  @Override
+  public Buffer setByteOrder(ByteOrder order) {
+    buffer.order(order);
+    return this;
   }
 
   public int length() {
