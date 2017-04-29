@@ -460,6 +460,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         }
       }
     }
+    // if we do not know the protocol, the port still may be -1, we will handle that below
     return createRequest(method, protocol, url.getHost(), port, ssl, url.getFile(), null);
   }
 
@@ -934,7 +935,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     try {
       return new URL(surl);
     } catch (MalformedURLException e) {
-      throw new VertxException("Invalid url: " + surl);
+      throw new VertxException("Invalid url: " + surl, e);
     }
   }
 
@@ -949,6 +950,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   private HttpClientRequest createRequest(HttpMethod method, String protocol, String host, int port, Boolean ssl, String relativeURI, MultiMap headers) {
     Objects.requireNonNull(method, "no null method accepted");
+    Objects.requireNonNull(protocol, "no null protocl accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
@@ -956,8 +958,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     boolean useSSL = ssl != null ? ssl : options.isSsl();
     boolean useProxy = !useSSL && proxyType == ProxyType.HTTP;
     if (useProxy) {
-      int defaultPort = protocol.equals("ftp") ? 21 : 80;
-      relativeURI = protocol + "://" + host + (port != defaultPort ? ":" + port : "") + relativeURI;
+      final int defaultPort = protocol.equals("ftp") ? 21 : 80;
+      final String addPort = (port != -1 && port != defaultPort) ? (":" + port) : "";
+      relativeURI = protocol + "://" + host + addPort + relativeURI;
       ProxyOptions proxyOptions = options.getProxyOptions();
       if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
         if (headers == null) {
@@ -968,7 +971,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       req = new HttpClientRequestImpl(this, useSSL, method, proxyOptions.getHost(), proxyOptions.getPort(),
           relativeURI, vertx);
-      req.setHost(host + (port != defaultPort ? ":" + port : ""));
+      req.setHost(host + addPort);
     } else {
       req = new HttpClientRequestImpl(this, useSSL, method, host, port, relativeURI, vertx);
     }
