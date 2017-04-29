@@ -950,7 +950,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   private HttpClientRequest createRequest(HttpMethod method, String protocol, String host, int port, Boolean ssl, String relativeURI, MultiMap headers) {
     Objects.requireNonNull(method, "no null method accepted");
-    Objects.requireNonNull(protocol, "no null protocl accepted");
+    Objects.requireNonNull(protocol, "no null protocol accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
