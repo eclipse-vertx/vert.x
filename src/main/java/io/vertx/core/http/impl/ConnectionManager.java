@@ -429,7 +429,13 @@ public class ConnectionManager {
       if (options.getProxyOptions() == null || !ssl && options.getProxyOptions().getType()==ProxyType.HTTP ) {
         channelProvider = ChannelProvider.INSTANCE;
       } else {
-        channelProvider = ProxyChannelProvider.INSTANCE;
+        try {
+          channelProvider = ProxyChannelProvider.INSTANCE;
+        } catch (NoClassDefFoundError ex) {
+          log.warn("Dependency io.netty:netty-handler-proxy missing - check your classpath");
+          queue.connectionFailed(context, null, waiter::handleFailure, ex);
+          return;
+        }
       }
 
       Handler<Channel> channelInitializer = ch -> {
