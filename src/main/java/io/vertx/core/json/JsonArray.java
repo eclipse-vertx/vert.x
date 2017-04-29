@@ -19,6 +19,7 @@ package io.vertx.core.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
@@ -623,7 +624,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   @Override
   public void writeToBuffer(Buffer buffer) {
     String encoded = encode();
-    byte[] bytes = encoded.getBytes();
+    byte[] bytes = encoded.getBytes(StandardCharsets.UTF_8);
     buffer.appendInt(bytes.length);
     buffer.appendBytes(bytes);
   }
@@ -641,7 +642,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     list = Json.decodeValue(json, List.class);
   }
 
-  private class Iter implements Iterator<Object> {
+  private static class Iter implements Iterator<Object> {
 
     final Iterator<Object> listIter;
 
