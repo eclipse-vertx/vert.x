@@ -99,7 +99,7 @@ public class CodecManager {
 
   public void registerCodec(MessageCodec codec) {
     Objects.requireNonNull(codec, "codec");
-    Objects.requireNonNull(codec.name(), "code.name()");
+    Objects.requireNonNull(codec.name(), "codec.name()");
     checkSystemCodec(codec);
     if (userCodecMap.containsKey(codec.name())) {
       throw new IllegalStateException("Already a codec registered with name " + codec.name());
@@ -115,7 +115,7 @@ public class CodecManager {
   public <T> void registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec) {
     Objects.requireNonNull(clazz);
     Objects.requireNonNull(codec, "codec");
-    Objects.requireNonNull(codec.name(), "code.name()");
+    Objects.requireNonNull(codec.name(), "codec.name()");
     checkSystemCodec(codec);
     if (defaultCodecMap.containsKey(clazz)) {
       throw new IllegalStateException("Already a default codec registered for class " + clazz);
