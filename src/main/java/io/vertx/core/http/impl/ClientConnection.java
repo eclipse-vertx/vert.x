@@ -419,7 +419,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
     // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
     for (HttpClientRequestImpl req: requests) {
-      req.handleException(e);
+      if (req != currentRequest) {
+        req.handleException(e);
+      }
     }
     if (currentRequest != null) {
       currentRequest.handleException(e);
