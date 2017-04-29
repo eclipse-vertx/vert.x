@@ -765,6 +765,17 @@ public class HTTPExamples {
 
   }
 
+  public void example60(Vertx vertx) {
+
+    HttpClientOptions options = new HttpClientOptions()
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP));
+    HttpClient client = vertx.createHttpClient(options);
+    client.getAbs("ftp://ftp.gnu.org/gnu/", response -> {
+      System.out.println("Received response with status code " + response.statusCode());
+    });
+
+  }
+
   public void serversharing(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       request.response().end("Hello from server " + this);
