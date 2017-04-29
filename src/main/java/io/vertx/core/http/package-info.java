@@ -1090,7 +1090,7 @@
  * `301`, `302`, `303` or `307` status code, it follows the redirection provided by the `Location` response header
  * and the response handler is passed the redirected response instead of the original response.
  *
- * Here’s an example:
+ * Here's an example:
  *
  * [source,$lang]
  * ----
