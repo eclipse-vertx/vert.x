@@ -30,6 +30,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -74,7 +75,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private boolean chunked;
   private boolean closed;
   private ChannelFuture channelFuture;
-  private MultiMap headers;
+  private final VertxHttpHeaders headers;
   private LastHttpContent trailing;
   private MultiMap trailers;
   private String statusMessage;
@@ -84,7 +85,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     this.vertx = vertx;
     this.conn = conn;
     this.version = request.getProtocolVersion();
-    this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
+    this.headers = new VertxHttpHeaders();
+    this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, headers);
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
@@ -92,9 +94,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public MultiMap headers() {
-    if (headers == null) {
-      headers = new HeadersAdaptor(response.headers());
-    }
     return headers;
   }
 
