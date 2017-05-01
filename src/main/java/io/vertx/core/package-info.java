@@ -1138,14 +1138,15 @@
  *
  * The redeployment process is implemented as follows. First your application is launched as a background application
  * (with the `start` command). On matching file changes, the process is stopped and the application is restarted.
- * This way avoids leaks.
+ * This way avoids leaks (as the process is restarted).
  *
  * To enable the live redeploy, pass the `--redeploy` option to the `run` command. The `--redeploy` indicates the
  * set of file to _watch_. This set can use Ant-style patterns (with `\**`, `*` and `?`). You can specify
  * several sets by separating them using a comma (`,`). Patterns are relative to the current working directory.
  *
  * Parameters passed to the `run` command are passed to the application. Java Virtual Machine options can be
- * configured using `--java-opts`.
+ * configured using `--java-opts`. For instance, to pass the the `conf` parameter or a system property, you need to
+ * use: `--java-opts="-conf=my-conf.json -Dkey=value"`
  *
  * The `--launcher-class` option determine with with _main_ class the application is launcher. It's generally
  * {@link io.vertx.core.Launcher}, but you have use you own _main_.
@@ -1175,7 +1176,14 @@
  *
  * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
  * restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
- * or `grunt` to update your resources.
+ * or `grunt` to update your resources. Don't forget that passing parameter to your application requires the
+ * `--java-opts` param:
+ *
+ * [source]
+ * ----
+ * java -jar target/my-fat-jar.jar --redeploy="**&#47;*.java" --on-redeploy="mvn package" --java-opts="-Dkey=val"
+ * java -jar build/libs/my-fat-jar.jar --redeploy="src&#47;**&#47;*.java" --on-redeploy='./gradlew shadowJar' --java-opts="-Dkey=val"
+ * ----
  *
  * The redeploy feature also supports the following settings:
  *
