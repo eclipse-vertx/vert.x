@@ -314,11 +314,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public void end(Buffer chunk) {
     synchronized (conn) {
-      if (!chunked && !headers.contentLengthSet()) {
-        headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
-      }
-      ByteBuf buf = chunk.getByteBuf();
-      end0(buf);
+      end0(chunk.getByteBuf());
     }
   }
 
@@ -467,9 +463,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       long contentLength = Math.min(length, file.length() - offset);
       bytesWritten = contentLength;
-      if (!headers.contentLengthSet()) {
-        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
-      }
       if (!headers.contentTypeSet()) {
         String contentType = MimeMapping.getMimeTypeForFilename(filename);
         if (contentType != null) {
@@ -583,8 +576,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (!head) {
       if (chunked) {
         headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
-      } else if (keepAlive && !headers.contentLengthSet()) {
-        headers.set(HttpHeaders.CONTENT_LENGTH, "0");
+      } else if (!headers.contentLengthSet()) {
+        String value = bytesWritten == 0 ? "0" : String.valueOf(bytesWritten);
+        headers.set(HttpHeaders.CONTENT_LENGTH, value);
       }
     }
     if (headersEndHandler != null) {
