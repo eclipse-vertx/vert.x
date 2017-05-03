@@ -18,11 +18,9 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -52,8 +50,13 @@ public class Json {
     prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 
     SimpleModule module = new SimpleModule();
+    // custom types
     module.addSerializer(JsonObject.class, new JsonObjectSerializer());
     module.addSerializer(JsonArray.class, new JsonArraySerializer());
+    // he have 2 extensions: RFC-7493
+    module.addSerializer(Instant.class, new InstantSerializer());
+    module.addSerializer(byte[].class, new ByteArraySerializer());
+
     mapper.registerModule(module);
     prettyMapper.registerModule(module);
   }
@@ -143,6 +146,13 @@ public class Json {
     @Override
     public void serialize(JsonArray value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
       jgen.writeObject(value.getList());
+    }
+  }
+
+  private static class InstantSerializer extends JsonSerializer<Instant> {
+    @Override
+    public void serialize(Instant value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+      jgen.writeString(ISO_INSTANT.format(value));
     }
   }
 }
