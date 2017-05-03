@@ -20,6 +20,7 @@ import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -138,7 +139,7 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     return this;
   }
 
-  private void remove0(int h, int i, String name) {
+  private void remove0(int h, int i, CharSequence name) {
     VertxHttpHeaders.MapEntry e = entries[i];
     if (e == null) {
       return;
@@ -179,7 +180,7 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     return set0(name, strVal);
   }
 
-  private VertxHttpHeaders set0(final String name, final CharSequence strVal) {
+  private VertxHttpHeaders set0(final CharSequence name, final CharSequence strVal) {
     int h = AsciiString.hashCode(name);
     int i = index(h);
     remove0(h, i, name);
@@ -234,20 +235,7 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public List<String> getAll(final String name) {
-    Objects.requireNonNull(name, "name");
-
-    LinkedList<String> values = new LinkedList<>();
-
-    int h = AsciiString.hashCode(name);
-    int i = index(h);
-    VertxHttpHeaders.MapEntry e = entries[i];
-    while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
-        values.addFirst(e.getValue().toString());
-      }
-      e = e.next;
-    }
-    return values;
+    return getAll((CharSequence) name);
   }
 
   @Override
@@ -261,9 +249,7 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public List<Map.Entry<String, String>> entries() {
-    List<Map.Entry<String, String>> all =
-        new LinkedList<>();
-
+    List<Map.Entry<String, String>> all = new ArrayList<>(size());
     VertxHttpHeaders.MapEntry e = head.after;
     while (e != head) {
       all.add(new AbstractMap.SimpleEntry<>(e.key.toString(), e.value.toString()));
@@ -289,9 +275,7 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public Set<String> names() {
-
     Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-
     VertxHttpHeaders.MapEntry e = head.after;
     while (e != head) {
       names.add(e.getKey().toString());
@@ -309,7 +293,20 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public List<String> getAll(CharSequence name) {
-    return getAll(name.toString());
+    Objects.requireNonNull(name, "name");
+
+    LinkedList<String> values = new LinkedList<>();
+
+    int h = AsciiString.hashCode(name);
+    int i = index(h);
+    VertxHttpHeaders.MapEntry e = entries[i];
+    while (e != null) {
+      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+        values.addFirst(e.getValue().toString());
+      }
+      e = e.next;
+    }
+    return values;
   }
 
   @Override
