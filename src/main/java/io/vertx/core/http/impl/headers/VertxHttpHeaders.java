@@ -216,9 +216,7 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public String get(final String name) {
-    Objects.requireNonNull(name, "name");
-    CharSequence ret = get0(name);
-    return ret != null ? ret.toString() : null;
+    return get((CharSequence) name);
   }
 
   private CharSequence get0(CharSequence name) {
@@ -304,7 +302,9 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public String get(CharSequence name) {
-    return get(name.toString());
+    Objects.requireNonNull(name, "name");
+    CharSequence ret = get0(name);
+    return ret != null ? ret.toString() : null;
   }
 
   @Override
