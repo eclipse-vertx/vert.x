@@ -180,7 +180,10 @@ public abstract class ConnectionBase {
   public abstract NetworkMetrics metrics();
 
   protected synchronized void handleException(Throwable t) {
-    metrics().exceptionOccurred(metric(), remoteAddress(), t);
+    NetworkMetrics metrics = metrics();
+    if (metrics != null) {
+      metrics.exceptionOccurred(metric, remoteAddress(), t);
+    }
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     } else {
@@ -190,7 +193,7 @@ public abstract class ConnectionBase {
 
   protected synchronized void handleClosed() {
     NetworkMetrics metrics = metrics();
-    if (metrics instanceof TCPMetrics) {
+    if (metrics != null && metrics instanceof TCPMetrics) {
       ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
     }
     if (closeHandler != null) {
@@ -222,14 +225,14 @@ public abstract class ConnectionBase {
 
   public void reportBytesRead(long numberOfBytes) {
     NetworkMetrics metrics = metrics();
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.bytesRead(metric(), remoteAddress(), numberOfBytes);
     }
   }
 
   public void reportBytesWritten(long numberOfBytes) {
     NetworkMetrics metrics = metrics();
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.bytesWritten(metric(), remoteAddress(), numberOfBytes);
     }
   }

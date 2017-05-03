@@ -246,7 +246,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       handshaker.finishHandshake(channel, response);
       context.executeFromIO(() -> {
         log.debug("WebSocket handshake complete");
-        webSocket.setMetric(metrics().connected(endpointMetric, metric(), webSocket));
+        if (metrics != null ) {
+          webSocket.setMetric(metrics.connected(endpointMetric, metric(), webSocket));
+        }
         wsConnect.handle(webSocket);
       });
     }
@@ -301,7 +303,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.responseBegin(requestForResponse.metric(), nResp);
     }
     if (vertxVersion != null) {
@@ -347,7 +349,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       HttpClientRequestBase req = currentResponse.request();
       Object reqMetric = req.metric();
       if (req.exceptionOccurred != null) {
@@ -408,7 +410,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     Exception e = new VertxException("Connection was closed");
 
     // Signal requests failed
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       for (HttpClientRequestImpl req: requests) {
         metrics.requestReset(req.metric());
       }
@@ -542,8 +544,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
     }
-    if (metrics.isEnabled()) {
-      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric(), localAddress(), remoteAddress(), req);
+    if (metrics != null) {
+      Object reqMetric = metrics.requestBegin(endpointMetric, metric(), localAddress(), remoteAddress(), req);
       req.metric(reqMetric);
     }
     this.currentRequest = req;
@@ -554,7 +556,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     if (currentRequest == null) {
       throw new IllegalStateException("No write in progress");
     }
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.requestEnd(currentRequest.metric());
     }
     currentRequest = null;

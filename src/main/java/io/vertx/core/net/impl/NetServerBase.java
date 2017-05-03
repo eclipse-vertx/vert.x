@@ -43,6 +43,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -161,7 +162,10 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
               NetServerBase.this.id = new ServerID(NetServerBase.this.actualPort, id.host);
               serverChannelGroup.add(ch);
               vertx.sharedNetServers().put(id, NetServerBase.this);
-              metrics = vertx.metricsSPI().createMetrics(new SocketAddressImpl(id.port, id.host), options);
+              VertxMetrics metrics = vertx.metricsSPI();
+              if (metrics != null) {
+                this.metrics = metrics.createMetrics(new SocketAddressImpl(id.port, id.host), options);
+              }
             } else {
               vertx.sharedNetServers().remove(id);
             }
@@ -186,7 +190,8 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         this.actualPort = shared.actualPort();
-        metrics = vertx.metricsSPI().createMetrics(new SocketAddressImpl(id.port, id.host), options);
+        VertxMetrics metrics = vertx.metricsSPI();
+        this.metrics = metrics != null ? metrics.createMetrics(new SocketAddressImpl(id.port, id.host), options) : null;
         actualServer.handlerManager.addHandler(handler, listenContext);
       }
 
@@ -257,7 +262,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
 
   @Override
   public boolean isMetricsEnabled() {
-    return metrics != null && metrics.isEnabled();
+    return metrics != null;
   }
 
   @Override
@@ -356,7 +361,9 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
       VertxNetHandler netHandler = ch.pipeline().get(VertxNetHandler.class);
       netHandler.conn = sock;
       handler.context.executeFromIO(() -> {
-        sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+        if (metrics != null) {
+          sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+        }
         handler.handler.handle(sock);
       });
     }

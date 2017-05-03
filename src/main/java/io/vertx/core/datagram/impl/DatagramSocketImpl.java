@@ -39,6 +39,7 @@ import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.WriteStream;
 
 import java.net.*;
@@ -67,7 +68,8 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     channel.pipeline().addLast("handler", new DatagramServerHandler(this));
     channel().config().setMaxMessagesPerRead(1);
     channel().config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
-    metrics = vertx.metricsSPI().createMetrics(this, (DatagramSocketOptions) options);
+    VertxMetrics metrics = vertx.metricsSPI();
+    this.metrics = metrics != null ? metrics.createMetrics(this, options) : null;
   }
 
   @Override
@@ -183,8 +185,8 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
       if (res.succeeded()) {
         ChannelFuture future = channel().bind(new InetSocketAddress(res.result(), local.port()));
         addListener(future, ar -> {
-          if (ar.succeeded()) {
-            ((DatagramSocketMetrics) metrics).listening(local.host(), localAddress());
+          if (metrics != null && ar.succeeded()) {
+            metrics.listening(local.host(), localAddress());
           }
           handler.handle(ar);
         });
@@ -233,7 +235,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
       // If it's immediately resolved it means it was just an IP address so no need to async resolve
       doSend(packet, addr, handler);
     }
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.bytesWritten(null, new SocketAddressImpl(port, host), packet.length());
     }
     return this;
@@ -265,7 +267,9 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public void close(final Handler<AsyncResult<Void>> handler) {
     // make sure everything is flushed out on close
     endReadAndFlush();
-    metrics.close();
+    if (metrics != null) {
+      metrics.close();
+    }
     ChannelFuture future = channel.close();
     if (handler != null) {
       future.addListener(new DatagramChannelFutureListener<>(null, handler, context));
@@ -274,7 +278,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   @Override
   public boolean isMetricsEnabled() {
-    return metrics != null && metrics.isEnabled();
+    return metrics != null;
   }
 
   @Override
@@ -348,7 +352,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   synchronized void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.bytesRead(null, packet.sender(), packet.data().length());
     }
     if (packetHandler != null) {

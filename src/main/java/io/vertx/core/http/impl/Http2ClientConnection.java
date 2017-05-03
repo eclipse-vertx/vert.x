@@ -137,7 +137,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
           int port = remoteAddress().port();
           HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, isSsl(), method, rawMethod, uri, host, port, headersMap);
-          if (metrics.isEnabled()) {
+          if (metrics != null) {
             pushReq.metric(metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq));
           }
           streams.put(promisedStreamId, pushReq.getStream());
@@ -177,7 +177,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleEnd(MultiMap trailers) {
-      if (conn.metrics.isEnabled()) {
+      if (conn.metrics != null) {
         if (request.exceptionOccurred != null) {
           conn.metrics.requestReset(request.metric());
         } else {
@@ -203,7 +203,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         return;
       }
       responseEnded = true;
-      if (conn.metrics.isEnabled()) {
+      if (conn.metrics != null) {
         conn.metrics.requestReset(request.metric());
       }
       handleException(new StreamResetException(errorCode));
@@ -213,7 +213,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     void handleClose() {
       if (!responseEnded) {
         responseEnded = true;
-        if (conn.metrics.isEnabled()) {
+        if (conn.metrics != null) {
           conn.metrics.requestReset(request.metric());
         }
         handleException(new VertxException("Connection was closed")); // Put that in utility class
@@ -261,7 +261,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
             statusMessage,
             new Http2HeadersAdaptor(headers)
         );
-        if (conn.metrics.isEnabled()) {
+        if (conn.metrics != null) {
           conn.metrics.responseBegin(request.metric(), response);
         }
         request.handleResponse(response);
@@ -319,7 +319,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.http2Pool.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
-      if (conn.metrics.isEnabled()) {
+      if (conn.metrics != null) {
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
       writeHeaders(h, end && content == null);
@@ -369,7 +369,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void endRequest() {
-      if (conn.metrics.isEnabled()) {
+      if (conn.metrics != null) {
         conn.metrics.requestEnd(request.metric());
       }
       requestEnded = true;
@@ -381,7 +381,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         requestEnded = true;
         responseEnded = true;
         writeReset(code);
-        if (conn.metrics.isEnabled()) {
+        if (conn.metrics != null) {
           conn.metrics.requestReset(request.metric());
         }
       }

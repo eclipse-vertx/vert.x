@@ -81,8 +81,7 @@ public class MetricsOptionsTest extends VertxTestBase {
     vertx.close();
     vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
     VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
-    assertNotNull(metrics);
-    assertTrue(metrics instanceof DummyVertxMetrics);
+    assertNull(metrics);
   }
 
   @Test

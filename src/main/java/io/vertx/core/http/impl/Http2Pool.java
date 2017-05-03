@@ -94,8 +94,10 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
           .initialSettings(client.getOptions().getInitialSettings())
           .connectionFactory(connHandler -> {
             Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, ch, connHandler, metrics);
-            Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-            conn.metric(metric);
+            if (metrics != null) {
+              Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+              conn.metric(metric);
+            }
             return conn;
           })
           .logEnabled(logEnabled)
@@ -104,7 +106,9 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
         handler.onHttpClientUpgrade();
       }
       Http2ClientConnection conn = handler.connection;
-      metrics.endpointConnected(queue.metric, conn.metric());
+      if (metrics != null) {
+        metrics.endpointConnected(queue.metric, conn.metric());
+      }
       p.addLast(handler);
       allConnections.add(conn);
       if (windowSize > 0) {
@@ -138,7 +142,9 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
         queue.connectionClosed();
       }
     }
-    metrics.endpointDisconnected(queue.metric, conn.metric());
+    if (metrics != null) {
+      metrics.endpointDisconnected(queue.metric, conn.metric());
+    }
   }
 
   @Override

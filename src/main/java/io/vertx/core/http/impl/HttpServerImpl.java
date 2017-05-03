@@ -89,6 +89,7 @@ import io.vertx.core.net.impl.VertxSniHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.InetSocketAddress;
@@ -102,6 +103,7 @@ import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.*;
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * This class is thread-safe
@@ -289,7 +291,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               Channel serverChannel = res.result();
               HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
               serverChannelGroup.add(serverChannel);
-              metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
+              VertxMetrics metrics = vertx.metricsSPI();
+              this.metrics = metrics != null ? metrics.createMetrics(this, new SocketAddressImpl(port, host), options) : null;
             }
           });
         } catch (final Throwable t) {
@@ -310,7 +313,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         actualServer = shared;
         this.actualPort = shared.actualPort;
         addHandlers(actualServer, listenContext);
-        metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
+        VertxMetrics metrics = vertx.metricsSPI();
+        this.metrics = metrics != null ? metrics.createMetrics(this, new SocketAddressImpl(port, host), options) : null;
       }
       actualServer.bindFuture.addListener(future -> {
         if (listenHandler != null) {
@@ -349,7 +353,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> {
           Http2ServerConnection conn = new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
-          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          if (metrics != null) {
+            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          }
           return conn;
         })
         .logEnabled(logEnabled)
@@ -491,7 +497,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public boolean isMetricsEnabled() {
-    return metrics != null && metrics.isEnabled();
+    return metrics != null;
   }
 
   public SSLHelper getSslHelper() {
@@ -762,7 +768,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         this.conn = conn;
         connectionMap.put(ch, conn);
         reqHandler.context.executeFromIO(() -> {
-          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          if (metrics != null) {
+            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          }
           Handler<HttpConnection> connHandler = reqHandler.handler.connectionHandler;
           if (connHandler != null) {
             connHandler.handle(conn);
@@ -794,7 +802,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
             serverOrigin, shake, metrics);
-          wsConn.metric(metrics.connected(wsConn.remoteAddress(), wsConn.remoteName()));
+          if (metrics != null) {
+            wsConn.metric(metrics.connected(wsConn.remoteAddress(), wsConn.remoteName()));
+          }
           wsConn.wsHandler(wsHandler.handler);
 
           Runnable connectRunnable = () -> {
@@ -813,7 +823,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
             theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
             connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
-          ws.setMetric(metrics.connected(wsConn.metric(), ws));
+          if (METRICS_ENABLED && metrics != null) {
+            ws.setMetric(metrics.connected(wsConn.metric(), ws));
+          }
           wsConn.handleWebsocketConnect(ws);
           if (!ws.isRejected()) {
             ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);

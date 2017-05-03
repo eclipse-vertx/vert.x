@@ -24,11 +24,16 @@ package io.vertx.core.spi.metrics;
  */
 public interface Metrics {
 
+  String DISABLE_METRICS_PROPERTY_NAME = "vertx.disabledMetrics";
+
+  boolean METRICS_ENABLED = !Boolean.getBoolean(DISABLE_METRICS_PROPERTY_NAME);
+
   /**
    * Whether the metrics are enabled.
    *
    * @return true if the metrics are enabled.
    */
+  @Deprecated
   boolean isEnabled();
 
   /**

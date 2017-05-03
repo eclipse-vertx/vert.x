@@ -181,7 +181,9 @@ public class ConnectionManager {
   public void close() {
     wsQM.close();
     requestQM.close();
-    metrics.close();
+    if (metrics != null) {
+      metrics.close();
+    }
   }
 
   /**
@@ -217,12 +219,12 @@ public class ConnectionManager {
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
         maxSize = options.getHttp2MaxPoolSize();
-        pool =  (Pool)new Http2Pool(this, client, ConnectionManager.this.metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize());
+        pool =  (Pool)new Http2Pool(this, client, metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize());
       } else {
         maxSize = options.getMaxPoolSize();
-        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize());
+        pool = (Pool)new Http1xPool(client, metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize());
       }
-      this.metric = ConnectionManager.this.metrics.createEndpoint(host, port, maxSize);
+      this.metric = metrics != null ? metrics.createEndpoint(host, port, maxSize) : null;
     }
 
     public synchronized void getConnection(Waiter waiter) {
@@ -242,8 +244,8 @@ public class ConnectionManager {
         } else {
           // Wait in queue
           if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
-            if (ConnectionManager.this.metrics.isEnabled()) {
-              waiter.metric = ConnectionManager.this.metrics.enqueueRequest(metric);
+            if (metrics != null) {
+              waiter.metric = metrics.enqueueRequest(metric);
             }
             waiters.add(waiter);
           } else {
@@ -303,13 +305,13 @@ public class ConnectionManager {
      */
     Waiter getNextWaiter() {
       Waiter waiter = waiters.poll();
-      if (waiter != null && ConnectionManager.this.metrics.isEnabled()) {
-        ConnectionManager.this.metrics.dequeueRequest(metric, waiter.metric);
+      if (metrics != null && waiter != null) {
+        metrics.dequeueRequest(metric, waiter.metric);
       }
       while (waiter != null && waiter.isCancelled()) {
         waiter = waiters.poll();
-        if (waiter != null && ConnectionManager.this.metrics.isEnabled()) {
-          ConnectionManager.this.metrics.dequeueRequest(metric, waiter.metric);
+        if (metrics != null && waiter != null) {
+          metrics.dequeueRequest(metric, waiter.metric);
         }
       }
       return waiter;
@@ -325,8 +327,8 @@ public class ConnectionManager {
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         mgr.queueMap.remove(key);
-        if (ConnectionManager.this.metrics.isEnabled()) {
-          ConnectionManager.this.metrics.closeEndpoint(host, port, metric);
+        if (metrics != null) {
+          metrics.closeEndpoint(host, port, metric);
         }
       }
     }

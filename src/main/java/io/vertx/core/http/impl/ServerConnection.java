@@ -71,6 +71,7 @@ import java.util.Queue;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  *
@@ -151,7 +152,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   synchronized void responseComplete() {
-    if (metrics.isEnabled()) {
+    if (METRICS_ENABLED && metrics != null) {
       reportBytesWritten(bytesWritten);
       bytesWritten = 0;
       if (requestFailed) {
@@ -183,7 +184,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   @Override
   public ChannelFuture writeToChannel(Object obj) {
-    if (metrics.isEnabled()) {
+    if (METRICS_ENABLED && metrics != null) {
       long bytes = getBytes(obj);
       if (bytes == -1) {
         log.warn("Metrics could not be updated to include bytes written because of unknown object " + obj.getClass() + " being written.");
@@ -206,7 +207,9 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, server.options().getMaxWebsocketFrameSize(), server.options().getMaxWebsocketMessageSize());
-    ws.setMetric(metrics.upgrade(requestMetric, ws));
+    if (METRICS_ENABLED && metrics != null) {
+      ws.setMetric(metrics.upgrade(requestMetric, ws));
+    }
     try {
       handshaker.handshake(channel, nettyReq);
     } catch (WebSocketHandshakeException e) {
@@ -294,7 +297,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   private void handleChunk(Buffer chunk) {
-    if (metrics.isEnabled()) {
+    if (METRICS_ENABLED && metrics != null) {
       bytesRead += chunk.length();
     }
     currentRequest.handleData(chunk);
@@ -302,7 +305,9 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private void handleEnd() {
     currentRequest.handleEnd();
-    reportBytesRead(bytesRead);
+    if (METRICS_ENABLED) {
+      reportBytesRead(bytesRead);
+    }
     currentRequest = null;
     bytesRead = 0;
   }
@@ -347,10 +352,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   synchronized protected void handleClosed() {
-    if (ws != null) {
-      if (metrics.isEnabled()) {
-        metrics.disconnected(ws.getMetric());
-      }
+    if (METRICS_ENABLED && metrics != null && ws != null) {
+      metrics.disconnected(ws.getMetric());
       ws.setMetric(null);
     }
     super.handleClosed();
@@ -358,7 +361,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       ws.handleClosed();
     }
     if (pendingResponse != null) {
-      if (metrics.isEnabled()) {
+      if (METRICS_ENABLED && metrics != null) {
         metrics.requestReset(requestMetric);
       }
       pendingResponse.handleClosed();
@@ -372,7 +375,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   @Override
   protected synchronized void handleException(Throwable t) {
     super.handleException(t);
-    if (metrics.isEnabled()) {
+    if (METRICS_ENABLED && metrics != null) {
       requestFailed = true;
     }
     if (currentRequest != null) {
@@ -434,7 +437,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       currentRequest = req;
       pendingResponse = resp;
-      if (metrics.isEnabled()) {
+      if (METRICS_ENABLED && metrics != null) {
         requestMetric = metrics.requestBegin(metric(), req);
       }
       requestHandler.handle(req);

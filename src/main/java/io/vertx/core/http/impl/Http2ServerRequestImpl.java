@@ -51,6 +51,8 @@ import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -96,7 +98,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       int idx = serverOrigin.indexOf("://");
       host = serverOrigin.substring(idx + 3);
     }
-    Object metric = metrics.isEnabled() ? metrics.requestBegin(conn.metric(), this) : null;
+    Object metric = (METRICS_ENABLED && metrics != null) ? metrics.requestBegin(conn.metric(), this) : null;
     this.response = new Http2ServerResponseImpl(conn, this, metric, false, contentEncoding, host);
   }
 

@@ -36,6 +36,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.Map;
 import java.util.Objects;
@@ -79,7 +80,8 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
     } else {
       creatingContext = null;
     }
-    this.metrics = vertx.metricsSPI().createMetrics(options);
+    VertxMetrics metrics = vertx.metricsSPI();
+    this.metrics = metrics != null ? metrics.createMetrics(options) : null;
   }
 
   /**
@@ -105,7 +107,9 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
         creatingContext.removeCloseHook(closeHook);
       }
       closed = true;
-      metrics.close();
+      if (metrics != null) {
+        metrics.close();
+      }
     }
   }
 
@@ -238,7 +242,9 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
     handler.conn = sock;
     socketMap.put(ch, sock);
     context.executeFromIO(() -> {
-      sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+      if (metrics != null) {
+        sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+      }
       connectHandler.handle(Future.succeededFuture(sock));
     });
   }

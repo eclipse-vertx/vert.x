@@ -21,6 +21,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -438,7 +439,10 @@ public class DeploymentManager {
                 parent.addChild(deployment);
                 deployment.child = true;
               }
-              vertx.metricsSPI().verticleDeployed(verticle);
+              VertxMetrics metrics = vertx.metricsSPI();
+              if (metrics != null) {
+                metrics.verticleDeployed(verticle);
+              }
               deployments.put(deploymentID, deployment);
               if (deployCount.incrementAndGet() == verticles.length) {
                 reportSuccess(deploymentID, callingContext, completionHandler);
@@ -528,7 +532,10 @@ public class DeploymentManager {
             AtomicBoolean failureReported = new AtomicBoolean();
             stopFuture.setHandler(ar -> {
               deployments.remove(deploymentID);
-              vertx.metricsSPI().verticleUndeployed(verticleHolder.verticle);
+              VertxMetrics metrics = vertx.metricsSPI();
+              if (metrics != null) {
+                metrics.verticleUndeployed(verticleHolder.verticle);
+              }
               context.runCloseHooks(ar2 -> {
 
                 if (ar2.failed()) {
