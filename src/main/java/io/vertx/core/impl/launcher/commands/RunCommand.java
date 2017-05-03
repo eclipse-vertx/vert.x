@@ -405,7 +405,7 @@ public class RunCommand extends BareCommand {
   protected JsonObject getConfiguration() {
     JsonObject conf;
     if (config != null) {
-      try (Scanner scanner = new Scanner(new File(config)).useDelimiter("\\A")) {
+      try (Scanner scanner = new Scanner(new File(config), "UTF-8").useDelimiter("\\A")) {
         String sconf = scanner.next();
         try {
           conf = new JsonObject(sconf);
