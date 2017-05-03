@@ -19,6 +19,7 @@ package io.vertx.core.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -50,6 +51,14 @@ public class Json {
 
     prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
     prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    if (cl == null) {
+      cl = Json.class.getClassLoader();
+    }
+    List<Module> modules = ObjectMapper.findModules(cl);
+    mapper.registerModules(modules);
+    prettyMapper.registerModules(modules);
 
     SimpleModule module = new SimpleModule();
     module.addSerializer(JsonObject.class, new JsonObjectSerializer());
