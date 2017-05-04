@@ -203,7 +203,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
-    
+
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, server.options().getMaxWebsocketFrameSize(), server.options().getMaxWebsocketMessageSize());
@@ -301,15 +301,6 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       bytesRead += chunk.length();
     }
     currentRequest.handleData(chunk);
-  }
-
-  private void handleEnd() {
-    currentRequest.handleEnd();
-    if (METRICS_ENABLED) {
-      reportBytesRead(bytesRead);
-    }
-    currentRequest = null;
-    bytesRead = 0;
   }
 
   @Override
@@ -441,6 +432,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
         requestMetric = metrics.requestBegin(metric(), req);
       }
       requestHandler.handle(req);
+    } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
+      handleLastHttpContent();
     } else if (msg instanceof HttpContent) {
       HttpContent content = (HttpContent) msg;
       handleContent(content);
@@ -463,12 +456,21 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     }
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
-      if (!paused) {
-        handleEnd();
-      } else {
-        // Requeue
-        pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+      handleLastHttpContent();
+    }
+  }
+
+  private void handleLastHttpContent() {
+    if (!paused) {
+      currentRequest.handleEnd();
+      if (METRICS_ENABLED) {
+        reportBytesRead(bytesRead);
+        bytesRead = 0;
       }
+      currentRequest = null;
+    } else {
+      // Requeue
+      pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
     }
   }
 
