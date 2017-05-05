@@ -17,23 +17,23 @@
 package io.vertx.core.spi.cluster;
 
 /**
- *
  * An extension of Iterable which allows keeps track of an iterator internally to allow the next element to be chosen
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
- *
  */
-public interface ChoosableIterable<T> extends Iterable<T>{
+// TODO: 17/1/1 by zmyer
+public interface ChoosableIterable<T> extends Iterable<T> {
 
-  /**
-   * Is it empty?
-   */
-  boolean isEmpty();
+    /**
+     * Is it empty?
+     */
+    boolean isEmpty();
 
-  /**
-   * Return the next element T in a round robin fashion. The implementation should internally maintain some state
-   * which allows the next element to be returned
-   * @return The next element
-   */
-  T choose();
+    /**
+     * Return the next element T in a round robin fashion. The implementation should internally maintain some state
+     * which allows the next element to be returned
+     *
+     * @return The next element
+     */
+    T choose();
 }

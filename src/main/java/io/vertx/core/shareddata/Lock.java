@@ -26,11 +26,12 @@ import io.vertx.codegen.annotations.VertxGen;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 @VertxGen
 public interface Lock {
 
-  /**
-   * Release the lock. Once the lock is released another will be able to obtain the lock.
-   */
-  void release();
+    /**
+     * Release the lock. Once the lock is released another will be able to obtain the lock.
+     */
+    void release();
 }

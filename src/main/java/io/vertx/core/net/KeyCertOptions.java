@@ -26,20 +26,21 @@ import javax.net.ssl.KeyManagerFactory;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface KeyCertOptions {
 
-  /**
-   * @return a copy of these options
-   */
-  KeyCertOptions clone();
+    /**
+     * @return a copy of these options
+     */
+    KeyCertOptions clone();
 
-  /**
-   * Create and return the key manager factory for these options.
-   *
-   * @param vertx the vertx instance
-   * @return the key manager factory
-   */
-  default KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
-    return KeyStoreHelper.create((VertxInternal) vertx, this).getKeyMgrFactory((VertxInternal) vertx);
-  }
+    /**
+     * Create and return the key manager factory for these options.
+     *
+     * @param vertx the vertx instance
+     * @return the key manager factory
+     */
+    default KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
+        return KeyStoreHelper.create((VertxInternal) vertx, this).getKeyMgrFactory((VertxInternal) vertx);
+    }
 }

@@ -29,47 +29,48 @@ import io.vertx.core.Handler;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/25 by zmyer
 @VertxGen(concrete = false)
 public interface ReadStream<T> extends StreamBase {
 
-  /**
-   * Set an exception handler on the read stream.
-   *
-   * @param handler  the exception handler
-   * @return a reference to this, so the API can be used fluently
-   */
-  ReadStream<T> exceptionHandler(Handler<Throwable> handler);
+    /**
+     * Set an exception handler on the read stream.
+     *
+     * @param handler the exception handler
+     * @return a reference to this, so the API can be used fluently
+     */
+    ReadStream<T> exceptionHandler(Handler<Throwable> handler);
 
-  /**
-   * Set a data handler. As data is read, the handler will be called with the data.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  ReadStream<T> handler(@Nullable Handler<T> handler);
+    /**
+     * Set a data handler. As data is read, the handler will be called with the data.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    ReadStream<T> handler(@Nullable Handler<T> handler);
 
-  /**
-   * Pause the {@code ReadSupport}. While it's paused, no data will be sent to the {@code dataHandler}
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  ReadStream<T> pause();
+    /**
+     * Pause the {@code ReadSupport}. While it's paused, no data will be sent to the {@code dataHandler}
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    ReadStream<T> pause();
 
-  /**
-   * Resume reading. If the {@code ReadSupport} has been paused, reading will recommence on it.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  ReadStream<T> resume();
+    /**
+     * Resume reading. If the {@code ReadSupport} has been paused, reading will recommence on it.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    ReadStream<T> resume();
 
-  /**
-   * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  ReadStream<T> endHandler(@Nullable Handler<Void> endHandler);
+    /**
+     * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    ReadStream<T> endHandler(@Nullable Handler<Void> endHandler);
 
 }

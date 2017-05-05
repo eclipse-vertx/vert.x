@@ -28,36 +28,37 @@ import io.vertx.core.WorkerExecutor;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/29 by zmyer
 public interface ContextInternal extends Context {
 
-  /**
-   * Return the Netty EventLoop used by this Context. This can be used to integrate
-   * a Netty Server with a Vert.x runtime, specially the Context part.
-   *
-   * @return the EventLoop
-   */
-  EventLoop nettyEventLoop();
+    /**
+     * Return the Netty EventLoop used by this Context. This can be used to integrate
+     * a Netty Server with a Vert.x runtime, specially the Context part.
+     *
+     * @return the EventLoop
+     */
+    EventLoop nettyEventLoop();
 
-  /**
-   * Create a worker executor using the underlying worker pool of the context.
-   *
-   * The executor does not have to be closed, as the worker pool is managed by the context itself.
-   *
-   * It should be used when a separate executor per context is needed.
-   *
-   * @return a new worker executor
-   */
-  WorkerExecutor createWorkerExecutor();
+    /**
+     * Create a worker executor using the underlying worker pool of the context.
+     * <p>
+     * The executor does not have to be closed, as the worker pool is managed by the context itself.
+     * <p>
+     * It should be used when a separate executor per context is needed.
+     *
+     * @return a new worker executor
+     */
+    WorkerExecutor createWorkerExecutor();
 
-  /**
-   * Execute the context task and switch on this context if necessary, this also associates the
-   * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
-   *
-   * The caller thread should be the the event loop thread of this context.<p/>
-   *
-   * Any exception thrown from the {@literal stack} will be reported on this context.
-   *
-   * @param task the task to execute
-   */
-  void executeFromIO(ContextTask task);
+    /**
+     * Execute the context task and switch on this context if necessary, this also associates the
+     * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
+     * <p>
+     * The caller thread should be the the event loop thread of this context.<p/>
+     * <p>
+     * Any exception thrown from the {@literal stack} will be reported on this context.
+     *
+     * @param task the task to execute
+     */
+    void executeFromIO(ContextTask task);
 }

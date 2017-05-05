@@ -22,31 +22,32 @@ import io.vertx.core.eventbus.MessageCodec;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/25 by zmyer
 public class FloatMessageCodec implements MessageCodec<Float, Float> {
 
-  @Override
-  public void encodeToWire(Buffer buffer, Float f) {
-    buffer.appendFloat(f);
-  }
+    @Override
+    public void encodeToWire(Buffer buffer, Float f) {
+        buffer.appendFloat(f);
+    }
 
-  @Override
-  public Float decodeFromWire(int pos, Buffer buffer) {
-    return buffer.getFloat(pos);
-  }
+    @Override
+    public Float decodeFromWire(int pos, Buffer buffer) {
+        return buffer.getFloat(pos);
+    }
 
-  @Override
-  public Float transform(Float f) {
-    // Floats are immutable so just return it
-    return f;
-  }
+    @Override
+    public Float transform(Float f) {
+        // Floats are immutable so just return it
+        return f;
+    }
 
-  @Override
-  public String name() {
-    return "float";
-  }
+    @Override
+    public String name() {
+        return "float";
+    }
 
-  @Override
-  public byte systemCodecID() {
-    return 7;
-  }
+    @Override
+    public byte systemCodecID() {
+        return 7;
+    }
 }

@@ -23,27 +23,28 @@ import java.util.stream.Collectors;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/18 by zmyer
 public class MissingOptionException extends CLIException {
-  private final Collection<Option> expected;
+    private final Collection<Option> expected;
 
-  /**
-   * Creates a new instance of {@link MissingOptionException}.
-   *
-   * @param expected the list of expected options (missing options)
-   */
-  public MissingOptionException(Collection<Option> expected) {
-    super("The option"
-        + (expected.size() > 1 ? "s " : " ")
-        + expected.stream().map(Option::getName).collect(Collectors.toList())
-        + (expected.size() > 1 ? " are" : " is")
-        + " required");
-    this.expected = expected;
-  }
+    /**
+     * Creates a new instance of {@link MissingOptionException}.
+     *
+     * @param expected the list of expected options (missing options)
+     */
+    public MissingOptionException(Collection<Option> expected) {
+        super("The option"
+                + (expected.size() > 1 ? "s " : " ")
+                + expected.stream().map(Option::getName).collect(Collectors.toList())
+                + (expected.size() > 1 ? " are" : " is")
+                + " required");
+        this.expected = expected;
+    }
 
-  /**
-   * @return the missing (mandatory) options.
-   */
-  public Collection<Option> getExpected() {
-    return expected;
-  }
+    /**
+     * @return the missing (mandatory) options.
+     */
+    public Collection<Option> getExpected() {
+        return expected;
+    }
 }

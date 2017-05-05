@@ -16,10 +16,6 @@
 
 package io.vertx.core.net.impl;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -45,219 +41,272 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
- *
  * This class is thread-safe
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class NetClientImpl implements NetClient, MetricsProvider {
 
-  private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
+    //vertx节点对象
+    private final VertxInternal vertx;
+    //客户端配置项
+    private final NetClientOptions options;
+    //SSL
+    private final SSLHelper sslHelper;
+    //socket映射表
+    private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
+    //关闭hook
+    private final Closeable closeHook;
+    //执行上下文对象
+    private final ContextImpl creatingContext;
+    //
+    private final TCPMetrics metrics;
+    //日志开关
+    private final boolean logEnabled;
+    private volatile boolean closed;
 
-  private final VertxInternal vertx;
-  private final NetClientOptions options;
-  private final SSLHelper sslHelper;
-  private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
-  private final Closeable closeHook;
-  private final ContextImpl creatingContext;
-  private final TCPMetrics metrics;
-  private final boolean logEnabled;
-  private volatile boolean closed;
-
-  public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
-    this(vertx, options, true);
-  }
-
-  public NetClientImpl(VertxInternal vertx, NetClientOptions options, boolean useCreatingContext) {
-    this.vertx = vertx;
-    this.options = new NetClientOptions(options);
-    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
-    this.logEnabled = options.getLogActivity();
-    this.closeHook = completionHandler -> {
-      NetClientImpl.this.close();
-      completionHandler.handle(Future.succeededFuture());
-    };
-    if (useCreatingContext) {
-      creatingContext = vertx.getContext();
-      if (creatingContext != null) {
-        if (creatingContext.isMultiThreadedWorkerContext()) {
-          throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
-        }
-        creatingContext.addCloseHook(closeHook);
-      }
-    } else {
-      creatingContext = null;
-    }
-    this.metrics = vertx.metricsSPI().createMetrics(this, options);
-  }
-
-  public synchronized NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler) {
-    checkClosed();
-    connect(port, host, connectHandler, options.getReconnectAttempts());
-    return this;
-  }
-
-  @Override
-  public void close() {
-    if (!closed) {
-      for (NetSocket sock : socketMap.values()) {
-        sock.close();
-      }
-      if (creatingContext != null) {
-        creatingContext.removeCloseHook(closeHook);
-      }
-      closed = true;
-      metrics.close();
-    }
-  }
-
-  @Override
-  public boolean isMetricsEnabled() {
-    return metrics != null && metrics.isEnabled();
-  }
-
-  @Override
-  public Metrics getMetrics() {
-    return metrics;
-  }
-
-  private void checkClosed() {
-    if (closed) {
-      throw new IllegalStateException("Client is closed");
-    }
-  }
-
-  private void applyConnectionOptions(Bootstrap bootstrap) {
-    bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-    if (options.getSendBufferSize() != -1) {
-      bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-    }
-    if (options.getReceiveBufferSize() != -1) {
-      bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-      bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-    }
-    if (options.getSoLinger() != -1) {
-      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-    }
-    if (options.getTrafficClass() != -1) {
-      bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
-    }
-    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-    bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-  }
-
-  private void connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler,
-      int remainingAttempts) {
-    Objects.requireNonNull(host, "No null host accepted");
-    Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
-    ContextImpl context = vertx.getOrCreateContext();
-    sslHelper.validate(vertx);
-    Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.nettyEventLoop());
-    bootstrap.channel(NioSocketChannel.class);
-
-    applyConnectionOptions(bootstrap);
-
-    ChannelProvider channelProvider;
-    if (options.getProxyOptions() == null) {
-      channelProvider = ChannelProvider.INSTANCE;
-    } else {
-      channelProvider = ProxyChannelProvider.INSTANCE;
+    public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
+        this(vertx, options, true);
     }
 
-    Handler<Channel> channelInitializer = ch -> {
-
-      if (sslHelper.isSSL()) {
-        SslHandler sslHandler = sslHelper.createSslHandler(vertx, host, port);
-        ch.pipeline().addLast("ssl", sslHandler);
-      }
-
-      ChannelPipeline pipeline = ch.pipeline();
-      if (logEnabled) {
-        pipeline.addLast("logging", new LoggingHandler());
-      }
-      if (sslHelper.isSSL()) {
-        // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
-        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-      }
-      if (options.getIdleTimeout() > 0) {
-        pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-      }
-      pipeline.addLast("handler", new VertxNetHandler(ch, socketMap));
-    };
-
-    Handler<AsyncResult<Channel>> channelHandler = res -> {
-      if (res.succeeded()) {
-
-        Channel ch = res.result();
-
-        if (sslHelper.isSSL()) {
-          // TCP connected, so now we must do the SSL handshake
-          SslHandler sslHandler = (SslHandler) ch.pipeline().get("ssl");
-
-          io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-          fut.addListener(future2 -> {
-            if (future2.isSuccess()) {
-              connected(context, ch, connectHandler, host, port);
-            } else {
-              failed(context, ch, future2.cause(), connectHandler);
+    // TODO: 17/1/1 by zmyer
+    public NetClientImpl(VertxInternal vertx, NetClientOptions options, boolean useCreatingContext) {
+        this.vertx = vertx;
+        this.options = new NetClientOptions(options);
+        this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
+        this.logEnabled = options.getLogActivity();
+        //创建关闭hook
+        this.closeHook = completionHandler -> {
+            NetClientImpl.this.close();
+            completionHandler.handle(Future.succeededFuture());
+        };
+        if (useCreatingContext) {
+            //从vertx对象中读取执行上下文对象
+            creatingContext = vertx.getContext();
+            if (creatingContext != null) {
+                if (creatingContext.isMultiThreadedWorkerContext()) {
+                    throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
+                }
+                //将关闭hook注册到执行上下文对象
+                creatingContext.addCloseHook(closeHook);
             }
-          });
         } else {
-          connected(context, ch, connectHandler, host, port);
+            creatingContext = null;
         }
-
-      } else {
-        if (remainingAttempts > 0 || remainingAttempts == -1) {
-          context.executeFromIO(() -> {
-            log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
-            //Set a timer to retry connection
-            vertx.setTimer(options.getReconnectInterval(), tid ->
-                connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
-            );
-          });
-        } else {
-          failed(context, null, res.cause(), connectHandler);
-        }
-      }
-    };
-
-    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelInitializer, channelHandler);
-  }
-
-  private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, String host, int port) {
-    // Need to set context before constructor is called as writehandler registration needs this
-    ContextImpl.setContext(context);
-    NetSocketImpl sock = new NetSocketImpl(vertx, ch, host, port, context, sslHelper, metrics, null);
-    VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
-    handler.conn = sock;
-    socketMap.put(ch, sock);
-    context.executeFromIO(() -> {
-      sock.setMetric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
-      connectHandler.handle(Future.succeededFuture(sock));
-    });
-  }
-
-  private void failed(ContextImpl context, Channel ch, Throwable th, Handler<AsyncResult<NetSocket>> connectHandler) {
-    if (ch != null) {
-      ch.close();
+        this.metrics = vertx.metricsSPI().createMetrics(this, options);
     }
-    context.executeFromIO(() -> doFailed(connectHandler, th));
-  }
 
-  private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable th) {
-    connectHandler.handle(Future.failedFuture(th));
-  }
+    // TODO: 17/1/1 by zmyer
+    public synchronized NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler) {
+        //检查通道是否关闭
+        checkClosed();
+        //开始连接服务器
+        connect(port, host, connectHandler, options.getReconnectAttempts());
+        return this;
+    }
 
-  @Override
-  protected void finalize() throws Throwable {
-    // Make sure this gets cleaned up if there are no more references to it
-    // so as not to leave connections and resources dangling until the system is shutdown
-    // which could make the JVM run out of file handles.
-    close();
-    super.finalize();
-  }
+    // TODO: 17/1/1 by zmyer
+    @Override
+    public void close() {
+        if (!closed) {
+            for (NetSocket sock : socketMap.values()) {
+                //关闭每个sockekt对象
+                sock.close();
+            }
+            if (creatingContext != null) {
+                //删除执行上下文对象中的关闭hook
+                creatingContext.removeCloseHook(closeHook);
+            }
+            //标记关闭
+            closed = true;
+            metrics.close();
+        }
+    }
+
+    @Override
+    public boolean isMetricsEnabled() {
+        return metrics != null && metrics.isEnabled();
+    }
+
+    @Override
+    public Metrics getMetrics() {
+        return metrics;
+    }
+
+    private void checkClosed() {
+        if (closed) {
+            throw new IllegalStateException("Client is closed");
+        }
+    }
+
+    // TODO: 17/1/1 by zmyer
+    private void applyConnectionOptions(Bootstrap bootstrap) {
+        bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
+        if (options.getSendBufferSize() != -1) {
+            bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+        }
+        if (options.getReceiveBufferSize() != -1) {
+            bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+            bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+        }
+        if (options.getSoLinger() != -1) {
+            bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+        }
+        if (options.getTrafficClass() != -1) {
+            bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
+        }
+        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
+        bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+        bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+    }
+
+    // TODO: 17/1/1 by zmyer
+    private void connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler,
+                         int remainingAttempts) {
+        Objects.requireNonNull(host, "No null host accepted");
+        Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
+        ContextImpl context = vertx.getOrCreateContext();
+        sslHelper.validate(vertx);
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(context.nettyEventLoop());
+        bootstrap.channel(NioSocketChannel.class);
+
+        applyConnectionOptions(bootstrap);
+
+        //通道提供者对象
+        ChannelProvider channelProvider;
+        if (options.getProxyOptions() == null) {
+            //设置通道提供者对象
+            channelProvider = ChannelProvider.INSTANCE;
+        } else {
+            channelProvider = ProxyChannelProvider.INSTANCE;
+        }
+
+        Handler<Channel> channelInitializer = ch -> {
+
+            //如果SSL开关打开
+            if (sslHelper.isSSL()) {
+                //创建SSL事件处理器
+                SslHandler sslHandler = sslHelper.createSslHandler(vertx, host, port);
+                //注册到通道管道事件处理列表中
+                ch.pipeline().addLast("ssl", sslHandler);
+            }
+
+            ChannelPipeline pipeline = ch.pipeline();
+            if (logEnabled) {
+                //注册日志处理器
+                pipeline.addLast("logging", new LoggingHandler());
+            }
+            if (sslHelper.isSSL()) {
+                // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
+                pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+            }
+            if (options.getIdleTimeout() > 0) {
+                //设置空闲状态事件处理器
+                pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+            }
+            //设置事件处理器对象
+            pipeline.addLast("handler", new VertxNetHandler(ch, socketMap));
+        };
+
+        Handler<AsyncResult<Channel>> channelHandler = res -> {
+            if (res.succeeded()) {
+                //从结果中读取通道对象
+                Channel ch = res.result();
+                //SSL开关打开
+                if (sslHelper.isSSL()) {
+                    // TCP connected, so now we must do the SSL handshake
+                    //读取SSL事件处理器
+                    SslHandler sslHandler = (SslHandler) ch.pipeline().get("ssl");
+                    //从事件处理器中读取通道异步对象
+                    io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
+                    //在通道异步对象中添加监听器
+                    fut.addListener(future2 -> {
+                        if (future2.isSuccess()) {
+                            //SSL握手成功,连接成功
+                            connected(context, ch, connectHandler, host, port);
+                        } else {
+                            //SSL握手失败,连接失败
+                            failed(context, ch, future2.cause(), connectHandler);
+                        }
+                    });
+                } else {
+                    //连接成功
+                    connected(context, ch, connectHandler, host, port);
+                }
+
+            } else {
+                if (remainingAttempts > 0 || remainingAttempts == -1) {
+                    //重连开始
+                    context.executeFromIO(() -> {
+                        log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
+                        //Set a timer to retry connection
+                        //开始设置定时器,实现重连
+                        vertx.setTimer(options.getReconnectInterval(), tid ->
+                                connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+                        );
+                    });
+                } else {
+                    //重连失败
+                    failed(context, null, res.cause(), connectHandler);
+                }
+            }
+        };
+
+        //开始进行连接
+        channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelInitializer, channelHandler);
+    }
+
+    // TODO: 17/1/1 by zmyer
+    private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, String host, int port) {
+        // Need to set context before constructor is called as writehandler registration needs this
+        //设置执行上下文对象
+        ContextImpl.setContext(context);
+        //创建socket对象
+        NetSocketImpl sock = new NetSocketImpl(vertx, ch, host, port, context, sslHelper, metrics, null);
+        //从通道事件处理管道中读取Vertx事件处理对象
+        VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
+        //注册socket对象
+        handler.conn = sock;
+        //将socket和通道对象注册到socket映射表中
+        socketMap.put(ch, sock);
+        context.executeFromIO(() -> {
+            //设置统计对象
+            sock.setMetric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+            //连接成功之后,执行后续处理
+            connectHandler.handle(Future.succeededFuture(sock));
+        });
+    }
+
+    // TODO: 17/1/1 by zmyer
+    private void failed(ContextImpl context, Channel ch, Throwable th, Handler<AsyncResult<NetSocket>> connectHandler) {
+        if (ch != null) {
+            ch.close();
+        }
+        //开始执行连接失败流程
+        context.executeFromIO(() -> doFailed(connectHandler, th));
+    }
+
+    //连接失败处理
+    private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable th) {
+        connectHandler.handle(Future.failedFuture(th));
+    }
+
+    // TODO: 17/1/1 by zmyer
+    @Override
+    protected void finalize() throws Throwable {
+        // Make sure this gets cleaned up if there are no more references to it
+        // so as not to leave connections and resources dangling until the system is shutdown
+        // which could make the JVM run out of file handles.
+        close();
+        super.finalize();
+    }
 }
 

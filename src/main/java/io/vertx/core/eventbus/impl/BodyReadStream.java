@@ -26,45 +26,52 @@ import io.vertx.core.streams.ReadStream;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/25 by zmyer
 public class BodyReadStream<T> implements ReadStream<T> {
+    //读取流对象代理
+    private ReadStream<Message<T>> delegate;
 
-  private ReadStream<Message<T>> delegate;
-
-  public BodyReadStream(ReadStream<Message<T>> delegate) {
-    this.delegate = delegate;
-  }
-
-  @Override
-  public ReadStream<T> exceptionHandler(Handler<Throwable> handler) {
-    delegate.exceptionHandler(handler);
-    return null;
-  }
-
-  @Override
-  public ReadStream<T> handler(Handler<T> handler) {
-    if (handler != null) {
-      delegate.handler(message -> handler.handle(message.body()));
-    } else {
-      delegate.handler(null);
+    public BodyReadStream(ReadStream<Message<T>> delegate) {
+        this.delegate = delegate;
     }
-    return this;
-  }
 
-  @Override
-  public ReadStream<T> pause() {
-    delegate.pause();
-    return this;
-  }
+    @Override
+    public ReadStream<T> exceptionHandler(Handler<Throwable> handler) {
+        delegate.exceptionHandler(handler);
+        return null;
+    }
 
-  @Override
-  public ReadStream<T> resume() {
-    delegate.resume();
-    return this;
-  }
+    // TODO: 16/12/25 by zmyer
+    @Override
+    public ReadStream<T> handler(Handler<T> handler) {
+        if (handler != null) {
+            //开始处理消息
+            delegate.handler(message -> handler.handle(message.body()));
+        } else {
+            delegate.handler(null);
+        }
+        //链式调用
+        return this;
+    }
 
-  @Override
-  public ReadStream<T> endHandler(Handler<Void> endHandler) {
-    delegate.endHandler(endHandler);
-    return this;
-  }
+    // TODO: 16/12/25 by zmyer
+    @Override
+    public ReadStream<T> pause() {
+        delegate.pause();
+        return this;
+    }
+
+    // TODO: 16/12/25 by zmyer
+    @Override
+    public ReadStream<T> resume() {
+        delegate.resume();
+        return this;
+    }
+
+    // TODO: 16/12/25 by zmyer
+    @Override
+    public ReadStream<T> endHandler(Handler<Void> endHandler) {
+        delegate.endHandler(endHandler);
+        return this;
+    }
 }

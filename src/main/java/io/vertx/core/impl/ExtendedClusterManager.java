@@ -23,7 +23,8 @@ import io.vertx.core.spi.cluster.ClusterManager;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/16 by zmyer
 public interface ExtendedClusterManager extends ClusterManager {
 
-  void beforeLeave();
+    void beforeLeave();
 }

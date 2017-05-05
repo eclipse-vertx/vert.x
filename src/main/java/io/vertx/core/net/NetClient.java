@@ -16,10 +16,10 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.metrics.Measured;
 
 /**
@@ -32,28 +32,29 @@ import io.vertx.core.metrics.Measured;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/24 by zmyer
 @VertxGen
 public interface NetClient extends Measured {
 
-  /**
-   * Open a connection to a server at the specific {@code port} and {@code host}.
-   * <p>
-   * {@code host} can be a valid host name or IP address. The connect is done asynchronously and on success, a
-   * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
-   *
-   * @param port  the port
-   * @param host  the host
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler);
+    /**
+     * Open a connection to a server at the specific {@code port} and {@code host}.
+     * <p>
+     * {@code host} can be a valid host name or IP address. The connect is done asynchronously and on success, a
+     * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
+     *
+     * @param port the port
+     * @param host the host
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler);
 
-  /**
-   * Close the client.
-   * <p>
-   * Any sockets which have not been closed manually will be closed here. The close is asynchronous and may not
-   * complete until some time after the method has returned.
-   */
-  void close();
+    /**
+     * Close the client.
+     * <p>
+     * Any sockets which have not been closed manually will be closed here. The close is asynchronous and may not
+     * complete until some time after the method has returned.
+     */
+    void close();
 
 }

@@ -15,27 +15,26 @@
  */
 package io.vertx.core.spi;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 
 /**
  * Factory for creating Vertx instances.<p>
  * Use this to create Vertx instances when embedding Vert.x core directly.<p>
  *
  * @author pidster
- *
  */
+// TODO: 16/12/14  by zmyer
+
 public interface VertxFactory {
+    //创建vertx节点
+    Vertx vertx();
 
-  Vertx vertx();
+    //创建vertx节点
+    Vertx vertx(VertxOptions options);
 
-  Vertx vertx(VertxOptions options);
+    //创建集群模式的vertx节点
+    void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
 
-  void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
-
-  Context context();
+    Context context();
 
 }

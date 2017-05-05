@@ -19,8 +19,9 @@ package io.vertx.core.impl;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/29 by zmyer
 @FunctionalInterface
 public interface ContextTask {
 
-  public void run() throws Exception;
+    public void run() throws Exception;
 }

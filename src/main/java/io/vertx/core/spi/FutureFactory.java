@@ -21,15 +21,16 @@ import io.vertx.core.Future;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface FutureFactory {
 
-  <T> Future<T> future();
+    <T> Future<T> future();
 
-  <T> Future<T> succeededFuture();
+    <T> Future<T> succeededFuture();
 
-  <T> Future<T> succeededFuture(T result);
+    <T> Future<T> succeededFuture(T result);
 
-  <T> Future<T> failedFuture(Throwable t);
+    <T> Future<T> failedFuture(Throwable t);
 
-  <T> Future<T> failureFuture(String failureMessage);
+    <T> Future<T> failureFuture(String failureMessage);
 }

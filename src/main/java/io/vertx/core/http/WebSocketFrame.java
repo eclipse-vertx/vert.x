@@ -37,74 +37,75 @@ import io.vertx.core.spi.WebSocketFrameFactory;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
+// TODO: 16/12/27 by zmyer
 @VertxGen
 public interface WebSocketFrame {
 
-  /**
-   * Create a binary WebSocket frame.
-   *
-   * @param data  the data for the frame
-   * @param isFinal  true if it's the final frame in the WebSocket message
-   * @return the frame
-   */
-  static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
-    return factory.binaryFrame(data, isFinal);
-  }
+    /**
+     * Create a binary WebSocket frame.
+     *
+     * @param data    the data for the frame
+     * @param isFinal true if it's the final frame in the WebSocket message
+     * @return the frame
+     */
+    static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
+        return factory.binaryFrame(data, isFinal);
+    }
 
-  /**
-   * Create a text WebSocket frame.
-   *
-   * @param str  the string for the frame
-   * @param isFinal  true if it's the final frame in the WebSocket message
-   * @return the frame
-   */
-  static WebSocketFrame textFrame(String str, boolean isFinal) {
-    return factory.textFrame(str, isFinal);
-  }
+    /**
+     * Create a text WebSocket frame.
+     *
+     * @param str     the string for the frame
+     * @param isFinal true if it's the final frame in the WebSocket message
+     * @return the frame
+     */
+    static WebSocketFrame textFrame(String str, boolean isFinal) {
+        return factory.textFrame(str, isFinal);
+    }
 
-  /**
-   * Create a continuation frame
-   *
-   * @param data  the data for the frame
-   * @param isFinal true if it's the final frame in the WebSocket message
-   * @return the frame
-   */
-  static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
-    return factory.continuationFrame(data, isFinal);
-  }
+    /**
+     * Create a continuation frame
+     *
+     * @param data    the data for the frame
+     * @param isFinal true if it's the final frame in the WebSocket message
+     * @return the frame
+     */
+    static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
+        return factory.continuationFrame(data, isFinal);
+    }
 
-  /**
-   * @return true if it's a text frame
-   */
-  boolean isText();
+    /**
+     * @return true if it's a text frame
+     */
+    boolean isText();
 
-  /**
-   * @return true if it's a binary frame
-   */
-  boolean isBinary();
+    /**
+     * @return true if it's a binary frame
+     */
+    boolean isBinary();
 
-  /**
-   * @return true if it's a continuation frame
-   */
-  boolean isContinuation();
+    /**
+     * @return true if it's a continuation frame
+     */
+    boolean isContinuation();
 
-  /**
-   * @return the content of this frame as a UTF-8 string and returns the
-   * converted string. Only use this for text frames.
-   */
-  @CacheReturn
-  String textData();
+    /**
+     * @return the content of this frame as a UTF-8 string and returns the
+     * converted string. Only use this for text frames.
+     */
+    @CacheReturn
+    String textData();
 
-  /**
-   * @return the data of the frame
-   */
-  @CacheReturn
-  Buffer binaryData();
+    /**
+     * @return the data of the frame
+     */
+    @CacheReturn
+    Buffer binaryData();
 
-  /**
-   * @return true if this is the final frame.
-   */
-  boolean isFinal();
+    /**
+     * @return true if this is the final frame.
+     */
+    boolean isFinal();
 
-  WebSocketFrameFactory factory = ServiceHelper.loadFactory(WebSocketFrameFactory.class);
+    WebSocketFrameFactory factory = ServiceHelper.loadFactory(WebSocketFrameFactory.class);
 }

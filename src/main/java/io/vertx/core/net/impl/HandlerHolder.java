@@ -21,32 +21,36 @@ import io.vertx.core.impl.ContextImpl;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class HandlerHolder<T> {
-  public final ContextImpl context;
-  public final T handler;
+    //执行上下文对象
+    public final ContextImpl context;
+    //事件句柄对象
+    public final T handler;
 
-  public HandlerHolder(ContextImpl context, T handler) {
-    this.context = context;
-    this.handler = handler;
-  }
+    // TODO: 17/1/1 by zmyer
+    public HandlerHolder(ContextImpl context, T handler) {
+        this.context = context;
+        this.handler = handler;
+    }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-    HandlerHolder that = (HandlerHolder) o;
+        HandlerHolder that = (HandlerHolder) o;
 
-    if (context != that.context) return false;
-    if (handler != null ? !handler.equals(that.handler) : that.handler != null) return false;
+        if (context != that.context) return false;
+        if (handler != null ? !handler.equals(that.handler) : that.handler != null) return false;
 
-    return true;
-  }
+        return true;
+    }
 
-  @Override
-  public int hashCode() {
-    int result = context.hashCode();
-    result = 31 * result + handler.hashCode();
-    return result;
-  }
+    @Override
+    public int hashCode() {
+        int result = context.hashCode();
+        result = 31 * result + handler.hashCode();
+        return result;
+    }
 }

@@ -23,17 +23,18 @@ import io.vertx.core.VertxException;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 public class FileSystemException extends VertxException {
 
-  public FileSystemException(String message) {
-    super(message);
-  }
+    public FileSystemException(String message) {
+        super(message);
+    }
 
-  public FileSystemException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    public FileSystemException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-  public FileSystemException(Throwable cause) {
-    super(cause);
-  }
+    public FileSystemException(Throwable cause) {
+        super(cause);
+    }
 }

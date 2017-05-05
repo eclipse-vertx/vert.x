@@ -31,22 +31,23 @@ import io.vertx.core.streams.ReadStream;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/27 by zmyer
 @VertxGen
 public interface WebSocketStream extends ReadStream<WebSocket> {
 
-  @Override
-  WebSocketStream exceptionHandler(Handler<Throwable> handler);
+    @Override
+    WebSocketStream exceptionHandler(Handler<Throwable> handler);
 
-  @Override
-  WebSocketStream handler(Handler<WebSocket> handler);
+    @Override
+    WebSocketStream handler(Handler<WebSocket> handler);
 
-  @Override
-  WebSocketStream pause();
+    @Override
+    WebSocketStream pause();
 
-  @Override
-  WebSocketStream resume();
+    @Override
+    WebSocketStream resume();
 
-  @Override
-  WebSocketStream endHandler(Handler<Void> endHandler);
+    @Override
+    WebSocketStream endHandler(Handler<Void> endHandler);
 
 }

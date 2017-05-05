@@ -26,26 +26,33 @@ import java.net.InetSocketAddress;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+// TODO: 16/12/18 by zmyer
 final class DatagramPacketImpl implements DatagramPacket {
-  private final InetSocketAddress sender;
-  private final Buffer buffer;
-  private SocketAddress senderAddress;
+    //数据包发送者地址
+    private final InetSocketAddress sender;
+    //缓冲区对象
+    private final Buffer buffer;
+    //发送者socket地址
+    private SocketAddress senderAddress;
 
-  DatagramPacketImpl(InetSocketAddress sender, Buffer buffer) {
-    this.sender = sender;
-    this.buffer = buffer;
-  }
-
-  @Override
-  public SocketAddress sender() {
-    if (senderAddress == null) {
-      senderAddress = new SocketAddressImpl(sender.getPort(), sender.getAddress().getHostAddress());
+    // TODO: 16/12/18 by zmyer
+    DatagramPacketImpl(InetSocketAddress sender, Buffer buffer) {
+        this.sender = sender;
+        this.buffer = buffer;
     }
-    return senderAddress;
-  }
 
-  @Override
-  public Buffer data() {
-    return buffer;
-  }
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public SocketAddress sender() {
+        if (senderAddress == null) {
+            //如果发送者地址为空,则需要重新创建
+            senderAddress = new SocketAddressImpl(sender.getPort(), sender.getAddress().getHostAddress());
+        }
+        return senderAddress;
+    }
+
+    @Override
+    public Buffer data() {
+        return buffer;
+    }
 }

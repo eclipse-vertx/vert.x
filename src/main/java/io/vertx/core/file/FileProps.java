@@ -24,47 +24,48 @@ import io.vertx.codegen.annotations.VertxGen;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 @VertxGen
 public interface FileProps {
 
-  /**
-   * The date the file was created
-   */
-  long creationTime();
+    /**
+     * The date the file was created
+     */
+    long creationTime();
 
-  /**
-   * The date the file was last accessed
-   */
-  long lastAccessTime();
+    /**
+     * The date the file was last accessed
+     */
+    long lastAccessTime();
 
-  /**
-   * The date the file was last modified
-   */
-  long lastModifiedTime();
+    /**
+     * The date the file was last modified
+     */
+    long lastModifiedTime();
 
-  /**
-   * Is the file a directory?
-   */
-  boolean isDirectory();
+    /**
+     * Is the file a directory?
+     */
+    boolean isDirectory();
 
-  /**
-   * Is the file some other type? (I.e. not a directory, regular file or symbolic link)
-   */
-  boolean isOther();
+    /**
+     * Is the file some other type? (I.e. not a directory, regular file or symbolic link)
+     */
+    boolean isOther();
 
-  /**
-   * Is the file a regular file?
-   */
-  boolean isRegularFile();
+    /**
+     * Is the file a regular file?
+     */
+    boolean isRegularFile();
 
-  /**
-   * Is the file a symbolic link?
-   */
-  boolean isSymbolicLink();
+    /**
+     * Is the file a symbolic link?
+     */
+    boolean isSymbolicLink();
 
-  /**
-   * The size of the file, in bytes
-   */
-  long size();
+    /**
+     * The size of the file, in bytes
+     */
+    long size();
 
 }

@@ -22,29 +22,30 @@ package io.vertx.core.cli.converters;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/17 by zmyer
 public final class CharacterConverter implements Converter<Character> {
 
-  /**
-   * The converter.
-   */
-  public static final CharacterConverter INSTANCE = new CharacterConverter();
+    /**
+     * The converter.
+     */
+    //单例对象
+    public static final CharacterConverter INSTANCE = new CharacterConverter();
 
-  private CharacterConverter() {
-    // No direct instantiation
-  }
-
-  @Override
-  public Character fromString(String input) throws IllegalArgumentException {
-    if (input == null) {
-      throw new NullPointerException("input must not be null");
+    private CharacterConverter() {
+        // No direct instantiation
     }
 
-    if (input.length() != 1) {
-      throw new IllegalArgumentException("The input string \"" + input + "\" cannot be converted to a " +
-          "character. The input's length must be 1");
+    @Override
+    public Character fromString(String input) throws IllegalArgumentException {
+        if (input == null) {
+            throw new NullPointerException("input must not be null");
+        }
+
+        if (input.length() != 1) {
+            throw new IllegalArgumentException("The input string \"" + input + "\" cannot be converted to a " +
+                    "character. The input's length must be 1");
+        }
+
+        return input.toCharArray()[0];
     }
-
-    return input.toCharArray()[0];
-
-  }
 }

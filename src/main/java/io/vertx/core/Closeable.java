@@ -19,7 +19,8 @@ package io.vertx.core;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/28 by zmyer
 public interface Closeable {
 
-  void close(Handler<AsyncResult<Void>> completionHandler);
+    void close(Handler<AsyncResult<Void>> completionHandler);
 }

@@ -19,12 +19,13 @@ package io.vertx.core.json;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class EncodeException extends RuntimeException {
 
-  public EncodeException(String message) {
-    super(message);
-  }
+    public EncodeException(String message) {
+        super(message);
+    }
 
-  public EncodeException() {
-  }
+    public EncodeException() {
+    }
 }

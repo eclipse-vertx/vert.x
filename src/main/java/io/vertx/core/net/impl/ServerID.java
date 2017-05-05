@@ -21,40 +21,42 @@ import java.io.Serializable;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/25 by zmyer
 public class ServerID implements Serializable {
+    //端口号
+    public int port;
+    //主机地址
+    public String host;
 
-  public int port;
-  public String host;
+    public ServerID(int port, String host) {
+        this.port = port;
+        this.host = host;
+    }
 
-  public ServerID(int port, String host) {
-    this.port = port;
-    this.host = host;
-  }
+    public ServerID() {
+    }
 
-  public ServerID() {
-  }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof ServerID)) return false;
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || !(o instanceof ServerID)) return false;
+        ServerID serverID = (ServerID) o;
 
-    ServerID serverID = (ServerID) o;
+        if (port != serverID.port) return false;
+        if (!host.equals(serverID.host)) return false;
 
-    if (port != serverID.port) return false;
-    if (!host.equals(serverID.host)) return false;
+        return true;
+    }
 
-    return true;
-  }
+    @Override
+    public int hashCode() {
+        int result = port;
+        result = 31 * result + host.hashCode();
+        return result;
+    }
 
-  @Override
-  public int hashCode() {
-    int result = port;
-    result = 31 * result + host.hashCode();
-    return result;
-  }
-
-  public String toString() {
-    return host + ":" + port;
-  }
+    public String toString() {
+        return host + ":" + port;
+    }
 }

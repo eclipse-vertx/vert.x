@@ -19,14 +19,16 @@ package io.vertx.core.http.impl;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+
 /**
  * List of all frame types.
  */
+// TODO: 16/12/27 by zmyer
 public enum FrameType {
-  CONTINUATION,
-  TEXT,
-  BINARY,
-  CLOSE,
-  PING,
-  PONG,
+    CONTINUATION,
+    TEXT,
+    BINARY,
+    CLOSE,
+    PING,
+    PONG,
 }

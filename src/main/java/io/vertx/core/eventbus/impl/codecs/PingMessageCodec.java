@@ -22,29 +22,30 @@ import io.vertx.core.eventbus.MessageCodec;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 public class PingMessageCodec implements MessageCodec<String, String> {
 
-  @Override
-  public void encodeToWire(Buffer buffer, String s) {
-  }
+    @Override
+    public void encodeToWire(Buffer buffer, String s) {
+    }
 
-  @Override
-  public String decodeFromWire(int pos, Buffer buffer) {
-    return null;
-  }
+    @Override
+    public String decodeFromWire(int pos, Buffer buffer) {
+        return null;
+    }
 
-  @Override
-  public String transform(String s) {
-    return null;
-  }
+    @Override
+    public String transform(String s) {
+        return null;
+    }
 
-  @Override
-  public String name() {
-    return "ping";
-  }
+    @Override
+    public String name() {
+        return "ping";
+    }
 
-  @Override
-  public byte systemCodecID() {
-    return 1;
-  }
+    @Override
+    public byte systemCodecID() {
+        return 1;
+    }
 }

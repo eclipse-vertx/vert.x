@@ -18,7 +18,10 @@ package io.vertx.core.cli.impl;
 
 import io.vertx.core.cli.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -26,221 +29,228 @@ import java.util.stream.Collectors;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/18 by zmyer
 public class DefaultCLI implements CLI {
+    //客户端名称
+    protected String name;
+    //客户端描述
+    protected String description;
+    protected String summary;
+    protected boolean hidden;
 
-  protected String name;
-  protected String description;
-  protected String summary;
-  protected boolean hidden;
+    //选项集合
+    protected List<Option> options = new ArrayList<>();
+    //参数集合
+    private List<Argument> arguments = new ArrayList<>();
 
-  protected List<Option> options = new ArrayList<>();
-  private List<Argument> arguments = new ArrayList<>();
-
-  /**
-   * Parses the user command line interface and create a new {@link CommandLine} containing extracting values.
-   *
-   * @param arguments the arguments
-   * @return the creates command line
-   */
-  @Override
-  public CommandLine parse(List<String> arguments) {
-    return new DefaultParser().parse(this, arguments);
-  }
-
-  /**
-   * Parses the user command line interface and create a new {@link CommandLine} containing extracting values.
-   *
-   * @param arguments the arguments
-   * @param validate  enable / disable parsing validation
-   * @return the creates command line
-   */
-  @Override
-  public CommandLine parse(List<String> arguments, boolean validate) {
-    return new DefaultParser().parse(this, arguments, validate);
-  }
-
-  @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public CLI setName(String name) {
-    Objects.requireNonNull(name);
-    if (name.isEmpty()) {
-      throw new IllegalArgumentException("Invalid command name");
-    }
-    this.name = name;
-    return this;
-  }
-
-  @Override
-  public String getDescription() {
-    return description;
-  }
-
-  @Override
-  public CLI setDescription(String desc) {
-    Objects.requireNonNull(desc);
-    description = desc;
-    return this;
-  }
-
-  @Override
-  public String getSummary() {
-    return summary;
-  }
-
-  @Override
-  public CLI setSummary(String summary) {
-    Objects.requireNonNull(summary);
-    this.summary = summary;
-    return this;
-  }
-
-  @Override
-  public boolean isHidden() {
-    return hidden;
-  }
-
-  @Override
-  public CLI setHidden(boolean hidden) {
-    this.hidden = hidden;
-    return this;
-  }
-
-  @Override
-  public List<Option> getOptions() {
-    return options;
-  }
-
-  @Override
-  public CLI addOption(Option option) {
-    Objects.requireNonNull(option);
-    options.add(option);
-    return this;
-  }
-
-  @Override
-  public CLI addOptions(List<Option> options) {
-    Objects.requireNonNull(options);
-    options.forEach(this::addOption);
-    return this;
-  }
-
-  @Override
-  public CLI setOptions(List<Option> options) {
-    Objects.requireNonNull(options);
-    this.options = new ArrayList<>();
-    return addOptions(options);
-  }
-
-  @Override
-  public List<Argument> getArguments() {
-    return arguments;
-  }
-
-  @Override
-  public CLI addArgument(Argument arg) {
-    Objects.requireNonNull(arg);
-    arguments.add(arg);
-    return this;
-  }
-
-  @Override
-  public CLI addArguments(List<Argument> args) {
-    Objects.requireNonNull(args);
-    args.forEach(this::addArgument);
-    return this;
-  }
-
-  @Override
-  public CLI setArguments(List<Argument> args) {
-    Objects.requireNonNull(args);
-    arguments = new ArrayList<>(args);
-    return this;
-  }
-
-  @Override
-  public Option getOption(String name) {
-    Objects.requireNonNull(name);
-    // The option by name look up is a three steps lookup:
-    // first check by long name
-    // then by short name
-    // finally by arg name
-    for (Option option : options) {
-      if (name.equalsIgnoreCase(option.getLongName())) {
-        return option;
-      }
+    /**
+     * Parses the user command line interface and create a new {@link CommandLine} containing extracting values.
+     *
+     * @param arguments the arguments
+     * @return the creates command line
+     */
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public CommandLine parse(List<String> arguments) {
+        return new DefaultParser().parse(this, arguments);
     }
 
-    for (Option option : options) {
-      if (name.equalsIgnoreCase(option.getShortName())) {
-        return option;
-      }
+    /**
+     * Parses the user command line interface and create a new {@link CommandLine} containing extracting values.
+     *
+     * @param arguments the arguments
+     * @param validate  enable / disable parsing validation
+     * @return the creates command line
+     */
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public CommandLine parse(List<String> arguments, boolean validate) {
+        return new DefaultParser().parse(this, arguments, validate);
     }
 
-    for (Option option : options) {
-      if (name.equalsIgnoreCase(option.getArgName())) {
-        return option;
-      }
+    @Override
+    public String getName() {
+        return name;
     }
 
-    return null;
-  }
-
-  @Override
-  public Argument getArgument(String name) {
-    Objects.requireNonNull(name);
-    for (Argument arg : arguments) {
-      if (name.equalsIgnoreCase(arg.getArgName())) {
-        return arg;
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public Argument getArgument(int index) {
-    if (index < 0) {
-      throw new IllegalArgumentException("Given index cannot be negative");
-    }
-    for (Argument arg : arguments) {
-      if (index == arg.getIndex()) {
-        return arg;
-      }
-    }
-    return null;
-  }
-
-
-  @Override
-  public CLI removeOption(String name) {
-    options = options.stream().filter(o -> !o.getLongName().equals(name) && !o.getShortName().equals(name))
-        .collect(Collectors.toList());
-    return this;
-  }
-
-  @Override
-  public CLI removeArgument(int index) {
-    for (Argument arg : new TreeSet<>(arguments)) {
-      if (arg.getIndex() == index) {
-        arguments.remove(arg);
+    @Override
+    public CLI setName(String name) {
+        Objects.requireNonNull(name);
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Invalid command name");
+        }
+        this.name = name;
         return this;
-      }
     }
-    return this;
-  }
 
-  @Override
-  public CLI usage(StringBuilder builder) {
-    new UsageMessageFormatter().usage(builder, this);
-    return this;
-  }
+    @Override
+    public String getDescription() {
+        return description;
+    }
 
-  @Override
-  public CLI usage(StringBuilder builder, String prefix) {
-    new UsageMessageFormatter().usage(builder, prefix, this);
-    return this;
-  }
+    @Override
+    public CLI setDescription(String desc) {
+        Objects.requireNonNull(desc);
+        description = desc;
+        return this;
+    }
+
+    @Override
+    public String getSummary() {
+        return summary;
+    }
+
+    @Override
+    public CLI setSummary(String summary) {
+        Objects.requireNonNull(summary);
+        this.summary = summary;
+        return this;
+    }
+
+    @Override
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    @Override
+    public CLI setHidden(boolean hidden) {
+        this.hidden = hidden;
+        return this;
+    }
+
+    @Override
+    public List<Option> getOptions() {
+        return options;
+    }
+
+    @Override
+    public CLI addOption(Option option) {
+        Objects.requireNonNull(option);
+        options.add(option);
+        return this;
+    }
+
+    @Override
+    public CLI addOptions(List<Option> options) {
+        Objects.requireNonNull(options);
+        options.forEach(this::addOption);
+        return this;
+    }
+
+    @Override
+    public CLI setOptions(List<Option> options) {
+        Objects.requireNonNull(options);
+        this.options = new ArrayList<>();
+        return addOptions(options);
+    }
+
+    @Override
+    public List<Argument> getArguments() {
+        return arguments;
+    }
+
+    @Override
+    public CLI addArgument(Argument arg) {
+        Objects.requireNonNull(arg);
+        arguments.add(arg);
+        return this;
+    }
+
+    @Override
+    public CLI addArguments(List<Argument> args) {
+        Objects.requireNonNull(args);
+        args.forEach(this::addArgument);
+        return this;
+    }
+
+    @Override
+    public CLI setArguments(List<Argument> args) {
+        Objects.requireNonNull(args);
+        arguments = new ArrayList<>(args);
+        return this;
+    }
+
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public Option getOption(String name) {
+        Objects.requireNonNull(name);
+        // The option by name look up is a three steps lookup:
+        // first check by long name
+        // then by short name
+        // finally by arg name
+        for (Option option : options) {
+            if (name.equalsIgnoreCase(option.getLongName())) {
+                return option;
+            }
+        }
+
+        for (Option option : options) {
+            if (name.equalsIgnoreCase(option.getShortName())) {
+                return option;
+            }
+        }
+
+        for (Option option : options) {
+            if (name.equalsIgnoreCase(option.getArgName())) {
+                return option;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public Argument getArgument(String name) {
+        Objects.requireNonNull(name);
+        for (Argument arg : arguments) {
+            if (name.equalsIgnoreCase(arg.getArgName())) {
+                return arg;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Argument getArgument(int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException("Given index cannot be negative");
+        }
+        for (Argument arg : arguments) {
+            if (index == arg.getIndex()) {
+                return arg;
+            }
+        }
+        return null;
+    }
+
+
+    @Override
+    public CLI removeOption(String name) {
+        options = options.stream().filter(o -> !o.getLongName().equals(name) && !o.getShortName().equals(name))
+                .collect(Collectors.toList());
+        return this;
+    }
+
+    @Override
+    public CLI removeArgument(int index) {
+        for (Argument arg : new TreeSet<>(arguments)) {
+            if (arg.getIndex() == index) {
+                arguments.remove(arg);
+                return this;
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public CLI usage(StringBuilder builder) {
+        new UsageMessageFormatter().usage(builder, this);
+        return this;
+    }
+
+    @Override
+    public CLI usage(StringBuilder builder, String prefix) {
+        new UsageMessageFormatter().usage(builder, prefix, this);
+        return this;
+    }
 }

@@ -26,20 +26,21 @@ import javax.net.ssl.TrustManagerFactory;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface TrustOptions {
 
-  /**
-   * @return a copy of these options
-   */
-  TrustOptions clone();
+    /**
+     * @return a copy of these options
+     */
+    TrustOptions clone();
 
-  /**
-   * Create and return the trust manager factory for these options.
-   *
-   * @param vertx the vertx instance
-   * @return the trust manager factory
-   */
-  default TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
-    return KeyStoreHelper.create((VertxInternal) vertx, this).getTrustMgrFactory((VertxInternal) vertx);
-  }
+    /**
+     * Create and return the trust manager factory for these options.
+     *
+     * @param vertx the vertx instance
+     * @return the trust manager factory
+     */
+    default TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
+        return KeyStoreHelper.create((VertxInternal) vertx, this).getTrustMgrFactory((VertxInternal) vertx);
+    }
 }

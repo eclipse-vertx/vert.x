@@ -35,89 +35,90 @@ import javax.security.cert.X509Certificate;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 @VertxGen
 public interface ServerWebSocket extends WebSocketBase {
 
-  @Override
-  ServerWebSocket exceptionHandler(Handler<Throwable> handler);
+    @Override
+    ServerWebSocket exceptionHandler(Handler<Throwable> handler);
 
-  @Override
-  ServerWebSocket handler(Handler<Buffer> handler);
+    @Override
+    ServerWebSocket handler(Handler<Buffer> handler);
 
-  @Override
-  ServerWebSocket pause();
+    @Override
+    ServerWebSocket pause();
 
-  @Override
-  ServerWebSocket resume();
+    @Override
+    ServerWebSocket resume();
 
-  @Override
-  ServerWebSocket endHandler(Handler<Void> endHandler);
+    @Override
+    ServerWebSocket endHandler(Handler<Void> endHandler);
 
-  @Override
-  ServerWebSocket write(Buffer data);
+    @Override
+    ServerWebSocket write(Buffer data);
 
-  @Override
-  ServerWebSocket setWriteQueueMaxSize(int maxSize);
+    @Override
+    ServerWebSocket setWriteQueueMaxSize(int maxSize);
 
-  @Override
-  ServerWebSocket drainHandler(Handler<Void> handler);
+    @Override
+    ServerWebSocket drainHandler(Handler<Void> handler);
 
-  @Override
-  ServerWebSocket writeFrame(WebSocketFrame frame);
+    @Override
+    ServerWebSocket writeFrame(WebSocketFrame frame);
 
-  @Override
-  ServerWebSocket writeFinalTextFrame(String text);
+    @Override
+    ServerWebSocket writeFinalTextFrame(String text);
 
-  @Override
-  ServerWebSocket writeFinalBinaryFrame(Buffer data);
+    @Override
+    ServerWebSocket writeFinalBinaryFrame(Buffer data);
 
-  @Override
-  ServerWebSocket writeBinaryMessage(Buffer data);
+    @Override
+    ServerWebSocket writeBinaryMessage(Buffer data);
 
-  @Override
-  ServerWebSocket closeHandler(Handler<Void> handler);
+    @Override
+    ServerWebSocket closeHandler(Handler<Void> handler);
 
-  @Override
-  ServerWebSocket frameHandler(Handler<WebSocketFrame> handler);
+    @Override
+    ServerWebSocket frameHandler(Handler<WebSocketFrame> handler);
 
-  /*
-   * @return the WebSocket handshake URI. This is a relative URI.
-   */
-  String uri();
+    /*
+     * @return the WebSocket handshake URI. This is a relative URI.
+     */
+    String uri();
 
-  /**
-   * @return the WebSocket handshake path.
-   */
-  String path();
+    /**
+     * @return the WebSocket handshake path.
+     */
+    String path();
 
-  /**
-   * @return the WebSocket handshake query string.
-   */
-  @Nullable
-  String query();
+    /**
+     * @return the WebSocket handshake query string.
+     */
+    @Nullable
+    String query();
 
-  /**
-   * @return the headers in the WebSocket handshake
-   */
-  @CacheReturn
-  MultiMap headers();
+    /**
+     * @return the headers in the WebSocket handshake
+     */
+    @CacheReturn
+    MultiMap headers();
 
-  /**
-   * Reject the WebSocket.
-   * <p>
-   * Calling this method from the websocket handler when it is first passed to you gives you the opportunity to reject
-   * the websocket, which will cause the websocket handshake to fail by returning
-   * a 404 response code.
-   * <p>
-   * You might use this method, if for example you only want to accept WebSockets with a particular path.
-   */
-  void reject();
+    /**
+     * Reject the WebSocket.
+     * <p>
+     * Calling this method from the websocket handler when it is first passed to you gives you the opportunity to reject
+     * the websocket, which will cause the websocket handshake to fail by returning
+     * a 404 response code.
+     * <p>
+     * You might use this method, if for example you only want to accept WebSockets with a particular path.
+     */
+    void reject();
 
-  /**
-   * @return an array of the peer certificates. Returns null if connection is
-   *         not SSL.
-   * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
-   */
-  @GenIgnore
-  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
+    /**
+     * @return an array of the peer certificates. Returns null if connection is
+     * not SSL.
+     * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+     */
+    @GenIgnore
+    X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 }

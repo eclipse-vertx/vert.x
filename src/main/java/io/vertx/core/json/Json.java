@@ -39,110 +39,110 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class Json {
+    //
+    public static ObjectMapper mapper = new ObjectMapper();
+    public static ObjectMapper prettyMapper = new ObjectMapper();
 
-  public static ObjectMapper mapper = new ObjectMapper();
-  public static ObjectMapper prettyMapper = new ObjectMapper();
+    static {
+        // Non-standard JSON but we allow C style comments in our JSON
+        mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
-  static {
-    // Non-standard JSON but we allow C style comments in our JSON
-    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 
-    prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-
-    SimpleModule module = new SimpleModule();
-    module.addSerializer(JsonObject.class, new JsonObjectSerializer());
-    module.addSerializer(JsonArray.class, new JsonArraySerializer());
-    mapper.registerModule(module);
-    prettyMapper.registerModule(module);
-  }
-
-  public static String encode(Object obj) throws EncodeException {
-    try {
-      return mapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(JsonObject.class, new JsonObjectSerializer());
+        module.addSerializer(JsonArray.class, new JsonArraySerializer());
+        mapper.registerModule(module);
+        prettyMapper.registerModule(module);
     }
-  }
 
-  public static String encodePrettily(Object obj) throws EncodeException {
-    try {
-      return prettyMapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    public static String encode(Object obj) throws EncodeException {
+        try {
+            return mapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+        }
     }
-  }
 
-  public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
-    try {
-      return mapper.readValue(str, clazz);
+    public static String encodePrettily(Object obj) throws EncodeException {
+        try {
+            return prettyMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+        }
     }
-    catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage());
-    }
-  }
 
-  @SuppressWarnings("unchecked")
-  static Object checkAndCopy(Object val, boolean copy) {
-    if (val == null) {
-      // OK
-    } else if (val instanceof Number && !(val instanceof BigDecimal)) {
-      // OK
-    } else if (val instanceof Boolean) {
-      // OK
-    } else if (val instanceof String) {
-      // OK
-    } else if (val instanceof Character) {
-      // OK
-    } else if (val instanceof CharSequence) {
-      val = val.toString();
-    } else if (val instanceof JsonObject) {
-      if (copy) {
-        val = ((JsonObject) val).copy();
-      }
-    } else if (val instanceof JsonArray) {
-      if (copy) {
-        val = ((JsonArray) val).copy();
-      }
-    } else if (val instanceof Map) {
-      if (copy) {
-        val = (new JsonObject((Map)val)).copy();
-      } else {
-        val = new JsonObject((Map)val);
-      }
-    } else if (val instanceof List) {
-      if (copy) {
-        val = (new JsonArray((List)val)).copy();
-      } else {
-        val = new JsonArray((List)val);
-      }
-    } else if (val instanceof byte[]) {
-      val = Base64.getEncoder().encodeToString((byte[])val);
-    } else if (val instanceof Instant) {
-      val = ISO_INSTANT.format((Instant) val);
-    } else {
-      throw new IllegalStateException("Illegal type in JsonObject: " + val.getClass());
+    public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
+        try {
+            return mapper.readValue(str, clazz);
+        } catch (Exception e) {
+            throw new DecodeException("Failed to decode:" + e.getMessage());
+        }
     }
-    return val;
-  }
 
-  static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
-    Iterable<T> iterable = () -> sourceIterator;
-    return StreamSupport.stream(iterable.spliterator(), false);
-  }
-
-  private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {
-    @Override
-    public void serialize(JsonObject value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeObject(value.getMap());
+    @SuppressWarnings("unchecked")
+    static Object checkAndCopy(Object val, boolean copy) {
+        if (val == null) {
+            // OK
+        } else if (val instanceof Number && !(val instanceof BigDecimal)) {
+            // OK
+        } else if (val instanceof Boolean) {
+            // OK
+        } else if (val instanceof String) {
+            // OK
+        } else if (val instanceof Character) {
+            // OK
+        } else if (val instanceof CharSequence) {
+            val = val.toString();
+        } else if (val instanceof JsonObject) {
+            if (copy) {
+                val = ((JsonObject) val).copy();
+            }
+        } else if (val instanceof JsonArray) {
+            if (copy) {
+                val = ((JsonArray) val).copy();
+            }
+        } else if (val instanceof Map) {
+            if (copy) {
+                val = (new JsonObject((Map) val)).copy();
+            } else {
+                val = new JsonObject((Map) val);
+            }
+        } else if (val instanceof List) {
+            if (copy) {
+                val = (new JsonArray((List) val)).copy();
+            } else {
+                val = new JsonArray((List) val);
+            }
+        } else if (val instanceof byte[]) {
+            val = Base64.getEncoder().encodeToString((byte[]) val);
+        } else if (val instanceof Instant) {
+            val = ISO_INSTANT.format((Instant) val);
+        } else {
+            throw new IllegalStateException("Illegal type in JsonObject: " + val.getClass());
+        }
+        return val;
     }
-  }
 
-  private static class JsonArraySerializer extends JsonSerializer<JsonArray> {
-    @Override
-    public void serialize(JsonArray value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeObject(value.getList());
+    static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
+        Iterable<T> iterable = () -> sourceIterator;
+        return StreamSupport.stream(iterable.spliterator(), false);
     }
-  }
+
+    private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {
+        @Override
+        public void serialize(JsonObject value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+            jgen.writeObject(value.getMap());
+        }
+    }
+
+    private static class JsonArraySerializer extends JsonSerializer<JsonArray> {
+        @Override
+        public void serialize(JsonArray value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+            jgen.writeObject(value.getList());
+        }
+    }
 }

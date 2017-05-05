@@ -24,34 +24,39 @@ import java.util.concurrent.ExecutorService;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/20 by zmyer
 class WorkerPool {
+    //顺序执行器工厂对象
+    private final OrderedExecutorFactory orderedFact;
+    //普通执行服务对象
+    private final ExecutorService pool;
+    //工作池统计对象
+    private final PoolMetrics metrics;
 
-  private final OrderedExecutorFactory orderedFact;
-  private final ExecutorService pool;
-  private final PoolMetrics metrics;
-
-  WorkerPool(ExecutorService pool, PoolMetrics metrics) {
-    this.orderedFact = new OrderedExecutorFactory(pool);
-    this.pool = pool;
-    this.metrics = metrics;
-  }
-
-  ExecutorService executor() {
-    return pool;
-  }
-
-  Executor createOrderedExecutor() {
-    return orderedFact.getExecutor();
-  }
-
-  PoolMetrics metrics() {
-    return metrics;
-  }
-
-  void close() {
-    if (metrics != null) {
-      metrics.close();
+    // TODO: 17/1/1 by zmyer
+    WorkerPool(ExecutorService pool, PoolMetrics metrics) {
+        this.orderedFact = new OrderedExecutorFactory(pool);
+        this.pool = pool;
+        this.metrics = metrics;
     }
-    pool.shutdownNow();
-  }
+
+    ExecutorService executor() {
+        return pool;
+    }
+
+    Executor createOrderedExecutor() {
+        return orderedFact.getExecutor();
+    }
+
+    PoolMetrics metrics() {
+        return metrics;
+    }
+
+    // TODO: 17/1/1 by zmyer
+    void close() {
+        if (metrics != null) {
+            metrics.close();
+        }
+        pool.shutdownNow();
+    }
 }

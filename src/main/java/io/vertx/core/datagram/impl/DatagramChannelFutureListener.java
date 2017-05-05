@@ -25,27 +25,36 @@ import io.vertx.core.impl.ContextImpl;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+// TODO: 16/12/18 by zmyer
 final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
-  private final Handler<AsyncResult<T>> handler;
-  private final T result;
-  private final ContextImpl context;
+    //处理事件对象
+    private final Handler<AsyncResult<T>> handler;
+    //处理的结果对象
+    private final T result;
+    //上下文对象
+    private final ContextImpl context;
 
-  DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, ContextImpl context) {
-    this.handler = handler;
-    this.result = result;
-    this.context = context;
-  }
-
-  @Override
-  public void operationComplete(final ChannelFuture future) throws Exception {
-    context.executeFromIO(() -> notifyHandler(future));
-  }
-
-  private void notifyHandler(ChannelFuture future) {
-    if (future.isSuccess()) {
-      handler.handle(Future.succeededFuture(result));
-    } else {
-      handler.handle(Future.failedFuture(future.cause()));
+    // TODO: 16/12/18 by zmyer
+    DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, ContextImpl context) {
+        this.handler = handler;
+        this.result = result;
+        this.context = context;
     }
-  }
+
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public void operationComplete(final ChannelFuture future) throws Exception {
+        //操作完成,开始进行对结果的处理流程
+        context.executeFromIO(() -> notifyHandler(future));
+    }
+
+    // TODO: 16/12/18 by zmyer
+    private void notifyHandler(ChannelFuture future) {
+        if (future.isSuccess()) {
+            //开始处理结果
+            handler.handle(Future.succeededFuture(result));
+        } else {
+            handler.handle(Future.failedFuture(future.cause()));
+        }
+    }
 }

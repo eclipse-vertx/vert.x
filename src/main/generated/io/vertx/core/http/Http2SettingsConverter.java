@@ -17,42 +17,42 @@
 package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.http.Http2Settings}.
- *
+ * <p>
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.Http2Settings} original class using Vert.x codegen.
  */
+// TODO: 16/12/26 by zmyer
 public class Http2SettingsConverter {
 
-  public static void fromJson(JsonObject json, Http2Settings obj) {
-    if (json.getValue("headerTableSize") instanceof Number) {
-      obj.setHeaderTableSize(((Number)json.getValue("headerTableSize")).longValue());
+    public static void fromJson(JsonObject json, Http2Settings obj) {
+        if (json.getValue("headerTableSize") instanceof Number) {
+            obj.setHeaderTableSize(((Number) json.getValue("headerTableSize")).longValue());
+        }
+        if (json.getValue("initialWindowSize") instanceof Number) {
+            obj.setInitialWindowSize(((Number) json.getValue("initialWindowSize")).intValue());
+        }
+        if (json.getValue("maxConcurrentStreams") instanceof Number) {
+            obj.setMaxConcurrentStreams(((Number) json.getValue("maxConcurrentStreams")).longValue());
+        }
+        if (json.getValue("maxFrameSize") instanceof Number) {
+            obj.setMaxFrameSize(((Number) json.getValue("maxFrameSize")).intValue());
+        }
+        if (json.getValue("maxHeaderListSize") instanceof Number) {
+            obj.setMaxHeaderListSize(((Number) json.getValue("maxHeaderListSize")).intValue());
+        }
+        if (json.getValue("pushEnabled") instanceof Boolean) {
+            obj.setPushEnabled((Boolean) json.getValue("pushEnabled"));
+        }
     }
-    if (json.getValue("initialWindowSize") instanceof Number) {
-      obj.setInitialWindowSize(((Number)json.getValue("initialWindowSize")).intValue());
-    }
-    if (json.getValue("maxConcurrentStreams") instanceof Number) {
-      obj.setMaxConcurrentStreams(((Number)json.getValue("maxConcurrentStreams")).longValue());
-    }
-    if (json.getValue("maxFrameSize") instanceof Number) {
-      obj.setMaxFrameSize(((Number)json.getValue("maxFrameSize")).intValue());
-    }
-    if (json.getValue("maxHeaderListSize") instanceof Number) {
-      obj.setMaxHeaderListSize(((Number)json.getValue("maxHeaderListSize")).intValue());
-    }
-    if (json.getValue("pushEnabled") instanceof Boolean) {
-      obj.setPushEnabled((Boolean)json.getValue("pushEnabled"));
-    }
-  }
 
-  public static void toJson(Http2Settings obj, JsonObject json) {
-    json.put("headerTableSize", obj.getHeaderTableSize());
-    json.put("initialWindowSize", obj.getInitialWindowSize());
-    json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
-    json.put("maxFrameSize", obj.getMaxFrameSize());
-    json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
-    json.put("pushEnabled", obj.isPushEnabled());
-  }
+    public static void toJson(Http2Settings obj, JsonObject json) {
+        json.put("headerTableSize", obj.getHeaderTableSize());
+        json.put("initialWindowSize", obj.getInitialWindowSize());
+        json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
+        json.put("maxFrameSize", obj.getMaxFrameSize());
+        json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
+        json.put("pushEnabled", obj.isPushEnabled());
+    }
 }

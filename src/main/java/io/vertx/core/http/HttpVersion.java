@@ -23,7 +23,8 @@ import io.vertx.codegen.annotations.VertxGen;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 @VertxGen
 public enum HttpVersion {
-  HTTP_1_0, HTTP_1_1, HTTP_2
+    HTTP_1_0, HTTP_1_1, HTTP_2
 }

@@ -21,12 +21,13 @@ package io.vertx.core.json;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 zmyer
 public class DecodeException extends RuntimeException {
 
-  public DecodeException() {
-  }
+    public DecodeException() {
+    }
 
-  public DecodeException(String message) {
-    super(message);
-  }
+    public DecodeException(String message) {
+        super(message);
+    }
 }

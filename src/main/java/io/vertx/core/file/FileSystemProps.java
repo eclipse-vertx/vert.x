@@ -21,24 +21,24 @@ import io.vertx.codegen.annotations.VertxGen;
 /**
  * Represents properties of the file system.
  *
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 @VertxGen
 public interface FileSystemProps {
 
-  /**
-   * @return The total space on the file system, in bytes
-   */
-  long totalSpace();
+    /**
+     * @return The total space on the file system, in bytes
+     */
+    long totalSpace();
 
-  /**
-   * @return The total un-allocated space on the file system, in bytes
-   */
-  long unallocatedSpace();
+    /**
+     * @return The total un-allocated space on the file system, in bytes
+     */
+    long unallocatedSpace();
 
-  /**
-   * @return The total usable space on the file system, in bytes
-   */
-  long usableSpace();
+    /**
+     * @return The total usable space on the file system, in bytes
+     */
+    long usableSpace();
 }

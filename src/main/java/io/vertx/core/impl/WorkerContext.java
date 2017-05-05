@@ -22,38 +22,43 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/15 by zmyer
 public class WorkerContext extends ContextImpl {
 
-  public WorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID,
-                       JsonObject config, ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
-  }
+    // TODO: 16/12/15 by zmyer
+    public WorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID,
+                         JsonObject config, ClassLoader tccl) {
+        super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
+    }
 
-  @Override
-  public void executeAsync(Handler<Void> task) {
-    workerExec.execute(wrapTask(null, task, true, workerPool.metrics()));
-  }
+    // TODO: 16/12/15 by zmyer
+    @Override
+    public void executeAsync(Handler<Void> task) {
+        //在给定的工作对象池中执行给定的任务
+        workerExec.execute(wrapTask(null, task, true, workerPool.metrics()));
+    }
 
-  @Override
-  public boolean isEventLoopContext() {
-    return false;
-  }
+    @Override
+    public boolean isEventLoopContext() {
+        return false;
+    }
 
-  @Override
-  public boolean isMultiThreadedWorkerContext() {
-    return false;
-  }
+    @Override
+    public boolean isMultiThreadedWorkerContext() {
+        return false;
+    }
 
-  @Override
-  protected void checkCorrectThread() {
-    // NOOP
-  }
+    @Override
+    protected void checkCorrectThread() {
+        // NOOP
+    }
 
-  // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
-  // so we need to execute it on the worker thread
-  @Override
-  public void executeFromIO(ContextTask task) {
-    workerExec.execute(wrapTask(task, null, true, workerPool.metrics()));
-  }
+    // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
+    // so we need to execute it on the worker thread
+    // TODO: 16/12/15 by zmyer
+    @Override
+    public void executeFromIO(ContextTask task) {
+        workerExec.execute(wrapTask(task, null, true, workerPool.metrics()));
+    }
 
 }

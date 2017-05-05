@@ -25,10 +25,10 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
  */
 public class BareCommandFactory extends DefaultCommandFactory<BareCommand> {
 
-  /**
-   * Creates a new instance of {@link BareCommandFactory}.
-   */
-  public BareCommandFactory() {
-    super(BareCommand.class);
-  }
+    /**
+     * Creates a new instance of {@link BareCommandFactory}.
+     */
+    public BareCommandFactory() {
+        super(BareCommand.class);
+    }
 }

@@ -16,14 +16,10 @@
 
 package io.vertx.core.parsetools;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.parsetools.impl.RecordParserImpl;
-
-import java.util.Objects;
 
 /**
  * A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
@@ -59,83 +55,84 @@ import java.util.Objects;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
+// TODO: 16/12/24 by zmyer
 @VertxGen
 public interface RecordParser extends Handler<Buffer> {
 
-  void setOutput(Handler<Buffer> output);
+    void setOutput(Handler<Buffer> output);
 
-  /**
-   * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
-   * by the String {@code} delim endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
-   * <p>
-   * {@code output} Will receive whole records which have been parsed.
-   *
-   * @param delim  the initial delimiter string
-   * @param output  handler that will receive the output
-   */
-  static RecordParser newDelimited(String delim, Handler<Buffer> output) {
-    return RecordParserImpl.newDelimited(delim, output);
-  }
+    /**
+     * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
+     * by the String {@code} delim endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
+     * <p>
+     * {@code output} Will receive whole records which have been parsed.
+     *
+     * @param delim  the initial delimiter string
+     * @param output handler that will receive the output
+     */
+    static RecordParser newDelimited(String delim, Handler<Buffer> output) {
+        return RecordParserImpl.newDelimited(delim, output);
+    }
 
-  /**
-   * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
-   * by the {@code Buffer} delim.
-   * <p>
-   * {@code output} Will receive whole records which have been parsed.
-   *
-   * @param delim  the initial delimiter buffer
-   * @param output  handler that will receive the output
-   */
-   static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
-     return RecordParserImpl.newDelimited(delim, output); 
-   }
+    /**
+     * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
+     * by the {@code Buffer} delim.
+     * <p>
+     * {@code output} Will receive whole records which have been parsed.
+     *
+     * @param delim  the initial delimiter buffer
+     * @param output handler that will receive the output
+     */
+    static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
+        return RecordParserImpl.newDelimited(delim, output);
+    }
 
-  /**
-   * Create a new {@code RecordParser} instance, initially in fixed size mode, and where the record size is specified
-   * by the {@code size} parameter.
-   * <p>
-   * {@code output} Will receive whole records which have been parsed.
-   *
-   * @param size  the initial record size
-   * @param output  handler that will receive the output
-   */
-  static RecordParser newFixed(int size, Handler<Buffer> output) {
-    return RecordParserImpl.newFixed(size, output);
-  }
+    /**
+     * Create a new {@code RecordParser} instance, initially in fixed size mode, and where the record size is specified
+     * by the {@code size} parameter.
+     * <p>
+     * {@code output} Will receive whole records which have been parsed.
+     *
+     * @param size   the initial record size
+     * @param output handler that will receive the output
+     */
+    static RecordParser newFixed(int size, Handler<Buffer> output) {
+        return RecordParserImpl.newFixed(size, output);
+    }
 
-  /**
-   * Flip the parser into delimited mode, and where the delimiter can be represented
-   * by the String {@code delim} encoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
-   * <p>
-   * This method can be called multiple times with different values of delim while data is being parsed.
-   *
-   * @param delim  the new delimeter
-   */
-  void delimitedMode(String delim);
+    /**
+     * Flip the parser into delimited mode, and where the delimiter can be represented
+     * by the String {@code delim} encoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
+     * <p>
+     * This method can be called multiple times with different values of delim while data is being parsed.
+     *
+     * @param delim the new delimeter
+     */
+    void delimitedMode(String delim);
 
-  /**
-   * Flip the parser into delimited mode, and where the delimiter can be represented
-   * by the delimiter {@code delim}.
-   * <p>
-   * This method can be called multiple times with different values of delim while data is being parsed.
-   *
-   * @param delim  the new delimiter
-   */
-  void delimitedMode(Buffer delim);
+    /**
+     * Flip the parser into delimited mode, and where the delimiter can be represented
+     * by the delimiter {@code delim}.
+     * <p>
+     * This method can be called multiple times with different values of delim while data is being parsed.
+     *
+     * @param delim the new delimiter
+     */
+    void delimitedMode(Buffer delim);
 
-  /**
-   * Flip the parser into fixed size mode, where the record size is specified by {@code size} in bytes.
-   * <p>
-   * This method can be called multiple times with different values of size while data is being parsed.
-   *
-   * @param size  the new record size
-   */
-  void fixedSizeMode(int size);
+    /**
+     * Flip the parser into fixed size mode, where the record size is specified by {@code size} in bytes.
+     * <p>
+     * This method can be called multiple times with different values of size while data is being parsed.
+     *
+     * @param size the new record size
+     */
+    void fixedSizeMode(int size);
 
-  /**
-   * This method is called to provide the parser with data.
-   *
-   * @param buffer  a chunk of data
-   */
-  void handle(Buffer buffer);
+    /**
+     * This method is called to provide the parser with data.
+     *
+     * @param buffer a chunk of data
+     */
+    void handle(Buffer buffer);
 }

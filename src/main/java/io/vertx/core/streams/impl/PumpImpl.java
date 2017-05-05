@@ -34,84 +34,85 @@ import io.vertx.core.streams.WriteStream;
  * This class can be used to pump from any {@link io.vertx.core.streams.ReadStream} to any {@link io.vertx.core.streams.WriteStream},
  * e.g. from an {@link io.vertx.core.http.HttpServerRequest} to an {@link io.vertx.core.file.AsyncFile},
  * or from {@link io.vertx.core.net.NetSocket} to a {@link io.vertx.core.http.WebSocket}.<p>
- *
+ * <p>
  * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class PumpImpl<T> implements Pump {
 
-  private final ReadStream<T> readStream;
-  private final WriteStream<T> writeStream;
-  private final Handler<T> dataHandler;
-  private final Handler<Void> drainHandler;
-  private int pumped;
+    private final ReadStream<T> readStream;
+    private final WriteStream<T> writeStream;
+    private final Handler<T> dataHandler;
+    private final Handler<Void> drainHandler;
+    private int pumped;
 
-  /**
-   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
-   * of the write stream to {@code maxWriteQueueSize}
-   */
-  PumpImpl(ReadStream<T> rs, WriteStream<T> ws, int maxWriteQueueSize) {
-    this(rs, ws);
-    this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
-  }
+    /**
+     * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
+     * of the write stream to {@code maxWriteQueueSize}
+     */
+    PumpImpl(ReadStream<T> rs, WriteStream<T> ws, int maxWriteQueueSize) {
+        this(rs, ws);
+        this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
+    }
 
-  PumpImpl(ReadStream<T> rs, WriteStream<T> ws) {
-    this.readStream = rs;
-    this.writeStream = ws;
-    drainHandler = v-> readStream.resume();
-    dataHandler = data -> {
-      writeStream.write(data);
-      incPumped();
-      if (writeStream.writeQueueFull()) {
-        readStream.pause();
-        writeStream.drainHandler(drainHandler);
-      }
-    };
-  }
+    PumpImpl(ReadStream<T> rs, WriteStream<T> ws) {
+        this.readStream = rs;
+        this.writeStream = ws;
+        drainHandler = v -> readStream.resume();
+        dataHandler = data -> {
+            writeStream.write(data);
+            incPumped();
+            if (writeStream.writeQueueFull()) {
+                readStream.pause();
+                writeStream.drainHandler(drainHandler);
+            }
+        };
+    }
 
-  /**
-   * Set the write queue max size to {@code maxSize}
-   */
-  @Override
-  public PumpImpl setWriteQueueMaxSize(int maxSize) {
-    writeStream.setWriteQueueMaxSize(maxSize);
-    return this;
-  }
+    /**
+     * Set the write queue max size to {@code maxSize}
+     */
+    @Override
+    public PumpImpl setWriteQueueMaxSize(int maxSize) {
+        writeStream.setWriteQueueMaxSize(maxSize);
+        return this;
+    }
 
-  /**
-   * Start the Pump. The Pump can be started and stopped multiple times.
-   */
-  @Override
-  public PumpImpl start() {
-    readStream.handler(dataHandler);
-    return this;
-  }
+    /**
+     * Start the Pump. The Pump can be started and stopped multiple times.
+     */
+    @Override
+    public PumpImpl start() {
+        readStream.handler(dataHandler);
+        return this;
+    }
 
-  /**
-   * Stop the Pump. The Pump can be started and stopped multiple times.
-   */
-  @Override
-  public PumpImpl stop() {
-    writeStream.drainHandler(null);
-    readStream.handler(null);
-    return this;
-  }
+    /**
+     * Stop the Pump. The Pump can be started and stopped multiple times.
+     */
+    @Override
+    public PumpImpl stop() {
+        writeStream.drainHandler(null);
+        readStream.handler(null);
+        return this;
+    }
 
-  /**
-   * Return the total number of elements pumped by this pump.
-   */
-  @Override
-  public synchronized int numberPumped() {
-    return pumped;
-  }
+    /**
+     * Return the total number of elements pumped by this pump.
+     */
+    @Override
+    public synchronized int numberPumped() {
+        return pumped;
+    }
 
-  // Note we synchronize as numberPumped can be called from a different thread however incPumped will always
-  // be called from the same thread so we benefit from bias locked optimisation which should give a very low
-  // overhead
-  private synchronized void incPumped() {
-    pumped++;
-  }
+    // Note we synchronize as numberPumped can be called from a different thread however incPumped will always
+    // be called from the same thread so we benefit from bias locked optimisation which should give a very low
+    // overhead
+    private synchronized void incPumped() {
+        pumped++;
+    }
 
 
 }

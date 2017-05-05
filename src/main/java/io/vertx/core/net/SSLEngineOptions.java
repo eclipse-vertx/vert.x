@@ -21,8 +21,9 @@ package io.vertx.core.net;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 17/1/1 by zmyer
 public abstract class SSLEngineOptions {
 
-  public abstract SSLEngineOptions clone();
+    public abstract SSLEngineOptions clone();
 
 }

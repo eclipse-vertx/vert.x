@@ -22,42 +22,45 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/27 by zmyer
 public class Args {
+    //参数列表
+    public final Map<String, String> map = new HashMap<>();
 
-  public final Map<String, String> map = new HashMap<>();
-
-  public Args(String[] args) {
-    String currentKey = null;
-    for (String arg: args) {
-      if (arg.startsWith("-")) {
-        if (currentKey != null) {
-          map.put(currentKey, "");
+    // TODO: 16/12/27 by zmyer
+    public Args(String[] args) {
+        String currentKey = null;
+        for (String arg : args) {
+            if (arg.startsWith("-")) {
+                if (currentKey != null) {
+                    map.put(currentKey, "");
+                }
+                currentKey = arg;
+            } else {
+                if (currentKey != null) {
+                    map.put(currentKey, arg);
+                    currentKey = null;
+                }
+            }
         }
-        currentKey = arg;
-      } else {
         if (currentKey != null) {
-          map.put(currentKey, arg);
-          currentKey = null;
+            map.put(currentKey, "");
         }
-      }
     }
-    if (currentKey != null) {
-      map.put(currentKey, "");
-    }
-  }
 
-  public int getInt(String argName) {
-    String arg = map.get(argName);
-    int val;
-    if (arg != null) {
-      try {
-        val = Integer.parseInt(arg.trim());
-      } catch (NumberFormatException e) {
-        throw new IllegalArgumentException("Invalid " + argName + ": " + arg);
-      }
-    } else {
-      val = -1;
+    // TODO: 16/12/27 by zmyer
+    public int getInt(String argName) {
+        String arg = map.get(argName);
+        int val;
+        if (arg != null) {
+            try {
+                val = Integer.parseInt(arg.trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid " + argName + ": " + arg);
+            }
+        } else {
+            val = -1;
+        }
+        return val;
     }
-    return val;
-  }
 }

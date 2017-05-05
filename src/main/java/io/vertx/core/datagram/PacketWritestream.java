@@ -27,18 +27,19 @@ import io.vertx.core.streams.WriteStream;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/18 by zmyer
 @VertxGen
 public interface PacketWritestream extends WriteStream<Buffer> {
 
-  @Override
-  PacketWritestream exceptionHandler(Handler<Throwable> handler);
+    @Override
+    PacketWritestream exceptionHandler(Handler<Throwable> handler);
 
-  @Override
-  PacketWritestream write(Buffer data);
+    @Override
+    PacketWritestream write(Buffer data);
 
-  @Override
-  PacketWritestream setWriteQueueMaxSize(int maxSize);
+    @Override
+    PacketWritestream setWriteQueueMaxSize(int maxSize);
 
-  @Override
-  PacketWritestream drainHandler(Handler<Void> handler);
+    @Override
+    PacketWritestream drainHandler(Handler<Void> handler);
 }

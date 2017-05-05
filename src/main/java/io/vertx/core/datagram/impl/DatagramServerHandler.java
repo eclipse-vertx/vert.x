@@ -26,41 +26,45 @@ import io.vertx.core.net.impl.VertxHandler;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+// TODO: 16/12/18 by zmyer
 final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
+    //数据包socket对象
+    private final DatagramSocketImpl socket;
 
-  private final DatagramSocketImpl socket;
-
-  DatagramServerHandler(DatagramSocketImpl socket) {
-    this.socket = socket;
-  }
-
-  @Override
-  protected DatagramSocketImpl getConnection() {
-    return socket;
-  }
-
-  @Override
-  protected DatagramSocketImpl removeConnection() {
-    return socket;
-  }
-
-
-  @SuppressWarnings("unchecked")
-  @Override
-  protected void channelRead(final DatagramSocketImpl server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
-    context.executeFromIO(() -> server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg));
-  }
-
-  @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (msg instanceof DatagramPacket) {
-      DatagramPacket packet = (DatagramPacket) msg;
-      ByteBuf content = packet.content();
-      if (content.isDirect())  {
-        content = safeBuffer(content, allocator);
-      }
-      return new DatagramPacketImpl(packet.sender(), Buffer.buffer(content));
+    DatagramServerHandler(DatagramSocketImpl socket) {
+        this.socket = socket;
     }
-    return msg;
-  }
+
+    @Override
+    protected DatagramSocketImpl getConnection() {
+        return socket;
+    }
+
+    @Override
+    protected DatagramSocketImpl removeConnection() {
+        return socket;
+    }
+
+    //// TODO: 16/12/18 by zmyer
+    @SuppressWarnings("unchecked")
+    @Override
+    protected void channelRead(final DatagramSocketImpl server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
+        //开始在上下文中处理读取到的数据报文
+        context.executeFromIO(() -> server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg));
+    }
+
+    // TODO: 16/12/18 by zmyer
+    @Override
+    protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+        if (msg instanceof DatagramPacket) {
+            DatagramPacket packet = (DatagramPacket) msg;
+            ByteBuf content = packet.content();
+            if (content.isDirect()) {
+                content = safeBuffer(content, allocator);
+            }
+            //创建数据报文对象
+            return new DatagramPacketImpl(packet.sender(), Buffer.buffer(content));
+        }
+        return msg;
+    }
 }

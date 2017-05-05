@@ -22,31 +22,32 @@ import io.vertx.core.eventbus.MessageCodec;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 public class LongMessageCodec implements MessageCodec<Long, Long> {
 
-  @Override
-  public void encodeToWire(Buffer buffer, Long l) {
-    buffer.appendLong(l);
-  }
+    @Override
+    public void encodeToWire(Buffer buffer, Long l) {
+        buffer.appendLong(l);
+    }
 
-  @Override
-  public Long decodeFromWire(int pos, Buffer buffer) {
-    return buffer.getLong(pos);
-  }
+    @Override
+    public Long decodeFromWire(int pos, Buffer buffer) {
+        return buffer.getLong(pos);
+    }
 
-  @Override
-  public Long transform(Long l) {
-    // Longs are immutable so just return it
-    return l;
-  }
+    @Override
+    public Long transform(Long l) {
+        // Longs are immutable so just return it
+        return l;
+    }
 
-  @Override
-  public String name() {
-    return "long";
-  }
+    @Override
+    public String name() {
+        return "long";
+    }
 
-  @Override
-  public byte systemCodecID() {
-    return 6;
-  }
+    @Override
+    public byte systemCodecID() {
+        return 6;
+    }
 }

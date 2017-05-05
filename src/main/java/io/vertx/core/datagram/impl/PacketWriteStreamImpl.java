@@ -21,61 +21,71 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.PacketWritestream;
-import io.vertx.core.streams.WriteStream;
 
 /**
  * A write stream for packets.
  *
-* @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-*/
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
+// TODO: 16/12/18 by zmyer
 class PacketWriteStreamImpl implements PacketWritestream, Handler<AsyncResult<DatagramSocket>> {
+    //数据报文socket对象
+    private DatagramSocketImpl datagramSocket;
+    //异常处理对象
+    private Handler<Throwable> exceptionHandler;
+    //端口号
+    private final int port;
+    //主机名
+    private final String host;
 
-  private DatagramSocketImpl datagramSocket;
-  private Handler<Throwable> exceptionHandler;
-  private final int port;
-  private final String host;
-
-  PacketWriteStreamImpl(DatagramSocketImpl datagramSocket, int port, String host) {
-    this.datagramSocket = datagramSocket;
-    this.port = port;
-    this.host = host;
-  }
-
-  @Override
-  public void handle(AsyncResult<DatagramSocket> event) {
-    if (event.failed() && exceptionHandler != null) {
-      exceptionHandler.handle(event.cause());
+    // TODO: 16/12/18 by zmyer
+    PacketWriteStreamImpl(DatagramSocketImpl datagramSocket, int port, String host) {
+        this.datagramSocket = datagramSocket;
+        this.port = port;
+        this.host = host;
     }
-  }
 
-  @Override
-  public PacketWritestream exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
-    return this;
-  }
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public void handle(AsyncResult<DatagramSocket> event) {
+        if (event.failed() && exceptionHandler != null) {
+            //开始处理异常信息
+            exceptionHandler.handle(event.cause());
+        }
+    }
 
-  @Override
-  public PacketWritestream write(Buffer data) {
-    datagramSocket.send(data, port, host, this);
-    return this;
-  }
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public PacketWritestream exceptionHandler(Handler<Throwable> handler) {
+        exceptionHandler = handler;
+        return this;
+    }
 
-  @Override
-  public PacketWritestream setWriteQueueMaxSize(int maxSize) {
-    return this;
-  }
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public PacketWritestream write(Buffer data) {
+        //开始发送报文
+        datagramSocket.send(data, port, host, this);
+        return this;
+    }
 
-  @Override
-  public boolean writeQueueFull() {
-    return false;
-  }
+    // TODO: 16/12/18 by zmyer
+    @Override
+    public PacketWritestream setWriteQueueMaxSize(int maxSize) {
+        return this;
+    }
 
-  @Override
-  public PacketWritestream drainHandler(Handler<Void> handler) {
-    return this;
-  }
+    @Override
+    public boolean writeQueueFull() {
+        return false;
+    }
 
-  @Override
-  public void end() {
-  }
+    @Override
+    public PacketWritestream drainHandler(Handler<Void> handler) {
+        return this;
+    }
+
+    @Override
+    public void end() {
+    }
 }

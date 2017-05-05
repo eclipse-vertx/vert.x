@@ -17,7 +17,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -30,91 +29,98 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class HandlerManager<T> {
 
-  @SuppressWarnings("unused")
-  private static final Logger log = LoggerFactory.getLogger(HandlerManager.class);
+    @SuppressWarnings("unused")
+    private static final Logger log = LoggerFactory.getLogger(HandlerManager.class);
 
-  private final VertxEventLoopGroup availableWorkers;
-  private final ConcurrentMap<EventLoop, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
+    private final VertxEventLoopGroup availableWorkers;
+    private final ConcurrentMap<EventLoop, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
 
-  // We maintain a separate hasHandlers variable so we can implement hasHandlers() efficiently
-  // As it is called for every HTTP message received
-  private volatile boolean hasHandlers;
+    // We maintain a separate hasHandlers variable so we can implement hasHandlers() efficiently
+    // As it is called for every HTTP message received
+    private volatile boolean hasHandlers;
 
-  public HandlerManager(VertxEventLoopGroup availableWorkers) {
-    this.availableWorkers = availableWorkers;
-  }
-
-  public boolean hasHandlers() {
-    return hasHandlers;
-  }
-
-  public HandlerHolder<T> chooseHandler(EventLoop worker) {
-    Handlers<T> handlers = handlerMap.get(worker);
-    return handlers == null ? null : handlers.chooseHandler();
-  }
-
-  public synchronized void addHandler(T handler, ContextImpl context) {
-    EventLoop worker = context.nettyEventLoop();
-    availableWorkers.addWorker(worker);
-    Handlers<T> handlers = new Handlers<>();
-    Handlers<T> prev = handlerMap.putIfAbsent(worker, handlers);
-    if (prev != null) {
-      handlers = prev;
-    }
-    handlers.addHandler(new HandlerHolder<>(context, handler));
-    hasHandlers = true;
-  }
-
-  public synchronized void removeHandler(T handler, ContextImpl context) {
-    EventLoop worker = context.nettyEventLoop();
-    Handlers<T> handlers = handlerMap.get(worker);
-    if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {
-      throw new IllegalStateException("Can't find handler");
-    }
-    if (handlers.isEmpty()) {
-      handlerMap.remove(worker);
-    }
-    if (handlerMap.isEmpty()) {
-      hasHandlers = false;
-    }
-    //Available workers does it's own reference counting -since workers can be shared across different Handlers
-    availableWorkers.removeWorker(worker);
-  }
-
-  private static final class Handlers<T> {
-    private int pos;
-    private final List<HandlerHolder<T>> list = new CopyOnWriteArrayList<>();
-    HandlerHolder<T> chooseHandler() {
-      HandlerHolder<T> handler = list.get(pos);
-      pos++;
-      checkPos();
-      return handler;
+    public HandlerManager(VertxEventLoopGroup availableWorkers) {
+        this.availableWorkers = availableWorkers;
     }
 
-    void addHandler(HandlerHolder<T> handler) {
-      list.add(handler);
+    public boolean hasHandlers() {
+        return hasHandlers;
     }
 
-    boolean removeHandler(HandlerHolder<T> handler) {
-      if (list.remove(handler)) {
-        checkPos();
-        return true;
-      } else {
-        return false;
-      }
+    // TODO: 17/1/1 by zmyer
+    public HandlerHolder<T> chooseHandler(EventLoop worker) {
+        Handlers<T> handlers = handlerMap.get(worker);
+        return handlers == null ? null : handlers.chooseHandler();
     }
 
-    boolean isEmpty() {
-      return list.isEmpty();
+    // TODO: 17/1/1 by zmyer
+    public synchronized void addHandler(T handler, ContextImpl context) {
+        EventLoop worker = context.nettyEventLoop();
+        availableWorkers.addWorker(worker);
+        Handlers<T> handlers = new Handlers<>();
+        //在事件处理器映射表中注册处理器
+        Handlers<T> prev = handlerMap.putIfAbsent(worker, handlers);
+        if (prev != null) {
+            handlers = prev;
+        }
+        handlers.addHandler(new HandlerHolder<>(context, handler));
+        hasHandlers = true;
     }
 
-    void checkPos() {
-      if (pos == list.size()) {
-        pos = 0;
-      }
+    // TODO: 17/1/1 by zmyer
+    public synchronized void removeHandler(T handler, ContextImpl context) {
+        EventLoop worker = context.nettyEventLoop();
+        Handlers<T> handlers = handlerMap.get(worker);
+        if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {
+            throw new IllegalStateException("Can't find handler");
+        }
+        if (handlers.isEmpty()) {
+            handlerMap.remove(worker);
+        }
+        if (handlerMap.isEmpty()) {
+            hasHandlers = false;
+        }
+        //Available workers does it's own reference counting -since workers can be shared across different Handlers
+        availableWorkers.removeWorker(worker);
     }
-  }
 
+    // TODO: 17/1/1 by zmyer
+    private static final class Handlers<T> {
+        private int pos;
+        private final List<HandlerHolder<T>> list = new CopyOnWriteArrayList<>();
+
+        HandlerHolder<T> chooseHandler() {
+            HandlerHolder<T> handler = list.get(pos);
+            pos++;
+            checkPos();
+            return handler;
+        }
+
+        void addHandler(HandlerHolder<T> handler) {
+            list.add(handler);
+        }
+
+        // TODO: 17/1/1 by zmyer
+        boolean removeHandler(HandlerHolder<T> handler) {
+            if (list.remove(handler)) {
+                checkPos();
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        boolean isEmpty() {
+            return list.isEmpty();
+        }
+
+        void checkPos() {
+            if (pos == list.size()) {
+                pos = 0;
+            }
+        }
+    }
 }

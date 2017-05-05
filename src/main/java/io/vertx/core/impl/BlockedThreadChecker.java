@@ -28,46 +28,50 @@ import java.util.WeakHashMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/27 by zmyer
 public class BlockedThreadChecker {
 
-  private static final Logger log = LoggerFactory.getLogger(BlockedThreadChecker.class);
+    private static final Logger log = LoggerFactory.getLogger(BlockedThreadChecker.class);
+    private static final Object O = new Object();
+    //检查线程列表
+    private final Map<VertxThread, Object> threads = new WeakHashMap<>();
+    //定时器对象
+    private final Timer timer; // Need to use our own timer - can't use event loop for this
 
-  private static final Object O = new Object();
-  private final Map<VertxThread, Object> threads = new WeakHashMap<>();
-  private final Timer timer; // Need to use our own timer - can't use event loop for this
-
-  BlockedThreadChecker(long interval, long warningExceptionTime) {
-    timer = new Timer("vertx-blocked-thread-checker", true);
-    timer.schedule(new TimerTask() {
-      @Override
-      public void run() {
-        synchronized (BlockedThreadChecker.this) {
-          long now = System.nanoTime();
-          for (VertxThread thread : threads.keySet()) {
-            long execStart = thread.startTime();
-            long dur = now - execStart;
-            final long timeLimit = thread.getMaxExecTime();
-            if (execStart != 0 && dur > timeLimit) {
-              final String message = "Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms, time limit is " + (timeLimit / 1000000);
-              if (dur <= warningExceptionTime) {
-                log.warn(message);
-              } else {
-                VertxException stackTrace = new VertxException("Thread blocked");
-                stackTrace.setStackTrace(thread.getStackTrace());
-                log.warn(message, stackTrace);
-              }
+    // TODO: 16/12/27 by zmyer
+    BlockedThreadChecker(long interval, long warningExceptionTime) {
+        //创建定时器对象
+        timer = new Timer("vertx-blocked-thread-checker", true);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                synchronized (BlockedThreadChecker.this) {
+                    long now = System.nanoTime();
+                    for (VertxThread thread : threads.keySet()) {
+                        long execStart = thread.startTime();
+                        long dur = now - execStart;
+                        final long timeLimit = thread.getMaxExecTime();
+                        if (execStart != 0 && dur > timeLimit) {
+                            final String message = "Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms, time limit is " + (timeLimit / 1000000);
+                            if (dur <= warningExceptionTime) {
+                                log.warn(message);
+                            } else {
+                                VertxException stackTrace = new VertxException("Thread blocked");
+                                stackTrace.setStackTrace(thread.getStackTrace());
+                                log.warn(message, stackTrace);
+                            }
+                        }
+                    }
+                }
             }
-          }
-        }
-      }
-    }, interval, interval);
-  }
+        }, interval, interval);
+    }
 
-  public synchronized void registerThread(VertxThread thread) {
-    threads.put(thread, O);
-  }
+    public synchronized void registerThread(VertxThread thread) {
+        threads.put(thread, O);
+    }
 
-  public void close() {
-    timer.cancel();
-  }
+    public void close() {
+        timer.cancel();
+    }
 }

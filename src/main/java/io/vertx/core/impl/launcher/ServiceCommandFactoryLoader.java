@@ -28,30 +28,37 @@ import java.util.List;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/13 by zmyer
 public class ServiceCommandFactoryLoader implements CommandFactoryLookup {
 
-  private Collection<CommandFactory> commands;
+    //指令工厂集合
+    private Collection<CommandFactory> commands;
 
-  /**
-   * Creates a new instance of {@link ServiceCommandFactoryLoader} using the classloader having loaded the
-   * {@link ServiceCommandFactoryLoader} class.
-   */
-  public ServiceCommandFactoryLoader() {
-    this.commands = ServiceHelper.loadFactories(CommandFactory.class, getClass().getClassLoader());
-  }
+    /**
+     * Creates a new instance of {@link ServiceCommandFactoryLoader} using the classloader having loaded the
+     * {@link ServiceCommandFactoryLoader} class.
+     */
+    // TODO: 16/12/13 by zmyer
+    public ServiceCommandFactoryLoader() {
+        //加载指令工厂集合
+        this.commands = ServiceHelper.loadFactories(CommandFactory.class, getClass().getClassLoader());
+    }
 
-  /**
-   * Creates a new instance of {@link ServiceCommandFactoryLoader} using specified classloader.
-   */
-  public ServiceCommandFactoryLoader(ClassLoader loader) {
-    this.commands = ServiceHelper.loadFactories(CommandFactory.class, loader);
-  }
+    /**
+     * Creates a new instance of {@link ServiceCommandFactoryLoader} using specified classloader.
+     */
+    // TODO: 16/12/13 by zmyer
+    public ServiceCommandFactoryLoader(ClassLoader loader) {
+        //加载指令工厂集合
+        this.commands = ServiceHelper.loadFactories(CommandFactory.class, loader);
+    }
 
-  @Override
-  public Collection<CommandFactory<?>> lookup() {
-    List<CommandFactory<?>> list = new ArrayList<>();
-    commands.stream().forEach(list::add);
-    return list;
-  }
+    // TODO: 16/12/13 by zmyer
+    @Override
+    public Collection<CommandFactory<?>> lookup() {
+        List<CommandFactory<?>> list = new ArrayList<>();
+        commands.stream().forEach(list::add);
+        return list;
+    }
 
 }

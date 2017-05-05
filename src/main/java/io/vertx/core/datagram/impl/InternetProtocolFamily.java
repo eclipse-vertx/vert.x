@@ -18,15 +18,16 @@ package io.vertx.core.datagram.impl;
 /**
  * Internet Protocol (IP) families used by {@link io.vertx.core.datagram.DatagramSocket}.
  */
+// TODO: 16/12/18 by zmyer
 public enum InternetProtocolFamily {
 
-  /**
-   * Using IPv4
-   */
-  IPv4,
+    /**
+     * Using IPv4
+     */
+    IPv4,
 
-  /**
-   * Using IPv6
-   */
-  IPv6
+    /**
+     * Using IPv6
+     */
+    IPv6
 }

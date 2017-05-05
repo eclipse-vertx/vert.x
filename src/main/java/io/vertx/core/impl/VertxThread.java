@@ -21,44 +21,46 @@ import io.netty.util.concurrent.FastThreadLocalThread;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+// TODO: 16/12/28 by zmyer
 final class VertxThread extends FastThreadLocalThread {
 
-  private final boolean worker;
-  private final long maxExecTime;
-  private long execStart;
-  private ContextImpl context;
+    private final boolean worker;
+    private final long maxExecTime;
+    private long execStart;
+    //所属的执行上下文对象
+    private ContextImpl context;
 
-  public VertxThread(Runnable target, String name, boolean worker, long maxExecTime) {
-    super(target, name);
-    this.worker = worker;
-    this.maxExecTime = maxExecTime;
-  }
+    public VertxThread(Runnable target, String name, boolean worker, long maxExecTime) {
+        super(target, name);
+        this.worker = worker;
+        this.maxExecTime = maxExecTime;
+    }
 
-  ContextImpl getContext() {
-    return context;
-  }
+    ContextImpl getContext() {
+        return context;
+    }
 
-  void setContext(ContextImpl context) {
-    this.context = context;
-  }
+    void setContext(ContextImpl context) {
+        this.context = context;
+    }
 
-  public final void executeStart() {
-    execStart = System.nanoTime();
-  }
+    public final void executeStart() {
+        execStart = System.nanoTime();
+    }
 
-  public final void executeEnd() {
-    execStart = 0;
-  }
+    public final void executeEnd() {
+        execStart = 0;
+    }
 
-  public long startTime() {
-    return execStart;
-  }
+    public long startTime() {
+        return execStart;
+    }
 
-  public boolean isWorker() {
-    return worker;
-  }
+    public boolean isWorker() {
+        return worker;
+    }
 
-  public long getMaxExecTime() {
-    return maxExecTime;
-  }
+    public long getMaxExecTime() {
+        return maxExecTime;
+    }
 }

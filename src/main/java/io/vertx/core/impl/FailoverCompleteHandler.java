@@ -21,7 +21,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/29 by zmyer
 public interface FailoverCompleteHandler {
-
-  void handle(String nodeID, JsonObject haInfo, boolean failed);
+    void handle(String nodeID, JsonObject haInfo, boolean failed);
 }

@@ -29,67 +29,76 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class AsynchronousCounter implements Counter {
+    //vertx节点
+    private final VertxInternal vertx;
+    //引用计数器
+    private final AtomicLong counter;
 
-  private final VertxInternal vertx;
-  private final AtomicLong counter;
+    public AsynchronousCounter(VertxInternal vertx) {
+        this.vertx = vertx;
+        this.counter = new AtomicLong();
+    }
 
-  public AsynchronousCounter(VertxInternal vertx) {
-    this.vertx = vertx;
-    this.counter = new AtomicLong();
-  }
+    public AsynchronousCounter(VertxInternal vertx, AtomicLong counter) {
+        this.vertx = vertx;
+        this.counter = counter;
+    }
 
-  public AsynchronousCounter(VertxInternal vertx, AtomicLong counter) {
-    this.vertx = vertx;
-    this.counter = counter;
-  }
+    // TODO: 17/1/1 by zmyer
+    @Override
+    public void get(Handler<AsyncResult<Long>> resultHandler) {
+        Objects.requireNonNull(resultHandler, "resultHandler");
+        Context context = vertx.getOrCreateContext();
+        context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.get())));
+    }
 
-  @Override
-  public void get(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.get())));
-  }
+    // TODO: 17/1/1 by zmyer
+    @Override
+    public void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+        Objects.requireNonNull(resultHandler, "resultHandler");
+        Context context = vertx.getOrCreateContext();
+        context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.incrementAndGet())));
+    }
 
-  @Override
-  public void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.incrementAndGet())));
-  }
+    // TODO: 17/1/1 by zmyer
+    @Override
+    public void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
+        Objects.requireNonNull(resultHandler, "resultHandler");
+        Context context = vertx.getOrCreateContext();
+        context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.getAndIncrement())));
+    }
 
-  @Override
-  public void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.getAndIncrement())));
-  }
+    // TODO: 17/1/1 by zmyer
+    @Override
+    public void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+        Objects.requireNonNull(resultHandler, "resultHandler");
+        Context context = vertx.getOrCreateContext();
+        context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.decrementAndGet())));
+    }
 
-  @Override
-  public void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.decrementAndGet())));
-  }
+    // TODO: 17/1/1 by zmyer
+    @Override
+    public void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
+        Objects.requireNonNull(resultHandler, "resultHandler");
+        Context context = vertx.getOrCreateContext();
+        context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.addAndGet(value))));
+    }
 
-  @Override
-  public void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.addAndGet(value))));
-  }
+    // TODO: 17/1/1 by zmyer
+    @Override
+    public void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
+        Objects.requireNonNull(resultHandler, "resultHandler");
+        Context context = vertx.getOrCreateContext();
+        context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.getAndAdd(value))));
+    }
 
-  @Override
-  public void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.getAndAdd(value))));
-  }
-
-  @Override
-  public void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.compareAndSet(expected, value))));
-  }
+    // TODO: 17/1/1 by zmyer
+    @Override
+    public void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
+        Objects.requireNonNull(resultHandler, "resultHandler");
+        Context context = vertx.getOrCreateContext();
+        context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.compareAndSet(expected, value))));
+    }
 }

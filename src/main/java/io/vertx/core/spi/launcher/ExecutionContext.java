@@ -25,73 +25,78 @@ import java.util.HashMap;
 /**
  * The execution context contains various information on the execution.
  */
+// TODO: 17/1/1 by zmyer
 public class ExecutionContext extends HashMap<String, Object> {
-  private final VertxCommandLauncher launcher;
-  private final Command command;
-  private final CommandLine commandLine;
+    //vertx指令加载器
+    private final VertxCommandLauncher launcher;
+    //指令对象
+    private final Command command;
+    //命令行对象
+    private final CommandLine commandLine;
 
-  /**
-   * Creates a new instance of {@link ExecutionContext}.
-   *
-   * @param command     the command instance that is executed
-   * @param launcher    the launcher class
-   * @param commandLine the command line
-   */
-  public ExecutionContext(Command command, VertxCommandLauncher launcher, CommandLine commandLine) {
-    this.command = command;
-    this.commandLine = commandLine;
-    this.launcher = launcher;
-  }
+    /**
+     * Creates a new instance of {@link ExecutionContext}.
+     *
+     * @param command     the command instance that is executed
+     * @param launcher    the launcher class
+     * @param commandLine the command line
+     */
+    // TODO: 17/1/1 by zmyer
+    public ExecutionContext(Command command, VertxCommandLauncher launcher, CommandLine commandLine) {
+        this.command = command;
+        this.commandLine = commandLine;
+        this.launcher = launcher;
+    }
 
-  /**
-   * @return the command line object.
-   */
-  public Command command() {
-    return command;
-  }
+    /**
+     * @return the command line object.
+     */
+    public Command command() {
+        return command;
+    }
 
-  /**
-   * @return the launcher.
-   */
-  public VertxCommandLauncher launcher() {
-    return launcher;
-  }
+    /**
+     * @return the launcher.
+     */
+    public VertxCommandLauncher launcher() {
+        return launcher;
+    }
 
-  /**
-   * @return the {@link CLI}.
-   */
-  public CLI cli() {
-    return commandLine.cli();
-  }
+    /**
+     * @return the {@link CLI}.
+     */
+    public CLI cli() {
+        return commandLine.cli();
+    }
 
-  /**
-   * @return the {@link CommandLine}.
-   */
-  public CommandLine commandLine() {
-    return commandLine;
-  }
+    /**
+     * @return the {@link CommandLine}.
+     */
+    public CommandLine commandLine() {
+        return commandLine;
+    }
 
-  /**
-   * Executes another command.
-   *
-   * @param command the command name
-   * @param args    the arguments
-   */
-  public void execute(String command, String... args) {
-    launcher.execute(command, args);
-  }
+    /**
+     * Executes another command.
+     *
+     * @param command the command name
+     * @param args    the arguments
+     */
+    public void execute(String command, String... args) {
+        launcher.execute(command, args);
+    }
 
-  /**
-   * @return the {@code Main-Class} object.
-   */
-  public Object main() {
-    return get("Main");
-  }
+    /**
+     * @return the {@code Main-Class} object.
+     */
+    public Object main() {
+        return get("Main");
+    }
 
-  /**
-   * @return the {@link PrintStream} on which command can write.
-   */
-  public PrintStream getPrintStream() {
-    return launcher.getPrintStream();
-  }
+    /**
+     * @return the {@link PrintStream} on which command can write.
+     */
+    public PrintStream getPrintStream() {
+        return launcher.getPrintStream();
+    }
 }

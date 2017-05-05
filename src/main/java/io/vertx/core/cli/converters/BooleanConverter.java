@@ -24,30 +24,33 @@ import java.util.List;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/17 by zmyer
 public final class BooleanConverter implements Converter<Boolean> {
 
-  /**
-   * The converter.
-   */
-  public static final BooleanConverter INSTANCE = new BooleanConverter();
-  /**
-   * The set of values considered as 'true'.
-   */
-  private static final List<String> TRUE = Arrays.asList("true", "yes", "on", "1");
+    /**
+     * The converter.
+     */
+    //单例对象
+    public static final BooleanConverter INSTANCE = new BooleanConverter();
+    /**
+     * The set of values considered as 'true'.
+     */
+    //true列表
+    private static final List<String> TRUE = Arrays.asList("true", "yes", "on", "1");
 
-  private BooleanConverter() {
-    // No direct instantiation
-  }
+    private BooleanConverter() {
+        // No direct instantiation
+    }
 
-  /**
-   * Creates the boolean value from the given String. If the given String does not match one of the 'true' value,
-   * {@code false} is returned.
-   *
-   * @param value the value
-   * @return the boolean object
-   */
-  @Override
-  public Boolean fromString(String value) {
-    return value != null && TRUE.contains(value.toLowerCase());
-  }
+    /**
+     * Creates the boolean value from the given String. If the given String does not match one of the 'true' value,
+     * {@code false} is returned.
+     *
+     * @param value the value
+     * @return the boolean object
+     */
+    @Override
+    public Boolean fromString(String value) {
+        return value != null && TRUE.contains(value.toLowerCase());
+    }
 }

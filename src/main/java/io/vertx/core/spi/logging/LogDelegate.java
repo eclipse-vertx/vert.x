@@ -21,62 +21,63 @@ package io.vertx.core.spi.logging;
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface LogDelegate {
 
-  boolean isInfoEnabled();
+    boolean isInfoEnabled();
 
-  boolean isDebugEnabled();
+    boolean isDebugEnabled();
 
-  boolean isTraceEnabled();
+    boolean isTraceEnabled();
 
-  void fatal(Object message);
+    void fatal(Object message);
 
-  void fatal(Object message, Throwable t);
+    void fatal(Object message, Throwable t);
 
-  void error(Object message);
+    void error(Object message);
 
-  void error(Object message, Object... params);
+    void error(Object message, Object... params);
 
-  void error(Object message, Throwable t);
+    void error(Object message, Throwable t);
 
-  void error(Object message, Throwable t, Object... params);
+    void error(Object message, Throwable t, Object... params);
 
-  void warn(Object message);
+    void warn(Object message);
 
-  void warn(Object message, Object... params);
+    void warn(Object message, Object... params);
 
-  void warn(Object message, Throwable t);
+    void warn(Object message, Throwable t);
 
-  void warn(Object message, Throwable t, Object... params);
+    void warn(Object message, Throwable t, Object... params);
 
-  void info(Object message);
+    void info(Object message);
 
-  void info(Object message, Object... params);
+    void info(Object message, Object... params);
 
-  void info(Object message, Throwable t);
+    void info(Object message, Throwable t);
 
-  void info(Object message, Throwable t, Object... params);
+    void info(Object message, Throwable t, Object... params);
 
-  void debug(Object message);
+    void debug(Object message);
 
-  void debug(Object message, Object... params);
+    void debug(Object message, Object... params);
 
-  void debug(Object message, Throwable t);
+    void debug(Object message, Throwable t);
 
-  void debug(Object message, Throwable t, Object... params);
+    void debug(Object message, Throwable t, Object... params);
 
-  void trace(Object message);
+    void trace(Object message);
 
-  void trace(Object message, Object... params);
+    void trace(Object message, Object... params);
 
-  void trace(Object message, Throwable t);
+    void trace(Object message, Throwable t);
 
-  void trace(Object message, Throwable t, Object... params);
+    void trace(Object message, Throwable t, Object... params);
 
-  /**
-   * @return the underlying framework logger object, null in the default implementation
-   */
-  default Object unwrap() {
-    return null;
-  }
+    /**
+     * @return the underlying framework logger object, null in the default implementation
+     */
+    default Object unwrap() {
+        return null;
+    }
 }

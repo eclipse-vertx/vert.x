@@ -16,11 +16,7 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.WorkerExecutor;
+import io.vertx.core.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -30,61 +26,72 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/15 by zmyer
 class WorkerExecutorImpl implements WorkerExecutor, Closeable, MetricsProvider {
+    //执行上下文对象
+    private final ContextImpl context;
+    //工作对象池
+    final WorkerPool pool;
+    //关闭标记
+    private boolean closed;
+    //工作线程对象
+    private final Executor workerExec;
+    //释放标记
+    private final boolean releaseOnClose;
 
-  private final ContextImpl context;
-  final WorkerPool pool;
-  private boolean closed;
-  private final Executor workerExec;
-  private final boolean releaseOnClose;
-
-  public WorkerExecutorImpl(ContextImpl context, WorkerPool pool, boolean releaseOnClose) {
-    this.pool = pool;
-    this.context = context;
-    this.workerExec = pool.createOrderedExecutor();
-    this.releaseOnClose = releaseOnClose;
-  }
-
-  @Override
-  public Metrics getMetrics() {
-    return pool.metrics();
-  }
-
-  @Override
-  public boolean isMetricsEnabled() {
-    PoolMetrics metrics = pool.metrics();
-    return metrics != null && metrics.isEnabled();
-  }
-
-  public WorkerPool getPool() {
-    return pool;
-  }
-
-  public synchronized <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-    if (closed) {
-      throw new IllegalStateException("Worker executor closed");
+    // TODO: 16/12/15 by zmyer
+    public WorkerExecutorImpl(ContextImpl context, WorkerPool pool, boolean releaseOnClose) {
+        this.pool = pool;
+        this.context = context;
+        this.workerExec = pool.createOrderedExecutor();
+        this.releaseOnClose = releaseOnClose;
     }
-    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? workerExec : pool.executor(), pool.metrics());
-  }
 
-  @Override
-  public void close() {
-    synchronized (this) {
-      if (!closed) {
-        closed = true;
-      } else {
-        return;
-      }
+    @Override
+    public Metrics getMetrics() {
+        return pool.metrics();
     }
-    if (releaseOnClose && pool instanceof VertxImpl.SharedWorkerPool) {
-      ((VertxImpl.SharedWorkerPool)pool).release();
-    }
-  }
 
-  @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
-    close();
-    completionHandler.handle(Future.succeededFuture());
-  }
+    @Override
+    public boolean isMetricsEnabled() {
+        PoolMetrics metrics = pool.metrics();
+        return metrics != null && metrics.isEnabled();
+    }
+
+    public WorkerPool getPool() {
+        return pool;
+    }
+
+    // TODO: 16/12/15 by zmyer
+    public synchronized <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
+        if (closed) {
+            throw new IllegalStateException("Worker executor closed");
+        }
+        //在执行上下文中执行给定的处理对象
+        context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? workerExec : pool.executor(), pool.metrics());
+    }
+
+    // TODO: 16/12/15 by zmyer
+    @Override
+    public void close() {
+        synchronized (this) {
+            if (!closed) {
+                closed = true;
+            } else {
+                return;
+            }
+        }
+        //如果开启了释放标记,则需要及时释放对应的工作对象池
+        if (releaseOnClose && pool instanceof VertxImpl.SharedWorkerPool) {
+            ((VertxImpl.SharedWorkerPool) pool).release();
+        }
+    }
+
+    // TODO: 16/12/15 by zmyer
+    @Override
+    public void close(Handler<AsyncResult<Void>> completionHandler) {
+        close();
+        completionHandler.handle(Future.succeededFuture());
+    }
 
 }

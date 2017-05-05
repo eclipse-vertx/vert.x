@@ -21,6 +21,7 @@ package io.vertx.core.spi.logging;
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface LogDelegateFactory {
-  LogDelegate createDelegate(String name);
+    LogDelegate createDelegate(String name);
 }

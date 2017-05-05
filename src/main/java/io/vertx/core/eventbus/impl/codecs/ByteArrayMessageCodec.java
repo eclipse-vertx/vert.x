@@ -22,35 +22,36 @@ import io.vertx.core.eventbus.MessageCodec;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/25 by zmyer
 public class ByteArrayMessageCodec implements MessageCodec<byte[], byte[]> {
 
-  @Override
-  public void encodeToWire(Buffer buffer, byte[] byteArray) {
-    buffer.appendInt(byteArray.length);
-    buffer.appendBytes(byteArray);
-  }
+    @Override
+    public void encodeToWire(Buffer buffer, byte[] byteArray) {
+        buffer.appendInt(byteArray.length);
+        buffer.appendBytes(byteArray);
+    }
 
-  @Override
-  public byte[] decodeFromWire(int pos, Buffer buffer) {
-    int length = buffer.getInt(pos);
-    pos += 4;
-    return buffer.getBytes(pos, pos + length);
-  }
+    @Override
+    public byte[] decodeFromWire(int pos, Buffer buffer) {
+        int length = buffer.getInt(pos);
+        pos += 4;
+        return buffer.getBytes(pos, pos + length);
+    }
 
-  @Override
-  public byte[] transform(byte[] bytes) {
-    byte[] copied = new byte[bytes.length];
-    System.arraycopy(bytes, 0, copied, 0, bytes.length);
-    return copied;
-  }
+    @Override
+    public byte[] transform(byte[] bytes) {
+        byte[] copied = new byte[bytes.length];
+        System.arraycopy(bytes, 0, copied, 0, bytes.length);
+        return copied;
+    }
 
-  @Override
-  public String name() {
-    return "bytearray";
-  }
+    @Override
+    public String name() {
+        return "bytearray";
+    }
 
-  @Override
-  public byte systemCodecID() {
-    return 12;
-  }
+    @Override
+    public byte systemCodecID() {
+        return 12;
+    }
 }

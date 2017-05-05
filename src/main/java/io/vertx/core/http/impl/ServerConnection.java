@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -32,12 +33,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -60,495 +56,497 @@ import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
- *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/18 by zmyer
 class ServerConnection extends ConnectionBase implements HttpConnection {
 
-  private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
+    private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
 
-  private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
+    private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
-  private final Queue<Object> pending = new ArrayDeque<>(8);
-  private final String serverOrigin;
-  private final HttpServerImpl server;
-  private WebSocketServerHandshaker handshaker;
-  private final HttpServerMetrics metrics;
-  private boolean requestFailed;
-  private Object requestMetric;
-  private Handler<HttpServerRequest> requestHandler;
-  private Handler<ServerWebSocket> wsHandler;
-  private HttpServerRequestImpl currentRequest;
-  private HttpServerResponseImpl pendingResponse;
-  private ServerWebSocketImpl ws;
-  private ChannelFuture lastWriteFuture;
-  private boolean channelPaused;
-  private boolean paused;
-  private boolean sentCheck;
-  private long bytesRead;
-  private long bytesWritten;
-  private Object metric;
+    //消息挂起队列
+    private final Queue<Object> pending = new ArrayDeque<>(8);
 
-  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
-                   WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
-    super(vertx, channel, context, metrics);
-    this.serverOrigin = serverOrigin;
-    this.server = server;
-    this.handshaker = handshaker;
-    this.metrics = metrics;
-  }
+    private final String serverOrigin;
+    private final HttpServerImpl server;
+    private WebSocketServerHandshaker handshaker;
+    private final HttpServerMetrics metrics;
+    private boolean requestFailed;
+    private Object requestMetric;
+    private Handler<HttpServerRequest> requestHandler;
+    private Handler<ServerWebSocket> wsHandler;
+    private HttpServerRequestImpl currentRequest;
+    private HttpServerResponseImpl pendingResponse;
+    private ServerWebSocketImpl ws;
+    private ChannelFuture lastWriteFuture;
+    private boolean channelPaused;
+    private boolean paused;
+    private boolean sentCheck;
+    private long bytesRead;
+    private long bytesWritten;
+    private Object metric;
 
-  @Override
-  protected synchronized Object metric() {
-    return metric;
-  }
-
-  synchronized void metric(Object metric) {
-    this.metric = metric;
-  }
-
-  public synchronized void pause() {
-    if (!paused) {
-      paused = true;
-    }
-  }
-
-  public synchronized void resume() {
-    if (paused) {
-      paused = false;
-      checkNextTick();
-    }
-  }
-
-  synchronized void handleMessage(Object msg) {
-    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
-      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      pending.add(msg);
-      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
-        //We pause the channel too, to prevent the queue growing too large, but we don't do this
-        //until the queue reaches a certain size, to avoid pausing it too often
-        super.doPause();
-        channelPaused = true;
-      }
-    } else {
-      processMessage(msg);
-    }
-  }
-
-  synchronized void responseComplete() {
-    if (metrics.isEnabled()) {
-      reportBytesWritten(bytesWritten);
-      bytesWritten = 0;
-      if (requestFailed) {
-        metrics.requestReset(requestMetric);
-        requestFailed = false;
-      } else {
-        metrics.responseEnd(requestMetric, pendingResponse);
-      }
-    }
-    pendingResponse = null;
-    checkNextTick();
-  }
-
-  synchronized void requestHandler(Handler<HttpServerRequest> handler) {
-    this.requestHandler = handler;
-  }
-
-  synchronized void wsHandler(Handler<ServerWebSocket> handler) {
-    this.wsHandler = handler;
-  }
-
-  String getServerOrigin() {
-    return serverOrigin;
-  }
-
-  Vertx vertx() {
-    return vertx;
-  }
-
-  @Override
-  public ChannelFuture writeToChannel(Object obj) {
-    if (metrics.isEnabled()) {
-      long bytes = getBytes(obj);
-      if (bytes == -1) {
-        log.warn("Metrics could not be updated to include bytes written because of unknown object " + obj.getClass() + " being written.");
-      } else {
-        bytesWritten += bytes;
-      }
-    }
-    return lastWriteFuture = super.writeToChannel(obj);
-  }
-
-  ServerWebSocket upgrade(HttpServerRequest request, HttpRequest nettyReq) {
-    if (ws != null) {
-      return ws;
-    }
-    handshaker = server.createHandshaker(channel, nettyReq);
-    if (handshaker == null) {
-      throw new IllegalStateException("Can't upgrade this request");
-    }
-    
-    ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
-      request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
-      null, server.options().getMaxWebsocketFrameSize());
-    ws.setMetric(metrics.upgrade(requestMetric, ws));
-    try {
-      handshaker.handshake(channel, nettyReq);
-    } catch (WebSocketHandshakeException e) {
-      handleException(e);
-    } catch (Exception e) {
-      log.error("Failed to generate shake response", e);
-    }
-    ChannelHandler handler = channel.pipeline().get(HttpChunkContentCompressor.class);
-    if (handler != null) {
-      // remove compressor as its not needed anymore once connection was upgraded to websockets
-      channel.pipeline().remove(handler);
-    }
-    server.connectionMap().put(channel, this);
-    return ws;
-  }
-
-  boolean isSSL() {
-    return server.getSslHelper().isSSL();
-  }
-
-  NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics, metric);
-    Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
-    connectionMap.put(channel, socket);
-
-    // Flush out all pending data
-    endReadAndFlush();
-
-    // remove old http handlers and replace the old handler with one that handle plain sockets
-    ChannelPipeline pipeline = channel.pipeline();
-    ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
-    if (compressor != null) {
-      pipeline.remove(compressor);
+    ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
+                     WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
+        super(vertx, channel, context, metrics);
+        this.serverOrigin = serverOrigin;
+        this.server = server;
+        this.handshaker = handshaker;
+        this.metrics = metrics;
     }
 
-    pipeline.remove("httpDecoder");
-    if (pipeline.get("chunkedWriter") != null) {
-      pipeline.remove("chunkedWriter");
+    @Override
+    protected synchronized Object metric() {
+        return metric;
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(channel, socket, connectionMap) {
-      @Override
-      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
-        // remove from the real mapping
-        server.removeChannel(channel);
-        super.exceptionCaught(chctx, t);
-      }
-
-      @Override
-      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-        // remove from the real mapping
-        server.removeChannel(channel);
-        super.channelInactive(chctx);
-      }
-
-      @Override
-      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-        if (msg instanceof HttpContent) {
-          ReferenceCountUtil.release(msg);
-          return;
-        }
-        super.channelRead(chctx, msg);
-      }
-    });
-
-    // check if the encoder can be removed yet or not.
-    if (lastWriteFuture == null) {
-      channel.pipeline().remove("httpEncoder");
-    } else {
-      lastWriteFuture.addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          channel.pipeline().remove("httpEncoder");
-        }
-      });
+    synchronized void metric(Object metric) {
+        this.metric = metric;
     }
-    return socket;
-  }
 
-  private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
-    this.currentRequest = req;
-    pendingResponse = resp;
-    if (metrics.isEnabled()) {
-      requestMetric = metrics.requestBegin(metric, req);
-    }
-    if (requestHandler != null) {
-      requestHandler.handle(req);
-    }
-  }
-
-  private void handleChunk(Buffer chunk) {
-    if (metrics.isEnabled()) {
-      bytesRead += chunk.length();
-    }
-    currentRequest.handleData(chunk);
-  }
-
-  private void handleEnd() {
-    currentRequest.handleEnd();
-    reportBytesRead(bytesRead);
-    currentRequest = null;
-    bytesRead = 0;
-  }
-
-  @Override
-  public synchronized void handleInterestedOpsChanged() {
-    if (!isNotWritable()) {
-      if (pendingResponse != null) {
-        pendingResponse.handleDrained();
-      } else if (ws != null) {
-        ws.writable();
-      }
-    }
-  }
-
-  @Override
-  public void close() {
-    if (handshaker == null) {
-      super.close();
-    } else {
-      endReadAndFlush();
-      handshaker.close(channel, new CloseWebSocketFrame(1000, null));
-    }
-  }
-
-
-  synchronized void handleWebsocketConnect(ServerWebSocketImpl ws) {
-    if (wsHandler != null) {
-      wsHandler.handle(ws);
-      this.ws = ws;
-    }
-  }
-
-  void write100Continue() {
-    channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
-  }
-
-  synchronized private void handleWsFrame(WebSocketFrameInternal frame) {
-    if (ws != null) {
-      ws.handleFrame(frame);
-    }
-  }
-
-  synchronized protected void handleClosed() {
-    if (ws != null) {
-      if (metrics.isEnabled()) {
-        metrics.disconnected(ws.getMetric());
-      }
-      ws.setMetric(null);
-    }
-    super.handleClosed();
-    if (ws != null) {
-      ws.handleClosed();
-    }
-    if (pendingResponse != null) {
-      if (metrics.isEnabled()) {
-        metrics.requestReset(requestMetric);
-      }
-      pendingResponse.handleClosed();
-    }
-  }
-
-  protected ContextImpl getContext() {
-    return super.getContext();
-  }
-
-  @Override
-  protected synchronized void handleException(Throwable t) {
-    super.handleException(t);
-    if (metrics.isEnabled()) {
-      requestFailed = true;
-    }
-    if (currentRequest != null) {
-      currentRequest.handleException(t);
-    }
-    if (pendingResponse != null) {
-      pendingResponse.handleException(t);
-    }
-    if (ws != null) {
-      ws.handleException(t);
-    }
-  }
-
-  protected void addFuture(Handler<AsyncResult<Void>> completionHandler, ChannelFuture future) {
-    super.addFuture(completionHandler, future);
-  }
-
-  @Override
-  protected boolean supportsFileRegion() {
-    return super.supportsFileRegion() && channel.pipeline().get(HttpChunkContentCompressor.class) == null;
-  }
-
-  protected ChannelFuture sendFile(RandomAccessFile file, long offset, long length) throws IOException {
-    return super.sendFile(file, offset, length);
-  }
-
-  private void processMessage(Object msg) {
-
-    if (msg instanceof HttpRequest) {
-      HttpRequest request = (HttpRequest) msg;
-      DecoderResult result = ((HttpObject) msg).getDecoderResult();
-      if (result.isFailure()) {
-        channel.pipeline().fireExceptionCaught(result.cause());
-        return;
-      }
-      if (server.options().isHandle100ContinueAutomatically()) {
-        if (HttpHeaders.is100ContinueExpected(request)) {
-          write100Continue();
-        }
-      }
-      HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
-      handleRequest(req, resp);
-    }
-    if (msg instanceof HttpContent) {
-        HttpContent chunk = (HttpContent) msg;
-      if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.content());
-        handleChunk(buff);
-      }
-
-      //TODO chunk trailers
-      if (msg instanceof LastHttpContent) {
+    public synchronized void pause() {
         if (!paused) {
-          handleEnd();
+            paused = true;
+        }
+    }
+
+    public synchronized void resume() {
+        if (paused) {
+            paused = false;
+            checkNextTick();
+        }
+    }
+
+    synchronized void handleMessage(Object msg) {
+        if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
+            //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+            pending.add(msg);
+            if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+                //We pause the channel too, to prevent the queue growing too large, but we don't do this
+                //until the queue reaches a certain size, to avoid pausing it too often
+                super.doPause();
+                channelPaused = true;
+            }
         } else {
-          // Requeue
-          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+            processMessage(msg);
         }
-      }
-    } else if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      handleWsFrame(frame);
     }
 
-    checkNextTick();
-  }
-
-  private void checkNextTick() {
-    // Check if there are more pending messages in the queue that can be processed next time around
-    if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
-      sentCheck = true;
-      vertx.runOnContext(new VoidHandler() {
-        public void handle() {
-          sentCheck = false;
-          if (!paused) {
-            Object msg = pending.poll();
-            if (msg != null) {
-              processMessage(msg);
+    synchronized void responseComplete() {
+        if (metrics.isEnabled()) {
+            reportBytesWritten(bytesWritten);
+            bytesWritten = 0;
+            if (requestFailed) {
+                metrics.requestReset(requestMetric);
+                requestFailed = false;
+            } else {
+                metrics.responseEnd(requestMetric, pendingResponse);
             }
-            if (channelPaused && pending.isEmpty()) {
-              //Resume the actual channel
-              ServerConnection.super.doResume();
-              channelPaused = false;
-            }
-          }
         }
-      });
+        pendingResponse = null;
+        checkNextTick();
     }
-  }
 
-  private long getBytes(Object obj) {
-    if (obj == null) return 0;
-
-    if (obj instanceof Buffer) {
-      return ((Buffer) obj).length();
-    } else if (obj instanceof ByteBuf) {
-      return ((ByteBuf) obj).readableBytes();
-    } else if (obj instanceof HttpContent) {
-      return ((HttpContent) obj).content().readableBytes();
-    } else if (obj instanceof WebSocketFrame) {
-      return ((WebSocketFrame) obj).binaryData().length();
-    } else if (obj instanceof FileRegion) {
-      return ((FileRegion) obj).count();
-    } else if (obj instanceof ChunkedFile) {
-      ChunkedFile file = (ChunkedFile) obj;
-      return file.endOffset() - file.startOffset();
-    } else {
-      return -1;
+    synchronized void requestHandler(Handler<HttpServerRequest> handler) {
+        this.requestHandler = handler;
     }
-  }
 
-  //
+    synchronized void wsHandler(Handler<ServerWebSocket> handler) {
+        this.wsHandler = handler;
+    }
+
+    String getServerOrigin() {
+        return serverOrigin;
+    }
+
+    Vertx vertx() {
+        return vertx;
+    }
+
+    @Override
+    public ChannelFuture writeToChannel(Object obj) {
+        if (metrics.isEnabled()) {
+            long bytes = getBytes(obj);
+            if (bytes == -1) {
+                log.warn("Metrics could not be updated to include bytes written because of unknown object " + obj.getClass() + " being written.");
+            } else {
+                bytesWritten += bytes;
+            }
+        }
+        return lastWriteFuture = super.writeToChannel(obj);
+    }
+
+    ServerWebSocket upgrade(HttpServerRequest request, HttpRequest nettyReq) {
+        if (ws != null) {
+            return ws;
+        }
+        handshaker = server.createHandshaker(channel, nettyReq);
+        if (handshaker == null) {
+            throw new IllegalStateException("Can't upgrade this request");
+        }
+
+        ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
+                request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
+                null, server.options().getMaxWebsocketFrameSize());
+        ws.setMetric(metrics.upgrade(requestMetric, ws));
+        try {
+            handshaker.handshake(channel, nettyReq);
+        } catch (WebSocketHandshakeException e) {
+            handleException(e);
+        } catch (Exception e) {
+            log.error("Failed to generate shake response", e);
+        }
+        ChannelHandler handler = channel.pipeline().get(HttpChunkContentCompressor.class);
+        if (handler != null) {
+            // remove compressor as its not needed anymore once connection was upgraded to websockets
+            channel.pipeline().remove(handler);
+        }
+        server.connectionMap().put(channel, this);
+        return ws;
+    }
+
+    boolean isSSL() {
+        return server.getSslHelper().isSSL();
+    }
+
+    NetSocket createNetSocket() {
+        NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics, metric);
+        Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
+        connectionMap.put(channel, socket);
+
+        // Flush out all pending data
+        endReadAndFlush();
+
+        // remove old http handlers and replace the old handler with one that handle plain sockets
+        ChannelPipeline pipeline = channel.pipeline();
+        ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
+        if (compressor != null) {
+            pipeline.remove(compressor);
+        }
+
+        pipeline.remove("httpDecoder");
+        if (pipeline.get("chunkedWriter") != null) {
+            pipeline.remove("chunkedWriter");
+        }
+
+        channel.pipeline().replace("handler", "handler", new VertxNetHandler(channel, socket, connectionMap) {
+            @Override
+            public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
+                // remove from the real mapping
+                server.removeChannel(channel);
+                super.exceptionCaught(chctx, t);
+            }
+
+            @Override
+            public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+                // remove from the real mapping
+                server.removeChannel(channel);
+                super.channelInactive(chctx);
+            }
+
+            @Override
+            public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+                if (msg instanceof HttpContent) {
+                    ReferenceCountUtil.release(msg);
+                    return;
+                }
+                super.channelRead(chctx, msg);
+            }
+        });
+
+        // check if the encoder can be removed yet or not.
+        if (lastWriteFuture == null) {
+            channel.pipeline().remove("httpEncoder");
+        } else {
+            lastWriteFuture.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    channel.pipeline().remove("httpEncoder");
+                }
+            });
+        }
+        return socket;
+    }
+
+    private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
+        this.currentRequest = req;
+        pendingResponse = resp;
+        if (metrics.isEnabled()) {
+            requestMetric = metrics.requestBegin(metric, req);
+        }
+        if (requestHandler != null) {
+            requestHandler.handle(req);
+        }
+    }
+
+    private void handleChunk(Buffer chunk) {
+        if (metrics.isEnabled()) {
+            bytesRead += chunk.length();
+        }
+        currentRequest.handleData(chunk);
+    }
+
+    private void handleEnd() {
+        currentRequest.handleEnd();
+        reportBytesRead(bytesRead);
+        currentRequest = null;
+        bytesRead = 0;
+    }
+
+    @Override
+    public synchronized void handleInterestedOpsChanged() {
+        if (!isNotWritable()) {
+            if (pendingResponse != null) {
+                pendingResponse.handleDrained();
+            } else if (ws != null) {
+                ws.writable();
+            }
+        }
+    }
+
+    @Override
+    public void close() {
+        if (handshaker == null) {
+            super.close();
+        } else {
+            endReadAndFlush();
+            handshaker.close(channel, new CloseWebSocketFrame(1000, null));
+        }
+    }
 
 
-  @Override
-  public synchronized ServerConnection closeHandler(Handler<Void> handler) {
-    return (ServerConnection) super.closeHandler(handler);
-  }
+    synchronized void handleWebsocketConnect(ServerWebSocketImpl ws) {
+        if (wsHandler != null) {
+            wsHandler.handle(ws);
+            this.ws = ws;
+        }
+    }
 
-  @Override
-  public synchronized ServerConnection exceptionHandler(Handler<Throwable> handler) {
-    return (ServerConnection) super.exceptionHandler(handler);
-  }
+    void write100Continue() {
+        channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+    }
 
-  @Override
-  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
+    synchronized private void handleWsFrame(WebSocketFrameInternal frame) {
+        if (ws != null) {
+            ws.handleFrame(frame);
+        }
+    }
 
-  @Override
-  public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
+    synchronized protected void handleClosed() {
+        if (ws != null) {
+            if (metrics.isEnabled()) {
+                metrics.disconnected(ws.getMetric());
+            }
+            ws.setMetric(null);
+        }
+        super.handleClosed();
+        if (ws != null) {
+            ws.handleClosed();
+        }
+        if (pendingResponse != null) {
+            if (metrics.isEnabled()) {
+                metrics.requestReset(requestMetric);
+            }
+            pendingResponse.handleClosed();
+        }
+    }
 
-  @Override
-  public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
+    protected ContextImpl getContext() {
+        return super.getContext();
+    }
 
-  @Override
-  public HttpConnection shutdown() {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
+    @Override
+    protected synchronized void handleException(Throwable t) {
+        super.handleException(t);
+        if (metrics.isEnabled()) {
+            requestFailed = true;
+        }
+        if (currentRequest != null) {
+            currentRequest.handleException(t);
+        }
+        if (pendingResponse != null) {
+            pendingResponse.handleException(t);
+        }
+        if (ws != null) {
+            ws.handleException(t);
+        }
+    }
 
-  @Override
-  public HttpConnection shutdown(long timeoutMs) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
+    protected void addFuture(Handler<AsyncResult<Void>> completionHandler, ChannelFuture future) {
+        super.addFuture(completionHandler, future);
+    }
 
-  @Override
-  public Http2Settings settings() {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
+    @Override
+    protected boolean supportsFileRegion() {
+        return super.supportsFileRegion() && channel.pipeline().get(HttpChunkContentCompressor.class) == null;
+    }
 
-  @Override
-  public HttpConnection updateSettings(Http2Settings settings) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
+    protected ChannelFuture sendFile(RandomAccessFile file, long offset, long length) throws IOException {
+        return super.sendFile(file, offset, length);
+    }
 
-  @Override
-  public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
+    private void processMessage(Object msg) {
 
-  @Override
-  public Http2Settings remoteSettings() {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
+        if (msg instanceof HttpRequest) {
+            HttpRequest request = (HttpRequest) msg;
+            DecoderResult result = ((HttpObject) msg).getDecoderResult();
+            if (result.isFailure()) {
+                channel.pipeline().fireExceptionCaught(result.cause());
+                return;
+            }
+            if (server.options().isHandle100ContinueAutomatically()) {
+                if (HttpHeaders.is100ContinueExpected(request)) {
+                    write100Continue();
+                }
+            }
+            HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
+            HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
+            handleRequest(req, resp);
+        }
+        if (msg instanceof HttpContent) {
+            HttpContent chunk = (HttpContent) msg;
+            if (chunk.content().isReadable()) {
+                Buffer buff = Buffer.buffer(chunk.content());
+                handleChunk(buff);
+            }
 
-  @Override
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
+            //TODO chunk trailers
+            if (msg instanceof LastHttpContent) {
+                if (!paused) {
+                    handleEnd();
+                } else {
+                    // Requeue
+                    pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+                }
+            }
+        } else if (msg instanceof WebSocketFrameInternal) {
+            WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+            handleWsFrame(frame);
+        }
 
-  @Override
-  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
-  }
+        checkNextTick();
+    }
 
-  @Override
-  public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
-  }
+    private void checkNextTick() {
+        // Check if there are more pending messages in the queue that can be processed next time around
+        if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
+            sentCheck = true;
+            vertx.runOnContext(new VoidHandler() {
+                public void handle() {
+                    sentCheck = false;
+                    if (!paused) {
+                        Object msg = pending.poll();
+                        if (msg != null) {
+                            processMessage(msg);
+                        }
+                        if (channelPaused && pending.isEmpty()) {
+                            //Resume the actual channel
+                            ServerConnection.super.doResume();
+                            channelPaused = false;
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    private long getBytes(Object obj) {
+        if (obj == null) return 0;
+
+        if (obj instanceof Buffer) {
+            return ((Buffer) obj).length();
+        } else if (obj instanceof ByteBuf) {
+            return ((ByteBuf) obj).readableBytes();
+        } else if (obj instanceof HttpContent) {
+            return ((HttpContent) obj).content().readableBytes();
+        } else if (obj instanceof WebSocketFrame) {
+            return ((WebSocketFrame) obj).binaryData().length();
+        } else if (obj instanceof FileRegion) {
+            return ((FileRegion) obj).count();
+        } else if (obj instanceof ChunkedFile) {
+            ChunkedFile file = (ChunkedFile) obj;
+            return file.endOffset() - file.startOffset();
+        } else {
+            return -1;
+        }
+    }
+
+    //
+
+
+    @Override
+    public synchronized ServerConnection closeHandler(Handler<Void> handler) {
+        return (ServerConnection) super.closeHandler(handler);
+    }
+
+    @Override
+    public synchronized ServerConnection exceptionHandler(Handler<Throwable> handler) {
+        return (ServerConnection) super.exceptionHandler(handler);
+    }
+
+    @Override
+    public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+    }
+
+    @Override
+    public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+    }
+
+    @Override
+    public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+    }
+
+    @Override
+    public HttpConnection shutdown() {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+    }
+
+    @Override
+    public HttpConnection shutdown(long timeoutMs) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+    }
+
+    @Override
+    public Http2Settings settings() {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+    }
+
+    @Override
+    public HttpConnection updateSettings(Http2Settings settings) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+    }
+
+    @Override
+    public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+    }
+
+    @Override
+    public Http2Settings remoteSettings() {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+    }
+
+    @Override
+    public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+    }
+
+    @Override
+    public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+    }
+
+    @Override
+    public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
+        throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+    }
 }

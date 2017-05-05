@@ -44,64 +44,65 @@ import io.vertx.core.spi.PumpFactory;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 @VertxGen
 public interface Pump {
 
-  /**
-   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
-   *
-   * @param rs  the read stream
-   * @param ws  the write stream
-   * @return the pump
-   */
-  static <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws) {
-    return factory.pump(rs, ws);
-  }
+    /**
+     * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
+     *
+     * @param rs the read stream
+     * @param ws the write stream
+     * @return the pump
+     */
+    static <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws) {
+        return factory.pump(rs, ws);
+    }
 
-  /**
-   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream} and
-   * {@code writeQueueMaxSize}
-   *
-   * @param rs  the read stream
-   * @param ws  the write stream
-   * @param writeQueueMaxSize  the max size of the write queue
-   * @return the pump
-   */
-  static <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws, int writeQueueMaxSize) {
-    return factory.pump(rs, ws, writeQueueMaxSize);
-  }
+    /**
+     * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream} and
+     * {@code writeQueueMaxSize}
+     *
+     * @param rs                the read stream
+     * @param ws                the write stream
+     * @param writeQueueMaxSize the max size of the write queue
+     * @return the pump
+     */
+    static <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws, int writeQueueMaxSize) {
+        return factory.pump(rs, ws, writeQueueMaxSize);
+    }
 
-  /**
-   * Set the write queue max size to {@code maxSize}
-   *
-   * @param maxSize  the max size
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  Pump setWriteQueueMaxSize(int maxSize);
+    /**
+     * Set the write queue max size to {@code maxSize}
+     *
+     * @param maxSize the max size
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    Pump setWriteQueueMaxSize(int maxSize);
 
-  /**
-   * Start the Pump. The Pump can be started and stopped multiple times.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  Pump start();
+    /**
+     * Start the Pump. The Pump can be started and stopped multiple times.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    Pump start();
 
-  /**
-   * Stop the Pump. The Pump can be started and stopped multiple times.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  Pump stop();
+    /**
+     * Stop the Pump. The Pump can be started and stopped multiple times.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    Pump stop();
 
-  /**
-   * Return the total number of items pumped by this pump.
-   */
-  int numberPumped();
+    /**
+     * Return the total number of items pumped by this pump.
+     */
+    int numberPumped();
 
-  PumpFactory factory = ServiceHelper.loadFactory(PumpFactory.class);
+    PumpFactory factory = ServiceHelper.loadFactory(PumpFactory.class);
 
 
 }

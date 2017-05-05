@@ -31,63 +31,64 @@ import java.util.Objects;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author Juergen Donnerstag
  */
+// TODO: 16/12/26 by zmyer
 public class WindowsFileSystem extends FileSystemImpl {
 
-  private static final Logger log = LoggerFactory.getLogger(WindowsFileSystem.class);
+    private static final Logger log = LoggerFactory.getLogger(WindowsFileSystem.class);
 
-  public WindowsFileSystem(final VertxInternal vertx) {
-    super(vertx);
-  }
-
-  private static void logInternal(final String perms) {
-    if (perms != null && log.isDebugEnabled()) {
-      log.debug("You are running on Windows and POSIX style file permissions are not supported");
+    public WindowsFileSystem(final VertxInternal vertx) {
+        super(vertx);
     }
-  }
 
-  @Override
-  protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms,
-                                               Handler<AsyncResult<Void>> handler) {
-    Objects.requireNonNull(path);
-    Objects.requireNonNull(perms);
-    logInternal(perms);
-    logInternal(dirPerms);
-    if (log.isDebugEnabled()) {
-      log.debug("You are running on Windows and POSIX style file permissions are not supported!");
+    private static void logInternal(final String perms) {
+        if (perms != null && log.isDebugEnabled()) {
+            log.debug("You are running on Windows and POSIX style file permissions are not supported");
+        }
     }
-    return new BlockingAction<Void>(handler) {
-      @Override
-      public Void perform() {
-        return null;
-      }
-    };
-  }
 
-  @Override
-  protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents,
-                                               Handler<AsyncResult<Void>> handler) {
-    logInternal(perms);
-    return super.mkdirInternal(path, null, createParents, handler);
-  }
-
-  @Override
-  protected AsyncFile doOpen(String path, OpenOptions options,
-                             ContextImpl context) {
-    logInternal(options.getPerms());
-    return new AsyncFileImpl(vertx, path, options, context);
-  }
-
-  @Override
-  protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
-    logInternal(perms);
-    return super.createFileInternal(p, null, handler);
-  }
-
-  @Override
-  protected BlockingAction<Void> chownInternal(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
-    if (group != null && log.isDebugEnabled()) {
-      log.debug("You are running on Windows and POSIX style file ownership is not supported");
+    @Override
+    protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms,
+                                                 Handler<AsyncResult<Void>> handler) {
+        Objects.requireNonNull(path);
+        Objects.requireNonNull(perms);
+        logInternal(perms);
+        logInternal(dirPerms);
+        if (log.isDebugEnabled()) {
+            log.debug("You are running on Windows and POSIX style file permissions are not supported!");
+        }
+        return new BlockingAction<Void>(handler) {
+            @Override
+            public Void perform() {
+                return null;
+            }
+        };
     }
-    return super.chownInternal(path, user, group, handler);
-  }
+
+    @Override
+    protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents,
+                                                 Handler<AsyncResult<Void>> handler) {
+        logInternal(perms);
+        return super.mkdirInternal(path, null, createParents, handler);
+    }
+
+    @Override
+    protected AsyncFile doOpen(String path, OpenOptions options,
+                               ContextImpl context) {
+        logInternal(options.getPerms());
+        return new AsyncFileImpl(vertx, path, options, context);
+    }
+
+    @Override
+    protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
+        logInternal(perms);
+        return super.createFileInternal(p, null, handler);
+    }
+
+    @Override
+    protected BlockingAction<Void> chownInternal(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
+        if (group != null && log.isDebugEnabled()) {
+            log.debug("You are running on Windows and POSIX style file ownership is not supported");
+        }
+        return super.chownInternal(path, user, group, handler);
+    }
 }

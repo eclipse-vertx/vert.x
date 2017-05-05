@@ -32,22 +32,26 @@ import java.util.Objects;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/17 by zmyer
 public class BufferImpl implements Buffer {
-
+    //缓冲区对象
     private ByteBuf buffer;
 
     BufferImpl() {
         this(0);
     }
 
+    // TODO: 16/12/17 by zmyer
     BufferImpl(int initialSizeHint) {
         buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
     }
 
+    // TODO: 16/12/17 by zmyer
     BufferImpl(byte[] bytes) {
         buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
     }
 
+    // TODO: 16/12/17 by zmyer
     BufferImpl(String str, String enc) {
         this(str.getBytes(Charset.forName(Objects.requireNonNull(enc))));
     }
@@ -159,12 +163,14 @@ public class BufferImpl implements Buffer {
         return buffer.getUnsignedMediumLE(pos);
     }
 
+    // TODO: 16/12/17 by zmyer
     public byte[] getBytes() {
         byte[] arr = new byte[buffer.writerIndex()];
         buffer.getBytes(0, arr);
         return arr;
     }
 
+    // TODO: 16/12/17 by zmyer
     public byte[] getBytes(int start, int end) {
         Arguments.require(end >= start, "end must be greater or equal than start");
         byte[] arr = new byte[end - start];
@@ -187,6 +193,7 @@ public class BufferImpl implements Buffer {
         return getBytes(start, end, dst, 0);
     }
 
+    // TODO: 16/12/17 by zmyer
     @Override
     public Buffer getBytes(int start, int end, byte[] dst, int dstIndex) {
         Arguments.require(end >= start, "end must be greater or equal than start");

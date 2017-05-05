@@ -26,15 +26,16 @@ import io.vertx.core.Handler;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/18 by zmyer
 @VertxGen(concrete = false)
 public interface StreamBase {
 
-  /**
-   * Set an exception handler.
-   *
-   * @param handler the handler
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  StreamBase exceptionHandler(@Nullable Handler<Throwable> handler);
+    /**
+     * Set an exception handler.
+     *
+     * @param handler the handler
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    StreamBase exceptionHandler(@Nullable Handler<Throwable> handler);
 }

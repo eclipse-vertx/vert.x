@@ -26,67 +26,68 @@ import io.vertx.core.streams.ReadStream;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+// TODO: 16/12/26 by zmyer
 @VertxGen
 public interface HttpServerFileUpload extends ReadStream<Buffer> {
 
-  @Override
-  HttpServerFileUpload exceptionHandler(Handler<Throwable> handler);
+    @Override
+    HttpServerFileUpload exceptionHandler(Handler<Throwable> handler);
 
-  @Override
-  HttpServerFileUpload handler(Handler<Buffer> handler);
+    @Override
+    HttpServerFileUpload handler(Handler<Buffer> handler);
 
-  @Override
-  HttpServerFileUpload endHandler(Handler<Void> endHandler);
+    @Override
+    HttpServerFileUpload endHandler(Handler<Void> endHandler);
 
-  @Override
-  HttpServerFileUpload pause();
+    @Override
+    HttpServerFileUpload pause();
 
-  @Override
-  HttpServerFileUpload resume();
+    @Override
+    HttpServerFileUpload resume();
 
-  /**
-   * Stream the content of this upload to the given file on storage.
-   *
-   * @param filename  the name of the file
-   */
-  @Fluent
-  HttpServerFileUpload streamToFileSystem(String filename);
+    /**
+     * Stream the content of this upload to the given file on storage.
+     *
+     * @param filename the name of the file
+     */
+    @Fluent
+    HttpServerFileUpload streamToFileSystem(String filename);
 
-  /**
-   * @return the filename which was used when upload the file.
-   */
-  String filename();
+    /**
+     * @return the filename which was used when upload the file.
+     */
+    String filename();
 
-  /**
-   * @return the name of the attribute
-   */
-  String name();
+    /**
+     * @return the name of the attribute
+     */
+    String name();
 
-  /**
-   * @return  the content type for the upload
-   */
-  String contentType();
+    /**
+     * @return the content type for the upload
+     */
+    String contentType();
 
-  /**
-   * @return the contentTransferEncoding for the upload
-   */
-  String contentTransferEncoding();
+    /**
+     * @return the contentTransferEncoding for the upload
+     */
+    String contentTransferEncoding();
 
-  /**
-   * @return the charset for the upload
-   */
-  String charset();
+    /**
+     * @return the charset for the upload
+     */
+    String charset();
 
-  /**
-   * The size of the upload may not be available until it is all read.
-   * Check {@link #isSizeAvailable} to determine this
-   *
-   * @return the size of the upload (in bytes)
-   */
-  long size();
+    /**
+     * The size of the upload may not be available until it is all read.
+     * Check {@link #isSizeAvailable} to determine this
+     *
+     * @return the size of the upload (in bytes)
+     */
+    long size();
 
-  /**
-   * @return true if the size of the upload can be retrieved via {@link #size()}.
-   */
-  boolean isSizeAvailable();
+    /**
+     * @return true if the size of the upload can be retrieved via {@link #size()}.
+     */
+    boolean isSizeAvailable();
 }

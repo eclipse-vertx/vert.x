@@ -22,22 +22,25 @@ package io.vertx.core.impl;
  * @author Juergen Donnerstag
  * @author Alain Penders
  */
+// TODO: 17/1/1 by zmyer
 public class Utils {
 
-  public static String LINE_SEPARATOR = System.getProperty("line.separator");
+    //换行符
+    public static String LINE_SEPARATOR = System.getProperty("line.separator");
 
-  private static final boolean isWindows;
+    //window标记
+    private static final boolean isWindows;
 
-  static {
-    String os = System.getProperty("os.name").toLowerCase();
-    isWindows = os.contains("win");
-  }
+    static {
+        String os = System.getProperty("os.name").toLowerCase();
+        isWindows = os.contains("win");
+    }
 
-  /**
-   * @return true, if running on Windows
-   */
-  public static boolean isWindows() {
-    return isWindows;
-  }
+    /**
+     * @return true, if running on Windows
+     */
+    public static boolean isWindows() {
+        return isWindows;
+    }
 
 }

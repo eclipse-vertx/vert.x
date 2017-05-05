@@ -20,8 +20,9 @@ package io.vertx.core.cli.converters;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/17 by zmyer
 public interface Converter<T> {
 
-  T fromString(String s);
+    T fromString(String s);
 
 }

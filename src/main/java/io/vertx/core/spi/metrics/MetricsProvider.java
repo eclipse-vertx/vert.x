@@ -21,18 +21,19 @@ import io.vertx.core.metrics.Measured;
 /**
  * Metrics provider is the base SPI used by metrics implementations to retrieve a {@link io.vertx.core.spi.metrics.Metrics}
  * object.<p/>
- *
+ * <p>
  * It is meant to be implemented by {@link io.vertx.core.metrics.Measured} implementations but not exposed directly.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/15 by zmyer
 public interface MetricsProvider extends Measured {
 
-  /**
-   * Returns the metrics implementation.
-   *
-   * @return the metrics
-   */
-  Metrics getMetrics();
+    /**
+     * Returns the metrics implementation.
+     *
+     * @return the metrics
+     */
+    Metrics getMetrics();
 
 }

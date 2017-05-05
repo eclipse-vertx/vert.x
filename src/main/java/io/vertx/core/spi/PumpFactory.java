@@ -23,9 +23,10 @@ import io.vertx.core.streams.WriteStream;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface PumpFactory {
 
-  <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws);
+    <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws);
 
-  <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws, int writeQueueMaxSize);
+    <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws, int writeQueueMaxSize);
 }

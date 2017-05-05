@@ -46,6 +46,7 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
      *
      * @param args the user command line arguments.
      */
+    // TODO: 16/12/12 by zmyer
     public static void main(String[] args) {
         new Launcher().dispatch(args);
     }
@@ -56,6 +57,7 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
      * @param cmd  the command
      * @param args the arguments
      */
+    // TODO: 16/12/12 by zmyer
     public static void executeCommand(String cmd, String... args) {
         new Launcher().execute(cmd, args);
     }
@@ -65,6 +67,7 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
      *
      * @param config the read config, empty if none are provided.
      */
+    // TODO: 16/12/12 by zmyer
     public void afterConfigParsed(JsonObject config) {
     }
 
@@ -82,6 +85,7 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
      *
      * @param vertx the created Vert.x instance
      */
+    // TODO: 16/12/12 by zmyer
     public void afterStartingVertx(Vertx vertx) {
 
     }
@@ -91,6 +95,7 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
      *
      * @param deploymentOptions the current deployment options. Modify them to customize the deployment.
      */
+    // TODO: 16/12/12 by zmyer
     public void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
 
     }
@@ -104,6 +109,7 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
      * @param deploymentOptions the verticle deployment options
      * @param cause             the cause of the failure
      */
+    // TODO: 16/12/12 by zmyer
     public void handleDeployFailed(Vertx vertx, String mainVerticle, DeploymentOptions deploymentOptions, Throwable cause) {
         // Default behaviour is to close Vert.x if the deploy failed
         vertx.close();

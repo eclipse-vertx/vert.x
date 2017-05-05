@@ -23,18 +23,19 @@ import io.vertx.codegen.annotations.VertxGen;
  *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
+// TODO: 17/1/1 by zmyer
 @VertxGen
 public enum ProxyType {
-  /**
-   * HTTP CONNECT ssl proxy
-   */
-  HTTP,
-  /**
-   * SOCKS4/4a tcp proxy
-   */
-  SOCKS4,
-  /**
-   * SOCSK5 tcp proxy
-   */
-  SOCKS5
+    /**
+     * HTTP CONNECT ssl proxy
+     */
+    HTTP,
+    /**
+     * SOCKS4/4a tcp proxy
+     */
+    SOCKS4,
+    /**
+     * SOCSK5 tcp proxy
+     */
+    SOCKS5
 }

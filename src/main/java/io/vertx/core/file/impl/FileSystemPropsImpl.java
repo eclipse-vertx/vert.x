@@ -18,30 +18,31 @@ package io.vertx.core.file.impl;
 
 import io.vertx.core.file.FileSystemProps;
 
+// TODO: 16/12/26 by zmyer
 public class FileSystemPropsImpl implements FileSystemProps {
 
-  private final long totalSpace;
-  private final long unallocatedSpace;
-  private final long usableSpace;
+    private final long totalSpace;
+    private final long unallocatedSpace;
+    private final long usableSpace;
 
-  public FileSystemPropsImpl(long totalSpace, long unallocatedSpace, long usableSpace) {
-    this.totalSpace = totalSpace;
-    this.unallocatedSpace = unallocatedSpace;
-    this.usableSpace = usableSpace;
-  }
+    public FileSystemPropsImpl(long totalSpace, long unallocatedSpace, long usableSpace) {
+        this.totalSpace = totalSpace;
+        this.unallocatedSpace = unallocatedSpace;
+        this.usableSpace = usableSpace;
+    }
 
-  @Override
-  public long totalSpace() {
-    return totalSpace;
-  }
+    @Override
+    public long totalSpace() {
+        return totalSpace;
+    }
 
-  @Override
-  public long unallocatedSpace() {
-    return unallocatedSpace;
-  }
+    @Override
+    public long unallocatedSpace() {
+        return unallocatedSpace;
+    }
 
-  @Override
-  public long usableSpace() {
-    return usableSpace;
-  }
+    @Override
+    public long usableSpace() {
+        return usableSpace;
+    }
 }

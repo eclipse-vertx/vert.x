@@ -24,36 +24,37 @@ import java.util.stream.Collectors;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/18 by zmyer
 public class AmbiguousOptionException extends CLIException {
 
-  private final List<Option> options;
-  private final String token;
+    private final List<Option> options;
+    private final String token;
 
 
-  /**
-   * Creates a new instance of {@link AmbiguousOptionException}.
-   *
-   * @param token        the ambiguous token
-   * @param matchingOpts the list of potential matches
-   */
-  public AmbiguousOptionException(String token, List<Option> matchingOpts) {
-    super("Ambiguous argument in command line: '" + token + "' matches "
-        + matchingOpts.stream().map(Option::getName).collect(Collectors.toList()));
-    this.token = token;
-    this.options = matchingOpts;
-  }
+    /**
+     * Creates a new instance of {@link AmbiguousOptionException}.
+     *
+     * @param token        the ambiguous token
+     * @param matchingOpts the list of potential matches
+     */
+    public AmbiguousOptionException(String token, List<Option> matchingOpts) {
+        super("Ambiguous argument in command line: '" + token + "' matches "
+                + matchingOpts.stream().map(Option::getName).collect(Collectors.toList()));
+        this.token = token;
+        this.options = matchingOpts;
+    }
 
-  /**
-   * @return the list of potential matches.
-   */
-  public List<Option> getOptions() {
-    return options;
-  }
+    /**
+     * @return the list of potential matches.
+     */
+    public List<Option> getOptions() {
+        return options;
+    }
 
-  /**
-   * @return the token triggering the ambiguity.
-   */
-  public String getToken() {
-    return token;
-  }
+    /**
+     * @return the token triggering the ambiguity.
+     */
+    public String getToken() {
+        return token;
+    }
 }

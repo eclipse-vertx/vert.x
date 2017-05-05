@@ -24,38 +24,39 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 public class JsonObjectMessageCodec implements MessageCodec<JsonObject, JsonObject> {
 
-  @Override
-  public void encodeToWire(Buffer buffer, JsonObject jsonObject) {
-    String strJson = jsonObject.encode();
-    byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
-    buffer.appendInt(encoded.length);
-    Buffer buff = Buffer.buffer(encoded);
-    buffer.appendBuffer(buff);
-  }
+    @Override
+    public void encodeToWire(Buffer buffer, JsonObject jsonObject) {
+        String strJson = jsonObject.encode();
+        byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
+        buffer.appendInt(encoded.length);
+        Buffer buff = Buffer.buffer(encoded);
+        buffer.appendBuffer(buff);
+    }
 
-  @Override
-  public JsonObject decodeFromWire(int pos, Buffer buffer) {
-    int length = buffer.getInt(pos);
-    pos += 4;
-    byte[] encoded = buffer.getBytes(pos, pos + length);
-    String str = new String(encoded, CharsetUtil.UTF_8);
-    return new JsonObject(str);
-  }
+    @Override
+    public JsonObject decodeFromWire(int pos, Buffer buffer) {
+        int length = buffer.getInt(pos);
+        pos += 4;
+        byte[] encoded = buffer.getBytes(pos, pos + length);
+        String str = new String(encoded, CharsetUtil.UTF_8);
+        return new JsonObject(str);
+    }
 
-  @Override
-  public JsonObject transform(JsonObject jsonObject) {
-    return jsonObject.copy();
-  }
+    @Override
+    public JsonObject transform(JsonObject jsonObject) {
+        return jsonObject.copy();
+    }
 
-  @Override
-  public String name() {
-    return "jsonobject";
-  }
+    @Override
+    public String name() {
+        return "jsonobject";
+    }
 
-  @Override
-  public byte systemCodecID() {
-    return 13;
-  }
+    @Override
+    public byte systemCodecID() {
+        return 13;
+    }
 }

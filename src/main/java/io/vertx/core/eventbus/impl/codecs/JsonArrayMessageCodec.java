@@ -24,38 +24,41 @@ import io.vertx.core.json.JsonArray;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/25 by zmyer
 public class JsonArrayMessageCodec implements MessageCodec<JsonArray, JsonArray> {
 
-  @Override
-  public void encodeToWire(Buffer buffer, JsonArray jsonArray) {
-    String strJson = jsonArray.encode();
-    byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
-    buffer.appendInt(encoded.length);
-    Buffer buff = Buffer.buffer(encoded);
-    buffer.appendBuffer(buff);
-  }
+    // TODO: 16/12/26 by zmyer
+    @Override
+    public void encodeToWire(Buffer buffer, JsonArray jsonArray) {
+        String strJson = jsonArray.encode();
+        byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
+        buffer.appendInt(encoded.length);
+        Buffer buff = Buffer.buffer(encoded);
+        buffer.appendBuffer(buff);
+    }
 
-  @Override
-  public JsonArray decodeFromWire(int pos, Buffer buffer) {
-    int length = buffer.getInt(pos);
-    pos += 4;
-    byte[] encoded = buffer.getBytes(pos, pos + length);
-    String str = new String(encoded, CharsetUtil.UTF_8);
-    return new JsonArray(str);
-  }
+    // TODO: 16/12/26 by zmyer
+    @Override
+    public JsonArray decodeFromWire(int pos, Buffer buffer) {
+        int length = buffer.getInt(pos);
+        pos += 4;
+        byte[] encoded = buffer.getBytes(pos, pos + length);
+        String str = new String(encoded, CharsetUtil.UTF_8);
+        return new JsonArray(str);
+    }
 
-  @Override
-  public JsonArray transform(JsonArray jsonArray) {
-    return jsonArray.copy();
-  }
+    @Override
+    public JsonArray transform(JsonArray jsonArray) {
+        return jsonArray.copy();
+    }
 
-  @Override
-  public String name() {
-    return "jsonarray";
-  }
+    @Override
+    public String name() {
+        return "jsonarray";
+    }
 
-  @Override
-  public byte systemCodecID() {
-    return 14;
-  }
+    @Override
+    public byte systemCodecID() {
+        return 14;
+    }
 }

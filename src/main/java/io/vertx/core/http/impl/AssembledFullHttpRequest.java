@@ -16,14 +16,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 
 /**
  * Helper wrapper class which allows to assemble a LastHttpContent and a HttpRequest into one "packet" and so more
@@ -31,94 +24,95 @@ import io.netty.handler.codec.http.LastHttpContent;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+// TODO: 16/12/27 by zmyer
 class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpRequest {
 
-  public AssembledFullHttpRequest(HttpRequest request, LastHttpContent content) {
-    super(request, content);
-  }
-
-  public AssembledFullHttpRequest(HttpRequest request) {
-    super(request, LastHttpContent.EMPTY_LAST_CONTENT);
-  }
-
-  public AssembledFullHttpRequest(HttpRequest request, ByteBuf buf) {
-    super(request, toLastContent(buf));
-  }
-
-  private static LastHttpContent toLastContent(ByteBuf buf) {
-    if (buf.isReadable()) {
-      return new DefaultLastHttpContent(buf, false);
-    } else {
-      return LastHttpContent.EMPTY_LAST_CONTENT;
+    public AssembledFullHttpRequest(HttpRequest request, LastHttpContent content) {
+        super(request, content);
     }
-  }
 
-  @Override
-  public AssembledFullHttpRequest replace(ByteBuf content) {
-    super.replace(content);
-    return this;
-  }
+    public AssembledFullHttpRequest(HttpRequest request) {
+        super(request, LastHttpContent.EMPTY_LAST_CONTENT);
+    }
 
-  @Override
-  public AssembledFullHttpRequest retainedDuplicate() {
-    super.retainedDuplicate();
-    return this;
-  }
+    public AssembledFullHttpRequest(HttpRequest request, ByteBuf buf) {
+        super(request, toLastContent(buf));
+    }
 
-  @Override
-  public AssembledFullHttpRequest setUri(String uri) {
-    super.setUri(uri);
-    return this;
-  }
+    private static LastHttpContent toLastContent(ByteBuf buf) {
+        if (buf.isReadable()) {
+            return new DefaultLastHttpContent(buf, false);
+        } else {
+            return LastHttpContent.EMPTY_LAST_CONTENT;
+        }
+    }
 
-  @Override
-  public AssembledFullHttpRequest setProtocolVersion(HttpVersion version) {
-    super.setProtocolVersion(version);
-    return this;
-  }
+    @Override
+    public AssembledFullHttpRequest replace(ByteBuf content) {
+        super.replace(content);
+        return this;
+    }
 
-  @Override
-  public AssembledFullHttpRequest setMethod(HttpMethod method) {
-    super.setMethod(method);
-    return this;
-  }
+    @Override
+    public AssembledFullHttpRequest retainedDuplicate() {
+        super.retainedDuplicate();
+        return this;
+    }
 
-  @Override
-  public AssembledFullHttpRequest duplicate() {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public AssembledFullHttpRequest setUri(String uri) {
+        super.setUri(uri);
+        return this;
+    }
 
-  @Override
-  public AssembledFullHttpRequest copy() {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public AssembledFullHttpRequest setProtocolVersion(HttpVersion version) {
+        super.setProtocolVersion(version);
+        return this;
+    }
 
-  @Override
-  public HttpHeaders trailingHeaders() {
-    return ((LastHttpContent) content).trailingHeaders();
-  }
+    @Override
+    public AssembledFullHttpRequest setMethod(HttpMethod method) {
+        super.setMethod(method);
+        return this;
+    }
 
-  @Override
-  public AssembledFullHttpRequest retain() {
-    super.retain();
-    return this;
-  }
+    @Override
+    public AssembledFullHttpRequest duplicate() {
+        throw new UnsupportedOperationException();
+    }
 
-  @Override
-  public AssembledFullHttpRequest retain(int increment) {
-    super.retain(increment);
-    return this;
-  }
+    @Override
+    public AssembledFullHttpRequest copy() {
+        throw new UnsupportedOperationException();
+    }
 
-  @Override
-  public AssembledFullHttpRequest touch(Object hint) {
-    super.touch(hint);
-    return this;
-  }
+    @Override
+    public HttpHeaders trailingHeaders() {
+        return ((LastHttpContent) content).trailingHeaders();
+    }
 
-  @Override
-  public AssembledFullHttpRequest touch() {
-    super.touch();
-    return this;
-  }
+    @Override
+    public AssembledFullHttpRequest retain() {
+        super.retain();
+        return this;
+    }
+
+    @Override
+    public AssembledFullHttpRequest retain(int increment) {
+        super.retain(increment);
+        return this;
+    }
+
+    @Override
+    public AssembledFullHttpRequest touch(Object hint) {
+        super.touch(hint);
+        return this;
+    }
+
+    @Override
+    public AssembledFullHttpRequest touch() {
+        super.touch();
+        return this;
+    }
 }

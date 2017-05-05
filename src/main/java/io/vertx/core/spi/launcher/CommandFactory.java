@@ -29,19 +29,18 @@ import io.vertx.core.cli.CommandLine;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/13 by zmyer
 public interface CommandFactory<C extends Command> {
 
-  /**
-   * @return a new instance of the command.
-   */
-  C create(CommandLine evaluated);
+    /**
+     * @return a new instance of the command.
+     */
+    C create(CommandLine evaluated);
 
-  /**
-   * Creates a new {@link CLI} instance.
-   *
-   * @return the CLI.
-   */
-  CLI define();
-
-
+    /**
+     * Creates a new {@link CLI} instance.
+     *
+     * @return the CLI.
+     */
+    CLI define();
 }

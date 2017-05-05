@@ -19,5 +19,6 @@ package io.vertx.core.net;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class ServerOptionsBase extends TCPSSLOptions {
 }

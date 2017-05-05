@@ -28,15 +28,16 @@ import io.vertx.core.VertxException;
  * @author <a href="mailto:ddimensia@gmail.com">Gil Markham</a>
  * @author <a href="mailto:wangjunbo924@gmail.com">Junbo Wang</a>
  */
+// TODO: 16/12/26 by zmyer
 public class ConnectionPoolTooBusyException extends VertxException {
 
-  /**
-   * Create a ConnectionPoolTooBusyException
-   *
-   * @param message the failure message
-   */
-  public ConnectionPoolTooBusyException(String message) {
-    super(message);
-  }
+    /**
+     * Create a ConnectionPoolTooBusyException
+     *
+     * @param message the failure message
+     */
+    public ConnectionPoolTooBusyException(String message) {
+        super(message);
+    }
 
 }

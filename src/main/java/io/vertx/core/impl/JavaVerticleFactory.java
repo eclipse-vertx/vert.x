@@ -23,25 +23,31 @@ import io.vertx.core.spi.VerticleFactory;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/29 by zmyer
 public class JavaVerticleFactory implements VerticleFactory {
 
-  @Override
-  public String prefix() {
-    return "java";
-  }
-
-  @Override
-  public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
-    verticleName = VerticleFactory.removePrefix(verticleName);
-    Class clazz;
-    if (verticleName.endsWith(".java")) {
-      CompilingClassLoader compilingLoader = new CompilingClassLoader(classLoader, verticleName);
-      String className = compilingLoader.resolveMainClassName();
-      clazz = compilingLoader.loadClass(className);
-    } else {
-      clazz = classLoader.loadClass(verticleName);
+    @Override
+    public String prefix() {
+        return "java";
     }
-    return (Verticle) clazz.newInstance();
-  }
+
+    // TODO: 16/12/29 by zmyer
+    @Override
+    public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
+        verticleName = VerticleFactory.removePrefix(verticleName);
+        Class clazz;
+        if (verticleName.endsWith(".java")) {
+            //如果是java源文件,则首先需要创建编译类加载器对象
+            CompilingClassLoader compilingLoader = new CompilingClassLoader(classLoader, verticleName);
+            //开始获取类名称
+            String className = compilingLoader.resolveMainClassName();
+            //开始加载类对象
+            clazz = compilingLoader.loadClass(className);
+        } else {
+            //直接加载类对象
+            clazz = classLoader.loadClass(verticleName);
+        }
+        return (Verticle) clazz.newInstance();
+    }
 
 }

@@ -27,28 +27,29 @@ import io.vertx.core.http.impl.FrameType;
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
+// TODO: 16/12/27 by zmyer
 public interface WebSocketFrameInternal extends WebSocketFrame {
-  /**
-   * Returns the content of this frame as-is, with no UTF-8 decoding.
-   */
-  ByteBuf getBinaryData();
+    /**
+     * Returns the content of this frame as-is, with no UTF-8 decoding.
+     */
+    ByteBuf getBinaryData();
 
-  /**
-   * Sets the type and the content of this frame.
-   *
-   * @param binaryData the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
-   *                   it must be encoded in UTF-8.
-   * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
-   *                                  in UTF-8
-   */
-  void setBinaryData(ByteBuf binaryData);
+    /**
+     * Sets the type and the content of this frame.
+     *
+     * @param binaryData the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
+     *                   it must be encoded in UTF-8.
+     * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
+     *                                  in UTF-8
+     */
+    void setBinaryData(ByteBuf binaryData);
 
-  /**
-   * Set the type of the content of this frame and populate it with the given content
-   *
-   * @param textData the content of the frame. Must be valid UTF-8
-   */
-  void setTextData(String textData);
+    /**
+     * Set the type of the content of this frame and populate it with the given content
+     *
+     * @param textData the content of the frame. Must be valid UTF-8
+     */
+    void setTextData(String textData);
 
-  FrameType type();
+    FrameType type();
 }

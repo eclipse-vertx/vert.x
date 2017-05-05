@@ -25,48 +25,49 @@ import io.vertx.core.buffer.Buffer;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/26 by zmyer
 @VertxGen
 public interface WebSocket extends WebSocketBase {
 
-  @Override
-  WebSocket exceptionHandler(Handler<Throwable> handler);
+    @Override
+    WebSocket exceptionHandler(Handler<Throwable> handler);
 
-  @Override
-  WebSocket handler(Handler<Buffer> handler);
+    @Override
+    WebSocket handler(Handler<Buffer> handler);
 
-  @Override
-  WebSocket pause();
+    @Override
+    WebSocket pause();
 
-  @Override
-  WebSocket resume();
+    @Override
+    WebSocket resume();
 
-  @Override
-  WebSocket endHandler(Handler<Void> endHandler);
+    @Override
+    WebSocket endHandler(Handler<Void> endHandler);
 
-  @Override
-  WebSocket write(Buffer data);
+    @Override
+    WebSocket write(Buffer data);
 
-  @Override
-  WebSocket setWriteQueueMaxSize(int maxSize);
+    @Override
+    WebSocket setWriteQueueMaxSize(int maxSize);
 
-  @Override
-  WebSocket drainHandler(Handler<Void> handler);
+    @Override
+    WebSocket drainHandler(Handler<Void> handler);
 
-  @Override
-  WebSocket writeFrame(WebSocketFrame frame);
+    @Override
+    WebSocket writeFrame(WebSocketFrame frame);
 
-  @Override
-  WebSocket writeFinalTextFrame(String text);
+    @Override
+    WebSocket writeFinalTextFrame(String text);
 
-  @Override
-  WebSocket writeFinalBinaryFrame(Buffer data);
+    @Override
+    WebSocket writeFinalBinaryFrame(Buffer data);
 
-  @Override
-  WebSocket writeBinaryMessage(Buffer data);
+    @Override
+    WebSocket writeBinaryMessage(Buffer data);
 
-  @Override
-  WebSocket closeHandler(Handler<Void> handler);
+    @Override
+    WebSocket closeHandler(Handler<Void> handler);
 
-  @Override
-  WebSocket frameHandler(Handler<WebSocketFrame> handler);
+    @Override
+    WebSocket frameHandler(Handler<WebSocketFrame> handler);
 }

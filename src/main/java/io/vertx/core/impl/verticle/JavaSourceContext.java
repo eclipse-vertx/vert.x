@@ -23,71 +23,88 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 /**
- *
  * Resolves package name and source path based on a single Java source file.
  *
  * @author Janne Hietam&auml;ki
  */
+// TODO: 16/12/30 by zmyer
 public class JavaSourceContext {
+    //类名
+    private final String className;
+    //类文件路径
+    private final File sourceRoot;
 
-  private final String className;
-  private final File sourceRoot;
-
-  public JavaSourceContext(File file) {
-    String packageName = parsePackage(file);
-    File rootDirectory = file.getParentFile();
-    if (packageName != null) {
-      String[] pathTokens = packageName.split("\\.");
-      for(int i = pathTokens.length - 1; i >= 0; i--) {
-        String token = pathTokens[i];
-        if (!token.equals(rootDirectory.getName())) {
-          throw new RuntimeException("Package structure does not match directory structure: " + token + " != " + rootDirectory.getName());
+    public JavaSourceContext(File file) {
+        //从类文件中读取包名
+        String packageName = parsePackage(file);
+        //从包名中读取具体的目录
+        File rootDirectory = file.getParentFile();
+        if (packageName != null) {
+            //解析包名
+            String[] pathTokens = packageName.split("\\.");
+            for (int i = pathTokens.length - 1; i >= 0; i--) {
+                String token = pathTokens[i];
+                //比较目录名是否一致
+                if (!token.equals(rootDirectory.getName())) {
+                    throw new RuntimeException("Package structure does not match directory structure: " + token + " != " + rootDirectory.getName());
+                }
+                //读取上一级目录名
+                rootDirectory = rootDirectory.getParentFile();
+            }
         }
-        rootDirectory = rootDirectory.getParentFile();
-      }
-    }
-    sourceRoot = rootDirectory;
 
-    String fileName = file.getName();
-    String className = fileName.substring(0, fileName.length() - Kind.SOURCE.extension.length());
-    if (packageName != null) {
-      className = packageName + '.' + className;
-    }
-    this.className = className;
-  }
+        //读取文件对应的根目录
+        sourceRoot = rootDirectory;
 
-  public File getSourceRoot() {
-	  return sourceRoot;
-  }
-
-  public String getClassName() {
-	  return className;
-  }
-
-  /*
-   * Parse package definition from a Java source file:
-   * First remove all comments, split file into lines, find first non-empty line
-   * Then, if the line starts with keyword "package", parse the package definition from it.
-   *
-   */
-  private static String parsePackage(File file) {
-    try {
-      String source = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-      // http://stackoverflow.com/questions/1657066/java-regular-expression-finding-comments-in-code
-      source = source.replaceAll( "//.*|(\"(?:\\\\[^\"]|\\\\\"|.)*?\")|(?s)/\\*.*?\\*/", "$1 " );
-      for (String line : source.split("\\r?\\n")) {
-        line = line.trim();
-        if (!line.isEmpty()) {
-          int idx = line.indexOf("package ");
-          if (idx != -1) {
-            return line.substring(line.indexOf(' ', idx), line.indexOf(';', idx)).trim();
-          }
-          return null; // Package definition must be on the first non-comment line
+        String fileName = file.getName();
+        //读取类名
+        String className = fileName.substring(0, fileName.length() - Kind.SOURCE.extension.length());
+        if (packageName != null) {
+            //将包名和类名组装
+            className = packageName + '.' + className;
         }
-      }
-	    return null;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+        //设置绝对类路径
+        this.className = className;
     }
-  }
+
+    public File getSourceRoot() {
+        return sourceRoot;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    /*
+     * Parse package definition from a Java source file:
+     * First remove all comments, split file into lines, find first non-empty line
+     * Then, if the line starts with keyword "package", parse the package definition from it.
+     *
+     */
+    // TODO: 16/12/30 by zmyer
+    private static String parsePackage(File file) {
+        try {
+            //开始读取源文件
+            String source = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            // http://stackoverflow.com/questions/1657066/java-regular-expression-finding-comments-in-code
+            //开始删除源文件中的注释部分
+            source = source.replaceAll("//.*|(\"(?:\\\\[^\"]|\\\\\"|.)*?\")|(?s)/\\*.*?\\*/", "$1 ");
+            //开始读取源文件中每一行代码
+            for (String line : source.split("\\r?\\n")) {
+                line = line.trim();
+                if (!line.isEmpty()) {
+                    //如果当前的代码行中包含了package,这说明当前是包名
+                    int idx = line.indexOf("package ");
+                    if (idx != -1) {
+                        //截取包名,并返回
+                        return line.substring(line.indexOf(' ', idx), line.indexOf(';', idx)).trim();
+                    }
+                    return null; // Package definition must be on the first non-comment line
+                }
+            }
+            return null;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

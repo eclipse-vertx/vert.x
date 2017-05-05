@@ -27,304 +27,311 @@ import java.util.Objects;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 @DataObject(generateConverter = true)
 public class NetClientOptions extends ClientOptionsBase {
 
-  /**
-   * The default value for reconnect attempts = 0
-   */
-  public static final int DEFAULT_RECONNECT_ATTEMPTS = 0;
-
-  /**
-   * The default value for reconnect interval = 1000 ms
-   */
-  public static final long DEFAULT_RECONNECT_INTERVAL = 1000;
-
-  /**
-   * Default value to determine hostname verification algorithm hostname verification (for SSL/TLS) = ""
-   */
-  public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "";
-
-
-  private int reconnectAttempts;
-  private long reconnectInterval;
-  private String hostnameVerificationAlgorithm;
+    /**
+     * The default value for reconnect attempts = 0
+     */
+    public static final int DEFAULT_RECONNECT_ATTEMPTS = 0;
 
     /**
-   * The default constructor
-   */
-  public NetClientOptions() {
-    super();
-    init();
-  }
+     * The default value for reconnect interval = 1000 ms
+     */
+    public static final long DEFAULT_RECONNECT_INTERVAL = 1000;
 
-  /**
-   * Copy constructor
-   *
-   * @param other  the options to copy
-   */
-  public NetClientOptions(NetClientOptions other) {
-    super(other);
-    this.reconnectAttempts = other.getReconnectAttempts();
-    this.reconnectInterval = other.getReconnectInterval();
-    this.hostnameVerificationAlgorithm = other.getHostnameVerificationAlgorithm();
-  }
+    /**
+     * Default value to determine hostname verification algorithm hostname verification (for SSL/TLS) = ""
+     */
+    public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "";
 
-  /**
-   * Create options from JSON
-   *
-   * @param json  the JSON
-   */
-  public NetClientOptions(JsonObject json) {
-    super(json);
-    init();
-    NetClientOptionsConverter.fromJson(json, this);
-  }
+    //重连次数
+    private int reconnectAttempts;
+    //重连时间间隔
+    private long reconnectInterval;
+    //
+    private String hostnameVerificationAlgorithm;
 
-  private void init() {
-    this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
-    this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
-    this.hostnameVerificationAlgorithm = DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM;
-  }
-
-  @Override
-  public NetClientOptions setSendBufferSize(int sendBufferSize) {
-    super.setSendBufferSize(sendBufferSize);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setReceiveBufferSize(int receiveBufferSize) {
-    super.setReceiveBufferSize(receiveBufferSize);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setReuseAddress(boolean reuseAddress) {
-    super.setReuseAddress(reuseAddress);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTrafficClass(int trafficClass) {
-    super.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTcpNoDelay(boolean tcpNoDelay) {
-    super.setTcpNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTcpKeepAlive(boolean tcpKeepAlive) {
-    super.setTcpKeepAlive(tcpKeepAlive);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setSoLinger(int soLinger) {
-    super.setSoLinger(soLinger);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setUsePooledBuffers(boolean usePooledBuffers) {
-    super.setUsePooledBuffers(usePooledBuffers);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setIdleTimeout(int idleTimeout) {
-    super.setIdleTimeout(idleTimeout);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setSsl(boolean ssl) {
-    super.setSsl(ssl);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setKeyCertOptions(KeyCertOptions options) {
-    super.setKeyCertOptions(options);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setKeyStoreOptions(JksOptions options) {
-    super.setKeyStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setPfxKeyCertOptions(PfxOptions options) {
-    return (NetClientOptions) super.setPfxKeyCertOptions(options);
-  }
-
-  @Override
-  public NetClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    return (NetClientOptions) super.setPemKeyCertOptions(options);
-  }
-
-  @Override
-  public NetClientOptions setTrustOptions(TrustOptions options) {
-    super.setTrustOptions(options);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTrustStoreOptions(JksOptions options) {
-    super.setTrustStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setPemTrustOptions(PemTrustOptions options) {
-    return (NetClientOptions) super.setPemTrustOptions(options);
-  }
-
-  @Override
-  public NetClientOptions setPfxTrustOptions(PfxOptions options) {
-    return (NetClientOptions) super.setPfxTrustOptions(options);
-  }
-
-  @Override
-  public NetClientOptions addEnabledCipherSuite(String suite) {
-    super.addEnabledCipherSuite(suite);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions addEnabledSecureTransportProtocol(final String protocol) {
-    super.addEnabledSecureTransportProtocol(protocol);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
-    return (NetClientOptions) super.addCrlPath(crlPath);
-  }
-
-  @Override
-  public NetClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
-    return (NetClientOptions) super.addCrlValue(crlValue);
-  }
-
-  @Override
-  public NetClientOptions setTrustAll(boolean trustAll) {
-    super.setTrustAll(trustAll);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setConnectTimeout(int connectTimeout) {
-    super.setConnectTimeout(connectTimeout);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setMetricsName(String metricsName) {
-    return (NetClientOptions) super.setMetricsName(metricsName);
-  }
-
-  /**
-   * Set the value of reconnect attempts
-   *
-   * @param attempts  the maximum number of reconnect attempts
-   * @return a reference to this, so the API can be used fluently
-   */
-  public NetClientOptions setReconnectAttempts(int attempts) {
-    if (attempts < -1) {
-      throw new IllegalArgumentException("reconnect attempts must be >= -1");
+    /**
+     * The default constructor
+     */
+    public NetClientOptions() {
+        super();
+        init();
     }
-    this.reconnectAttempts = attempts;
-    return this;
-  }
 
-  /**
-   * @return  the value of reconnect attempts
-   */
-  public int getReconnectAttempts() {
-    return reconnectAttempts;
-  }
-
-  /**
-   * Set the reconnect interval
-   *
-   * @param interval  the reconnect interval in ms
-   * @return a reference to this, so the API can be used fluently
-   */
-  public NetClientOptions setReconnectInterval(long interval) {
-    if (interval < 1) {
-      throw new IllegalArgumentException("reconnect interval must be >= 1");
+    /**
+     * Copy constructor
+     *
+     * @param other the options to copy
+     */
+    // TODO: 17/1/1 by zmyer
+    public NetClientOptions(NetClientOptions other) {
+        super(other);
+        this.reconnectAttempts = other.getReconnectAttempts();
+        this.reconnectInterval = other.getReconnectInterval();
+        this.hostnameVerificationAlgorithm = other.getHostnameVerificationAlgorithm();
     }
-    this.reconnectInterval = interval;
-    return this;
-  }
 
-  /**
-   * @return  the value of the hostname verification algorithm
-   */
+    /**
+     * Create options from JSON
+     *
+     * @param json the JSON
+     */
+    // TODO: 17/1/1 by zmyer
+    public NetClientOptions(JsonObject json) {
+        super(json);
+        init();
+        NetClientOptionsConverter.fromJson(json, this);
+    }
 
-  public String getHostnameVerificationAlgorithm() {
-    return hostnameVerificationAlgorithm;
-  }
+    // TODO: 17/1/1 by zmyer
+    private void init() {
+        this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
+        this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
+        this.hostnameVerificationAlgorithm = DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM;
+    }
 
-  /**
-   * Set the hostname verification algorithm interval
-   * To disable hostname verification, set hostnameVerificationAlgorithm to an empty String
-   *
-   * @param hostnameVerificationAlgorithm should be HTTPS, LDAPS or an empty String
-   * @return a reference to this, so the API can be used fluently
-   */
+    @Override
+    public NetClientOptions setSendBufferSize(int sendBufferSize) {
+        super.setSendBufferSize(sendBufferSize);
+        return this;
+    }
 
-  public NetClientOptions setHostnameVerificationAlgorithm(String hostnameVerificationAlgorithm) {
-    Objects.requireNonNull(hostnameVerificationAlgorithm, "hostnameVerificationAlgorithm can not be null!");
-    this.hostnameVerificationAlgorithm = hostnameVerificationAlgorithm;
-    return this;
-  }
+    @Override
+    public NetClientOptions setReceiveBufferSize(int receiveBufferSize) {
+        super.setReceiveBufferSize(receiveBufferSize);
+        return this;
+    }
 
-  /**
-   * @return  the value of reconnect interval
-   */
-  public long getReconnectInterval() {
-    return reconnectInterval;
-  }
+    @Override
+    public NetClientOptions setReuseAddress(boolean reuseAddress) {
+        super.setReuseAddress(reuseAddress);
+        return this;
+    }
 
-  @Override
-  public NetClientOptions setLogActivity(boolean logEnabled) {
-    return (NetClientOptions) super.setLogActivity(logEnabled);
-  }
+    @Override
+    public NetClientOptions setTrafficClass(int trafficClass) {
+        super.setTrafficClass(trafficClass);
+        return this;
+    }
 
-  public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {
-    return (NetClientOptions) super.setProxyOptions(proxyOptions);
-  }
+    @Override
+    public NetClientOptions setTcpNoDelay(boolean tcpNoDelay) {
+        super.setTcpNoDelay(tcpNoDelay);
+        return this;
+    }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof NetClientOptions)) return false;
-    if (!super.equals(o)) return false;
+    @Override
+    public NetClientOptions setTcpKeepAlive(boolean tcpKeepAlive) {
+        super.setTcpKeepAlive(tcpKeepAlive);
+        return this;
+    }
 
-    NetClientOptions that = (NetClientOptions) o;
+    @Override
+    public NetClientOptions setSoLinger(int soLinger) {
+        super.setSoLinger(soLinger);
+        return this;
+    }
 
-    if (reconnectAttempts != that.reconnectAttempts) return false;
-    if (reconnectInterval != that.reconnectInterval) return false;
-    if (!hostnameVerificationAlgorithm.equals(that.hostnameVerificationAlgorithm)) return false;
+    @Override
+    public NetClientOptions setUsePooledBuffers(boolean usePooledBuffers) {
+        super.setUsePooledBuffers(usePooledBuffers);
+        return this;
+    }
 
-    return true;
-  }
+    @Override
+    public NetClientOptions setIdleTimeout(int idleTimeout) {
+        super.setIdleTimeout(idleTimeout);
+        return this;
+    }
 
-  @Override
-  public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + reconnectAttempts;
-    result = 31 * result + (int) (reconnectInterval ^ (reconnectInterval >>> 32));
-    result = 31 * result + hostnameVerificationAlgorithm.hashCode();
-    return result;
-  }
+    @Override
+    public NetClientOptions setSsl(boolean ssl) {
+        super.setSsl(ssl);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions setKeyCertOptions(KeyCertOptions options) {
+        super.setKeyCertOptions(options);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions setKeyStoreOptions(JksOptions options) {
+        super.setKeyStoreOptions(options);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions setPfxKeyCertOptions(PfxOptions options) {
+        return (NetClientOptions) super.setPfxKeyCertOptions(options);
+    }
+
+    @Override
+    public NetClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+        return (NetClientOptions) super.setPemKeyCertOptions(options);
+    }
+
+    @Override
+    public NetClientOptions setTrustOptions(TrustOptions options) {
+        super.setTrustOptions(options);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions setTrustStoreOptions(JksOptions options) {
+        super.setTrustStoreOptions(options);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions setPemTrustOptions(PemTrustOptions options) {
+        return (NetClientOptions) super.setPemTrustOptions(options);
+    }
+
+    @Override
+    public NetClientOptions setPfxTrustOptions(PfxOptions options) {
+        return (NetClientOptions) super.setPfxTrustOptions(options);
+    }
+
+    @Override
+    public NetClientOptions addEnabledCipherSuite(String suite) {
+        super.addEnabledCipherSuite(suite);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions addEnabledSecureTransportProtocol(final String protocol) {
+        super.addEnabledSecureTransportProtocol(protocol);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
+        return (NetClientOptions) super.addCrlPath(crlPath);
+    }
+
+    @Override
+    public NetClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+        return (NetClientOptions) super.addCrlValue(crlValue);
+    }
+
+    @Override
+    public NetClientOptions setTrustAll(boolean trustAll) {
+        super.setTrustAll(trustAll);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions setConnectTimeout(int connectTimeout) {
+        super.setConnectTimeout(connectTimeout);
+        return this;
+    }
+
+    @Override
+    public NetClientOptions setMetricsName(String metricsName) {
+        return (NetClientOptions) super.setMetricsName(metricsName);
+    }
+
+    /**
+     * Set the value of reconnect attempts
+     *
+     * @param attempts the maximum number of reconnect attempts
+     * @return a reference to this, so the API can be used fluently
+     */
+    // TODO: 17/1/1 by zmyer
+    public NetClientOptions setReconnectAttempts(int attempts) {
+        if (attempts < -1) {
+            throw new IllegalArgumentException("reconnect attempts must be >= -1");
+        }
+        this.reconnectAttempts = attempts;
+        return this;
+    }
+
+    /**
+     * @return the value of reconnect attempts
+     */
+    public int getReconnectAttempts() {
+        return reconnectAttempts;
+    }
+
+    /**
+     * Set the reconnect interval
+     *
+     * @param interval the reconnect interval in ms
+     * @return a reference to this, so the API can be used fluently
+     */
+    public NetClientOptions setReconnectInterval(long interval) {
+        if (interval < 1) {
+            throw new IllegalArgumentException("reconnect interval must be >= 1");
+        }
+        this.reconnectInterval = interval;
+        return this;
+    }
+
+    /**
+     * @return the value of the hostname verification algorithm
+     */
+
+    public String getHostnameVerificationAlgorithm() {
+        return hostnameVerificationAlgorithm;
+    }
+
+    /**
+     * Set the hostname verification algorithm interval
+     * To disable hostname verification, set hostnameVerificationAlgorithm to an empty String
+     *
+     * @param hostnameVerificationAlgorithm should be HTTPS, LDAPS or an empty String
+     * @return a reference to this, so the API can be used fluently
+     */
+
+    public NetClientOptions setHostnameVerificationAlgorithm(String hostnameVerificationAlgorithm) {
+        Objects.requireNonNull(hostnameVerificationAlgorithm, "hostnameVerificationAlgorithm can not be null!");
+        this.hostnameVerificationAlgorithm = hostnameVerificationAlgorithm;
+        return this;
+    }
+
+    /**
+     * @return the value of reconnect interval
+     */
+    public long getReconnectInterval() {
+        return reconnectInterval;
+    }
+
+    @Override
+    public NetClientOptions setLogActivity(boolean logEnabled) {
+        return (NetClientOptions) super.setLogActivity(logEnabled);
+    }
+
+    public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {
+        return (NetClientOptions) super.setProxyOptions(proxyOptions);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof NetClientOptions)) return false;
+        if (!super.equals(o)) return false;
+
+        NetClientOptions that = (NetClientOptions) o;
+
+        if (reconnectAttempts != that.reconnectAttempts) return false;
+        if (reconnectInterval != that.reconnectInterval) return false;
+        if (!hostnameVerificationAlgorithm.equals(that.hostnameVerificationAlgorithm)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + reconnectAttempts;
+        result = 31 * result + (int) (reconnectInterval ^ (reconnectInterval >>> 32));
+        result = 31 * result + hostnameVerificationAlgorithm.hashCode();
+        return result;
+    }
 
 }

@@ -24,117 +24,120 @@ import java.util.Enumeration;
 import java.util.List;
 
 /**
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/29 by zmyer
 public class IsolatingClassLoader extends URLClassLoader {
+    //类对象集合
+    private List<String> isolatedClasses;
 
-  private List<String> isolatedClasses;
+    public IsolatingClassLoader(URL[] urls, ClassLoader parent, List<String> isolatedClasses) {
+        super(urls, parent);
+        this.isolatedClasses = isolatedClasses;
+    }
 
-  public IsolatingClassLoader(URL[] urls, ClassLoader parent, List<String> isolatedClasses) {
-    super(urls, parent);
-    this.isolatedClasses = isolatedClasses;
-  }
-
-  @Override
-  protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-    synchronized (getClassLoadingLock(name)) {
-      Class<?> c = findLoadedClass(name);
-      if (c == null) {
-        if (isIsolatedClass(name)) {
-          // We don't want to load Vert.x (or Vert.x dependency) classes from an isolating loader
-          if (isVertxOrSystemClass(name)) {
-            try {
-              c = getParent().loadClass(name);
-            } catch (ClassNotFoundException e) {
-              // Fall through
+    // TODO: 16/12/29 by zmyer
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        synchronized (getClassLoadingLock(name)) {
+            Class<?> c = findLoadedClass(name);
+            if (c == null) {
+                if (isIsolatedClass(name)) {
+                    // We don't want to load Vert.x (or Vert.x dependency) classes from an isolating loader
+                    if (isVertxOrSystemClass(name)) {
+                        try {
+                            c = getParent().loadClass(name);
+                        } catch (ClassNotFoundException e) {
+                            // Fall through
+                        }
+                    }
+                    if (c == null) {
+                        // Try and load with this classloader
+                        try {
+                            c = findClass(name);
+                        } catch (ClassNotFoundException e) {
+                            // Now try with parent
+                            c = getParent().loadClass(name);
+                        }
+                    }
+                    if (resolve) {
+                        resolveClass(c);
+                    }
+                } else {
+                    // Parent first
+                    c = super.loadClass(name, resolve);
+                }
             }
-          }
-          if (c == null) {
-            // Try and load with this classloader
-            try {
-              c = findClass(name);
-            } catch (ClassNotFoundException e) {
-              // Now try with parent
-              c = getParent().loadClass(name);
+            return c;
+        }
+    }
+
+    // TODO: 16/12/29 by zmyer
+    private boolean isIsolatedClass(String name) {
+        if (isolatedClasses != null) {
+            for (String isolated : isolatedClasses) {
+                if (isolated.endsWith(".*")) {
+                    String isolatedPackage = isolated.substring(0, isolated.length() - 1);
+                    String paramPackage = name.substring(0, name.lastIndexOf('.') + 1);
+                    if (paramPackage.startsWith(isolatedPackage)) {
+                        // Matching package
+                        return true;
+                    }
+                } else if (isolated.equals(name)) {
+                    return true;
+                }
             }
-          }
-          if (resolve) {
-            resolveClass(c);
-          }
-        } else {
-          // Parent first
-          c = super.loadClass(name, resolve);
         }
-      }
-      return c;
+        return false;
     }
-  }
 
-  private boolean isIsolatedClass(String name) {
-    if (isolatedClasses != null) {
-      for (String isolated : isolatedClasses) {
-        if (isolated.endsWith(".*")) {
-          String isolatedPackage = isolated.substring(0, isolated.length() - 1);
-          String paramPackage = name.substring(0, name.lastIndexOf('.') + 1);
-          if (paramPackage.startsWith(isolatedPackage)) {
-            // Matching package
-            return true;
-          }
-        } else if (isolated.equals(name)) {
-          return true;
+
+    /**
+     * {@inheritDoc}
+     */
+    // TODO: 16/12/29 by zmyer
+    @Override
+    public URL getResource(String name) {
+
+        // First check this classloader
+        URL url = findResource(name);
+
+        // Then try the parent if not found
+        if (url == null) {
+            url = super.getResource(name);
         }
-      }
-    }
-    return false;
-  }
 
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public URL getResource(String name) {
-
-    // First check this classloader
-    URL url = findResource(name);
-
-    // Then try the parent if not found
-    if (url == null) {
-      url = super.getResource(name);
+        return url;
     }
 
-    return url;
-  }
+    /**
+     * {@inheritDoc}
+     */
+    // TODO: 16/12/29 by zmyer
+    @Override
+    public Enumeration<URL> getResources(String name) throws IOException {
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public Enumeration<URL> getResources(String name) throws IOException {
+        // First get resources from this classloader
+        List<URL> resources = Collections.list(findResources(name));
 
-    // First get resources from this classloader
-    List<URL> resources = Collections.list(findResources(name));
+        // Then add resources from the parent
+        if (getParent() != null) {
+            Enumeration<URL> parentResources = getParent().getResources(name);
+            if (parentResources.hasMoreElements()) {
+                resources.addAll(Collections.list(parentResources));
+            }
+        }
 
-    // Then add resources from the parent
-    if (getParent() != null) {
-      Enumeration<URL> parentResources = getParent().getResources(name);
-      if (parentResources.hasMoreElements()) {
-        resources.addAll(Collections.list(parentResources));
-      }
+        return Collections.enumeration(resources);
     }
 
-    return Collections.enumeration(resources);
-  }
-
-  private boolean isVertxOrSystemClass(String name) {
-    return
-        name.startsWith("java.") ||
-        name.startsWith("javax.") ||
-        name.startsWith("sun.*") ||
-        name.startsWith("com.sun.") ||
-        name.startsWith("io.vertx.core") ||
-        name.startsWith("io.netty.") ||
-        name.startsWith("com.fasterxml.jackson");
-  }
+    private boolean isVertxOrSystemClass(String name) {
+        return name.startsWith("java.") ||
+                name.startsWith("javax.") ||
+                name.startsWith("sun.*") ||
+                name.startsWith("com.sun.") ||
+                name.startsWith("io.vertx.core") ||
+                name.startsWith("io.netty.") ||
+                name.startsWith("com.fasterxml.jackson");
+    }
 }

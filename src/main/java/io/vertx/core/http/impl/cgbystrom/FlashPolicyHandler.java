@@ -26,13 +26,13 @@ import io.netty.util.CharsetUtil;
 /**
  * A Flash policy file handler
  * Will detect connection attempts made by Adobe Flash clients and return a policy file response
- *
+ * <p>
  * After the policy has been sent, it will instantly close the connection.
  * If the first bytes sent are not a policy file request the handler will simply remove itself
  * from the pipeline.
- *
+ * <p>
  * Read more at http://www.adobe.com/devnet/articles/crossdomain_policy_file_spec.html
- *
+ * <p>
  * Example usage:
  * <code>
  * ChannelPipeline pipeline = Channels.pipeline();
@@ -41,47 +41,48 @@ import io.netty.util.CharsetUtil;
  * pipeline.addLast("encoder", new MyProtocolEncoder());
  * pipeline.addLast("handler", new MyBusinessLogicHandler());
  * </code>
- *
+ * <p>
  * For license see LICENSE file in this directory
  */
+// TODO: 16/12/27 by zmyer
 public class FlashPolicyHandler extends ChannelInboundHandlerAdapter {
-  private static final String XML = "<cross-domain-policy><allow-access-from domain=\"*\" to-ports=\"*\" /></cross-domain-policy>";
+    private static final String XML = "<cross-domain-policy><allow-access-from domain=\"*\" to-ports=\"*\" /></cross-domain-policy>";
 
-  enum ParseState {
-    MAGIC1,
-    MAGIC2
-  }
+    enum ParseState {
+        MAGIC1,
+        MAGIC2
+    }
 
-  private ParseState state = ParseState.MAGIC1;
+    private ParseState state = ParseState.MAGIC1;
 
-  @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    ByteBuf buffer = (ByteBuf) msg;
-    int index = buffer.readerIndex();
-    switch (state) {
-      case MAGIC1:
-        if (!buffer.isReadable()) {
-          return;
-        }
-        final int magic1 = buffer.getUnsignedByte(index++);
-        state = ParseState.MAGIC2;
-        if (magic1 != '<') {
-          ctx.fireChannelRead(buffer);
-          ctx.pipeline().remove(this);
-          return;
-        }
-        // fall through
-      case MAGIC2:
-        if (!buffer.isReadable()) {
-          return;
-        }
-        final int magic2 = buffer.getUnsignedByte(index);
-        if (magic2 != 'p') {
-          ctx.fireChannelRead(buffer);
-          ctx.pipeline().remove(this);
-        } else {
-          ctx.writeAndFlush(Unpooled.copiedBuffer(XML, CharsetUtil.UTF_8)).addListener(ChannelFutureListener.CLOSE);
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        ByteBuf buffer = (ByteBuf) msg;
+        int index = buffer.readerIndex();
+        switch (state) {
+            case MAGIC1:
+                if (!buffer.isReadable()) {
+                    return;
+                }
+                final int magic1 = buffer.getUnsignedByte(index++);
+                state = ParseState.MAGIC2;
+                if (magic1 != '<') {
+                    ctx.fireChannelRead(buffer);
+                    ctx.pipeline().remove(this);
+                    return;
+                }
+                // fall through
+            case MAGIC2:
+                if (!buffer.isReadable()) {
+                    return;
+                }
+                final int magic2 = buffer.getUnsignedByte(index);
+                if (magic2 != 'p') {
+                    ctx.fireChannelRead(buffer);
+                    ctx.pipeline().remove(this);
+                } else {
+                    ctx.writeAndFlush(Unpooled.copiedBuffer(XML, CharsetUtil.UTF_8)).addListener(ChannelFutureListener.CLOSE);
+                }
         }
     }
-  }
 }

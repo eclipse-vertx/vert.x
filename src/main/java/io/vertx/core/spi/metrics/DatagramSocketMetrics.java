@@ -20,32 +20,33 @@ import io.vertx.core.net.SocketAddress;
 
 /**
  * The datagram/udp metrics SPI which Vert.x will use to call when each event occurs pertaining to datagram sockets.<p/>
- *
+ * <p>
  * The thread model for the datagram socket depends on the actual context thats started the server.<p/>
- *
+ * <p>
  * <h3>Event loop context</h3>
- *
+ * <p>
  * Unless specified otherwise, all the methods on this object including the methods inherited from the super interfaces are invoked
  * with the thread of the http server and therefore are the same than the
  * {@link io.vertx.core.spi.metrics.VertxMetrics} {@code createMetrics} method that created and returned
  * this metrics object.
- *
+ * <p>
  * <h3>Worker context</h3>
- *
+ * <p>
  * Unless specified otherwise, all the methods on this object including the methods inherited from the super interfaces are invoked
  * with a worker thread.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface DatagramSocketMetrics extends NetworkMetrics<Void> {
 
-  /**
-   * Called when a socket is listening. For example, this is called when an http or net server
-   * has been created and is listening on a specific host/port.
-   *
-   * @param localName
-   * @param localAddress the local address the net socket is listening on.
-   */
-  void listening(String localName, SocketAddress localAddress);
+    /**
+     * Called when a socket is listening. For example, this is called when an http or net server
+     * has been created and is listening on a specific host/port.
+     *
+     * @param localName
+     * @param localAddress the local address the net socket is listening on.
+     */
+    void listening(String localName, SocketAddress localAddress);
 
 }

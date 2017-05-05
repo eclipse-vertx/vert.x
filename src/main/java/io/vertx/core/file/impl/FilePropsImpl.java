@@ -21,65 +21,66 @@ import io.vertx.core.file.FileProps;
 import java.nio.file.attribute.BasicFileAttributes;
 
 
+// TODO: 16/12/26 by zmyer
 public class FilePropsImpl implements FileProps {
-  
-  private final long creationTime;
-  private final long lastAccessTime;
-  private final long lastModifiedTime;
-  private final boolean isDirectory;
-  private final boolean isOther;
-  private final boolean isRegularFile;
-  private final boolean isSymbolicLink;
-  private final long size;
 
-  public FilePropsImpl(BasicFileAttributes attrs) {
-    creationTime = attrs.creationTime().toMillis();
-    lastModifiedTime = attrs.lastModifiedTime().toMillis();
-    lastAccessTime = attrs.lastAccessTime().toMillis();
-    isDirectory = attrs.isDirectory();
-    isOther = attrs.isOther();
-    isRegularFile = attrs.isRegularFile();
-    isSymbolicLink = attrs.isSymbolicLink();
-    size = attrs.size();
-  }
+    private final long creationTime;
+    private final long lastAccessTime;
+    private final long lastModifiedTime;
+    private final boolean isDirectory;
+    private final boolean isOther;
+    private final boolean isRegularFile;
+    private final boolean isSymbolicLink;
+    private final long size;
 
-  @Override
-  public long creationTime() {
-    return creationTime;
-  }
+    public FilePropsImpl(BasicFileAttributes attrs) {
+        creationTime = attrs.creationTime().toMillis();
+        lastModifiedTime = attrs.lastModifiedTime().toMillis();
+        lastAccessTime = attrs.lastAccessTime().toMillis();
+        isDirectory = attrs.isDirectory();
+        isOther = attrs.isOther();
+        isRegularFile = attrs.isRegularFile();
+        isSymbolicLink = attrs.isSymbolicLink();
+        size = attrs.size();
+    }
 
-  @Override
-  public long lastAccessTime() {
-    return lastAccessTime;
-  }
+    @Override
+    public long creationTime() {
+        return creationTime;
+    }
 
-  @Override
-  public long lastModifiedTime() {
-    return lastModifiedTime;
-  }
+    @Override
+    public long lastAccessTime() {
+        return lastAccessTime;
+    }
 
-  @Override
-  public boolean isDirectory() {
-    return isDirectory;
-  }
+    @Override
+    public long lastModifiedTime() {
+        return lastModifiedTime;
+    }
 
-  @Override
-  public boolean isOther() {
-    return isOther;
-  }
+    @Override
+    public boolean isDirectory() {
+        return isDirectory;
+    }
 
-  @Override
-  public boolean isRegularFile() {
-    return isRegularFile;
-  }
+    @Override
+    public boolean isOther() {
+        return isOther;
+    }
 
-  @Override
-  public boolean isSymbolicLink() {
-    return isSymbolicLink;
-  }
+    @Override
+    public boolean isRegularFile() {
+        return isRegularFile;
+    }
 
-  @Override
-  public long size() {
-    return size;
-  }
+    @Override
+    public boolean isSymbolicLink() {
+        return isSymbolicLink;
+    }
+
+    @Override
+    public long size() {
+        return size;
+    }
 }

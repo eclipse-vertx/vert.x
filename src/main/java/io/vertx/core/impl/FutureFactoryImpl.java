@@ -22,31 +22,32 @@ import io.vertx.core.spi.FutureFactory;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/29 by zmyer
 public class FutureFactoryImpl implements FutureFactory {
 
-  @Override
-  public <T> Future<T> future() {
-    return new FutureImpl<>();
-  }
+    @Override
+    public <T> Future<T> future() {
+        return new FutureImpl<>();
+    }
 
-  // TODO - for completed futures with null values we could maybe reuse a static instance to save allocation
-  @Override
-  public <T> Future<T> succeededFuture() {
-    return new FutureImpl<>((T)null);
-  }
+    // TODO - for completed futures with null values we could maybe reuse a static instance to save allocation
+    @Override
+    public <T> Future<T> succeededFuture() {
+        return new FutureImpl<>((T) null);
+    }
 
-  @Override
-  public <T> Future<T> succeededFuture(T result) {
-    return new FutureImpl<>(result);
-  }
+    @Override
+    public <T> Future<T> succeededFuture(T result) {
+        return new FutureImpl<>(result);
+    }
 
-  @Override
-  public <T> Future<T> failedFuture(Throwable t) {
-    return new FutureImpl<>(t);
-  }
+    @Override
+    public <T> Future<T> failedFuture(Throwable t) {
+        return new FutureImpl<>(t);
+    }
 
-  @Override
-  public <T> Future<T> failureFuture(String failureMessage) {
-    return new FutureImpl<>(failureMessage);
-  }
+    @Override
+    public <T> Future<T> failureFuture(String failureMessage) {
+        return new FutureImpl<>(failureMessage);
+    }
 }

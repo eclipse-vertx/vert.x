@@ -22,16 +22,17 @@ import java.util.Collection;
 /**
  * The interface to implement to look for commands.
  *
- * @see ServiceCommandFactoryLoader
  * @author Clement Escoffier <clement@apache.org>
+ * @see ServiceCommandFactoryLoader
  */
+// TODO: 16/12/13 by zmyer
 public interface CommandFactoryLookup {
 
-  /**
-   * Looks for command implementation and instantiated them.
-   *
-   * @return the set of commands, empty if none are found.
-   */
-  Collection<CommandFactory<?>> lookup();
+    /**
+     * Looks for command implementation and instantiated them.
+     *
+     * @return the set of commands, empty if none are found.
+     */
+    Collection<CommandFactory<?>> lookup();
 
 }

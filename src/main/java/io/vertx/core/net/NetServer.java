@@ -16,12 +16,12 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.streams.ReadStream;
 
@@ -30,117 +30,118 @@ import io.vertx.core.streams.ReadStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 @VertxGen
 public interface NetServer extends Measured {
 
-  /**
-   * Return the connect stream for this server. The server can only have at most one handler at any one time.
-   * As the server accepts TCP or SSL connections it creates an instance of {@link NetSocket} and passes it to the
-   * connect stream {@link ReadStream#handler(io.vertx.core.Handler)}.
-   *
-   * @return the connect stream
-   */
-  NetSocketStream connectStream();
+    /**
+     * Return the connect stream for this server. The server can only have at most one handler at any one time.
+     * As the server accepts TCP or SSL connections it creates an instance of {@link NetSocket} and passes it to the
+     * connect stream {@link ReadStream#handler(io.vertx.core.Handler)}.
+     *
+     * @return the connect stream
+     */
+    NetSocketStream connectStream();
 
-  /**
-   * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
-   * As the server accepts TCP or SSL connections it creates an instance of {@link NetSocket} and passes it to the
-   * connect handler.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  NetServer connectHandler(@Nullable Handler<NetSocket> handler);
+    /**
+     * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
+     * As the server accepts TCP or SSL connections it creates an instance of {@link NetSocket} and passes it to the
+     * connect handler.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    NetServer connectHandler(@Nullable Handler<NetSocket> handler);
 
-  @GenIgnore
-  Handler<NetSocket> connectHandler();
+    @GenIgnore
+    Handler<NetSocket> connectHandler();
 
-  /**
-   * Start listening on the port and host as configured in the {@link io.vertx.core.net.NetServerOptions} used when
-   * creating the server.
-   * <p>
-   * The server may not be listening until some time after the call to listen has returned.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  NetServer listen();
+    /**
+     * Start listening on the port and host as configured in the {@link io.vertx.core.net.NetServerOptions} used when
+     * creating the server.
+     * <p>
+     * The server may not be listening until some time after the call to listen has returned.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    NetServer listen();
 
-  /**
-   * Like {@link #listen} but providing a handler that will be notified when the server is listening, or fails.
-   *
-   * @param listenHandler  handler that will be notified when listening or failed
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  NetServer listen(Handler<AsyncResult<NetServer>> listenHandler);
+    /**
+     * Like {@link #listen} but providing a handler that will be notified when the server is listening, or fails.
+     *
+     * @param listenHandler handler that will be notified when listening or failed
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    NetServer listen(Handler<AsyncResult<NetServer>> listenHandler);
 
-  /**
-   * Start listening on the specified port and host, ignoring post and host configured in the {@link io.vertx.core.net.NetServerOptions} used when
-   * creating the server.
-   * <p>
-   * Port {@code 0} can be specified meaning "choose an random port".
-   * <p>
-   * Host {@code 0.0.0.0} can be specified meaning "listen on all available interfaces".
-   * <p>
-   * The server may not be listening until some time after the call to listen has returned.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  NetServer listen(int port, String host);
+    /**
+     * Start listening on the specified port and host, ignoring post and host configured in the {@link io.vertx.core.net.NetServerOptions} used when
+     * creating the server.
+     * <p>
+     * Port {@code 0} can be specified meaning "choose an random port".
+     * <p>
+     * Host {@code 0.0.0.0} can be specified meaning "listen on all available interfaces".
+     * <p>
+     * The server may not be listening until some time after the call to listen has returned.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    NetServer listen(int port, String host);
 
-  /**
-   * Like {@link #listen(int, String)} but providing a handler that will be notified when the server is listening, or fails.
-   *
-   * @param port  the port to listen on
-   * @param host  the host to listen on
-   * @param listenHandler handler that will be notified when listening or failed
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler);
+    /**
+     * Like {@link #listen(int, String)} but providing a handler that will be notified when the server is listening, or fails.
+     *
+     * @param port          the port to listen on
+     * @param host          the host to listen on
+     * @param listenHandler handler that will be notified when listening or failed
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler);
 
-  /**
-   * Start listening on the specified port and host "0.0.0.0", ignoring post and host configured in the
-   * {@link io.vertx.core.net.NetServerOptions} used when creating the server.
-   * <p>
-   * Port {@code 0} can be specified meaning "choose an random port".
-   * <p>
-   * The server may not be listening until some time after the call to listen has returned.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  NetServer listen(int port);
+    /**
+     * Start listening on the specified port and host "0.0.0.0", ignoring post and host configured in the
+     * {@link io.vertx.core.net.NetServerOptions} used when creating the server.
+     * <p>
+     * Port {@code 0} can be specified meaning "choose an random port".
+     * <p>
+     * The server may not be listening until some time after the call to listen has returned.
+     *
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    NetServer listen(int port);
 
-  /**
-   * Like {@link #listen(int)} but providing a handler that will be notified when the server is listening, or fails.
-   *
-   * @param port  the port to listen on
-   * @param listenHandler handler that will be notified when listening or failed
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler);
+    /**
+     * Like {@link #listen(int)} but providing a handler that will be notified when the server is listening, or fails.
+     *
+     * @param port          the port to listen on
+     * @param listenHandler handler that will be notified when listening or failed
+     * @return a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler);
 
-  /**
-   * Close the server. This will close any currently open connections. The close may not complete until after this
-   * method has returned.
-   */
-  void close();
+    /**
+     * Close the server. This will close any currently open connections. The close may not complete until after this
+     * method has returned.
+     */
+    void close();
 
-  /**
-   * Like {@link #close} but supplying a handler that will be notified when close is complete.
-   *
-   * @param completionHandler  the handler
-   */
-  void close(Handler<AsyncResult<Void>> completionHandler);
+    /**
+     * Like {@link #close} but supplying a handler that will be notified when close is complete.
+     *
+     * @param completionHandler the handler
+     */
+    void close(Handler<AsyncResult<Void>> completionHandler);
 
-  /**
-   * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
-   * signifying an ephemeral port
-   *
-   * @return the actual port the server is listening on.
-   */
-  int actualPort();
+    /**
+     * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
+     * signifying an ephemeral port
+     *
+     * @return the actual port the server is listening on.
+     */
+    int actualPort();
 }

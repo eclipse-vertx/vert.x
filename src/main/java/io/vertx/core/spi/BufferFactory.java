@@ -22,17 +22,18 @@ import io.vertx.core.buffer.Buffer;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface BufferFactory {
 
-  Buffer buffer(int initialSizeHint);
+    Buffer buffer(int initialSizeHint);
 
-  Buffer buffer();
+    Buffer buffer();
 
-  Buffer buffer(String str);
+    Buffer buffer(String str);
 
-  Buffer buffer(String str, String enc);
+    Buffer buffer(String str, String enc);
 
-  Buffer buffer(byte[] bytes);
+    Buffer buffer(byte[] bytes);
 
-  Buffer buffer(ByteBuf byteBuffer);
+    Buffer buffer(ByteBuf byteBuffer);
 }

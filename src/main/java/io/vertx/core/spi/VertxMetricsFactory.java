@@ -26,28 +26,29 @@ import io.vertx.core.spi.metrics.VertxMetrics;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface VertxMetricsFactory {
 
-  /**
-   * Create a new {@link io.vertx.core.spi.metrics.VertxMetrics} object.<p/>
-   *
-   * No specific thread and context can be expected when this method is called.
-   *
-   * @param vertx the vertx instance
-   * @param options the metrics configuration option
-   * @return the metrics implementation
-   */
-  VertxMetrics metrics(Vertx vertx, VertxOptions options);
+    /**
+     * Create a new {@link io.vertx.core.spi.metrics.VertxMetrics} object.<p/>
+     * <p>
+     * No specific thread and context can be expected when this method is called.
+     *
+     * @param vertx   the vertx instance
+     * @param options the metrics configuration option
+     * @return the metrics implementation
+     */
+    VertxMetrics metrics(Vertx vertx, VertxOptions options);
 
-  /**
-   * Create an empty metrics options. Providers can override this method to provide a custom metrics options subclass
-   * that exposes custom configuration. It is used by the {@link io.vertx.core.Starter} class when
-   * creating new options when building a CLI vert.x
-   *
-   * @return new metrics options
-   */
-  default MetricsOptions newOptions() {
-    return new MetricsOptions();
-  }
+    /**
+     * Create an empty metrics options. Providers can override this method to provide a custom metrics options subclass
+     * that exposes custom configuration. It is used by the {@link io.vertx.core.Starter} class when
+     * creating new options when building a CLI vert.x
+     *
+     * @return new metrics options
+     */
+    default MetricsOptions newOptions() {
+        return new MetricsOptions();
+    }
 
 }

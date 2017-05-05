@@ -24,45 +24,45 @@ import io.vertx.core.shareddata.Shareable;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class Checker {
 
-  static void checkType(Object obj) {
-    if (obj instanceof String ||
-        obj instanceof Integer ||
-        obj instanceof Long ||
-        obj instanceof Boolean ||
-        obj instanceof Double ||
-        obj instanceof Float ||
-        obj instanceof Short ||
-        obj instanceof Byte ||
-        obj instanceof Character ||
-        obj instanceof byte[] ||
-        obj instanceof Buffer ||
-        obj instanceof JsonObject ||
-        obj instanceof JsonArray ||
-        obj instanceof Shareable) {
-    } else {
-      throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
+    static void checkType(Object obj) {
+        if (obj instanceof String ||
+                obj instanceof Integer ||
+                obj instanceof Long ||
+                obj instanceof Boolean ||
+                obj instanceof Double ||
+                obj instanceof Float ||
+                obj instanceof Short ||
+                obj instanceof Byte ||
+                obj instanceof Character ||
+                obj instanceof byte[] ||
+                obj instanceof Buffer ||
+                obj instanceof JsonObject ||
+                obj instanceof JsonArray ||
+                obj instanceof Shareable) {
+        } else {
+            throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
+        }
     }
-  }
 
-  static <T> T copyIfRequired(T obj) {
-    if (obj instanceof JsonObject) {
-      return (T)((JsonObject)obj).copy();
-    } else if (obj instanceof JsonArray) {
-      return (T) ((JsonArray) obj).copy();
-    } else if (obj instanceof byte[]) {
-      //Copy it
-      byte[] bytes = (byte[]) obj;
-      byte[] copy = new byte[bytes.length];
-      System.arraycopy(bytes, 0, copy, 0, bytes.length);
-      return (T) copy;
-    } else if (obj instanceof Buffer) {
-      //Copy it
-      return (T) ((Buffer) obj).copy();
-    } else {
-      return obj;
+    static <T> T copyIfRequired(T obj) {
+        if (obj instanceof JsonObject) {
+            return (T) ((JsonObject) obj).copy();
+        } else if (obj instanceof JsonArray) {
+            return (T) ((JsonArray) obj).copy();
+        } else if (obj instanceof byte[]) {
+            //Copy it
+            byte[] bytes = (byte[]) obj;
+            byte[] copy = new byte[bytes.length];
+            System.arraycopy(bytes, 0, copy, 0, bytes.length);
+            return (T) copy;
+        } else if (obj instanceof Buffer) {
+            //Copy it
+            return (T) ((Buffer) obj).copy();
+        } else {
+            return obj;
+        }
     }
-  }
-
 }

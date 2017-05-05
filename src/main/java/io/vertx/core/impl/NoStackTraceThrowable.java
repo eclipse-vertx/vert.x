@@ -19,9 +19,10 @@ package io.vertx.core.impl;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public class NoStackTraceThrowable extends Throwable {
 
-  public NoStackTraceThrowable(String message) {
-    super(message, null, false, false);
-  }
+    public NoStackTraceThrowable(String message) {
+        super(message, null, false, false);
+    }
 }

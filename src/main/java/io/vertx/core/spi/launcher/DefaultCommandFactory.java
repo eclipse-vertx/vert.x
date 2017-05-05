@@ -28,34 +28,35 @@ import io.vertx.core.cli.impl.ReflectionUtils;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 17/1/1 by zmyer
 public class DefaultCommandFactory<C extends Command> implements CommandFactory<C> {
 
-  private final Class<C> clazz;
+    private final Class<C> clazz;
 
-  /**
-   * Creates a new {@link CommandFactory}.
-   *
-   * @param clazz the {@link Command} implementation
-   */
-  public DefaultCommandFactory(Class<C> clazz) {
-    this.clazz = clazz;
-  }
+    /**
+     * Creates a new {@link CommandFactory}.
+     *
+     * @param clazz the {@link Command} implementation
+     */
+    public DefaultCommandFactory(Class<C> clazz) {
+        this.clazz = clazz;
+    }
 
-  /**
-   * @return a new instance of the command by invoking the default constructor of the given class.
-   */
-  @Override
-  public C create(CommandLine cl) {
-    C c = ReflectionUtils.newInstance(clazz);
-    CLIConfigurator.inject(cl, c);
-    return c;
-  }
+    /**
+     * @return a new instance of the command by invoking the default constructor of the given class.
+     */
+    @Override
+    public C create(CommandLine cl) {
+        C c = ReflectionUtils.newInstance(clazz);
+        CLIConfigurator.inject(cl, c);
+        return c;
+    }
 
-  /**
-   * @return the {@link CLI} instance by reading the annotation.
-   */
-  @Override
-  public CLI define() {
-    return CLIConfigurator.define(clazz);
-  }
+    /**
+     * @return the {@link CLI} instance by reading the annotation.
+     */
+    @Override
+    public CLI define() {
+        return CLIConfigurator.define(clazz);
+    }
 }

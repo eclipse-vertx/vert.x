@@ -21,9 +21,10 @@ import io.vertx.core.buffer.Buffer;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface ClusterSerializable {
 
-  void writeToBuffer(Buffer buffer);
+    void writeToBuffer(Buffer buffer);
 
-  int readFromBuffer(int pos, Buffer buffer);
+    int readFromBuffer(int pos, Buffer buffer);
 }

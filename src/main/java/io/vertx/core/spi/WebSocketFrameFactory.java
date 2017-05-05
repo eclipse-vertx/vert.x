@@ -22,11 +22,12 @@ import io.vertx.core.http.WebSocketFrame;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface WebSocketFrameFactory {
 
-  WebSocketFrame binaryFrame(Buffer data, boolean isFinal);
+    WebSocketFrame binaryFrame(Buffer data, boolean isFinal);
 
-  WebSocketFrame textFrame(String str, boolean isFinal);
+    WebSocketFrame textFrame(String str, boolean isFinal);
 
-  WebSocketFrame continuationFrame(Buffer data, boolean isFinal);
+    WebSocketFrame continuationFrame(Buffer data, boolean isFinal);
 }

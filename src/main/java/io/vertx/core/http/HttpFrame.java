@@ -25,25 +25,26 @@ import io.vertx.core.buffer.Buffer;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/26 by zmyer
 @VertxGen
 public interface HttpFrame {
 
-  /**
-   * @return the 8-bit type of the frame
-   */
-  @CacheReturn
-  int type();
+    /**
+     * @return the 8-bit type of the frame
+     */
+    @CacheReturn
+    int type();
 
-  /**
-   * @return the 8-bit flags specific to the frame
-   */
-  @CacheReturn
-  int flags();
+    /**
+     * @return the 8-bit flags specific to the frame
+     */
+    @CacheReturn
+    int flags();
 
-  /**
-   * @return the frame payload
-   */
-  @CacheReturn
-  Buffer payload();
+    /**
+     * @return the frame payload
+     */
+    @CacheReturn
+    Buffer payload();
 
 }

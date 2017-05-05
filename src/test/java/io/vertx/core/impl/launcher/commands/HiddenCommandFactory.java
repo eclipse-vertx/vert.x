@@ -18,10 +18,11 @@ package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
+// TODO: 16/12/13 by zmyer
 public class HiddenCommandFactory extends DefaultCommandFactory<HiddenCommand> {
 
-  public HiddenCommandFactory() {
-    super(HiddenCommand.class);
-  }
+    public HiddenCommandFactory() {
+        super(HiddenCommand.class);
+    }
 
 }

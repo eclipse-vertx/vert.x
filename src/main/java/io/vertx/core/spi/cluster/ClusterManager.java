@@ -28,11 +28,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * A cluster provider for Vert.x must implement this interface.
- *
+ * <p>
  * In order for HA to work correctly, all implementations of this interface MUST be implemented such that:
- *
+ * <p>
  * 1. Whenever a node joins or leaves the cluster the registered NodeListener (if any) MUST be called with the
  * appropriate join or leave event.
  * 2. For all nodes that are part of the cluster, the registered NodeListener MUST be called with the exact same
@@ -45,61 +44,61 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 17/1/1 by zmyer
 public interface ClusterManager {
 
-  void setVertx(Vertx vertx);
+    void setVertx(Vertx vertx);
 
-  /**
-   * Return an async multi-map for the given name
-   */
-  <K, V> void getAsyncMultiMap(String name, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler);
+    /**
+     * Return an async multi-map for the given name
+     */
+    <K, V> void getAsyncMultiMap(String name, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler);
 
-  /**
-   * Return an async map for the given name
-   */
-  <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
+    /**
+     * Return an async map for the given name
+     */
+    <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
-  /**
-   * Return a synchronous map for the given name
-   */
-  <K, V> Map<K, V> getSyncMap(String name);
+    /**
+     * Return a synchronous map for the given name
+     */
+    <K, V> Map<K, V> getSyncMap(String name);
 
-  void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
+    void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
 
-  void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
+    void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
 
-  /**
-   * Return the unique node ID for this node
-   */
-  String getNodeID();
+    /**
+     * Return the unique node ID for this node
+     */
+    String getNodeID();
 
-  /**
-   * Return a list of node IDs corresponding to the nodes in the cluster
-   *
-   */
-  List<String> getNodes();
+    /**
+     * Return a list of node IDs corresponding to the nodes in the cluster
+     */
+    List<String> getNodes();
 
-  /**
-   * Set a listener that will be called when a node joins or leaves the cluster.
-   *
-   * @param listener
-   */
-  void nodeListener(NodeListener listener);
+    /**
+     * Set a listener that will be called when a node joins or leaves the cluster.
+     *
+     * @param listener
+     */
+    void nodeListener(NodeListener listener);
 
-  /**
-   * Join the cluster
-   */
-  void join(Handler<AsyncResult<Void>> resultHandler);
+    /**
+     * Join the cluster
+     */
+    void join(Handler<AsyncResult<Void>> resultHandler);
 
-  /**
-   * Leave the cluster
-   */
-  void leave(Handler<AsyncResult<Void>> resultHandler);
+    /**
+     * Leave the cluster
+     */
+    void leave(Handler<AsyncResult<Void>> resultHandler);
 
-  /**
-   * Is the cluster manager active?
-   *
-   * @return  true if active, false otherwise
-   */
-  boolean isActive();
+    /**
+     * Is the cluster manager active?
+     *
+     * @return true if active, false otherwise
+     */
+    boolean isActive();
 }

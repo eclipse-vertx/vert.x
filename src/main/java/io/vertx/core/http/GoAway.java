@@ -25,78 +25,79 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+// TODO: 16/12/28 by zmyer
 @DataObject(generateConverter = true)
 public class GoAway {
 
-  private long errorCode;
-  private int lastStreamId;
-  private Buffer debugData;
+    private long errorCode;
+    private int lastStreamId;
+    private Buffer debugData;
 
-  public GoAway() {
-  }
+    public GoAway() {
+    }
 
-  public GoAway(JsonObject json) {
-    GoAwayConverter.fromJson(json, this);
-  }
+    public GoAway(JsonObject json) {
+        GoAwayConverter.fromJson(json, this);
+    }
 
-  public GoAway(GoAway that) {
-    errorCode = that.errorCode;
-    lastStreamId = that.lastStreamId;
-    debugData = that.debugData != null ? that.debugData.copy() : null;
-  }
+    public GoAway(GoAway that) {
+        errorCode = that.errorCode;
+        lastStreamId = that.lastStreamId;
+        debugData = that.debugData != null ? that.debugData.copy() : null;
+    }
 
-  /**
-   * @return the {@literal GOAWAY} error code
-   */
-  public long getErrorCode() {
-    return errorCode;
-  }
+    /**
+     * @return the {@literal GOAWAY} error code
+     */
+    public long getErrorCode() {
+        return errorCode;
+    }
 
-  public GoAway setErrorCode(long errorCode) {
-    this.errorCode = errorCode;
-    return this;
-  }
+    public GoAway setErrorCode(long errorCode) {
+        this.errorCode = errorCode;
+        return this;
+    }
 
-  /**
-   * @return the highest numbered stream identifier for which the sender of the frame might have taken some
-   *         action on or might yet take action
-   */
-  public int getLastStreamId() {
-    return lastStreamId;
-  }
+    /**
+     * @return the highest numbered stream identifier for which the sender of the frame might have taken some
+     * action on or might yet take action
+     */
+    public int getLastStreamId() {
+        return lastStreamId;
+    }
 
-  /**
-   * Set the last stream id.
-   *
-   * @param lastStreamId the last stream id
-   * @return a reference to this, so the API can be used fluently
-   */
-  public GoAway setLastStreamId(int lastStreamId) {
-    this.lastStreamId = lastStreamId;
-    return this;
-  }
+    /**
+     * Set the last stream id.
+     *
+     * @param lastStreamId the last stream id
+     * @return a reference to this, so the API can be used fluently
+     */
+    public GoAway setLastStreamId(int lastStreamId) {
+        this.lastStreamId = lastStreamId;
+        return this;
+    }
 
-  /**
-   * @return additional debug data
-   */
-  public Buffer getDebugData() {
-    return debugData;
-  }
+    /**
+     * @return additional debug data
+     */
+    public Buffer getDebugData() {
+        return debugData;
+    }
 
-  /**
-   * Set the additional debug data
-   *
-   * @param debugData the data
-   * @return a reference to this, so the API can be used fluently
-   */
-  public GoAway setDebugData(Buffer debugData) {
-    this.debugData = debugData;
-    return this;
-  }
+    /**
+     * Set the additional debug data
+     *
+     * @param debugData the data
+     * @return a reference to this, so the API can be used fluently
+     */
+    public GoAway setDebugData(Buffer debugData) {
+        this.debugData = debugData;
+        return this;
+    }
 
-  public JsonObject toJson() {
-    JsonObject json = new JsonObject();
-    GoAwayConverter.toJson(this, json);
-    return json;
-  }
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        GoAwayConverter.toJson(this, json);
+        return json;
+    }
 }

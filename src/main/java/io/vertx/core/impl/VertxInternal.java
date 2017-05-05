@@ -44,87 +44,89 @@ import java.util.concurrent.ExecutorService;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/15 by zmyer
 public interface VertxInternal extends Vertx {
 
-  @Override
-  ContextImpl getOrCreateContext();
+    @Override
+    ContextImpl getOrCreateContext();
 
-  EventLoopGroup getEventLoopGroup();
+    EventLoopGroup getEventLoopGroup();
 
-  EventLoopGroup getAcceptorEventLoopGroup();
+    EventLoopGroup getAcceptorEventLoopGroup();
 
-  ExecutorService getWorkerPool();
+    ExecutorService getWorkerPool();
 
-  Map<ServerID, HttpServerImpl> sharedHttpServers();
+    Map<ServerID, HttpServerImpl> sharedHttpServers();
 
-  Map<ServerID, NetServerImpl> sharedNetServers();
+    Map<ServerID, NetServerImpl> sharedNetServers();
 
-  VertxMetrics metricsSPI();
+    VertxMetrics metricsSPI();
 
-	/**
-	 * Get the current context
-	 * @return the context
-	 */
-	ContextImpl getContext();
+    /**
+     * Get the current context
+     *
+     * @return the context
+     */
+    ContextImpl getContext();
 
-  /**
-   * @return event loop context
-   */
-  EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl);
+    /**
+     * @return event loop context
+     */
+    EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl);
 
-  /**
-   * @return worker loop context
-   */
-  ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool pool, JsonObject config, ClassLoader tccl);
+    /**
+     * @return worker loop context
+     */
+    ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool pool, JsonObject config, ClassLoader tccl);
 
-  @Override
-  WorkerExecutorImpl createSharedWorkerExecutor(String name);
+    @Override
+    WorkerExecutorImpl createSharedWorkerExecutor(String name);
 
-  @Override
-  WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize);
+    @Override
+    WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize);
 
-  @Override
-  WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
+    @Override
+    WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 
-  void simulateKill();
+    void simulateKill();
 
-  Deployment getDeployment(String deploymentID);
+    Deployment getDeployment(String deploymentID);
 
-  void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler);
+    void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler);
 
-  boolean isKilled();
+    boolean isKilled();
 
-  void failDuringFailover(boolean fail);
+    void failDuringFailover(boolean fail);
 
-  String getNodeID();
+    String getNodeID();
 
-  File resolveFile(String fileName);
+    File resolveFile(String fileName);
 
-  <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler);
+    <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler);
 
-  ClusterManager getClusterManager();
+    ClusterManager getClusterManager();
 
-  /**
-   * Resolve an address (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
-   *
-   * @param hostname the hostname to resolve
-   * @param resultHandler the result handler
-   */
-  void resolveAddress(String hostname, Handler<AsyncResult<InetAddress>> resultHandler);
+    /**
+     * Resolve an address (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
+     *
+     * @param hostname      the hostname to resolve
+     * @param resultHandler the result handler
+     */
+    void resolveAddress(String hostname, Handler<AsyncResult<InetAddress>> resultHandler);
 
-  /**
-   * @return the address resolver
-   */
-  AddressResolver addressResolver();
+    /**
+     * @return the address resolver
+     */
+    AddressResolver addressResolver();
 
-  /**
-   * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
-   */
-  AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
+    /**
+     * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
+     */
+    AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
 
-  @GenIgnore
-  void addCloseHook(Closeable hook);
+    @GenIgnore
+    void addCloseHook(Closeable hook);
 
-  @GenIgnore
-  void removeCloseHook(Closeable hook);
+    @GenIgnore
+    void removeCloseHook(Closeable hook);
 }

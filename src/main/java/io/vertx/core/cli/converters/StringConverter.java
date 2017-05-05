@@ -20,25 +20,26 @@ package io.vertx.core.cli.converters;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 16/12/18 by zmyer
 public final class StringConverter implements Converter<String> {
 
-  /**
-   * The converter.
-   */
-  public static final StringConverter INSTANCE = new StringConverter();
+    /**
+     * The converter.
+     */
+    public static final StringConverter INSTANCE = new StringConverter();
 
-  private StringConverter() {
-    // No direct instantiation
-  }
+    private StringConverter() {
+        // No direct instantiation
+    }
 
-  /**
-   * Just returns the given input.
-   *
-   * @param input the input, can be {@literal null}
-   * @return the input
-   */
-  @Override
-  public String fromString(String input) throws IllegalArgumentException {
-    return input;
-  }
+    /**
+     * Just returns the given input.
+     *
+     * @param input the input, can be {@literal null}
+     * @return the input
+     */
+    @Override
+    public String fromString(String input) throws IllegalArgumentException {
+        return input;
+    }
 }

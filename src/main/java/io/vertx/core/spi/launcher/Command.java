@@ -39,30 +39,31 @@ import io.vertx.core.cli.annotations.Summary;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+// TODO: 17/1/1 by zmyer
 public interface Command {
 
-  /**
-   * Set up the command execution environment.
-   * The command line model has been retrieved and is frozen. Values has been set / injected. You can use
-   * this callback to validate the inputs.
-   *
-   * @param context the context
-   * @throws CLIException if the validation failed
-   */
-  void setUp(ExecutionContext context) throws CLIException;
+    /**
+     * Set up the command execution environment.
+     * The command line model has been retrieved and is frozen. Values has been set / injected. You can use
+     * this callback to validate the inputs.
+     *
+     * @param context the context
+     * @throws CLIException if the validation failed
+     */
+    void setUp(ExecutionContext context) throws CLIException;
 
-  /**
-   * Executes the command.
-   *
-   * @throws CLIException If anything went wrong.
-   */
-  void run() throws CLIException;
+    /**
+     * Executes the command.
+     *
+     * @throws CLIException If anything went wrong.
+     */
+    void run() throws CLIException;
 
-  /**
-   * The command has been executed. Use this method to cleanup the environment.
-   *
-   * @throws CLIException if anything went wrong
-   */
-  void tearDown() throws CLIException;
+    /**
+     * The command has been executed. Use this method to cleanup the environment.
+     *
+     * @throws CLIException if anything went wrong
+     */
+    void tearDown() throws CLIException;
 
 }

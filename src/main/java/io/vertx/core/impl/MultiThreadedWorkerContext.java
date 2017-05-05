@@ -22,20 +22,23 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+// TODO: 16/12/15 by zmyer
 public class MultiThreadedWorkerContext extends WorkerContext {
 
-  public MultiThreadedWorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool,
-                                    String deploymentID, JsonObject config, ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
-  }
+    public MultiThreadedWorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool,
+                                      String deploymentID, JsonObject config, ClassLoader tccl) {
+        super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
+    }
 
-  @Override
-  public void executeAsync(Handler<Void> task) {
-    workerPool.executor().execute(wrapTask(null, task, false, workerPool.metrics()));
-  }
+    // TODO: 16/12/15 by zmyer
+    @Override
+    public void executeAsync(Handler<Void> task) {
+        //在工作对象池中执行给定的任务
+        workerPool.executor().execute(wrapTask(null, task, false, workerPool.metrics()));
+    }
 
-  @Override
-  public boolean isMultiThreadedWorkerContext() {
-    return true;
-  }
+    @Override
+    public boolean isMultiThreadedWorkerContext() {
+        return true;
+    }
 }
