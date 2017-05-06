@@ -1169,6 +1169,7 @@ public class Http1xTest extends HttpTest {
     AtomicInteger reqCount = new AtomicInteger(0);
     server.requestHandler(req -> {
       int theCount = reqCount.get();
+//      System.out.println("begin " + theCount);
       assertEquals(theCount, Integer.parseInt(req.headers().get("count")));
       reqCount.incrementAndGet();
       req.response().setChunked(true);
@@ -1180,6 +1181,7 @@ public class Http1xTest extends HttpTest {
           req.response().headers().set("count", String.valueOf(theCount));
           req.response().write(buff);
           req.response().end();
+//          System.out.println("end " + theCount);
         });
       });
     });

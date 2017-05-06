@@ -65,6 +65,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -90,7 +91,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
-  private final Queue<Object> pending = new ArrayDeque<>(8);
+  private final Deque<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final HttpServerImpl server;
   private WebSocketServerHandshaker handshaker;
@@ -109,6 +110,9 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   private long bytesRead;
   private long bytesWritten;
 
+  // queuing == true <=> (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty())
+  private boolean queueing;
+
   ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
                    WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
     super(vertx, channel, context);
@@ -126,28 +130,38 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   public synchronized void pause() {
     if (!paused) {
       paused = true;
+      queueing = true;
     }
   }
 
   public synchronized void resume() {
     if (paused) {
       paused = false;
+      if (pending.isEmpty()) {
+        queueing = false;
+      } else if (pendingResponse == null || !(pending.peek() instanceof HttpRequest)) {
+        queueing = false;
+      }
       checkNextTick();
     }
   }
 
   synchronized void handleMessage(Object msg) {
-    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
-      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      pending.add(msg);
-      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
-        //We pause the channel too, to prevent the queue growing too large, but we don't do this
-        //until the queue reaches a certain size, to avoid pausing it too often
-        super.doPause();
-        channelPaused = true;
-      }
+    if (queueing) {
+      enqueue(msg);
     } else {
       processMessage(msg);
+    }
+  }
+
+  private void enqueue(Object msg) {
+    //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+    pending.add(msg);
+    if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+      //We pause the channel too, to prevent the queue growing too large, but we don't do this
+      //until the queue reaches a certain size, to avoid pausing it too often
+      super.doPause();
+      channelPaused = true;
     }
   }
 
@@ -163,6 +177,9 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       }
     }
     pendingResponse = null;
+    if (queueing) {
+      queueing = paused;
+    }
     checkNextTick();
   }
 
@@ -300,6 +317,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     if (METRICS_ENABLED && metrics != null) {
       bytesRead += chunk.length();
     }
+//    System.out.println("handling chunk " + chunk);
     currentRequest.handleData(chunk);
   }
 
@@ -416,6 +434,11 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
+      if (pendingResponse != null) {
+        queueing = true;
+        enqueue(msg);
+        return;
+      }
       HttpRequest request = (HttpRequest) msg;
       if (request.decoderResult().isFailure()) {
         handleError(request);
@@ -470,19 +493,26 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       currentRequest = null;
     } else {
       // Requeue
+      // paused = true => queueing = true
       pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
     }
   }
 
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
+    if (!queueing && !sentCheck) {
       sentCheck = true;
       vertx.runOnContext(v -> {
+        // Should be synchronized ...
         sentCheck = false;
-        if (!paused) {
+        if (!queueing) {
           Object msg = pending.poll();
           if (msg != null) {
+            if (msg instanceof HttpRequest && pendingResponse != null) {
+              pending.addFirst(msg);
+              queueing = true;
+              return;
+            }
             processMessage(msg);
           }
           if (channelPaused && pending.isEmpty()) {
