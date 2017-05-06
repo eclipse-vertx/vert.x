@@ -156,6 +156,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private void enqueue(Object msg) {
     //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+    queueing = true;
     pending.add(msg);
     if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
       //We pause the channel too, to prevent the queue growing too large, but we don't do this
@@ -435,7 +436,6 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       if (pendingResponse != null) {
-        queueing = true;
         enqueue(msg);
         return;
       }
@@ -494,6 +494,9 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     } else {
       // Requeue
       // paused = true => queueing = true
+      // todo : this should be added first if pending.size() > 0
+      // case : user call resume on the last http content and then call pause
+      // it will be added at the wrong place and create a bug
       pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
     }
   }
