@@ -2790,6 +2790,31 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testHttpProxyFtpRequest() throws Exception {
+    startProxy(null, ProxyType.HTTP);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+    final String url = "ftp://ftp.gnu.org/gnu/";
+    proxy.setForceUri("http://localhost:8080/");
+    HttpClientRequest clientReq = client.getAbs(url);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+
+    server.listen(onSuccess(s -> {
+      clientReq.handler(resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals("request did sent the expected url", url, proxy.getLastUri());
+        testComplete();
+      });
+      clientReq.exceptionHandler(this::fail);
+      clientReq.end();
+    }));
+    await();
+  }
+
+  @Test
   public void testHttpSocksProxyRequest() throws Exception {
     startProxy(null, ProxyType.SOCKS5);
 

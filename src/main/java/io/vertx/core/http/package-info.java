@@ -1090,7 +1090,7 @@
  * `301`, `302`, `303` or `307` status code, it follows the redirection provided by the `Location` response header
  * and the response handler is passed the redirected response instead of the original response.
  *
- * Here’s an example:
+ * Here's an example:
  *
  * [source,$lang]
  * ----
@@ -1728,6 +1728,19 @@
  *
  * The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
  * to resolve the DNS address locally.
+ *
+ * ==== Handling of other protocols
+ *
+ * The HTTP proxy implementation supports getting ftp:// urls if the proxy supports
+ * that, which isn't available in non-proxy getAbs requests.
+ * 
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example60}
+ * ----
+ *
+ * Support for other protocols is not available since java.net.URL does not
+ * support them (gopher:// for example).
  *
  * === Automatic clean-up in verticles
  *
