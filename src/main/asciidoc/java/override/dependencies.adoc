@@ -16,5 +16,5 @@ project descriptor to access the Vert.x Core API:
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-core:3.4.2-SNAPSHOT
+compile 'io.vertx:vertx-core:3.4.2-SNAPSHOT'
 ----
