@@ -1138,7 +1138,7 @@
  *
  * The redeployment process is implemented as follows. First your application is launched as a background application
  * (with the `start` command). On matching file changes, the process is stopped and the application is restarted.
- * This way avoids leaks (as the process is restarted).
+ * This avoids leaks, as the process is restarted.
  *
  * To enable the live redeploy, pass the `--redeploy` option to the `run` command. The `--redeploy` indicates the
  * set of file to _watch_. This set can use Ant-style patterns (with `\**`, `*` and `?`). You can specify
@@ -1176,7 +1176,7 @@
  *
  * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
  * restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
- * or `grunt` to update your resources. Don't forget that passing parameter to your application requires the
+ * or `grunt` to update your resources. Don't forget that passing parameters to your application requires the
  * `--java-opts` param:
  *
  * [source]
