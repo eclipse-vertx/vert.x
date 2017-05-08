@@ -24,6 +24,10 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.StringBufferInputStream;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -1507,6 +1511,15 @@ public class JsonObjectTest {
     assertEquals("bar", obj.getString("foo"));
     assertEquals(Integer.valueOf(123), obj.getInteger("quux"));
     assertSame(map, obj.getMap());
+  }
+
+  @Test
+  public void testCreateFromBuffer() {
+    JsonObject excepted = new JsonObject();
+    excepted.put("foo", "bar");
+    excepted.put("quux", 123);
+    Buffer buf = Buffer.buffer(excepted.encode());
+    assertEquals(excepted, new JsonObject(buf));
   }
 
   @Test

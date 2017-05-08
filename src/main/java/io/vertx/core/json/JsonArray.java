@@ -78,15 +78,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
-   * Create an instance from a stream of JSON.
-   *
-   * @param stream  the stream of JSON.
-   */
-  public JsonArray(InputStream stream) {
-    fromStream(stream);
-  }
-
-  /**
    * Get the String at position {@code pos} in the array,
    *
    * @param pos  the position in the array

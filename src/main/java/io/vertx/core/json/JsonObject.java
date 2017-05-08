@@ -80,15 +80,6 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Create an instance from a stream.
-   *
-   * @param stream  the stream to create the instance from.
-   */
-  public JsonObject(InputStream stream) {
-    fromStream(stream);
-  }
-
-  /**
    * Create a JsonObject from the fields of a Java object.
    * Faster than calling `new JsonObject(Json.encode(obj))`.
    * 
