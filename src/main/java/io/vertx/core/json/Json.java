@@ -43,6 +43,10 @@ public class Json {
   public static ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
+    initialize();
+  }
+
+  static void initialize(){
     // Non-standard JSON but we allow C style comments in our JSON
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
@@ -84,6 +88,11 @@ public class Json {
     catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
+  }
+
+  public static void registerModule(Module module){
+    mapper.registerModule(module);
+    prettyMapper.registerModule(module);
   }
 
   @SuppressWarnings("unchecked")
