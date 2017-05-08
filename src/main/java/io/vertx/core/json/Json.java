@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Base64;
@@ -89,8 +90,12 @@ public class Json {
   }
 
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
+    return decodeValue(new ByteBufInputStream(buf.getByteBuf()), clazz);
+  }
+
+  public static <T> T decodeValue(InputStream stream, Class<T> clazz) throws DecodeException {
     try {
-      return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), clazz);
+      return mapper.readValue(stream, clazz);
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
