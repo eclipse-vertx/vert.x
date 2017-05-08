@@ -24,10 +24,6 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.StringBufferInputStream;
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
