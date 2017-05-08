@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,8 +26,7 @@ import org.junit.Test;
 
 import io.vertx.core.json.JsonObject;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="https://github.com/lukehutch">Luke Hutchison</a>
@@ -57,7 +57,7 @@ public class JsonPOJOMapperTest {
       d.add(myObj0);
       e.add(3);
     }};
-    
+
     JsonObject jsonObject1 = JsonObject.mapFrom(myObj1);
     String jsonStr1 = jsonObject1.encode();
     assertEquals("{\"a\":5,\"b\":\"obj1\",\"c\":{\"x\":\"1\",\"y\":2},\"d\":["
@@ -75,7 +75,7 @@ public class JsonPOJOMapperTest {
     assertEquals(myObj0Roundtrip.b, "obj0");
     assertEquals(myObj0Roundtrip.c.get("z"), Arrays.asList(7, 8));
     assertEquals(myObj0Roundtrip.e, Arrays.asList(9));
-    
+
     boolean caughtCycle = false;
     try {
       myObj0.d.add(myObj0);
@@ -86,5 +86,28 @@ public class JsonPOJOMapperTest {
     if (!caughtCycle) {
       fail();
     }
+  }
+
+  public static class MyType2 {
+    public Instant isodate = Instant.now();
+    public byte[] base64 = "Hello World!".getBytes();
+  }
+
+  @Test
+  public void testInstantFromPOJO() {
+    JsonObject json = JsonObject.mapFrom(new MyType2());
+    // attempt to deserialize back to a instant, asserting for not null
+    // already means that there was an attempt to parse a string to instant
+    // and that the parsing succeeded (the object is of type instant and not null)
+    assertNotNull(json.getInstant("isodate"));
+  }
+
+  @Test
+  public void testBase64FromPOJO() {
+    JsonObject json = JsonObject.mapFrom(new MyType2());
+    // attempt to deserialize back to a byte[], asserting for not null
+    // already means that there was an attempt to parse a string to byte[]
+    // and that the parsing succeeded (the object is of type byte[] and not null)
+    assertNotNull(json.getBinary("base64"));
   }
 }
