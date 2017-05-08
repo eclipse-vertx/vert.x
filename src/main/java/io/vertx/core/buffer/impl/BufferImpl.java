@@ -21,12 +21,15 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -79,12 +82,12 @@ public class BufferImpl implements Buffer {
 
   @Override
   public JsonObject toJsonObject() {
-    return new JsonObject(toString());
+    return new JsonObject(Json.decodeValue(this, Map.class));
   }
 
   @Override
   public JsonArray toJsonArray() {
-    return new JsonArray(toString());
+    return new JsonArray(Json.decodeValue(this, List.class));
   }
 
   public byte getByte(int pos) {

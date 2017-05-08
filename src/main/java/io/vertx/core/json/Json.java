@@ -21,6 +21,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
+import io.netty.buffer.ByteBufInputStream;
+import io.vertx.core.buffer.Buffer;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -82,6 +84,14 @@ public class Json {
       return mapper.readValue(str, clazz);
     }
     catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+  }
+
+  public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
+    try {
+      return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), clazz);
+    } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
   }
