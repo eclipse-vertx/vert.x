@@ -66,15 +66,20 @@ public final class DnsClientImpl implements DnsClient {
   private final Bootstrap bootstrap;
   private final InetSocketAddress dnsServer;
   private final ContextImpl actualCtx;
+  private final boolean recursionDesired;
 
   public DnsClientImpl(VertxInternal vertx, int port, String host) {
+   this(vertx, port, host, false);
+  }
 
+  public DnsClientImpl(VertxInternal vertx, int port, String host, boolean recursionDesired) {
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DnsClient in a multi-threaded worker verticle");
     }
 
     this.dnsServer = new InetSocketAddress(host, port);
+    this.recursionDesired = recursionDesired;
 
     actualCtx = vertx.getOrCreateContext();
     bootstrap = new Bootstrap();
@@ -231,6 +236,7 @@ public final class DnsClientImpl implements DnsClient {
         for (DnsRecordType type: types) {
           query.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
         }
+        query.setRecursionDesired(recursionDesired);
         future.channel().writeAndFlush(query).addListener(new RetryChannelFutureListener(result) {
           @Override
           public void onSuccess(ChannelFuture future) throws Exception {
