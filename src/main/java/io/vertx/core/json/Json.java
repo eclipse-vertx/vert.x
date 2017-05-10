@@ -18,6 +18,7 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
@@ -79,8 +80,15 @@ public class Json {
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
     try {
       return mapper.readValue(str, clazz);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage());
     }
-    catch (Exception e) {
+  }
+
+  public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
+    try {
+      return mapper.readValue(str, type);
+    } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
   }
