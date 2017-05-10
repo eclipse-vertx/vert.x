@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
 import org.junit.Test;
 
@@ -83,5 +84,13 @@ public class JsonMapperTest extends VertxTestBase {
     String json = Json.encode(data);
     assertNotNull(json);
     assertEquals("null", json);
+  }
+
+  @Test
+  public void encodeToBuffer() {
+    Buffer json = Json.encodeToBuffer("Hello World!");
+    assertNotNull(json);
+    // json strings are always UTF8
+    assertEquals("\"Hello World!\"", json.toString("UTF-8"));
   }
 }

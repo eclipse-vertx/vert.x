@@ -555,6 +555,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
+   * Encode this JSON object as a string.
+   *
+   * @return the string encoding.
+   */
+  public Buffer toBuffer() {
+    return Json.encodeToBuffer(list);
+  }
+
+  /**
    * Encode the JSON array prettily as a string
    *
    * @return the string encoding

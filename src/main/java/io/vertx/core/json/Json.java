@@ -25,6 +25,7 @@ import io.vertx.core.buffer.Buffer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Base64;
@@ -66,6 +67,24 @@ public class Json {
   public static String encode(Object obj) throws EncodeException {
     try {
       return mapper.writeValueAsString(obj);
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
+  }
+
+  public static Buffer encodeToBuffer(Object obj) throws EncodeException {
+    try {
+      final Buffer buffer = Buffer.buffer();
+
+      mapper.writeValue(new OutputStream() {
+        @Override
+        public void write(int b) throws IOException {
+          buffer.appendByte((byte) b);
+        }
+      }, obj);
+
+      return buffer;
+
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }

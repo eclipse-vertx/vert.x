@@ -82,7 +82,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Create a JsonObject from the fields of a Java object.
    * Faster than calling `new JsonObject(Json.encode(obj))`.
-   * 
+   *
    * @param obj
    *          The object to convert to a JsonObject.
    * @throws IllegalArgumentException
@@ -96,7 +96,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Instantiate a Java object from a JsonObject.
    * Faster than calling `Json.decodeValue(Json.encode(jsonObject), type)`.
-   * 
+   *
    * @param type
    *          The type to instantiate from the JsonObject.
    * @throws IllegalArgumentException
@@ -771,6 +771,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public String encodePrettily() {
     return Json.encodePrettily(map);
+  }
+
+  /**
+   * Encode this JSON object as a string.
+   *
+   * @return the string encoding.
+   */
+  public Buffer toBuffer() {
+    return Json.encodeToBuffer(map);
   }
 
   /**
