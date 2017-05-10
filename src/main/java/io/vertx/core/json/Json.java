@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 
@@ -168,6 +167,15 @@ public class Json {
     @Override
     public void serialize(Instant value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
       jgen.writeString(ISO_INSTANT.format(value));
+    }
+  }
+
+  private static class ByteArraySerializer extends JsonSerializer<byte[]> {
+    private final Base64.Encoder BASE64 = Base64.getEncoder();
+
+    @Override
+    public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+      jgen.writeString(BASE64.encodeToString(value));
     }
   }
 }
