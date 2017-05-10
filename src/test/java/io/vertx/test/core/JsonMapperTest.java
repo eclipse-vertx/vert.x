@@ -16,6 +16,8 @@
 
 package io.vertx.test.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.Json;
 import org.junit.Test;
@@ -23,6 +25,10 @@ import org.junit.Test;
 import java.time.Instant;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -83,5 +89,27 @@ public class JsonMapperTest extends VertxTestBase {
     String json = Json.encode(data);
     assertNotNull(json);
     assertEquals("null", json);
+  }
+
+  @Test
+  public void testGenericDecoding() {
+    Pojo original = new Pojo();
+    original.value = "test";
+
+    String json = Json.encode(Collections.singletonList(original));
+
+    List<Pojo> correct = Json.decodeValue(json, new TypeReference<List<Pojo>>() {});
+    assertTrue(((List)correct).get(0) instanceof Pojo);
+    assertEquals(original.value, correct.get(0).value);
+
+    List incorrect = Json.decodeValue(json, List.class);
+    assertFalse(incorrect.get(0) instanceof Pojo);
+    assertTrue(incorrect.get(0) instanceof Map);
+    assertEquals(original.value, ((Map)(incorrect.get(0))).get("value"));
+  }
+
+  private static class Pojo {
+    @JsonProperty
+    String value;
   }
 }
