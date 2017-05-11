@@ -22,10 +22,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
 import io.vertx.core.buffer.Buffer;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Base64;
@@ -74,7 +74,9 @@ public class Json {
 
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
     try {
-      return Buffer.buffer(mapper.writeValueAsBytes(obj));
+      Buffer buf = Buffer.buffer();
+      mapper.writeValue(new ByteBufOutputStream(buf.getByteBuf()), obj);
+      return buf;
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
@@ -104,13 +106,17 @@ public class Json {
     }
   }
 
-  public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
-    return decodeValue(new ByteBufInputStream(buf.getByteBuf()), clazz);
+  public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
+    try {
+      return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), type);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
   }
 
-  public static <T> T decodeValue(InputStream stream, Class<T> clazz) throws DecodeException {
+  public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
     try {
-      return mapper.readValue(stream, clazz);
+      return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), clazz);
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }

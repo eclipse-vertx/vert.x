@@ -106,8 +106,14 @@ public class JsonMapperTest extends VertxTestBase {
     original.value = "test";
 
     String json = Json.encode(Collections.singletonList(original));
+    List<Pojo> correct;
 
-    List<Pojo> correct = Json.decodeValue(json, new TypeReference<List<Pojo>>() {});
+    correct = Json.decodeValue(json, new TypeReference<List<Pojo>>() {});
+    assertTrue(((List)correct).get(0) instanceof Pojo);
+    assertEquals(original.value, correct.get(0).value);
+
+    // same must apply if instead of string we use a buffer
+    correct = Json.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
