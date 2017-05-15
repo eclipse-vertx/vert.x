@@ -158,10 +158,9 @@ public class LauncherExtensibilityTest extends CommandTestBase {
 
     assertThat(this.vertx.isClustered()).isTrue();
 
-    BareCommand.getTerminationRunnable(vertx, LoggerFactory.getLogger("foo"), () -> {
-      asv.set(true);
-    }).run();
+    BareCommand.getTerminationRunnable(vertx, LoggerFactory.getLogger("foo"), () -> asv.set(true)).run();
 
+    assertThat(bsv.get()).isTrue();
     assertThat(asv.get()).isTrue();
     vertx = null;
   }
