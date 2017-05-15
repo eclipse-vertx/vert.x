@@ -128,8 +128,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final Map<Channel, Http2ServerConnection> connectionMap2 = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
-  private final HandlerManager<HttpHandler> reqHandlerManager = new HandlerManager<>(availableWorkers);
-  private final HandlerManager<Handler<ServerWebSocket>> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<Handlers> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
@@ -343,7 +342,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return this;
   }
 
-  private VertxHttp2ConnectionHandler<Http2ServerConnection> createHttp2Handler(HandlerHolder<HttpHandler> holder, Channel ch) {
+  private VertxHttp2ConnectionHandler<Http2ServerConnection> createHttp2Handler(HandlerHolder<Handlers> holder, Channel ch) {
     return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
         .connectionMap(connectionMap2)
         .server(true)
@@ -412,7 +411,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   public void handleHttp2(Channel ch) {
-    HandlerHolder<HttpHandler> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
+    HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = createHttp2Handler(holder, ch);
     configureHttp2(ch.pipeline(), handler);
     if (holder.handler.connectionHandler != null) {
@@ -471,14 +470,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
       if (actualServer != null) {
 
-        if (requestStream.handler() != null) {
-          actualServer.reqHandlerManager.removeHandler(new HttpHandler(requestStream.handler(), connectionHandler), listenContext);
-        }
-        if (wsStream.handler() != null) {
-          actualServer.wsHandlerManager.removeHandler(wsStream.handler(), listenContext);
-        }
+        actualServer.reqHandlerManager.removeHandler(new Handlers(requestStream.handler(), wsStream.handler(), connectionHandler), listenContext);
 
-        if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
+        if (actualServer.reqHandlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
             executeCloseDone(context, done, null);
@@ -542,12 +536,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
 
   private void addHandlers(HttpServerImpl server, ContextImpl context) {
-    if (requestStream.handler() != null) {
-      server.reqHandlerManager.addHandler(new HttpHandler(requestStream.handler(), connectionHandler), context);
-    }
-    if (wsStream.handler() != null) {
-      server.wsHandlerManager.addHandler(wsStream.handler(), context);
-    }
+    server.reqHandlerManager.addHandler(new Handlers(requestStream.handler(), wsStream.handler(), connectionHandler), context);
   }
 
   private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
@@ -700,7 +689,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     protected void createConnAndHandle(ChannelHandlerContext ctx, Channel ch, Object msg, WebSocketServerHandshaker shake) {
-      HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+      HandlerHolder<Handlers> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
       if (reqHandler != null) {
         if (!DISABLE_HC2 && msg instanceof HttpRequest) {
           HttpRequest request = (HttpRequest) msg;
@@ -791,9 +780,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       if (shake == null) {
         return;
       }
-      HandlerHolder<Handler<ServerWebSocket>> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
+      HandlerHolder<Handlers> wsHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
 
-      if (wsHandler == null) {
+      if (wsHandler == null || wsHandler.handler.wsHandler == null) {
         createConnAndHandle(ctx, ch, request, shake);
       } else {
 
@@ -810,7 +799,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           if (metrics != null) {
             wsConn.metric(metrics.connected(wsConn.remoteAddress(), wsConn.remoteName()));
           }
-          wsConn.wsHandler(wsHandler.handler);
+          wsConn.wsHandler(wsHandler.handler.wsHandler);
 
           Runnable connectRunnable = () -> {
             VertxHttpHandler<ServerConnection> handler = ch.pipeline().get(VertxHttpHandler.class);
@@ -1005,11 +994,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  class HttpHandler {
+  class Handlers {
     final Handler<HttpServerRequest> requesthHandler;
+    final Handler<ServerWebSocket> wsHandler;
     final Handler<HttpConnection> connectionHandler;
-    public HttpHandler(Handler<HttpServerRequest> requesthHandler, Handler<HttpConnection> connectionHandler) {
+    public Handlers(Handler<HttpServerRequest> requesthHandler, Handler<ServerWebSocket> wsHandler, Handler<HttpConnection> connectionHandler) {
       this.requesthHandler = requesthHandler;
+      this.wsHandler = wsHandler;
       this.connectionHandler = connectionHandler;
     }
 
@@ -1018,17 +1009,24 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
 
-      HttpHandler that = (HttpHandler) o;
+      Handlers that = (Handlers) o;
 
-      if (!requesthHandler.equals(that.requesthHandler)) return false;
-      if (connectionHandler != null ? !connectionHandler.equals(that.connectionHandler) : that.connectionHandler != null) return false;
+      if (!Objects.equals(requesthHandler, that.requesthHandler)) return false;
+      if (!Objects.equals(wsHandler, that.wsHandler)) return false;
+      if (!Objects.equals(connectionHandler, that.connectionHandler)) return false;
 
       return true;
     }
 
     @Override
     public int hashCode() {
-      int result = reqHandlerManager.hashCode();
+      int result = 0;
+      if (requesthHandler != null) {
+        result = 31 * result + requesthHandler.hashCode();
+      }
+      if (wsHandler != null) {
+        result = 31 * result + wsHandler.hashCode();
+      }
       if (connectionHandler != null) {
         result = 31 * result + connectionHandler.hashCode();
       }
@@ -1050,8 +1048,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       super.exceptionCaught(ctx, cause);
-      HandlerHolder<HttpServerImpl.HttpHandler> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
-      reqHandler.context.executeFromIO(() -> connectionExceptionHandler.handle(cause));
-    }
+      HandlerHolder<Handlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
+      reqHandler.context.executeFromIO(() -> HttpServerImpl.this.connectionExceptionHandler.handle(cause));
   }
+}
 }
