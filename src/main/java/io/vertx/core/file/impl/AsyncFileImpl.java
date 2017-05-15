@@ -377,70 +377,77 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void writeInternal(ByteBuffer buff, long position, Handler<AsyncResult<Void>> handler) {
+    ContextImpl handlerContext = vertx.getOrCreateContext();
+    handlerContext.executeBlocking(res -> {
+      ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
-    ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
+        public void completed(Integer bytesWritten, Object attachment) {
 
-      public void completed(Integer bytesWritten, Object attachment) {
+          long pos = position;
 
-        long pos = position;
-
-        if (buff.hasRemaining()) {
-          // partial write
-          pos += bytesWritten;
-          // resubmit
-          writeInternal(buff, pos, handler);
-        } else {
-          // It's been fully written
-          context.runOnContext((v) -> {
-            writesOutstanding -= buff.limit();
-            handler.handle(Future.succeededFuture());
-          });
+          if (buff.hasRemaining()) {
+            // partial write
+            pos += bytesWritten;
+            // resubmit
+            writeInternal(buff, pos, handler);
+          } else {
+            // It's been fully written
+            context.runOnContext((v) -> {
+              writesOutstanding -= buff.limit();
+              handler.handle(Future.succeededFuture());
+            });
+          }
         }
-      }
 
-      public void failed(Throwable exc, Object attachment) {
-        if (exc instanceof Exception) {
-          context.runOnContext((v) -> handler.handle(Future.succeededFuture()));
-        } else {
-          log.error("Error occurred", exc);
+        public void failed(Throwable exc, Object attachment) {
+          if (exc instanceof Exception) {
+            context.runOnContext((v) -> handler.handle(Future.succeededFuture()));
+          } else {
+            log.error("Error occurred", exc);
+          }
         }
-      }
-    });
+      });
+    }, handler);
   }
 
   private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, Handler<AsyncResult<Buffer>> handler) {
 
-    ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
+    ContextImpl handlerContext = vertx.getOrCreateContext();
 
-      long pos = position;
+    handlerContext.executeBlocking(res -> {
+      ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
-      private void done() {
-        context.runOnContext((v) -> {
-          buff.flip();
-          writeBuff.setBytes(offset, buff);
-          handler.handle(Future.succeededFuture(writeBuff));
-        });
-      }
+        long pos = position;
 
-      public void completed(Integer bytesRead, Object attachment) {
-        if (bytesRead == -1) {
-          //End of file
-          done();
-        } else if (buff.hasRemaining()) {
-          // partial read
-          pos += bytesRead;
-          // resubmit
-          doRead(writeBuff, offset, buff, pos, handler);
-        } else {
-          // It's been fully written
-          done();
+        private void done() {
+
+          context.runOnContext((v) -> {
+            buff.flip();
+            writeBuff.setBytes(offset, buff);
+            handler.handle(Future.succeededFuture(writeBuff));
+          });
         }
-      }
 
-      public void failed(Throwable t, Object attachment) {
-        context.runOnContext((v) -> handler.handle(Future.failedFuture(t)));
-      }
-    });
+        public void completed(Integer bytesRead, Object attachment) {
+          if (bytesRead == -1) {
+            //End of file
+            done();
+          } else if (buff.hasRemaining()) {
+            // partial read
+            pos += bytesRead;
+            // resubmit
+            doRead(writeBuff, offset, buff, pos, handler);
+          } else {
+            // It's been fully written
+            done();
+          }
+        }
+
+        public void failed(Throwable t, Object attachment) {
+          context.runOnContext((v) -> handler.handle(Future.failedFuture(t)));
+        }
+      });
+    }, handler);
   }
 
   private void check() {
