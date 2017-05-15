@@ -18,9 +18,9 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -80,9 +80,16 @@ public class Json {
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
     try {
       return mapper.readValue(str, clazz);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode: " + e.getMessage());
     }
-    catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+  }
+
+  public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
+    try {
+      return mapper.readValue(str, type);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode: " + e.getMessage(), e);
     }
   }
 
@@ -153,6 +160,15 @@ public class Json {
     @Override
     public void serialize(Instant value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
       jgen.writeString(ISO_INSTANT.format(value));
+    }
+  }
+
+  private static class ByteArraySerializer extends JsonSerializer<byte[]> {
+    private final Base64.Encoder BASE64 = Base64.getEncoder();
+
+    @Override
+    public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+      jgen.writeString(BASE64.encodeToString(value));
     }
   }
 }
