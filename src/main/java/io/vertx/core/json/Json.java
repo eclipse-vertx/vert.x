@@ -64,6 +64,13 @@ public class Json {
     prettyMapper.registerModule(module);
   }
 
+  /**
+   * Encode a POJO to JSON using the underlying Jackson mapper.
+   *
+   * @param obj a POJO
+   * @return a String containing the JSON representation of the given POJO.
+   * @throws EncodeException if a property cannot be encoded.
+   */
   public static String encode(Object obj) throws EncodeException {
     try {
       return mapper.writeValueAsString(obj);
@@ -72,6 +79,13 @@ public class Json {
     }
   }
 
+  /**
+   * Encode a POJO to JSON using the underlying Jackson mapper.
+   *
+   * @param obj a POJO
+   * @return a Buffer containing the JSON representation of the given POJO.
+   * @throws EncodeException if a property cannot be encoded.
+   */
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
     try {
       Buffer buf = Buffer.buffer();
@@ -82,6 +96,13 @@ public class Json {
     }
   }
 
+  /**
+   * Encode a POJO to JSON with pretty indentation, using the underlying Jackson mapper.
+   *
+   * @param obj a POJO
+   * @return a String containing the JSON representation of the given POJO.
+   * @throws EncodeException if a property cannot be encoded.
+   */
   public static String encodePrettily(Object obj) throws EncodeException {
     try {
       return prettyMapper.writeValueAsString(obj);
@@ -90,6 +111,14 @@ public class Json {
     }
   }
 
+  /**
+   * Decode a given JSON string to a POJO of the given class type.
+   * @param str the JSON string.
+   * @param clazz the class to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
     try {
       return mapper.readValue(str, clazz);
@@ -98,6 +127,14 @@ public class Json {
     }
   }
 
+  /**
+   * Decode a given JSON string to a POJO of the given type.
+   * @param str the JSON string.
+   * @param type the type to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
   public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
     try {
       return mapper.readValue(str, type);
@@ -106,6 +143,14 @@ public class Json {
     }
   }
 
+  /**
+   * Decode a given JSON buffer to a POJO of the given class type.
+   * @param buf the JSON buffer.
+   * @param type the type to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
   public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
     try {
       return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), type);
@@ -114,6 +159,14 @@ public class Json {
     }
   }
 
+  /**
+   * Decode a given JSON buffer to a POJO of the given class type.
+   * @param buf the JSON buffer.
+   * @param clazz the class to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
     try {
       return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), clazz);

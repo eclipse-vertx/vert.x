@@ -773,9 +773,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Encode this JSON object as a string.
+   * Encode this JSON object as buffer.
    *
-   * @return the string encoding.
+   * @return the buffer encoding.
    */
   public Buffer toBuffer() {
     return Json.encodeToBuffer(map);
