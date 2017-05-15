@@ -237,7 +237,7 @@ public abstract class ConnectionBase {
     }
   }
 
-  private boolean isSSL() {
+  public boolean isSSL() {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 

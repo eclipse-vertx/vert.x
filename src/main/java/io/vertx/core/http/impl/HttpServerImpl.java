@@ -133,7 +133,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
-  private final String subProtocols;
   private String serverOrigin;
 
   private ChannelGroup serverChannelGroup;
@@ -158,7 +157,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       creatingContext.addCloseHook(this);
     }
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
-    this.subProtocols = options.getWebsocketSubProtocols();
     this.logEnabled = options.getLogActivity();
     connectionExceptionHandler = t -> {log.trace("Connection failure", t);};
   }
@@ -405,12 +403,20 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (!DISABLE_HC2) {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
+    HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(pipeline.channel().eventLoop());
+    ServerConnection conn = new ServerConnection(vertx,
+        sslHelper,
+        options,
+        pipeline.channel(),
+        holder.context,
+        serverOrigin,
+        metrics);
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
       // some casting and a header check
-      pipeline.addLast("handler", new ServerHandler(pipeline.channel()));
+      pipeline.addLast("handler", new ServerHandler(connectionMap, pipeline.channel(), holder, conn, metrics));
     } else {
-      pipeline.addLast("handler", new ServerHandleWithWebSockets(pipeline.channel()));
+      pipeline.addLast("handler", new ServerHandleWithWebSockets(pipeline.channel(), holder, conn, metrics));
     }
   }
 
@@ -583,8 +589,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private boolean closeFrameSent;
     private FullHttpRequest wsRequest;
 
-    public ServerHandleWithWebSockets(Channel ch) {
-      super(ch);
+    public ServerHandleWithWebSockets(Channel ch, HandlerHolder<Handlers> holder, ServerConnection conn, HttpServerMetrics metrics) {
+      super(HttpServerImpl.this.connectionMap, ch, holder, conn, metrics);
     }
 
     @Override
@@ -721,32 +727,33 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  public class ServerHandler extends VertxHttpHandler<ServerConnection> {
+  public static class ServerHandler extends VertxHttpHandler<ServerConnection> {
 
-    public ServerHandler(Channel ch) {
-      super(HttpServerImpl.this.connectionMap, ch);
+    private final HttpServerMetrics metrics;
+    private final HandlerHolder<Handlers> holder;
+
+    public ServerHandler(Map<Channel, ServerConnection> connectionMap, Channel ch, HandlerHolder<Handlers> holder, ServerConnection conn, HttpServerMetrics metrics) {
+      super(connectionMap, ch);
+
+      this.holder = holder;
+      this.conn = conn;
+      this.metrics = metrics;
     }
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
       super.handlerAdded(ctx);
-      HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
-      if (holder != null) {
-        conn = new ServerConnection(vertx, HttpServerImpl.this, ch, holder.context, serverOrigin, metrics);
-        conn.requestHandler(holder.handler.requesthHandler);
-        connectionMap.put(ch, conn);
-        holder.context.executeFromIO(() -> {
-          if (metrics != null) {
-            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-          }
-          Handler<HttpConnection> connHandler = holder.handler.connectionHandler;
-          if (connHandler != null) {
-            connHandler.handle(conn);
-          }
-        });
-      } else {
-        // ?
-      }
+      conn.requestHandler(holder.handler.requesthHandler);
+      connectionMap.put(ch, conn);
+      holder.context.executeFromIO(() -> {
+        if (metrics != null) {
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        }
+        Handler<HttpConnection> connHandler = holder.handler.connectionHandler;
+        if (connHandler != null) {
+          connHandler.handle(conn);
+        }
+      });
     }
 
     @Override
@@ -758,42 +765,42 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       conn.handleMessage(msg);
     }
-  }
 
-  WebSocketServerHandshaker createHandshaker(Channel ch, HttpRequest request)  {
-    // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
-    // it doesn't send a normal 'Connection: Upgrade' header. Instead it
-    // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
-    String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
-    if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
-      sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
-      return null;
-    }
-
-    if (request.getMethod() != HttpMethod.GET) {
-      sendError(null, METHOD_NOT_ALLOWED, ch);
-      return null;
-    }
-
-    try {
-
-      WebSocketServerHandshakerFactory factory =
-        new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
-          options.getMaxWebsocketFrameSize(),options.isAcceptUnmaskedFrames());
-      WebSocketServerHandshaker shake = factory.newHandshaker(request);
-
-      if (shake == null) {
-        log.error("Unrecognised websockets handshake");
-        WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
+    WebSocketServerHandshaker createHandshaker(Channel ch, HttpRequest request)  {
+      // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
+      // it doesn't send a normal 'Connection: Upgrade' header. Instead it
+      // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
+      String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
+      if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
+        sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
+        return null;
       }
 
-      return shake;
-    } catch (Exception e) {
-      throw new VertxException(e);
+      if (request.getMethod() != HttpMethod.GET) {
+        sendError(null, METHOD_NOT_ALLOWED, ch);
+        return null;
+      }
+
+      try {
+
+        WebSocketServerHandshakerFactory factory =
+            new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), conn.options.getWebsocketSubProtocols(), false,
+                conn.options.getMaxWebsocketFrameSize(), conn.options.isAcceptUnmaskedFrames());
+        WebSocketServerHandshaker shake = factory.newHandshaker(request);
+
+        if (shake == null) {
+          log.error("Unrecognised websockets handshake");
+          WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
+        }
+
+        return shake;
+      } catch (Exception e) {
+        throw new VertxException(e);
+      }
     }
   }
 
-  private void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
+  private static void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
     FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
     if (status.code() == METHOD_NOT_ALLOWED.code()) {
       // SockJS requires this
@@ -809,7 +816,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     ch.writeAndFlush(resp);
   }
 
-  private String getWebSocketLocation(ChannelPipeline pipeline, HttpRequest req) throws Exception {
+  private static String getWebSocketLocation(ChannelPipeline pipeline, HttpRequest req) throws Exception {
     String prefix;
     if (pipeline.get(SslHandler.class) == null) {
       prefix = "ws://";
@@ -914,7 +921,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  class Handlers {
+  public static class Handlers {
     final Handler<HttpServerRequest> requesthHandler;
     final Handler<ServerWebSocket> wsHandler;
     final Handler<HttpConnection> connectionHandler;

@@ -21,7 +21,7 @@ import io.netty.util.concurrent.FastThreadLocalThread;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class VertxThread extends FastThreadLocalThread {
+public final class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
   private final long maxExecTime;

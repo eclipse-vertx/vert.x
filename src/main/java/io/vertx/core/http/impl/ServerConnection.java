@@ -48,6 +48,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
@@ -59,6 +60,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -83,7 +85,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ServerConnection extends ConnectionBase implements HttpConnection {
+public class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
 
@@ -93,7 +95,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
 
   private final Deque<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
-  private final HttpServerImpl server;
+  private final SSLHelper sslHelper;
+  final HttpServerOptions options;
   private WebSocketServerHandshaker handshaker;
   private final HttpServerMetrics metrics;
   private boolean requestFailed;
@@ -113,10 +116,17 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   // queuing == true <=> (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty())
   private boolean queueing;
 
-  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin, HttpServerMetrics metrics) {
+  public ServerConnection(VertxInternal vertx,
+                   SSLHelper sslHelper,
+                   HttpServerOptions options,
+                   Channel channel,
+                   ContextImpl context,
+                   String serverOrigin,
+                   HttpServerMetrics metrics) {
     super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
-    this.server = server;
+    this.options = options;
+    this.sslHelper = sslHelper;
     this.metrics = metrics;
   }
 
@@ -216,14 +226,15 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     if (ws != null) {
       return ws;
     }
-    handshaker = server.createHandshaker(channel, nettyReq);
+    HttpServerImpl.ServerHandler serverHandler = (HttpServerImpl.ServerHandler) channel.pipeline().get("handler");
+    handshaker = serverHandler.createHandshaker(channel, nettyReq);
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
 
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
-      null, server.options().getMaxWebsocketFrameSize(), server.options().getMaxWebsocketMessageSize());
+      null, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
       ws.setMetric(metrics.upgrade(requestMetric, ws));
     }
@@ -242,12 +253,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     return ws;
   }
 
-  boolean isSSL() {
-    return server.getSslHelper().isSSL();
-  }
-
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), metrics);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, sslHelper, metrics);
     socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
@@ -449,7 +456,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
         handleError(request);
         return;
       }
-      if (server.options().isHandle100ContinueAutomatically() && HttpUtil.is100ContinueExpected(request)) {
+      if (options.isHandle100ContinueAutomatically() && HttpUtil.is100ContinueExpected(request)) {
         write100Continue();
       }
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
