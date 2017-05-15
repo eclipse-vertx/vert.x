@@ -64,8 +64,17 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
+  public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+    ContextImpl context = getContext(conn);
+    context.executeFromIO(() -> {
+      conn.startRead();
+      doMessageReceived(conn, chctx, safeObject(msg, chctx.alloc()));
+    });
+  }
+
+  @Override
   protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
-    context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
+    throw new UnsupportedOperationException();
   }
 
   @Override

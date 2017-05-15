@@ -65,7 +65,7 @@ public abstract class ConnectionBase {
     this.context = context;
   }
 
-  protected synchronized final void startRead() {
+  public synchronized final void startRead() {
     checkContext();
     read = true;
     if (ctxThread == null) {
