@@ -663,6 +663,62 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         throw new IllegalStateException("Invalid message " + msg);
       }
     }
+
+    protected void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
+
+      WebSocketServerHandshaker shake = createHandshaker(ch, request);
+      if (shake == null) {
+        return;
+      }
+      HandlerHolder<Handlers> wsHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+
+      if (wsHandler == null || wsHandler.handler.wsHandler == null) {
+        conn.handleMessage(request);
+      } else {
+
+        wsHandler.context.executeFromIO(() -> {
+          URI theURI;
+          try {
+            theURI = new URI(request.getUri());
+          } catch (URISyntaxException e2) {
+            throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+          }
+
+          if (metrics != null) {
+            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          }
+          conn.wsHandler(shake, wsHandler.handler.wsHandler);
+
+          Runnable connectRunnable = () -> {
+            try {
+              shake.handshake(ch, request);
+            } catch (WebSocketHandshakeException e) {
+              conn.handleException(e);
+            } catch (Exception e) {
+              log.error("Failed to generate shake response", e);
+            }
+          };
+
+          ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
+              theURI.getQuery(), new HeadersAdaptor(request.headers()), conn, shake.version() != WebSocketVersion.V00,
+              connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
+          if (METRICS_ENABLED && metrics != null) {
+            ws.setMetric(metrics.connected(conn.metric(), ws));
+          }
+          conn.handleWebsocketConnect(ws);
+          if (!ws.isRejected()) {
+            ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);
+            if (handler != null) {
+              // remove compressor as its not needed anymore once connection was upgraded to websockets
+              ctx.pipeline().remove(handler);
+            }
+            ws.connectNow();
+          } else {
+            ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
+          }
+        });
+      }
+    }
   }
 
   public class ServerHandler extends VertxHttpHandler<ServerConnection> {
@@ -701,62 +757,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       conn.handleMessage(msg);
-    }
-
-    protected void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
-
-      WebSocketServerHandshaker shake = createHandshaker(ch, request);
-      if (shake == null) {
-        return;
-      }
-      HandlerHolder<Handlers> wsHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-
-      if (wsHandler == null || wsHandler.handler.wsHandler == null) {
-        conn.handleMessage(request);
-      } else {
-
-        wsHandler.context.executeFromIO(() -> {
-          URI theURI;
-          try {
-            theURI = new URI(request.getUri());
-          } catch (URISyntaxException e2) {
-            throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
-          }
-
-          if (metrics != null) {
-            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-          }
-          conn.wsHandler(shake, wsHandler.handler.wsHandler);
-
-          Runnable connectRunnable = () -> {
-            try {
-              shake.handshake(ch, request);
-            } catch (WebSocketHandshakeException e) {
-              conn.handleException(e);
-            } catch (Exception e) {
-              log.error("Failed to generate shake response", e);
-            }
-          };
-
-          ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
-            theURI.getQuery(), new HeadersAdaptor(request.headers()), conn, shake.version() != WebSocketVersion.V00,
-            connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
-          if (METRICS_ENABLED && metrics != null) {
-            ws.setMetric(metrics.connected(conn.metric(), ws));
-          }
-          conn.handleWebsocketConnect(ws);
-          if (!ws.isRejected()) {
-            ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);
-            if (handler != null) {
-              // remove compressor as its not needed anymore once connection was upgraded to websockets
-              ctx.pipeline().remove(handler);
-            }
-            ws.connectNow();
-          } else {
-            ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
-          }
-        });
-      }
     }
   }
 
