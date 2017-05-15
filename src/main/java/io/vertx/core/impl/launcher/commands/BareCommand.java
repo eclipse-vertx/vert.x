@@ -332,7 +332,6 @@ public class BareCommand extends ClasspathHandler {
   public static Runnable getTerminationRunnable(Vertx vertx, Logger log, Runnable action) {
     return () -> {
       CountDownLatch latch = new CountDownLatch(1);
-      System.out.println("Shutdown hook ! " + vertx);
       if (vertx != null) {
         vertx.close(ar -> {
           if (!ar.succeeded()) {
