@@ -60,24 +60,12 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   @Override
   protected C removeConnection() {
     connectionMap.remove(ch);
-    C conn = this.conn;
-    this.conn = null;
     return conn;
   }
 
   @Override
   protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
-    if (connection != null) {
-      context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
-    } else {
-      // We execute this directly as we don't have a context yet, the context will have to be set manually
-      // inside doMessageReceived();
-      try {
-        doMessageReceived(null, chctx, msg);
-      } catch (Throwable t) {
-        chctx.pipeline().fireExceptionCaught(t);
-      }
-    }
+    context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
   }
 
   @Override

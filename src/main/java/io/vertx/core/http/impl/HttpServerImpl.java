@@ -508,10 +508,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return sslHelper;
   }
 
-  void removeChannel(Channel channel) {
-    connectionMap.remove(channel);
-  }
-
   private void applyConnectionOptions(ServerBootstrap bootstrap) {
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
@@ -623,11 +619,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           }
         } else {
           //HTTP request
-          if (conn == null) {
-            createConnAndHandle(ctx, ch, msg, null);
-          } else {
-            conn.handleMessage(msg);
-          }
+          conn.handleMessage(msg);
         }
       } else if (msg instanceof WebSocketFrameInternal) {
         //Websocket frame
@@ -636,9 +628,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           case BINARY:
           case CONTINUATION:
           case TEXT:
-            if (conn != null) {
-              conn.handleMessage(msg);
-            }
+            conn.handleMessage(msg);
             break;
           case PING:
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
@@ -668,9 +658,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             return;
           }
         }
-        if (conn != null) {
-          conn.handleMessage(msg);
-        }
+        conn.handleMessage(msg);
       } else {
         throw new IllegalStateException("Invalid message " + msg);
       }
@@ -684,34 +672,35 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
-      if (conn == null) {
-        createConnAndHandle(ctx, ch, msg, null);
-      } else {
-        conn.handleMessage(msg);
-      }
-    }
-
-    protected void createConnAndHandle(ChannelHandlerContext ctx, Channel ch, Object msg, WebSocketServerHandshaker shake) {
-      HandlerHolder<Handlers> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-      if (reqHandler != null) {
-
-        // Put in the connection map before executeFromIO
-        ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
-        conn.requestHandler(reqHandler.handler.requesthHandler);
-        this.conn = conn;
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+      super.handlerAdded(ctx);
+      HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
+      if (holder != null) {
+        conn = new ServerConnection(vertx, HttpServerImpl.this, ch, holder.context, serverOrigin, metrics);
+        conn.requestHandler(holder.handler.requesthHandler);
         connectionMap.put(ch, conn);
-        reqHandler.context.executeFromIO(() -> {
+        holder.context.executeFromIO(() -> {
           if (metrics != null) {
             conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
           }
-          Handler<HttpConnection> connHandler = reqHandler.handler.connectionHandler;
+          Handler<HttpConnection> connHandler = holder.handler.connectionHandler;
           if (connHandler != null) {
             connHandler.handle(conn);
           }
-          conn.handleMessage(msg);
         });
+      } else {
+        // ?
       }
+    }
+
+    @Override
+    protected void channelRead(ServerConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      context.executeFromIO(() -> doMessageReceived(conn, chctx, msg));
+    }
+
+    @Override
+    protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+      conn.handleMessage(msg);
     }
 
     protected void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
@@ -723,7 +712,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       HandlerHolder<Handlers> wsHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
 
       if (wsHandler == null || wsHandler.handler.wsHandler == null) {
-        createConnAndHandle(ctx, ch, request, shake);
+        conn.handleMessage(request);
       } else {
 
         wsHandler.context.executeFromIO(() -> {
@@ -734,33 +723,28 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
           }
 
-          ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
-            serverOrigin, shake, metrics);
           if (metrics != null) {
-            wsConn.metric(metrics.connected(wsConn.remoteAddress(), wsConn.remoteName()));
+            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
           }
-          wsConn.wsHandler(wsHandler.handler.wsHandler);
+          conn.wsHandler(shake, wsHandler.handler.wsHandler);
 
           Runnable connectRunnable = () -> {
-            VertxHttpHandler<ServerConnection> handler = ch.pipeline().get(VertxHttpHandler.class);
-            handler.conn = wsConn;
-            connectionMap.put(ch, wsConn);
             try {
               shake.handshake(ch, request);
             } catch (WebSocketHandshakeException e) {
-              wsConn.handleException(e);
+              conn.handleException(e);
             } catch (Exception e) {
               log.error("Failed to generate shake response", e);
             }
           };
 
           ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
-            theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
+            theURI.getQuery(), new HeadersAdaptor(request.headers()), conn, shake.version() != WebSocketVersion.V00,
             connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
           if (METRICS_ENABLED && metrics != null) {
-            ws.setMetric(metrics.connected(wsConn.metric(), ws));
+            ws.setMetric(metrics.connected(conn.metric(), ws));
           }
-          wsConn.handleWebsocketConnect(ws);
+          conn.handleWebsocketConnect(ws);
           if (!ws.isRejected()) {
             ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);
             if (handler != null) {
@@ -853,10 +837,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   HttpServerOptions options() {
     return options;
-  }
-
-  Map<Channel, ServerConnection> connectionMap() {
-    return connectionMap;
   }
 
   /*

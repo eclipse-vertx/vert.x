@@ -113,12 +113,10 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
   // queuing == true <=> (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty())
   private boolean queueing;
 
-  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
-                   WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
+  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin, HttpServerMetrics metrics) {
     super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.server = server;
-    this.handshaker = handshaker;
     this.metrics = metrics;
   }
 
@@ -188,7 +186,8 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
     this.requestHandler = handler;
   }
 
-  synchronized void wsHandler(Handler<ServerWebSocket> handler) {
+  synchronized void wsHandler(WebSocketServerHandshaker handshaker, Handler<ServerWebSocket> handler) {
+    this.handshaker = handshaker;
     this.wsHandler = handler;
   }
 
@@ -240,7 +239,6 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       // remove compressor as its not needed anymore once connection was upgraded to websockets
       channel.pipeline().remove(handler);
     }
-    server.connectionMap().put(channel, this);
     return ws;
   }
 
@@ -273,14 +271,14 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
-        server.removeChannel(channel);
+        connectionMap.remove(channel);
         super.exceptionCaught(chctx, t);
       }
 
       @Override
       public void channelInactive(ChannelHandlerContext chctx) throws Exception {
         // remove from the real mapping
-        server.removeChannel(channel);
+        connectionMap.remove(channel);
         super.channelInactive(chctx);
       }
 
@@ -427,10 +425,17 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       }
       HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
       DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
-      writeToChannel(resp);
+      ChannelFuture fut = writeToChannel(resp);
+      fut.addListener(res -> {
+        if (res.isSuccess()) {
+          // That will close the connection as it is considered as unusable
+          channel.pipeline().fireExceptionCaught(result.cause());
+        }
+      });
+    } else {
+      // That will close the connection as it is considered as unusable
+      channel.pipeline().fireExceptionCaught(result.cause());
     }
-    // That will close the connection as it is considered as unusable
-    channel.pipeline().fireExceptionCaught(result.cause());
   }
 
   private void processMessage(Object msg) {
