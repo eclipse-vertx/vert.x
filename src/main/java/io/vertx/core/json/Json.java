@@ -81,7 +81,7 @@ public class Json {
     try {
       return mapper.readValue(str, clazz);
     } catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage());
+      throw new DecodeException("Failed to decode: " + e.getMessage());
     }
   }
 
@@ -89,7 +89,7 @@ public class Json {
     try {
       return mapper.readValue(str, type);
     } catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+      throw new DecodeException("Failed to decode: " + e.getMessage(), e);
     }
   }
 
