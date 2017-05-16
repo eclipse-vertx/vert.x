@@ -28,11 +28,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
-@Threads(1)
+@Warmup(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 10, time = 2, timeUnit = TimeUnit.SECONDS)
+@Threads(16)
 @BenchmarkMode(Mode.Throughput)
-@Fork(value = 1, jvmArgs = {
+@Fork(value = 1, jvmArgsAppend = {
     "-XX:+UseBiasedLocking",
     "-XX:BiasedLockingStartupDelay=0",
     "-XX:+AggressiveOpts",
