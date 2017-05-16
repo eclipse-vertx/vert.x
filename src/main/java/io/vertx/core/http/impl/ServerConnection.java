@@ -17,12 +17,14 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.FileRegion;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.TooLongFrameException;
@@ -106,7 +108,6 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
   private HttpServerRequestImpl currentRequest;
   private HttpServerResponseImpl pendingResponse;
   private ServerWebSocketImpl ws;
-  private ChannelFuture lastWriteFuture;
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
@@ -210,7 +211,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   @Override
-  public ChannelFuture writeToChannel(Object obj) {
+  public void writeToChannel(Object obj, ChannelPromise promise) {
     if (METRICS_ENABLED && metrics != null) {
       long bytes = getBytes(obj);
       if (bytes == -1) {
@@ -219,7 +220,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
         bytesWritten += bytes;
       }
     }
-    return lastWriteFuture = super.writeToChannel(obj);
+    super.writeToChannel(obj, promise);
   }
 
   ServerWebSocket upgrade(HttpServerRequest request, HttpRequest nettyReq) {
@@ -306,16 +307,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
     });
 
     // check if the encoder can be removed yet or not.
-    if (lastWriteFuture == null) {
-      channel.pipeline().remove("httpEncoder");
-    } else {
-      lastWriteFuture.addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          channel.pipeline().remove("httpEncoder");
-        }
-      });
-    }
+    channel.pipeline().remove("httpEncoder");
     return socket;
   }
 
@@ -432,7 +424,8 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
       }
       HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
       DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
-      ChannelFuture fut = writeToChannel(resp);
+      ChannelPromise fut = channel.newPromise();
+      writeToChannel(resp, fut);
       fut.addListener(res -> {
         if (res.isSuccess()) {
           // That will close the connection as it is considered as unusable

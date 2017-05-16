@@ -71,7 +71,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private Handler<Void> drainHandler;
   private Buffer pendingData;
   private boolean paused = false;
-  private ChannelFuture writeFuture;
 
   public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context,
                        SSLHelper helper, TCPMetrics metrics) {
@@ -238,13 +237,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   @Override
   public synchronized void close() {
-    if (writeFuture != null) {
-      // Close after all data is written
-      writeFuture.addListener(ChannelFutureListener.CLOSE);
-      channel.flush();
-    } else {
-      super.close();
-    }
+    // Close after all data is written
+    channel.write(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+    channel.flush();
   }
 
   @Override
@@ -328,7 +323,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   private void write(ByteBuf buff) {
     reportBytesWritten(buff.readableBytes());
-    writeFuture = super.writeToChannel(buff);
+    super.writeToChannel(buff);
   }
 
   private synchronized void callDrainHandler() {

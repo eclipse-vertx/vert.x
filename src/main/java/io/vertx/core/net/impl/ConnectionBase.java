@@ -90,20 +90,25 @@ public abstract class ConnectionBase {
     }
   }
 
-  public synchronized ChannelFuture queueForWrite(final Object obj) {
-    needsFlush = true;
-    needsAsyncFlush = Thread.currentThread() != ctxThread;
-    return channel.write(obj);
+  public void queueForWrite(final Object obj) {
+    queueForWrite(obj, channel.voidPromise());
   }
 
-  public synchronized ChannelFuture writeToChannel(Object obj) {
+  public synchronized void queueForWrite(final Object obj, ChannelPromise promise) {
+    needsFlush = true;
+    needsAsyncFlush = Thread.currentThread() != ctxThread;
+    channel.write(obj, promise);
+  }
+
+  public void writeToChannel(Object obj) {
+    writeToChannel(obj, channel.voidPromise());
+  }
+
+  public synchronized void writeToChannel(Object obj, ChannelPromise promise) {
     if (read) {
-      return queueForWrite(obj);
-    }
-    if (channel.isOpen()) {
-      return channel.writeAndFlush(obj);
+      queueForWrite(obj, promise);
     } else {
-      return null;
+      channel.writeAndFlush(obj, promise);
     }
   }
 
@@ -243,14 +248,14 @@ public abstract class ConnectionBase {
 
   protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
     // Write the content.
-    ChannelFuture writeFuture;
+    ChannelPromise writeFuture = channel.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
-      writeFuture = writeToChannel(new ChunkedFile(raf, offset, length, 8192));
+      writeToChannel(new ChunkedFile(raf, offset, length, 8192), writeFuture);
     } else {
       // No encryption - use zero-copy.
       FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
-      writeFuture = writeToChannel(region);
+      writeToChannel(region, writeFuture);
     }
     if (writeFuture != null) {
       writeFuture.addListener(fut -> raf.close());
@@ -281,6 +286,10 @@ public abstract class ConnectionBase {
     } else {
       return null;
     }
+  }
+
+  public ChannelPromise channelFuture() {
+    return channel.newPromise();
   }
 
   public String remoteName() {

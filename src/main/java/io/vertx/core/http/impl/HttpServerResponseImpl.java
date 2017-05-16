@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.codegen.annotations.Nullable;
@@ -74,7 +75,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Void> bodyEndHandler;
   private boolean chunked;
   private boolean closed;
-  private ChannelFuture channelFuture;
   private final VertxHttpHeaders headers;
   private LastHttpContent trailing;
   private MultiMap trailers;
@@ -410,13 +410,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         resp = new AssembledFullHttpResponse(response, data);
       }
-      channelFuture = conn.writeToChannel(resp);
+      conn.writeToChannel(resp);
     } else {
       if (!data.isReadable()) {
         if (trailing == null) {
-          channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+          conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
         } else {
-          channelFuture = conn.writeToChannel(trailing);
+          conn.writeToChannel(trailing);
         }
       } else {
         LastHttpContent content;
@@ -425,7 +425,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         } else {
           content = new DefaultLastHttpContent(data, false);
         }
-        channelFuture = conn.writeToChannel(content);
+        conn.writeToChannel(content);
       }
     }
 
@@ -493,28 +493,21 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
 
       // write an empty last content to let the http encoder know the response is complete
-      channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+      ChannelPromise channelFuture = conn.channelFuture();
+      conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT, channelFuture);
       written = true;
 
       if (resultHandler != null) {
         ContextImpl ctx = vertx.getOrCreateContext();
-        // the channel might not be available if the client has already terminated the connection
-        if (channelFuture == null) {
-          ctx.runOnContext(v -> {
-            // schedule the failure return after the doSendFile method terminates
-            resultHandler.handle(Future.failedFuture("Channel Unavailable"));
-          });
-        } else {
-          channelFuture.addListener(future -> {
-            AsyncResult<Void> res;
-            if (future.isSuccess()) {
-              res = Future.succeededFuture();
-            } else {
-              res = Future.failedFuture(future.cause());
-            }
-            ctx.runOnContext((v) -> resultHandler.handle(res));
-          });
-        }
+        channelFuture.addListener(future -> {
+          AsyncResult<Void> res;
+          if (future.isSuccess()) {
+            res = Future.succeededFuture();
+          } else {
+            res = Future.failedFuture(future.cause());
+          }
+          ctx.runOnContext((v) -> resultHandler.handle(res));
+        });
       }
 
       if (!keepAlive) {
@@ -529,9 +522,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   private void closeConnAfterWrite() {
-    if (channelFuture != null) {
-      channelFuture.addListener(fut -> conn.close());
-    }
+    ChannelPromise channelFuture = conn.channelFuture();
+    conn.writeToChannel(Unpooled.EMPTY_BUFFER, channelFuture);
+    channelFuture.addListener(fut -> conn.close());
   }
 
   void handleDrained() {
@@ -598,9 +591,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       bytesWritten += chunk.readableBytes();
       if (!headWritten) {
         prepareHeaders();
-        channelFuture = conn.writeToChannel(new AssembledHttpResponse(response, chunk));
+        conn.writeToChannel(new AssembledHttpResponse(response, chunk));
       } else {
-        channelFuture = conn.writeToChannel(new DefaultHttpContent(chunk));
+        conn.writeToChannel(new DefaultHttpContent(chunk));
       }
 
       return this;
