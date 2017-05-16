@@ -31,6 +31,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.OpenOption;
@@ -78,12 +79,19 @@ public class AsyncFileImpl implements AsyncFile {
   private long readPos;
   private boolean readInProgress;
 
+  AsyncFileImpl(VertxInternal vertx, URI path, OpenOptions options, ContextImpl context) {
+    this(vertx, Paths.get(path), options, context);
+  }
+
   AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextImpl context) {
+    this(vertx, Paths.get(path), options, context);
+  }
+
+  AsyncFileImpl(VertxInternal vertx, Path file, OpenOptions options, ContextImpl context) {
     if (!options.isRead() && !options.isWrite()) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
     this.vertx = vertx;
-    Path file = Paths.get(path);
     HashSet<OpenOption> opts = new HashSet<>();
     if (options.isRead()) opts.add(StandardOpenOption.READ);
     if (options.isWrite()) opts.add(StandardOpenOption.WRITE);
@@ -400,7 +408,7 @@ public class AsyncFileImpl implements AsyncFile {
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          context.runOnContext((v) -> handler.handle(Future.succeededFuture()));
+          context.runOnContext((v) -> handler.handle(Future.failedFuture(exc)));
         } else {
           log.error("Error occurred", exc);
         }
