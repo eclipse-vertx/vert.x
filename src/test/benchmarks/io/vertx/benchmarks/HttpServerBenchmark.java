@@ -40,6 +40,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.impl.HttpHandlers;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.ServerConnection;
 import io.vertx.core.impl.ContextImpl;
@@ -110,7 +111,7 @@ public class HttpServerBenchmark extends BenchmarkBase {
           .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH);
       response.end(HELLO_WORLD_BUFFER);
     };
-    HandlerHolder<HttpServerImpl.Handlers> holder = new HandlerHolder<>(context, new HttpServerImpl.Handlers(app, null, null));
+    HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null));
     HttpServerImpl.ServerHandler handler = new HttpServerImpl.ServerHandler(null, new HttpServerOptions(), "localhost", connectionMap, vertxChannel, holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
     GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((

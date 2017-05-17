@@ -50,7 +50,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
@@ -129,7 +128,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final Map<Channel, Http2ServerConnection> connectionMap2 = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
-  private final HandlerManager<Handlers> reqHandlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<HttpHandlers> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
@@ -341,7 +340,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return this;
   }
 
-  private VertxHttp2ConnectionHandler<Http2ServerConnection> setHandler(HandlerHolder<Handlers> holder, Http2Settings upgrade, Channel ch) {
+  private VertxHttp2ConnectionHandler<Http2ServerConnection> setHandler(HandlerHolder<HttpHandlers> holder, Http2Settings upgrade, Channel ch) {
     return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>(ch)
         .connectionMap(connectionMap2)
         .server(true)
@@ -407,7 +406,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (!DISABLE_HC2) {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
-    HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(pipeline.channel().eventLoop());
+    HandlerHolder<HttpHandlers> holder = reqHandlerManager.chooseHandler(pipeline.channel().eventLoop());
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
       // some casting and a header check
@@ -418,7 +417,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   public void handleHttp2(Channel ch) {
-    HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
+    HandlerHolder<HttpHandlers> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
     configureHttp2(ch.pipeline());
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(holder, null, ch);
     if (holder.handler.connectionHandler != null) {
@@ -473,7 +472,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
       if (actualServer != null) {
 
-        actualServer.reqHandlerManager.removeHandler(new Handlers(requestStream.handler(), wsStream.handler(), connectionHandler), listenContext);
+        actualServer.reqHandlerManager.removeHandler(new HttpHandlers(requestStream.handler(), wsStream.handler(), connectionHandler), listenContext);
 
         if (actualServer.reqHandlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
@@ -535,7 +534,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
 
   private void addHandlers(HttpServerImpl server, ContextImpl context) {
-    server.reqHandlerManager.addHandler(new Handlers(requestStream.handler(), wsStream.handler(), connectionHandler), context);
+    server.reqHandlerManager.addHandler(new HttpHandlers(requestStream.handler(), wsStream.handler(), connectionHandler), context);
   }
 
   private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
@@ -582,7 +581,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private boolean closeFrameSent;
     private FullHttpRequest wsRequest;
 
-    public ServerHandleWithWebSockets(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Channel ch, HandlerHolder<Handlers> holder, HttpServerMetrics metrics) {
+    public ServerHandleWithWebSockets(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Channel ch, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
       super(sslHelper, options, serverOrigin, HttpServerImpl.this.connectionMap, ch, holder, metrics);
     }
 
@@ -669,7 +668,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       if (shake == null) {
         return;
       }
-      HandlerHolder<Handlers> wsHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+      HandlerHolder<HttpHandlers> wsHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
 
       if (wsHandler == null || wsHandler.handler.wsHandler == null) {
         conn.handleMessage(request);
@@ -726,9 +725,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private final HttpServerOptions options;
     private final String serverOrigin;
     private final HttpServerMetrics metrics;
-    private final HandlerHolder<Handlers> holder;
+    private final HandlerHolder<HttpHandlers> holder;
 
-    public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Map<Channel, ServerConnection> connectionMap, Channel ch, HandlerHolder<Handlers> holder, HttpServerMetrics metrics) {
+    public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Map<Channel, ServerConnection> connectionMap, Channel ch, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
       super(connectionMap, ch);
 
       this.holder = holder;
@@ -926,46 +925,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  public static class Handlers {
-    final Handler<HttpServerRequest> requesthHandler;
-    final Handler<ServerWebSocket> wsHandler;
-    final Handler<HttpConnection> connectionHandler;
-    public Handlers(Handler<HttpServerRequest> requesthHandler, Handler<ServerWebSocket> wsHandler, Handler<HttpConnection> connectionHandler) {
-      this.requesthHandler = requesthHandler;
-      this.wsHandler = wsHandler;
-      this.connectionHandler = connectionHandler;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      Handlers that = (Handlers) o;
-
-      if (!Objects.equals(requesthHandler, that.requesthHandler)) return false;
-      if (!Objects.equals(wsHandler, that.wsHandler)) return false;
-      if (!Objects.equals(connectionHandler, that.connectionHandler)) return false;
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = 0;
-      if (requesthHandler != null) {
-        result = 31 * result + requesthHandler.hashCode();
-      }
-      if (wsHandler != null) {
-        result = 31 * result + wsHandler.hashCode();
-      }
-      if (connectionHandler != null) {
-        result = 31 * result + connectionHandler.hashCode();
-      }
-      return result;
-    }
-  }
-
   private class Http2UpgradeHandler extends ChannelInboundHandlerAdapter {
 
     private Http2Settings settings;
@@ -1008,7 +967,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else if (msg instanceof LastHttpContent) {
         if (settings != null) {
-          HandlerHolder<Handlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
+          HandlerHolder<HttpHandlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
           if (reqHandler.context.isEventLoopContext()) {
             ChannelPipeline pipeline = ctx.pipeline();
             DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
@@ -1058,7 +1017,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       super.exceptionCaught(ctx, cause);
-      HandlerHolder<Handlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
+      HandlerHolder<HttpHandlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
       reqHandler.context.executeFromIO(() -> HttpServerImpl.this.connectionExceptionHandler.handle(cause));
   }
 }
