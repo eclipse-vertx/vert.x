@@ -19,6 +19,7 @@ package io.vertx.core.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
@@ -65,6 +66,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    */
   public JsonArray(List list) {
     this.list = list;
+  }
+
+  /**
+   * Create an instance from a Buffer of JSON.
+   *
+   * @param buf  the buffer of JSON.
+   */
+  public JsonArray(Buffer buf) {
+    fromBuffer(buf);
   }
 
   /**
@@ -639,6 +649,14 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
 
   private void fromJson(String json) {
     list = Json.decodeValue(json, List.class);
+  }
+
+  private void fromBuffer(Buffer buf) {
+    list = Json.decodeValue(buf, List.class);
+  }
+
+  private void fromStream(InputStream stream) {
+    list = Json.decodeValue(stream, List.class);
   }
 
   private class Iter implements Iterator<Object> {

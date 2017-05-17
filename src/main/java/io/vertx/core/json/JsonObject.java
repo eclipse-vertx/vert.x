@@ -20,6 +20,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -67,6 +68,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public JsonObject(Map<String, Object> map) {
     this.map = map;
+  }
+
+  /**
+   * Create an instance from a buffer.
+   *
+   * @param buf  the buffer to create the instance from.
+   */
+  public JsonObject(Buffer buf) {
+    fromBuffer(buf);
   }
 
   /**
@@ -930,6 +940,14 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   private void fromJson(String json) {
     map = Json.decodeValue(json, Map.class);
+  }
+
+  private void fromBuffer(Buffer buf) {
+    map = Json.decodeValue(buf, Map.class);
+  }
+
+  private void fromStream(InputStream stream) {
+    map = Json.decodeValue(stream, Map.class);
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {

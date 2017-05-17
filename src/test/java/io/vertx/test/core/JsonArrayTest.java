@@ -1028,6 +1028,15 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testCreateFromBuffer() {
+    JsonArray excepted = new JsonArray();
+    excepted.add("foobar");
+    excepted.add(123);
+    Buffer buf = Buffer.buffer(excepted.encode());
+    assertEquals(excepted, new JsonArray(buf));
+  }
+
+  @Test
   public void testClusterSerializable() {
     jsonArray.add("foo").add(123);
     Buffer buff = Buffer.buffer();

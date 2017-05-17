@@ -79,12 +79,12 @@ public class BufferImpl implements Buffer {
 
   @Override
   public JsonObject toJsonObject() {
-    return new JsonObject(toString());
+    return new JsonObject(this);
   }
 
   @Override
   public JsonArray toJsonArray() {
-    return new JsonArray(toString());
+    return new JsonArray(this);
   }
 
   public byte getByte(int pos) {

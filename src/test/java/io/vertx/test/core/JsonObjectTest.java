@@ -1510,6 +1510,15 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testCreateFromBuffer() {
+    JsonObject excepted = new JsonObject();
+    excepted.put("foo", "bar");
+    excepted.put("quux", 123);
+    Buffer buf = Buffer.buffer(excepted.encode());
+    assertEquals(excepted, new JsonObject(buf));
+  }
+
+  @Test
   public void testCreateFromMapCharSequence() {
     Map<String, Object> map = new HashMap<>();
     map.put("foo", "bar");
