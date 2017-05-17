@@ -231,7 +231,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public DatagramSocket createDatagramSocket(DatagramSocketOptions options) {
-    return new DatagramSocketImpl(this, options);
+    return DatagramSocketImpl.create(this, options);
   }
 
   @Override

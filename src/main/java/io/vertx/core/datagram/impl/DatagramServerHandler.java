@@ -26,28 +26,32 @@ import io.vertx.core.net.impl.VertxHandler;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
+final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connection> {
 
   private final DatagramSocketImpl socket;
+  private DatagramSocketImpl.Connection conn;
 
   DatagramServerHandler(DatagramSocketImpl socket) {
     this.socket = socket;
   }
 
   @Override
-  protected DatagramSocketImpl getConnection() {
-    return socket;
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    conn = socket.createConnection();
   }
 
   @Override
-  protected DatagramSocketImpl removeConnection() {
-    return socket;
+  protected DatagramSocketImpl.Connection getConnection() {
+    return conn;
   }
 
-
-  @SuppressWarnings("unchecked")
   @Override
-  protected void channelRead(final DatagramSocketImpl server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
+  protected DatagramSocketImpl.Connection removeConnection() {
+    return conn;
+  }
+
+  @Override
+  protected void channelRead(final DatagramSocketImpl.Connection server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
     context.executeFromIO(() -> server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg));
   }
 

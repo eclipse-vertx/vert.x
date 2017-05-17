@@ -234,7 +234,7 @@ public abstract class ContextImpl implements ContextInternal {
     return eventLoop;
   }
 
-  public Vertx owner() {
+  public VertxInternal owner() {
     return owner;
   }
 
