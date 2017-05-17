@@ -24,6 +24,13 @@ import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.GoAway;
+import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -34,7 +41,7 @@ import static io.vertx.core.http.impl.Http2ConnectionBase.safeBuffer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http1xConnectionBase extends ConnectionBase {
+abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.core.http.HttpConnection {
 
   Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context) {
     super(vertx, chctx, context);
@@ -72,5 +79,75 @@ abstract class Http1xConnectionBase extends ConnectionBase {
       }
     }
     return super.encode(obj);
+  }
+
+  @Override
+  public Http1xConnectionBase closeHandler(Handler<Void> handler) {
+    return (Http1xConnectionBase) super.closeHandler(handler);
+  }
+
+  @Override
+  public Http1xConnectionBase exceptionHandler(Handler<Throwable> handler) {
+    return (Http1xConnectionBase) super.exceptionHandler(handler);
+  }
+
+  @Override
+  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public HttpConnection shutdown() {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public HttpConnection shutdown(long timeoutMs) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+  }
+
+  @Override
+  public Http2Settings settings() {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public HttpConnection updateSettings(Http2Settings settings) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public Http2Settings remoteSettings() {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
+  }
+
+  @Override
+  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+  }
+
+  @Override
+  public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
   }
 }
