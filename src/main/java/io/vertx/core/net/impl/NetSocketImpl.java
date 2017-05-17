@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
@@ -72,12 +73,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private Buffer pendingData;
   private boolean paused = false;
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context,
+  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextImpl context,
                        SSLHelper helper, TCPMetrics metrics) {
     this(vertx, channel, null, 0, context, helper, metrics);
   }
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, String host, int port, ContextImpl context,
+  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, String host, int port, ContextImpl context,
                        SSLHelper helper, TCPMetrics metrics) {
     super(vertx, channel, context);
     this.helper = helper;

@@ -17,6 +17,7 @@ package io.vertx.core.datagram.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
@@ -369,13 +370,13 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     super.finalize();
   }
 
-  Connection createConnection() {
-    return new Connection(context.owner(), channel, context);
+  Connection createConnection(ChannelHandlerContext chctx) {
+    return new Connection(context.owner(), chctx, context);
   }
 
   class Connection extends ConnectionBase {
 
-    public Connection(VertxInternal vertx, Channel channel, ContextImpl context) {
+    public Connection(VertxInternal vertx, ChannelHandlerContext channel, ContextImpl context) {
       super(vertx, channel, context);
     }
 

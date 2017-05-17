@@ -92,16 +92,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private boolean closed;
   private int windowSize;
 
-  public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler handler) {
-    super((VertxInternal) context.owner(), channel, context);
-    this.channel = channel;
+  public Http2ConnectionBase(ContextImpl context, VertxHttp2ConnectionHandler handler) {
+    super(context.owner(), handler.context(), context);
+    this.channel = handler.context().channel();
     this.handlerContext = channel.pipeline().context(handler);
     this.handler = handler;
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
-  }
-
-  void setHandlerContext(ChannelHandlerContext handlerContext) {
-    this.handlerContext = handlerContext;
   }
 
   VertxInternal vertx() {

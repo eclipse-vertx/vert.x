@@ -50,6 +50,7 @@ public abstract class ConnectionBase {
 
   protected final VertxInternal vertx;
   protected final Channel channel;
+  protected final ChannelHandlerContext chctx;
   protected final ContextImpl context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
@@ -59,9 +60,10 @@ public abstract class ConnectionBase {
   private boolean needsAsyncFlush;
   private Object metric;
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context) {
+  protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext channel, ContextImpl context) {
     this.vertx = vertx;
-    this.channel = channel;
+    this.chctx = channel;
+    this.channel = channel.channel();
     this.context = context;
   }
 

@@ -120,7 +120,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
   public ServerConnection(VertxInternal vertx,
                    SSLHelper sslHelper,
                    HttpServerOptions options,
-                   Channel channel,
+                   ChannelHandlerContext channel,
                    ContextImpl context,
                    String serverOrigin,
                    HttpServerMetrics metrics) {
@@ -255,7 +255,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, sslHelper, metrics);
+    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, sslHelper, metrics);
     socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);

@@ -90,7 +90,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, Channel channel, boolean ssl, String host,
+  ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, ChannelHandlerContext channel, boolean ssl, String host,
                    int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context);
     this.client = client;
@@ -577,7 +577,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   public NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), metrics);
+    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics);
     socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);

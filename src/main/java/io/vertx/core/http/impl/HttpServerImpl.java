@@ -341,8 +341,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return this;
   }
 
-  private VertxHttp2ConnectionHandler<Http2ServerConnection> createHttp2Handler(HandlerHolder<Handlers> holder, Channel ch) {
-    return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
+  private VertxHttp2ConnectionHandler<Http2ServerConnection> setHandler(HandlerHolder<Handlers> holder, Channel ch) {
+    return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>(ch)
         .connectionMap(connectionMap2)
         .server(true)
         .useCompression(options.isCompressionSupported())
@@ -350,9 +350,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .compressionLevel(options.getCompressionLevel())
         .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> {
-          Http2ServerConnection conn = new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
+          Http2ServerConnection conn = new Http2ServerConnection(holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
           if (metrics != null) {
             conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          }
+          if (options.getHttp2ConnectionWindowSize() > 0) {
+            conn.setWindowSize(options.getHttp2ConnectionWindowSize());
           }
           return conn;
         })
@@ -404,26 +407,19 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
     HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(pipeline.channel().eventLoop());
-    ServerConnection conn = new ServerConnection(vertx,
-        sslHelper,
-        options,
-        pipeline.channel(),
-        holder.context,
-        serverOrigin,
-        metrics);
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
       // some casting and a header check
-      pipeline.addLast("handler", new ServerHandler(connectionMap, pipeline.channel(), holder, conn, metrics));
+      pipeline.addLast("handler", new ServerHandler(sslHelper, options, serverOrigin, connectionMap, pipeline.channel(), holder, metrics));
     } else {
-      pipeline.addLast("handler", new ServerHandleWithWebSockets(pipeline.channel(), holder, conn, metrics));
+      pipeline.addLast("handler", new ServerHandleWithWebSockets(sslHelper, options, serverOrigin, pipeline.channel(), holder, metrics));
     }
   }
 
   public void handleHttp2(Channel ch) {
     HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = createHttp2Handler(holder, ch);
-    configureHttp2(ch.pipeline(), handler);
+    configureHttp2(ch.pipeline());
+    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(holder, ch);
     if (holder.handler.connectionHandler != null) {
       holder.context.executeFromIO(() -> {
         holder.handler.connectionHandler.handle(handler.connection);
@@ -431,13 +427,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  public void configureHttp2(ChannelPipeline pipeline, VertxHttp2ConnectionHandler<Http2ServerConnection> handler) {
+  public void configureHttp2(ChannelPipeline pipeline) {
     if (options.getIdleTimeout() > 0) {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-    }
-    pipeline.addLast("handler", handler);
-    if (options.getHttp2ConnectionWindowSize() > 0) {
-      handler.connection.setWindowSize(options.getHttp2ConnectionWindowSize());
     }
   }
 
@@ -589,8 +581,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private boolean closeFrameSent;
     private FullHttpRequest wsRequest;
 
-    public ServerHandleWithWebSockets(Channel ch, HandlerHolder<Handlers> holder, ServerConnection conn, HttpServerMetrics metrics) {
-      super(HttpServerImpl.this.connectionMap, ch, holder, conn, metrics);
+    public ServerHandleWithWebSockets(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Channel ch, HandlerHolder<Handlers> holder, HttpServerMetrics metrics) {
+      super(sslHelper, options, serverOrigin, HttpServerImpl.this.connectionMap, ch, holder, metrics);
     }
 
     @Override
@@ -729,20 +721,32 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   public static class ServerHandler extends VertxHttpHandler<ServerConnection> {
 
+    private final SSLHelper sslHelper;
+    private final HttpServerOptions options;
+    private final String serverOrigin;
     private final HttpServerMetrics metrics;
     private final HandlerHolder<Handlers> holder;
 
-    public ServerHandler(Map<Channel, ServerConnection> connectionMap, Channel ch, HandlerHolder<Handlers> holder, ServerConnection conn, HttpServerMetrics metrics) {
+    public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Map<Channel, ServerConnection> connectionMap, Channel ch, HandlerHolder<Handlers> holder, HttpServerMetrics metrics) {
       super(connectionMap, ch);
 
       this.holder = holder;
-      this.conn = conn;
       this.metrics = metrics;
+      this.sslHelper = sslHelper;
+      this.options = options;
+      this.serverOrigin = serverOrigin;
     }
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
       super.handlerAdded(ctx);
+      conn = new ServerConnection(holder.context.owner(),
+          sslHelper,
+          options,
+          ctx,
+          holder.context,
+          serverOrigin,
+          metrics);
       conn.requestHandler(holder.handler.requesthHandler);
       connectionMap.put(ch, conn);
       holder.context.executeFromIO(() -> {
@@ -1016,9 +1020,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                     }
                   }
                   try {
-                    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = createHttp2Handler(reqHandler, ctx.channel());
+                    configureHttp2(pipeline);
+                    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(reqHandler, ctx.channel());
                     handler.onHttpServerUpgrade(settings);
-                    configureHttp2(pipeline, handler);
                     return;
                   } catch (Http2Exception ignore) {
                   }

@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -41,7 +40,6 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.NetworkMetrics;
 
 import java.util.Map;
 
@@ -60,10 +58,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public Http2ClientConnection(Http2Pool http2Pool,
                                Object queueMetric,
                                ContextImpl context,
-                               Channel channel,
                                VertxHttp2ConnectionHandler connHandler,
                                HttpClientMetrics metrics) {
-    super(channel, context, connHandler);
+    super(context, connHandler);
     this.http2Pool = http2Pool;
     this.metrics = metrics;
     this.queueMetric = queueMetric;

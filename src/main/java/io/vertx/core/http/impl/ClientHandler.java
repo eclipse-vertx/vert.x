@@ -39,10 +39,20 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
 
   private boolean closeFrameSent;
   private ContextImpl context;
+  private ChannelHandlerContext chctx;
 
   public ClientHandler(Channel ch, ContextImpl context, Map<Channel, ClientConnection> connectionMap) {
     super(connectionMap, ch);
     this.context = context;
+  }
+
+  @Override
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    chctx = ctx;
+  }
+
+  public ChannelHandlerContext context() {
+    return chctx;
   }
 
   @Override

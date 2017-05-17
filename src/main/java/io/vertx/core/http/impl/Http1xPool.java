@@ -117,14 +117,15 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-    ClientConnection conn = new ClientConnection(version, client, queue.metric, ch,
+    // Ugly : improve this
+    ClientHandler handler = ch.pipeline().get(ClientHandler.class);
+    ClientConnection conn = new ClientConnection(version, client, queue.metric, handler.context(),
         ssl, host, port, context, this, metrics);
     if (metrics != null) {
       Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
       conn.metric(metric);
       metrics.endpointConnected(queue.metric, metric);
     }
-    ClientHandler handler = ch.pipeline().get(ClientHandler.class);
     handler.conn = conn;
     synchronized (queue) {
       allConnections.add(conn);

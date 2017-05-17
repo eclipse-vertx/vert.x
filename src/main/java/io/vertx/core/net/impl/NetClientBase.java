@@ -19,6 +19,7 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
@@ -89,7 +90,7 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
    *
    * @return the created connection
    */
-  protected abstract C createConnection(VertxInternal vertx, Channel channel, String host, int port,
+  protected abstract C createConnection(VertxInternal vertx, ChannelHandlerContext chctx, String host, int port,
                                         ContextImpl context, SSLHelper helper, TCPMetrics metrics);
 
   protected abstract void handleMsgReceived(C conn, Object msg);
@@ -237,8 +238,8 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<C>> connectHandler, String host, int port) {
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
-    C sock = createConnection(vertx, ch, host, port, context, sslHelper, metrics);
     VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
+    C sock = createConnection(vertx, handler.context(), host, port, context, sslHelper, metrics);
     handler.conn = sock;
     socketMap.put(ch, sock);
     context.executeFromIO(() -> {

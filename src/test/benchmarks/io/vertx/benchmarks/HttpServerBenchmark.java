@@ -100,7 +100,6 @@ public class HttpServerBenchmark extends BenchmarkBase {
         new HttpResponseEncoder()
     );
     ContextImpl context = new EventLoopContext(vertx, vertxChannel.eventLoop(), null, null, null, new JsonObject(), Thread.currentThread().getContextClassLoader());
-    ServerConnection connection = new ServerConnection(vertx, null, new HttpServerOptions(), vertxChannel, context, "localhost", null);
     Handler<HttpServerRequest> app = request -> {
       HttpServerResponse response = request.response();
       MultiMap headers = response.headers();
@@ -112,7 +111,7 @@ public class HttpServerBenchmark extends BenchmarkBase {
       response.end(HELLO_WORLD_BUFFER);
     };
     HandlerHolder<HttpServerImpl.Handlers> holder = new HandlerHolder<>(context, new HttpServerImpl.Handlers(app, null, null));
-    HttpServerImpl.ServerHandler handler = new HttpServerImpl.ServerHandler(connectionMap, vertxChannel, holder, connection, null);
+    HttpServerImpl.ServerHandler handler = new HttpServerImpl.ServerHandler(null, new HttpServerOptions(), "localhost", connectionMap, vertxChannel, holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
     GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
         "GET / HTTP/1.1\r\n" +

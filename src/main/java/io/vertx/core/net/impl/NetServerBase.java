@@ -356,9 +356,9 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
     private void connected(Channel ch, HandlerHolder<Handler<? super C>> handler) {
       // Need to set context before constructor is called as writehandler registration needs this
       ContextImpl.setContext(handler.context);
-      C sock = createConnection(vertx, ch, handler.context, sslHelper, metrics);
-      socketMap.put(ch, sock);
       VertxNetHandler netHandler = ch.pipeline().get(VertxNetHandler.class);
+      C sock = createConnection(vertx, netHandler.context(), handler.context, sslHelper, metrics);
+      socketMap.put(ch, sock);
       netHandler.conn = sock;
       handler.context.executeFromIO(() -> {
         if (metrics != null) {
@@ -378,7 +378,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
    *
    * @return the created connection
    */
-  protected abstract C createConnection(VertxInternal vertx, Channel channel, ContextImpl context,
+  protected abstract C createConnection(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context,
                                         SSLHelper helper, TCPMetrics metrics);
 
   /**
