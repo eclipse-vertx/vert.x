@@ -1267,6 +1267,9 @@
  * {@link examples.CoreExamples#example18}
  * ----
  *
+ * CAUTION: Logging backends use different formats to represent replaceable tokens in parameterized messages.
+ * As a consequence, if you rely on Vert.x parameterized logging methods, you won't be able to switch backends without changing your code.
+ *
  * [[netty-logging]]
  * === Netty logging
  *
@@ -1287,33 +1290,33 @@
  * // Force logging to Log4j
  * InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
  * ----
- * 
+ *
  * === Troubleshooting
- * 
+ *
  * ==== SLF4J warning at startup
- * 
+ *
  * If, when you start your application, you see the following message:
- * 
+ *
  * ----
  * SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
  * SLF4J: Defaulting to no-operation (NOP) logger implementation
  * SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
  * ----
- * 
+ *
  * It means that you have SLF4J-API in your classpath but no actual binding. Messages logged with SLF4J will be dropped.
  * You should add a binding to your classpath. Check https://www.slf4j.org/manual.html#swapping to pick a binding and configure it.
- * 
+ *
  * Be aware that Netty looks for the SLF4-API jar and uses it by default.
- * 
+ *
  * ==== Connection reset by peer
- * 
+ *
  * If your logs show a bunch of:
- * 
+ *
  * ----
  * io.vertx.core.net.impl.ConnectionBase
  * SEVERE: java.io.IOException: Connection reset by peer
  * ----
- * 
+ *
  * It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
  * may have not consumed the complete payload (the connection was cut before you were able to).
  *
