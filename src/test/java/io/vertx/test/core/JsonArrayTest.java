@@ -303,7 +303,7 @@ public class JsonArrayTest {
 
   @Test
   public void testGetJsonObject() {
-    JsonObject obj = new JsonObject().put("foo", "bar");    
+    JsonObject obj = new JsonObject().put("foo", "bar");
     jsonArray.add(obj);
     assertEquals(obj, jsonArray.getJsonObject(0));
     try {
@@ -847,6 +847,25 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testEncodeToBuffer() throws Exception {
+    jsonArray.add("foo");
+    jsonArray.add(123);
+    jsonArray.add(1234l);
+    jsonArray.add(1.23f);
+    jsonArray.add(2.34d);
+    jsonArray.add(true);
+    byte[] bytes = TestUtils.randomByteArray(10);
+    jsonArray.add(bytes);
+    jsonArray.addNull();
+    jsonArray.add(new JsonObject().put("foo", "bar"));
+    jsonArray.add(new JsonArray().add("foo").add(123));
+    String strBytes = Base64.getEncoder().encodeToString(bytes);
+    Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]", "UTF-8");
+    Buffer json = jsonArray.toBuffer();
+    assertArrayEquals(expected.getBytes(), json.getBytes());
+  }
+
+  @Test
   public void testDecode() {
     byte[] bytes = TestUtils.randomByteArray(10);
     String strBytes = Base64.getEncoder().encodeToString(bytes);
@@ -1025,6 +1044,15 @@ public class JsonArrayTest {
     assertSame(list, arr.getList());
     JsonArray arr2 = arr.getJsonArray(2);
     assertSame(list2, arr2.getList());
+  }
+
+  @Test
+  public void testCreateFromBuffer() {
+    JsonArray excepted = new JsonArray();
+    excepted.add("foobar");
+    excepted.add(123);
+    Buffer buf = Buffer.buffer(excepted.encode());
+    assertEquals(excepted, new JsonArray(buf));
   }
 
   @Test

@@ -70,9 +70,18 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Create an instance from a buffer.
+   *
+   * @param buf  the buffer to create the instance from.
+   */
+  public JsonObject(Buffer buf) {
+    fromBuffer(buf);
+  }
+
+  /**
    * Create a JsonObject from the fields of a Java object.
    * Faster than calling `new JsonObject(Json.encode(obj))`.
-   * 
+   *
    * @param obj
    *          The object to convert to a JsonObject.
    * @throws IllegalArgumentException
@@ -86,7 +95,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Instantiate a Java object from a JsonObject.
    * Faster than calling `Json.decodeValue(Json.encode(jsonObject), type)`.
-   * 
+   *
    * @param type
    *          The type to instantiate from the JsonObject.
    * @throws IllegalArgumentException
@@ -764,6 +773,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Encode this JSON object as buffer.
+   *
+   * @return the buffer encoding.
+   */
+  public Buffer toBuffer() {
+    return Json.encodeToBuffer(map);
+  }
+
+  /**
    * Copy the JSON object
    *
    * @return a copy of the object
@@ -930,6 +948,10 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   private void fromJson(String json) {
     map = Json.decodeValue(json, Map.class);
+  }
+
+  private void fromBuffer(Buffer buf) {
+    map = Json.decodeValue(buf, Map.class);
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {

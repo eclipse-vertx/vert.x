@@ -68,6 +68,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
+   * Create an instance from a Buffer of JSON.
+   *
+   * @param buf  the buffer of JSON.
+   */
+  public JsonArray(Buffer buf) {
+    fromBuffer(buf);
+  }
+
+  /**
    * Get the String at position {@code pos} in the array,
    *
    * @param pos  the position in the array
@@ -545,6 +554,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
+   * Encode this JSON object as buffer.
+   *
+   * @return the buffer encoding.
+   */
+  public Buffer toBuffer() {
+    return Json.encodeToBuffer(list);
+  }
+
+  /**
    * Encode the JSON array prettily as a string
    *
    * @return the string encoding
@@ -639,6 +657,10 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
 
   private void fromJson(String json) {
     list = Json.decodeValue(json, List.class);
+  }
+
+  private void fromBuffer(Buffer buf) {
+    list = Json.decodeValue(buf, List.class);
   }
 
   private class Iter implements Iterator<Object> {

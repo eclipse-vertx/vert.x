@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
 import org.junit.Test;
 
@@ -92,13 +93,27 @@ public class JsonMapperTest extends VertxTestBase {
   }
 
   @Test
+  public void encodeToBuffer() {
+    Buffer json = Json.encodeToBuffer("Hello World!");
+    assertNotNull(json);
+    // json strings are always UTF8
+    assertEquals("\"Hello World!\"", json.toString("UTF-8"));
+  }
+
+  @Test
   public void testGenericDecoding() {
     Pojo original = new Pojo();
     original.value = "test";
 
     String json = Json.encode(Collections.singletonList(original));
+    List<Pojo> correct;
 
-    List<Pojo> correct = Json.decodeValue(json, new TypeReference<List<Pojo>>() {});
+    correct = Json.decodeValue(json, new TypeReference<List<Pojo>>() {});
+    assertTrue(((List)correct).get(0) instanceof Pojo);
+    assertEquals(original.value, correct.get(0).value);
+
+    // same must apply if instead of string we use a buffer
+    correct = Json.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
