@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -50,35 +51,33 @@ abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.c
   @Override
   protected Object encode(Object obj) {
     if (obj instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) obj;
-      ByteBuf buf = frame.getBinaryData();
-      if (buf != Unpooled.EMPTY_BUFFER) {
-        buf = safeBuffer(buf, chctx.alloc());
-      }
-      switch (frame.type()) {
-        case BINARY:
-          obj = new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case TEXT:
-          obj = new TextWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case CLOSE:
-          obj = new CloseWebSocketFrame(true, 0, buf);
-          break;
-        case CONTINUATION:
-          obj = new ContinuationWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case PONG:
-          obj = new PongWebSocketFrame(buf);
-          break;
-        case PING:
-          obj = new PingWebSocketFrame(buf);
-          break;
-        default:
-          throw new IllegalStateException("Unsupported websocket msg " + obj);
-      }
+      return encodeFrame(obj);
     }
-    return super.encode(obj);
+    return obj;
+  }
+
+  private WebSocketFrame encodeFrame(Object obj) {
+    WebSocketFrameInternal frame = (WebSocketFrameInternal) obj;
+    ByteBuf buf = frame.getBinaryData();
+    if (buf != Unpooled.EMPTY_BUFFER) {
+      buf = safeBuffer(buf, chctx.alloc());
+    }
+    switch (frame.type()) {
+      case BINARY:
+        return new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
+      case TEXT:
+        return new TextWebSocketFrame(frame.isFinal(), 0, buf);
+      case CLOSE:
+        return new CloseWebSocketFrame(true, 0, buf);
+      case CONTINUATION:
+        return new ContinuationWebSocketFrame(frame.isFinal(), 0, buf);
+      case PONG:
+        return new PongWebSocketFrame(buf);
+      case PING:
+        return new PingWebSocketFrame(buf);
+      default:
+        throw new IllegalStateException("Unsupported websocket msg " + obj);
+    }
   }
 
   @Override
