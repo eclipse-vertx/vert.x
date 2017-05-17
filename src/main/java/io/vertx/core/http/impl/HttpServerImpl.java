@@ -341,10 +341,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return this;
   }
 
-  private VertxHttp2ConnectionHandler<Http2ServerConnection> setHandler(HandlerHolder<Handlers> holder, Channel ch) {
+  private VertxHttp2ConnectionHandler<Http2ServerConnection> setHandler(HandlerHolder<Handlers> holder, Http2Settings upgrade, Channel ch) {
     return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>(ch)
         .connectionMap(connectionMap2)
         .server(true)
+        .serverUpgrade(upgrade)
         .useCompression(options.isCompressionSupported())
         .useDecompression(options.isDecompressionSupported())
         .compressionLevel(options.getCompressionLevel())
@@ -419,7 +420,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public void handleHttp2(Channel ch) {
     HandlerHolder<Handlers> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
     configureHttp2(ch.pipeline());
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(holder, ch);
+    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(holder, null, ch);
     if (holder.handler.connectionHandler != null) {
       holder.context.executeFromIO(() -> {
         holder.handler.connectionHandler.handle(handler.connection);
@@ -967,77 +968,73 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private class Http2UpgradeHandler extends ChannelInboundHandlerAdapter {
 
+    private Http2Settings settings;
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      try {
-        if (msg instanceof HttpRequest) {
-          HandlerHolder<Handlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
-          HttpRequest request = (HttpRequest) msg;
-          if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, true)) {
-            if (reqHandler.context.isEventLoopContext()) {
-              String connection = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
-              int found = 0;
-              if (connection != null && connection.length() > 0) {
-                StringBuilder buff = new StringBuilder();
-                int pos = 0;
-                int len = connection.length();
-                while (pos < len) {
-                  char c = connection.charAt(pos++);
-                  if (c != ' ' && c != ',') {
-                    buff.append(Character.toLowerCase(c));
-                  }
-                  if (c == ',' || pos == len) {
-                    if (buff.indexOf("upgrade") == 0 && buff.length() == 7) {
-                      found |= 1;
-                    } else if (buff.indexOf("http2-settings") == 0 && buff.length() == 14) {
-                      found |= 2;
-                    }
-                    buff.setLength(0);
-                  }
-                }
+      if (msg instanceof HttpRequest) {
+        HttpRequest request = (HttpRequest) msg;
+        if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, true)) {
+          String connection = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
+          int found = 0;
+          if (connection != null && connection.length() > 0) {
+            StringBuilder buff = new StringBuilder();
+            int pos = 0;
+            int len = connection.length();
+            while (pos < len) {
+              char c = connection.charAt(pos++);
+              if (c != ' ' && c != ',') {
+                buff.append(Character.toLowerCase(c));
               }
-              if (found == 3) {
-                Http2Settings settings = null;
-                String settingsHeader = request.headers().get(Http2CodecUtil.HTTP_UPGRADE_SETTINGS_HEADER);
-                if (settingsHeader != null) {
-                  settings = HttpUtils.decodeSettings(settingsHeader);
+              if (c == ',' || pos == len) {
+                if (buff.indexOf("upgrade") == 0 && buff.length() == 7) {
+                  found |= 1;
+                } else if (buff.indexOf("http2-settings") == 0 && buff.length() == 14) {
+                  found |= 2;
                 }
-                if (settings != null) {
-                  ChannelPipeline pipeline = ctx.pipeline();
-                  DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
-                  res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
-                  res.headers().add(HttpHeaderNames.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME);
-                  res.headers().add(HttpHeaderNames.CONTENT_LENGTH, HttpHeaderValues.ZERO);
-                  ctx.writeAndFlush(res).addListener(v -> {
-                    // Clean more pipeline ?
-                    pipeline.remove("handler");
-                    pipeline.remove("httpDecoder");
-                    pipeline.remove("httpEncoder");
-                  });
-                  for (String name : H2C_HANDLERS_TO_REMOVE) {
-                    if (pipeline.get(name) != null) {
-                      pipeline.remove(name);
-                    }
-                  }
-                  try {
-                    configureHttp2(pipeline);
-                    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(reqHandler, ctx.channel());
-                    handler.onHttpServerUpgrade(settings);
-                    return;
-                  } catch (Http2Exception ignore) {
-                  }
-                }
+                buff.setLength(0);
               }
             }
+          }
+          if (found == 3) {
+            String settingsHeader = request.headers().get(Http2CodecUtil.HTTP_UPGRADE_SETTINGS_HEADER);
+            if (settingsHeader != null) {
+              settings = HttpUtils.decodeSettings(settingsHeader);
+            }
+          }
+        } else {
+          ctx.fireChannelRead(msg);
+          ctx.pipeline().remove(this);
+        }
+      } else if (msg instanceof LastHttpContent) {
+        if (settings != null) {
+          HandlerHolder<Handlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
+          if (reqHandler.context.isEventLoopContext()) {
+            ChannelPipeline pipeline = ctx.pipeline();
             DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
-            res.setStatus(BAD_REQUEST);
-            ctx.writeAndFlush(res);
+            res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
+            res.headers().add(HttpHeaderNames.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME);
+            res.headers().add(HttpHeaderNames.CONTENT_LENGTH, HttpHeaderValues.ZERO);
+            ctx.writeAndFlush(res).addListener(v -> {
+              // Clean more pipeline ?
+              pipeline.remove("handler");
+              pipeline.remove("httpDecoder");
+              pipeline.remove("httpEncoder");
+            });
+            for (String name : H2C_HANDLERS_TO_REMOVE) {
+              if (pipeline.get(name) != null) {
+                pipeline.remove(name);
+              }
+            }
+            configureHttp2(pipeline);
+            setHandler(reqHandler, settings, ctx.channel());
+            ctx.pipeline().remove(this);
             return;
           }
         }
-        ctx.fireChannelRead(msg);
-      } finally {
-        ctx.pipeline().remove(this);
+        DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST, Unpooled.EMPTY_BUFFER, false);
+        res.headers().set(HttpHeaderNames.CONNECTION, "close");
+        ctx.writeAndFlush(res);
       }
     }
   }

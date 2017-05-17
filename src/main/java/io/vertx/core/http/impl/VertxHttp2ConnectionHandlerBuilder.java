@@ -51,7 +51,8 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private boolean logEnabled;
-  private boolean upgrade;
+  private boolean clientUpgrade;
+  private Http2Settings serverUpgrade;
 
   VertxHttp2ConnectionHandlerBuilder(Channel channel) {
     this.channel = channel;
@@ -76,8 +77,13 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     return this;
   }
 
-  public VertxHttp2ConnectionHandlerBuilder<C> upgrade(boolean upgrade) {
-    this.upgrade = upgrade;
+  public VertxHttp2ConnectionHandlerBuilder<C> clientUpgrade(boolean upgrade) {
+    this.clientUpgrade = upgrade;
+    return this;
+  }
+
+  public VertxHttp2ConnectionHandlerBuilder<C> serverUpgrade(Http2Settings upgrade) {
+    this.serverUpgrade = upgrade;
     return this;
   }
 
@@ -193,8 +199,8 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
         encoder = new CompressorHttp2ConnectionEncoder(encoder,compressionLevel,CompressorHttp2ConnectionEncoder.DEFAULT_WINDOW_BITS,CompressorHttp2ConnectionEncoder.DEFAULT_MEM_LEVEL);
       }
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings);
-      if (upgrade) {
-        handler.onHttpClientUpgrade();
+      if (serverUpgrade != null) {
+        handler.onHttpServerUpgrade(serverUpgrade);
       }
       channel.pipeline().addLast(handler);
       handler.init(connectionFactory.apply(handler));
@@ -206,7 +212,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
       return handler;
     } else {
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings);
-      if (upgrade) {
+      if (clientUpgrade) {
         handler.onHttpClientUpgrade();
       }
       channel.pipeline().addLast(handler);

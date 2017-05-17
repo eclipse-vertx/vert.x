@@ -17,7 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
@@ -86,7 +85,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
       VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>(ch)
           .connectionMap(connectionMap)
           .server(false)
-          .upgrade(upgrade)
+          .clientUpgrade(upgrade)
           .useCompression(client.getOptions().isTryUseCompression())
           .initialSettings(client.getOptions().getInitialSettings())
           .connectionFactory(connHandler -> {
