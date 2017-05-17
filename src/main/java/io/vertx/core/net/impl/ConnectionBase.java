@@ -49,7 +49,6 @@ public abstract class ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
   protected final VertxInternal vertx;
-  protected final Channel channel;
   protected final ChannelHandlerContext chctx;
   protected final ContextImpl context;
   private Handler<Throwable> exceptionHandler;
@@ -60,10 +59,9 @@ public abstract class ConnectionBase {
   private boolean needsAsyncFlush;
   private Object metric;
 
-  protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext channel, ContextImpl context) {
+  protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context) {
     this.vertx = vertx;
-    this.chctx = channel;
-    this.channel = channel.channel();
+    this.chctx = chctx;
     this.context = context;
   }
 
@@ -84,39 +82,49 @@ public abstract class ConnectionBase {
         // Then Netty might end up executing the flush *before* the write as Netty checks for event loop and if not
         // it executes using the executor.
         // To avoid this ordering issue we must runOnContext in this situation
-        context.runOnContext(v -> channel.flush());
+        context.runOnContext(v -> chctx.flush());
       } else {
         // flush now
-        channel.flush();
+        chctx.flush();
       }
     }
   }
 
   public void queueForWrite(final Object obj) {
-    queueForWrite(obj, channel.voidPromise());
+    queueForWrite(obj, chctx.voidPromise());
+  }
+
+  /**
+   * Encode to message before writing to the channel
+   *
+   * @param obj the object to encode
+   * @return the encoded message
+   */
+  protected Object encode(Object obj) {
+    return obj;
   }
 
   public synchronized void queueForWrite(final Object obj, ChannelPromise promise) {
     needsFlush = true;
     needsAsyncFlush = Thread.currentThread() != ctxThread;
-    channel.write(obj, promise);
+    chctx.write(encode(obj), promise);
   }
 
   public void writeToChannel(Object obj) {
-    writeToChannel(obj, channel.voidPromise());
+    writeToChannel(obj, chctx.voidPromise());
   }
 
   public synchronized void writeToChannel(Object obj, ChannelPromise promise) {
     if (read) {
       queueForWrite(obj, promise);
     } else {
-      channel.writeAndFlush(obj, promise);
+      chctx.writeAndFlush(encode(obj), promise);
     }
   }
 
   // This is a volatile read inside the Netty channel implementation
   public boolean isNotWritable() {
-    return !channel.isWritable();
+    return !chctx.channel().isWritable();
   }
 
   /**
@@ -125,7 +133,7 @@ public abstract class ConnectionBase {
   public void close() {
     // make sure everything is flushed out on close
     endReadAndFlush();
-    channel.close();
+    chctx.channel().close();
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
@@ -143,15 +151,15 @@ public abstract class ConnectionBase {
   }
 
   public void doPause() {
-    channel.config().setAutoRead(false);
+    chctx.channel().config().setAutoRead(false);
   }
 
   public void doResume() {
-    channel.config().setAutoRead(true);
+    chctx.channel().config().setAutoRead(true);
   }
 
   public void doSetWriteQueueMaxSize(int size) {
-    ChannelConfig config = channel.config();
+    ChannelConfig config = chctx.channel().config();
     int high = config.getWriteBufferHighWaterMark();
     int newLow = size / 2;
     int newHigh = size;
@@ -245,12 +253,12 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSSL() {
-    return channel.pipeline().get(SslHandler.class) != null;
+    return chctx.pipeline().get(SslHandler.class) != null;
   }
 
   protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
     // Write the content.
-    ChannelPromise writeFuture = channel.newPromise();
+    ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
       writeToChannel(new ChunkedFile(raf, offset, length, 8192), writeFuture);
@@ -268,12 +276,12 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return channel.pipeline().get(SslHandler.class) != null;
+    return chctx.pipeline().get(SslHandler.class) != null;
   }
 
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = channel.pipeline().context("ssl");
+      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
       assert sslHandlerContext != null;
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession().getPeerCertificateChain();
@@ -283,32 +291,32 @@ public abstract class ConnectionBase {
   }
 
   public String indicatedServerName() {
-    if (channel.hasAttr(VertxSniHandler.SERVER_NAME_ATTR)) {
-      return channel.attr(VertxSniHandler.SERVER_NAME_ATTR).get();
+    if (chctx.channel().hasAttr(VertxSniHandler.SERVER_NAME_ATTR)) {
+      return chctx.channel().attr(VertxSniHandler.SERVER_NAME_ATTR).get();
     } else {
       return null;
     }
   }
 
   public ChannelPromise channelFuture() {
-    return channel.newPromise();
+    return chctx.newPromise();
   }
 
   public String remoteName() {
-    InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
+    InetSocketAddress addr = (InetSocketAddress) chctx.channel().remoteAddress();
     if (addr == null) return null;
     // Use hostString that does not trigger a DNS resolution
     return addr.getHostString();
   }
 
   public SocketAddress remoteAddress() {
-    InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
+    InetSocketAddress addr = (InetSocketAddress) chctx.channel().remoteAddress();
     if (addr == null) return null;
     return new SocketAddressImpl(addr);
   }
 
   public SocketAddress localAddress() {
-    InetSocketAddress addr = (InetSocketAddress) channel.localAddress();
+    InetSocketAddress addr = (InetSocketAddress) chctx.channel().localAddress();
     if (addr == null) return null;
     return new SocketAddressImpl(addr);
   }

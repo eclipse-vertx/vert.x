@@ -72,7 +72,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -87,7 +86,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerConnection extends ConnectionBase implements HttpConnection {
+public class ServerConnection extends Http1xConnectionBase implements HttpConnection {
 
   private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
 
@@ -227,8 +226,8 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
     if (ws != null) {
       return ws;
     }
-    HttpServerImpl.ServerHandler serverHandler = (HttpServerImpl.ServerHandler) channel.pipeline().get("handler");
-    handshaker = serverHandler.createHandshaker(channel, nettyReq);
+    HttpServerImpl.ServerHandler serverHandler = (HttpServerImpl.ServerHandler) chctx.pipeline().get("handler");
+    handshaker = serverHandler.createHandshaker(chctx.channel(), nettyReq);
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
@@ -240,16 +239,16 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
       ws.setMetric(metrics.upgrade(requestMetric, ws));
     }
     try {
-      handshaker.handshake(channel, nettyReq);
+      handshaker.handshake(chctx.channel(), nettyReq);
     } catch (WebSocketHandshakeException e) {
       handleException(e);
     } catch (Exception e) {
       log.error("Failed to generate shake response", e);
     }
-    ChannelHandler handler = channel.pipeline().get(HttpChunkContentCompressor.class);
+    ChannelHandler handler = chctx.pipeline().get(HttpChunkContentCompressor.class);
     if (handler != null) {
       // remove compressor as its not needed anymore once connection was upgraded to websockets
-      channel.pipeline().remove(handler);
+      chctx.pipeline().remove(handler);
     }
     return ws;
   }
@@ -258,13 +257,13 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
     NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, sslHelper, metrics);
     socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
-    connectionMap.put(channel, socket);
+    connectionMap.put(chctx.channel(), socket);
 
     // Flush out all pending data
     endReadAndFlush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
-    ChannelPipeline pipeline = channel.pipeline();
+    ChannelPipeline pipeline = chctx.pipeline();
     ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
     if (compressor != null) {
       pipeline.remove(compressor);
@@ -275,18 +274,18 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
       pipeline.remove("chunkedWriter");
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
+    chctx.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
-        connectionMap.remove(channel);
+        connectionMap.remove(chctx.channel());
         super.exceptionCaught(chctx, t);
       }
 
       @Override
       public void channelInactive(ChannelHandlerContext chctx) throws Exception {
         // remove from the real mapping
-        connectionMap.remove(channel);
+        connectionMap.remove(chctx.channel());
         super.channelInactive(chctx);
       }
 
@@ -307,7 +306,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
     });
 
     // check if the encoder can be removed yet or not.
-    channel.pipeline().remove("httpEncoder");
+    chctx.pipeline().remove("httpEncoder");
     return socket;
   }
 
@@ -336,7 +335,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
       super.close();
     } else {
       endReadAndFlush();
-      handshaker.close(channel, new CloseWebSocketFrame(1000, null));
+      handshaker.close(chctx.channel(), new CloseWebSocketFrame(1000, null));
     }
   }
 
@@ -349,7 +348,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
   }
 
   void write100Continue() {
-    channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+    chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
   }
 
   synchronized private void handleWsFrame(WebSocketFrameInternal frame) {
@@ -402,7 +401,7 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
 
   @Override
   protected boolean supportsFileRegion() {
-    return super.supportsFileRegion() && channel.pipeline().get(HttpChunkContentCompressor.class) == null;
+    return super.supportsFileRegion() && chctx.pipeline().get(HttpChunkContentCompressor.class) == null;
   }
 
   protected ChannelFuture sendFile(RandomAccessFile file, long offset, long length) throws IOException {
@@ -424,17 +423,17 @@ public class ServerConnection extends ConnectionBase implements HttpConnection {
       }
       HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
       DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
-      ChannelPromise fut = channel.newPromise();
+      ChannelPromise fut = chctx.newPromise();
       writeToChannel(resp, fut);
       fut.addListener(res -> {
         if (res.isSuccess()) {
           // That will close the connection as it is considered as unusable
-          channel.pipeline().fireExceptionCaught(result.cause());
+          chctx.pipeline().fireExceptionCaught(result.cause());
         }
       });
     } else {
       // That will close the connection as it is considered as unusable
-      channel.pipeline().fireExceptionCaught(result.cause());
+      chctx.pipeline().fireExceptionCaught(result.cause());
     }
   }
 

@@ -115,41 +115,6 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     return msg;
   }
 
-
-  @Override
-  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-    if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      ByteBuf buf = frame.getBinaryData();
-      if (buf != Unpooled.EMPTY_BUFFER) {
-         buf = safeBuffer(buf, ctx.alloc());
-      }
-      switch (frame.type()) {
-        case BINARY:
-          msg = new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case TEXT:
-          msg = new TextWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case CLOSE:
-          msg = new CloseWebSocketFrame(true, 0, buf);
-          break;
-        case CONTINUATION:
-          msg = new ContinuationWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case PONG:
-          msg = new PongWebSocketFrame(buf);
-          break;
-        case PING:
-          msg = new PingWebSocketFrame(buf);
-          break;
-        default:
-          throw new IllegalStateException("Unsupported websocket msg " + msg);
-      }
-    }
-    ctx.write(msg, promise);
-  }
-
   protected abstract void doMessageReceived(C connection, ChannelHandlerContext ctx, Object msg) throws Exception;
 
 }

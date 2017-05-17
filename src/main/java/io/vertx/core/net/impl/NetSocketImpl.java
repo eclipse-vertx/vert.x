@@ -239,8 +239,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   @Override
   public synchronized void close() {
     // Close after all data is written
-    channel.write(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-    channel.flush();
+    chctx.write(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+    chctx.flush();
   }
 
   @Override
@@ -250,7 +250,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   @Override
   public NetSocket upgradeToSsl(String serverName, Handler<Void> handler) {
-    ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) channel.pipeline().get("ssl");
+    ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
     if (sslHandler == null) {
       if (host != null) {
         sslHandler = new SslHandler(helper.createEngine(vertx, host, port, serverName));
@@ -261,7 +261,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
           sslHandler = new SslHandler(helper.createEngine(vertx));
         }
       }
-      channel.pipeline().addFirst("ssl", sslHandler);
+      chctx.pipeline().addFirst("ssl", sslHandler);
     }
     io.netty.util.concurrent.Future<Channel> handshakeFuture;
     if (sslHandler instanceof SslHandler) {

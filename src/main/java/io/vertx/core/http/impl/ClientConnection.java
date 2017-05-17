@@ -65,7 +65,7 @@ import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ClientConnection extends ConnectionBase implements HttpClientConnection, HttpClientStream {
+class ClientConnection extends Http1xConnectionBase implements HttpClientConnection, HttpClientStream {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
@@ -137,9 +137,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       }
       handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
                                                                   nettyHeaders, maxWebSocketFrameSize,!client.getOptions().isSendUnmaskedFrames(),false);
-      ChannelPipeline p = channel.pipeline();
+      ChannelPipeline p = chctx.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
-      handshaker.handshake(channel).addListener(future -> {
+      handshaker.handshake(chctx.channel()).addListener(future -> {
         Handler<Throwable> handler = exceptionHandler();
         if (!future.isSuccess() && handler != null) {
           handler.handle(future.cause());
@@ -197,7 +197,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
               response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
               try {
                 handshakeComplete(ctx, response);
-                channel.pipeline().remove(HandshakeInboundHandler.this);
+                chctx.pipeline().remove(HandshakeInboundHandler.this);
                 for (; ; ) {
                   Object m = buffered.poll();
                   if (m == null) {
@@ -243,7 +243,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
                                                   client.getOptions().getMaxWebsocketFrameSize(),
                                                   client.getOptions().getMaxWebsocketMessageSize());
       ws = webSocket;
-      handshaker.finishHandshake(channel, response);
+      handshaker.finishHandshake(chctx.channel(), response);
       context.executeFromIO(() -> {
         log.debug("WebSocket handshake complete");
         if (metrics != null ) {
@@ -259,7 +259,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   public boolean isValid() {
-    return channel.isOpen();
+    return chctx.channel().isOpen();
   }
 
   int getOutstandingRequestCount() {
@@ -571,7 +571,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       // make sure everything is flushed out on close
       endReadAndFlush();
       // close the websocket connection by sending a close frame.
-      handshaker.close(channel, new CloseWebSocketFrame(1000, null));
+      handshaker.close(chctx.channel(), new CloseWebSocketFrame(1000, null));
     }
   }
 
@@ -580,30 +580,30 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics);
     socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
-    connectionMap.put(channel, socket);
+    connectionMap.put(chctx.channel(), socket);
 
     // Flush out all pending data
     endReadAndFlush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
-    ChannelPipeline pipeline = channel.pipeline();
+    ChannelPipeline pipeline = chctx.pipeline();
     ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
     if (inflater != null) {
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
+    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
-        pool.removeChannel(channel);
+        pool.removeChannel(chctx.channel());
         super.exceptionCaught(chctx, t);
       }
 
       @Override
       public void channelInactive(ChannelHandlerContext chctx) throws Exception {
         // remove from the real mapping
-        pool.removeChannel(channel);
+        pool.removeChannel(chctx.channel());
         super.channelInactive(chctx);
       }
 
