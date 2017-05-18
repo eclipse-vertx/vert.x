@@ -31,9 +31,17 @@ import io.vertx.core.impl.ContextImpl;
  */
 public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
-  protected abstract C getConnection();
+  private C conn;
 
-  protected abstract C removeConnection();
+  protected void setConnection(C connection) {
+    conn = connection;
+  }
+
+  public C getConnection() {
+    return conn;
+  }
+
+  protected abstract void removeConnection();
 
   protected ContextImpl getContext(C connection) {
     return connection.getContext();
@@ -89,9 +97,9 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-    C connection = removeConnection();
-    ContextImpl context = getContext(connection);
-    context.executeFromIO(connection::handleClosed);
+    removeConnection();
+    ContextImpl context = getContext(conn);
+    context.executeFromIO(conn::handleClosed);
   }
 
   @Override

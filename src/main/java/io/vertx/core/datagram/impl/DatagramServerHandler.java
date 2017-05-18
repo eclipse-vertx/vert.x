@@ -29,7 +29,6 @@ import io.vertx.core.net.impl.VertxHandler;
 final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connection> {
 
   private final DatagramSocketImpl socket;
-  private DatagramSocketImpl.Connection conn;
 
   DatagramServerHandler(DatagramSocketImpl socket) {
     this.socket = socket;
@@ -37,17 +36,11 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connec
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    conn = socket.createConnection(ctx);
+    setConnection(socket.createConnection(ctx));
   }
 
   @Override
-  protected DatagramSocketImpl.Connection getConnection() {
-    return conn;
-  }
-
-  @Override
-  protected DatagramSocketImpl.Connection removeConnection() {
-    return conn;
+  protected void removeConnection() {
   }
 
   @Override

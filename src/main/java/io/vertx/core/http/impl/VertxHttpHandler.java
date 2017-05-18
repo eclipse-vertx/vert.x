@@ -45,7 +45,6 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
 
   protected Map<Channel, C> connectionMap;
   protected final Channel ch;
-  protected C conn;
 
   protected VertxHttpHandler(Map<Channel, C> connectionMap, Channel ch) {
     this.connectionMap = connectionMap;
@@ -53,14 +52,8 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  protected C getConnection() {
-    return conn;
-  }
-
-  @Override
-  protected C removeConnection() {
+  protected void removeConnection() {
     connectionMap.remove(ch);
-    return conn;
   }
 
   @Override

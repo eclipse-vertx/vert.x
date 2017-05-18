@@ -586,7 +586,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void handleMessage(ServerConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    protected void handleMessage(ServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;
 
@@ -609,7 +609,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           if (wsRequest == null) {
             if (request instanceof FullHttpRequest) {
-              handshake((FullHttpRequest) request, ch, chctx);
+              handshake(conn, (FullHttpRequest) request, ch, chctx);
             } else {
               wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
               wsRequest.headers().set(request.headers());
@@ -652,7 +652,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           if (msg instanceof LastHttpContent) {
             FullHttpRequest req = wsRequest;
             wsRequest = null;
-            handshake(req, ch, chctx);
+            handshake(conn, req, ch, chctx);
             return;
           }
         }
@@ -662,9 +662,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
-    protected void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
+    protected void handshake(ServerConnection conn, FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
 
-      WebSocketServerHandshaker shake = createHandshaker(ch, request);
+      WebSocketServerHandshaker shake = createHandshaker(conn, ch, request);
       if (shake == null) {
         return;
       }
@@ -740,13 +740,14 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
       super.handlerAdded(ctx);
-      conn = new ServerConnection(holder.context.owner(),
+      ServerConnection conn = new ServerConnection(holder.context.owner(),
           sslHelper,
           options,
           ctx,
           holder.context,
           serverOrigin,
           metrics);
+      setConnection(conn);
       conn.requestHandler(holder.handler.requesthHandler);
       connectionMap.put(ch, conn);
       holder.context.executeFromIO(() -> {
@@ -761,11 +762,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void handleMessage(ServerConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    protected void handleMessage(ServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
       conn.handleMessage(msg);
     }
 
-    WebSocketServerHandshaker createHandshaker(Channel ch, HttpRequest request)  {
+    WebSocketServerHandshaker createHandshaker(ServerConnection conn, Channel ch, HttpRequest request)  {
       // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
       // it doesn't send a normal 'Connection: Upgrade' header. Instead it
       // sends: 'Connection: keep-alive, Upgrade'. Brilliant.

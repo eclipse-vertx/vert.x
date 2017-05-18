@@ -63,8 +63,9 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
-    conn = new ClientConnection(pool.version(), client, endpointMetric, ctx,
+    ClientConnection conn = new ClientConnection(pool.version(), client, endpointMetric, ctx,
       pool.ssl(), pool.host(), pool.port(), context, pool, metrics);
+    setConnection(conn);
     if (metrics != null) {
       context.executeFromIO(() -> {
         Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
@@ -84,10 +85,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   }
 
   @Override
-  protected void handleMessage(ClientConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
-    if (conn == null) {
-      return;
-    }
+  protected void handleMessage(ClientConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
       DecoderResult result = obj.decoderResult();

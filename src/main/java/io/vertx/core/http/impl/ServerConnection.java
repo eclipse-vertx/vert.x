@@ -221,7 +221,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
       return ws;
     }
     HttpServerImpl.ServerHandler serverHandler = (HttpServerImpl.ServerHandler) chctx.pipeline().get("handler");
-    handshaker = serverHandler.createHandshaker(chctx.channel(), nettyReq);
+    handshaker = serverHandler.createHandshaker(this, chctx.channel(), nettyReq);
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }

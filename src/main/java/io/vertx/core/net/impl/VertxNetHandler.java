@@ -20,9 +20,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -36,7 +33,6 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
   private final Channel ch;
   private final Map<Channel, C> connectionMap;
   private ChannelHandlerContext chctx;
-  private C conn;
 
   public VertxNetHandler(Channel ch, Function<ChannelHandlerContext, C> connectionFactory, Map<Channel, C> connectionMap) {
     this.ch = ch;
@@ -51,7 +47,7 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
-    conn = connectionFactory.apply(ctx);
+    setConnection(connectionFactory.apply(ctx));
   }
 
   ChannelHandlerContext context() {
@@ -59,16 +55,8 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
   }
 
   @Override
-  protected C getConnection() {
-    return conn;
-  }
-
-  @Override
-  protected C removeConnection() {
+  protected void removeConnection() {
     connectionMap.remove(ch);
-    C conn = this.conn;
-    this.conn = null;
-    return conn;
   }
 
   @Override
