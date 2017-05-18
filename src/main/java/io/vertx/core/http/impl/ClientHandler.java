@@ -23,12 +23,12 @@ import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.Map;
 
@@ -40,15 +40,38 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   private boolean closeFrameSent;
   private ContextImpl context;
   private ChannelHandlerContext chctx;
+  private Http1xPool pool;
+  private HttpClientImpl client;
+  private Object endpointMetric;
+  private HttpClientMetrics metrics;
 
-  public ClientHandler(Channel ch, ContextImpl context, Map<Channel, ClientConnection> connectionMap) {
+  public ClientHandler(Channel ch,
+                       ContextImpl context,
+                       Map<Channel, ClientConnection> connectionMap,
+                       Http1xPool pool,
+                       HttpClientImpl client,
+                       Object endpointMetric,
+                       HttpClientMetrics metrics) {
     super(connectionMap, ch);
     this.context = context;
+    this.pool = pool;
+    this.client = client;
+    this.endpointMetric = endpointMetric;
+    this.metrics = metrics;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
+    conn = new ClientConnection(pool.version(), client, endpointMetric, ctx,
+      pool.ssl(), pool.host(), pool.port(), context, pool, metrics);
+    if (metrics != null) {
+      context.executeFromIO(() -> {
+        Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+        conn.metric(metric);
+        metrics.endpointConnected(endpointMetric, metric);
+      });
+    }
   }
 
   public ChannelHandlerContext context() {

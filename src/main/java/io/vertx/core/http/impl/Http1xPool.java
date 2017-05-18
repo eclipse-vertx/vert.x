@@ -42,13 +42,22 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   private final boolean keepAlive;
   private final int pipeliningLimit;
   private final boolean ssl;
+  private final String host;
+  private final int port;
   private final HttpVersion version;
   private final Set<ClientConnection> allConnections = new HashSet<>();
   private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
   private final int maxSockets;
 
-  public Http1xPool(HttpClientImpl client, HttpClientMetrics metrics, HttpClientOptions options, ConnectionManager.ConnQueue queue,
-                    Map<Channel, HttpClientConnection> connectionMap, HttpVersion version, int maxSockets) {
+  public Http1xPool(HttpClientImpl client,
+                    HttpClientMetrics metrics,
+                    HttpClientOptions options,
+                    ConnectionManager.ConnQueue queue,
+                    Map<Channel, HttpClientConnection> connectionMap,
+                    HttpVersion version,
+                    int maxSockets,
+                    String host,
+                    int port) {
     this.queue = queue;
     this.version = version;
     this.client = client;
@@ -59,6 +68,20 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     this.ssl = options.isSsl();
     this.connectionMap = connectionMap;
     this.maxSockets = maxSockets;
+    this.host = host;
+    this.port = port;
+  }
+
+  boolean ssl() {
+    return ssl;
+  }
+
+  String host() {
+    return host;
+  }
+
+  int port() {
+    return port;
   }
 
   @Override
@@ -117,22 +140,24 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-    // Ugly : improve this
-    ClientHandler handler = ch.pipeline().get(ClientHandler.class);
-    ClientConnection conn = new ClientConnection(version, client, queue.metric, handler.context(),
-        ssl, host, port, context, this, metrics);
-    if (metrics != null) {
-      Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-      conn.metric(metric);
-      metrics.endpointConnected(queue.metric, metric);
-    }
-    handler.conn = conn;
+    ClientHandler handler = new ClientHandler(
+      ch,
+      context,
+      (Map) connectionMap,
+      this,
+      client,
+      queue.metric,
+      metrics);
+    ch.pipeline().addLast("handler", handler);
+    ClientConnection conn = handler.getConnection();
     synchronized (queue) {
       allConnections.add(conn);
     }
     connectionMap.put(ch, conn);
-    waiter.handleConnection(conn);
-    queue.deliverStream(conn, waiter);
+    context.executeFromIO(() -> {
+      waiter.handleConnection(conn);
+      queue.deliverStream(conn, waiter);
+    });
   }
 
   // Called if the connection is actually closed, OR the connection attempt failed - in the latter case
