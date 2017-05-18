@@ -22,7 +22,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
 import io.vertx.core.buffer.Buffer;
 
 import java.io.IOException;
@@ -88,9 +87,7 @@ public class Json {
    */
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
     try {
-      Buffer buf = Buffer.buffer();
-      mapper.writeValue(new ByteBufOutputStream(buf.getByteBuf()), obj);
-      return buf;
+      return Buffer.buffer(mapper.writeValueAsBytes(obj));
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
