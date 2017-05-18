@@ -586,7 +586,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void doMessageReceived(ServerConnection connection, ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected void handleMessage(ServerConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;
 
@@ -609,7 +609,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           if (wsRequest == null) {
             if (request instanceof FullHttpRequest) {
-              handshake((FullHttpRequest) request, ch, ctx);
+              handshake((FullHttpRequest) request, ch, chctx);
             } else {
               wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
               wsRequest.headers().set(request.headers());
@@ -652,7 +652,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           if (msg instanceof LastHttpContent) {
             FullHttpRequest req = wsRequest;
             wsRequest = null;
-            handshake(req, ch, ctx);
+            handshake(req, ch, chctx);
             return;
           }
         }
@@ -761,12 +761,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void channelRead(ServerConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
-      context.executeFromIO(() -> doMessageReceived(conn, chctx, msg));
-    }
-
-    @Override
-    protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected void handleMessage(ServerConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
       conn.handleMessage(msg);
     }
 

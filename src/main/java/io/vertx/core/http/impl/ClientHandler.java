@@ -84,7 +84,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   }
 
   @Override
-  protected void doMessageReceived(ClientConnection conn, ChannelHandlerContext ctx, Object msg) {
+  protected void handleMessage(ClientConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (conn == null) {
       return;
     }
@@ -124,7 +124,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
           break;
         case PING:
           // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-          ctx.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, frame.getBinaryData()));
+          chctx.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, frame.getBinaryData()));
           break;
         case PONG:
           // Just ignore it
@@ -133,7 +133,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
           if (!closeFrameSent) {
             // Echo back close frame and close the connection once it was written.
             // This is specified in the WebSockets RFC 6455 Section  5.4.1
-            ctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
+            chctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
             closeFrameSent = true;
           }
           break;

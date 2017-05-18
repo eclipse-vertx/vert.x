@@ -72,18 +72,7 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
   }
 
   @Override
-  protected void channelRead(C conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
-    if (conn != null) {
-      context.executeFromIO(() -> handleMsgReceived(conn, msg));
-    } else {
-      // just discard
-    }
-  }
-
-  protected abstract void handleMsgReceived(C conn, Object msg);
-
-  @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+  protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof ByteBuf) {
       return safeBuffer((ByteBuf) msg, allocator);
     }

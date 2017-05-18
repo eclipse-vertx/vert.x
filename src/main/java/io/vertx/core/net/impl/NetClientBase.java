@@ -230,17 +230,15 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
     ContextImpl.setContext(context);
     VertxNetHandler<C> handler = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, host, port, context, sslHelper, metrics), socketMap) {
       @Override
-      protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+      protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
         return NetClientBase.this.safeObject(msg, allocator);
       }
-
       @Override
-      protected void handleMsgReceived(C conn, Object msg) {
-        NetClientBase.this.handleMsgReceived(conn, msg);
+      protected void handleMessage(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+        NetClientBase.this.handleMsgReceived(connection, msg);
       }
     };
     ch.pipeline().addLast("handler", handler);
-
 
     // Need to set context before constructor is called as writehandler registration needs this
     C sock = handler.getConnection();

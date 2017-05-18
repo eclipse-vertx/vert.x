@@ -328,11 +328,11 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
     ContextImpl.setContext(handler.context);
     VertxNetHandler<C> nh = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, handler.context, sslHelper, metrics), socketMap) {
       @Override
-      protected void handleMsgReceived(C conn, Object msg) {
-        NetServerBase.this.handleMsgReceived(conn, msg);
+      protected void handleMessage(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+        NetServerBase.this.handleMsgReceived(connection, msg);
       }
       @Override
-      protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+      protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
         return NetServerBase.this.safeObject(msg, allocator);
       }
     };

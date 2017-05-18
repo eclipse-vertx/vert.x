@@ -64,21 +64,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    ContextImpl context = getContext(conn);
-    context.executeFromIO(() -> {
-      conn.startRead();
-      doMessageReceived(conn, chctx, safeObject(msg, chctx.alloc()));
-    });
-  }
-
-  @Override
-  protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+  protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof HttpContent) {
       HttpContent content = (HttpContent) msg;
       ByteBuf buf = content.content();
@@ -114,7 +100,5 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     }
     return msg;
   }
-
-  protected abstract void doMessageReceived(C connection, ChannelHandlerContext ctx, Object msg) throws Exception;
 
 }

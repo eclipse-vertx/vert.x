@@ -613,9 +613,9 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       }
 
       @Override
-      protected void handleMsgReceived(NetSocketImpl conn, Object msg) {
+      protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        conn.handleDataReceived(Buffer.buffer(buf));
+        connection.handleDataReceived(Buffer.buffer(buf));
       }
     });
     return socket;

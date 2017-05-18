@@ -51,12 +51,12 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connec
   }
 
   @Override
-  protected void channelRead(final DatagramSocketImpl.Connection server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
-    context.executeFromIO(() -> server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg));
+  protected void handleMessage(final DatagramSocketImpl.Connection server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
+    server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg);
   }
 
   @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+  protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof DatagramPacket) {
       DatagramPacket packet = (DatagramPacket) msg;
       ByteBuf content = packet.content();

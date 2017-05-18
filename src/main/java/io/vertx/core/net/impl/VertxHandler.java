@@ -62,10 +62,8 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
-    if (conn != null) {
-      ContextImpl context = getContext(conn);
-      context.executeFromIO(conn::handleInterestedOpsChanged);
-    }
+    ContextImpl context = getContext(conn);
+    context.executeFromIO(conn::handleInterestedOpsChanged);
   }
 
   @Override
@@ -92,34 +90,27 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
     C connection = removeConnection();
-    if (connection != null) {
-      ContextImpl context = getContext(connection);
-      context.executeFromIO(connection::handleClosed);
-    }
+    ContextImpl context = getContext(connection);
+    context.executeFromIO(connection::handleClosed);
   }
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
-    if (conn != null) {
-      ContextImpl context = getContext(conn);
-      context.executeFromIO(conn::endReadAndFlush);
-    }
+    ContextImpl context = getContext(conn);
+    context.executeFromIO(conn::endReadAndFlush);
   }
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    Object message = safeObject(msg, chctx.alloc());
+    Object message = decode(msg, chctx.alloc());
     C connection = getConnection();
-
     ContextImpl context;
-    if (connection != null) {
-      context = getContext(connection);
-      context.executeFromIO(connection::startRead);
-    } else {
-      context = null;
-    }
-    channelRead(connection, context, chctx, message);
+    context = getContext(connection);
+    context.executeFromIO(() -> {
+      connection.startRead();
+      handleMessage(connection, context, chctx, message);
+    });
   }
 
   @Override
@@ -130,7 +121,13 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     ctx.fireUserEventTriggered(evt);
   }
 
-  protected abstract void channelRead(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception;
+  protected abstract void handleMessage(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception;
 
-  protected abstract Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception;
+  /**
+   * Decode the message before passing it to the channel
+   *
+   * @param msg the message to decode
+   * @return the decoded message
+   */
+  protected abstract Object decode(Object msg, ByteBufAllocator allocator) throws Exception;
 }
