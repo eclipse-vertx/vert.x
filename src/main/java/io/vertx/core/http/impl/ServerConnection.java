@@ -268,21 +268,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
       pipeline.remove("chunkedWriter");
     }
 
-    chctx.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket, connectionMap) {
-      @Override
-      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
-        // remove from the real mapping
-        connectionMap.remove(chctx.channel());
-        super.exceptionCaught(chctx, t);
-      }
-
-      @Override
-      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-        // remove from the real mapping
-        connectionMap.remove(chctx.channel());
-        super.channelInactive(chctx);
-      }
-
+    chctx.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
@@ -297,7 +283,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
         ByteBuf buf = (ByteBuf) msg;
         connection.handleDataReceived(Buffer.buffer(buf));
       }
-    });
+    }.removeHandler(sock -> connectionMap.remove(chctx.channel())));
 
     // check if the encoder can be removed yet or not.
     chctx.pipeline().remove("httpEncoder");

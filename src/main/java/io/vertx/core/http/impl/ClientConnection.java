@@ -421,11 +421,6 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     } else if (currentResponse != null) {
       currentResponse.handleException(e);
     }
-
-    // The connection has been closed - tell the pool about it, this allows the pool to create more
-    // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
-    // gets the closed on, they will check if it's closed and if so get another one.
-    pool.connectionClosed(this);
   }
 
   public ContextImpl getContext() {
@@ -585,21 +580,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket, connectionMap) {
-      @Override
-      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
-        // remove from the real mapping
-        pool.removeChannel(chctx.channel());
-        super.exceptionCaught(chctx, t);
-      }
-
-      @Override
-      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-        // remove from the real mapping
-        pool.removeChannel(chctx.channel());
-        super.channelInactive(chctx);
-      }
-
+    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
@@ -611,13 +592,14 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
         }
         super.channelRead(chctx, msg);
       }
-
       @Override
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
         connection.handleDataReceived(Buffer.buffer(buf));
       }
-    });
+    }.removeHandler(sock -> {
+      pool.removeChannel(chctx.channel());
+    }));
     return socket;
   }
 

@@ -24,6 +24,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextTask;
 
@@ -34,17 +35,47 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   private C conn;
   private ContextTask endReadAndFlush;
+  private Handler<C> addHandler;
+  private Handler<C> removeHandler;
 
+  /**
+   * Set the connection, this is usually called by subclasses when the channel is added to the pipeline.
+   *
+   * @param connection the connection
+   */
   protected void setConnection(C connection) {
     conn = connection;
     endReadAndFlush = conn::endReadAndFlush;
+    if (addHandler != null) {
+      addHandler.handle(connection);
+    }
+  }
+
+  /**
+   * Set an handler to be called when the connection is set on this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHandler<C> addHandler(Handler<C> handler) {
+    this.addHandler = handler;
+    return this;
+  }
+
+  /**
+   * Set an handler to be called when the connection is unset from this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHandler<C> removeHandler(Handler<C> handler) {
+    this.removeHandler = handler;
+    return this;
   }
 
   public C getConnection() {
     return conn;
   }
-
-  protected abstract void removeConnection();
 
   public static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
     if (buf == Unpooled.EMPTY_BUFFER) {
@@ -96,7 +127,9 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-    removeConnection();
+    if (removeHandler != null) {
+      removeHandler.handle(conn);
+    }
     ContextImpl context = conn.getContext();
     context.executeFromIO(conn::handleClosed);
   }

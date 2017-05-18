@@ -47,12 +47,11 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
 
   public ClientHandler(Channel ch,
                        ContextImpl context,
-                       Map<Channel, ClientConnection> connectionMap,
                        Http1xPool pool,
                        HttpClientImpl client,
                        Object endpointMetric,
                        HttpClientMetrics metrics) {
-    super(connectionMap, ch);
+    super(ch);
     this.context = context;
     this.pool = pool;
     this.client = client;

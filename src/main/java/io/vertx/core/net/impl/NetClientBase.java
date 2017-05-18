@@ -227,8 +227,10 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<C>> connectHandler, String host, int port) {
 
+    // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
-    VertxNetHandler<C> handler = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, host, port, context, sslHelper, metrics), socketMap) {
+
+    VertxNetHandler<C> handler = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, host, port, context, sslHelper, metrics)) {
       @Override
       protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
         return NetClientBase.this.safeObject(msg, allocator);
@@ -238,17 +240,19 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
         NetClientBase.this.handleMsgReceived(connection, msg);
       }
     };
-    ch.pipeline().addLast("handler", handler);
-
-    // Need to set context before constructor is called as writehandler registration needs this
-    C sock = handler.getConnection();
-    socketMap.put(ch, sock);
-    context.executeFromIO(() -> {
-      if (metrics != null) {
-        sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
-      }
-      connectHandler.handle(Future.succeededFuture(sock));
+    handler.addHandler(sock -> {
+      socketMap.put(ch, sock);
+      context.executeFromIO(() -> {
+        if (metrics != null) {
+          sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+        }
+        connectHandler.handle(Future.succeededFuture(sock));
+      });
     });
+    handler.removeHandler(conn -> {
+      socketMap.remove(ch);
+    });
+    ch.pipeline().addLast("handler", handler);
   }
 
   private void failed(ContextImpl context, Channel ch, Throwable th, Handler<AsyncResult<C>> connectHandler) {

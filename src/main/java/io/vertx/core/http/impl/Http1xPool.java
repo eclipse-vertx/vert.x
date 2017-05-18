@@ -143,17 +143,19 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     ClientHandler handler = new ClientHandler(
       ch,
       context,
-      (Map) connectionMap,
       this,
       client,
       queue.metric,
       metrics);
+    handler.addHandler(conn -> {
+      synchronized (queue) {
+        allConnections.add(conn);
+      }
+      connectionMap.put(ch, conn);
+    });
+    handler.removeHandler(this::connectionClosed);
     ch.pipeline().addLast("handler", handler);
     ClientConnection conn = handler.getConnection();
-    synchronized (queue) {
-      allConnections.add(conn);
-    }
-    connectionMap.put(ch, conn);
     context.executeFromIO(() -> {
       waiter.handleConnection(conn);
       queue.deliverStream(conn, waiter);
@@ -162,7 +164,10 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
   // Called if the connection is actually closed, OR the connection attempt failed - in the latter case
   // conn will be null
-  public synchronized void connectionClosed(ClientConnection conn) {
+  // The connection has been closed - tell the pool about it, this allows the pool to create more
+  // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
+  // gets the closed on, they will check if it's closed and if so get another one.
+  private synchronized void connectionClosed(ClientConnection conn) {
     synchronized (queue) {
       allConnections.remove(conn);
       availableConnections.remove(conn);

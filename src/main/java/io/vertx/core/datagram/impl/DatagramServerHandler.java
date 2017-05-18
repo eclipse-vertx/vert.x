@@ -40,10 +40,6 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connec
   }
 
   @Override
-  protected void removeConnection() {
-  }
-
-  @Override
   protected void handleMessage(final DatagramSocketImpl.Connection server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
     server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg);
   }

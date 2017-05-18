@@ -43,17 +43,10 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     return safeBuffer(holder.content(), allocator);
   }
 
-  protected Map<Channel, C> connectionMap;
   protected final Channel ch;
 
-  protected VertxHttpHandler(Map<Channel, C> connectionMap, Channel ch) {
-    this.connectionMap = connectionMap;
+  protected VertxHttpHandler(Channel ch) {
     this.ch = ch;
-  }
-
-  @Override
-  protected void removeConnection() {
-    connectionMap.remove(ch);
   }
 
   @Override

@@ -31,17 +31,15 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
 
   private final Function<ChannelHandlerContext, C> connectionFactory;
   private final Channel ch;
-  private final Map<Channel, C> connectionMap;
   private ChannelHandlerContext chctx;
 
-  public VertxNetHandler(Channel ch, Function<ChannelHandlerContext, C> connectionFactory, Map<Channel, C> connectionMap) {
+  public VertxNetHandler(Channel ch, Function<ChannelHandlerContext, C> connectionFactory) {
     this.ch = ch;
-    this.connectionMap = connectionMap;
     this.connectionFactory = connectionFactory;
   }
 
-  public VertxNetHandler(Channel ch, C conn, Map<Channel, C> connectionMap) {
-    this(ch, ctx -> conn, connectionMap);
+  public VertxNetHandler(Channel ch, C conn) {
+    this(ch, ctx -> conn);
   }
 
   @Override
@@ -52,11 +50,6 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
 
   ChannelHandlerContext context() {
     return chctx;
-  }
-
-  @Override
-  protected void removeConnection() {
-    connectionMap.remove(ch);
   }
 
   @Override

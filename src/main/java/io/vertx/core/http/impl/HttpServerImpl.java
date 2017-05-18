@@ -407,13 +407,21 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
     HandlerHolder<HttpHandlers> holder = reqHandlerManager.chooseHandler(pipeline.channel().eventLoop());
+    ServerHandler handler;
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
       // some casting and a header check
-      pipeline.addLast("handler", new ServerHandler(sslHelper, options, serverOrigin, connectionMap, pipeline.channel(), holder, metrics));
+      handler = new ServerHandler(sslHelper, options, serverOrigin, pipeline.channel(), holder, metrics);
     } else {
-      pipeline.addLast("handler", new ServerHandleWithWebSockets(sslHelper, options, serverOrigin, pipeline.channel(), holder, metrics));
+      handler = new ServerHandleWithWebSockets(sslHelper, options, serverOrigin, pipeline.channel(), holder, metrics);
     }
+    handler.addHandler(conn -> {
+      connectionMap.put(pipeline.channel(), conn);
+    });
+    handler.removeHandler(conn -> {
+      connectionMap.remove(pipeline.channel());
+    });
+    pipeline.addLast("handler", handler);
   }
 
   public void handleHttp2(Channel ch) {
@@ -582,7 +590,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private FullHttpRequest wsRequest;
 
     public ServerHandleWithWebSockets(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Channel ch, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
-      super(sslHelper, options, serverOrigin, HttpServerImpl.this.connectionMap, ch, holder, metrics);
+      super(sslHelper, options, serverOrigin, ch, holder, metrics);
     }
 
     @Override
@@ -727,8 +735,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private final HttpServerMetrics metrics;
     private final HandlerHolder<HttpHandlers> holder;
 
-    public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Map<Channel, ServerConnection> connectionMap, Channel ch, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
-      super(connectionMap, ch);
+    public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Channel ch, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
+      super(ch);
 
       this.holder = holder;
       this.metrics = metrics;
@@ -749,7 +757,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           metrics);
       setConnection(conn);
       conn.requestHandler(holder.handler.requesthHandler);
-      connectionMap.put(ch, conn);
       holder.context.executeFromIO(() -> {
         if (metrics != null) {
           conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));

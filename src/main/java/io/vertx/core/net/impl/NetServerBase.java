@@ -48,7 +48,6 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 /**
  *
@@ -326,7 +325,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
     }
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(handler.context);
-    VertxNetHandler<C> nh = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, handler.context, sslHelper, metrics), socketMap) {
+    VertxNetHandler<C> nh = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, handler.context, sslHelper, metrics)) {
       @Override
       protected void handleMessage(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         NetServerBase.this.handleMsgReceived(connection, msg);
@@ -336,9 +335,10 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
         return NetServerBase.this.safeObject(msg, allocator);
       }
     };
+    nh.addHandler(conn -> socketMap.put(ch, conn));
+    nh.removeHandler(conn -> socketMap.remove(ch));
     ch.pipeline().addLast("handler", nh);
     C sock = nh.getConnection();
-    socketMap.put(ch, sock);
     handler.context.executeFromIO(() -> {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));

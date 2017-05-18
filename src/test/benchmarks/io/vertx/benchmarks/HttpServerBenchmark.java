@@ -90,7 +90,6 @@ public class HttpServerBenchmark extends BenchmarkBase {
   public void setup() {
     vertx = (VertxInternal) Vertx.vertx();
     HttpServerOptions options = new HttpServerOptions();
-    Map<Channel, ServerConnection> connectionMap = new HashMap<>();
     vertxChannel = new EmbeddedChannel(
         new HttpRequestDecoder(
             options.getMaxInitialLineLength(),
@@ -112,7 +111,7 @@ public class HttpServerBenchmark extends BenchmarkBase {
       response.end(HELLO_WORLD_BUFFER);
     };
     HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null));
-    HttpServerImpl.ServerHandler handler = new HttpServerImpl.ServerHandler(null, new HttpServerOptions(), "localhost", connectionMap, vertxChannel, holder, null);
+    HttpServerImpl.ServerHandler handler = new HttpServerImpl.ServerHandler(null, new HttpServerOptions(), "localhost", vertxChannel, holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
     GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
         "GET / HTTP/1.1\r\n" +
