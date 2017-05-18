@@ -502,15 +502,23 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       if (resultHandler != null) {
         ContextImpl ctx = vertx.getOrCreateContext();
-        channelFuture.addListener(future -> {
-          AsyncResult<Void> res;
-          if (future.isSuccess()) {
-            res = Future.succeededFuture();
-          } else {
-            res = Future.failedFuture(future.cause());
-          }
-          ctx.runOnContext((v) -> resultHandler.handle(res));
-        });
+        // the channel might not be available if the client has already terminated the connection
+        if (channelFuture == null) {
+          ctx.runOnContext(v -> {
+            // schedule the failure return after the doSendFile method terminates
+            resultHandler.handle(Future.failedFuture("Channel Unavailable"));
+          });
+        } else {
+          channelFuture.addListener(future -> {
+            AsyncResult<Void> res;
+            if (future.isSuccess()) {
+              res = Future.succeededFuture();
+            } else {
+              res = Future.failedFuture(future.cause());
+            }
+            ctx.runOnContext((v) -> resultHandler.handle(res));
+          });
+        }
       }
 
       if (!keepAlive) {
