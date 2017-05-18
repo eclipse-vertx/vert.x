@@ -3537,17 +3537,7 @@ public class Http1xTest extends HttpTest {
     final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(1000000));
 
     server.requestHandler(req -> {
-      vertx.executeBlocking(future -> {
-
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-
-        }
-
-        future.complete();
-
-      }, false, res -> {
+      req.connection().closeHandler(v -> {
         req.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/pdf");
 
         try {
