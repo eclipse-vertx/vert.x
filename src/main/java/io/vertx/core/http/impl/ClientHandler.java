@@ -16,7 +16,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
@@ -29,8 +28,6 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -45,13 +42,11 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   private Object endpointMetric;
   private HttpClientMetrics metrics;
 
-  public ClientHandler(Channel ch,
-                       ContextImpl context,
+  public ClientHandler(ContextImpl context,
                        Http1xPool pool,
                        HttpClientImpl client,
                        Object endpointMetric,
                        HttpClientMetrics metrics) {
-    super(ch);
     this.context = context;
     this.pool = pool;
     this.client = client;

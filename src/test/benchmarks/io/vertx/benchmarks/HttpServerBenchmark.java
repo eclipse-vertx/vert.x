@@ -111,7 +111,7 @@ public class HttpServerBenchmark extends BenchmarkBase {
       response.end(HELLO_WORLD_BUFFER);
     };
     HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null));
-    HttpServerImpl.ServerHandler handler = new HttpServerImpl.ServerHandler(null, new HttpServerOptions(), "localhost", vertxChannel, holder, null);
+    HttpServerImpl.ServerHandler handler = new HttpServerImpl.ServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
     GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
         "GET / HTTP/1.1\r\n" +

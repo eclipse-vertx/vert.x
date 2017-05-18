@@ -411,9 +411,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
       // some casting and a header check
-      handler = new ServerHandler(sslHelper, options, serverOrigin, pipeline.channel(), holder, metrics);
+      handler = new ServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     } else {
-      handler = new ServerHandleWithWebSockets(sslHelper, options, serverOrigin, pipeline.channel(), holder, metrics);
+      handler = new ServerHandleWithWebSockets(sslHelper, options, serverOrigin, holder, metrics);
     }
     handler.addHandler(conn -> {
       connectionMap.put(pipeline.channel(), conn);
@@ -589,12 +589,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private boolean closeFrameSent;
     private FullHttpRequest wsRequest;
 
-    public ServerHandleWithWebSockets(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Channel ch, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
-      super(sslHelper, options, serverOrigin, ch, holder, metrics);
+    public ServerHandleWithWebSockets(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
+      super(sslHelper, options, serverOrigin, holder, metrics);
     }
 
     @Override
     protected void handleMessage(ServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      Channel ch = chctx.channel();
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;
 
@@ -735,9 +736,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private final HttpServerMetrics metrics;
     private final HandlerHolder<HttpHandlers> holder;
 
-    public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, Channel ch, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
-      super(ch);
-
+    public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
       this.holder = holder;
       this.metrics = metrics;
       this.sslHelper = sslHelper;

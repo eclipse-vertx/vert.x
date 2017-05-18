@@ -43,12 +43,6 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     return safeBuffer(holder.content(), allocator);
   }
 
-  protected final Channel ch;
-
-  protected VertxHttpHandler(Channel ch) {
-    this.ch = ch;
-  }
-
   @Override
   protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof HttpContent) {
