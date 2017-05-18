@@ -43,10 +43,6 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   protected abstract void removeConnection();
 
-  protected ContextImpl getContext(C connection) {
-    return connection.getContext();
-  }
-
   public static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
     if (buf == Unpooled.EMPTY_BUFFER) {
       return buf;
@@ -70,7 +66,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
-    ContextImpl context = getContext(conn);
+    ContextImpl context = conn.getContext();
     context.executeFromIO(conn::handleInterestedOpsChanged);
   }
 
@@ -80,7 +76,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
     C connection = getConnection();
     if (connection != null) {
-      ContextImpl context = getContext(connection);
+      ContextImpl context = conn.getContext();
       context.executeFromIO(() -> {
         try {
           if (ch.isOpen()) {
@@ -98,26 +94,24 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
     removeConnection();
-    ContextImpl context = getContext(conn);
+    ContextImpl context = conn.getContext();
     context.executeFromIO(conn::handleClosed);
   }
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    C conn = getConnection();
-    ContextImpl context = getContext(conn);
+    ContextImpl context = conn.getContext();
     context.executeFromIO(conn::endReadAndFlush);
   }
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     Object message = decode(msg, chctx.alloc());
-    C connection = getConnection();
     ContextImpl context;
-    context = getContext(connection);
+    context = conn.getContext();
     context.executeFromIO(() -> {
-      connection.startRead();
-      handleMessage(connection, context, chctx, message);
+      conn.startRead();
+      handleMessage(conn, context, chctx, message);
     });
   }
 

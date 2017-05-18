@@ -80,11 +80,6 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   }
 
   @Override
-  protected ContextImpl getContext(ClientConnection connection) {
-    return context;
-  }
-
-  @Override
   protected void handleMessage(ClientConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
