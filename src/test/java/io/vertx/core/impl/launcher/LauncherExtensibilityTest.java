@@ -21,10 +21,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.annotations.Name;
+import io.vertx.core.impl.launcher.commands.BareCommand;
 import io.vertx.core.impl.launcher.commands.CommandTestBase;
 import io.vertx.core.impl.launcher.commands.HttpTestVerticle;
 import io.vertx.core.impl.launcher.commands.RunCommandTest;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.launcher.CommandFactory;
 import io.vertx.core.spi.launcher.DefaultCommand;
 import io.vertx.core.spi.launcher.DefaultCommandFactory;
@@ -32,6 +34,8 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -111,7 +115,11 @@ public class LauncherExtensibilityTest extends CommandTestBase {
   }
 
   @Test
-  public void testThatCustomLauncherCanCustomizeTheClusteredOption() {
+  public void testThatCustomLauncherCanCustomizeTheClusteredOption() throws InterruptedException {
+
+    AtomicBoolean asv = new AtomicBoolean();
+    AtomicBoolean bsv = new AtomicBoolean();
+
     Launcher myLauncher = new Launcher() {
       @Override
       protected String getMainVerticle() {
@@ -127,6 +135,16 @@ public class LauncherExtensibilityTest extends CommandTestBase {
       public void beforeStartingVertx(VertxOptions options) {
         options.setClustered(true);
       }
+
+      @Override
+      public void afterStoppingVertx() {
+        asv.set(true);
+      }
+
+      @Override
+      public void beforeStoppingVertx(Vertx vertx) {
+        bsv.set(vertx != null);
+      }
     };
 
     myLauncher.dispatch(new String[0]);
@@ -139,6 +157,12 @@ public class LauncherExtensibilityTest extends CommandTestBase {
     });
 
     assertThat(this.vertx.isClustered()).isTrue();
+
+    BareCommand.getTerminationRunnable(vertx, LoggerFactory.getLogger("foo"), () -> asv.set(true)).run();
+
+    assertThat(bsv.get()).isTrue();
+    assertThat(asv.get()).isTrue();
+    vertx = null;
   }
 
   @Test

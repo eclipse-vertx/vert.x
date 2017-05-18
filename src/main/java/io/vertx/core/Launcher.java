@@ -94,6 +94,16 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
 
   }
 
+  @Override
+  public void beforeStoppingVertx(Vertx vertx) {
+
+  }
+
+  @Override
+  public void afterStoppingVertx() {
+
+  }
+
   /**
    * A deployment failure has been encountered. You can override this method to customize the behavior.
    * By default it closes the `vertx` instance.
