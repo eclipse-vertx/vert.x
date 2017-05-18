@@ -184,16 +184,6 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
         ch.pipeline().addLast("ssl", sslHandler);
       }
       initChannel(pipeline);
-      pipeline.addLast("handler", new VertxNetHandler<C>(ch, socketMap) {
-        @Override
-        protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-          return NetClientBase.this.safeObject(msg, allocator);
-        }
-        @Override
-        protected void handleMsgReceived(C conn, Object msg) {
-          NetClientBase.this.handleMsgReceived(conn, msg);
-        }
-      });
     };
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
@@ -236,11 +226,24 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
   }
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<C>> connectHandler, String host, int port) {
-    // Need to set context before constructor is called as writehandler registration needs this
+
     ContextImpl.setContext(context);
-    VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
-    C sock = createConnection(vertx, handler.context(), host, port, context, sslHelper, metrics);
-    handler.conn = sock;
+    VertxNetHandler<C> handler = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, host, port, context, sslHelper, metrics), socketMap) {
+      @Override
+      protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+        return NetClientBase.this.safeObject(msg, allocator);
+      }
+
+      @Override
+      protected void handleMsgReceived(C conn, Object msg) {
+        NetClientBase.this.handleMsgReceived(conn, msg);
+      }
+    };
+    ch.pipeline().addLast("handler", handler);
+
+
+    // Need to set context before constructor is called as writehandler registration needs this
+    C sock = handler.getConnection();
     socketMap.put(ch, sock);
     context.executeFromIO(() -> {
       if (metrics != null) {
