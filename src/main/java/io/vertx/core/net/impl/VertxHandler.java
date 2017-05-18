@@ -25,6 +25,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextTask;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -32,9 +33,11 @@ import io.vertx.core.impl.ContextImpl;
 public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
   private C conn;
+  private ContextTask endReadAndFlush;
 
   protected void setConnection(C connection) {
     conn = connection;
+    endReadAndFlush = conn::endReadAndFlush;
   }
 
   public C getConnection() {
@@ -101,7 +104,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     ContextImpl context = conn.getContext();
-    context.executeFromIO(conn::endReadAndFlush);
+    context.executeFromIO(endReadAndFlush);
   }
 
   @Override
