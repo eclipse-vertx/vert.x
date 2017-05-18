@@ -542,6 +542,28 @@ public abstract class EventBusTestBase extends VertxTestBase {
     awaitLatch(closeLatch);
   }
 
+  @Test
+  public void testMessageBodyInterceptor() throws Exception {
+    String content = TestUtils.randomUnicodeString(13);
+    startNodes(2);
+    waitFor(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    vertices[0].eventBus().registerCodec(new StringLengthCodec()).<Integer>consumer("whatever", msg -> {
+      assertEquals(content.length(), (int) msg.body());
+      complete();
+    }).completionHandler(ar -> latch.countDown());
+    awaitLatch(latch);
+    StringLengthCodec codec = new StringLengthCodec();
+    vertices[1].eventBus().registerCodec(codec).addInterceptor(sc -> {
+      if ("whatever".equals(sc.message().address())) {
+        assertEquals(content, sc.sentBody());
+        complete();
+      }
+      sc.next();
+    }).send("whatever", content, new DeliveryOptions().setCodecName(codec.name()));
+    await();
+  }
+
   protected <T> void testSend(T val) {
     testSend(val, null);
   }
@@ -770,4 +792,31 @@ public abstract class EventBusTestBase extends VertxTestBase {
     }
   }
 
+  public static class StringLengthCodec implements MessageCodec<String, Integer> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, String s) {
+      buffer.appendInt(s.length());
+    }
+
+    @Override
+    public Integer decodeFromWire(int pos, Buffer buffer) {
+      return buffer.getInt(pos);
+    }
+
+    @Override
+    public Integer transform(String s) {
+      return s.length();
+    }
+
+    @Override
+    public String name() {
+      return getClass().getName();
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return -1;
+    }
+  }
 }
