@@ -17,7 +17,6 @@ package io.vertx.benchmarks;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -41,8 +40,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.HttpHandlers;
-import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.http.impl.ServerConnection;
+import io.vertx.core.http.impl.ServerHandler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
@@ -58,8 +56,6 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -111,7 +107,7 @@ public class HttpServerBenchmark extends BenchmarkBase {
       response.end(HELLO_WORLD_BUFFER);
     };
     HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null));
-    HttpServerImpl.ServerHandler handler = new HttpServerImpl.ServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
+    ServerHandler handler = new ServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
     GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
         "GET / HTTP/1.1\r\n" +

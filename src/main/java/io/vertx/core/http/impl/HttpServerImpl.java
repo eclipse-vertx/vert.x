@@ -47,7 +47,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
-import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -62,7 +61,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServer;
@@ -728,85 +726,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  public static class ServerHandler extends VertxHttpHandler<ServerConnection> {
-
-    private final SSLHelper sslHelper;
-    private final HttpServerOptions options;
-    private final String serverOrigin;
-    private final HttpServerMetrics metrics;
-    private final HandlerHolder<HttpHandlers> holder;
-
-    public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
-      this.holder = holder;
-      this.metrics = metrics;
-      this.sslHelper = sslHelper;
-      this.options = options;
-      this.serverOrigin = serverOrigin;
-    }
-
-    @Override
-    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-      super.handlerAdded(ctx);
-      ServerConnection conn = new ServerConnection(holder.context.owner(),
-          sslHelper,
-          options,
-          ctx,
-          holder.context,
-          serverOrigin,
-          metrics);
-      setConnection(conn);
-      conn.requestHandler(holder.handler.requesthHandler);
-      holder.context.executeFromIO(() -> {
-        if (metrics != null) {
-          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-        }
-        Handler<HttpConnection> connHandler = holder.handler.connectionHandler;
-        if (connHandler != null) {
-          connHandler.handle(conn);
-        }
-      });
-    }
-
-    @Override
-    protected void handleMessage(ServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
-      conn.handleMessage(msg);
-    }
-
-    WebSocketServerHandshaker createHandshaker(ServerConnection conn, Channel ch, HttpRequest request)  {
-      // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
-      // it doesn't send a normal 'Connection: Upgrade' header. Instead it
-      // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
-      String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
-      if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
-        sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
-        return null;
-      }
-
-      if (request.getMethod() != HttpMethod.GET) {
-        sendError(null, METHOD_NOT_ALLOWED, ch);
-        return null;
-      }
-
-      try {
-
-        WebSocketServerHandshakerFactory factory =
-            new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), conn.options.getWebsocketSubProtocols(), false,
-                conn.options.getMaxWebsocketFrameSize(), conn.options.isAcceptUnmaskedFrames());
-        WebSocketServerHandshaker shake = factory.newHandshaker(request);
-
-        if (shake == null) {
-          log.error("Unrecognised websockets handshake");
-          WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
-        }
-
-        return shake;
-      } catch (Exception e) {
-        throw new VertxException(e);
-      }
-    }
-  }
-
-  private static void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
+  static void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
     FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
     if (status.code() == METHOD_NOT_ALLOWED.code()) {
       // SockJS requires this
@@ -822,7 +742,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     ch.writeAndFlush(resp);
   }
 
-  private static String getWebSocketLocation(ChannelPipeline pipeline, HttpRequest req) throws Exception {
+  static String getWebSocketLocation(ChannelPipeline pipeline, HttpRequest req) throws Exception {
     String prefix;
     if (pipeline.get(SslHandler.class) == null) {
       prefix = "ws://";
