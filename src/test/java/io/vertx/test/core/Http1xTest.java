@@ -21,10 +21,24 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.ConnectionPoolTooBusyException;
+import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
@@ -50,6 +64,7 @@ import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -58,6 +73,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -3596,6 +3612,70 @@ public class Http1xTest extends HttpTest {
         req.end();
       }
     }
+    await();
+  }
+
+  @Test
+  public void testHeadMDontAutomaticallySetContentHeaders() throws Exception {
+    testHeadMustNoAutomaticallySetContentHeaders(MultiMap.caseInsensitiveMultiMap(), respHeaders -> {
+      assertFalse(respHeaders.contains("Content-Length"));
+      assertFalse(respHeaders.contains("Transfer-Encoding"));
+    });
+  }
+
+  @Test
+  public void testHeadMustNotSendBodyWhenContentLengthSet() throws Exception {
+    MultiMap reqHeaders = MultiMap.caseInsensitiveMultiMap();
+    reqHeaders.set("Content-Length", "10");
+    testHeadMustNoAutomaticallySetContentHeaders(reqHeaders, respHeaders -> {
+      assertEquals(respHeaders.get("Content-Length"), " 10");
+      assertFalse(respHeaders.contains("Transfer-Encoding"));
+    });
+  }
+
+  @Ignore("See https://github.com/netty/netty/issues/6761")
+  @Test
+  public void testHeadMustNotSendBodyWhenTransferEncodingSet() throws Exception {
+    MultiMap reqHeaders = MultiMap.caseInsensitiveMultiMap();
+    reqHeaders.set("Transfer-Encoding", "chunked");
+    testHeadMustNoAutomaticallySetContentHeaders(reqHeaders, respHeaders -> {
+      assertEquals(respHeaders.get("Content-Length"), "10");
+      assertFalse(respHeaders.contains("Transfer-Encoding"));
+    });
+  }
+
+  private void testHeadMustNoAutomaticallySetContentHeaders(MultiMap reqHeaders, Consumer<MultiMap> headersChecker) throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.headers().addAll(reqHeaders);
+      resp.end();
+    });
+    startServer();
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, onSuccess(so -> {
+      so.write(
+          "HEAD / HTTP/1.1\r\n" +
+          "Connection: close\r\n" +
+          "\r\n");
+      LinkedList<String> records = new LinkedList<String>();
+      RecordParser parser = RecordParser.newDelimited("\r\n", record -> {
+        records.add(record.toString());
+        System.out.println("record = " + record);
+      });
+      so.handler(parser);
+      so.endHandler(v -> {
+        assertEquals("HTTP/1.1 200 OK", records.removeFirst());
+        assertTrue(records.removeLast().length() == 0);
+        MultiMap respHeaders = MultiMap.caseInsensitiveMultiMap();
+        records.forEach(record -> {
+          int index = record.indexOf(":");
+          String value = record.substring(0, index);
+          respHeaders.add(value, record.substring(index + 1));
+        });
+        headersChecker.accept(respHeaders);
+        testComplete();
+      });
+    }));
     await();
   }
 
