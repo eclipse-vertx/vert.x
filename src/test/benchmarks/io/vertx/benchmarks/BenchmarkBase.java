@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Warmup(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 2, timeUnit = TimeUnit.SECONDS)
-@Threads(16)
+@Threads(1)
 @BenchmarkMode(Mode.Throughput)
 @Fork(value = 1, jvmArgsAppend = {
     "-XX:+UseBiasedLocking",

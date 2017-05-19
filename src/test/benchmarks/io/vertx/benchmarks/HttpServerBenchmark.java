@@ -51,6 +51,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.text.DateFormat;
@@ -61,6 +62,7 @@ import java.util.Date;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @State(Scope.Thread)
+@Threads(16)
 public class HttpServerBenchmark extends BenchmarkBase {
 
   VertxInternal vertx;
