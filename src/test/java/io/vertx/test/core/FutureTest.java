@@ -509,6 +509,37 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testAnyListWithFutureGenerics() {
+    @SuppressWarnings("rawtypes")
+    List<Future> nonGenericFutureList = new ArrayList<>();
+    nonGenericFutureList.add(Future.failedFuture("failed"));
+    nonGenericFutureList.add(Future.succeededFuture(new Object()));
+    nonGenericFutureList.add(Future.succeededFuture(new FutureTest()));
+    CompositeFuture all = CompositeFuture.any(nonGenericFutureList);
+    new Checker<>(all).assertSucceeded(all);
+    
+    List<Future<Object>> genericObjectFutureList = new ArrayList<>();
+    genericObjectFutureList.add(Future.failedFuture("failed"));
+    genericObjectFutureList.add(Future.succeededFuture(new Object()));
+    genericObjectFutureList.add(Future.succeededFuture(new FutureTest()));
+    all = CompositeFuture.any(genericObjectFutureList);
+    new Checker<>(all).assertSucceeded(all);
+    
+    List<Future<?>> wildcardFutureList = new ArrayList<>();
+    wildcardFutureList.add(Future.failedFuture("failed"));
+    wildcardFutureList.add(Future.succeededFuture(new Object()));
+    wildcardFutureList.add(Future.succeededFuture(new FutureTest()));
+    all = CompositeFuture.any(wildcardFutureList);
+    new Checker<>(all).assertSucceeded(all);
+    
+    List<Future<VertxTestBase>> specificFutureList = new ArrayList<>();
+    specificFutureList.add(Future.failedFuture("failed"));
+    specificFutureList.add(Future.succeededFuture(new VertxTestBase()));
+    all = CompositeFuture.any(wildcardFutureList);
+    new Checker<>(all).assertSucceeded(all);
+  }
+  
+  @Test
   public void testJoinSucceeded() {
     testJoinSucceeded(CompositeFuture::join);
   }
@@ -606,6 +637,37 @@ public class FutureTest extends VertxTestBase {
     assertTrue(composite.isComplete());
   }
 
+  @Test
+  public void testJoinListWithFutureGenerics() {
+    @SuppressWarnings("rawtypes")
+    List<Future> nonGenericFutureList = new ArrayList<>();
+    nonGenericFutureList.add(Future.succeededFuture());
+    nonGenericFutureList.add(Future.succeededFuture(new Object()));
+    nonGenericFutureList.add(Future.succeededFuture(new FutureTest()));
+    CompositeFuture all = CompositeFuture.join(nonGenericFutureList);
+    new Checker<>(all).assertSucceeded(all);
+    
+    List<Future<Object>> genericObjectFutureList = new ArrayList<>();
+    genericObjectFutureList.add(Future.succeededFuture());
+    genericObjectFutureList.add(Future.succeededFuture(new Object()));
+    genericObjectFutureList.add(Future.succeededFuture(new FutureTest()));
+    all = CompositeFuture.join(genericObjectFutureList);
+    new Checker<>(all).assertSucceeded(all);
+    
+    List<Future<?>> wildcardFutureList = new ArrayList<>();
+    wildcardFutureList.add(Future.succeededFuture());
+    wildcardFutureList.add(Future.succeededFuture(new Object()));
+    wildcardFutureList.add(Future.succeededFuture(new FutureTest()));
+    all = CompositeFuture.join(wildcardFutureList);
+    new Checker<>(all).assertSucceeded(all);
+    
+    List<Future<VertxTestBase>> specificFutureList = new ArrayList<>();
+    specificFutureList.add(Future.succeededFuture(new FutureTest()));
+    specificFutureList.add(Future.succeededFuture(new VertxTestBase()));
+    all = CompositeFuture.join(wildcardFutureList);
+    new Checker<>(all).assertSucceeded(all);
+  }
+  
   @Test
   public void testCompositeFutureToList() {
     Future<String> f1 = Future.future();
