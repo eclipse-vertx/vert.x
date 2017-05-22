@@ -78,10 +78,10 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture all(List<Future> futures) {
+  static <X extends Future<?>> CompositeFuture all(List<X> futures) {
     return CompositeFutureImpl.all(futures.toArray(new Future[futures.size()]));
   }
-
+  
   /**
    * Return a composite future, succeeded when any futures is succeeded, failed when all futures are failed.
    * <p/>
