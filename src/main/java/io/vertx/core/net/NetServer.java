@@ -101,7 +101,7 @@ public interface NetServer extends Measured {
   NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler);
 
   /**
-   * Start listening on the specified port and host "0.0.0.0", ignoring post and host configured in the
+   * Start listening on the specified port and host "0.0.0.0", ignoring port and host configured in the
    * {@link io.vertx.core.net.NetServerOptions} used when creating the server.
    * <p>
    * Port {@code 0} can be specified meaning "choose an random port".
