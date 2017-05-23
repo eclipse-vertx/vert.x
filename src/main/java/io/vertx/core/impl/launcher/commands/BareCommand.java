@@ -18,6 +18,7 @@ package io.vertx.core.impl.launcher.commands;
 import io.vertx.core.*;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
+import io.vertx.core.logging.Logger;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.launcher.ExecutionContext;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Summary("Creates a bare instance of vert.x.")
 @Description("This command launches a vert.x instance but do not deploy any verticles. It will " +
-    "receive a verticle if another node of the cluster dies.")
+  "receive a verticle if another node of the cluster dies.")
 @Name("bare")
 public class BareCommand extends ClasspathHandler {
 
@@ -58,6 +59,8 @@ public class BareCommand extends ClasspathHandler {
 
   protected VertxOptions options;
 
+  protected Runnable finalAction;
+
   /**
    * Sets the quorum option.
    *
@@ -65,7 +68,7 @@ public class BareCommand extends ClasspathHandler {
    */
   @Option(longName = "quorum", argName = "q")
   @Description("Used in conjunction with -ha this specifies the minimum number of nodes in the cluster for any HA " +
-      "deploymentIDs to be active. Defaults to 1.")
+    "deploymentIDs to be active. Defaults to 1.")
   @DefaultValue("-1")
   public void setQuorum(int quorum) {
     this.quorum = quorum;
@@ -78,7 +81,7 @@ public class BareCommand extends ClasspathHandler {
    */
   @Option(longName = "hagroup", argName = "group")
   @Description("used in conjunction with -ha this specifies the HA group this node will join. There can be multiple " +
-      "HA groups in a cluster. Nodes will only failover to other nodes in the same group. Defaults to '__DEFAULT__'.")
+    "HA groups in a cluster. Nodes will only failover to other nodes in the same group. Defaults to '__DEFAULT__'.")
   @DefaultValue("__DEFAULT__")
   public void setHAGroup(String group) {
     this.haGroup = group;
@@ -103,7 +106,7 @@ public class BareCommand extends ClasspathHandler {
    */
   @Option(longName = "cluster-host", argName = "host")
   @Description("host to bind to for cluster communication. If this is not specified vert.x will attempt to choose one" +
-      " from the available interfaces.")
+    " from the available interfaces.")
   public void setClusterHost(String host) {
     this.clusterHost = host;
   }
@@ -129,6 +132,16 @@ public class BareCommand extends ClasspathHandler {
    */
   @Override
   public void run() {
+    this.run(null);
+  }
+
+  /**
+   * Starts the vert.x instance and sets the final action (called when vert.x is closed).
+   *
+   * @param action the action, can be {@code null}
+   */
+  public void run(Runnable action) {
+    this.finalAction = action;
     vertx = startVertx();
   }
 
@@ -192,7 +205,7 @@ public class BareCommand extends ClasspathHandler {
     } else {
       instance = create(options);
     }
-    addShutdownHook();
+    addShutdownHook(instance, log, finalAction);
     afterStartingVertx(instance);
     return instance;
   }
@@ -298,12 +311,28 @@ public class BareCommand extends ClasspathHandler {
   }
 
   /**
-   * Registers a shutdown hook closing the vert.x instance when the JVM is terminating.
+   * Registers a shutdown hook closing the given vert.x instance when the JVM is terminating.
+   * Optionally, an action can be executed after the termination of the {@link Vertx} instance.
+   *
+   * @param vertx  the vert.x instance, must not be {@code null}
+   * @param log    the log, must not be {@code null}
+   * @param action the action, may be {@code null}
    */
-  protected void addShutdownHook() {
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        CountDownLatch latch = new CountDownLatch(1);
+  protected static void addShutdownHook(Vertx vertx, Logger log, Runnable action) {
+    Runtime.getRuntime().addShutdownHook(new Thread(getTerminationRunnable(vertx, log, action)));
+  }
+
+  /**
+   * Gets the termination runnable used to close the Vert.x instance.
+   *
+   * @param vertx  the vert.x instance, must not be {@code null}
+   * @param log    the log, must not be {@code null}
+   * @param action the action, may be {@code null}
+   */
+  public static Runnable getTerminationRunnable(Vertx vertx, Logger log, Runnable action) {
+    return () -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      if (vertx != null) {
         vertx.close(ar -> {
           if (!ar.succeeded()) {
             log.error("Failure in stopping Vert.x", ar.cause());
@@ -314,11 +343,14 @@ public class BareCommand extends ClasspathHandler {
           if (!latch.await(2, TimeUnit.MINUTES)) {
             log.error("Timed out waiting to undeploy all");
           }
+          if (action != null) {
+            action.run();
+          }
         } catch (InterruptedException e) {
           throw new IllegalStateException(e);
         }
       }
-    });
+    };
   }
 
   /**
@@ -340,7 +372,7 @@ public class BareCommand extends ClasspathHandler {
       while (addresses.hasMoreElements()) {
         InetAddress address = addresses.nextElement();
         if (!address.isAnyLocalAddress() && !address.isMulticastAddress()
-            && !(address instanceof Inet6Address)) {
+          && !(address instanceof Inet6Address)) {
           return address.getHostAddress();
         }
       }

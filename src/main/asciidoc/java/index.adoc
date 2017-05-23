@@ -39,9 +39,11 @@ Let's discuss the different concepts and features in core.
 
 == In the beginning there was Vert.x
 
-NOTE: Much of this is Java specific - need someway of swapping in language specific parts
+////
+TODO Much of this is Java specific - need someway of swapping in language specific parts
+////
 
-You can't do much in Vert.x-land unless you can commune with a `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` object!
+You can't do much in Vert.x-land unless you can communicate with a `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` object!
 
 It's the control centre of Vert.x and is how you do pretty much everything, including creating clients and servers,
 getting a reference to the event bus, setting timers, as well as many other things.
@@ -54,8 +56,6 @@ If you're embedding Vert.x then you simply create an instance as follows:
 ----
 Vertx vertx = Vertx.vertx();
 ----
-
-If you're using Verticles
 
 NOTE: Most applications will only need a single Vert.x instance, but it's possible to create multiple Vert.x instances if you
 require, for example, isolation between the event bus or different groups of servers and clients.
@@ -291,7 +291,7 @@ An alternative way to run blocking code is to use a <<worker_verticles, worker v
 
 A worker verticle is always executed with a thread from the worker pool.
 
-By default blocking code is executed on the Vert.x blocking code pool, configured with `link:../../apidocs/io/vertx/core/VertxOptions.html#setWorkerPoolSize-int-[setWorkerPoolSize]`.
+By default blocking code is executed on the Vert.x worker pool, configured with `link:../../apidocs/io/vertx/core/VertxOptions.html#setWorkerPoolSize-int-[setWorkerPoolSize]`.
 
 Additional pools can be created for different purposes:
 
@@ -1235,14 +1235,15 @@ java io.vertx.core.Launcher run org.acme.MyVerticle --redeploy="**/*.class"  --l
 
 The redeployment process is implemented as follows. First your application is launched as a background application
 (with the `start` command). On matching file changes, the process is stopped and the application is restarted.
-This way avoids leaks.
+This avoids leaks, as the process is restarted.
 
 To enable the live redeploy, pass the `--redeploy` option to the `run` command. The `--redeploy` indicates the
 set of file to _watch_. This set can use Ant-style patterns (with `\**`, `*` and `?`). You can specify
 several sets by separating them using a comma (`,`). Patterns are relative to the current working directory.
 
 Parameters passed to the `run` command are passed to the application. Java Virtual Machine options can be
-configured using `--java-opts`.
+configured using `--java-opts`. For instance, to pass the the `conf` parameter or a system property, you need to
+use: `--java-opts="-conf=my-conf.json -Dkey=value"`
 
 The `--launcher-class` option determine with with _main_ class the application is launcher. It's generally
 `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]`, but you have use you own _main_.
@@ -1272,7 +1273,14 @@ java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./
 
 The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
 restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
-or `grunt` to update your resources.
+or `grunt` to update your resources. Don't forget that passing parameters to your application requires the
+`--java-opts` param:
+
+[source]
+----
+java -jar target/my-fat-jar.jar --redeploy="**/*.java" --on-redeploy="mvn package" --java-opts="-Dkey=val"
+java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./gradlew shadowJar' --java-opts="-Dkey=val"
+----
 
 The redeploy feature also supports the following settings:
 
@@ -1358,6 +1366,9 @@ Logger logger = LoggerFactory.getLogger(className);
 logger.info("something happened");
 logger.error("oops!", exception);
 ----
+
+CAUTION: Logging backends use different formats to represent replaceable tokens in parameterized messages.
+As a consequence, if you rely on Vert.x parameterized logging methods, you won't be able to switch backends without changing your code.
 
 [[netty-logging]]
 === Netty logging

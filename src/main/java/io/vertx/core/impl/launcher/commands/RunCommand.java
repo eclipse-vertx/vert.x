@@ -15,11 +15,11 @@
  */
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.*;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -250,11 +250,23 @@ public class RunCommand extends BareCommand {
       }
       afterConfigParsed(conf);
 
-      super.run();
+      super.run(this::afterStoppingVertx);
       if (vertx == null) {
         // Already logged.
         ExecUtils.exitBecauseOfVertxInitializationIssue();
       }
+
+      if (vertx instanceof VertxInternal) {
+        ((VertxInternal) vertx).addCloseHook(completionHandler -> {
+          try {
+            beforeStoppingVertx(vertx);
+            completionHandler.handle(Future.succeededFuture());
+          } catch (Exception e) {
+            completionHandler.handle(Future.failedFuture(e));
+          }
+        });
+      }
+
       deploymentOptions = new DeploymentOptions();
       configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
       deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
@@ -405,7 +417,7 @@ public class RunCommand extends BareCommand {
   protected JsonObject getConfiguration() {
     JsonObject conf;
     if (config != null) {
-      try (Scanner scanner = new Scanner(new File(config)).useDelimiter("\\A")) {
+      try (Scanner scanner = new Scanner(new File(config), "UTF-8").useDelimiter("\\A")) {
         String sconf = scanner.next();
         try {
           conf = new JsonObject(sconf);
@@ -440,6 +452,20 @@ public class RunCommand extends BareCommand {
     final Object main = executionContext.main();
     if (main instanceof VertxLifecycleHooks) {
       ((VertxLifecycleHooks) main).afterConfigParsed(config);
+    }
+  }
+
+  protected void beforeStoppingVertx(Vertx vertx) {
+    final Object main = executionContext.main();
+    if (main instanceof VertxLifecycleHooks) {
+      ((VertxLifecycleHooks) main).beforeStoppingVertx(vertx);
+    }
+  }
+
+  protected void afterStoppingVertx() {
+    final Object main = executionContext.main();
+    if (main instanceof VertxLifecycleHooks) {
+      ((VertxLifecycleHooks) main).afterStoppingVertx();
     }
   }
 }

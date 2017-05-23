@@ -38,12 +38,14 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
@@ -79,6 +81,7 @@ import java.util.stream.IntStream;
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static java.util.Collections.singletonList;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -283,6 +286,22 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(200, resp.statusCode());
         testComplete();
       }).putHeader("foo", "bar").end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testPutHeaderReplacesPreviousHeaders() throws Exception {
+    server.requestHandler(req ->
+      req.response()
+        .putHeader("Location", "http://example1.org")
+        .putHeader("location", "http://example2.org")
+        .end());
+    server.listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(singletonList("http://example2.org"), resp.headers().getAll("LocatioN"));
+        testComplete();
+       }).end();
     }));
     await();
   }
@@ -1125,19 +1144,27 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testRequestWrite() {
-    Buffer body = TestUtils.randomBuffer(1000);
-
+    int times = 3;
+    Buffer chunk = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> {
       req.bodyHandler(buff -> {
-        assertEquals(body, buff);
+        Buffer expected = Buffer.buffer();
+        for (int i = 0;i < times;i++) {
+          expected.appendBuffer(chunk);
+        }
+        assertEquals(expected, buff);
         testComplete();
       });
     });
-
     server.listen(onSuccess(s -> {
       HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.setChunked(true);
-      req.write(body);
+      int padding = 5;
+      for (int i = 0;i < times;i++) {
+        Buffer paddedChunk = TestUtils.leftPad(padding, chunk);
+        assertEquals(paddedChunk.getByteBuf().readerIndex(), padding);
+        req.write(paddedChunk);
+      }
       req.end();
     }));
 
@@ -3249,6 +3276,15 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectWithBody() throws Exception {
+    testFollowRedirectWithBody(Function.identity());
+  }
+
+  @Test
+  public void testFollowRedirectWithPaddedBody() throws Exception {
+    testFollowRedirectWithBody(buff -> TestUtils.leftPad(1, buff));
+  }
+
+  private void testFollowRedirectWithBody(Function<Buffer, Buffer> translator) throws Exception {
     Buffer expected = TestUtils.randomBuffer(2048);
     AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
@@ -3266,7 +3302,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
       testComplete();
-    }).setFollowRedirects(true).end(expected);
+    }).setFollowRedirects(true).end(translator.apply(expected));
     await();
   }
 
@@ -3451,24 +3487,27 @@ public abstract class HttpTest extends HttpTestBase {
   public void testFollowRedirectHost() throws Exception {
     String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
     waitFor(2);
-    AtomicInteger redirections = new AtomicInteger();
+    HttpServerOptions options = createBaseServerOptions();
+    int port = options.getPort() + 1;
+    options.setPort(port);
+    AtomicInteger redirects = new AtomicInteger();
     server.requestHandler(req -> {
-      switch (redirections.getAndIncrement()) {
-        case 0:
-          req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
-          break;
-        case 1:
-          assertEquals(scheme + "://the_host/whatever", req.absoluteURI());
-          req.response().end();
-          complete();
-          break;
-      }
+      redirects.incrementAndGet();
+      req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:" + port + "/whatever").end();
     });
     startServer();
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      assertEquals(scheme + "://the_host/whatever", resp.request().absoluteURI());
+    HttpServer server2 = vertx.createHttpServer(options);
+    server2.requestHandler(req -> {
+      assertEquals(1, redirects.get());
+      assertEquals(scheme + "://localhost:" + port + "/whatever", req.absoluteURI());
+      req.response().end();
       complete();
-    }).setFollowRedirects(true).setHost("the_host").end();
+    });
+    startServer(server2);
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(scheme + "://localhost:" + port + "/whatever", resp.request().absoluteURI());
+      complete();
+    }).setFollowRedirects(true).setHost("localhost:" + options.getPort()).end();
     await();
   }
 
@@ -3476,34 +3515,37 @@ public abstract class HttpTest extends HttpTestBase {
   public void testFollowRedirectWithCustomHandler() throws Exception {
     String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
     waitFor(2);
-    AtomicInteger redirections = new AtomicInteger();
+    HttpServerOptions options = createBaseServerOptions();
+    int port = options.getPort() + 1;
+    options.setPort(port);
+    AtomicInteger redirects = new AtomicInteger();
     server.requestHandler(req -> {
-      switch (redirections.getAndIncrement()) {
-        case 0:
-          req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever").end();
-          break;
-        case 1:
-          assertEquals(scheme + "://another_host/custom", req.absoluteURI());
-          req.response().end();
-          complete();
-          break;
-      }
+      redirects.incrementAndGet();
+      req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, "http://localhost:" + port + "/whatever").end();
     });
     startServer();
+    HttpServer server2 = vertx.createHttpServer(options);
+    server2.requestHandler(req -> {
+      assertEquals(1, redirects.get());
+      assertEquals(scheme + "://localhost:" + port + "/custom", req.absoluteURI());
+      req.response().end();
+      complete();
+    });
+    startServer(server2);
     client.redirectHandler(resp -> {
       Future<HttpClientRequest> fut = Future.future();
       vertx.setTimer(25, id -> {
-        HttpClientRequest req = client.getAbs(scheme + "://localhost:8080/custom");
+        HttpClientRequest req = client.getAbs(scheme + "://localhost:" + port + "/custom");
         req.putHeader("foo", "foo_another");
-        req.setHost("another_host");
+        req.setHost("localhost:" + port);
         fut.complete(req);
       });
       return fut;
     });
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      assertEquals(scheme + "://another_host/custom", resp.request().absoluteURI());
+      assertEquals(scheme + "://localhost:" + port + "/custom", resp.request().absoluteURI());
       complete();
-    }).setFollowRedirects(true).putHeader("foo", "foo_value").setHost("the_host").end();
+    }).setFollowRedirects(true).putHeader("foo", "foo_value").setHost("localhost:" + options.getPort()).end();
     await();
   }
 

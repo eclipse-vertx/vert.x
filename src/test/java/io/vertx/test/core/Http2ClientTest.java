@@ -346,7 +346,7 @@ public class Http2ClientTest extends Http2TestBase {
       testComplete();
     })
         .setHost("localhost:4444")
-        .exceptionHandler(err -> fail())
+        .exceptionHandler(this::fail)
         .end();
     await();
   }
@@ -1074,7 +1074,7 @@ public class Http2ClientTest extends Http2TestBase {
       @Override
       protected void initChannel(Channel ch) throws Exception {
         SSLHelper sslHelper = new SSLHelper(serverOptions, Cert.SERVER_JKS.get(), null);
-        SslHandler sslHandler = sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createSslHandler((VertxInternal) vertx, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
+        SslHandler sslHandler = new SslHandler(sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createEngine((VertxInternal) vertx, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT));
         ch.pipeline().addLast(sslHandler);
         ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
           @Override
@@ -1163,8 +1163,6 @@ public class Http2ClientTest extends Http2TestBase {
           if (err instanceof Http2Exception) {
             complete();
           }
-/*
-*/
         }).sendHead();
       });
       await();
@@ -1290,7 +1288,7 @@ public class Http2ClientTest extends Http2TestBase {
     server.close();
     server = vertx.createHttpServer(serverOptions.setHandle100ContinueAutomatically(true));
     server.requestHandler(req -> {
-      assertEquals(0, status.getAndIncrement());
+      status.getAndIncrement();
       HttpServerResponse resp = req.response();
       req.bodyHandler(body -> {
         assertEquals(2, status.getAndIncrement());
@@ -1311,7 +1309,7 @@ public class Http2ClientTest extends Http2TestBase {
     req.continueHandler(v -> {
       Context ctx = Vertx.currentContext();
       assertOnIOContext(ctx);
-      assertEquals(1, status.getAndIncrement());
+      status.getAndIncrement();
       req.end(Buffer.buffer("request-body"));
     });
     req.sendHead(version -> {
@@ -1374,7 +1372,7 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
-    }).setHost("whatever.com").sendHead();
+    }).sendHead();
     await();
   }
 
@@ -1431,7 +1429,7 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
-    }).setHost("whatever.com").sendHead();
+    }).sendHead();
     await();
   }
 

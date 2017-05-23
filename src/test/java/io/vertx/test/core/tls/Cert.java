@@ -27,5 +27,14 @@ public interface Cert<K extends KeyCertOptions> extends Supplier<K> {
   Cert<PemKeyCertOptions> SERVER_PEM_CA_CHAIN = () -> new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-ca-chain.pem");
   Cert<PemKeyCertOptions> SERVER_PEM_OTHER_CA = () -> new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-other-ca.pem");
   Cert<JksOptions> SERVER_MIM = () -> new JksOptions().setPath("tls/mim-server-keystore.jks").setPassword("wibble");
+  Cert<JksOptions> SNI_JKS = () -> new JksOptions().setPath("tls/sni-keystore.jks").setPassword("wibble");
+  Cert<PfxOptions> SNI_PKCS12 = () -> new PfxOptions().setPath("tls/sni-keystore.p12").setPassword("wibble");
+  Cert<PemKeyCertOptions> SNI_PEM = () -> new PemKeyCertOptions()
+      .addKeyPath("tls/server-key.pem").addCertPath("tls/server-cert.pem")
+      .addKeyPath("tls/host1-key.pem").addCertPath("tls/host1-cert.pem")
+      .addKeyPath("tls/host2-key.pem").addCertPath("tls/host2-cert.pem")
+      .addKeyPath("tls/host3-key.pem").addCertPath("tls/host3-cert.pem")
+      .addKeyPath("tls/host4-key.pem").addCertPath("tls/host4-cert.pem")
+      .addKeyPath("tls/host5-key.pem").addCertPath("tls/host5-cert.pem");
 
 }

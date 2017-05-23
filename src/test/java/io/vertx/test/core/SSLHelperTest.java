@@ -122,7 +122,7 @@ public class SSLHelperTest extends VertxTestBase {
     HttpServerOptionsConverter.toJson(options, json);
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
     SSLHelper helper = new SSLHelper(options, Cert.SERVER_JKS.get(), null);
-    assertEquals(Arrays.asList(helper.createSslHandler((VertxInternal) vertx).engine().getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
+    assertEquals(Arrays.asList(helper.createEngine((VertxInternal) vertx).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
   }
 
   @Test
@@ -141,7 +141,7 @@ public class SSLHelperTest extends VertxTestBase {
     HttpServerOptionsConverter.toJson(options, json);
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
     SSLHelper helper = new SSLHelper(options, Cert.SERVER_JKS.get(), null);
-    List<String> engineProtocols = Arrays.asList(helper.createSslHandler((VertxInternal) vertx).engine().getEnabledProtocols());
+    List<String> engineProtocols = Arrays.asList(helper.createEngine((VertxInternal) vertx).getEnabledProtocols());
     List<String> expectedProtocols = new ArrayList<>(Arrays.asList(protocols));
     expectedProtocols.retainAll(engineProtocols);
     assertEquals(engineProtocols, expectedProtocols);

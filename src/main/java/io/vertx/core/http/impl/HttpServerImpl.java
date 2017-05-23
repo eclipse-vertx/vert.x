@@ -87,6 +87,7 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
+import io.vertx.core.net.impl.VertxSniHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -256,7 +257,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         applyConnectionOptions(bootstrap);
         sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
-            @Override
+          @Override
             protected void initChannel(Channel ch) throws Exception {
               if (requestStream.isPaused() || wsStream.isPaused()) {
                 ch.close();
@@ -264,21 +265,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
-                pipeline.addLast("ssl", sslHelper.createSslHandler(vertx));
-                if (options.isUseAlpn()) {
-                  pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
-                    @Override
-                    protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
-                      if (protocol.equals("http/1.1")) {
-                        configureHttp1(pipeline);
-                      } else {
-                        handleHttp2(ch);
-                      }
-                    }
-                  });
+                if (options.isSni()) {
+                  VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
+                  pipeline.addLast(sniHandler);
                 } else {
-                  configureHttp1(pipeline);
+                  pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx)));
                 }
+                postSSLConfig(pipeline);
               } else {
                 if (DISABLE_HC2) {
                   configureHttp1(pipeline);
@@ -366,6 +359,23 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .build();
   }
 
+  private void postSSLConfig(ChannelPipeline pipeline) {
+    if (options.isUseAlpn()) {
+      pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
+        @Override
+        protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
+          if (protocol.equals("http/1.1")) {
+            configureHttp1(pipeline);
+          } else {
+            handleHttp2(pipeline.channel());
+          }
+        }
+      });
+    } else {
+      configureHttp1(pipeline);
+    }
+  }
+
   private void configureHttp1(ChannelPipeline pipeline) {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler());
@@ -374,7 +384,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("flashpolicy", new FlashPolicyHandler());
     }
     pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
-        , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
+        , options.getMaxHeaderSize(), options.getMaxChunkSize(), false, options.getDecoderInitialBufferSize()));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
     if (options.isDecompressionSupported()) {
       pipeline.addLast("inflater", new HttpContentDecompressor(true));

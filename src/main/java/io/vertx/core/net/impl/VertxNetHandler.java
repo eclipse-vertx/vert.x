@@ -31,7 +31,7 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
 
   private final Channel ch;
   private final Map<Channel, C> connectionMap;
-  protected C conn;
+  C conn; // We should try to make this private
 
   public VertxNetHandler(Channel ch, Map<Channel, C> connectionMap) {
     this.ch = ch;
@@ -57,17 +57,16 @@ public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHan
     return conn;
   }
 
-
   @Override
-  protected void channelRead(C sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
-    if (sock != null) {
-      context.executeFromIO(() -> handleMsgReceived(msg));
+  protected void channelRead(C conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    if (conn != null) {
+      context.executeFromIO(() -> handleMsgReceived(conn, msg));
     } else {
       // just discard
     }
   }
 
-  protected abstract void handleMsgReceived(Object msg);
+  protected abstract void handleMsgReceived(C conn, Object msg);
 
   @Override
   protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {

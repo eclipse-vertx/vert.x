@@ -19,11 +19,16 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.*;
 
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+import javax.security.cert.X509Certificate;
 import java.io.ByteArrayOutputStream;
 import java.util.EnumSet;
 import java.util.Random;
@@ -364,4 +369,22 @@ public class TestUtils {
     return trustOptions;
   }
 
+  public static Buffer leftPad(int padding, Buffer buffer) {
+    return Buffer.buffer(Unpooled.buffer()
+        .writerIndex(padding)
+        .readerIndex(padding)
+        .writeBytes(buffer.getByteBuf())
+    );
+  }
+
+  public static String cnOf(X509Certificate cert) throws Exception {
+    String dn = cert.getSubjectDN().getName();
+    LdapName ldapDN = new LdapName(dn);
+    for (Rdn rdn : ldapDN.getRdns()) {
+      if (rdn.getType().equalsIgnoreCase("cn")) {
+        return rdn.getValue().toString();
+      }
+    }
+    return null;
+  }
 }

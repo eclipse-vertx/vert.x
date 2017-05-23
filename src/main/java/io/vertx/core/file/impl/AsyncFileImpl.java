@@ -400,7 +400,7 @@ public class AsyncFileImpl implements AsyncFile {
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          context.runOnContext((v) -> handler.handle(Future.succeededFuture()));
+          context.runOnContext((v) -> handler.handle(Future.failedFuture(exc)));
         } else {
           log.error("Error occurred", exc);
         }

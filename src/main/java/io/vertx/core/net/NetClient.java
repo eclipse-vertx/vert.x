@@ -16,6 +16,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -47,6 +48,20 @@ public interface NetClient extends Measured {
    */
   @Fluent
   NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler);
+
+  /**
+   * Open a connection to a server at the specific {@code port} and {@code host}.
+   * <p>
+   * {@code host} can be a valid host name or IP address. The connect is done asynchronously and on success, a
+   * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
+   *
+   * @param port the port
+   * @param host the host
+   * @param serverName the SNI server name
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler);
 
   /**
    * Close the client.

@@ -1237,6 +1237,21 @@ public class FutureTest extends VertxTestBase {
     testOtherwiseEmpty(f, f);
   }
 
+  @Test
+  public void testToString() {
+    assertEquals("Future{unresolved}", Future.future().toString());
+    assertEquals("Future{result=abc}", Future.succeededFuture("abc").toString());
+    assertEquals("Future{cause=It's like that, and that's the way it is}", Future.failedFuture("It's like that, and that's the way it is").toString());
+
+    Future<String> f = Future.future();
+    f.complete("abc");
+    assertEquals("Future{result=abc}", f.toString());
+
+    f = Future.future();
+    f.fail("abc");
+    assertEquals("Future{cause=abc}", f.toString());
+  }
+
   private void testOtherwiseEmpty(AsyncResult<String> res, Future<String> f) {
     AsyncResult<String> otherwise = res.otherwiseEmpty();
     Throwable cause = new Throwable("the-failure");

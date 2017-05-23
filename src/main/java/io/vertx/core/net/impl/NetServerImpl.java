@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -68,10 +69,6 @@ public class NetServerImpl extends NetServerBase<NetSocketImpl> implements NetSe
 
   @Override
   protected void initChannel(ChannelPipeline pipeline) {
-    if (sslHelper.isSSL()) {
-      SslHandler sslHandler = sslHelper.createSslHandler(vertx);
-      pipeline.addLast("ssl", sslHandler);
-    }
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler());
     }

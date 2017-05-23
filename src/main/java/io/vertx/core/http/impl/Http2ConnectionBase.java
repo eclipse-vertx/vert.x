@@ -29,7 +29,6 @@ import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.vertx.codegen.annotations.Nullable;
@@ -117,6 +116,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public synchronized void handleClosed() {
+    closed = true;
     super.handleClosed();
   }
 
@@ -128,10 +128,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   protected void handleInterestedOpsChanged() {
     // Handled by HTTP/2
-  }
-
-  boolean isSsl() {
-    return channel.pipeline().get(SslHandler.class) != null;
   }
 
   synchronized boolean isClosed() {
@@ -455,6 +451,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public synchronized Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http2ConnectionBase) super.exceptionHandler(handler);
+  }
+
+  /**
+   * @return the Netty channel - for internal usage only
+   */
+  public Channel channel() {
+    return channel;
   }
 
   // Private

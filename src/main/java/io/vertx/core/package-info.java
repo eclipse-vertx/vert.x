@@ -56,9 +56,11 @@
  *
  * == In the beginning there was Vert.x
  *
- * NOTE: Much of this is Java specific - need someway of swapping in language specific parts
+ * ////
+ * TODO Much of this is Java specific - need someway of swapping in language specific parts
+ * ////
  *
- * You can't do much in Vert.x-land unless you can commune with a {@link io.vertx.core.Vertx} object!
+ * You can't do much in Vert.x-land unless you can communicate with a {@link io.vertx.core.Vertx} object!
  *
  * It's the control centre of Vert.x and is how you do pretty much everything, including creating clients and servers,
  * getting a reference to the event bus, setting timers, as well as many other things.
@@ -71,8 +73,6 @@
  * ----
  * {@link examples.CoreExamples#example1}
  * ----
- *
- * If you're using Verticles
  *
  * NOTE: Most applications will only need a single Vert.x instance, but it's possible to create multiple Vert.x instances if you
  * require, for example, isolation between the event bus or different groups of servers and clients.
@@ -293,7 +293,7 @@
  *
  * A worker verticle is always executed with a thread from the worker pool.
  *
- * By default blocking code is executed on the Vert.x blocking code pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
+ * By default blocking code is executed on the Vert.x worker pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
  *
  * Additional pools can be created for different purposes:
  *
@@ -1138,14 +1138,15 @@
  *
  * The redeployment process is implemented as follows. First your application is launched as a background application
  * (with the `start` command). On matching file changes, the process is stopped and the application is restarted.
- * This way avoids leaks.
+ * This avoids leaks, as the process is restarted.
  *
  * To enable the live redeploy, pass the `--redeploy` option to the `run` command. The `--redeploy` indicates the
  * set of file to _watch_. This set can use Ant-style patterns (with `\**`, `*` and `?`). You can specify
  * several sets by separating them using a comma (`,`). Patterns are relative to the current working directory.
  *
  * Parameters passed to the `run` command are passed to the application. Java Virtual Machine options can be
- * configured using `--java-opts`.
+ * configured using `--java-opts`. For instance, to pass the the `conf` parameter or a system property, you need to
+ * use: `--java-opts="-conf=my-conf.json -Dkey=value"`
  *
  * The `--launcher-class` option determine with with _main_ class the application is launcher. It's generally
  * {@link io.vertx.core.Launcher}, but you have use you own _main_.
@@ -1175,7 +1176,14 @@
  *
  * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
  * restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
- * or `grunt` to update your resources.
+ * or `grunt` to update your resources. Don't forget that passing parameters to your application requires the
+ * `--java-opts` param:
+ *
+ * [source]
+ * ----
+ * java -jar target/my-fat-jar.jar --redeploy="**&#47;*.java" --on-redeploy="mvn package" --java-opts="-Dkey=val"
+ * java -jar build/libs/my-fat-jar.jar --redeploy="src&#47;**&#47;*.java" --on-redeploy='./gradlew shadowJar' --java-opts="-Dkey=val"
+ * ----
  *
  * The redeploy feature also supports the following settings:
  *
@@ -1259,6 +1267,9 @@
  * {@link examples.CoreExamples#example18}
  * ----
  *
+ * CAUTION: Logging backends use different formats to represent replaceable tokens in parameterized messages.
+ * As a consequence, if you rely on Vert.x parameterized logging methods, you won't be able to switch backends without changing your code.
+ *
  * [[netty-logging]]
  * === Netty logging
  *
@@ -1279,33 +1290,33 @@
  * // Force logging to Log4j
  * InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
  * ----
- * 
+ *
  * === Troubleshooting
- * 
+ *
  * ==== SLF4J warning at startup
- * 
+ *
  * If, when you start your application, you see the following message:
- * 
+ *
  * ----
  * SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
  * SLF4J: Defaulting to no-operation (NOP) logger implementation
  * SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
  * ----
- * 
+ *
  * It means that you have SLF4J-API in your classpath but no actual binding. Messages logged with SLF4J will be dropped.
  * You should add a binding to your classpath. Check https://www.slf4j.org/manual.html#swapping to pick a binding and configure it.
- * 
+ *
  * Be aware that Netty looks for the SLF4-API jar and uses it by default.
- * 
+ *
  * ==== Connection reset by peer
- * 
+ *
  * If your logs show a bunch of:
- * 
+ *
  * ----
  * io.vertx.core.net.impl.ConnectionBase
  * SEVERE: java.io.IOException: Connection reset by peer
  * ----
- * 
+ *
  * It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
  * may have not consumed the complete payload (the connection was cut before you were able to).
  *

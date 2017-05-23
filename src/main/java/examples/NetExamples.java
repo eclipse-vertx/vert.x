@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.*;
 
 import java.security.cert.CertificateException;
+import java.util.Arrays;
 
 /**
  * Created by tim on 19/01/15.
@@ -597,5 +598,46 @@ public class NetExamples {
       .setTrustOptions(certificate.trustOptions()))
       .requestHandler(req -> req.response().end("Hello!"))
       .listen(8080);
+  }
+
+  public void configureSNIServer(Vertx vertx) {
+    JksOptions keyCertOptions = new JksOptions().setPath("keystore.jks").setPassword("wibble");
+
+    NetServer netServer = vertx.createNetServer(new NetServerOptions()
+        .setKeyStoreOptions(keyCertOptions)
+        .setSsl(true)
+        .setSni(true)
+    );
+  }
+
+  public void configureSNIServerWithPems(Vertx vertx) {
+    PemKeyCertOptions keyCertOptions = new PemKeyCertOptions()
+        .setKeyPaths(Arrays.asList("default-key.pem", "host1-key.pem", "etc..."))
+        .setCertPaths(Arrays.asList("default-cert.pem", "host2-key.pem", "etc...")
+        );
+
+    NetServer netServer = vertx.createNetServer(new NetServerOptions()
+        .setPemKeyCertOptions(keyCertOptions)
+        .setSsl(true)
+        .setSni(true)
+    );
+  }
+
+  public void useSNIInClient(Vertx vertx, JksOptions trustOptions) {
+
+    NetClient client = vertx.createNetClient(new NetClientOptions()
+        .setTrustStoreOptions(trustOptions)
+        .setSsl(true)
+    );
+
+    // Connect to 'localhost' and present 'server.name' server name
+    client.connect(1234, "localhost", "server.name", res -> {
+      if (res.succeeded()) {
+        System.out.println("Connected!");
+        NetSocket socket = res.result();
+      } else {
+        System.out.println("Failed to connect: " + res.cause().getMessage());
+      }
+    });
   }
 }

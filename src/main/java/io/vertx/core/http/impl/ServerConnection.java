@@ -255,7 +255,7 @@ class ServerConnection extends ConnectionBase implements HttpConnection {
       }
 
       @Override
-      protected void handleMsgReceived(Object msg) {
+      protected void handleMsgReceived(NetSocketImpl conn, Object msg) {
         ByteBuf buf = (ByteBuf) msg;
         conn.handleDataReceived(Buffer.buffer(buf));
       }

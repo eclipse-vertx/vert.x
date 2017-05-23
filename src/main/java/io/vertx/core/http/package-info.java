@@ -1090,7 +1090,7 @@
  * `301`, `302`, `303` or `307` status code, it follows the redirection provided by the `Location` response header
  * and the response handler is passed the redirected response instead of the original response.
  *
- * Here’s an example:
+ * Here's an example:
  *
  * [source,$lang]
  * ----
@@ -1558,6 +1558,12 @@
  * Likewise {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod, java.lang.String)} scheme
  * also overrides the default client setting.
  *
+ * ==== Server Name Indication (SNI)
+ *
+ * Vert.x http servers can be configured to use SNI in exactly the same way as {@linkplain io.vertx.core.net net servers}.
+ *
+ * Vert.x http client will present the actual hostname as _server name_ during the TLS handshake.
+ *
  * === WebSockets
  *
  * http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like
@@ -1722,6 +1728,19 @@
  *
  * The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
  * to resolve the DNS address locally.
+ *
+ * ==== Handling of other protocols
+ *
+ * The HTTP proxy implementation supports getting ftp:// urls if the proxy supports
+ * that, which isn't available in non-proxy getAbs requests.
+ * 
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example60}
+ * ----
+ *
+ * Support for other protocols is not available since java.net.URL does not
+ * support them (gopher:// for example).
  *
  * === Automatic clean-up in verticles
  *

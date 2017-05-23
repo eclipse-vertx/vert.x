@@ -668,6 +668,10 @@ Add a CRL path
 +++
 Add a CRL value
 +++
+|[[decoderInitialBufferSize]]`decoderInitialBufferSize`|`Number (int)`|
++++
+set to <code>initialBufferSizeHttpDecoder</code> the initial buffer of the HttpDecoder.
++++
 |[[defaultHost]]`defaultHost`|`String`|
 +++
 Set the default host name to be used by this client in requests if none is provided when making the request.
@@ -683,6 +687,11 @@ Add an enabled cipher suite, appended to the ordered suites.
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
 Add an enabled SSL/TLS protocols, appended to the ordered protocols.
++++
+|[[forceSni]]`forceSni`|`Boolean`|
++++
+By default, the server name is only sent for Fully Qualified Domain Name (FQDN), setting
+ this property to <code>true</code> forces the server name to be always sent.
 +++
 |[[http2ClearTextUpgrade]]`http2ClearTextUpgrade`|`Boolean`|
 +++
@@ -921,10 +930,10 @@ This method allows to set the compression level to be used in http1.x/2 response
  
  While one can think that best value is always the maximum compression ratio, 
  there's a trade-off to consider: the most compressed level requires the most
- computatinal work to compress/decompress data, e.g. more dictionary lookups and loops.
+ computational work to compress/decompress data, e.g. more dictionary lookups and loops.
  
  E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
- and latency on resource serving due to CPU overload, and, however - as the comptational work is required also client side 
+ and latency on resource serving due to CPU overload, and, however - as the computational work is required also client side
  while decompressing - setting an higher compression level can result in an overall higher page load time
  especially nowadays when many clients are handled mobile devices with a low CPU profile.
  
@@ -942,6 +951,10 @@ Add a CRL path
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
 Add a CRL value
++++
+|[[decoderInitialBufferSize]]`decoderInitialBufferSize`|`Number (int)`|
++++
+Set the initial buffer size for the HTTP decoder
 +++
 |[[decompressionSupported]]`decompressionSupported`|`Boolean`|
 +++
@@ -1041,6 +1054,10 @@ Set the value of reuse address
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
++++
+|[[sni]]`sni`|`Boolean`|
++++
+Set whether the server supports Server Name Indiciation
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
@@ -1392,6 +1409,10 @@ Set the value of reuse address
 +++
 Set the TCP send buffer size
 +++
+|[[sni]]`sni`|`Boolean`|
++++
+Set whether the server supports Server Name Indiciation
++++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
 Set whether SO_linger keep alive is enabled
@@ -1617,11 +1638,11 @@ Sets whether or not this option can receive a value.
 == PemKeyCertOptions
 
 ++++
- Key store options configuring a private key and its certificate based on
+ Key store options configuring a list of private key and its certificate based on
  <i>Privacy-enhanced Electronic Email</i> (PEM) files.
  <p>
 
- The key file must contain a <b>non encrypted</b> private key in <b>PKCS8</b> format wrapped in a PEM
+ A key file must contain a <b>non encrypted</b> private key in <b>PKCS8</b> format wrapped in a PEM
  block, for example:
  <p>
 
@@ -1633,7 +1654,7 @@ Sets whether or not this option can receive a value.
  -----END PRIVATE KEY-----
  </pre><p>
 
- The certificate file must contain an X.509 certificate wrapped in a PEM block, for example:
+ A certificate file must contain an X.509 certificate wrapped in a PEM block, for example:
  <p>
 
  <pre>
@@ -1644,7 +1665,7 @@ Sets whether or not this option can receive a value.
  -----END CERTIFICATE-----
  </pre>
 
- The key and certificate can either be loaded by Vert.x from the filesystem:
+ Keys and certificates can either be loaded by Vert.x from the filesystem:
  <p>
  <pre>
  HttpServerOptions options = new HttpServerOptions();
@@ -1658,6 +1679,15 @@ Sets whether or not this option can receive a value.
  Buffer cert = vertx.fileSystem().readFileSync("/mycert.pem");
  options.setPemKeyCertOptions(new PemKeyCertOptions().setKeyValue(key).setCertValue(cert));
  </pre>
+
+ Several key/certificate pairs can be used:
+ <p>
+ <pre>
+ HttpServerOptions options = new HttpServerOptions();
+ options.setPemKeyCertOptions(new PemKeyCertOptions()
+    .addKeyPath("/mykey1.pem").addCertPath("/mycert1.pem")
+    .addKeyPath("/mykey2.pem").addCertPath("/mycert2.pem"));
+ </pre>
 ++++
 '''
 
@@ -1667,19 +1697,35 @@ Sets whether or not this option can receive a value.
 ^|Name | Type ^| Description
 |[[certPath]]`certPath`|`String`|
 +++
-Set the path to the certificate
+Set the path of the first certificate, replacing the previous certificates paths
++++
+|[[certPaths]]`certPaths`|`Array of String`|
++++
+Set all the paths to the certificates files
 +++
 |[[certValue]]`certValue`|`Buffer`|
 +++
-Set the certificate as a buffer
+Set the first certificate as a buffer, replacing the previous certificates buffers
++++
+|[[certValues]]`certValues`|`Array of Buffer`|
++++
+Set all the certificates as a list of buffer
 +++
 |[[keyPath]]`keyPath`|`String`|
 +++
-Set the path to the key file
+Set the path of the first key file, replacing the keys paths
++++
+|[[keyPaths]]`keyPaths`|`Array of String`|
++++
+Set all the paths to the keys files
 +++
 |[[keyValue]]`keyValue`|`Buffer`|
 +++
-Set the key a a buffer
+Set the first key a a buffer, replacing the previous keys buffers
++++
+|[[keyValues]]`keyValues`|`Array of Buffer`|
++++
+Set all the keys as a list of buffer
 +++
 |===
 
