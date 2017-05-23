@@ -277,7 +277,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       if (future.isSuccess()) {
         handler.handle(null);
       } else {
-        log.error(future.cause());
+        log.error("SSL handshake failure", future.cause());
       }
     }));
     return this;

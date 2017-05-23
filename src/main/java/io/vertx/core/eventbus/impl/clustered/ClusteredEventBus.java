@@ -158,7 +158,7 @@ public class ClusteredEventBus extends EventBusImpl {
             if (resultHandler != null) {
               resultHandler.handle(Future.failedFuture(asyncResult.cause()));
             } else {
-              log.error(asyncResult.cause());
+              log.error("Cannot start ClusteredEventBus", asyncResult.cause());
             }
           }
         });
@@ -166,7 +166,7 @@ public class ClusteredEventBus extends EventBusImpl {
         if (resultHandler != null) {
           resultHandler.handle(Future.failedFuture(ar2.cause()));
         } else {
-          log.error(ar2.cause());
+          log.error("Cannot start ClusteredEventBus", ar2.cause());
         }
       }
     });

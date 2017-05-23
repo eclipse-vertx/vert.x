@@ -173,7 +173,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
             vertx.runOnContext(v ->  listenHandler.handle(Future.failedFuture(t)));
           } else {
             // No handler - log so user can see failure
-            log.error(t);
+            log.error("Error in "+getClass().getName(), t);
           }
           listening = false;
           return;
