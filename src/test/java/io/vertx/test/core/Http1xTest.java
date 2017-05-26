@@ -88,7 +88,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -3657,15 +3659,14 @@ public class Http1xTest extends HttpTest {
           "HEAD / HTTP/1.1\r\n" +
           "Connection: close\r\n" +
           "\r\n");
-      LinkedList<String> records = new LinkedList<String>();
-      RecordParser parser = RecordParser.newDelimited("\r\n", record -> {
-        records.add(record.toString());
-        System.out.println("record = " + record);
-      });
-      so.handler(parser);
+      Buffer buff = Buffer.buffer();
+      so.handler(buff::appendBuffer);
       so.endHandler(v -> {
+        String content = buff.toString();
+        int idx = content.indexOf("\r\n\r\n");
+        LinkedList<String> records = new LinkedList<String>(Arrays.asList(content.substring(0, idx).split("\\r\\n")));
         assertEquals("HTTP/1.1 200 OK", records.removeFirst());
-        assertTrue(records.removeLast().length() == 0);
+        assertEquals("", content.substring(idx + 4));
         MultiMap respHeaders = MultiMap.caseInsensitiveMultiMap();
         records.forEach(record -> {
           int index = record.indexOf(":");
