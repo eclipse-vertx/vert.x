@@ -20,28 +20,26 @@ import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.OpenSslServerContext;
 import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerOptionsConverter;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetServerOptionsConverter;
-import io.vertx.core.net.NetworkOptionsConverter;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.TCPSSLOptionsConverter;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSessionContext;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import javax.net.ssl.TrustManagerFactory;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -145,5 +143,36 @@ public class SSLHelperTest extends VertxTestBase {
     List<String> expectedProtocols = new ArrayList<>(Arrays.asList(protocols));
     expectedProtocols.retainAll(engineProtocols);
     assertEquals(engineProtocols, expectedProtocols);
+  }
+
+  @Test
+  public void testCustomTrustManagerFactoryInit() throws Exception {
+    // Ensure any TrustManagerFactory is initialised before a call is made.
+
+    CompletableFuture<Object> completableFuture = new CompletableFuture<>();
+
+    TrustOptions trustOptions = new TrustOptions() {
+
+      @Override
+      public TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
+        return new TestTrustManagerFactory(() -> completableFuture.complete(null));
+      }
+
+      @Override
+      public TrustOptions clone() {
+        return this;
+      }
+    };
+
+    NetServerOptions netServerOptions = new NetServerOptions()
+            .setTrustOptions(trustOptions)
+            .setClientAuth(ClientAuth.REQUIRED);
+
+
+    SSLHelper helper = new SSLHelper(netServerOptions, Cert.SERVER_PEM.get(), trustOptions);
+
+    helper.getContext((VertxInternal) vertx);
+
+    Assert.assertTrue("Assert Trust Manager initialised at some point.", completableFuture.isDone());
   }
 }
