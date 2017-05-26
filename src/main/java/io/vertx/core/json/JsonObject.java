@@ -25,6 +25,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
+import com.jayway.jsonpath.JsonPath;
+
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -473,6 +475,17 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     Objects.requireNonNull(key);
     Object val = getValue(key);
     return val != null || map.containsKey(key) ? val : def;
+  }
+
+  /**
+   * Resolve the given JSON path to load the value.
+   *
+   * @param jsonPath the JSON path
+   * @param <T>      expected return type
+   * @return list of objects matched by the given path
+   */
+  public <T> T getByPath(String jsonPath) {
+    return JsonPath.read(toString(), jsonPath);
   }
 
   /**
