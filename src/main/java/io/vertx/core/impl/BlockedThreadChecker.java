@@ -45,10 +45,10 @@ public class BlockedThreadChecker {
           long now = System.nanoTime();
           for (VertxThread thread : threads.keySet()) {
             long execStart = thread.startTime();
-            long dur = now - execStart;
+            long dur = (now - execStart) / 1000000;
             final long timeLimit = thread.getMaxExecTime();
             if (execStart != 0 && dur > timeLimit) {
-              final String message = "Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms, time limit is " + (timeLimit / 1000000);
+              final String message = "Thread " + thread + " has been blocked for " + dur + " ms, time limit is " + timeLimit + " ms";
               if (dur <= warningExceptionTime) {
                 log.warn(message);
               } else {
