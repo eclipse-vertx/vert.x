@@ -2054,6 +2054,10 @@ Sets the event bus configuration to configure the host, port, ssl...
 +++
 Set the number of event loop threads to be used by the Vert.x instance.
 +++
+|[[fileResolverCachingEnabled]]`fileResolverCachingEnabled`|`Boolean`|
++++
+Set wether the Vert.x file resolver uses caching for classpath resources.
++++
 |[[haEnabled]]`haEnabled`|`Boolean`|
 +++
 Set whether HA will be enabled on the Vert.x instance.

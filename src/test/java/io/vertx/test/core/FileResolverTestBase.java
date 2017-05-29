@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
@@ -27,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -93,14 +95,17 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveFileFromClasspathDisableCaching() throws Exception {
-    System.setProperty(FileResolver.DISABLE_FILE_CACHING_PROP_NAME, "true");
-    resolver = new FileResolver(vertx);
-    for (int i = 0; i < 2; i++) {
-      File file = resolver.resolveFile("afile.html");
-      assertTrue(file.exists());
-      assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
-      assertFalse(file.isDirectory());
-      assertEquals("<html><body>afile</body></html>", readFile(file));
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileResolverCachingEnabled(false));
+    try {
+      for (int i = 0; i < 2; i++) {
+        File file = vertx.resolveFile("afile.html");
+        assertTrue(file.exists());
+        assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
+        assertFalse(file.isDirectory());
+        assertEquals("<html><body>afile</body></html>", readFile(file));
+      }
+    } finally {
+      vertx.close();
     }
   }
 
@@ -272,6 +277,47 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     start.countDown();
     latch.await();
     assertTrue(errors.isEmpty());
+  }
+
+  @Test
+  public void testEnableCaching() throws Exception {
+    testCaching(true);
+  }
+
+  @Test
+  public void testDisableCaching() throws Exception {
+    testCaching(false);
+  }
+
+  private void testCaching(boolean enabled) throws Exception {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileResolverCachingEnabled(enabled));
+    File tmp = File.createTempFile("vertx", ".bin");
+    tmp.deleteOnExit();
+    URL url = tmp.toURI().toURL();
+    Files.write(tmp.toPath(), "foo".getBytes());
+    ClassLoader old = Thread.currentThread().getContextClassLoader();
+    try {
+      Thread.currentThread().setContextClassLoader(new ClassLoader() {
+        @Override
+        public URL getResource(String name) {
+          if ("foo".equals(name)) {
+            return url;
+          }
+          return super.getResource(name);
+        }
+      });
+      File f = vertx.resolveFile("foo");
+      assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
+      Files.write(tmp.toPath(), "bar".getBytes());
+      f = vertx.resolveFile("foo");
+      if (enabled) {
+        assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
+      } else {
+        assertEquals("bar", new String(Files.readAllBytes(f.toPath())));
+      }
+    } finally {
+      Thread.currentThread().setContextClassLoader(old);
+    }
   }
 
   private String readFile(File file) {
