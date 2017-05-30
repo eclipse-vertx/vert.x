@@ -25,6 +25,8 @@ import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.Objects;
 
+import static io.vertx.core.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
+
 /**
  * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.
  *
@@ -114,6 +116,11 @@ public class VertxOptions {
   public static final boolean DEFAULT_HA_ENABLED = false;
 
   /**
+   * The default value for file resolver caching enabled = the value of the system property "vertx.disableFileCaching" or true
+   */
+  public static final boolean DEFAULT_FILE_CACHING_ENABLED = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
+
+  /**
    * The default value of warning exception time 5000000000 ns (5 seconds)
    * If a thread is blocked longer than this threshold, the warning log
    * contains a stack trace
@@ -123,8 +130,6 @@ public class VertxOptions {
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
-
-
   private long blockedThreadCheckInterval = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL;
   private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
   private long maxWorkerExecuteTime = DEFAULT_MAX_WORKER_EXECUTE_TIME;
@@ -136,6 +141,7 @@ public class VertxOptions {
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
   private EventBusOptions eventBusOptions = new EventBusOptions();
   private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
+  private boolean fileResolverCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
 
   /**
    * Default constructor
@@ -163,6 +169,7 @@ public class VertxOptions {
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions() : null;
+    this.fileResolverCachingEnabled = other.fileResolverCachingEnabled;
   }
 
   /**
@@ -648,6 +655,24 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * @return wether the file resolver uses caching
+   */
+  public boolean isFileResolverCachingEnabled() {
+    return fileResolverCachingEnabled;
+  }
+
+  /**
+   * Set wether the Vert.x file resolver uses caching for classpath resources.
+   *
+   * @param fileResolverCachingEnabled true when the file resolver caches resources
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setFileResolverCachingEnabled(boolean fileResolverCachingEnabled) {
+    this.fileResolverCachingEnabled = fileResolverCachingEnabled;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -671,8 +696,8 @@ public class VertxOptions {
       return false;
     if (addressResolverOptions != null ? !addressResolverOptions.equals(that.addressResolverOptions) : that.addressResolverOptions != null)
       return false;
+    if (fileResolverCachingEnabled != that.fileResolverCachingEnabled) return false;
     return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
-
   }
 
   @Override
@@ -685,6 +710,7 @@ public class VertxOptions {
     result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
     result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);
     result = 31 * result + (haEnabled ? 1 : 0);
+    result = 31 * result + (fileResolverCachingEnabled ? 1 : 0);
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
     result = 31 * result + (metricsOptions != null ? metricsOptions.hashCode() : 0);
@@ -705,6 +731,7 @@ public class VertxOptions {
         ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
         ", clusterManager=" + clusterManager +
         ", haEnabled=" + haEnabled +
+        ", fileCachingEnabled=" + fileResolverCachingEnabled +
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
         ", metrics=" + metricsOptions +

@@ -60,6 +60,9 @@ public class VertxOptionsConverter {
     if (json.getValue("eventLoopPoolSize") instanceof Number) {
       obj.setEventLoopPoolSize(((Number)json.getValue("eventLoopPoolSize")).intValue());
     }
+    if (json.getValue("fileResolverCachingEnabled") instanceof Boolean) {
+      obj.setFileResolverCachingEnabled((Boolean)json.getValue("fileResolverCachingEnabled"));
+    }
     if (json.getValue("haEnabled") instanceof Boolean) {
       obj.setHAEnabled((Boolean)json.getValue("haEnabled"));
     }
@@ -109,6 +112,7 @@ public class VertxOptionsConverter {
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }
     json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
+    json.put("fileResolverCachingEnabled", obj.isFileResolverCachingEnabled());
     json.put("haEnabled", obj.isHAEnabled());
     if (obj.getHAGroup() != null) {
       json.put("haGroup", obj.getHAGroup());
