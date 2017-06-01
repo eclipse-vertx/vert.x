@@ -826,7 +826,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             }
             ws.connectNow();
           } else {
-            ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
+            ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND));
           }
         });
       }
