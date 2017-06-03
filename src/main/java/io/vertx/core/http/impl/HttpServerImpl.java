@@ -17,13 +17,11 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -120,7 +118,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
   private final boolean DISABLE_HC2 = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
   private static final String[] H2C_HANDLERS_TO_REMOVE = { "idle", "flashpolicy", "deflater", "chunkwriter" };
-  private static final byte[] HTTP_2_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes();
 
   private final HttpServerOptions options;
   private final VertxInternal vertx;
@@ -1022,65 +1019,22 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  /**
-   * Handler that detects whether the HTTP/2 connection preface or just process the request
-   * with the HTTP 1.x pipeline to support H2C with prior knowledge, i.e a client that connects
-   * and uses HTTP/2 in clear text directly without an HTTP upgrade.
-   */
-  private class Http1xOrHttp2Handler extends ChannelInboundHandlerAdapter {
-
-    private int index = 0;
+  private class Http1xOrHttp2Handler extends Http1xOrH2CHandler {
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      ByteBuf buf = (ByteBuf) msg;
-      int len = buf.readableBytes();
-      for (int i = index;i < len;i++) {
-        if (i == HTTP_2_PREFACE.length) {
-          // H2C
-          http2(ctx, buf);
-          break;
-        } else {
-          if (buf.getByte(i) != HTTP_2_PREFACE[i]) {
-            http1(ctx, buf);
-            break;
-          }
-        }
+    protected void configure(ChannelHandlerContext ctx, boolean h2c) {
+      if (h2c) {
+        handleHttp2(ctx.channel());
+      } else {
+        configureHttp1(ctx.pipeline());
       }
-    }
-
-    private void http2(ChannelHandlerContext ctx, ByteBuf buf) {
-      ByteBuf msg;
-      if (index > 0) {
-        msg = Unpooled.buffer(index + buf.readableBytes());
-        msg.setBytes(0, HTTP_2_PREFACE, 0, index);
-        msg.setBytes(index, buf);
-        buf = msg;
-      }
-      handleHttp2(ctx.channel());
-      ctx.fireChannelRead(buf);
-      ctx.pipeline().remove(this);
-    }
-
-    private void http1(ChannelHandlerContext ctx, ByteBuf buf) {
-      ByteBuf msg;
-      if (index > 0) {
-        msg = Unpooled.buffer(index + buf.readableBytes());
-        msg.setBytes(0, HTTP_2_PREFACE, 0, index);
-        msg.setBytes(index, buf);
-        buf = msg;
-      }
-      configureHttp1(ctx.pipeline());
-      ctx.fireChannelRead(buf);
-      ctx.pipeline().remove(this);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      Channel channel = ctx.channel();
-      channel.close();
-      HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(channel.eventLoop());
-      reqHandler.context.executeFromIO(() -> HttpServerImpl.this.connectionExceptionHandler.handle(cause));
+      super.exceptionCaught(ctx, cause);
+      HandlerHolder<HttpServerImpl.HttpHandler> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
+      reqHandler.context.executeFromIO(() -> connectionExceptionHandler.handle(cause));
+    }
   }
-}
 }

@@ -20,14 +20,19 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
@@ -64,9 +69,12 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.impl.Http1xOrH2CHandler;
+import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -87,6 +95,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2131,7 +2140,7 @@ public class Http2ServerTest extends Http2TestBase {
     fut.sync();
     await();
   }
-  
+
   @Test
   public void testRequestCompressionEnabled() throws Exception {
     String expected = TestUtils.randomAlphaString(1000);
@@ -2893,5 +2902,98 @@ public class Http2ServerTest extends Http2TestBase {
     });
     fut.sync();
     await();
+  }
+
+  class TestHttp1xOrH2CHandler extends Http1xOrH2CHandler {
+
+    @Override
+    protected void configure(ChannelHandlerContext ctx, boolean h2c) {
+      if (h2c) {
+        ChannelPipeline p = ctx.pipeline();
+        p.addLast(new ChannelDuplexHandler() {
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            ctx.write(msg);
+          }
+          @Override
+          public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+            ctx.flush();
+          }
+        });
+      } else {
+        ChannelPipeline p = ctx.pipeline();
+        p.addLast(new HttpServerCodec());
+        p.addLast(new ChannelDuplexHandler() {
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            ctx.write(msg);
+          }
+          @Override
+          public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+            ctx.flush();
+          }
+        });
+      }
+    }
+  }
+
+  private static final ByteBuf HTTP_1_1_POST = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("POST /whatever HTTP/1.1\r\n\r\n", StandardCharsets.UTF_8));
+
+  @Test
+  public void testHttp1xOrH2CHandlerHttp1xRequest() throws Exception {
+    EmbeddedChannel ch =  new EmbeddedChannel(new TestHttp1xOrH2CHandler());
+    ByteBuf buff = HTTP_1_1_POST.copy(0, HTTP_1_1_POST.readableBytes());
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(1, ch.outboundMessages().size());
+    HttpRequest req = (HttpRequest) ch.outboundMessages().poll();
+    assertEquals("POST", req.method().name());
+    assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
+  }
+
+  @Test
+  public void testHttp1xOrH2CHandlerFragmentedHttp1xRequest() throws Exception {
+    EmbeddedChannel ch =  new EmbeddedChannel(new TestHttp1xOrH2CHandler());
+    ByteBuf buff = HTTP_1_1_POST.copy(0, 1);
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(0, ch.outboundMessages().size());
+    buff = HTTP_1_1_POST.copy(1, HTTP_1_1_POST.readableBytes() - 1);
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(1, ch.outboundMessages().size());
+    HttpRequest req = (HttpRequest) ch.outboundMessages().poll();
+    assertEquals("POST", req.method().name());
+    assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
+  }
+
+  @Test
+  public void testHttp1xOrH2CHandlerHttp2Request() throws Exception {
+    EmbeddedChannel ch =  new EmbeddedChannel(new TestHttp1xOrH2CHandler());
+    ByteBuf expected = Unpooled.copiedBuffer(Http1xOrH2CHandler.HTTP_2_PREFACE, StandardCharsets.UTF_8);
+    ch.writeInbound(expected);
+    assertEquals(1, expected.refCnt());
+    assertEquals(1, ch.outboundMessages().size());
+    ByteBuf res = (ByteBuf) ch.outboundMessages().poll();
+    assertEquals(Http1xOrH2CHandler.HTTP_2_PREFACE, res.toString(StandardCharsets.UTF_8));
+    assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
+  }
+
+  @Test
+  public void testHttp1xOrH2CHandlerFragmentedHttp2Request() throws Exception {
+    EmbeddedChannel ch =  new EmbeddedChannel(new TestHttp1xOrH2CHandler());
+    ByteBuf expected = Unpooled.copiedBuffer(Http1xOrH2CHandler.HTTP_2_PREFACE, StandardCharsets.UTF_8);
+    ByteBuf buff = expected.copy(0, 1);
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(0, ch.outboundMessages().size());
+    buff = expected.copy(1, expected.readableBytes() - 1);
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(1, ch.outboundMessages().size());
+    ByteBuf res = (ByteBuf) ch.outboundMessages().poll();
+    assertEquals(1, res.refCnt());
+    assertEquals(Http1xOrH2CHandler.HTTP_2_PREFACE, res.toString(StandardCharsets.UTF_8));
+    assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
   }
 }
