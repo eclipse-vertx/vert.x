@@ -3598,4 +3598,22 @@ public class Http1xTest extends HttpTest {
     }
     await();
   }
+
+  @Test
+  public void testPartialH2CAmbiguousRequest() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("POST", req.rawMethod());
+      testComplete();
+    });
+    Buffer fullRequest = Buffer.buffer("POST /whatever HTTP/1.1\r\n\r\n");
+    startServer();
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+      so.write(fullRequest.slice(0, 1));
+      vertx.setTimer(1000, id -> {
+        so.write(fullRequest.slice(1, fullRequest.length()));
+      });
+    }));
+    await();
+  }
 }
