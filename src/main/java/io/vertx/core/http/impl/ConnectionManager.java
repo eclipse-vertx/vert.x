@@ -30,6 +30,8 @@ import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolNames;
@@ -470,18 +472,22 @@ public class ConnectionManager {
                   ctx.fireChannelActive();
                 }
                 @Override
-                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                  super.userEventTriggered(ctx, evt);
-                  ChannelPipeline p = ctx.pipeline();
-                  if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
-                    p.remove(this);
-                    // Upgrade handler will remove itself
-                  } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
+                public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                  if (msg instanceof LastHttpContent) {
+                    ChannelPipeline p = ctx.pipeline();
                     p.remove(httpCodec);
                     p.remove(this);
                     // Upgrade handler will remove itself
                     applyHttp1xConnectionOptions(queue, ch.pipeline(), context);
                     queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
+                  }
+                }
+                @Override
+                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                  super.userEventTriggered(ctx, evt);
+                  if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
+                    ctx.pipeline().remove(this);
+                    // Upgrade handler will remove itself
                   }
                 }
               }
