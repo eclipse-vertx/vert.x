@@ -1539,6 +1539,7 @@ public class Http2ClientTest extends Http2TestBase {
       server.requestHandler(req -> {
         MultiMap headers = req.headers();
         String upgrade = headers.get("upgrade");
+        assertEquals(DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT, req.host());
         if ("h2c".equals(upgrade)) {
           req.response().setStatusCode(400).end();
         } else {

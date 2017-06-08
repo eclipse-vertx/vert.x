@@ -29,6 +29,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -468,6 +469,11 @@ public class ConnectionManager {
                 public void channelActive(ChannelHandlerContext ctx) throws Exception {
                   DefaultFullHttpRequest upgradeRequest =
                       new DefaultFullHttpRequest(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
+                  String hostHeader = peerHost;
+                  if (port != 80) {
+                    hostHeader += ":" + port;
+                  }
+                  upgradeRequest.headers().set(HttpHeaderNames.HOST, hostHeader);
                   ctx.writeAndFlush(upgradeRequest);
                   ctx.fireChannelActive();
                 }
