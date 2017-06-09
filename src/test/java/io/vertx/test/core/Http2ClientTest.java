@@ -46,11 +46,13 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsciiString;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -78,6 +80,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -1534,15 +1537,26 @@ public class Http2ClientTest extends Http2TestBase {
       server.close();
       server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false).setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
       server.requestHandler(req -> {
+        MultiMap headers = req.headers();
+        String upgrade = headers.get("upgrade");
+        assertEquals(DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT, req.host());
+        if ("h2c".equals(upgrade)) {
+          req.response().setStatusCode(400).end();
+        } else {
+          req.response().end("wibble");
+        }
         assertEquals(HttpVersion.HTTP_1_1, req.version());
-        req.response().end();
       });
       startServer();
       client.close();
       client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        assertEquals(200, resp.statusCode());
         assertEquals(HttpVersion.HTTP_1_1, resp.version());
-        testComplete();
+        resp.bodyHandler(body -> {
+          assertEquals("wibble", body.toString());
+          testComplete();
+        });
       }).exceptionHandler(this::fail).end();
       await();
     } finally {
