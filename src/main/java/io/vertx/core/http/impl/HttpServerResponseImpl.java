@@ -157,7 +157,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponseImpl putHeader(String key, String value) {
     synchronized (conn) {
       checkWritten();
-      headers().set(key, value);
+      headers.set(key, value);
       return this;
     }
   }
@@ -166,7 +166,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
     synchronized (conn) {
       checkWritten();
-      headers().set(key, values);
+      headers.set(key, values);
       return this;
     }
   }
@@ -193,7 +193,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
     synchronized (conn) {
       checkWritten();
-      headers().set(name, value);
+      headers.set(name, value);
       return this;
     }
   }
@@ -202,7 +202,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
     synchronized (conn) {
       checkWritten();
-      headers().set(name, values);
+      headers.set(name, values);
       return this;
     }
   }
@@ -314,8 +314,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public void end(Buffer chunk) {
     synchronized (conn) {
-      if (!chunked && !contentLengthSet()) {
-        headers().set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
+      if (!chunked && !headers.contentLengthSet()) {
+        headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
       }
       ByteBuf buf = chunk.getByteBuf();
       end0(buf);
@@ -467,10 +467,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       long contentLength = Math.min(length, file.length() - offset);
       bytesWritten = contentLength;
-      if (!contentLengthSet()) {
+      if (!headers.contentLengthSet()) {
         putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
       }
-      if (!contentTypeSet()) {
+      if (!headers.contentTypeSet()) {
         String contentType = MimeMapping.getMimeTypeForFilename(filename);
         if (contentType != null) {
           putHeader(HttpHeaders.CONTENT_TYPE, contentType);
@@ -535,20 +535,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private boolean contentLengthSet() {
-    if (headers == null) {
-      return false;
-    }
-    return response.headers().contains(HttpHeaders.CONTENT_LENGTH);
-  }
-
-  private boolean contentTypeSet() {
-    if (headers == null) {
-      return false;
-    }
-    return response.headers().contains(HttpHeaders.CONTENT_TYPE);
-  }
-
   private void closeConnAfterWrite() {
     if (channelFuture != null) {
       channelFuture.addListener(fut -> conn.close());
@@ -590,15 +576,15 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void prepareHeaders() {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
-      response.headers().set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
+      headers.set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
     } else if (version == HttpVersion.HTTP_1_1 && !keepAlive) {
-      response.headers().set(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
+      headers.set(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
     }
     if (!head) {
       if (chunked) {
-        response.headers().set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
-      } else if (keepAlive && !contentLengthSet()) {
-        response.headers().set(HttpHeaders.CONTENT_LENGTH, "0");
+        headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
+      } else if (keepAlive && !headers.contentLengthSet()) {
+        headers.set(HttpHeaders.CONTENT_LENGTH, "0");
       }
     }
     if (headersEndHandler != null) {
@@ -610,7 +596,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private HttpServerResponseImpl write(ByteBuf chunk) {
     synchronized (conn) {
       checkWritten();
-      if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
+      if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !headers.contentLengthSet()) {
         throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
           + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
       }

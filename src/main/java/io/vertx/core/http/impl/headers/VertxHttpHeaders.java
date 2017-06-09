@@ -68,6 +68,14 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     head.before = head.after = head;
   }
 
+  public boolean contentLengthSet() {
+    return contains(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
+  }
+
+  public boolean contentTypeSet() {
+    return contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE);
+  }
+
   @Override
   public VertxHttpHeaders add(CharSequence name, Object value) {
     int h = AsciiString.hashCode(name);
