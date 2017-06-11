@@ -53,8 +53,10 @@ import java.nio.file.attribute.UserPrincipal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -1679,4 +1681,35 @@ public class FileSystemTest extends VertxTestBase {
     File file = new File(testDir + pathSep + fileName);
     file.delete();
   }
-}
+
+  // @Repeat(times=1000)
+  @Test
+  public void testAsyncFileConcurrency() throws Exception {
+    String fileName = "some-file.dat";
+
+    AtomicReference<AsyncFile> arFile = new AtomicReference<>();
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
+      if (ar.succeeded()) {
+        AsyncFile af = ar.result();
+        arFile.set(af);
+      } else {
+        fail(ar.cause().getMessage());
+      }
+      latch.countDown();
+    });
+    awaitLatch(latch);
+
+    AsyncFile af = arFile.get();
+
+    Buffer buff = Buffer.buffer(randomByteArray(4096));
+    for (int i = 0; i < 100000; i++) {
+      af.write(buff);
+    }
+
+    af.close(onSuccess(v -> {
+      testComplete();
+    }));
+
+    await();
+  }}
