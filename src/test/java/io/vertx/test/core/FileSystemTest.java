@@ -1567,14 +1567,18 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testResumeFileInEndHandler() throws Exception {
-    createFileWithJunk("some-file.dat", 10000);
-    vertx.fileSystem().open("pom.xml", new OpenOptions(), onSuccess(file -> {
-      file.endHandler($ -> {
+    Buffer expected = TestUtils.randomBuffer(10000);
+    String fileName = "some-file.dat";
+    createFile(fileName, expected.getBytes());
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
+      Buffer buffer = Buffer.buffer();
+      file.endHandler(v -> {
+        assertEquals(buffer.length(), expected.length());
         file.pause();
         file.resume();
         complete();
       });
-      file.handler(b -> {});
+      file.handler(buffer::appendBuffer);
     }));
     await();
   }

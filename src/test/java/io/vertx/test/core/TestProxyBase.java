@@ -6,6 +6,7 @@ package io.vertx.test.core;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
 
 /**
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
@@ -28,6 +29,15 @@ public abstract class TestProxyBase {
    */
   public String getLastUri() {
     return lastUri;
+  }
+
+  /**
+   * check the last HTTP method
+   *
+   * @return the last method
+   */
+  public HttpMethod getLastMethod() {
+    throw new UnsupportedOperationException();
   }
 
   /**

@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class DefaultCommandTest {
 
-  HelloCommand command = new HelloCommand();
+  private HelloCommand command = new HelloCommand();
 
   private CommandLine parse(CLI cli, String... args) throws CLIException {
     return cli.parse(Arrays.asList(args));

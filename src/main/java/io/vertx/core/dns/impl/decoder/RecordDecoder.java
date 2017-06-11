@@ -123,7 +123,7 @@ public class RecordDecoder {
     static Function<DnsRecord, String> address(int octets) {
         return record -> {
             ByteBuf data = ((DnsRawRecord)record).content();
-            int size = data.writerIndex() - data.readerIndex();
+            int size = data.readableBytes();
             if (size != octets) {
                 throw new DecoderException("Invalid content length, or reader index when decoding address [index: "
                     + data.readerIndex() + ", expected length: " + octets + ", actual: " + size + "].");

@@ -448,7 +448,7 @@ public interface FileSystem {
   /**
    * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.
    * <p>
-   * Do not user this method to read very large files or you risk running out of available RAM.
+   * Do not use this method to read very large files or you risk running out of available RAM.
    *
    * @param path  path to the file
    * @param handler  the handler that will be called on completion

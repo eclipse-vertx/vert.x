@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.TimeoutStream;
 import io.vertx.core.Vertx;
@@ -306,6 +307,22 @@ public class TimerTest extends VertxTestBase {
     });
     stream.handler(id -> {
     });
+    await();
+  }
+
+  @Test
+  public void testCancelTimerWhenScheduledOnWorker() throws Exception {
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        long id = vertx.setTimer(100, id_ -> {
+          fail();
+        });
+        Thread.sleep(200);
+        assertTrue(vertx.cancelTimer(id));
+        testComplete();
+      }
+    }, new DeploymentOptions().setWorker(true));
     await();
   }
 }

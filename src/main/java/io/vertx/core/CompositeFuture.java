@@ -26,6 +26,7 @@ import java.util.List;
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
  * needs to be coordinated.
+ * The handlers set for the coordinated futures are overridden by the handler of the composite future.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */

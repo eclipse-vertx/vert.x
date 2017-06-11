@@ -46,11 +46,13 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsciiString;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -78,6 +80,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -346,7 +349,7 @@ public class Http2ClientTest extends Http2TestBase {
       testComplete();
     })
         .setHost("localhost:4444")
-        .exceptionHandler(err -> fail())
+        .exceptionHandler(this::fail)
         .end();
     await();
   }
@@ -1074,7 +1077,7 @@ public class Http2ClientTest extends Http2TestBase {
       @Override
       protected void initChannel(Channel ch) throws Exception {
         SSLHelper sslHelper = new SSLHelper(serverOptions, Cert.SERVER_JKS.get(), null);
-        SslHandler sslHandler = sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createSslHandler((VertxInternal) vertx, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
+        SslHandler sslHandler = new SslHandler(sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createEngine((VertxInternal) vertx, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT));
         ch.pipeline().addLast(sslHandler);
         ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
           @Override
@@ -1163,8 +1166,6 @@ public class Http2ClientTest extends Http2TestBase {
           if (err instanceof Http2Exception) {
             complete();
           }
-/*
-*/
         }).sendHead();
       });
       await();
@@ -1290,7 +1291,7 @@ public class Http2ClientTest extends Http2TestBase {
     server.close();
     server = vertx.createHttpServer(serverOptions.setHandle100ContinueAutomatically(true));
     server.requestHandler(req -> {
-      assertEquals(0, status.getAndIncrement());
+      status.getAndIncrement();
       HttpServerResponse resp = req.response();
       req.bodyHandler(body -> {
         assertEquals(2, status.getAndIncrement());
@@ -1311,7 +1312,7 @@ public class Http2ClientTest extends Http2TestBase {
     req.continueHandler(v -> {
       Context ctx = Vertx.currentContext();
       assertOnIOContext(ctx);
-      assertEquals(1, status.getAndIncrement());
+      status.getAndIncrement();
       req.end(Buffer.buffer("request-body"));
     });
     req.sendHead(version -> {
@@ -1374,7 +1375,7 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
-    }).setHost("whatever.com").sendHead();
+    }).sendHead();
     await();
   }
 
@@ -1431,7 +1432,7 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
-    }).setHost("whatever.com").sendHead();
+    }).sendHead();
     await();
   }
 
@@ -1536,15 +1537,26 @@ public class Http2ClientTest extends Http2TestBase {
       server.close();
       server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false).setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
       server.requestHandler(req -> {
+        MultiMap headers = req.headers();
+        String upgrade = headers.get("upgrade");
+        assertEquals(DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT, req.host());
+        if ("h2c".equals(upgrade)) {
+          req.response().setStatusCode(400).end();
+        } else {
+          req.response().end("wibble");
+        }
         assertEquals(HttpVersion.HTTP_1_1, req.version());
-        req.response().end();
       });
       startServer();
       client.close();
       client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        assertEquals(200, resp.statusCode());
         assertEquals(HttpVersion.HTTP_1_1, resp.version());
-        testComplete();
+        resp.bodyHandler(body -> {
+          assertEquals("wibble", body.toString());
+          testComplete();
+        });
       }).exceptionHandler(this::fail).end();
       await();
     } finally {

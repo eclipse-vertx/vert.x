@@ -22,6 +22,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
+import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.streams.Pump;
@@ -764,6 +765,17 @@ public class HTTPExamples {
 
   }
 
+  public void example60(Vertx vertx) {
+
+    HttpClientOptions options = new HttpClientOptions()
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP));
+    HttpClient client = vertx.createHttpClient(options);
+    client.getAbs("ftp://ftp.gnu.org/gnu/", response -> {
+      System.out.println("Received response with status code " + response.statusCode());
+    });
+
+  }
+
   public void serversharing(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       request.response().end("Hello from server " + this);
@@ -789,5 +801,4 @@ public class HTTPExamples {
       System.out.println("Received response with status code " + response.statusCode());
     });
   }
-
 }

@@ -143,25 +143,27 @@
  *
  * You can also use the _pump_ to write file content into HTTP responses, or more generally in any
  * `WriteStream`.
- * 
+ *
  * [[classpath]]
  * ==== Accessing files from the classpath
  *
  * When vert.x cannot find the file on the filesystem it tries to resolve the
  * file from the class path. Note that classpath resource paths never start with
- * a `/`. 
- * 
+ * a `/`.
+ *
  * Due to the fact that Java does not offer async access to classpath
  * resources, the file is copied to the filesystem in a worker thread when the
  * classpath resource is accessed the very first time and served from there
  * asynchrously. When the same resource is accessed a second time, the file from
  * the filesystem is served directly from the filesystem. The original content
  * is served even if the classpath resource changes (e.g. in a development
- * system). 
- * 
- * This caching behaviour can be disabled by setting the system
- * property `vertx.disableFileCaching` to `true`. The path where the files are
- * cached is `.vertx` by default and can be customized by setting the system
+ * system).
+ *
+ * This caching behaviour can be set on the {@link io.vertx.core.VertxOptions#setFileResolverCachingEnabled(boolean)}
+ * option. The default value of this option is `true` unless the system property `vertx.disableFileCaching` is
+ * defined.
+ *
+ * The path where the files are cached is `.vertx` by default and can be customized by setting the system
  * property `vertx.cacheDirBase`.
  *
  * The whole classpath resolving feature can be disabled by setting the system

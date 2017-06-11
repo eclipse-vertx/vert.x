@@ -206,6 +206,116 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setTcpNoDelay(boolean tcpNoDelay) {
+    return (ClientOptionsBase) super.setTcpNoDelay(tcpNoDelay);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpKeepAlive(boolean tcpKeepAlive) {
+    return (ClientOptionsBase) super.setTcpKeepAlive(tcpKeepAlive);
+  }
+
+  @Override
+  public ClientOptionsBase setSoLinger(int soLinger) {
+    return (ClientOptionsBase) super.setSoLinger(soLinger);
+  }
+
+  @Override
+  public ClientOptionsBase setUsePooledBuffers(boolean usePooledBuffers) {
+    return (ClientOptionsBase) super.setUsePooledBuffers(usePooledBuffers);
+  }
+
+  @Override
+  public ClientOptionsBase setIdleTimeout(int idleTimeout) {
+    return (ClientOptionsBase) super.setIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public ClientOptionsBase setSsl(boolean ssl) {
+    return (ClientOptionsBase) super.setSsl(ssl);
+  }
+
+  @Override
+  public ClientOptionsBase setKeyCertOptions(KeyCertOptions options) {
+    return (ClientOptionsBase) super.setKeyCertOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setKeyStoreOptions(JksOptions options) {
+    return (ClientOptionsBase) super.setKeyStoreOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setPfxKeyCertOptions(PfxOptions options) {
+    return (ClientOptionsBase) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (ClientOptionsBase) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setTrustOptions(TrustOptions options) {
+    return (ClientOptionsBase) super.setTrustOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setTrustStoreOptions(JksOptions options) {
+    return (ClientOptionsBase) super.setTrustStoreOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setPfxTrustOptions(PfxOptions options) {
+    return (ClientOptionsBase) super.setPfxTrustOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setPemTrustOptions(PemTrustOptions options) {
+    return (ClientOptionsBase) super.setPemTrustOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setUseAlpn(boolean useAlpn) {
+    return (ClientOptionsBase) super.setUseAlpn(useAlpn);
+  }
+
+  @Override
+  public ClientOptionsBase setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    return (ClientOptionsBase) super.setSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public ClientOptionsBase setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
+    return (ClientOptionsBase) super.setJdkSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public ClientOptionsBase setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
+    return (ClientOptionsBase) super.setOpenSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public ClientOptionsBase setSendBufferSize(int sendBufferSize) {
+    return (ClientOptionsBase) super.setSendBufferSize(sendBufferSize);
+  }
+
+  @Override
+  public ClientOptionsBase setReceiveBufferSize(int receiveBufferSize) {
+    return (ClientOptionsBase) super.setReceiveBufferSize(receiveBufferSize);
+  }
+
+  @Override
+  public ClientOptionsBase setReuseAddress(boolean reuseAddress) {
+    return (ClientOptionsBase) super.setReuseAddress(reuseAddress);
+  }
+
+  @Override
+  public ClientOptionsBase setTrafficClass(int trafficClass) {
+    return (ClientOptionsBase) super.setTrafficClass(trafficClass);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof ClientOptionsBase)) return false;

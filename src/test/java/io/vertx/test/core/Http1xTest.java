@@ -21,6 +21,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
@@ -30,12 +31,14 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
@@ -61,12 +64,16 @@ import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -80,7 +87,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -284,6 +294,11 @@ public class Http1xTest extends HttpTest {
     assertEquals(false,options.isSendUnmaskedFrames());
     assertEquals(options,options.setSendUnmaskedFrames(true));
     assertEquals(true,options.isSendUnmaskedFrames());
+
+    assertEquals(HttpClientOptions.DEFAULT_DECODER_INITIAL_BUFFER_SIZE, options.getDecoderInitialBufferSize());
+    assertEquals(options, options.setDecoderInitialBufferSize(256));
+    assertEquals(256, options.getDecoderInitialBufferSize());
+    assertIllegalArgumentException(() -> options.setDecoderInitialBufferSize(-1));
   }
 
   @Test
@@ -425,6 +440,12 @@ public class Http1xTest extends HttpTest {
     assertFalse(options.isDecompressionSupported());
     assertEquals(options, options.setDecompressionSupported(true));
     assertTrue(options.isDecompressionSupported());
+
+    assertEquals(HttpServerOptions.DEFAULT_DECODER_INITIAL_BUFFER_SIZE, options.getDecoderInitialBufferSize());
+    assertEquals(options, options.setDecoderInitialBufferSize(256));
+    assertEquals(256, options.getDecoderInitialBufferSize());
+    assertIllegalArgumentException(() -> options.setDecoderInitialBufferSize(-1));
+
   }
 
   @Test
@@ -471,6 +492,7 @@ public class Http1xTest extends HttpTest {
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     boolean sendUnmaskedFrame = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
+    int decoderInitialBufferSize = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -510,6 +532,7 @@ public class Http1xTest extends HttpTest {
     options.setHttp2ClearTextUpgrade(h2cUpgrade);
     options.setLocalAddress(localAddress);
     options.setSendUnmaskedFrames(sendUnmaskedFrame);
+    options.setDecoderInitialBufferSize(decoderInitialBufferSize);
     HttpClientOptions copy = new HttpClientOptions(options);
     checkCopyHttpClientOptions(options, copy);
     HttpClientOptions copy2 = new HttpClientOptions(options.toJson());
@@ -599,6 +622,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
     assertEquals(def.isHttp2ClearTextUpgrade(), json.isHttp2ClearTextUpgrade());
     assertEquals(def.getLocalAddress(), json.getLocalAddress());
+    assertEquals(def.getDecoderInitialBufferSize(), json.getDecoderInitialBufferSize());
   }
 
   @Test
@@ -649,6 +673,7 @@ public class Http1xTest extends HttpTest {
     boolean h2cUpgrade = rand.nextBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
+    int decoderInitialBufferSize = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -693,7 +718,8 @@ public class Http1xTest extends HttpTest {
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
       .put("http2ClearTextUpgrade", h2cUpgrade)
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
-      .put("localAddress", localAddress);
+      .put("localAddress", localAddress)
+      .put("decoderInitialBufferSize", decoderInitialBufferSize);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -748,6 +774,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(h2cUpgrade, options.isHttp2ClearTextUpgrade());
     assertEquals(localAddress, options.getLocalAddress());
+    assertEquals(decoderInitialBufferSize, options.getDecoderInitialBufferSize());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -806,6 +833,7 @@ public class Http1xTest extends HttpTest {
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean decompressionSupported = rand.nextBoolean();
     boolean acceptUnmaskedFrames = rand.nextBoolean();
+    int decoderInitialBufferSize = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -837,6 +865,7 @@ public class Http1xTest extends HttpTest {
     options.setAlpnVersions(alpnVersions);
     options.setDecompressionSupported(decompressionSupported);
     options.setAcceptUnmaskedFrames(acceptUnmaskedFrames);
+    options.setDecoderInitialBufferSize(decoderInitialBufferSize);
 
     HttpServerOptions copy = new HttpServerOptions(options);
     checkCopyHttpServerOptions(options, copy);
@@ -884,6 +913,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(options.getAlpnVersions(), copy.getAlpnVersions());
     assertEquals(options.isDecompressionSupported(), copy.isDecompressionSupported());
     assertEquals(options.isAcceptUnmaskedFrames(), copy.isAcceptUnmaskedFrames());
+    assertEquals(options.getDecoderInitialBufferSize(), copy.getDecoderInitialBufferSize());
   }
 
   @Test
@@ -915,6 +945,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getHttp2ConnectionWindowSize(), json.getHttp2ConnectionWindowSize());
     assertEquals(def.isDecompressionSupported(), json.isDecompressionSupported());
     assertEquals(def.isAcceptUnmaskedFrames(), json.isAcceptUnmaskedFrames());
+    assertEquals(def.getDecoderInitialBufferSize(), json.getDecoderInitialBufferSize());
   }
 
   @Test
@@ -961,6 +992,7 @@ public class Http1xTest extends HttpTest {
     boolean openSslSessionCacheEnabled = TestUtils.randomBoolean();
     boolean decompressionSupported = TestUtils.randomBoolean();
     boolean acceptUnmaskedFrames = TestUtils.randomBoolean();
+    int decoderInitialBufferSize = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -1001,7 +1033,8 @@ public class Http1xTest extends HttpTest {
       .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
       .put("decompressionSupported", decompressionSupported)
-      .put("acceptUnmaskedFrames", acceptUnmaskedFrames);
+      .put("acceptUnmaskedFrames", acceptUnmaskedFrames)
+      .put("decoderInitialBufferSize", decoderInitialBufferSize);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -1051,6 +1084,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(decompressionSupported, options.isDecompressionSupported());
     assertEquals(acceptUnmaskedFrames, options.isAcceptUnmaskedFrames());
+    assertEquals(decoderInitialBufferSize, options.getDecoderInitialBufferSize());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -2705,22 +2739,35 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testHttpProxyRequest() throws Exception {
     startProxy(null, ProxyType.HTTP);
-
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+    testHttpProxyRequest2(client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/"));
+  }
 
+  @Test
+  public void testHttpProxyRequestOverrideClientSsl() throws Exception {
+    startProxy(null, ProxyType.HTTP);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+    testHttpProxyRequest2(client.get(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080)));
+  }
+
+  private void testHttpProxyRequest2(HttpClientRequest clientReq) throws Exception {
     server.requestHandler(req -> {
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      clientReq.handler(resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
-      }).exceptionHandler(th -> fail(th)).end();
+      });
+      clientReq.exceptionHandler(this::fail);
+      clientReq.end();
     }));
     await();
   }
@@ -2745,6 +2792,31 @@ public class Http1xTest extends HttpTest {
         assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
       }).exceptionHandler(th -> fail(th)).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testHttpProxyFtpRequest() throws Exception {
+    startProxy(null, ProxyType.HTTP);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+    final String url = "ftp://ftp.gnu.org/gnu/";
+    proxy.setForceUri("http://localhost:8080/");
+    HttpClientRequest clientReq = client.getAbs(url);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+
+    server.listen(onSuccess(s -> {
+      clientReq.handler(resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals("request did sent the expected url", url, proxy.getLastUri());
+        testComplete();
+      });
+      clientReq.exceptionHandler(this::fail);
+      clientReq.end();
     }));
     await();
   }
@@ -3419,6 +3491,210 @@ public class Http1xTest extends HttpTest {
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       resp.exceptionHandler(errorHandler);
     });
+    await();
+  }
+
+  @Test
+  public void testRequestTimeoutIsNotDelayedAfterResponseIsReceived() throws Exception {
+    int n = 6;
+    waitFor(n);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(n));
+        for (int i = 0;i < n;i++) {
+          AtomicBoolean responseReceived = new AtomicBoolean();
+          client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+            try {
+              Thread.sleep(150);
+            } catch (InterruptedException e) {
+              fail(e);
+            }
+            responseReceived.set(true);
+            // Complete later, if some timeout tasks have been queued, this will be executed after
+            vertx.runOnContext(v -> complete());
+          }).exceptionHandler(err -> {
+            fail("Was not expecting to get a timeout after the response is received");
+          }).setTimeout(500).end();
+        }
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testPerPeerPooling() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setMaxPoolSize(1)
+        .setKeepAlive(true)
+        .setPipelining(false));
+    testPerPeerPooling(i -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath").setHost("host" + i));
+  }
+
+  @Test
+  public void testPerPeerPoolingWithProxy() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+        .setMaxPoolSize(1)
+        .setKeepAlive(true)
+        .setPipelining(false).setProxyOptions(new ProxyOptions()
+            .setType(ProxyType.HTTP)
+            .setHost(DEFAULT_HTTP_HOST)
+            .setPort(DEFAULT_HTTP_PORT)));
+    testPerPeerPooling(i -> client.get(80, "host" + i, "/somepath"));
+  }
+
+  @Test
+  public void testNoNPEWhenClientBreaksConnection() throws Exception {
+
+    final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(1000000));
+
+    server.requestHandler(req -> {
+      req.connection().closeHandler(v -> {
+        req.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/pdf");
+
+        try {
+          req.response().sendFile(f.getAbsolutePath(), event -> {
+            if (event.failed()) {
+              testComplete();
+            } else {
+              fail("It should not reach this point");
+            }
+          });
+        } catch (NullPointerException e) {
+          // this was the bug reported with issues/issue-80
+          fail("It should not throw NPE");
+        }
+      });
+    });
+
+    server.listen(onSuccess(server -> {
+      vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, socket -> {
+        socket.result().write("GET / HTTP/1.1\r\n\r\n").close();
+      });
+    }));
+
+    await();
+  }
+
+  private void testPerPeerPooling(Function<Integer, HttpClientRequest> requestProvider) throws Exception {
+    // Even though we use the same server host, we pool per peer host
+    waitFor(2);
+    int numPeers = 3;
+    int numRequests = 5;
+    Map<String, HttpServerResponse> map = new HashMap<>();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      assertFalse(map.containsKey(req.host()));
+      map.put(req.host(), req.response());
+      if (map.size() == numPeers) {
+        map.values().forEach(HttpServerResponse::end);
+        map.clear();
+        if (count.incrementAndGet() == numRequests) {
+          complete();
+        }
+      }
+    });
+    startServer();
+    AtomicInteger remaining = new AtomicInteger(numPeers * numRequests);
+    for (int i = 0;i < numPeers;i++) {
+      for (int j = 0;j < numRequests;j++) {
+        HttpClientRequest req = requestProvider.apply(i);
+        req.handler(resp -> {
+          assertEquals(200, resp.statusCode());
+          if (remaining.decrementAndGet() == 0) {
+            complete();
+          }
+        });
+        req.end();
+      }
+    }
+    await();
+  }
+
+  @Test
+  public void testHeadMDontAutomaticallySetContentHeaders() throws Exception {
+    testHeadMustNoAutomaticallySetContentHeaders(MultiMap.caseInsensitiveMultiMap(), respHeaders -> {
+      assertFalse(respHeaders.contains("Content-Length"));
+      assertFalse(respHeaders.contains("Transfer-Encoding"));
+    });
+  }
+
+  @Test
+  public void testHeadMustNotSendBodyWhenContentLengthSet() throws Exception {
+    MultiMap reqHeaders = MultiMap.caseInsensitiveMultiMap();
+    reqHeaders.set("Content-Length", "10");
+    testHeadMustNoAutomaticallySetContentHeaders(reqHeaders, respHeaders -> {
+      assertEquals(respHeaders.get("Content-Length"), " 10");
+      assertFalse(respHeaders.contains("Transfer-Encoding"));
+    });
+  }
+
+  @Ignore("See https://github.com/netty/netty/issues/6761")
+  @Test
+  public void testHeadMustNotSendBodyWhenTransferEncodingSet() throws Exception {
+    MultiMap reqHeaders = MultiMap.caseInsensitiveMultiMap();
+    reqHeaders.set("Transfer-Encoding", "chunked");
+    testHeadMustNoAutomaticallySetContentHeaders(reqHeaders, respHeaders -> {
+      assertEquals(respHeaders.get("Content-Length"), "10");
+      assertFalse(respHeaders.contains("Transfer-Encoding"));
+    });
+  }
+
+  private void testHeadMustNoAutomaticallySetContentHeaders(MultiMap reqHeaders, Consumer<MultiMap> headersChecker) throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.headers().addAll(reqHeaders);
+      resp.end();
+    });
+    startServer();
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, onSuccess(so -> {
+      so.write(
+          "HEAD / HTTP/1.1\r\n" +
+          "Connection: close\r\n" +
+          "\r\n");
+      Buffer buff = Buffer.buffer();
+      so.handler(buff::appendBuffer);
+      so.endHandler(v -> {
+        String content = buff.toString();
+        int idx = content.indexOf("\r\n\r\n");
+        LinkedList<String> records = new LinkedList<String>(Arrays.asList(content.substring(0, idx).split("\\r\\n")));
+        assertEquals("HTTP/1.1 200 OK", records.removeFirst());
+        assertEquals("", content.substring(idx + 4));
+        MultiMap respHeaders = MultiMap.caseInsensitiveMultiMap();
+        records.forEach(record -> {
+          int index = record.indexOf(":");
+          String value = record.substring(0, index);
+          respHeaders.add(value, record.substring(index + 1));
+        });
+        headersChecker.accept(respHeaders);
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testPartialH2CAmbiguousRequest() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("POST", req.rawMethod());
+      testComplete();
+    });
+    Buffer fullRequest = Buffer.buffer("POST /whatever HTTP/1.1\r\n\r\n");
+    startServer();
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+      so.write(fullRequest.slice(0, 1));
+      vertx.setTimer(1000, id -> {
+        so.write(fullRequest.slice(1, fullRequest.length()));
+      });
+    }));
     await();
   }
 }

@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelOutboundHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
@@ -35,7 +36,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -248,17 +248,32 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public synchronized NetSocket upgradeToSsl(final Handler<Void> handler) {
-    SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
+  public NetSocket upgradeToSsl(Handler<Void> handler) {
+    return upgradeToSsl(null, handler);
+  }
+
+  @Override
+  public NetSocket upgradeToSsl(String serverName, Handler<Void> handler) {
+    ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) channel.pipeline().get("ssl");
     if (sslHandler == null) {
       if (host != null) {
-        sslHandler = helper.createSslHandler(vertx, host, port);
+        sslHandler = new SslHandler(helper.createEngine(vertx, host, port, serverName));
       } else {
-        sslHandler = helper.createSslHandler(vertx, this.remoteName(), this.remoteAddress().port());
+        if (helper.isSNI()) {
+          sslHandler = new VertxSniHandler(helper, vertx);
+        } else {
+          sslHandler = new SslHandler(helper.createEngine(vertx));
+        }
       }
       channel.pipeline().addFirst("ssl", sslHandler);
     }
-    sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {
+    io.netty.util.concurrent.Future<Channel> handshakeFuture;
+    if (sslHandler instanceof SslHandler) {
+      handshakeFuture = ((SslHandler) sslHandler).handshakeFuture();
+    } else {
+      handshakeFuture = ((VertxSniHandler) sslHandler).handshakeFuture();
+    }
+    handshakeFuture.addListener(future -> context.executeFromIO(() -> {
       if (future.isSuccess()) {
         handler.handle(null);
       } else {
@@ -266,17 +281,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       }
     }));
     return this;
-  }
-
-  @Override
-  public boolean isSsl() {
-    return channel.pipeline().get(SslHandler.class) != null;
-  }
-
-
-  @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return getPeerCertificateChain();
   }
 
   @Override

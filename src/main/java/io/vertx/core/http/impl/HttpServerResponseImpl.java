@@ -61,6 +61,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private final HttpResponse response;
   private final HttpVersion version;
   private final boolean keepAlive;
+  private final boolean head;
 
   private boolean headWritten;
   private boolean written;
@@ -86,6 +87,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
+    this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
   }
 
   @Override
@@ -408,7 +410,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       FullHttpResponse resp;
       if (trailing != null) {
         resp = new AssembledFullHttpResponse(response, data, trailing.trailingHeaders(), trailing.getDecoderResult());
-      }  else {
+      } else if (head) {
+        resp = new AssembledFullHttpResponse(response);
+      } else {
         resp = new AssembledFullHttpResponse(response, data);
       }
       channelFuture = conn.writeToChannel(resp);
@@ -502,15 +506,23 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       if (resultHandler != null) {
         ContextImpl ctx = vertx.getOrCreateContext();
-        channelFuture.addListener(future -> {
-          AsyncResult<Void> res;
-          if (future.isSuccess()) {
-            res = Future.succeededFuture();
-          } else {
-            res = Future.failedFuture(future.cause());
-          }
-          ctx.runOnContext((v) -> resultHandler.handle(res));
-        });
+        // the channel might not be available if the client has already terminated the connection
+        if (channelFuture == null) {
+          ctx.runOnContext(v -> {
+            // schedule the failure return after the doSendFile method terminates
+            resultHandler.handle(Future.failedFuture("Channel Unavailable"));
+          });
+        } else {
+          channelFuture.addListener(future -> {
+            AsyncResult<Void> res;
+            if (future.isSuccess()) {
+              res = Future.succeededFuture();
+            } else {
+              res = Future.failedFuture(future.cause());
+            }
+            ctx.runOnContext((v) -> resultHandler.handle(res));
+          });
+        }
       }
 
       if (!keepAlive) {
@@ -583,10 +595,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     } else if (version == HttpVersion.HTTP_1_1 && !keepAlive) {
       response.headers().set(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
     }
-    if (chunked) {
-      response.headers().set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
-    } else if (keepAlive && !contentLengthSet()) {
-      response.headers().set(HttpHeaders.CONTENT_LENGTH, "0");
+    if (!head) {
+      if (chunked) {
+        response.headers().set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
+      } else if (keepAlive && !contentLengthSet()) {
+        response.headers().set(HttpHeaders.CONTENT_LENGTH, "0");
+      }
     }
     if (headersEndHandler != null) {
       headersEndHandler.handle(null);

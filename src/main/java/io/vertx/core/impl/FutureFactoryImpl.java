@@ -24,29 +24,32 @@ import io.vertx.core.spi.FutureFactory;
  */
 public class FutureFactoryImpl implements FutureFactory {
 
+  private static final SucceededFuture EMPTY = new SucceededFuture<>(null);
+
   @Override
   public <T> Future<T> future() {
     return new FutureImpl<>();
   }
 
-  // TODO - for completed futures with null values we could maybe reuse a static instance to save allocation
   @Override
   public <T> Future<T> succeededFuture() {
-    return new FutureImpl<>((T)null);
+    @SuppressWarnings("unchecked")
+    Future<T> fut = EMPTY;
+    return fut;
   }
 
   @Override
   public <T> Future<T> succeededFuture(T result) {
-    return new FutureImpl<>(result);
+    return new SucceededFuture<>(result);
   }
 
   @Override
   public <T> Future<T> failedFuture(Throwable t) {
-    return new FutureImpl<>(t);
+    return new FailedFuture<>(t);
   }
 
   @Override
   public <T> Future<T> failureFuture(String failureMessage) {
-    return new FutureImpl<>(failureMessage);
+    return new FailedFuture<>(failureMessage);
   }
 }

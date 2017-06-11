@@ -1211,6 +1211,31 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testEncodeToBuffer() throws Exception {
+    jsonObject.put("mystr", "foo");
+    jsonObject.put("mycharsequence", new StringBuilder("oob"));
+    jsonObject.put("myint", 123);
+    jsonObject.put("mylong", 1234l);
+    jsonObject.put("myfloat", 1.23f);
+    jsonObject.put("mydouble", 2.34d);
+    jsonObject.put("myboolean", true);
+    byte[] bytes = TestUtils.randomByteArray(10);
+    jsonObject.put("mybinary", bytes);
+    Instant now = Instant.now();
+    jsonObject.put("myinstant", now);
+    jsonObject.putNull("mynull");
+    jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
+    jsonObject.put("myarr", new JsonArray().add("foo").add(123));
+    String strBytes = Base64.getEncoder().encodeToString(bytes);
+
+    Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
+      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
+
+    Buffer json = jsonObject.toBuffer();
+    assertArrayEquals(expected.getBytes(), json.getBytes());
+  }
+
+  @Test
   public void testDecode() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(10);
     String strBytes = Base64.getEncoder().encodeToString(bytes);
@@ -1507,6 +1532,15 @@ public class JsonObjectTest {
     assertEquals("bar", obj.getString("foo"));
     assertEquals(Integer.valueOf(123), obj.getInteger("quux"));
     assertSame(map, obj.getMap());
+  }
+
+  @Test
+  public void testCreateFromBuffer() {
+    JsonObject excepted = new JsonObject();
+    excepted.put("foo", "bar");
+    excepted.put("quux", 123);
+    Buffer buf = Buffer.buffer(excepted.encode());
+    assertEquals(excepted, new JsonObject(buf));
   }
 
   @Test

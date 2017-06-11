@@ -35,11 +35,17 @@ public class HttpClientOptionsConverter {
       });
       obj.setAlpnVersions(list);
     }
+    if (json.getValue("decoderInitialBufferSize") instanceof Number) {
+      obj.setDecoderInitialBufferSize(((Number)json.getValue("decoderInitialBufferSize")).intValue());
+    }
     if (json.getValue("defaultHost") instanceof String) {
       obj.setDefaultHost((String)json.getValue("defaultHost"));
     }
     if (json.getValue("defaultPort") instanceof Number) {
       obj.setDefaultPort(((Number)json.getValue("defaultPort")).intValue());
+    }
+    if (json.getValue("forceSni") instanceof Boolean) {
+      obj.setForceSni((Boolean)json.getValue("forceSni"));
     }
     if (json.getValue("http2ClearTextUpgrade") instanceof Boolean) {
       obj.setHttp2ClearTextUpgrade((Boolean)json.getValue("http2ClearTextUpgrade"));
@@ -109,10 +115,12 @@ public class HttpClientOptionsConverter {
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
     }
+    json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }
     json.put("defaultPort", obj.getDefaultPort());
+    json.put("forceSni", obj.isForceSni());
     json.put("http2ClearTextUpgrade", obj.isHttp2ClearTextUpgrade());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());

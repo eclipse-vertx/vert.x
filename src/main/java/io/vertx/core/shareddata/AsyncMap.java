@@ -24,6 +24,9 @@ import io.vertx.core.Handler;
 /**
  *
  * An asynchronous map.
+ * <p>
+ * @implSpec Implementations of the interface must handle {@link io.vertx.core.shareddata.impl.ClusterSerializable}
+ *           implementing objects.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  *

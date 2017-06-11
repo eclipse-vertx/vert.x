@@ -25,6 +25,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -35,6 +36,8 @@ import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -87,6 +90,15 @@ public class WebsocketTest extends VertxTestBase {
       awaitLatch(latch);
     }
     super.tearDown();
+  }
+
+  @Override
+  protected VertxOptions getOptions() {
+    VertxOptions options = super.getOptions();
+    options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
+        "127.0.0.1 localhost\n" +
+        "127.0.0.1 host2.com"));
+    return options;
   }
 
   @Test
@@ -217,6 +229,13 @@ public class WebsocketTest extends VertxTestBase {
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCertWithSNI() throws Exception {
+    testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE, false, false, false, false, true, true, true, true, new String[0],
+        client -> client.websocketStream(4043, "host2.com", "/"));
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPKCS12() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PKCS12, Trust.NONE, false, false, false, false, true);
   }
@@ -329,28 +348,28 @@ public class WebsocketTest extends VertxTestBase {
   // Client trusts all server certs
   public void testClearClientRequestOptionsSetSSL() throws Exception {
     RequestOptions options = new RequestOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(true);
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, true, new String[0], client -> client.websocketStream(options));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, true, false, new String[0], client -> client.websocketStream(options));
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestOptionsSetSSL() throws Exception {
     RequestOptions options = new RequestOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(true);
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, true, new String[0], client -> client.websocketStream(options));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, true, false, new String[0], client -> client.websocketStream(options));
   }
 
   @Test
   // Client trusts all server certs
   public void testClearClientRequestOptionsSetClear() throws Exception {
     RequestOptions options = new RequestOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(false);
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, false, new String[0], client -> client.websocketStream(options));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, false, false, new String[0], client -> client.websocketStream(options));
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestOptionsSetClear() throws Exception {
     RequestOptions options = new RequestOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(false);
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, false, new String[0], client -> client.websocketStream(options));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, false, false, new String[0], client -> client.websocketStream(options));
   }
 
   private void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
@@ -360,7 +379,7 @@ public class WebsocketTest extends VertxTestBase {
                        String... enabledCipherSuites) throws Exception {
     testTLS(clientCert, clientTrust,
         serverCert, serverTrust,
-        requireClientAuth, serverUsesCrl, clientTrustAll, clientUsesCrl, shouldPass, true, true,
+        requireClientAuth, serverUsesCrl, clientTrustAll, clientUsesCrl, shouldPass, true, true, false,
         enabledCipherSuites, client -> client.websocketStream(4043, HttpTestBase.DEFAULT_HTTP_HOST, "/"));
   }
 
@@ -370,13 +389,12 @@ public class WebsocketTest extends VertxTestBase {
                        boolean clientUsesCrl, boolean shouldPass,
                        boolean clientSsl,
                        boolean serverSsl,
+                       boolean sni,
                        String[] enabledCipherSuites,
                        Function<HttpClient, ReadStream<WebSocket>> wsProvider) throws Exception {
     HttpClientOptions options = new HttpClientOptions();
     options.setSsl(clientSsl);
-    if (clientTrustAll) {
-      options.setTrustAll(true);
-    }
+    options.setTrustAll(clientTrustAll);
     if (clientUsesCrl) {
       options.addCrlPath("tls/root-ca/crl.pem");
     }
@@ -388,6 +406,7 @@ public class WebsocketTest extends VertxTestBase {
     client = vertx.createHttpClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(serverSsl);
+    serverOptions.setSni(sni);
     serverOptions.setTrustOptions(serverTrust.get());
     serverOptions.setKeyCertOptions(serverCert.get());
     if (requireClientAuth) {
@@ -415,6 +434,14 @@ public class WebsocketTest extends VertxTestBase {
           }
         };
         Handler<WebSocket> wsHandler = ws -> {
+          if (clientSsl && sni) {
+            try {
+              X509Certificate clientPeerCert = ws.peerCertificateChain()[0];
+              assertEquals("host2.com", cnOf(clientPeerCert));
+            } catch (Exception err) {
+              fail(err);
+            }
+          }
           int size = 100;
           Buffer received = Buffer.buffer();
           ws.handler(data -> {

@@ -304,7 +304,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
     }
 
     @Override
-    protected void handleMsgReceived(Object msg) {
+    protected void handleMsgReceived(C conn, Object msg) {
       NetServerBase.this.handleMsgReceived(conn, msg);
     }
 
@@ -326,10 +326,17 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
       }
 
       if (sslHelper.isSSL()) {
-        SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
-
-        io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-        fut.addListener(future -> {
+        io.netty.util.concurrent.Future<Channel> handshakeFuture;
+        if (options.isSni()) {
+          VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
+          handshakeFuture = sniHandler.handshakeFuture();
+          ch.pipeline().addFirst("ssl", sniHandler);
+        } else {
+          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
+          handshakeFuture = sslHandler.handshakeFuture();
+          ch.pipeline().addFirst("ssl", sslHandler);
+        }
+        handshakeFuture.addListener(future -> {
           if (future.isSuccess()) {
             connected(ch, handler);
           } else {

@@ -947,10 +947,83 @@ options = new NetServerOptions().
   setOpenSslEngineOptions(new OpenSSLEngineOptions());
 ----
 
-==== Application-Layer Protocol Negotiation
+==== Server Name Indication (SNI)
 
-ALPN is a TLS extension for applicationl layer protocol negotitation. It is used by HTTP/2: during the TLS handshake
-the client gives the list of application protocols it accepts and the server responds with a protocol it supports.
+Server Name Indication (SNI) is a TLS extension by which a client specifies an hostname attempting to connect: during
+the TLS handshake the clients gives a server name and the server can use it to respond with a specific certificate
+for this server name instead of the default deployed certificate.
+
+When SNI is active the server uses
+
+* the certificate CN or SAN DNS (Subject Alternative Name with DNS) to do an exact match, e.g `www.example.com`
+* the certificate CN or SAN DNS certificate to match a wildcard name, e.g `*.example.com`
+* otherwise the first certificate when the client does not present a server name or the presenter server name cannot be matched
+
+You can enable SNI on the server by setting `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setSni-boolean-[setSni]` to `true` and
+configured the server with multiple key/certificate pairs.
+
+Java KeyStore files or PKCS12 files can store multiple key/cert pairs out of the box.
+
+[source,java]
+----
+JksOptions keyCertOptions = new JksOptions().setPath("keystore.jks").setPassword("wibble");
+
+NetServer netServer = vertx.createNetServer(new NetServerOptions()
+    .setKeyStoreOptions(keyCertOptions)
+    .setSsl(true)
+    .setSni(true)
+);
+----
+
+`link:../../apidocs/io/vertx/core/net/PemKeyCertOptions.html[PemKeyCertOptions]` can be configured to hold multiple entries:
+
+[source,java]
+----
+PemKeyCertOptions keyCertOptions = new PemKeyCertOptions()
+    .setKeyPaths(Arrays.asList("default-key.pem", "host1-key.pem", "etc..."))
+    .setCertPaths(Arrays.asList("default-cert.pem", "host2-key.pem", "etc...")
+    );
+
+NetServer netServer = vertx.createNetServer(new NetServerOptions()
+    .setPemKeyCertOptions(keyCertOptions)
+    .setSsl(true)
+    .setSni(true)
+);
+----
+
+The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
+
+You can provide an explicit server name when connecting a socket
+
+[source,java]
+----
+NetClient client = vertx.createNetClient(new NetClientOptions()
+    .setTrustStoreOptions(trustOptions)
+    .setSsl(true)
+);
+
+// Connect to 'localhost' and present 'server.name' server name
+client.connect(1234, "localhost", "server.name", res -> {
+  if (res.succeeded()) {
+    System.out.println("Connected!");
+    NetSocket socket = res.result();
+  } else {
+    System.out.println("Failed to connect: " + res.cause().getMessage());
+  }
+});
+----
+
+It can be used for different purposes:
+
+* present a server name different than the server host
+* present a server name while connecting to an IP
+* force to present a server name when using shortname
+
+==== Application-Layer Protocol Negotiation (ALPN)
+
+Application-Layer Protocol Negotiation (ALPN) is a TLS extension for application layer protocol negotiation. It is used by
+HTTP/2: during the TLS handshake the client gives the list of application protocols it accepts and the server responds
+with a protocol it supports.
 
 Java 8 does not supports ALPN out of the box, so ALPN should be enabled by other means:
 

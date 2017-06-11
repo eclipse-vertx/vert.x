@@ -79,12 +79,12 @@ public class BufferImpl implements Buffer {
 
   @Override
   public JsonObject toJsonObject() {
-    return new JsonObject(toString());
+    return new JsonObject(this);
   }
 
   @Override
   public JsonArray toJsonArray() {
-    return new JsonArray(toString());
+    return new JsonArray(this);
   }
 
   public byte getByte(int pos) {
@@ -210,14 +210,14 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer appendBuffer(Buffer buff) {
-    ByteBuf cb = buff.getByteBuf();
     buffer.writeBytes(buff.getByteBuf());
-    cb.readerIndex(0); // Need to reset readerindex since Netty write modifies readerIndex of source!
     return this;
   }
 
   public Buffer appendBuffer(Buffer buff, int offset, int len) {
-    buffer.writeBytes(buff.getByteBuf(), offset, len);
+    ByteBuf byteBuf = buff.getByteBuf();
+    int from = byteBuf.readerIndex() + offset;
+    buffer.writeBytes(byteBuf, from, len);
     return this;
   }
 
@@ -423,7 +423,8 @@ public class BufferImpl implements Buffer {
 
   public Buffer setBuffer(int pos, Buffer b, int offset, int len) {
     ensureWritable(pos, len);
-    buffer.setBytes(pos, b.getByteBuf(), offset, len);
+    ByteBuf byteBuf = b.getByteBuf();
+    buffer.setBytes(pos, byteBuf, byteBuf.readerIndex() + offset, len);
     return this;
   }
 
