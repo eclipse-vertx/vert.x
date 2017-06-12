@@ -148,11 +148,15 @@ public class AsyncFileImpl implements AsyncFile {
     Handler<AsyncResult<Void>> wrapped = ar -> {
       if (ar.succeeded()) {
         checkContext();
-        if (writesOutstanding == 0 && closedDeferred != null) {
-          closedDeferred.run();
-        } else {
-          checkDrained();
+        Runnable action;
+        synchronized (AsyncFileImpl.this) {
+          if (writesOutstanding == 0 && closedDeferred != null) {
+            action = closedDeferred;
+          } else {
+            action = this::checkDrained;
+          }
         }
+        action.run();
         if (handler != null) {
           handler.handle(ar);
         }
@@ -372,7 +376,9 @@ public class AsyncFileImpl implements AsyncFile {
     if (toWrite == 0) {
       throw new IllegalStateException("Cannot save zero bytes");
     }
-    writesOutstanding += toWrite;
+    synchronized (this) {
+      writesOutstanding += toWrite;
+    }
     writeInternal(buff, position, handler);
   }
 
@@ -392,7 +398,9 @@ public class AsyncFileImpl implements AsyncFile {
         } else {
           // It's been fully written
           context.runOnContext((v) -> {
-            writesOutstanding -= buff.limit();
+            synchronized (AsyncFileImpl.this) {
+              writesOutstanding -= buff.limit();
+            }
             handler.handle(Future.succeededFuture());
           });
         }
