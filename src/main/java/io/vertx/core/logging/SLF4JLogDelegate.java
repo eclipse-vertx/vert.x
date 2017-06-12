@@ -145,7 +145,13 @@ public class SLF4JLogDelegate implements LogDelegate {
   }
 
   private void log(int level, Object message) {
-    log(level, message, null);
+    if (message instanceof Throwable) {
+      // We often send a throwable inside the message and
+      // therefore we will lack the stacktrace in the rendered log entry
+      log(level, "", (Throwable) message);
+    } else {
+      log(level, message, null);
+    }
   }
 
   private void log(int level, Object message, Throwable t) {
