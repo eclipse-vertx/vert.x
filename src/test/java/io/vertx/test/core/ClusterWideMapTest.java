@@ -16,16 +16,29 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import static io.vertx.test.core.TestUtils.*;
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -596,6 +609,148 @@ public class ClusterWideMapTest extends VertxTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testKeySet() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.keys(onSuccess(keys -> {
+        assertEquals(map.keySet(), keys);
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testValues() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.values(onSuccess(values -> {
+        assertEquals(map.values().size(), values.size());
+        assertTrue(map.values().containsAll(values));
+        assertTrue(values.containsAll(map.values()));
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testEntrySet() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.entries(onSuccess(res -> {
+        assertEquals(map.entrySet(), res.entrySet());
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testKeyStream() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      List<JsonObject> keys = new ArrayList<>();
+      ReadStream<JsonObject> stream = asyncMap.keyStream();
+      long pause = 500;
+      Long start = System.nanoTime();
+      stream.endHandler(end -> {
+        assertEquals(map.size(), keys.size());
+        assertTrue(keys.containsAll(map.keySet()));
+        long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
+        assertTrue(duration >= 3 * pause);
+        testComplete();
+      }).handler(jsonObject -> {
+        keys.add(jsonObject);
+        if (jsonObject.getInteger("key") == 3 || jsonObject.getInteger("key") == 16 || jsonObject.getInteger("key") == 38) {
+          stream.pause();
+          vertx.setTimer(pause, tid -> stream.resume());
+        }
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testValueStream() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      List<Buffer> values = new ArrayList<>();
+      ReadStream<Buffer> stream = asyncMap.valueStream();
+      AtomicInteger idx = new AtomicInteger();
+      long pause = 500;
+      Long start = System.nanoTime();
+      stream.endHandler(end -> {
+        assertEquals(map.size(), values.size());
+        assertTrue(values.containsAll(map.values()));
+        assertTrue(map.values().containsAll(values));
+        long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
+        assertTrue(duration >= 3 * pause);
+        testComplete();
+      }).handler(buffer -> {
+        values.add(buffer);
+        int j = idx.getAndIncrement();
+        if (j == 3 || j == 16 || j == 38) {
+          stream.pause();
+          vertx.setTimer(pause, tid -> stream.resume());
+        }
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testEntryStream() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      List<Entry<JsonObject, Buffer>> entries = new ArrayList<>();
+      ReadStream<Entry<JsonObject, Buffer>> stream = asyncMap.entryStream();
+      long pause = 500;
+      Long start = System.nanoTime();
+      stream.endHandler(end -> {
+        assertEquals(map.size(), entries.size());
+        assertTrue(entries.containsAll(map.entrySet()));
+        long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
+        assertTrue(duration >= 3 * pause);
+        testComplete();
+      }).handler(entry -> {
+        entries.add(entry);
+        if (entry.getKey().getInteger("key") == 3 || entry.getKey().getInteger("key") == 16 || entry.getKey().getInteger("key") == 38) {
+          stream.pause();
+          vertx.setTimer(pause, tid -> stream.resume());
+        }
+      });
+    });
+    await();
+  }
+
+  private Map<JsonObject, Buffer> genJsonToBuffer(int size) {
+    Map<JsonObject, Buffer> map = new HashMap<>();
+    for (int i = 0; i < size; i++) {
+      JsonObject key = new JsonObject().put("key", i);
+      map.put(key, key.toBuffer());
+    }
+    return map;
+  }
+
+  private void loadData(Map<JsonObject, Buffer> map, BiConsumer<Vertx, AsyncMap<JsonObject, Buffer>> test) {
+    List<Future> futures = new ArrayList<>(map.size());
+    map.forEach((key, value) -> {
+      Future future = Future.future();
+      getVertx().sharedData().getClusterWideMap("foo", onSuccess(asyncMap -> {
+        asyncMap.put(key, value, future);
+      }));
+      futures.add(future);
+    });
+    CompositeFuture.all(futures).setHandler(onSuccess(cf -> {
+      Vertx v = getVertx();
+      v.sharedData().<JsonObject, Buffer>getClusterWideMap("foo", onSuccess(asyncMap -> {
+        test.accept(v, asyncMap);
+      }));
+    }));
   }
 
   private <K, V> void testMapPutGet(K k, V v) {

@@ -16,9 +16,16 @@
 
 package io.vertx.core.shareddata;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.streams.ReadStream;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 
 /**
@@ -134,4 +141,66 @@ public interface AsyncMap<K, V> {
    */
   void size(Handler<AsyncResult<Integer>> resultHandler);
 
+  /**
+   * Get the keys of the map, asynchronously.
+   *
+   * Use this method with care as the map may contain a huge number of entries.
+   * In such cases, the invocation will much likely result in {@link OutOfMemoryError}.
+   *
+   * When in doubt, prefer usage of {@link #keyStream()}.
+   *
+   * @param resultHandler invoked when the operation completes
+   */
+  @GenIgnore
+  void keys(Handler<AsyncResult<Set<K>>> resultHandler);
+
+  /**
+   * Get the values of the map, asynchronously.
+   *
+   * Use this method with care as the map may contain a huge number of entries.
+   * In such cases, the invocation will much likely result in {@link OutOfMemoryError}.
+   *
+   * When in doubt, prefer usage of {@link #valueStream()}.
+   *
+   * @param resultHandler invoked when the operation completes
+   */
+  @GenIgnore
+  void values(Handler<AsyncResult<List<V>>> resultHandler);
+
+  /**
+   * Get the entries of the map, asynchronously.
+   *
+   * Use this method with care as the map may contain a huge number of entries.
+   * In such cases, the invocation will much likely result in {@link OutOfMemoryError}.
+   *
+   * When in doubt, prefer usage of {@link #entryStream()}.
+   *
+   * @param resultHandler invoked when the operation completes
+   */
+  @GenIgnore
+  void entries(Handler<AsyncResult<Map<K, V>>> resultHandler);
+
+  /**
+   * Get the keys of the map as a {@link ReadStream}.
+   *
+   * @return a stream of map keys
+   */
+  ReadStream<K> keyStream();
+
+
+  /**
+   * Get the values of the map as a {@link ReadStream}.
+   *
+   * @return a stream of map values
+   */
+  ReadStream<V> valueStream();
+
+
+  /**
+   * Get the entries of the map as a {@link ReadStream}.
+   *
+   * @return a stream of map entries
+   */
+  @GenIgnore
+  ReadStream<Entry<K, V>> entryStream();
 }
