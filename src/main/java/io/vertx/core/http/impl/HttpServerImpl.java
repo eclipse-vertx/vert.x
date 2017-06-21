@@ -48,6 +48,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -396,6 +397,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (options.getIdleTimeout() > 0) {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
     }
+	
+	pipeline.addLast("websocketHandler", new WebSocketServerCompressionHandler());
     pipeline.addLast("handler", new ServerHandler(pipeline.channel()));
   }
 
@@ -848,7 +851,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     try {
 
       WebSocketServerHandshakerFactory factory =
-        new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
+        new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, true,
           options.getMaxWebsocketFrameSize(),options.isAcceptUnmaskedFrames());
       WebSocketServerHandshaker shake = factory.newHandshaker(request);
 
