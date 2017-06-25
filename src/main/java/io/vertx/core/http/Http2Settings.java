@@ -345,14 +345,13 @@ public class Http2Settings {
 
   @Override
   public int hashCode() {
-    long result = super.hashCode();
+    int result = (int) (headerTableSize ^ (headerTableSize >>> 32));
     result = 31 * result + (pushEnabled ? 1 : 0);
-    result = 31 * result + maxConcurrentStreams;
-    result = 31 * result + maxConcurrentStreams;
+    result = 31 * result + (int) (maxConcurrentStreams ^ (maxConcurrentStreams >>> 32));
     result = 31 * result + initialWindowSize;
     result = 31 * result + maxFrameSize;
-    result = 31 * result + maxHeaderListSize;
-    return Long.hashCode(result);
+    result = 31 * result + (int) (maxHeaderListSize ^ (maxHeaderListSize >>> 32));
+    return result;
   }
 
   @Override
