@@ -31,7 +31,7 @@ import io.vertx.core.impl.ContextTask;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
   private C conn;
   private ContextTask endReadAndFlush;
