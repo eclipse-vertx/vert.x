@@ -8,6 +8,9 @@ The benchmarks configures a JMH executor that uses `VertxThread`.
 
 Benchmarks are located in the `src/test/benchmarks` folder.
 
+Note that these benchmarks have been added to quickly see the impact of changes but do not replace real benchmarking
+done in a lab.
+
 ### How-to
 
 Package the JMH microbenchmarks
