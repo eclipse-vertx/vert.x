@@ -411,7 +411,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       // some casting and a header check
       handler = new ServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     } else {
-      handler = new ServerHandleWithWebSockets(sslHelper, options, serverOrigin, holder, metrics);
+      handler = new ServerHandlerWithWebSockets(sslHelper, options, serverOrigin, holder, metrics);
     }
     handler.addHandler(conn -> {
       connectionMap.put(pipeline.channel(), conn);
@@ -582,12 +582,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  public class ServerHandleWithWebSockets extends ServerHandler {
+  public class ServerHandlerWithWebSockets extends ServerHandler {
 
     private boolean closeFrameSent;
     private FullHttpRequest wsRequest;
 
-    public ServerHandleWithWebSockets(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
+    public ServerHandlerWithWebSockets(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
       super(sslHelper, options, serverOrigin, holder, metrics);
     }
 
