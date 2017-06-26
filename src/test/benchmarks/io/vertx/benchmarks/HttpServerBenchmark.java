@@ -65,10 +65,13 @@ import java.util.Date;
 @Threads(16)
 public class HttpServerBenchmark extends BenchmarkBase {
 
+  private static final ByteBuf GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
+    "GET / HTTP/1.1\r\n" +
+      "\r\n").getBytes()));
+
   VertxInternal vertx;
   EmbeddedChannel vertxChannel;
   EmbeddedChannel nettyChannel;
-  ByteBuf GET;
 
   private static final CharSequence RESPONSE_TYPE_PLAIN = io.vertx.core.http.HttpHeaders.createOptimized("text/plain");
 
@@ -111,9 +114,6 @@ public class HttpServerBenchmark extends BenchmarkBase {
     HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null));
     ServerHandler handler = new ServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
-    GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
-        "GET / HTTP/1.1\r\n" +
-            "\r\n").getBytes()));
 
     nettyChannel = new EmbeddedChannel(new HttpRequestDecoder(
         options.getMaxInitialLineLength(),
@@ -164,31 +164,26 @@ public class HttpServerBenchmark extends BenchmarkBase {
   @Benchmark
   public void vertx(Blackhole blackhole) {
     vertxChannel.writeInbound(GET);
-    Object result = vertxChannel.outboundMessages().poll();
+    ByteBuf result = (ByteBuf) vertxChannel.outboundMessages().poll();
     blackhole.consume(result);
   }
 
   @Fork(value = 1, jvmArgsAppend = {
-      "-XX:+UseBiasedLocking",
-      "-XX:BiasedLockingStartupDelay=0",
       "-Dvertx.threadChecks=false",
       "-Dvertx.disableContextTimings=true",
       "-Dvertx.disableTCCL=true ",
-      "-XX:+AggressiveOpts",
-      "-Djmh.executor=CUSTOM",
-      "-Djmh.executor.class=io.vertx.core.impl.VertxExecutorService"
   })
   @Benchmark
   public void vertxOpt(Blackhole blackhole) {
     vertxChannel.writeInbound(GET);
-    Object result = vertxChannel.outboundMessages().poll();
+    ByteBuf result = (ByteBuf) vertxChannel.outboundMessages().poll();
     blackhole.consume(result);
   }
 
   @Benchmark
   public void netty(Blackhole blackhole) {
     nettyChannel.writeInbound(GET);
-    Object result = nettyChannel.outboundMessages().poll();
+    ByteBuf result = (ByteBuf) nettyChannel.outboundMessages().poll();
     blackhole.consume(result);
   }
 }

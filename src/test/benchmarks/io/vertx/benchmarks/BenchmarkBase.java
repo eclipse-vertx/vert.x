@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 2, timeUnit = TimeUnit.SECONDS)
 @Threads(1)
 @BenchmarkMode(Mode.Throughput)
-@Fork(value = 1, jvmArgsAppend = {
+@Fork(value = 1, jvmArgs = {
     "-XX:+UseBiasedLocking",
     "-XX:BiasedLockingStartupDelay=0",
     "-XX:+AggressiveOpts",
