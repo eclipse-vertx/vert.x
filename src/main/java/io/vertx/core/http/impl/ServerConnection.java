@@ -294,7 +294,6 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     if (METRICS_ENABLED && metrics != null) {
       bytesRead += chunk.length();
     }
-//    System.out.println("handling chunk " + chunk);
     currentRequest.handleData(chunk);
   }
 
