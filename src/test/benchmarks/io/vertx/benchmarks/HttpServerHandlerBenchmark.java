@@ -63,7 +63,7 @@ import java.util.Date;
  */
 @State(Scope.Thread)
 @Threads(16)
-public class HttpServerBenchmark extends BenchmarkBase {
+public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
   private static final ByteBuf GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
     "GET / HTTP/1.1\r\n" +
