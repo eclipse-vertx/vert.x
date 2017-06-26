@@ -58,12 +58,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 /**
  * An event bus implementation that clusters with other Vert.x nodes
  *
- * @author <a href="http://tfox.org">Tim Fox</a>   7                                                                                     T
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ClusteredEventBus extends EventBusImpl {
 
@@ -404,18 +405,13 @@ public class ClusteredEventBus extends EventBusImpl {
     // Once we connect we send them.
     // This can also be invoked concurrently from different threads, so it gets a little
     // tricky
-    ConnectionHolder holder = connections.get(theServerID);
-    if (holder == null) {
-      // When process is creating a lot of connections this can take some time
-      // so increase the timeout
-      holder = new ConnectionHolder(this, theServerID, options);
-      ConnectionHolder prevHolder = connections.putIfAbsent(theServerID, holder);
-      if (prevHolder != null) {
-        // Another one sneaked in
-        holder = prevHolder;
-      } else {
-        holder.connect();
-      }
+    final AtomicBoolean disconnected = new AtomicBoolean();
+    final ConnectionHolder holder = connections.computeIfAbsent(theServerID, id -> {
+      disconnected.set(true);
+      return new ConnectionHolder(this, id, options);
+    });
+    if (disconnected.get()) {
+      holder.connect();
     }
     holder.writeMessage((ClusteredMessage) message);
   }
