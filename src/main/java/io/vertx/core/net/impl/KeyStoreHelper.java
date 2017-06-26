@@ -27,19 +27,12 @@ import io.vertx.core.net.TrustOptions;
 
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -53,7 +46,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -118,7 +110,16 @@ public class KeyStoreHelper {
           map(path -> vertx.resolveFile(path).getAbsolutePath()).
           map(vertx.fileSystem()::readFileBlocking);
       certValues = Stream.concat(certValues, trustOptions.getCertValues().stream());
-      return new KeyStoreHelper(loadCA(certValues), null);
+      PemTrustOptions trustOpts = ((PemTrustOptions) trustOptions);
+      HashMap<String, KeyStore> trustMgrMap = new HashMap<>();
+      for (String name : trustOpts.getServerNames()) {
+        Stream<Buffer> certValues4Server = trustOpts.getCertPath4Name(name).
+            stream().
+            map(path -> vertx.resolveFile(path).getAbsolutePath()).
+            map(vertx.fileSystem()::readFileBlocking);
+            trustMgrMap.put(name,loadCA(Stream.concat(certValues4Server, trustOptions.getCertValues4Name(name).stream())));
+      }
+      return new KeyStoreHelper(loadCA(certValues), null, trustMgrMap);
     } else {
       return null;
     }
@@ -128,6 +129,13 @@ public class KeyStoreHelper {
   private final KeyStore store;
   private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
   private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
+  private Map<String, KeyStore> trustMgrMap;
+
+  public KeyStoreHelper(KeyStore ks, String password, Map<String, KeyStore> trustMgrMap){
+    this.password = password;
+    this.store = ks;
+    this.trustMgrMap = trustMgrMap;
+  }
 
   public KeyStoreHelper(KeyStore ks, String password) throws Exception {
     Enumeration<String> en = ks.aliases();
@@ -231,6 +239,21 @@ public class KeyStoreHelper {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     fact.init(store);
     return fact;
+  }
+
+  public TrustManagerFactory getTrustMgr(String serverName)  {
+    KeyStore trustStore = trustMgrMap.get(serverName);
+    if (trustStore == null){
+      trustStore = this.store;
+    }
+    TrustManagerFactory fact = null;
+    try {
+      fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      fact.init(trustStore);
+      return fact;
+    } catch (NoSuchAlgorithmException | KeyStoreException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public TrustManager[] getTrustMgrs(VertxInternal vertx) throws Exception {

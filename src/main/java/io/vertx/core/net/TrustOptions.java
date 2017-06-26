@@ -20,6 +20,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.util.function.Function;
 
 /**
  * Certification authority configuration options.
@@ -43,5 +44,10 @@ public interface TrustOptions {
    */
   default TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
     return KeyStoreHelper.create((VertxInternal) vertx, this).getTrustMgrFactory((VertxInternal) vertx);
+  }
+
+  default Function<String, TrustManagerFactory> trustManagerMapper(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, this);
+    return helper::getTrustMgr;
   }
 }
