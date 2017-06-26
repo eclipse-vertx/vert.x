@@ -126,7 +126,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final Map<Channel, Http2ServerConnection> connectionMap2 = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
-  private final HandlerManager<HttpHandlers> reqHandlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<HttpHandlers> httpHandlerMgr = new HandlerManager<>(availableWorkers);
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
@@ -404,7 +404,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (!DISABLE_HC2) {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
-    HandlerHolder<HttpHandlers> holder = reqHandlerManager.chooseHandler(pipeline.channel().eventLoop());
+    HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(pipeline.channel().eventLoop());
     ServerHandler handler;
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
@@ -423,7 +423,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   public void handleHttp2(Channel ch) {
-    HandlerHolder<HttpHandlers> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
+    HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(ch.eventLoop());
     configureHttp2(ch.pipeline());
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(holder, null, ch);
     if (holder.handler.connectionHandler != null) {
@@ -478,9 +478,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
       if (actualServer != null) {
 
-        actualServer.reqHandlerManager.removeHandler(new HttpHandlers(requestStream.handler(), wsStream.handler(), connectionHandler), listenContext);
+        actualServer.httpHandlerMgr.removeHandler(new HttpHandlers(requestStream.handler(), wsStream.handler(), connectionHandler), listenContext);
 
-        if (actualServer.reqHandlerManager.hasHandlers()) {
+        if (actualServer.httpHandlerMgr.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
             executeCloseDone(context, done, null);
@@ -540,7 +540,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
 
   private void addHandlers(HttpServerImpl server, ContextImpl context) {
-    server.reqHandlerManager.addHandler(new HttpHandlers(requestStream.handler(), wsStream.handler(), connectionHandler), context);
+    server.httpHandlerMgr.addHandler(new HttpHandlers(requestStream.handler(), wsStream.handler(), connectionHandler), context);
   }
 
   private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
@@ -675,7 +675,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       if (shake == null) {
         return;
       }
-      HandlerHolder<HttpHandlers> wsHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+      HandlerHolder<HttpHandlers> wsHandler = httpHandlerMgr.chooseHandler(ch.eventLoop());
 
       if (wsHandler == null || wsHandler.handler.wsHandler == null) {
         conn.handleMessage(request);
@@ -889,7 +889,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else if (msg instanceof LastHttpContent) {
         if (settings != null) {
-          HandlerHolder<HttpHandlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
+          HandlerHolder<HttpHandlers> reqHandler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
           if (reqHandler.context.isEventLoopContext()) {
             ChannelPipeline pipeline = ctx.pipeline();
             DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
@@ -939,7 +939,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       super.exceptionCaught(ctx, cause);
-      HandlerHolder<HttpHandlers> reqHandler = reqHandlerManager.chooseHandler(ctx.channel().eventLoop());
+      HandlerHolder<HttpHandlers> reqHandler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
       reqHandler.context.executeFromIO(() -> HttpServerImpl.this.connectionExceptionHandler.handle(cause));
   }
 }
