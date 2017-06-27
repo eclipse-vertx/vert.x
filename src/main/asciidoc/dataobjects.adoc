@@ -256,6 +256,36 @@ Set whether Netty pooled buffers are enabled
 +++
 |===
 
+[[CopyOptions]]
+== CopyOptions
+
+++++
+ Describes the copy (and move) options.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[atomicMove]]`atomicMove`|`Boolean`|
++++
+Whether move should be performed as an atomic filesystem operation. Defaults to <code>false</code>.
++++
+|[[copyAttributes]]`copyAttributes`|`Boolean`|
++++
+Whether the file attributes should be copied. Defaults to <code>false</code>.
++++
+|[[nofollowLinks]]`nofollowLinks`|`Boolean`|
++++
+Whether symbolic links should not be followed during copy or move operations. Defaults to <code>false</code>.
++++
+|[[replaceExisting]]`replaceExisting`|`Boolean`|
++++
+Whether an existing file, empty directory, or link should be replaced. Defaults to <code>false</code>.
++++
+|===
+
 [[DatagramSocketOptions]]
 == DatagramSocketOptions
 

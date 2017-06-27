@@ -20,6 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.FileProps;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.FileSystemException;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.CopyOption;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.FileVisitOption;
@@ -72,32 +74,42 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler) {
-    copyInternal(from, to, handler).run();
+    return copy(from, to, CopyOptions.DEFAULT_OPTIONS, handler);
+  }
+
+  @Override
+  public FileSystem copy(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
+    copyInternal(from, to, options, handler).run();
     return this;
   }
 
   public FileSystem copyBlocking(String from, String to) {
-    copyInternal(from, to, null).perform();
+    copyInternal(from, to, CopyOptions.DEFAULT_OPTIONS, null).perform();
     return this;
   }
 
   public FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler) {
-    copyInternal(from, to, recursive, handler).run();
+    copyRecursiveInternal(from, to, recursive, handler).run();
     return this;
   }
 
   public FileSystem copyRecursiveBlocking(String from, String to, boolean recursive) {
-    copyInternal(from, to, recursive, null).perform();
+    copyRecursiveInternal(from, to, recursive, null).perform();
     return this;
   }
 
   public FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler) {
-    moveInternal(from, to, handler).run();
+    return move(from, to, CopyOptions.DEFAULT_OPTIONS, handler);
+  }
+
+  @Override
+  public FileSystem move(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
+    moveInternal(from, to, options, handler).run();
     return this;
   }
 
   public FileSystem moveBlocking(String from, String to) {
-    moveInternal(from, to, null).perform();
+    moveInternal(from, to, CopyOptions.DEFAULT_OPTIONS, null).perform();
     return this;
   }
 
@@ -342,11 +354,27 @@ public class FileSystemImpl implements FileSystem {
     return fsPropsInternal(path, null).perform();
   }
 
-  private BlockingAction<Void> copyInternal(String from, String to, Handler<AsyncResult<Void>> handler) {
-    return copyInternal(from, to, false, handler);
+  private BlockingAction<Void> copyInternal(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(from);
+    Objects.requireNonNull(to);
+    Objects.requireNonNull(options);
+    Set<CopyOption> copyOptionSet = options.toCopyOptionSet();
+    CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[copyOptionSet.size()]);
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
+        try {
+          Path source = vertx.resolveFile(from).toPath();
+          Path target = vertx.resolveFile(to).toPath();
+          Files.copy(source, target, copyOptions);
+        } catch (IOException e) {
+          throw new FileSystemException(e);
+        }
+        return null;
+      }
+    };
   }
 
-  private BlockingAction<Void> copyInternal(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler) {
+  private BlockingAction<Void> copyRecursiveInternal(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(from);
     Objects.requireNonNull(to);
     return new BlockingAction<Void>(handler) {
@@ -356,27 +384,27 @@ public class FileSystemImpl implements FileSystem {
           Path target = vertx.resolveFile(to).toPath();
           if (recursive) {
             Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
-                new SimpleFileVisitor<Path>() {
-                  public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                      throws IOException {
-                    Path targetDir = target.resolve(source.relativize(dir));
-                    try {
-                      Files.copy(dir, targetDir);
-                    } catch (FileAlreadyExistsException e) {
-                      if (!Files.isDirectory(targetDir)) {
-                        throw e;
-                      }
+              new SimpleFileVisitor<Path>() {
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                  throws IOException {
+                  Path targetDir = target.resolve(source.relativize(dir));
+                  try {
+                    Files.copy(dir, targetDir);
+                  } catch (FileAlreadyExistsException e) {
+                    if (!Files.isDirectory(targetDir)) {
+                      throw e;
                     }
-                    return FileVisitResult.CONTINUE;
                   }
+                  return FileVisitResult.CONTINUE;
+                }
 
-                  @Override
-                  public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                      throws IOException {
-                    Files.copy(file, target.resolve(source.relativize(file)));
-                    return FileVisitResult.CONTINUE;
-                  }
-                });
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                  throws IOException {
+                  Files.copy(file, target.resolve(source.relativize(file)));
+                  return FileVisitResult.CONTINUE;
+                }
+              });
           } else {
             Files.copy(source, target);
           }
@@ -388,15 +416,18 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> moveInternal(String from, String to, Handler<AsyncResult<Void>> handler) {
+  private BlockingAction<Void> moveInternal(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(from);
     Objects.requireNonNull(to);
+    Objects.requireNonNull(options);
+    Set<CopyOption> copyOptionSet = options.toCopyOptionSet();
+    CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[copyOptionSet.size()]);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
           Path source = vertx.resolveFile(from).toPath();
           Path target = vertx.resolveFile(to).toPath();
-          Files.move(source, target);
+          Files.move(source, target, copyOptions);
         } catch (IOException e) {
           throw new FileSystemException(e);
         }
