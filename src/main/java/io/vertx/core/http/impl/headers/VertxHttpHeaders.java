@@ -252,7 +252,25 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     List<Map.Entry<String, String>> all = new ArrayList<>(size());
     VertxHttpHeaders.MapEntry e = head.after;
     while (e != head) {
-      all.add(new AbstractMap.SimpleEntry<>(e.key.toString(), e.value.toString()));
+      final MapEntry f = e;
+      all.add(new Map.Entry<String, String>() {
+        @Override
+        public String getKey() {
+          return f.key.toString();
+        }
+        @Override
+        public String getValue() {
+          return f.value.toString();
+        }
+        @Override
+        public String setValue(String value) {
+          return f.setValue(value).toString();
+        }
+        @Override
+        public String toString() {
+          return getKey() + ": " + getValue();
+        }
+      });
       e = e.after;
     }
     return all;
