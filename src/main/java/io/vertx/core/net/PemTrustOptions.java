@@ -65,7 +65,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   private Map<String, List<Buffer>> certValuesServerMap;
   private ArrayList<String> certPaths;
   private ArrayList<Buffer> certValues;
-
+  private Set<String> serverNames;
   /**
    * Default constructor
    */
@@ -75,6 +75,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
     this.certValues = new ArrayList<>();
     this.certPathsServerMap = new HashMap<>();
     this.certValuesServerMap = new HashMap<>();
+    this.serverNames = new HashSet<>();
   }
 
   /**
@@ -88,6 +89,8 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
     this.certValues = new ArrayList<>(other.getCertValues());
     this.certPathsServerMap = new HashMap<>(other.getCertPathsServerMap());
     this.certValuesServerMap = new HashMap<>(other.getCertValuesServerMap());
+    serverNames = new HashSet<>(this.certPathsServerMap.keySet());
+    serverNames.addAll(this.certValuesServerMap.keySet());
   }
 
   /**
@@ -97,7 +100,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
    */
   public PemTrustOptions(JsonObject json) {
     this();
-    if (json.getJsonArray("certPaths") instanceof JsonArray) {
+    if (json.getValue("certPaths") instanceof JsonArray) {
       json.getJsonArray("certPaths")
           .forEach(entry -> {
             if (entry instanceof String) {
@@ -193,7 +196,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
    * @throws NullPointerException
    */
   public PemTrustOptions addCertPath(String certPath) throws NullPointerException {
-    addCertPath4Name(certPath, null);
+    addCertPathForName(certPath, null);
     return this;
   }
 
@@ -201,18 +204,25 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
     return certPathsServerMap;
   }
 
-  public List<String> getCertPath4Name(String serverName){
+  /**
+   * Get the certificate paths for server name
+   *
+   * @param serverName the server name
+   * @return the certificate path for server name
+   */
+  public List<String> getCertPathForName(String serverName){
     return certPathsServerMap.getOrDefault(serverName, new ArrayList<>());
   }
 
   /**
-   * Add a certificate path
+   * Add a certificate path for a server name
    *
    * @param certPath  the path to add
+   * @param serverName  the server name
    * @return a reference to this, so the API can be used fluently
    * @throws NullPointerException
    */
-  public PemTrustOptions addCertPath4Name(String certPath, String serverName){
+  public PemTrustOptions addCertPathForName(String certPath, String serverName){
     Objects.requireNonNull(certPath, "No null certificate accepted");
     Arguments.require(!certPath.isEmpty(), "No empty certificate path accepted");
     if (serverName == null) {
@@ -224,26 +234,49 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
         ArrayList<String> paths = new ArrayList<>();
         paths.add(certPath);
         certPathsServerMap.put(serverName, paths);
+        serverNames.add(serverName);
       }
     }
     return this;
   }
 
+  /**
+   * Get all server names
+   *
+   * @return the server names
+   */
   public List<String> getServerNames(){
-    ArrayList<String> list = new ArrayList<>(certPathsServerMap.keySet());
-    list.addAll(new ArrayList<>(certValuesServerMap.keySet()));
-    return list;
+    return new ArrayList<>(serverNames);
   }
 
+  /**
+   * Get the map with certificate values grouped by server name.
+   *
+   * @return the certificate values for server map
+   */
   public Map<String, List<Buffer>> getCertValuesServerMap(){
     return certValuesServerMap;
   }
 
-  public List<Buffer> getCertValues4Name(String serverName){
+  /**
+   * Get the certificate values for server name
+   *
+   * @param serverName the server name
+   * @return the certificate values for server name
+   */
+  public List<Buffer> getCertValuesForName(String serverName){
     return certValuesServerMap.getOrDefault(serverName, new ArrayList<>());
   }
 
-  public PemTrustOptions addCertValue4Name(Buffer certValue, String serverName){
+  /**
+   * Add a certificate value for a server name
+   *
+   * @param certValue  the value to add
+   * @param serverName the server name
+   * @return a reference to this, so the API can be used fluently
+   * @throws NullPointerException
+   */
+  public PemTrustOptions addCertValueForName(Buffer certValue, String serverName){
     Objects.requireNonNull(certValue, "No null certificate accepted");
     if (serverName == null){
       certValues.add(certValue);
@@ -254,6 +287,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
         ArrayList<Buffer> values = new ArrayList<>();
         values.add(certValue);
         certValuesServerMap.put(serverName, values);
+        serverNames.add(serverName);
       }
     }
     return  this;

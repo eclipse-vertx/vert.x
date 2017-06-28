@@ -113,11 +113,11 @@ public class KeyStoreHelper {
       PemTrustOptions trustOpts = ((PemTrustOptions) trustOptions);
       HashMap<String, KeyStore> trustMgrMap = new HashMap<>();
       for (String name : trustOpts.getServerNames()) {
-        Stream<Buffer> certValues4Server = trustOpts.getCertPath4Name(name).
+        Stream<Buffer> certValuesForName = trustOpts.getCertPathForName(name).
             stream().
             map(path -> vertx.resolveFile(path).getAbsolutePath()).
             map(vertx.fileSystem()::readFileBlocking);
-            trustMgrMap.put(name,loadCA(Stream.concat(certValues4Server, trustOptions.getCertValues4Name(name).stream())));
+            trustMgrMap.put(name,loadCA(Stream.concat(certValuesForName, trustOptions.getCertValuesForName(name).stream())));
       }
       return new KeyStoreHelper(loadCA(certValues), null, trustMgrMap);
     } else {

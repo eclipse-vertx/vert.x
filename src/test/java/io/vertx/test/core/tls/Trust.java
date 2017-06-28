@@ -24,8 +24,8 @@ public interface Trust<T extends TrustOptions> extends Supplier<T> {
   Trust<PemTrustOptions> SERVER_PEM_ROOT_CA = () -> new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
   Trust<PemTrustOptions> CLIENT_PEM_ROOT_CA = () -> new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem");
   Trust<PemTrustOptions> SERVER_PEM_ROOT_CA_AND_OTHER_CA = () -> new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem").addCertPath("tls/other-ca/ca-cert.pem");
-  Trust<PemTrustOptions> SNI_SERVER_PEM_ROOT_CA_AND_OTHER_CA = () -> new PemTrustOptions().addCertPath4Name("tls/root-ca/ca-cert.pem", "host2.com").addCertPath4Name("tls/other-ca/ca-cert.pem", "host3.com");
-  Trust<PemTrustOptions> SNI_SERVER_PEM_ROOT_CA_AND_OTHER_CA_FALLBACK = () -> new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem").addCertPath4Name("tls/other-ca/ca-cert.pem", "host3.com");
+  Trust<PemTrustOptions> SNI_SERVER_PEM_ROOT_CA_AND_OTHER_CA = () -> new PemTrustOptions().addCertPathForName("tls/root-ca/ca-cert.pem", "host2.com").addCertPathForName("tls/other-ca/ca-cert.pem", "host3.com");
+  Trust<PemTrustOptions> SNI_SERVER_PEM_ROOT_CA_AND_OTHER_CA_FALLBACK = () -> new PemTrustOptions().addCertPath("tls/root-ca/ca-cert.pem").addCertPathForName("tls/other-ca/ca-cert.pem", "host3.com");
   Trust<JksOptions> SNI_JKS_HOST1 = () -> new JksOptions().setPath("tls/sni-truststore-host1.jks").setPassword("wibble");
   Trust<JksOptions> SNI_JKS_HOST2 = () -> new JksOptions().setPath("tls/sni-truststore-host2.jks").setPassword("wibble");
   Trust<JksOptions> SNI_JKS_HOST3 = () -> new JksOptions().setPath("tls/sni-truststore-host3.jks").setPassword("wibble");
