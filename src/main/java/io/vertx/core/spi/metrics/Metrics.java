@@ -32,6 +32,7 @@ public interface Metrics {
    * Whether the metrics are enabled.
    *
    * @return true if the metrics are enabled.
+   * @deprecated the SPI metrics should instead return a {@code null} object to signal that metrics is not provided
    */
   @Deprecated
   boolean isEnabled();
