@@ -583,9 +583,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private HttpServerResponseImpl write(ByteBuf chunk) {
     synchronized (conn) {
       checkWritten();
-      if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !headers.contentLengthSet()) {
-        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      if (!headWritten && !chunked && !headers.contentLengthSet()) {
+        if (version != HttpVersion.HTTP_1_0) {
+          throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+            + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+        } else {
+          headers.set(HttpHeaders.CONTENT_LENGTH, "0");
+        }
       }
 
       bytesWritten += chunk.readableBytes();
