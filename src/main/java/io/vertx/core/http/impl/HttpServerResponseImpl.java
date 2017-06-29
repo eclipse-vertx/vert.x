@@ -401,7 +401,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (!headWritten) {
       // if the head was not written yet we can write out everything in one go
       // which is cheaper.
-      prepareHeaders();
+      prepareHeaders(bytesWritten);
       FullHttpResponse resp;
       if (trailing != null) {
         resp = new AssembledFullHttpResponse(response, data, trailing.trailingHeaders(), trailing.getDecoderResult());
@@ -469,7 +469,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           putHeader(HttpHeaders.CONTENT_TYPE, contentType);
         }
       }
-      prepareHeaders();
+      prepareHeaders(bytesWritten);
 
       RandomAccessFile raf = null;
       try {
@@ -560,7 +560,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private void prepareHeaders() {
+  private void prepareHeaders(long contentLength) {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
       headers.set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
     } else if (version == HttpVersion.HTTP_1_1 && !keepAlive) {
@@ -569,8 +569,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (!head) {
       if (chunked) {
         headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
-      } else if (!headers.contentLengthSet()) {
-        String value = bytesWritten == 0 ? "0" : String.valueOf(bytesWritten);
+      } else if (!headers.contentLengthSet() && contentLength >= 0) {
+        String value = contentLength == 0 ? "0" : String.valueOf(contentLength);
         headers.set(HttpHeaders.CONTENT_LENGTH, value);
       }
     }
@@ -587,14 +587,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         if (version != HttpVersion.HTTP_1_0) {
           throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
             + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
-        } else {
-          headers.set(HttpHeaders.CONTENT_LENGTH, "0");
         }
       }
 
       bytesWritten += chunk.readableBytes();
       if (!headWritten) {
-        prepareHeaders();
+        prepareHeaders(-1);
         conn.writeToChannel(new AssembledHttpResponse(response, chunk));
       } else {
         conn.writeToChannel(new DefaultHttpContent(chunk));

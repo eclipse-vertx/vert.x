@@ -3689,7 +3689,7 @@ public class Http1xTest extends HttpTest {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0));
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      assertEquals("0", resp.getHeader("Content-Length"));
+      assertNull(resp.getHeader("Content-Length"));
       testComplete();
     });
     await();
