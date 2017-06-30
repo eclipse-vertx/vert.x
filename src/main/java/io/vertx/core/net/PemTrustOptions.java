@@ -66,6 +66,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   private ArrayList<String> certPaths;
   private ArrayList<Buffer> certValues;
   private Set<String> serverNames;
+
   /**
    * Default constructor
    */
@@ -89,7 +90,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
     this.certValues = new ArrayList<>(other.getCertValues());
     this.certPathsServerMap = new HashMap<>(other.getCertPathsServerMap());
     this.certValuesServerMap = new HashMap<>(other.getCertValuesServerMap());
-    serverNames = new HashSet<>(this.certPathsServerMap.keySet());
+    this.serverNames = new HashSet<>(other.getServerNames());
     serverNames.addAll(this.certValuesServerMap.keySet());
   }
 
@@ -112,34 +113,43 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
       json.getJsonArray("certValues")
           .forEach(item -> {
             if (item instanceof String)
-              this.addCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+              this.addCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder()
+                  .decode((String) item)));
           });
     }
-    JsonObject certPathMap = json.getJsonObject("certPathMap");
-    if (certPathMap != null) {
-      certPathMap.forEach(item -> {
-        if (item.getValue() instanceof JsonArray) {
-          ArrayList<String> paths = new ArrayList<>();
-          ((JsonArray) item.getValue()).forEach(path -> {
-            if (path instanceof String) {
-              paths.add((String) path);
+    if (json.getValue("certPathMap") instanceof JsonObject) {
+      json.getJsonObject("certPathMap")
+          .forEach(item -> {
+            if (item.getValue() instanceof JsonArray) {
+              ArrayList<String> paths = new ArrayList<>();
+              ((JsonArray) item.getValue()).forEach(path -> {
+                if (path instanceof String) {
+                  paths.add((String) path);
+                }
+              });
+              this.certPathsServerMap.put(item.getKey(), paths);
             }
           });
-          this.certPathsServerMap.put(item.getKey(), paths);
-        }
-      });
     }
-    JsonObject certValuesMap = json.getJsonObject("certValuesMap");
-    if (certValuesMap != null) {
-      certValuesMap.forEach(item -> {
-        if (item.getValue() instanceof JsonArray) {
-          ArrayList<Buffer> buffers = new ArrayList<>();
-          ((JsonArray) item.getValue()).forEach(buffer -> {
-            if (buffer instanceof String) {
-              buffers.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)buffer)));
+    if (json.getValue("certValuesMap") instanceof JsonObject) {
+      json.getJsonObject("certValuesMap")
+          .forEach(item -> {
+            if (item.getValue() instanceof JsonArray) {
+              ArrayList<Buffer> buffers = new ArrayList<>();
+              ((JsonArray) item.getValue()).forEach(buffer -> {
+                if (buffer instanceof String) {
+                  buffers.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder()
+                      .decode((String) buffer)));
+                }
+              });
+              this.certValuesServerMap.put(item.getKey(), buffers);
             }
           });
-          this.certValuesServerMap.put(item.getKey(), buffers);
+    }
+    if (json.getValue("serverNames") instanceof JsonArray){
+      json.getJsonArray("serverNames").forEach(item -> {
+        if (item instanceof String){
+          this.serverNames.add((String) item);
         }
       });
     }
@@ -177,6 +187,11 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
         values.forEach(v -> valuesJson.add(v.getBytes()));
         valuesMap.put(key, valuesJson);
       });
+    }
+    if (serverNames.size() != 0){
+      JsonArray serverNamesJson = new JsonArray();
+      serverNames.forEach(serverNamesJson::add);
+      json.put("serverNames", serverNamesJson);
     }
     return json;
   }

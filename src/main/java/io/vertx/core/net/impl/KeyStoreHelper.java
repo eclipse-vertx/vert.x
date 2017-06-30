@@ -17,6 +17,7 @@ package io.vertx.core.net.impl;
 
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.ContextTask;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
@@ -100,7 +101,37 @@ public class KeyStoreHelper {
   }
 
   public static KeyStoreHelper create(VertxInternal vertx, TrustOptions options) throws Exception {
-    if (options instanceof KeyCertOptions) {
+    if (options instanceof JksOptions){
+      JksOptions trustOpts = (JksOptions) options;
+      HashMap<String, KeyStore> trustMgrMap = new HashMap<>();
+      for (String name : trustOpts.getServerNames()) {
+        if (trustOpts.getPathForName(name) != null){
+          Supplier<Buffer> value = () -> vertx.fileSystem()
+              .readFileBlocking(vertx.resolveFile(trustOpts.getPathForName(name))
+                  .getAbsolutePath());
+          trustMgrMap.put(name, loadJKSOrPKCS12("JKS", trustOpts.getPassword(), value));
+        } else if (trustOpts.getValueForName(name) != null){
+          trustMgrMap.put(name, loadJKSOrPKCS12("JKS", trustOpts.getPassword(), () -> trustOpts.getValueForName(name)));
+        }
+      }
+      Supplier<Buffer> value = null;
+      if (trustOpts.getPath() != null) {
+        value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(trustOpts.getPath()).getAbsolutePath());
+      } else if (trustOpts.getValue() != null) {
+        value = trustOpts::getValue;
+      } else if (trustMgrMap.size() == 0){
+        return null;
+      }
+      KeyStore keyStore;
+      if (value == null) {
+        // create an empty keystore
+        keyStore = KeyStore.getInstance("jks");
+        keyStore.load(null, null);
+      } else {
+        keyStore = loadJKSOrPKCS12("JKS", trustOpts.getPassword(), value);
+      }
+      return new KeyStoreHelper(keyStore, trustOpts.getPassword(), trustMgrMap);
+    } else if (options instanceof KeyCertOptions) {
       return create(vertx, (KeyCertOptions) options);
     } else if (options instanceof PemTrustOptions) {
       PemTrustOptions trustOptions = (PemTrustOptions) options;
