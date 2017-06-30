@@ -2169,6 +2169,30 @@ The `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` instance i
 When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
 used with binary frames that are no split over multiple frames.
 
+==== Using WebSockets Compression
+
+WebSocket compression is supported in the HttpServer by default. It may be modified through use of the HttpServerOptions.
+
+[source,java]
+----
+server = vertx.createHttpServer(new HttpServerOptions()
+			  .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
+			  .setIsEnabledWebsocketFrameDeflateCompression(false)
+			  .setIsEnabledWebsocketPermessageDeflateCompression(true)
+			  .setWebsocketCompressionLevel(9)
+			  .setWebsocketPreferredClientNoContext(true)
+			  );
+----
+
+To request use of WebSocket compression in the client, use the HttpClientOptions to enable.
+
+[source,java]
+----
+HttpClientOptions options = new HttpClientOptions();
+options.setTryWebsocketTryPermessageDefalteCompression(true);
+client = vertx.createHttpClient(options);
+----
+
 === Using a proxy for HTTP/HTTPS connections
 
 The http client supports accessing http/https URLs via a HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.

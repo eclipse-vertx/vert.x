@@ -48,7 +48,11 @@ import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
-import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -95,6 +99,7 @@ import io.vertx.core.streams.ReadStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -398,8 +403,29 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
     }
 	
-	pipeline.addLast("websocketHandler", new WebSocketServerCompressionHandler());
+	initializeWebsocketExtensions (pipeline);
     pipeline.addLast("handler", new ServerHandler(pipeline.channel()));
+  }
+  
+  void initializeWebsocketExtensions (ChannelPipeline pipeline) {
+	  ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<WebSocketServerExtensionHandshaker>();
+	  
+	  if (options.getIsEnabledWebsocketFrameDefalteCompression()) {
+		  extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(options.getWebsocketCompressionLevel()));
+	  }
+	  
+	  if (options.getIsEnabledWebsocketPermessageDeflateCompression()) {
+		  extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(options.getWebsocketCompressionLevel(),
+				  ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE, 
+				  options.getWebsocketAllowServerNoContext(), options.getWebsocketPreferredClientNoContext()));
+	  }
+	  
+	  if (!extensionHandshakers.isEmpty()) {
+		  WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
+			  extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[extensionHandshakers.size()]));
+		  pipeline.addLast("websocketExtensionHandler", extensionHandler);
+	  }
+	  
   }
 
   public void handleHttp2(Channel ch) {

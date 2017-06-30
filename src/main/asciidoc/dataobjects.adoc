@@ -867,6 +867,22 @@ Set the trust options in jks format, aka Java truststore
 +++
 Set whether compression is enabled
 +++
+|[[tryWebsocketDefalteFrameCompression]]`tryWebsocketDefalteFrameCompression`|`Boolean`|
++++
+Set option to offer Deflate Frame websocket compression
++++
+|[[tryWebsocketDefalteFrameCompressionEnabled]]`tryWebsocketDefalteFrameCompressionEnabled`|`Boolean`|
++++
+
++++
+|[[tryWebsocketPermessageDeflateCompressionEnabled]]`tryWebsocketPermessageDeflateCompressionEnabled`|`Boolean`|
++++
+
++++
+|[[tryWebsocketTryPermessageDefalteCompression]]`tryWebsocketTryPermessageDefalteCompression`|`Boolean`|
++++
+Set option to offer Permessage Deflate websocket compression
++++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
 Set the ALPN usage.
@@ -878,6 +894,22 @@ Set whether Netty pooled buffers are enabled
 |[[verifyHost]]`verifyHost`|`Boolean`|
 +++
 Set whether hostname verification is enabled
++++
+|[[websocketCompressionAllowClientNoContext]]`websocketCompressionAllowClientNoContext`|`Boolean`|
++++
+Set the websocket compression allow client no context option
++++
+|[[websocketCompressionDeflateUseWebkitName]]`websocketCompressionDeflateUseWebkitName`|`Boolean`|
++++
+Sets the option to use the webkit name with the deflate frame compression
++++
+|[[websocketCompressionLevel]]`websocketCompressionLevel`|`Number (int)`|
++++
+Set websocket compression level
++++
+|[[websocketCompressionRequestServerNoContext]]`websocketCompressionRequestServerNoContext`|`Boolean`|
++++
+Set the websocket compression server no context option
 +++
 |===
 
@@ -993,6 +1025,18 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the HTTP/2 connection settings immediatly sent by the server when a client connects.
 +++
+|[[isEnabledWebsocketFrameDefalteCompression]]`isEnabledWebsocketFrameDefalteCompression`|`Boolean`|
++++
+Get whether WebSocket Deflate Frame compression is supported
++++
+|[[isEnabledWebsocketFrameDeflateCompression]]`isEnabledWebsocketFrameDeflateCompression`|`Boolean`|
++++
+Enable or disable support for WebSocket Defalte Frame compression
++++
+|[[isEnabledWebsocketPermessageDeflateCompression]]`isEnabledWebsocketPermessageDeflateCompression`|`Boolean`|
++++
+Enable or disable support for WebSocket Permessage Deflate compression
++++
 |[[jdkSslEngineOptions]]`jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -1090,6 +1134,18 @@ Set the ALPN usage.
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled
++++
+|[[websocketAllowServerNoContext]]`websocketAllowServerNoContext`|`Boolean`|
++++
+Set the WebSocket Allow Server No Context option
++++
+|[[websocketCompressionLevel]]`websocketCompressionLevel`|`Number (int)`|
++++
+Set the WebSocket compression level
++++
+|[[websocketPreferredClientNoContext]]`websocketPreferredClientNoContext`|`Boolean`|
++++
+Set the WebSocket Preferred Client No Context setting
 +++
 |[[websocketSubProtocols]]`websocketSubProtocols`|`String`|
 +++

@@ -59,6 +59,12 @@ public class HttpServerOptionsConverter {
     if (json.getValue("initialSettings") instanceof JsonObject) {
       obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
     }
+    if (json.getValue("isEnabledWebsocketFrameDeflateCompression") instanceof Boolean) {
+      obj.setIsEnabledWebsocketFrameDeflateCompression((Boolean)json.getValue("isEnabledWebsocketFrameDeflateCompression"));
+    }
+    if (json.getValue("isEnabledWebsocketPermessageDeflateCompression") instanceof Boolean) {
+      obj.setIsEnabledWebsocketPermessageDeflateCompression((Boolean)json.getValue("isEnabledWebsocketPermessageDeflateCompression"));
+    }
     if (json.getValue("maxChunkSize") instanceof Number) {
       obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
     }
@@ -73,6 +79,15 @@ public class HttpServerOptionsConverter {
     }
     if (json.getValue("maxWebsocketMessageSize") instanceof Number) {
       obj.setMaxWebsocketMessageSize(((Number)json.getValue("maxWebsocketMessageSize")).intValue());
+    }
+    if (json.getValue("websocketAllowServerNoContext") instanceof Boolean) {
+      obj.setWebsocketAllowServerNoContext((Boolean)json.getValue("websocketAllowServerNoContext"));
+    }
+    if (json.getValue("websocketCompressionLevel") instanceof Number) {
+      obj.setWebsocketCompressionLevel(((Number)json.getValue("websocketCompressionLevel")).intValue());
+    }
+    if (json.getValue("websocketPreferredClientNoContext") instanceof Boolean) {
+      obj.setWebsocketPreferredClientNoContext((Boolean)json.getValue("websocketPreferredClientNoContext"));
     }
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
@@ -95,11 +110,16 @@ public class HttpServerOptionsConverter {
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
+    json.put("isEnabledWebsocketFrameDefalteCompression", obj.getIsEnabledWebsocketFrameDefalteCompression());
+    json.put("isEnabledWebsocketPermessageDeflateCompression", obj.getIsEnabledWebsocketPermessageDeflateCompression());
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
+    json.put("websocketAllowServerNoContext", obj.getWebsocketAllowServerNoContext());
+    json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
+    json.put("websocketPreferredClientNoContext", obj.getWebsocketPreferredClientNoContext());
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());
     }

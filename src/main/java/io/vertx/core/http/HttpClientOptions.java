@@ -154,6 +154,36 @@ public class HttpClientOptions extends ClientOptionsBase {
    * Default initial buffer size for HttpObjectDecoder = 128 bytes
    */
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
+  
+  /**
+   * Default offer WebSocket Deflate Frame compression
+   */
+  public static final boolean DEFAULT_TRY_USE_WEBSOCKET_DEFLATE_FRAME = false;
+  
+  /** 
+   * Default offer WebSocket Permessage Deflate Compression
+   */
+  public static final boolean DEFAULT_TRY_USE_WEBSOCKET_PERMESSAGE_DEFLATE = false;
+  
+  /**
+   * Default WebSocket compression level
+   */
+  public static final int DEFAULT_WEBSOCKET_COMPRESSION_LEVEL = 6;
+  
+  /** 
+   * Default WebSocket Compression client no context allowance
+   */
+  public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_ALLOW_CLIENT_NO_CONTEXT = false;
+  
+  /** 
+   * Default WebSocket Compression server no context allowance
+   */
+  public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_REQUEST_SERVER_NO_CONTEXT = false;
+  
+  /** 
+   * Default WebSocket Compression use webkit name setting
+   */
+  public static final boolean DEFAULT_WEBSOCKET_DEFLATE_FRAME_USE_WEBKIT_NAME = false;
 
   private boolean verifyHost = true;
   private int maxPoolSize;
@@ -181,6 +211,14 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxRedirects;
   private boolean forceSni;
   private int decoderInitialBufferSize;
+  
+  private boolean websocketTryUseDeflateFrame;
+  private boolean websocketTryUsePermessageDeflate;
+  private int websocketCompressionLevel;
+  private boolean websocketAllowClientNoContext;
+  private boolean websocketRequestServerNoContext;
+  private boolean websocketDeflateCompressionUseWebkitName;
+  
 
   /**
    * Default constructor
@@ -222,6 +260,12 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
+    this.websocketTryUseDeflateFrame = other.websocketTryUseDeflateFrame;
+    this.websocketTryUsePermessageDeflate = other.websocketTryUsePermessageDeflate;
+    this.websocketAllowClientNoContext = other.websocketAllowClientNoContext;
+    this.websocketCompressionLevel = other.websocketCompressionLevel;
+    this.websocketRequestServerNoContext = other.websocketRequestServerNoContext;
+    this.websocketDeflateCompressionUseWebkitName = other.websocketDeflateCompressionUseWebkitName;
   }
 
   /**
@@ -272,6 +316,12 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
+    websocketTryUseDeflateFrame = DEFAULT_TRY_USE_WEBSOCKET_DEFLATE_FRAME;
+    websocketTryUsePermessageDeflate = DEFAULT_TRY_USE_WEBSOCKET_PERMESSAGE_DEFLATE;
+    websocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
+    websocketAllowClientNoContext = DEFAULT_WEBSOCKET_COMPRESSION_ALLOW_CLIENT_NO_CONTEXT;
+    websocketRequestServerNoContext = DEFAULT_WEBSOCKET_COMPRESSION_REQUEST_SERVER_NO_CONTEXT;
+    websocketDeflateCompressionUseWebkitName = DEFAULT_WEBSOCKET_DEFLATE_FRAME_USE_WEBKIT_NAME;
   }
 
   @Override
@@ -943,6 +993,124 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * Set option to offer Deflate Frame websocket compression
+   * @param tryDeflateFrame
+   * @return  a reference to this, so the API can be used fluently
+   */
+ public HttpClientOptions setTryWebsocketDefalteFrameCompression(boolean tryDeflateFrame)
+ {
+	 this.websocketTryUseDeflateFrame = tryDeflateFrame;
+	 return this;
+ }
+ 
+ /** 
+  * 
+  * @return Whether Deflate Frame websocket compression will be offered
+  */
+ public boolean isTryWebsocketDefalteFrameCompressionEnabled()
+ {
+	 return this.websocketTryUseDeflateFrame;
+ }
+ 
+/**
+ * Set option to offer Permessage Deflate websocket compression
+ * @param tryPermessageDeflate
+ * @return  a reference to this, so the API can be used fluently
+ */
+ public HttpClientOptions setTryWebsocketTryPermessageDefalteCompression(boolean tryPermessageDeflate)
+ {
+	 this.websocketTryUsePermessageDeflate = tryPermessageDeflate;
+	 return this;
+ }
+ 
+ /**
+  * 
+  * @return whether Permessage Deflate websocket compression will be offered
+  */
+ public boolean isTryWebsocketPermessageDeflateCompressionEnabled()
+ {
+	 return this.websocketTryUsePermessageDeflate;
+ }
+ 
+ /** 
+  * Set websocket compression level
+  * @param compressionLevel
+  * @return a reference to this, so the API can be used fluently
+  */
+ public HttpClientOptions setWebsocketCompressionLevel(int compressionLevel)
+ {
+	 this.websocketCompressionLevel = compressionLevel;
+	 return this;
+ }
+ 
+ /**
+  * 
+  * @return websocket compression level
+  */
+ public int getWebsocketCompressionLevel()
+ {
+	 return this.websocketCompressionLevel;
+ }
+ 
+ /**
+  * Set the websocket compression allow client no context option
+  * @param allowClientNoContext
+  * @return a reference to this, so the API can be used fluently
+  */
+ public HttpClientOptions setWebsocketCompressionAllowClientNoContext(boolean allowClientNoContext)
+ {
+	 this.websocketAllowClientNoContext = allowClientNoContext;
+	 return this;
+ }
+ 
+ /**
+  * 
+  * @return the current websocket compression client no context setting
+  */
+ public boolean getWebsocketCompressionAllowClientNoContext()
+ {
+	 return this.websocketAllowClientNoContext;
+ }
+ 
+ /**
+  * Set the websocket compression server no context option
+  * @param requestServerNoContext
+  * @return a reference to this, so the API can be used fluently
+  */
+ public HttpClientOptions setWebsocketCompressionRequestServerNoContext(boolean requestServerNoContext)
+ {
+	this.websocketRequestServerNoContext = requestServerNoContext;
+	return this;
+ }
+ 
+ /**
+  * 
+  * @return current setting of the websocket compression server no context option
+  */
+ public boolean getWebsocketCompressionRequestServerNoContext()
+ {
+	 return this.websocketRequestServerNoContext;
+ }
+ 
+ /**
+  * Sets the option to use the webkit name with the deflate frame compression
+  * @param useWebkitName
+  * @return a reference to this, so the API can be used fluently
+  */
+ public HttpClientOptions setWebsocketCompressionDeflateUseWebkitName(boolean useWebkitName) {
+	 this.websocketDeflateCompressionUseWebkitName = useWebkitName;
+	 return this;
+ }
+ 
+ /**
+  * 
+  * @return the current option to use the webkit name for deflate frame compression
+  */
+ public boolean getWebsocketCompressionDeflateUseWebkitName() {
+	 return this.websocketDeflateCompressionUseWebkitName;
+ }
+  
+  /**
    * @return the initial buffer size for the HTTP decoder
    */
   public int getDecoderInitialBufferSize() { return decoderInitialBufferSize; }
@@ -987,6 +1155,13 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (sendUnmaskedFrames != that.sendUnmaskedFrames) return false;
     if (maxRedirects != that.maxRedirects) return false;
     if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
+    
+    if (websocketTryUseDeflateFrame != that.websocketTryUseDeflateFrame) return false;
+    if (websocketTryUsePermessageDeflate != that.websocketTryUsePermessageDeflate) return false;
+    if (websocketCompressionLevel != that.websocketCompressionLevel) return false;
+    if (websocketAllowClientNoContext != that.websocketAllowClientNoContext) return false;
+    if (websocketRequestServerNoContext != that.websocketRequestServerNoContext) return false;
+    if (websocketDeflateCompressionUseWebkitName != that.websocketDeflateCompressionUseWebkitName) return false;
 
     return true;
   }
@@ -1015,6 +1190,12 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (sendUnmaskedFrames ? 1 : 0);
     result = 31 * result + maxRedirects;
     result = 31 * result + decoderInitialBufferSize;
+    result = 31 * result + (websocketTryUseDeflateFrame ? 1 : 0);
+    result = 31 * result + (websocketTryUsePermessageDeflate ? 1 : 0);
+    result = 31 * result + websocketCompressionLevel;
+    result = 31 * result + (websocketAllowClientNoContext ? 1 : 0);
+    result = 31 * result + (websocketRequestServerNoContext ? 1: 0);
+    result = 31 * result + (websocketDeflateCompressionUseWebkitName ? 1 : 0);
     return result;
   }
 
