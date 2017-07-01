@@ -168,6 +168,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   // gets the closed on, they will check if it's closed and if so get another one.
   private synchronized void connectionClosed(ClientConnection conn) {
     synchronized (queue) {
+      connectionMap.remove(conn.channel());
       allConnections.remove(conn);
       availableConnections.remove(conn);
       queue.connectionClosed();

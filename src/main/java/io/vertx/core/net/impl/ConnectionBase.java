@@ -179,6 +179,12 @@ public abstract class ConnectionBase {
     }
   }
 
+  /**
+   * @return the Netty channel - for internal usage only
+   */
+  public Channel channel() {
+    return chctx.channel();
+  }
 
   public ContextImpl getContext() {
     return context;
