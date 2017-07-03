@@ -23,10 +23,10 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.infra.Blackhole;
 
 import static io.vertx.benchmarks.HeadersUtils.setBaseHeaders;
 
@@ -35,6 +35,10 @@ import static io.vertx.benchmarks.HeadersUtils.setBaseHeaders;
  */
 @State(Scope.Thread)
 public class HeadersEncodeBenchmark extends BenchmarkBase {
+
+  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+  public static void consume(final ByteBuf buf) {
+  }
 
   static class PublicEncoder extends HttpResponseEncoder {
 
@@ -63,23 +67,23 @@ public class HeadersEncodeBenchmark extends BenchmarkBase {
   }
 
   @Benchmark
-  public void baseline(Blackhole blackhole) throws Exception {
+  public void baseline() throws Exception {
     byteBuf.resetWriterIndex();
     encoder.encodeHeaders(emptyHeaders, byteBuf);
-    blackhole.consume(byteBuf);
+    consume(byteBuf);
   }
 
   @Benchmark
-  public void nettySmall(Blackhole blackhole) throws Exception {
+  public void nettySmall() throws Exception {
     byteBuf.resetWriterIndex();
     encoder.encodeHeaders(nettySmallHeaders, byteBuf);
-    blackhole.consume(byteBuf);
+    consume(byteBuf);
   }
 
   @Benchmark
-  public void vertxSmall(Blackhole blackhole) throws Exception {
+  public void vertxSmall() throws Exception {
     byteBuf.resetWriterIndex();
     encoder.encodeHeaders(vertxSmallHeaders, byteBuf);
-    blackhole.consume(byteBuf);
+    consume(byteBuf);
   }
 }

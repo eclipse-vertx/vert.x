@@ -19,10 +19,10 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.infra.Blackhole;
 
 import static io.vertx.benchmarks.HeadersUtils.setBaseHeaders;
 
@@ -31,6 +31,10 @@ import static io.vertx.benchmarks.HeadersUtils.setBaseHeaders;
  */
 @State(Scope.Thread)
 public class HeadersSetBenchmark extends BenchmarkBase {
+
+  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+  public static void consume(final HttpHeaders headers) {
+  }
 
   private HttpHeaders nettySmallHeaders;
   private VertxHttpHeaders vertxSmallHeaders;
@@ -42,16 +46,16 @@ public class HeadersSetBenchmark extends BenchmarkBase {
   }
 
   @Benchmark
-  public void nettySmall(Blackhole blackhole) throws Exception {
+  public void nettySmall() throws Exception {
     nettySmallHeaders.clear();
     setBaseHeaders(nettySmallHeaders);
-    blackhole.consume(nettySmallHeaders);
+    consume(nettySmallHeaders);
   }
 
   @Benchmark
-  public void vertxSmall(Blackhole blackhole) throws Exception {
+  public void vertxSmall() throws Exception {
     vertxSmallHeaders.clear();
     setBaseHeaders(vertxSmallHeaders);
-    blackhole.consume(vertxSmallHeaders);
+    consume(vertxSmallHeaders);
   }
 }

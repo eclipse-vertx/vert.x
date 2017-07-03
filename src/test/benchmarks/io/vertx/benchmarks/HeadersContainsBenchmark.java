@@ -22,7 +22,6 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.infra.Blackhole;
 
 import static io.vertx.benchmarks.HeadersUtils.setBaseHeaders;
 
@@ -44,14 +43,12 @@ public class HeadersContainsBenchmark extends BenchmarkBase {
   }
 
   @Benchmark
-  public void nettySmall(Blackhole blackhole) throws Exception {
-    boolean result = nettySmallHeaders.contains(HeadersUtils.CONTENT_LENGTH_HEADER);
-    blackhole.consume(result);
+  public boolean nettySmall() throws Exception {
+    return nettySmallHeaders.contains(HeadersUtils.CONTENT_LENGTH_HEADER);
   }
 
   @Benchmark
-  public void vertxSmall(Blackhole blackhole) throws Exception {
-    boolean result = vertxSmallHeaders.contains(HeadersUtils.CONTENT_LENGTH_HEADER);
-    blackhole.consume(result);
+  public boolean vertxSmall() throws Exception {
+    return vertxSmallHeaders.contains(HeadersUtils.CONTENT_LENGTH_HEADER);
   }
 }

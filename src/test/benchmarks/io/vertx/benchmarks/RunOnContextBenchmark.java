@@ -19,17 +19,21 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.BenchmarkContext;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.infra.Blackhole;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @State(Scope.Thread)
 public class RunOnContextBenchmark extends BenchmarkBase {
+
+  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+  public static void consume(final String buf) {
+  }
 
   @State(Scope.Thread)
   public static class BaselineState {
@@ -39,12 +43,10 @@ public class RunOnContextBenchmark extends BenchmarkBase {
     Handler<Void> task;
 
     @Setup
-    public void setup(Blackhole hole) {
+    public void setup() {
       vertx = Vertx.vertx();
       context = BenchmarkContext.create(vertx);
-      task = v -> {
-        hole.consume("the-string");
-      };
+      task = v -> consume("the-string");
     }
   }
 

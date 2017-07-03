@@ -16,6 +16,8 @@
 package io.vertx.benchmarks;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -47,12 +49,11 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.HandlerHolder;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
-import org.openjdk.jmh.infra.Blackhole;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -62,16 +63,134 @@ import java.util.Date;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @State(Scope.Thread)
-@Threads(16)
 public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
-  private static final ByteBuf GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
-    "GET / HTTP/1.1\r\n" +
-      "\r\n").getBytes()));
+  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+  public static void consume(final ByteBuf buf) {
+  }
 
+  ByteBuf GET;
+  int readerIndex;
+  int writeIndex;
   VertxInternal vertx;
   EmbeddedChannel vertxChannel;
   EmbeddedChannel nettyChannel;
+
+  static class Alloc implements ByteBufAllocator {
+
+    private final ByteBuf buf = Unpooled.buffer();
+    private final int capacity = buf.capacity();
+
+    @Override
+    public ByteBuf buffer() {
+      buf.clear();
+      return buf;
+    }
+
+    @Override
+    public ByteBuf buffer(int initialCapacity) {
+      if (initialCapacity < capacity) {
+        return buffer();
+      } else {
+        throw new IllegalArgumentException();
+      }
+    }
+
+    @Override
+    public ByteBuf buffer(int initialCapacity, int maxCapacity) {
+      if (initialCapacity < capacity) {
+        return buffer();
+      } else {
+        throw new IllegalArgumentException();
+      }
+    }
+
+    @Override
+    public ByteBuf ioBuffer() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf ioBuffer(int initialCapacity) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf ioBuffer(int initialCapacity, int maxCapacity) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf heapBuffer() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf heapBuffer(int initialCapacity) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf heapBuffer(int initialCapacity, int maxCapacity) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf directBuffer() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf directBuffer(int initialCapacity) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf directBuffer(int initialCapacity, int maxCapacity) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompositeByteBuf compositeBuffer() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompositeByteBuf compositeBuffer(int maxNumComponents) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompositeByteBuf compositeHeapBuffer() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompositeByteBuf compositeHeapBuffer(int maxNumComponents) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompositeByteBuf compositeDirectBuffer() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompositeByteBuf compositeDirectBuffer(int maxNumComponents) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isDirectBufferPooled() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int calculateNewCapacity(int minNewCapacity, int maxCapacity) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
 
   private static final CharSequence RESPONSE_TYPE_PLAIN = io.vertx.core.http.HttpHeaders.createOptimized("text/plain");
 
@@ -100,6 +219,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
             options.getDecoderInitialBufferSize()),
         new HttpResponseEncoder()
     );
+    vertxChannel.config().setAllocator(new Alloc());
     ContextImpl context = new EventLoopContext(vertx, vertxChannel.eventLoop(), null, null, null, new JsonObject(), Thread.currentThread().getContextClassLoader());
     Handler<HttpServerRequest> app = request -> {
       HttpServerResponse response = request.response();
@@ -141,8 +261,11 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       @Override
       protected void channelRead0(ChannelHandlerContext ctx, HttpRequest msg) throws Exception {
         writeResponse(ctx, msg, PLAINTEXT_CONTENT_BUFFER.duplicate(), TYPE_PLAIN, PLAINTEXT_CLHEADER_VALUE);
-        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND, Unpooled.EMPTY_BUFFER, false);
-        ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+      }
+
+      @Override
+      public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        ctx.flush();
       }
 
       private void writeResponse(ChannelHandlerContext ctx, HttpRequest request, ByteBuf buf, CharSequence contentType, CharSequence contentLength) {
@@ -159,13 +282,21 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         ctx.write(response, ctx.voidPromise());
       }
     });
+    nettyChannel.config().setAllocator(new Alloc());
+
+    GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
+      "GET / HTTP/1.1\r\n" +
+        "\r\n").getBytes()));
+    readerIndex = GET.readerIndex();
+    writeIndex = GET.writerIndex();
   }
 
   @Benchmark
-  public void vertx(Blackhole blackhole) {
+  public void vertx() {
+    GET.setIndex(readerIndex, writeIndex);
     vertxChannel.writeInbound(GET);
     ByteBuf result = (ByteBuf) vertxChannel.outboundMessages().poll();
-    blackhole.consume(result);
+    consume(result);
   }
 
   @Fork(value = 1, jvmArgsAppend = {
@@ -174,16 +305,18 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       "-Dvertx.disableTCCL=true ",
   })
   @Benchmark
-  public void vertxOpt(Blackhole blackhole) {
+  public void vertxOpt() {
+    GET.setIndex(readerIndex, writeIndex);
     vertxChannel.writeInbound(GET);
     ByteBuf result = (ByteBuf) vertxChannel.outboundMessages().poll();
-    blackhole.consume(result);
+    consume(result);
   }
 
   @Benchmark
-  public void netty(Blackhole blackhole) {
+  public void netty() {
+    GET.setIndex(readerIndex, writeIndex);
     nettyChannel.writeInbound(GET);
     ByteBuf result = (ByteBuf) nettyChannel.outboundMessages().poll();
-    blackhole.consume(result);
+    consume(result);
   }
 }
