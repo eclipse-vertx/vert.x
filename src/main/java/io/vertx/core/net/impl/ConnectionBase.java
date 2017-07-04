@@ -208,7 +208,7 @@ public abstract class ConnectionBase {
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     } else {
-      log.error(t);
+      log.error("Error in connection "+getClass().getName(), t);
     }
   }
 
