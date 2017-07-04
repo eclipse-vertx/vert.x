@@ -60,7 +60,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private final VertxInternal vertx;
   private final ServerConnection conn;
-  private final HttpResponse response;
+  private HttpResponseStatus status;
   private final HttpVersion version;
   private final boolean keepAlive;
   private final boolean head;
@@ -86,7 +86,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     this.conn = conn;
     this.version = request.getProtocolVersion();
     this.headers = new VertxHttpHeaders();
-    this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, headers);
+    this.status = HttpResponseStatus.OK;
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
@@ -110,26 +110,25 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public int getStatusCode() {
-    return response.getStatus().code();
+    return status.code();
   }
 
   @Override
   public HttpServerResponse setStatusCode(int statusCode) {
-    HttpResponseStatus status = statusMessage != null ? new HttpResponseStatus(statusCode, statusMessage) : HttpResponseStatus.valueOf(statusCode);
-    this.response.setStatus(status);
+    status = statusMessage != null ? new HttpResponseStatus(statusCode, statusMessage) : HttpResponseStatus.valueOf(statusCode);
     return this;
   }
 
   @Override
   public String getStatusMessage() {
-    return response.getStatus().reasonPhrase();
+    return status.reasonPhrase();
   }
 
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
     synchronized (conn) {
       this.statusMessage = statusMessage;
-      this.response.setStatus(new HttpResponseStatus(response.getStatus().code(), statusMessage));
+      this.status = new HttpResponseStatus(status.code(), statusMessage);
       return this;
     }
   }
@@ -403,12 +402,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       // which is cheaper.
       prepareHeaders(bytesWritten);
       FullHttpResponse resp;
-      if (trailing != null) {
-        resp = new AssembledFullHttpResponse(response, data, trailing.trailingHeaders(), trailing.getDecoderResult());
-      } else if (head) {
-        resp = new AssembledFullHttpResponse(response);
+      if (!head) {
+        if (trailing == null) {
+          resp = new DefaultFullHttpResponse(version, status, data, headers, EmptyHttpHeaders.INSTANCE);
+        } else {
+          resp = new AssembledFullHttpResponse(new DefaultHttpResponse(version, status, headers), data, trailing.trailingHeaders(), trailing.getDecoderResult());
+        }
       } else {
-        resp = new AssembledFullHttpResponse(response, data);
+        resp = new AssembledFullHttpResponse(new DefaultHttpResponse(version, status, headers));
       }
       conn.writeToChannel(resp);
     } else {
@@ -474,7 +475,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       RandomAccessFile raf = null;
       try {
         raf = new RandomAccessFile(file, "r");
-        conn.queueForWrite(response);
+        conn.queueForWrite(new DefaultHttpResponse(version, status, headers));
         conn.sendFile(raf, Math.min(offset, file.length()), contentLength);
       } catch (IOException e) {
         try {
@@ -593,7 +594,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       bytesWritten += chunk.readableBytes();
       if (!headWritten) {
         prepareHeaders(-1);
-        conn.writeToChannel(new AssembledHttpResponse(response, chunk));
+        conn.writeToChannel(new PartialHttpResponse(version, status, headers, chunk));
       } else {
         conn.writeToChannel(new DefaultHttpContent(chunk));
       }

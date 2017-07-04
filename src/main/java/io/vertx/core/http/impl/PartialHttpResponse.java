@@ -27,19 +27,18 @@ import io.netty.handler.codec.http.HttpVersion;
 
 
 /**
- * Helper wrapper class which allows to assemble a HttpContent and a HttpResponse into one "packet" and so more
+ * Helper wrapper class which allows to assemble an HttpContent and a HttpResponse into one "packet" and so more
  * efficient write it through the pipeline.
  *
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class AssembledHttpResponse implements HttpResponse, HttpContent {
+class PartialHttpResponse extends DefaultHttpResponse implements HttpContent {
 
-  private final HttpResponse response;
-  protected final HttpContent content;
+  protected final ByteBuf content;
 
-  AssembledHttpResponse(HttpResponse response, HttpContent content) {
-    this.response = response;
-    this.content = content;
+  PartialHttpResponse(HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf buf) {
+    super(version, status, headers);
+    this.content = buf;
   }
 
   @Override
@@ -63,84 +62,32 @@ class AssembledHttpResponse implements HttpResponse, HttpContent {
   }
 
   @Override
-  public AssembledHttpResponse retain() {
+  public PartialHttpResponse retain() {
     content.retain();
     return this;
   }
 
   @Override
-  public AssembledHttpResponse retain(int increment) {
+  public PartialHttpResponse retain(int increment) {
     content.retain(increment);
     return this;
   }
 
   @Override
-  public HttpResponseStatus getStatus() {
-    return response.getStatus();
-  }
-
-  @Override
-  public AssembledHttpResponse setStatus(HttpResponseStatus status) {
-    response.setStatus(status);
-    return this;
-  }
-
-  @Override
-  public AssembledHttpResponse setProtocolVersion(HttpVersion version) {
-    response.setProtocolVersion(version);
-    return this;
-  }
-
-  @Override
-  public HttpVersion getProtocolVersion() {
-    return response.getProtocolVersion();
-  }
-
-  @Override
-  public HttpVersion protocolVersion() {
-    return response.protocolVersion();
-  }
-
-  @Override
-  public HttpResponseStatus status() {
-    return response.status();
-  }
-
-  @Override
-  public AssembledHttpResponse touch() {
+  public PartialHttpResponse touch() {
     content.touch();
     return this;
   }
 
   @Override
-  public AssembledHttpResponse touch(Object hint) {
+  public PartialHttpResponse touch(Object hint) {
     content.touch(hint);
     return this;
   }
 
   @Override
-  public DecoderResult decoderResult() {
-    return content.decoderResult();
-  }
-
-  @Override
-  public HttpHeaders headers() {
-    return response.headers();
-  }
-
-  @Override
-  public DecoderResult getDecoderResult() {
-    return response.getDecoderResult();
-  }
-
-  @Override
-  public void setDecoderResult(DecoderResult result) {
-    response.setDecoderResult(result);
-  }
-
-  @Override
   public ByteBuf content() {
-    return content.content();
+    return content;
   }
 
   @Override
