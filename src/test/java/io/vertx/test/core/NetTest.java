@@ -72,11 +72,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1343,6 +1339,114 @@ public class NetTest extends VertxTestBase {
     test.run(true);
     await();
     assertEquals("host1", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  // SNI JKS trust based on server name
+  public void testSniWithServerNameTrustJKS(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_HOST2_JKS_ROOT_CA);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI JKS trust based on server name
+  public void testSniWithServerNameTrustJKSValue(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_HOST2_JKS_ROOT_CA_VALUES);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI JKS trust based on fallback trust
+  public void testSniWithServerNameTrustFallbackJKS(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SERVER_JKS_ROOT_CA);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI JKS trust based on fallback trust
+  public void testSniWithServerNameTrustFallbackJKSValue(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SERVER_JKS_ROOT_CA_VALUES);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI PEM trust based on server name with wrong client cert
+  public void testSniFailWithServerNameTrustJKS(){
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST3)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("host3.com")
+        .serverTrust(Trust.SERVER_JKS_OTHER_CA_HOST2_ROOT_CA);
+    test.run(false);
+    await();
+  }
+
+  @Test
+  // SNI PEM trust based on server name
+  public void testSniWithServerNameTrustPEM(){
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_PEM_ROOT_CA_AND_OTHER_CA);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI PEM trust based on fallback trust
+  public void testSniWithServerNameTrustFallbackPEM(){
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_PEM_ROOT_CA_AND_OTHER_CA_FALLBACK);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  // SNI PEM trust based on server name with wrong client cert
+  public void testSniFailWithServerNameTrustPEM(){
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST3)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("host3.com")
+        .serverTrust(Trust.SNI_SERVER_PEM_ROOT_CA_AND_OTHER_CA);
+    test.run(false);
+    await();
   }
 
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,

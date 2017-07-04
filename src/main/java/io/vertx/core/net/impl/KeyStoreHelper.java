@@ -17,6 +17,7 @@ package io.vertx.core.net.impl;
 
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.ContextTask;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
@@ -27,19 +28,12 @@ import io.vertx.core.net.TrustOptions;
 
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -53,7 +47,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -108,7 +101,37 @@ public class KeyStoreHelper {
   }
 
   public static KeyStoreHelper create(VertxInternal vertx, TrustOptions options) throws Exception {
-    if (options instanceof KeyCertOptions) {
+    if (options instanceof JksOptions){
+      JksOptions trustOpts = (JksOptions) options;
+      HashMap<String, KeyStore> trustMgrMap = new HashMap<>();
+      for (String name : trustOpts.getServerNames()) {
+        if (trustOpts.getPathForName(name) != null){
+          Supplier<Buffer> value = () -> vertx.fileSystem()
+              .readFileBlocking(vertx.resolveFile(trustOpts.getPathForName(name))
+                  .getAbsolutePath());
+          trustMgrMap.put(name, loadJKSOrPKCS12("JKS", trustOpts.getPassword(), value));
+        } else if (trustOpts.getValueForName(name) != null){
+          trustMgrMap.put(name, loadJKSOrPKCS12("JKS", trustOpts.getPassword(), () -> trustOpts.getValueForName(name)));
+        }
+      }
+      Supplier<Buffer> value = null;
+      if (trustOpts.getPath() != null) {
+        value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(trustOpts.getPath()).getAbsolutePath());
+      } else if (trustOpts.getValue() != null) {
+        value = trustOpts::getValue;
+      } else if (trustMgrMap.size() == 0){
+        return null;
+      }
+      KeyStore keyStore;
+      if (value == null) {
+        // create an empty keystore
+        keyStore = KeyStore.getInstance("jks");
+        keyStore.load(null, null);
+      } else {
+        keyStore = loadJKSOrPKCS12("JKS", trustOpts.getPassword(), value);
+      }
+      return new KeyStoreHelper(keyStore, trustOpts.getPassword(), trustMgrMap);
+    } else if (options instanceof KeyCertOptions) {
       return create(vertx, (KeyCertOptions) options);
     } else if (options instanceof PemTrustOptions) {
       PemTrustOptions trustOptions = (PemTrustOptions) options;
@@ -118,7 +141,16 @@ public class KeyStoreHelper {
           map(path -> vertx.resolveFile(path).getAbsolutePath()).
           map(vertx.fileSystem()::readFileBlocking);
       certValues = Stream.concat(certValues, trustOptions.getCertValues().stream());
-      return new KeyStoreHelper(loadCA(certValues), null);
+      PemTrustOptions trustOpts = ((PemTrustOptions) trustOptions);
+      HashMap<String, KeyStore> trustMgrMap = new HashMap<>();
+      for (String name : trustOpts.getServerNames()) {
+        Stream<Buffer> certValuesForName = trustOpts.getCertPathForName(name).
+            stream().
+            map(path -> vertx.resolveFile(path).getAbsolutePath()).
+            map(vertx.fileSystem()::readFileBlocking);
+            trustMgrMap.put(name,loadCA(Stream.concat(certValuesForName, trustOptions.getCertValuesForName(name).stream())));
+      }
+      return new KeyStoreHelper(loadCA(certValues), null, trustMgrMap);
     } else {
       return null;
     }
@@ -128,6 +160,13 @@ public class KeyStoreHelper {
   private final KeyStore store;
   private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
   private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
+  private Map<String, KeyStore> trustMgrMap;
+
+  public KeyStoreHelper(KeyStore ks, String password, Map<String, KeyStore> trustMgrMap){
+    this.password = password;
+    this.store = ks;
+    this.trustMgrMap = trustMgrMap;
+  }
 
   public KeyStoreHelper(KeyStore ks, String password) throws Exception {
     Enumeration<String> en = ks.aliases();
@@ -231,6 +270,21 @@ public class KeyStoreHelper {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     fact.init(store);
     return fact;
+  }
+
+  public TrustManagerFactory getTrustMgr(String serverName)  {
+    KeyStore trustStore = trustMgrMap.get(serverName);
+    if (trustStore == null){
+      trustStore = this.store;
+    }
+    TrustManagerFactory fact = null;
+    try {
+      fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      fact.init(trustStore);
+      return fact;
+    } catch (NoSuchAlgorithmException | KeyStoreException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public TrustManager[] getTrustMgrs(VertxInternal vertx) throws Exception {

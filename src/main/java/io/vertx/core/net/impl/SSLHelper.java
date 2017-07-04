@@ -245,9 +245,8 @@ public class SSLHelper {
     If you don't specify a key store, and don't specify a system property no key store will be used
     You can override this by specifying the javax.echo.ssl.keyStore system property
      */
-  private SslContext createContext(VertxInternal vertx, X509KeyManager mgr) {
+  private SslContext createContext(VertxInternal vertx, X509KeyManager mgr, TrustManagerFactory trustMgrFactory) {
     try {
-      TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx);
       SslContextBuilder builder;
       if (client) {
         builder = SslContextBuilder.forClient();
@@ -309,13 +308,17 @@ public class SSLHelper {
     return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx);
   }
 
-  private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
+  private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, String serverName) throws Exception {
     TrustManagerFactory fact;
     if (trustAll) {
       TrustManager[] mgrs = new TrustManager[]{createTrustAllTrustManager()};
       fact = new VertxTrustManagerFactory(mgrs);
     } else if (trustOptions != null) {
-      fact = trustOptions.getTrustManagerFactory(vertx);
+      if (serverName != null){
+        fact = trustOptions.trustManagerMapper(vertx).apply(serverName);
+      } else {
+        fact = trustOptions.getTrustManagerFactory(vertx);
+      }
     } else {
       return null;
     }
@@ -441,23 +444,34 @@ public class SSLHelper {
   }
 
   public SslContext getContext(VertxInternal vertx, String serverName) {
-    if (serverName == null) {
-      if (sslContext == null) {
-        sslContext = createContext(vertx, null);
-      }
-      return sslContext;
-    } else {
-      X509KeyManager mgr;
-      try {
-        mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-      if (mgr == null) {
+      if (serverName == null) {
+        if (sslContext == null) {
+          TrustManagerFactory trustMgrFactory = null;
+          try {
+            trustMgrFactory = getTrustMgrFactory(vertx, null);
+          } catch (Exception e) {
+            throw new VertxException(e);
+          }
+          sslContext = createContext(vertx, null, trustMgrFactory);
+        }
         return sslContext;
+      } else {
+        X509KeyManager mgr;
+        try {
+          mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+        if (mgr == null) {
+          return sslContext;
+        }
+        try {
+          TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx, serverName);
+          return sslContextMap.computeIfAbsent(mgr.getCertificateChain(null)[0], s -> createContext(vertx, mgr, trustMgrFactory));
+        } catch (Exception e) {
+          throw new VertxException(e);
+        }
       }
-      return sslContextMap.computeIfAbsent(mgr.getCertificateChain(null)[0], s -> createContext(vertx, mgr));
-    }
   }
 
   // This is called to validate some of the SSL params as that only happens when the context is created
