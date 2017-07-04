@@ -32,6 +32,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -57,7 +58,7 @@ import java.util.UUID;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetSocketImpl extends ConnectionBase implements NetSocket {
+public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
@@ -68,6 +69,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private final int port;
   private final TCPMetrics metrics;
   private Handler<Buffer> dataHandler;
+  private Handler<Object> messageHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private Buffer pendingData;
@@ -91,6 +93,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
+  public ChannelHandlerContext channelHandlerContext() {
+    return chctx;
+  }
+
+  @Override
   public TCPMetrics metrics() {
     return metrics;
   }
@@ -98,6 +105,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   @Override
   public String writeHandlerID() {
     return writeHandlerID;
+  }
+
+  @Override
+  public NetSocketInternal writeMessage(Object message) {
+    super.writeToChannel(message);
+    return this;
   }
 
   @Override
@@ -126,6 +139,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   @Override
   public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
+    return this;
+  }
+
+  @Override
+  public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
+    messageHandler = handler;
     return this;
   }
 
@@ -302,8 +321,17 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
   }
 
-  public synchronized void handleDataReceived(Buffer data) {
+  public synchronized void handleMessageReceived(Object msg) {
     checkContext();
+    if (msg instanceof ByteBuf) {
+      ByteBuf buf = (ByteBuf) msg;
+      handleDataReceived(Buffer.buffer(buf));
+    } else if (messageHandler != null) {
+      messageHandler.handle(msg);
+    }
+  }
+
+  public void handleDataReceived(Buffer data) {
     if (paused) {
       if (pendingData == null) {
         pendingData = data.copy();
@@ -334,6 +362,5 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       }
     }
   }
-
 }
 

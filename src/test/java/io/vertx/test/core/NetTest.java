@@ -16,6 +16,19 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.json.JsonObjectDecoder;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -29,9 +42,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
@@ -72,6 +87,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -3029,6 +3045,37 @@ public class NetTest extends VertxTestBase {
         so.write(expected).close();
       }));
     }));
+    await();
+  }
+
+  @Test
+  public void testNetInternal() throws Exception {
+    server.connectHandler(so -> {
+      NetSocketInternal internal = (NetSocketInternal) so;
+      ChannelHandlerContext chctx = internal.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addFirst(new HttpServerCodec());
+      internal.messageHandler(obj -> {
+        if (obj instanceof LastHttpContent) {
+          DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+            HttpVersion.HTTP_1_1,
+            HttpResponseStatus.OK,
+            Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
+          response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
+          internal.writeMessage(response);
+        }
+      });
+      internal.handler(buff -> fail());
+    });
+    startServer();
+    HttpClient client = vertx.createHttpClient();
+    client.getNow(1234, "localhost", "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.bodyHandler(buff -> {
+        assertEquals("Hello World", buff.toString());
+        testComplete();
+      });
+    });
     await();
   }
 

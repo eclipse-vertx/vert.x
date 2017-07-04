@@ -83,8 +83,7 @@ public class NetServerImpl extends NetServerBase<NetSocketImpl> implements NetSe
 
   @Override
   protected void handleMsgReceived(NetSocketImpl conn, Object msg) {
-    ByteBuf buf = (ByteBuf) msg;
-    conn.handleDataReceived(Buffer.buffer(buf));
+    conn.handleMessageReceived(msg);
   }
 
   @Override
