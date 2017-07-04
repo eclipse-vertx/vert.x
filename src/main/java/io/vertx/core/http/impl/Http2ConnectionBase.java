@@ -78,8 +78,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   protected final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
-  protected ChannelHandlerContext handlerContext;
-  protected final Channel channel;
+  protected final ChannelHandlerContext handlerContext;
   protected final VertxHttp2ConnectionHandler handler;
   private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
@@ -92,16 +91,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private boolean closed;
   private int windowSize;
 
-  public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler handler) {
-    super((VertxInternal) context.owner(), channel, context);
-    this.channel = channel;
-    this.handlerContext = channel.pipeline().context(handler);
+  public Http2ConnectionBase(ContextImpl context, VertxHttp2ConnectionHandler handler) {
+    super(context.owner(), handler.context(), context);
     this.handler = handler;
+    this.handlerContext = chctx;
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
-  }
-
-  void setHandlerContext(ChannelHandlerContext handlerContext) {
-    this.handlerContext = handlerContext;
   }
 
   VertxInternal vertx() {
@@ -341,7 +335,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       throw new IllegalArgumentException("Invalid timeout value " + timeout);
     }
     handler.gracefulShutdownTimeoutMillis(timeout);
-    channel.close();
+    channel().close();
     return this;
   }
 
@@ -451,13 +445,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public synchronized Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http2ConnectionBase) super.exceptionHandler(handler);
-  }
-
-  /**
-   * @return the Netty channel - for internal usage only
-   */
-  public Channel channel() {
-    return channel;
   }
 
   // Private

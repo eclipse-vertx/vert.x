@@ -61,7 +61,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     this.asyncResultHandler = asyncResultHandler;
     if (timeout != -1) {
       timeoutID = vertx.setTimer(timeout, tid -> {
-        metrics.replyFailure(address, ReplyFailure.TIMEOUT);
+        if (metrics != null) {
+          metrics.replyFailure(address, ReplyFailure.TIMEOUT);
+        }
         sendAsyncResultFailure(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress);
       });
     }
@@ -153,14 +155,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   public synchronized void setResult(AsyncResult<Void> result) {
     this.result = result;
     if (completionHandler != null) {
-      if (result.succeeded()) {
+      if (metrics != null && result.succeeded()) {
         metric = metrics.handlerRegistered(address, repliedAddress);
       }
       Handler<AsyncResult<Void>> callback = completionHandler;
       vertx.runOnContext(v -> callback.handle(result));
     } else if (result.failed()) {
       log.error("Failed to propagate registration for handler " + handler + " and address " + address);
-    } else {
+    } else if (metrics != null) {
       metric = metrics.handlerRegistered(address, repliedAddress);
     }
   }
@@ -208,12 +210,18 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       eventBus.send(creditsAddress, 1);
     }
     try {
-      metrics.beginHandleMessage(metric, local);
+      if (metrics != null) {
+        metrics.beginHandleMessage(metric, local);
+      }
       theHandler.handle(message);
-      metrics.endHandleMessage(metric, null);
+      if (metrics != null) {
+        metrics.endHandleMessage(metric, null);
+      }
     } catch (Exception e) {
       log.error("Failed to handleMessage. address: " + message.address(), e);
-      metrics.endHandleMessage(metric, e);
+      if (metrics != null) {
+        metrics.endHandleMessage(metric, e);
+      }
       throw e;
     }
   }

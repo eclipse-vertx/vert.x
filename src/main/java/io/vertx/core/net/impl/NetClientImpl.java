@@ -19,6 +19,7 @@ package io.vertx.core.net.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -91,8 +92,8 @@ public class NetClientImpl extends NetClientBase<NetSocketImpl> implements NetCl
   }
 
   @Override
-  protected NetSocketImpl createConnection(VertxInternal vertx, Channel channel, String host, int port, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
-    return new NetSocketImpl(vertx, channel, host, port, context, helper, metrics);
+  protected NetSocketImpl createConnection(VertxInternal vertx, ChannelHandlerContext chctx, String host, int port, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
+    return new NetSocketImpl(vertx, chctx, host, port, context, helper, metrics);
   }
 
   @Override

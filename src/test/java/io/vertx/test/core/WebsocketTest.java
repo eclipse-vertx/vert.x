@@ -973,6 +973,38 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testInvalidMissingConnectionHeader() throws Exception {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocols("invalid")).websocketHandler(ws -> {
+    });
+    server.listen(onSuccess(ar -> {
+      client.get(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, resp -> {
+        assertEquals(400, resp.statusCode());
+        resp.endHandler(v -> {
+          testComplete();
+        });
+      }).putHeader("Upgrade", "Websocket").end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testInvalidMethod() throws Exception {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocols("invalid")).websocketHandler(ws -> {
+    });
+    server.listen(onSuccess(ar -> {
+      client.head(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, resp -> {
+        assertEquals(405, resp.statusCode());
+        resp.endHandler(v -> {
+          testComplete();
+        });
+      }).putHeader("Upgrade", "Websocket").putHeader("Connection", "Upgrade").end();
+    }));
+    await();
+  }
+
   private void testReject(WebsocketVersion version) throws Exception {
 
     String path = "/some/path";

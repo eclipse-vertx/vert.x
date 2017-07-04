@@ -719,13 +719,13 @@ public class MetricsContextTest extends VertxTestBase {
     testDatagram(workerContextFactory, workerChecker);
   }
 
-  private void testDatagram(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) {
+  private void testDatagram(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean listening = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
-    AtomicBoolean closeCalled = new AtomicBoolean();
+    CountDownLatch closeCalled = new CountDownLatch(1);
     VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
@@ -747,7 +747,7 @@ public class MetricsContextTest extends VertxTestBase {
           }
           @Override
           public void close() {
-            closeCalled.set(true);
+            closeCalled.countDown();
           }
           @Override
           public boolean isEnabled() {
@@ -769,20 +769,14 @@ public class MetricsContextTest extends VertxTestBase {
           assertTrue(listening.get());
           assertTrue(bytesReadCalled.get());
           assertTrue(bytesWrittenCalled.get());
-          executeInVanillaThread(() -> {
-            socket.close(ar2 -> {
-              assertTrue(closeCalled.get());
-              assertTrue(ar2.succeeded());
-              testComplete();
-            });
-          });
+          executeInVanillaThread(socket::close);
         });
         socket.send(Buffer.buffer("msg"), 1234, "localhost", ar2 -> {
           assertTrue(ar2.succeeded());
         });
       });
     });
-    await();
+    awaitLatch(closeCalled);
   }
 
   @Test

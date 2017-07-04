@@ -33,7 +33,7 @@ public class HandlerHolder<T> {
         unregisterMetric = true;
       }
     }
-    if (unregisterMetric) {
+    if (metrics != null && unregisterMetric) {
       metrics.handlerUnregistered(handler.getMetric());
     }
   }

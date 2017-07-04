@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
@@ -71,14 +72,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private Handler<Void> drainHandler;
   private Buffer pendingData;
   private boolean paused = false;
-  private ChannelFuture writeFuture;
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context,
+  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextImpl context,
                        SSLHelper helper, TCPMetrics metrics) {
     this(vertx, channel, null, 0, context, helper, metrics);
   }
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, String host, int port, ContextImpl context,
+  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, String host, int port, ContextImpl context,
                        SSLHelper helper, TCPMetrics metrics) {
     super(vertx, channel, context);
     this.helper = helper;
@@ -238,13 +238,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   @Override
   public synchronized void close() {
-    if (writeFuture != null) {
-      // Close after all data is written
-      writeFuture.addListener(ChannelFutureListener.CLOSE);
-      channel.flush();
-    } else {
-      super.close();
-    }
+    // Close after all data is written
+    chctx.write(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+    chctx.flush();
   }
 
   @Override
@@ -254,7 +250,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   @Override
   public NetSocket upgradeToSsl(String serverName, Handler<Void> handler) {
-    ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) channel.pipeline().get("ssl");
+    ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
     if (sslHandler == null) {
       if (host != null) {
         sslHandler = new SslHandler(helper.createEngine(vertx, host, port, serverName));
@@ -265,7 +261,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
           sslHandler = new SslHandler(helper.createEngine(vertx));
         }
       }
-      channel.pipeline().addFirst("ssl", sslHandler);
+      chctx.pipeline().addFirst("ssl", sslHandler);
     }
     io.netty.util.concurrent.Future<Channel> handshakeFuture;
     if (sslHandler instanceof SslHandler) {
@@ -328,7 +324,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   private void write(ByteBuf buff) {
     reportBytesWritten(buff.readableBytes());
-    writeFuture = super.writeToChannel(buff);
+    super.writeToChannel(buff);
   }
 
   private synchronized void callDrainHandler() {

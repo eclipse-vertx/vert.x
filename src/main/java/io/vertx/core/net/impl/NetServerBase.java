@@ -43,6 +43,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -140,9 +141,29 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
               ch.close();
               return;
             }
-            ChannelPipeline pipeline = ch.pipeline();
             NetServerBase.this.initChannel(ch.pipeline());
-            pipeline.addLast("handler", new ServerHandler(ch));
+
+            if (sslHelper.isSSL()) {
+              io.netty.util.concurrent.Future<Channel> handshakeFuture;
+              if (options.isSni()) {
+                VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
+                handshakeFuture = sniHandler.handshakeFuture();
+                ch.pipeline().addFirst("ssl", sniHandler);
+              } else {
+                SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
+                handshakeFuture = sslHandler.handshakeFuture();
+                ch.pipeline().addFirst("ssl", sslHandler);
+              }
+              handshakeFuture.addListener(future -> {
+                if (future.isSuccess()) {
+                  connected(ch);
+                } else {
+                  log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + future.cause());
+                }
+              });
+            } else {
+              connected(ch);
+            }
           }
         });
 
@@ -161,7 +182,10 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
               NetServerBase.this.id = new ServerID(NetServerBase.this.actualPort, id.host);
               serverChannelGroup.add(ch);
               vertx.sharedNetServers().put(id, NetServerBase.this);
-              metrics = vertx.metricsSPI().createMetrics(new SocketAddressImpl(id.port, id.host), options);
+              VertxMetrics metrics = vertx.metricsSPI();
+              if (metrics != null) {
+                this.metrics = metrics.createMetrics(new SocketAddressImpl(id.port, id.host), options);
+              }
             } else {
               vertx.sharedNetServers().remove(id);
             }
@@ -186,7 +210,8 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         this.actualPort = shared.actualPort();
-        metrics = vertx.metricsSPI().createMetrics(new SocketAddressImpl(id.port, id.host), options);
+        VertxMetrics metrics = vertx.metricsSPI();
+        this.metrics = metrics != null ? metrics.createMetrics(new SocketAddressImpl(id.port, id.host), options) : null;
         actualServer.handlerManager.addHandler(handler, listenContext);
       }
 
@@ -257,7 +282,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
 
   @Override
   public boolean isMetricsEnabled() {
-    return metrics != null && metrics.isEnabled();
+    return metrics != null;
   }
 
   @Override
@@ -291,74 +316,41 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
 
   }
 
+  private void connected(Channel ch) {
+    EventLoop worker = ch.eventLoop();
+    HandlerHolder<Handler<? super C>> handler = handlerManager.chooseHandler(worker);
+    if (handler == null) {
+      //Ignore
+      return;
+    }
+    // Need to set context before constructor is called as writehandler registration needs this
+    ContextImpl.setContext(handler.context);
+    VertxNetHandler<C> nh = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, handler.context, sslHelper, metrics)) {
+      @Override
+      protected void handleMessage(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+        NetServerBase.this.handleMsgReceived(connection, msg);
+      }
+      @Override
+      protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
+        return NetServerBase.this.safeObject(msg, allocator);
+      }
+    };
+    nh.addHandler(conn -> socketMap.put(ch, conn));
+    nh.removeHandler(conn -> socketMap.remove(ch));
+    ch.pipeline().addLast("handler", nh);
+    C sock = nh.getConnection();
+    handler.context.executeFromIO(() -> {
+      if (metrics != null) {
+        sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+      }
+      handler.handler.handle(sock);
+    });
+  }
+
   private void executeCloseDone(ContextImpl closeContext, Handler<AsyncResult<Void>> done, Exception e) {
     if (done != null) {
       Future<Void> fut = e == null ? Future.succeededFuture() : Future.failedFuture(e);
       closeContext.runOnContext(v -> done.handle(fut));
-    }
-  }
-
-  private class ServerHandler extends VertxNetHandler<C> {
-    public ServerHandler(Channel ch) {
-      super(ch, socketMap);
-    }
-
-    @Override
-    protected void handleMsgReceived(C conn, Object msg) {
-      NetServerBase.this.handleMsgReceived(conn, msg);
-    }
-
-    @Override
-    protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-      return NetServerBase.this.safeObject(msg, allocator);
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-      Channel ch = ctx.channel();
-      EventLoop worker = ch.eventLoop();
-
-      //Choose a handler
-      HandlerHolder<Handler<? super C>> handler = handlerManager.chooseHandler(worker);
-      if (handler == null) {
-        //Ignore
-        return;
-      }
-
-      if (sslHelper.isSSL()) {
-        io.netty.util.concurrent.Future<Channel> handshakeFuture;
-        if (options.isSni()) {
-          VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
-          handshakeFuture = sniHandler.handshakeFuture();
-          ch.pipeline().addFirst("ssl", sniHandler);
-        } else {
-          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
-          handshakeFuture = sslHandler.handshakeFuture();
-          ch.pipeline().addFirst("ssl", sslHandler);
-        }
-        handshakeFuture.addListener(future -> {
-          if (future.isSuccess()) {
-            connected(ch, handler);
-          } else {
-            log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + future.cause());
-          }
-        });
-      } else {
-        connected(ch, handler);
-      }
-    }
-
-    private void connected(Channel ch, HandlerHolder<Handler<? super C>> handler) {
-      // Need to set context before constructor is called as writehandler registration needs this
-      ContextImpl.setContext(handler.context);
-      C sock = createConnection(vertx, ch, handler.context, sslHelper, metrics);
-      socketMap.put(ch, sock);
-      VertxNetHandler netHandler = ch.pipeline().get(VertxNetHandler.class);
-      netHandler.conn = sock;
-      handler.context.executeFromIO(() -> {
-        sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
-        handler.handler.handle(sock);
-      });
     }
   }
 
@@ -371,7 +363,7 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
    *
    * @return the created connection
    */
-  protected abstract C createConnection(VertxInternal vertx, Channel channel, ContextImpl context,
+  protected abstract C createConnection(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context,
                                         SSLHelper helper, TCPMetrics metrics);
 
   /**

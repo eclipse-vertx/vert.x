@@ -207,6 +207,7 @@ public class DatagramTest extends VertxTestBase {
       WriteStream<Buffer> sender1 = peer1.sender(1234, "127.0.0.1");
       sender1.write(buffer);
     });
+    await();
   }
 
   @Test
