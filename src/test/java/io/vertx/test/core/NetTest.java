@@ -18,12 +18,18 @@ package io.vertx.test.core;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
@@ -43,6 +49,8 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
@@ -3049,12 +3057,12 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testNetInternal() throws Exception {
+  public void testNetServerInternal() throws Exception {
     server.connectHandler(so -> {
       NetSocketInternal internal = (NetSocketInternal) so;
       ChannelHandlerContext chctx = internal.channelHandlerContext();
       ChannelPipeline pipeline = chctx.pipeline();
-      pipeline.addFirst(new HttpServerCodec());
+      pipeline.addBefore("handler", "http", new HttpServerCodec());
       internal.messageHandler(obj -> {
         if (obj instanceof LastHttpContent) {
           DefaultFullHttpResponse response = new DefaultFullHttpResponse(
@@ -3076,6 +3084,49 @@ public class NetTest extends VertxTestBase {
         testComplete();
       });
     });
+    await();
+  }
+
+  @Test
+  public void testNetClientInternal() throws Exception {
+    waitFor(2);
+    HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost("localhost").setPort(1234));
+    server.requestHandler(req -> {
+      req.response().end("Hello World"); });
+    CountDownLatch latch = new CountDownLatch(1);
+    server.listen(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setTcpNoDelay(true));
+    client.connect(1234, "localhost", onSuccess(so -> {
+      NetSocketInternal soInt = (NetSocketInternal) so;
+      ChannelHandlerContext chctx = soInt.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addBefore("handler", "http", new HttpClientCodec());
+      AtomicInteger status = new AtomicInteger();
+      soInt.messageHandler(obj -> {
+        switch (status.getAndIncrement()) {
+          case 0:
+            assertTrue(obj instanceof HttpResponse);
+            HttpResponse resp = (HttpResponse) obj;
+            assertEquals(200, resp.status().code());
+            break;
+          case 1:
+            assertTrue(obj instanceof LastHttpContent);
+            assertEquals("Hello World", ((LastHttpContent)obj).content().toString(StandardCharsets.UTF_8));
+            complete();
+            break;
+          default:
+            fail();
+        }
+      });
+      soInt.handler(buff -> fail());
+      soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"), onSuccess(v -> {
+        complete();
+      }));
+    }));
     await();
   }
 

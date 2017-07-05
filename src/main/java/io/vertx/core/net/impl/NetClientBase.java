@@ -178,12 +178,10 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
     }
 
     Handler<Channel> channelInitializer = ch -> {
-      ChannelPipeline pipeline = ch.pipeline();
       if (sslHelper.isSSL()) {
         SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx, host, port, serverName));
         ch.pipeline().addLast("ssl", sslHandler);
       }
-      initChannel(pipeline);
     };
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
@@ -229,6 +227,7 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
 
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
+    initChannel(ch.pipeline());
 
     VertxNetHandler<C> handler = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, host, port, context, sslHelper, metrics)) {
       @Override

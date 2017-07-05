@@ -23,6 +23,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandler;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
@@ -110,6 +111,23 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public NetSocketInternal writeMessage(Object message) {
     super.writeToChannel(message);
+    return this;
+  }
+
+  @Override
+  public NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler) {
+    ChannelPromise promise = chctx.newPromise();
+    super.writeToChannel(message, promise);
+    promise.addListener(new ChannelFutureListener() {
+      @Override
+      public void operationComplete(ChannelFuture future) throws Exception {
+        if (future.isSuccess()) {
+          handler.handle(Future.succeededFuture());
+        } else {
+          handler.handle(Future.failedFuture(future.cause()));
+        }
+      }
+    });
     return this;
   }
 

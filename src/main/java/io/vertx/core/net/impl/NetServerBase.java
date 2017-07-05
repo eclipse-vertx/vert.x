@@ -323,7 +323,9 @@ public abstract class NetServerBase<C extends ConnectionBase> implements Closeab
     }
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(handler.context);
+
     NetServerBase.this.initChannel(ch.pipeline());
+
     VertxNetHandler<C> nh = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, handler.context, sslHelper, metrics)) {
       @Override
       protected void handleMessage(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {

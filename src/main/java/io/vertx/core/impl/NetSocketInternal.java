@@ -15,8 +15,9 @@
  */
 package io.vertx.core.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.net.NetSocket;
 
@@ -28,6 +29,8 @@ public interface NetSocketInternal extends NetSocket {
   ChannelHandlerContext channelHandlerContext();
 
   NetSocketInternal writeMessage(Object message);
+
+  NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler);
 
   NetSocketInternal messageHandler(Handler<Object> handler);
 
