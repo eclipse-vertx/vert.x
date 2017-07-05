@@ -268,7 +268,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
       pipeline.remove("chunkedWriter");
     }
 
-    chctx.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket) {
+    chctx.pipeline().replace("handler", "handler", new VertxNetHandler(socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {

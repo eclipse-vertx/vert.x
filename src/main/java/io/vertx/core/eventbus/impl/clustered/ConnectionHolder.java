@@ -1,7 +1,6 @@
 package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;

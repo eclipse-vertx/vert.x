@@ -58,7 +58,6 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetClientImpl;
-import io.vertx.core.net.impl.NetServerBase;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
@@ -116,7 +115,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final DeploymentManager deploymentManager;
   private final FileResolver fileResolver;
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
-  private final Map<ServerID, NetServerBase> sharedNetServers = new HashMap<>();
+  private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
   final WorkerPool workerPool;
   final WorkerPool internalBlockingPool;
   private final ThreadFactory eventLoopThreadFactory;
@@ -343,7 +342,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return sharedHttpServers;
   }
 
-  public Map<ServerID, NetServerBase> sharedNetServers() {
+  public Map<ServerID, NetServerImpl> sharedNetServers() {
     return sharedNetServers;
   }
 
@@ -511,7 +510,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             closeClusterManager(ar4 -> {
               // Copy set to prevent ConcurrentModificationException
               Set<HttpServer> httpServers = new HashSet<>(sharedHttpServers.values());
-              Set<NetServerBase> netServers = new HashSet<>(sharedNetServers.values());
+              Set<NetServerImpl> netServers = new HashSet<>(sharedNetServers.values());
               sharedHttpServers.clear();
               sharedNetServers.clear();
 
@@ -531,7 +530,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
               for (HttpServer server : httpServers) {
                 server.close(serverCloseHandler);
               }
-              for (NetServerBase server : netServers) {
+              for (NetServerImpl server : netServers) {
                 server.close(serverCloseHandler);
               }
               if (serverCount == 0) {

@@ -580,7 +580,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket) {
+    pipeline.replace("handler", "handler",  new VertxNetHandler(socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
