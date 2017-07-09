@@ -3083,6 +3083,7 @@ public class NetTest extends VertxTestBase {
   }
 
   private void testNetServerInternal_(HttpClientOptions clientOptions, Consumer<NetSocketInternal> checker) throws Exception {
+    waitFor(2);
     server.connectHandler(so -> {
       NetSocketInternal internal = (NetSocketInternal) so;
       checker.accept(internal);
@@ -3096,7 +3097,7 @@ public class NetTest extends VertxTestBase {
             HttpResponseStatus.OK,
             Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
           response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
-          internal.writeMessage(response);
+          internal.writeMessage(response, onSuccess(v -> complete()));
         }
       });
       internal.handler(buff -> fail());
@@ -3169,9 +3170,7 @@ public class NetTest extends VertxTestBase {
         }
       });
       soInt.handler(buff -> fail());
-      soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"), onSuccess(v -> {
-        complete();
-      }));
+      soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"), onSuccess(v -> complete()));
     }));
     await();
   }
