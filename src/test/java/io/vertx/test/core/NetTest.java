@@ -49,6 +49,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -3058,8 +3059,33 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testNetServerInternal() throws Exception {
+    testNetServerInternal_(new HttpClientOptions(), so -> {
+      assertFalse(so.isSsl());
+      assertNull(so.indicatedServerName());
+    });
+  }
+
+  @Test
+  public void testNetServerInternalTLS() throws Exception {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions()
+      .setPort(1234)
+      .setHost("localhost")
+      .setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get()));
+    testNetServerInternal_(new HttpClientOptions()
+      .setSsl(true)
+      .setTrustStoreOptions(Trust.SERVER_JKS.get())
+    , so -> {
+        assertTrue(so.isSsl());
+        assertNull(so.indicatedServerName());
+      });
+  }
+
+  private void testNetServerInternal_(HttpClientOptions clientOptions, Consumer<NetSocketInternal> checker) throws Exception {
     server.connectHandler(so -> {
       NetSocketInternal internal = (NetSocketInternal) so;
+      checker.accept(internal);
       ChannelHandlerContext chctx = internal.channelHandlerContext();
       ChannelPipeline pipeline = chctx.pipeline();
       pipeline.addBefore("handler", "http", new HttpServerCodec());
@@ -3076,7 +3102,7 @@ public class NetTest extends VertxTestBase {
       internal.handler(buff -> fail());
     });
     startServer();
-    HttpClient client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient(clientOptions);
     client.getNow(1234, "localhost", "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
       resp.bodyHandler(buff -> {
@@ -3089,8 +3115,29 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testNetClientInternal() throws Exception {
+    testNetClientInternal_(new HttpServerOptions().setHost("localhost").setPort(1234), so -> {
+      assertFalse(so.isSsl());
+      assertNull(so.indicatedServerName());
+    });
+  }
+
+  @Test
+  public void testNetClientInternalTLS() throws Exception {
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustStoreOptions(Trust.SERVER_JKS.get()));
+    testNetClientInternal_(new HttpServerOptions()
+      .setHost("localhost")
+      .setPort(1234)
+      .setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get()), so -> {
+      assertTrue(so.isSsl());
+      assertNull(so.indicatedServerName());
+    });
+  }
+
+  private void testNetClientInternal_(HttpServerOptions options, Consumer<NetSocketInternal> checker) throws Exception {
     waitFor(2);
-    HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost("localhost").setPort(1234));
+    HttpServer server = vertx.createHttpServer(options);
     server.requestHandler(req -> {
       req.response().end("Hello World"); });
     CountDownLatch latch = new CountDownLatch(1);
@@ -3098,8 +3145,6 @@ public class NetTest extends VertxTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    client.close();
-    client = vertx.createNetClient(new NetClientOptions().setTcpNoDelay(true));
     client.connect(1234, "localhost", onSuccess(so -> {
       NetSocketInternal soInt = (NetSocketInternal) so;
       ChannelHandlerContext chctx = soInt.channelHandlerContext();
