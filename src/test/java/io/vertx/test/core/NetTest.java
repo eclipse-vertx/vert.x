@@ -3147,6 +3147,7 @@ public class NetTest extends VertxTestBase {
     awaitLatch(latch);
     client.connect(1234, "localhost", onSuccess(so -> {
       NetSocketInternal soInt = (NetSocketInternal) so;
+      checker.accept(soInt);
       ChannelHandlerContext chctx = soInt.channelHandlerContext();
       ChannelPipeline pipeline = chctx.pipeline();
       pipeline.addBefore("handler", "http", new HttpClientCodec());
