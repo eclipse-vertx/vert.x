@@ -867,13 +867,13 @@ Set the trust options in jks format, aka Java truststore
 +++
 Set whether compression is enabled
 +++
-|[[tryWebsocketDefalteFrameCompression]]`tryWebsocketDefalteFrameCompression`|`Boolean`|
-+++
-Set option to offer Deflate Frame websocket compression
-+++
 |[[tryWebsocketDefalteFrameCompressionEnabled]]`tryWebsocketDefalteFrameCompressionEnabled`|`Boolean`|
 +++
 
++++
+|[[tryWebsocketDeflateFrameCompression]]`tryWebsocketDeflateFrameCompression`|`Boolean`|
++++
+Set option to offer Deflate Frame websocket compression
 +++
 |[[tryWebsocketPermessageDeflateCompressionEnabled]]`tryWebsocketPermessageDeflateCompressionEnabled`|`Boolean`|
 +++
@@ -1033,10 +1033,6 @@ Get whether WebSocket Deflate Frame compression is supported
 +++
 Enable or disable support for WebSocket Defalte Frame compression
 +++
-|[[isEnabledWebsocketPermessageDeflateCompression]]`isEnabledWebsocketPermessageDeflateCompression`|`Boolean`|
-+++
-Enable or disable support for WebSocket Permessage Deflate compression
-+++
 |[[jdkSslEngineOptions]]`jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -1142,6 +1138,14 @@ Set the WebSocket Allow Server No Context option
 |[[websocketCompressionLevel]]`websocketCompressionLevel`|`Number (int)`|
 +++
 Set the WebSocket compression level
++++
+|[[websocketPermessageDeflateCompressionIsSupported]]`websocketPermessageDeflateCompressionIsSupported`|`Boolean`|
++++
+Get whether WebSocket Permessage Deflate compression is supported
++++
+|[[websocketPermessageDeflateCompressionSupported]]`websocketPermessageDeflateCompressionSupported`|`Boolean`|
++++
+Enable or disable support for WebSocket Permessage Deflate compression
 +++
 |[[websocketPreferredClientNoContext]]`websocketPreferredClientNoContext`|`Boolean`|
 +++

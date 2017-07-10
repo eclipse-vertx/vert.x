@@ -23,7 +23,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>3.5.0-SNAPSHOT-CMP</version>
+  <version>3.5.0-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -689,5 +689,4 @@
     </profile>
   </profiles>
 
-  <description>Updated temporary instance that uses websockets compresson.</description>
 </project>

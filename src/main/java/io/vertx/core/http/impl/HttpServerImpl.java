@@ -414,7 +414,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 		  extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(options.getWebsocketCompressionLevel()));
 	  }
 	  
-	  if (options.getIsEnabledWebsocketPermessageDeflateCompression()) {
+	  if (options.getWebsocketPermessageDeflateCompressionIsSupported()) {
 		  extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(options.getWebsocketCompressionLevel(),
 				  ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE, 
 				  options.getWebsocketAllowServerNoContext(), options.getWebsocketPreferredClientNoContext()));

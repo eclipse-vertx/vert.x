@@ -104,8 +104,8 @@ public class HttpClientOptionsConverter {
     if (json.getValue("tryUseCompression") instanceof Boolean) {
       obj.setTryUseCompression((Boolean)json.getValue("tryUseCompression"));
     }
-    if (json.getValue("tryWebsocketDefalteFrameCompression") instanceof Boolean) {
-      obj.setTryWebsocketDefalteFrameCompression((Boolean)json.getValue("tryWebsocketDefalteFrameCompression"));
+    if (json.getValue("tryWebsocketDeflateFrameCompression") instanceof Boolean) {
+      obj.setTryWebsocketDeflateFrameCompression((Boolean)json.getValue("tryWebsocketDeflateFrameCompression"));
     }
     if (json.getValue("tryWebsocketTryPermessageDefalteCompression") instanceof Boolean) {
       obj.setTryWebsocketTryPermessageDefalteCompression((Boolean)json.getValue("tryWebsocketTryPermessageDefalteCompression"));

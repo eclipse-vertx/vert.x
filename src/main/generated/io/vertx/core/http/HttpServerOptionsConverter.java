@@ -62,9 +62,6 @@ public class HttpServerOptionsConverter {
     if (json.getValue("isEnabledWebsocketFrameDeflateCompression") instanceof Boolean) {
       obj.setIsEnabledWebsocketFrameDeflateCompression((Boolean)json.getValue("isEnabledWebsocketFrameDeflateCompression"));
     }
-    if (json.getValue("isEnabledWebsocketPermessageDeflateCompression") instanceof Boolean) {
-      obj.setIsEnabledWebsocketPermessageDeflateCompression((Boolean)json.getValue("isEnabledWebsocketPermessageDeflateCompression"));
-    }
     if (json.getValue("maxChunkSize") instanceof Number) {
       obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
     }
@@ -85,6 +82,9 @@ public class HttpServerOptionsConverter {
     }
     if (json.getValue("websocketCompressionLevel") instanceof Number) {
       obj.setWebsocketCompressionLevel(((Number)json.getValue("websocketCompressionLevel")).intValue());
+    }
+    if (json.getValue("websocketPermessageDeflateCompressionSupported") instanceof Boolean) {
+      obj.setWebsocketPermessageDeflateCompressionSupported((Boolean)json.getValue("websocketPermessageDeflateCompressionSupported"));
     }
     if (json.getValue("websocketPreferredClientNoContext") instanceof Boolean) {
       obj.setWebsocketPreferredClientNoContext((Boolean)json.getValue("websocketPreferredClientNoContext"));
@@ -111,7 +111,6 @@ public class HttpServerOptionsConverter {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
     json.put("isEnabledWebsocketFrameDefalteCompression", obj.getIsEnabledWebsocketFrameDefalteCompression());
-    json.put("isEnabledWebsocketPermessageDeflateCompression", obj.getIsEnabledWebsocketPermessageDeflateCompression());
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
@@ -119,6 +118,7 @@ public class HttpServerOptionsConverter {
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
     json.put("websocketAllowServerNoContext", obj.getWebsocketAllowServerNoContext());
     json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
+    json.put("websocketPermessageDeflateCompressionIsSupported", obj.getWebsocketPermessageDeflateCompressionIsSupported());
     json.put("websocketPreferredClientNoContext", obj.getWebsocketPreferredClientNoContext());
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());

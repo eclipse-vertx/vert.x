@@ -744,7 +744,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @param permessageDeflateSupported
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setIsEnabledWebsocketPermessageDeflateCompression (boolean permessageDeflateSupported) {
+  public HttpServerOptions setWebsocketPermessageDeflateCompressionSupported (boolean permessageDeflateSupported) {
 	  this.websocketPermessageDeflateCompressionSupported = permessageDeflateSupported;
 	  return this;
   }
@@ -753,7 +753,7 @@ public class HttpServerOptions extends NetServerOptions {
    * Get whether WebSocket Permessage Deflate compression is supported
    * @return true if the http server will accept Permessage Deflate compression
    */
-  public boolean getIsEnabledWebsocketPermessageDeflateCompression () {
+  public boolean getWebsocketPermessageDeflateCompressionIsSupported () {
 	  return this.websocketPermessageDeflateCompressionSupported;
   }
   

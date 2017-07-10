@@ -156,32 +156,32 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
   
   /**
-   * Default offer WebSocket Deflate Frame compression
+   * Default offer WebSocket Deflate Frame compression = false
    */
   public static final boolean DEFAULT_TRY_USE_WEBSOCKET_DEFLATE_FRAME = false;
   
   /** 
-   * Default offer WebSocket Permessage Deflate Compression
+   * Default offer WebSocket Permessage Deflate Compression = false
    */
   public static final boolean DEFAULT_TRY_USE_WEBSOCKET_PERMESSAGE_DEFLATE = false;
   
   /**
-   * Default WebSocket compression level
+   * Default WebSocket compression level = 6
    */
   public static final int DEFAULT_WEBSOCKET_COMPRESSION_LEVEL = 6;
   
   /** 
-   * Default WebSocket Compression client no context allowance
+   * Default WebSocket Compression client no context allowance = false
    */
   public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_ALLOW_CLIENT_NO_CONTEXT = false;
   
   /** 
-   * Default WebSocket Compression server no context allowance
+   * Default WebSocket Compression server no context allowance = false
    */
   public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_REQUEST_SERVER_NO_CONTEXT = false;
   
   /** 
-   * Default WebSocket Compression use webkit name setting
+   * Default WebSocket Compression use webkit name setting = false
    */
   public static final boolean DEFAULT_WEBSOCKET_DEFLATE_FRAME_USE_WEBKIT_NAME = false;
 
@@ -997,7 +997,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @param tryDeflateFrame
    * @return  a reference to this, so the API can be used fluently
    */
- public HttpClientOptions setTryWebsocketDefalteFrameCompression(boolean tryDeflateFrame)
+ public HttpClientOptions setTryWebsocketDeflateFrameCompression(boolean tryDeflateFrame)
  {
 	 this.websocketTryUseDeflateFrame = tryDeflateFrame;
 	 return this;
