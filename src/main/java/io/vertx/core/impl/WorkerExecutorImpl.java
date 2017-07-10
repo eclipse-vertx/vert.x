@@ -49,7 +49,7 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
   @Override
   public boolean isMetricsEnabled() {
     PoolMetrics metrics = pool.metrics();
-    return metrics != null && metrics.isEnabled();
+    return metrics != null;
   }
 
   @Override

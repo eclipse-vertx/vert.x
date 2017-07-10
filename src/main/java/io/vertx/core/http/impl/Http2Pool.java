@@ -17,19 +17,15 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -85,27 +81,27 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   void createConn(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) throws Http2Exception {
-    ChannelPipeline p = ch.pipeline();
     synchronized (queue) {
-      VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
+      VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>(ch)
           .connectionMap(connectionMap)
           .server(false)
+          .clientUpgrade(upgrade)
           .useCompression(client.getOptions().isTryUseCompression())
           .initialSettings(client.getOptions().getInitialSettings())
           .connectionFactory(connHandler -> {
-            Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, ch, connHandler, metrics);
-            Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-            conn.metric(metric);
+            Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, connHandler, metrics);
+            if (metrics != null) {
+              Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+              conn.metric(metric);
+            }
             return conn;
           })
           .logEnabled(logEnabled)
           .build();
-      if (upgrade) {
-        handler.onHttpClientUpgrade();
-      }
       Http2ClientConnection conn = handler.connection;
-      metrics.endpointConnected(queue.metric, conn.metric());
-      p.addLast(handler);
+      if (metrics != null) {
+        metrics.endpointConnected(queue.metric, conn.metric());
+      }
       allConnections.add(conn);
       if (windowSize > 0) {
         conn.setWindowSize(windowSize);
@@ -138,7 +134,9 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
         queue.connectionClosed();
       }
     }
-    metrics.endpointDisconnected(queue.metric, conn.metric());
+    if (metrics != null) {
+      metrics.endpointDisconnected(queue.metric, conn.metric());
+    }
   }
 
   @Override

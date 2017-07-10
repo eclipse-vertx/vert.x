@@ -16,7 +16,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -58,14 +57,13 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
 
   Http2ServerConnection(
-      Channel channel,
       ContextImpl context,
       String serverOrigin,
       VertxHttp2ConnectionHandler connHandler,
       HttpServerOptions options,
       Handler<HttpServerRequest> requestHandler,
       HttpServerMetrics metrics) {
-    super(channel, context, connHandler);
+    super(context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;

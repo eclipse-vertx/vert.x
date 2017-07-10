@@ -155,8 +155,8 @@ public class NetServerImpl extends NetServerBase<NetSocketImpl> implements NetSe
   }
 
   @Override
-  protected NetSocketImpl createConnection(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
-    return new NetSocketImpl(vertx, channel, context, helper, metrics);
+  protected NetSocketImpl createConnection(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
+    return new NetSocketImpl(vertx, chctx, context, helper, metrics);
   }
 
   /*

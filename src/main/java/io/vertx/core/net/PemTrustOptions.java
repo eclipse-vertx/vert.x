@@ -155,4 +155,21 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
     return new PemTrustOptions(this);
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    PemTrustOptions that = (PemTrustOptions) o;
+
+    if (!certPaths.equals(that.certPaths)) return false;
+    return certValues.equals(that.certValues);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = certPaths.hashCode();
+    result = 31 * result + certValues.hashCode();
+    return result;
+  }
 }

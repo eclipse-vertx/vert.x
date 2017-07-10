@@ -3681,6 +3681,21 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testUnknownContentLengthIsSetToZeroWithHTTP_1_0() throws Exception {
+    server.requestHandler(req -> {
+      req.response().write("Some-String").end();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertNull(resp.getHeader("Content-Length"));
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testPartialH2CAmbiguousRequest() throws Exception {
     server.requestHandler(req -> {
       assertEquals("POST", req.rawMethod());

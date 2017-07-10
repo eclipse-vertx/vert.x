@@ -16,15 +16,19 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
-import io.netty.handler.codec.http2.DefaultHttp2LocalFlowController;
 import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Flags;
+import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2FrameLogger;
-import io.netty.handler.codec.http2.Http2LocalFlowController;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LogLevel;
 import io.vertx.core.http.HttpServerOptions;
@@ -33,10 +37,13 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
+ * Todo : don't use the parent builder that is too complicated and restrictive
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2ConnectionHandler<C>, VertxHttp2ConnectionHandlerBuilder<C>> {
 
+  private final Channel channel;
   private Map<Channel, ? super C> connectionMap;
   private boolean useCompression;
   private boolean useDecompression;
@@ -44,8 +51,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private boolean logEnabled;
+  private boolean clientUpgrade;
+  private Http2Settings serverUpgrade;
 
-  VertxHttp2ConnectionHandlerBuilder() {
+  VertxHttp2ConnectionHandlerBuilder(Channel channel) {
+    this.channel = channel;
   }
 
   protected VertxHttp2ConnectionHandlerBuilder<C> server(boolean isServer) {
@@ -66,8 +76,18 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     this.useCompression = useCompression;
     return this;
   }
-  
-  /** 
+
+  public VertxHttp2ConnectionHandlerBuilder<C> clientUpgrade(boolean upgrade) {
+    this.clientUpgrade = upgrade;
+    return this;
+  }
+
+  public VertxHttp2ConnectionHandlerBuilder<C> serverUpgrade(Http2Settings upgrade) {
+    this.serverUpgrade = upgrade;
+    return this;
+  }
+
+  /**
    * This method allows to set the compression level to be used in the http/2 connection encoder 
    * (for data sent to client) when compression support is turned on (@see useCompression) and 
    * the client advertises to support deflate/gizip compression in the Accept-Encoding header
@@ -114,6 +134,61 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     if (logEnabled) {
       frameLogger(new Http2FrameLogger(LogLevel.DEBUG));
     }
+    // Make this damn builder happy
+    frameListener(new Http2FrameListener() {
+      @Override
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onSettingsAckRead(ChannelHandlerContext ctx) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) throws Http2Exception {
+        throw new UnsupportedOperationException();
+      }
+    });
     return super.build();
   }
 
@@ -123,19 +198,29 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
       if (useCompression) {
         encoder = new CompressorHttp2ConnectionEncoder(encoder,compressionLevel,CompressorHttp2ConnectionEncoder.DEFAULT_WINDOW_BITS,CompressorHttp2ConnectionEncoder.DEFAULT_MEM_LEVEL);
       }
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings);
+      if (serverUpgrade != null) {
+        handler.onHttpServerUpgrade(serverUpgrade);
+      }
+      channel.pipeline().addLast(handler);
+      handler.init(connectionFactory.apply(handler));
       if (useDecompression) {
-        frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler.connection));
+        decoder.frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler.connection));
       } else {
-        frameListener(handler.connection);
+        decoder.frameListener(handler.connection);
       }
       return handler;
     } else {
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings);
+      if (clientUpgrade) {
+        handler.onHttpClientUpgrade();
+      }
+      channel.pipeline().addLast(handler);
+      handler.init(connectionFactory.apply(handler));
       if (useCompression) {
-        frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler.connection));
+        decoder.frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler.connection));
       } else {
-        frameListener(handler.connection);
+        decoder.frameListener(handler.connection);
       }
       return handler;
     }

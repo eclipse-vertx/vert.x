@@ -35,11 +35,14 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -104,7 +107,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
     }
 
-    this.metric = conn.metrics().responsePushed(conn.metric(), method, path, this);
+    HttpServerMetrics metrics = conn.metrics();
+    this.metric = (METRICS_ENABLED && metrics != null) ? metrics.responsePushed(conn.metric(), method, path, this) : null;
   }
 
   synchronized void beginRequest() {
@@ -438,7 +442,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private void handleEnded(boolean failed) {
     if (!ended) {
       ended = true;
-      if (metric != null) {
+      if (METRICS_ENABLED && metric != null) {
         // Null in case of push response : handle this case
         if (failed) {
           conn.metrics().requestReset(metric);

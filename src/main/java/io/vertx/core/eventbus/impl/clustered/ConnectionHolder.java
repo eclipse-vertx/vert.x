@@ -66,7 +66,9 @@ class ConnectionHolder {
   synchronized void writeMessage(ClusteredMessage message) {
     if (connected) {
       Buffer data = message.encodeToWire();
-      metrics.messageWritten(message.address(), data.length());
+      if (metrics != null) {
+        metrics.messageWritten(message.address(), data.length());
+      }
       socket.write(data);
     } else {
       if (pending == null) {
@@ -124,7 +126,9 @@ class ConnectionHolder {
     schedulePing();
     for (ClusteredMessage message : pending) {
       Buffer data = message.encodeToWire();
-      metrics.messageWritten(message.address(), data.length());
+      if (metrics != null) {
+        metrics.messageWritten(message.address(), data.length());
+      }
       socket.write(data);
     }
     pending.clear();
