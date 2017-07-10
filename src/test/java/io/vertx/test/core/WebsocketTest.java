@@ -1013,7 +1013,7 @@ public class WebsocketTest extends VertxTestBase {
 	  // client needs to ask for it
 	  server = vertx.createHttpServer(new HttpServerOptions()
 			  .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
-			  .setIsEnabledWebsocketFrameDeflateCompression(false)
+			  .setWebsocketFrameDeflateCompressionSupported(false)
 			  .setWebsocketPermessageDeflateCompressionSupported(false)
 			  ).websocketHandler(ws -> {
 				  

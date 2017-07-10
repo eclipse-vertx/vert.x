@@ -1025,14 +1025,6 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the HTTP/2 connection settings immediatly sent by the server when a client connects.
 +++
-|[[isEnabledWebsocketFrameDefalteCompression]]`isEnabledWebsocketFrameDefalteCompression`|`Boolean`|
-+++
-Get whether WebSocket Deflate Frame compression is supported
-+++
-|[[isEnabledWebsocketFrameDeflateCompression]]`isEnabledWebsocketFrameDeflateCompression`|`Boolean`|
-+++
-Enable or disable support for WebSocket Defalte Frame compression
-+++
 |[[jdkSslEngineOptions]]`jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -1138,6 +1130,10 @@ Set the WebSocket Allow Server No Context option
 |[[websocketCompressionLevel]]`websocketCompressionLevel`|`Number (int)`|
 +++
 Set the WebSocket compression level
++++
+|[[websocketFrameDeflateCompressionSupported]]`websocketFrameDeflateCompressionSupported`|`Boolean`|
++++
+Enable or disable support for WebSocket Defalte Frame compression
 +++
 |[[websocketPermessageDeflateCompressionIsSupported]]`websocketPermessageDeflateCompressionIsSupported`|`Boolean`|
 +++

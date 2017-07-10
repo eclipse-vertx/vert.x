@@ -726,7 +726,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @param deflateCompressionSupported
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setIsEnabledWebsocketFrameDeflateCompression (boolean deflateCompressionSupported) {
+  public HttpServerOptions setWebsocketFrameDeflateCompressionSupported (boolean deflateCompressionSupported) {
 	  this.websocketDeflateFrameCompressionSupported = deflateCompressionSupported;
 	  return this;
   }
@@ -735,7 +735,7 @@ public class HttpServerOptions extends NetServerOptions {
    * Get whether WebSocket Deflate Frame compression is supported
    * @return true if the http server will accept Deflate Frame compression 
    */
-  public boolean getIsEnabledWebsocketFrameDefalteCompression () {
+  public boolean getWebsocketFrameDeflateCompressionSupported () {
 	  return this.websocketDeflateFrameCompressionSupported;
   }
   
