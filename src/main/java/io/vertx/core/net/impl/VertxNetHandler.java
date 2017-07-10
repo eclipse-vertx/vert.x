@@ -46,9 +46,6 @@ public abstract class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
   @Override
   protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (msg instanceof ByteBuf) {
-      return safeBuffer((ByteBuf) msg, allocator);
-    }
     return msg;
   }
 }

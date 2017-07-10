@@ -422,13 +422,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         connection.handleMessageReceived(msg);
       }
-      @Override
-      protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
-        if (msg instanceof ByteBuf) {
-          return safeBuffer((ByteBuf) msg, allocator);
-        }
-        return msg;
-      }
     };
     nh.addHandler(conn -> socketMap.put(ch, conn));
     nh.removeHandler(conn -> socketMap.remove(ch));

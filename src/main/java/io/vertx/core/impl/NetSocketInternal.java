@@ -28,12 +28,12 @@ import io.vertx.core.net.NetSocket;
  * {@link io.vertx.core.net.NetServer} and {@link io.vertx.core.net.NetClient}:
  *
  * <ul>
+ *   <li>Server sharing</li>
  *   <li>SSL/TLS</li>
  *   <li>SNI</li>
  *   <li>SSL/TLS upgrade</li>
  *   <li>Write batching during read operation</li>
  *   <li>Client proxy support</li>
- *   <li>Back-pressure</li>
  * </ul>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -73,6 +73,10 @@ public interface NetSocketInternal extends NetSocket {
   /**
    * Set a {@code handler} on this socket to process the messages produced by this socket. The message can be
    * {@link io.netty.buffer.ByteBuf} or other messages produced by channel pipeline handlers.
+   * <p/>
+   * The {@code} handler should take care of releasing pooled / direct messages.
+   * <p/>
+   * The handler replaces any {@link #handler(Handler)} previously set.
    *
    * @param handler the handler to set
    * @return a reference to this, so the API can be used fluently

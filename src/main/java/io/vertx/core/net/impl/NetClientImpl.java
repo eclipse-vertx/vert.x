@@ -257,13 +257,6 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, host, port, context, sslHelper, metrics)) {
       @Override
-      protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
-        if (msg instanceof ByteBuf) {
-          return safeBuffer((ByteBuf) msg, allocator);
-        }
-        return msg;
-      }
-      @Override
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         connection.handleMessageReceived(msg);;
       }

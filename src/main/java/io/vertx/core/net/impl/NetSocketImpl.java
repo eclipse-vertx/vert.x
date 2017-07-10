@@ -17,6 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -59,6 +60,13 @@ import java.util.UUID;
  */
 public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
+  private static final Handler<Object> NULL_MSG_HANDLER = event -> {
+    if (event instanceof ByteBuf) {
+      ByteBuf byteBuf = (ByteBuf) event;
+      byteBuf.release();
+    }
+  };
+
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
@@ -67,7 +75,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final String host;
   private final int port;
   private final TCPMetrics metrics;
-  private Handler<Object> messageHandler;
+  private Handler<Object> messageHandler = NULL_MSG_HANDLER;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private Buffer pendingData;
@@ -154,16 +162,20 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
     if (dataHandler != null) {
-      messageHandler = new BufferMessageHandler(dataHandler);
+      messageHandler(new BufferMessageHandler(channelHandlerContext().alloc(), dataHandler));
     } else {
-      messageHandler = null;
+      messageHandler(null);
     }
     return this;
   }
 
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
-    messageHandler = handler;
+    if (handler != null) {
+      messageHandler = handler;
+    } else {
+      messageHandler = NULL_MSG_HANDLER;
+    }
     return this;
   }
 
@@ -349,16 +361,20 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   private class BufferMessageHandler implements Handler<Object> {
 
+    private final ByteBufAllocator allocator;
     private final Handler<Buffer> dataHandler;
 
-    public BufferMessageHandler(Handler<Buffer> dataHandler) {
+    public BufferMessageHandler(ByteBufAllocator allocator, Handler<Buffer> dataHandler) {
       this.dataHandler = dataHandler;
+      this.allocator = allocator;
     }
 
     @Override
     public void handle(Object event) {
       if (event instanceof ByteBuf) {
-        Buffer data = Buffer.buffer((ByteBuf) event);
+        ByteBuf byteBuf = (ByteBuf) event;
+        byteBuf = VertxHandler.safeBuffer(byteBuf, allocator);
+        Buffer data = Buffer.buffer(byteBuf);
         reportBytesRead(data.length());
         if (paused) {
           if (pendingData == null) {

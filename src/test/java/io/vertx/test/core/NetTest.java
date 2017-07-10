@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -3059,10 +3060,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testNetServerInternal() throws Exception {
-    testNetServerInternal_(new HttpClientOptions(), so -> {
-      assertFalse(so.isSsl());
-      assertNull(so.indicatedServerName());
-    });
+    testNetServerInternal_(new HttpClientOptions(), false);
   }
 
   @Test
@@ -3076,17 +3074,14 @@ public class NetTest extends VertxTestBase {
     testNetServerInternal_(new HttpClientOptions()
       .setSsl(true)
       .setTrustStoreOptions(Trust.SERVER_JKS.get())
-    , so -> {
-        assertTrue(so.isSsl());
-        assertNull(so.indicatedServerName());
-      });
+    , true);
   }
 
-  private void testNetServerInternal_(HttpClientOptions clientOptions, Consumer<NetSocketInternal> checker) throws Exception {
+  private void testNetServerInternal_(HttpClientOptions clientOptions, boolean expectSSL) throws Exception {
     waitFor(2);
     server.connectHandler(so -> {
       NetSocketInternal internal = (NetSocketInternal) so;
-      checker.accept(internal);
+      assertEquals(expectSSL, internal.isSsl());
       ChannelHandlerContext chctx = internal.channelHandlerContext();
       ChannelPipeline pipeline = chctx.pipeline();
       pipeline.addBefore("handler", "http", new HttpServerCodec());
@@ -3116,10 +3111,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testNetClientInternal() throws Exception {
-    testNetClientInternal_(new HttpServerOptions().setHost("localhost").setPort(1234), so -> {
-      assertFalse(so.isSsl());
-      assertNull(so.indicatedServerName());
-    });
+    testNetClientInternal_(new HttpServerOptions().setHost("localhost").setPort(1234), false);
   }
 
   @Test
@@ -3130,13 +3122,10 @@ public class NetTest extends VertxTestBase {
       .setHost("localhost")
       .setPort(1234)
       .setSsl(true)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get()), so -> {
-      assertTrue(so.isSsl());
-      assertNull(so.indicatedServerName());
-    });
+      .setKeyStoreOptions(Cert.SERVER_JKS.get()), true);
   }
 
-  private void testNetClientInternal_(HttpServerOptions options, Consumer<NetSocketInternal> checker) throws Exception {
+  private void testNetClientInternal_(HttpServerOptions options, boolean expectSSL) throws Exception {
     waitFor(2);
     HttpServer server = vertx.createHttpServer(options);
     server.requestHandler(req -> {
@@ -3148,7 +3137,7 @@ public class NetTest extends VertxTestBase {
     awaitLatch(latch);
     client.connect(1234, "localhost", onSuccess(so -> {
       NetSocketInternal soInt = (NetSocketInternal) so;
-      checker.accept(soInt);
+      assertEquals(expectSSL, soInt.isSsl());
       ChannelHandlerContext chctx = soInt.channelHandlerContext();
       ChannelPipeline pipeline = chctx.pipeline();
       pipeline.addBefore("handler", "http", new HttpClientCodec());
@@ -3163,7 +3152,12 @@ public class NetTest extends VertxTestBase {
             break;
           case 1:
             assertTrue(obj instanceof LastHttpContent);
-            assertEquals("Hello World", ((LastHttpContent)obj).content().toString(StandardCharsets.UTF_8));
+            ByteBuf content = ((LastHttpContent) obj).content();
+            assertEquals(!expectSSL, content.isDirect());
+            assertEquals(1, content.refCnt());
+            String val = content.toString(StandardCharsets.UTF_8);
+            assertTrue(content.release());
+            assertEquals("Hello World", val);
             complete();
             break;
           default:
@@ -3171,6 +3165,38 @@ public class NetTest extends VertxTestBase {
         }
       });
       soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"), onSuccess(v -> complete()));
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetSocketInternalBuffer() throws Exception {
+    server.connectHandler(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.messageHandler(msg -> fail("Unexpected"));
+      soi.handler(msg -> {
+        ByteBuf byteBuf = msg.getByteBuf();
+        assertFalse(byteBuf.isDirect());
+        assertEquals(1, byteBuf.refCnt());
+        assertFalse(byteBuf.release());
+        assertEquals(1, byteBuf.refCnt());
+        soi.write(msg);
+      });
+    });
+    startServer();
+    client.connect(1234, "localhost", onSuccess(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.write(Buffer.buffer("Hello World"));
+      soi.messageHandler(msg -> fail("Unexpected"));
+      soi.handler(msg -> {
+        ByteBuf byteBuf = msg.getByteBuf();
+        assertFalse(byteBuf.isDirect());
+        assertEquals(1, byteBuf.refCnt());
+        assertFalse(byteBuf.release());
+        assertEquals(1, byteBuf.refCnt());
+        assertEquals("Hello World", msg.toString());
+        testComplete();
+      });
     }));
     await();
   }
