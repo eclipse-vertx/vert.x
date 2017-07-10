@@ -3090,6 +3090,7 @@ public class NetTest extends VertxTestBase {
       ChannelHandlerContext chctx = internal.channelHandlerContext();
       ChannelPipeline pipeline = chctx.pipeline();
       pipeline.addBefore("handler", "http", new HttpServerCodec());
+      internal.handler(buff -> fail());
       internal.messageHandler(obj -> {
         if (obj instanceof LastHttpContent) {
           DefaultFullHttpResponse response = new DefaultFullHttpResponse(
@@ -3100,7 +3101,6 @@ public class NetTest extends VertxTestBase {
           internal.writeMessage(response, onSuccess(v -> complete()));
         }
       });
-      internal.handler(buff -> fail());
     });
     startServer();
     HttpClient client = vertx.createHttpClient(clientOptions);
@@ -3153,6 +3153,7 @@ public class NetTest extends VertxTestBase {
       ChannelPipeline pipeline = chctx.pipeline();
       pipeline.addBefore("handler", "http", new HttpClientCodec());
       AtomicInteger status = new AtomicInteger();
+      soInt.handler(buff -> fail());
       soInt.messageHandler(obj -> {
         switch (status.getAndIncrement()) {
           case 0:
@@ -3169,7 +3170,6 @@ public class NetTest extends VertxTestBase {
             fail();
         }
       });
-      soInt.handler(buff -> fail());
       soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"), onSuccess(v -> complete()));
     }));
     await();

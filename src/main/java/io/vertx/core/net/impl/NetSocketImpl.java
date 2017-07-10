@@ -41,8 +41,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -69,7 +67,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final String host;
   private final int port;
   private final TCPMetrics metrics;
-  private Handler<Buffer> dataHandler;
   private Handler<Object> messageHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
@@ -156,7 +153,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
-    this.dataHandler = dataHandler;
+    if (dataHandler != null) {
+      messageHandler = new BufferMessageHandler(dataHandler);
+    } else {
+      messageHandler = null;
+    }
     return this;
   }
 
@@ -181,7 +182,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       paused = false;
       if (pendingData != null) {
         // Send empty buffer to trigger sending of pending data
-        context.runOnContext(v -> handleDataReceived(Buffer.buffer()));
+        context.runOnContext(v -> handleMessageReceived(Unpooled.EMPTY_BUFFER));
       }
       doResume();
     }
@@ -341,30 +342,38 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   public synchronized void handleMessageReceived(Object msg) {
     checkContext();
-    if (msg instanceof ByteBuf) {
-      ByteBuf buf = (ByteBuf) msg;
-      handleDataReceived(Buffer.buffer(buf));
-    } else if (messageHandler != null) {
+    if (messageHandler != null) {
       messageHandler.handle(msg);
     }
   }
 
-  public void handleDataReceived(Buffer data) {
-    if (paused) {
-      if (pendingData == null) {
-        pendingData = data.copy();
-      } else {
-        pendingData.appendBuffer(data);
+  private class BufferMessageHandler implements Handler<Object> {
+
+    private final Handler<Buffer> dataHandler;
+
+    public BufferMessageHandler(Handler<Buffer> dataHandler) {
+      this.dataHandler = dataHandler;
+    }
+
+    @Override
+    public void handle(Object event) {
+      if (event instanceof ByteBuf) {
+        Buffer data = Buffer.buffer((ByteBuf) event);
+        reportBytesRead(data.length());
+        if (paused) {
+          if (pendingData == null) {
+            pendingData = data.copy();
+          } else {
+            pendingData.appendBuffer(data);
+          }
+          return;
+        }
+        if (pendingData != null) {
+          data = pendingData.appendBuffer(data);
+          pendingData = null;
+        }
+        dataHandler.handle(data);
       }
-      return;
-    }
-    if (pendingData != null) {
-      data = pendingData.appendBuffer(data);
-      pendingData = null;
-    }
-    reportBytesRead(data.length());
-    if (dataHandler != null) {
-      dataHandler.handle(data);
     }
   }
 

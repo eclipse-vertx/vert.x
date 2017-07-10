@@ -595,7 +595,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       @Override
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        connection.handleDataReceived(Buffer.buffer(buf));
+        connection.handleMessageReceived(buf);
       }
     }.removeHandler(sock -> {
       pool.removeChannel(chctx.channel());
