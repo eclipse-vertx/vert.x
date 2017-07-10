@@ -140,7 +140,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
         nettyHeaders = null;
       }
             
-      ChannelPipeline p = channel.pipeline(); 
+      ChannelPipeline p = chctx.channel().pipeline(); 
       ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebsocketExtensionHandshakers(client.getOptions());
       if (!extensionHandshakers.isEmpty()) {
     	  p.addBefore("handler", "websocketsExtensionsHandler", new WebSocketClientExtensionHandler(
