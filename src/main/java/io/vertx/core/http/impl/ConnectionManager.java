@@ -181,7 +181,9 @@ public class ConnectionManager {
   public void close() {
     wsQM.close();
     requestQM.close();
-    metrics.close();
+    if (metrics != null) {
+      metrics.close();
+    }
   }
 
   /**
@@ -217,12 +219,12 @@ public class ConnectionManager {
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
         maxSize = options.getHttp2MaxPoolSize();
-        pool =  (Pool)new Http2Pool(this, client, ConnectionManager.this.metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize());
+        pool =  (Pool)new Http2Pool(this, client, metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize());
       } else {
         maxSize = options.getMaxPoolSize();
-        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize());
+        pool = (Pool)new Http1xPool(client, metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize(), host, port);
       }
-      this.metric = ConnectionManager.this.metrics.createEndpoint(host, port, maxSize);
+      this.metric = metrics != null ? metrics.createEndpoint(host, port, maxSize) : null;
     }
 
     public synchronized void getConnection(Waiter waiter) {
@@ -242,8 +244,8 @@ public class ConnectionManager {
         } else {
           // Wait in queue
           if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
-            if (ConnectionManager.this.metrics.isEnabled()) {
-              waiter.metric = ConnectionManager.this.metrics.enqueueRequest(metric);
+            if (metrics != null) {
+              waiter.metric = metrics.enqueueRequest(metric);
             }
             waiters.add(waiter);
           } else {
@@ -303,13 +305,13 @@ public class ConnectionManager {
      */
     Waiter getNextWaiter() {
       Waiter waiter = waiters.poll();
-      if (waiter != null && ConnectionManager.this.metrics.isEnabled()) {
-        ConnectionManager.this.metrics.dequeueRequest(metric, waiter.metric);
+      if (metrics != null && waiter != null) {
+        metrics.dequeueRequest(metric, waiter.metric);
       }
       while (waiter != null && waiter.isCancelled()) {
         waiter = waiters.poll();
-        if (waiter != null && ConnectionManager.this.metrics.isEnabled()) {
-          ConnectionManager.this.metrics.dequeueRequest(metric, waiter.metric);
+        if (metrics != null && waiter != null) {
+          metrics.dequeueRequest(metric, waiter.metric);
         }
       }
       return waiter;
@@ -325,8 +327,8 @@ public class ConnectionManager {
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         mgr.queueMap.remove(key);
-        if (ConnectionManager.this.metrics.isEnabled()) {
-          ConnectionManager.this.metrics.closeEndpoint(host, port, metric);
+        if (metrics != null) {
+          metrics.closeEndpoint(host, port, metric);
         }
       }
     }
@@ -342,15 +344,13 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // change the pool to Http1xPool
       synchronized (this) {
-        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion, options.getMaxPoolSize());
+        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion, options.getMaxPoolSize(), host, port);
       }
       http1xConnected(fallbackVersion, context, port, host, ch, waiter);
     }
 
     private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-      context.executeFromIO(() ->
-          ((Http1xPool)(Pool)pool).createConn(version, context, port, host, ch, waiter)
-      );
+      ((Http1xPool)(Pool)pool).createConn(version, context, port, host, ch, waiter);
     }
 
     private void http2Connected(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {
@@ -450,7 +450,7 @@ public class ConnectionManager {
                 applyHttp2ConnectionOptions(pipeline);
                 queue.http2Connected(context, ch, waiter, false);
               } else {
-                applyHttp1xConnectionOptions(queue, ch.pipeline(), context);
+                applyHttp1xConnectionOptions(ch.pipeline(), context);
                 HttpVersion fallbackProtocol = ApplicationProtocolNames.HTTP_1_1.equals(protocol) ?
                     HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
                 queue.fallbackToHttp1x(ch, context, fallbackProtocol, port, host, waiter);
@@ -484,7 +484,7 @@ public class ConnectionManager {
                     p.remove(httpCodec);
                     p.remove(this);
                     // Upgrade handler will remove itself
-                    applyHttp1xConnectionOptions(queue, ch.pipeline(), context);
+                    applyHttp1xConnectionOptions(ch.pipeline(), context);
                     queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
                   }
                 }
@@ -510,7 +510,7 @@ public class ConnectionManager {
               applyHttp2ConnectionOptions(pipeline);
             }
           } else {
-            applyHttp1xConnectionOptions(queue, pipeline, context);
+            applyHttp1xConnectionOptions(pipeline, context);
           }
         }
       };
@@ -583,7 +583,7 @@ public class ConnectionManager {
       }
     }
 
-    void applyHttp1xConnectionOptions(ConnQueue queue, ChannelPipeline pipeline, ContextImpl context) {
+    void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
       if (logEnabled) {
         pipeline.addLast("logging", new LoggingHandler());
       }
@@ -595,7 +595,6 @@ public class ConnectionManager {
       if (options.getIdleTimeout() > 0) {
         pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
       }
-      pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)queue.mgr.connectionMap));
     }
   }
 }

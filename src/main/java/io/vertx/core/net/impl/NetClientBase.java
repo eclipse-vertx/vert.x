@@ -19,6 +19,7 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
@@ -36,6 +37,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.Map;
 import java.util.Objects;
@@ -79,7 +81,8 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
     } else {
       creatingContext = null;
     }
-    this.metrics = vertx.metricsSPI().createMetrics(options);
+    VertxMetrics metrics = vertx.metricsSPI();
+    this.metrics = metrics != null ? metrics.createMetrics(options) : null;
   }
 
   /**
@@ -87,7 +90,7 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
    *
    * @return the created connection
    */
-  protected abstract C createConnection(VertxInternal vertx, Channel channel, String host, int port,
+  protected abstract C createConnection(VertxInternal vertx, ChannelHandlerContext chctx, String host, int port,
                                         ContextImpl context, SSLHelper helper, TCPMetrics metrics);
 
   protected abstract void handleMsgReceived(C conn, Object msg);
@@ -105,7 +108,9 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
         creatingContext.removeCloseHook(closeHook);
       }
       closed = true;
-      metrics.close();
+      if (metrics != null) {
+        metrics.close();
+      }
     }
   }
 
@@ -179,16 +184,6 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
         ch.pipeline().addLast("ssl", sslHandler);
       }
       initChannel(pipeline);
-      pipeline.addLast("handler", new VertxNetHandler<C>(ch, socketMap) {
-        @Override
-        protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-          return NetClientBase.this.safeObject(msg, allocator);
-        }
-        @Override
-        protected void handleMsgReceived(C conn, Object msg) {
-          NetClientBase.this.handleMsgReceived(conn, msg);
-        }
-      });
     };
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
@@ -231,16 +226,33 @@ public abstract class NetClientBase<C extends ConnectionBase> implements Metrics
   }
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<C>> connectHandler, String host, int port) {
+
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
-    C sock = createConnection(vertx, ch, host, port, context, sslHelper, metrics);
-    VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
-    handler.conn = sock;
-    socketMap.put(ch, sock);
-    context.executeFromIO(() -> {
-      sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
-      connectHandler.handle(Future.succeededFuture(sock));
+
+    VertxNetHandler<C> handler = new VertxNetHandler<C>(ch, ctx -> createConnection(vertx, ctx, host, port, context, sslHelper, metrics)) {
+      @Override
+      protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
+        return NetClientBase.this.safeObject(msg, allocator);
+      }
+      @Override
+      protected void handleMessage(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+        NetClientBase.this.handleMsgReceived(connection, msg);
+      }
+    };
+    handler.addHandler(sock -> {
+      socketMap.put(ch, sock);
+      context.executeFromIO(() -> {
+        if (metrics != null) {
+          sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
+        }
+        connectHandler.handle(Future.succeededFuture(sock));
+      });
     });
+    handler.removeHandler(conn -> {
+      socketMap.remove(ch);
+    });
+    ch.pipeline().addLast("handler", handler);
   }
 
   private void failed(ContextImpl context, Channel ch, Throwable th, Handler<AsyncResult<C>> connectHandler) {

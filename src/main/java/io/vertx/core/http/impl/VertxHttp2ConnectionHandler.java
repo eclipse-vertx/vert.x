@@ -39,7 +39,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -48,27 +47,36 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   private final Map<Channel, ? super C> connectionMap;
   C connection;
-  private ChannelHandlerContext ctx;
+  private ChannelHandlerContext chctx;
 
   public VertxHttp2ConnectionHandler(
       Map<Channel, ? super C> connectionMap,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
-      Http2Settings initialSettings,
-      Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
+      Http2Settings initialSettings) {
     super(decoder, encoder, initialSettings);
     this.connectionMap = connectionMap;
-    this.connection = connectionFactory.apply(this);
-    encoder().flowController().listener(s -> connection.onStreamwritabilityChanged(s));
+    encoder().flowController().listener(s -> {
+      if (connection != null) {
+        connection.onStreamwritabilityChanged(s);
+      }
+    });
     connection().addListener(this);
+  }
+
+  public ChannelHandlerContext context() {
+    return chctx;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
-    this.ctx = ctx;
-    connection.setHandlerContext(ctx);
-    connectionMap.put(ctx.channel(), connection);
+    chctx = ctx;
+  }
+
+  void init(C conn) {
+    connection = conn;
+    connectionMap.put(chctx.channel(), connection);
   }
 
   @Override
@@ -166,7 +174,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   //
 
   void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeHeaders(stream, headers, end);
     } else {
@@ -177,11 +185,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end) {
-    encoder().writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());;
+    encoder().writeHeaders(chctx, stream.id(), headers, 0, end, chctx.newPromise());;
   }
 
   void writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeData(stream, chunk, end);
     } else {
@@ -192,21 +200,21 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
-    encoder().writeData(ctx, stream.id(), chunk, 0, end, ctx.newPromise());
+    encoder().writeData(chctx, stream.id(), chunk, 0, end, chctx.newPromise());
     Http2RemoteFlowController controller = encoder().flowController();
     if (!controller.isWritable(stream) || end) {
       try {
         encoder().flowController().writePendingBytes();
       } catch (Http2Exception e) {
-        onError(ctx, e);
+        onError(chctx, e);
       }
     }
-    ctx.channel().flush();
+    chctx.channel().flush();
   }
 
   ChannelFuture writePing(ByteBuf data) {
-    ChannelPromise promise = ctx.newPromise();
-    EventExecutor executor = ctx.executor();
+    ChannelPromise promise = chctx.newPromise();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writePing(data, promise);
     } else {
@@ -218,8 +226,8 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writePing(ByteBuf data, ChannelPromise promise) {
-    encoder().writePing(ctx, false, data, promise);
-    ctx.channel().flush();
+    encoder().writePing(chctx, false, data, promise);
+    chctx.channel().flush();
   }
 
   /**
@@ -229,15 +237,15 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     try {
       boolean windowUpdateSent = decoder().flowController().consumeBytes(stream, numBytes);
       if (windowUpdateSent) {
-        ctx.channel().flush();
+        chctx.channel().flush();
       }
     } catch (Http2Exception e) {
-      onError(ctx, e);
+      onError(chctx, e);
     }
   }
 
   void writeFrame(Http2Stream stream, byte type, short flags, ByteBuf payload) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeFrame(stream, type, flags, payload);
     } else {
@@ -248,12 +256,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeFrame(Http2Stream stream, byte type, short flags, ByteBuf payload) {
-    encoder().writeFrame(ctx, type, stream.id(), new Http2Flags(flags), payload, ctx.newPromise());
-    ctx.flush();
+    encoder().writeFrame(chctx, type, stream.id(), new Http2Flags(flags), payload, chctx.newPromise());
+    chctx.flush();
   }
 
   void writeReset(int streamId, long code) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeReset(streamId, code);
     } else {
@@ -264,12 +272,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeReset(int streamId, long code) {
-    encoder().writeRstStream(ctx, streamId, code, ctx.newPromise());
-    ctx.flush();
+    encoder().writeRstStream(chctx, streamId, code, chctx.newPromise());
+    chctx.flush();
   }
 
   void writeGoAway(long errorCode, int lastStreamId, ByteBuf debugData) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeGoAway(errorCode, lastStreamId, debugData);
     } else {
@@ -280,13 +288,13 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeGoAway(long errorCode, int lastStreamId, ByteBuf debugData) {
-    encoder().writeGoAway(ctx, lastStreamId, errorCode, debugData, ctx.newPromise());
-    ctx.flush();
+    encoder().writeGoAway(chctx, lastStreamId, errorCode, debugData, chctx.newPromise());
+    chctx.flush();
   }
 
   ChannelFuture writeSettings(Http2Settings settingsUpdate) {
-    ChannelPromise promise = ctx.newPromise();
-    EventExecutor executor = ctx.executor();
+    ChannelPromise promise = chctx.newPromise();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeSettings(settingsUpdate, promise);
     } else {
@@ -298,13 +306,13 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeSettings(Http2Settings settingsUpdate, ChannelPromise promise) {
-    encoder().writeSettings(ctx, settingsUpdate, promise);
-    ctx.flush();
+    encoder().writeSettings(chctx, settingsUpdate, promise);
+    chctx.flush();
   }
 
   void writePushPromise(int streamId, Http2Headers headers, Handler<AsyncResult<Integer>> completionHandler) {
     int promisedStreamId = connection().local().incrementAndGetNextStreamId();
-    ChannelPromise promise = ctx.newPromise();
+    ChannelPromise promise = chctx.newPromise();
     promise.addListener(fut -> {
       if (fut.isSuccess()) {
         completionHandler.handle(Future.succeededFuture(promisedStreamId));
@@ -312,7 +320,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         completionHandler.handle(Future.failedFuture(fut.cause()));
       }
     });
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writePushPromise(streamId, promisedStreamId, headers, promise);
     } else {
@@ -323,6 +331,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writePushPromise(int streamId, int promisedStreamId, Http2Headers headers, ChannelPromise promise) {
-    encoder().writePushPromise(ctx, streamId, promisedStreamId, headers, 0, promise);
+    encoder().writePushPromise(chctx, streamId, promisedStreamId, headers, 0, promise);
   }
 }

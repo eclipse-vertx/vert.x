@@ -42,13 +42,22 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   private final boolean keepAlive;
   private final int pipeliningLimit;
   private final boolean ssl;
+  private final String host;
+  private final int port;
   private final HttpVersion version;
   private final Set<ClientConnection> allConnections = new HashSet<>();
   private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
   private final int maxSockets;
 
-  public Http1xPool(HttpClientImpl client, HttpClientMetrics metrics, HttpClientOptions options, ConnectionManager.ConnQueue queue,
-                    Map<Channel, HttpClientConnection> connectionMap, HttpVersion version, int maxSockets) {
+  public Http1xPool(HttpClientImpl client,
+                    HttpClientMetrics metrics,
+                    HttpClientOptions options,
+                    ConnectionManager.ConnQueue queue,
+                    Map<Channel, HttpClientConnection> connectionMap,
+                    HttpVersion version,
+                    int maxSockets,
+                    String host,
+                    int port) {
     this.queue = queue;
     this.version = version;
     this.client = client;
@@ -59,6 +68,20 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     this.ssl = options.isSsl();
     this.connectionMap = connectionMap;
     this.maxSockets = maxSockets;
+    this.host = host;
+    this.port = port;
+  }
+
+  boolean ssl() {
+    return ssl;
+  }
+
+  String host() {
+    return host;
+  }
+
+  int port() {
+    return port;
   }
 
   @Override
@@ -117,30 +140,42 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-    ClientConnection conn = new ClientConnection(version, client, queue.metric, ch,
-        ssl, host, port, context, this, metrics);
-    Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-    conn.metric(metric);
-    metrics.endpointConnected(queue.metric, metric);
-    ClientHandler handler = ch.pipeline().get(ClientHandler.class);
-    handler.conn = conn;
-    synchronized (queue) {
-      allConnections.add(conn);
-    }
-    connectionMap.put(ch, conn);
-    waiter.handleConnection(conn);
-    queue.deliverStream(conn, waiter);
+    ClientHandler handler = new ClientHandler(
+      context,
+      this,
+      client,
+      queue.metric,
+      metrics);
+    handler.addHandler(conn -> {
+      synchronized (queue) {
+        allConnections.add(conn);
+      }
+      connectionMap.put(ch, conn);
+    });
+    handler.removeHandler(this::connectionClosed);
+    ch.pipeline().addLast("handler", handler);
+    ClientConnection conn = handler.getConnection();
+    context.executeFromIO(() -> {
+      waiter.handleConnection(conn);
+      queue.deliverStream(conn, waiter);
+    });
   }
 
   // Called if the connection is actually closed, OR the connection attempt failed - in the latter case
   // conn will be null
-  public synchronized void connectionClosed(ClientConnection conn) {
+  // The connection has been closed - tell the pool about it, this allows the pool to create more
+  // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
+  // gets the closed on, they will check if it's closed and if so get another one.
+  private synchronized void connectionClosed(ClientConnection conn) {
     synchronized (queue) {
+      connectionMap.remove(conn.channel());
       allConnections.remove(conn);
       availableConnections.remove(conn);
       queue.connectionClosed();
     }
-    metrics.endpointDisconnected(queue.metric, conn.metric());
+    if (metrics != null) {
+      metrics.endpointDisconnected(queue.metric, conn.metric());
+    }
   }
 
   public void closeAllConnections() {

@@ -40,9 +40,9 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.MalformedURLException;
@@ -148,8 +148,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    HttpClientMetrics metrics = vertx.metricsSPI().createMetrics(this, options);
-    connectionManager = new ConnectionManager(this, metrics);
+    VertxMetrics metrics = vertx.metricsSPI();
+    connectionManager = new ConnectionManager(this, metrics != null ? metrics.createMetrics(this, options) : null);
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
   }
 
@@ -861,7 +861,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public boolean isMetricsEnabled() {
-    return getMetrics().isEnabled();
+    return getMetrics() != null;
   }
 
   @Override
@@ -926,10 +926,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   SSLHelper getSslHelper() {
     return sslHelper;
-  }
-
-  HttpClientMetrics httpClientMetrics() {
-    return connectionManager.metrics();
   }
 
   private URL parseUrl(String surl) {
