@@ -162,7 +162,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
     if (dataHandler != null) {
-      messageHandler(new BufferMessageHandler(channelHandlerContext().alloc(), dataHandler));
+      messageHandler(new DataMessageHandler(channelHandlerContext().alloc(), dataHandler));
     } else {
       messageHandler(null);
     }
@@ -359,12 +359,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     }
   }
 
-  private class BufferMessageHandler implements Handler<Object> {
+  private class DataMessageHandler implements Handler<Object> {
 
     private final ByteBufAllocator allocator;
     private final Handler<Buffer> dataHandler;
 
-    public BufferMessageHandler(ByteBufAllocator allocator, Handler<Buffer> dataHandler) {
+    public DataMessageHandler(ByteBufAllocator allocator, Handler<Buffer> dataHandler) {
       this.dataHandler = dataHandler;
       this.allocator = allocator;
     }
