@@ -27,36 +27,25 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHandler<C> {
+public abstract class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
-  private final Function<ChannelHandlerContext, C> connectionFactory;
-  private final Channel ch;
-  private ChannelHandlerContext chctx;
+  private final Function<ChannelHandlerContext, NetSocketImpl> connectionFactory;
 
-  public VertxNetHandler(Channel ch, Function<ChannelHandlerContext, C> connectionFactory) {
-    this.ch = ch;
+  public VertxNetHandler(Function<ChannelHandlerContext, NetSocketImpl> connectionFactory) {
     this.connectionFactory = connectionFactory;
   }
 
-  public VertxNetHandler(Channel ch, C conn) {
-    this(ch, ctx -> conn);
+  public VertxNetHandler(NetSocketImpl conn) {
+    this(ctx -> conn);
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    chctx = ctx;
     setConnection(connectionFactory.apply(ctx));
-  }
-
-  ChannelHandlerContext context() {
-    return chctx;
   }
 
   @Override
   protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (msg instanceof ByteBuf) {
-      return safeBuffer((ByteBuf) msg, allocator);
-    }
     return msg;
   }
 }

@@ -268,7 +268,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
       pipeline.remove("chunkedWriter");
     }
 
-    chctx.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket) {
+    chctx.pipeline().replace("handler", "handler", new VertxNetHandler(socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
@@ -281,7 +281,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
       @Override
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        connection.handleDataReceived(Buffer.buffer(buf));
+        connection.handleMessageReceived(buf);
       }
     }.removeHandler(sock -> connectionMap.remove(chctx.channel())));
 

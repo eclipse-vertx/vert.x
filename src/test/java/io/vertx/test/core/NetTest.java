@@ -16,6 +16,26 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.json.JsonObjectDecoder;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -29,9 +49,14 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
@@ -72,6 +97,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -3028,6 +3054,149 @@ public class NetTest extends VertxTestBase {
       client.connect(1234, "localhost", onSuccess(so -> {
         so.write(expected).close();
       }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetServerInternal() throws Exception {
+    testNetServerInternal_(new HttpClientOptions(), false);
+  }
+
+  @Test
+  public void testNetServerInternalTLS() throws Exception {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions()
+      .setPort(1234)
+      .setHost("localhost")
+      .setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get()));
+    testNetServerInternal_(new HttpClientOptions()
+      .setSsl(true)
+      .setTrustStoreOptions(Trust.SERVER_JKS.get())
+    , true);
+  }
+
+  private void testNetServerInternal_(HttpClientOptions clientOptions, boolean expectSSL) throws Exception {
+    waitFor(2);
+    server.connectHandler(so -> {
+      NetSocketInternal internal = (NetSocketInternal) so;
+      assertEquals(expectSSL, internal.isSsl());
+      ChannelHandlerContext chctx = internal.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addBefore("handler", "http", new HttpServerCodec());
+      internal.handler(buff -> fail());
+      internal.messageHandler(obj -> {
+        if (obj instanceof LastHttpContent) {
+          DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+            HttpVersion.HTTP_1_1,
+            HttpResponseStatus.OK,
+            Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
+          response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
+          internal.writeMessage(response, onSuccess(v -> complete()));
+        }
+      });
+    });
+    startServer();
+    HttpClient client = vertx.createHttpClient(clientOptions);
+    client.getNow(1234, "localhost", "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.bodyHandler(buff -> {
+        assertEquals("Hello World", buff.toString());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testNetClientInternal() throws Exception {
+    testNetClientInternal_(new HttpServerOptions().setHost("localhost").setPort(1234), false);
+  }
+
+  @Test
+  public void testNetClientInternalTLS() throws Exception {
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustStoreOptions(Trust.SERVER_JKS.get()));
+    testNetClientInternal_(new HttpServerOptions()
+      .setHost("localhost")
+      .setPort(1234)
+      .setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get()), true);
+  }
+
+  private void testNetClientInternal_(HttpServerOptions options, boolean expectSSL) throws Exception {
+    waitFor(2);
+    HttpServer server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+      req.response().end("Hello World"); });
+    CountDownLatch latch = new CountDownLatch(1);
+    server.listen(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    client.connect(1234, "localhost", onSuccess(so -> {
+      NetSocketInternal soInt = (NetSocketInternal) so;
+      assertEquals(expectSSL, soInt.isSsl());
+      ChannelHandlerContext chctx = soInt.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addBefore("handler", "http", new HttpClientCodec());
+      AtomicInteger status = new AtomicInteger();
+      soInt.handler(buff -> fail());
+      soInt.messageHandler(obj -> {
+        switch (status.getAndIncrement()) {
+          case 0:
+            assertTrue(obj instanceof HttpResponse);
+            HttpResponse resp = (HttpResponse) obj;
+            assertEquals(200, resp.status().code());
+            break;
+          case 1:
+            assertTrue(obj instanceof LastHttpContent);
+            ByteBuf content = ((LastHttpContent) obj).content();
+            assertEquals(!expectSSL, content.isDirect());
+            assertEquals(1, content.refCnt());
+            String val = content.toString(StandardCharsets.UTF_8);
+            assertTrue(content.release());
+            assertEquals("Hello World", val);
+            complete();
+            break;
+          default:
+            fail();
+        }
+      });
+      soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"), onSuccess(v -> complete()));
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetSocketInternalBuffer() throws Exception {
+    server.connectHandler(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.messageHandler(msg -> fail("Unexpected"));
+      soi.handler(msg -> {
+        ByteBuf byteBuf = msg.getByteBuf();
+        assertFalse(byteBuf.isDirect());
+        assertEquals(1, byteBuf.refCnt());
+        assertFalse(byteBuf.release());
+        assertEquals(1, byteBuf.refCnt());
+        soi.write(msg);
+      });
+    });
+    startServer();
+    client.connect(1234, "localhost", onSuccess(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.write(Buffer.buffer("Hello World"));
+      soi.messageHandler(msg -> fail("Unexpected"));
+      soi.handler(msg -> {
+        ByteBuf byteBuf = msg.getByteBuf();
+        assertFalse(byteBuf.isDirect());
+        assertEquals(1, byteBuf.refCnt());
+        assertFalse(byteBuf.release());
+        assertEquals(1, byteBuf.refCnt());
+        assertEquals("Hello World", msg.toString());
+        testComplete();
+      });
     }));
     await();
   }

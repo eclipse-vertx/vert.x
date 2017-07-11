@@ -580,7 +580,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket) {
+    pipeline.replace("handler", "handler",  new VertxNetHandler(socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
@@ -595,7 +595,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       @Override
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        connection.handleDataReceived(Buffer.buffer(buf));
+        connection.handleMessageReceived(buf);
       }
     }.removeHandler(sock -> {
       pool.removeChannel(chctx.channel());
