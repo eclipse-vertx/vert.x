@@ -17,6 +17,8 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.GenTypeParams;
+import io.vertx.codegen.annotations.GenTypeParams.Param;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.CompositeFutureImpl;
 
@@ -79,10 +81,11 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture all(List<Future> futures) {
+  @GenTypeParams({@Param(name="X",generated=Future.class)})
+  static <X extends Future<?>> CompositeFuture all(List<X> futures) {
     return CompositeFutureImpl.all(futures.toArray(new Future[futures.size()]));
   }
-
+  
   /**
    * Return a composite future, succeeded when any futures is succeeded, failed when all futures are failed.
    * <p/>
@@ -129,7 +132,8 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture any(List<Future> futures) {
+  @GenTypeParams({@Param(name="X",generated=Future.class)})
+  static <X extends Future<?>> CompositeFuture any(List<X> futures) {
     return CompositeFutureImpl.any(futures.toArray(new Future[futures.size()]));
   }
 
@@ -179,7 +183,8 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture join(List<Future> futures) {
+  @GenTypeParams({@Param(name="X",generated=Future.class)})
+  static <X extends Future<?>> CompositeFuture join(List<X> futures) {
     return CompositeFutureImpl.join(futures.toArray(new Future[futures.size()]));
   }
 
