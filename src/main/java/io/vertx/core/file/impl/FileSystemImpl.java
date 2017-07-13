@@ -44,6 +44,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.GroupPrincipal;
@@ -54,6 +55,7 @@ import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -67,6 +69,8 @@ import java.util.regex.Pattern;
  */
 public class FileSystemImpl implements FileSystem {
 
+  private static final CopyOptions DEFAULT_OPTIONS = new CopyOptions();
+
   protected final VertxInternal vertx;
 
   public FileSystemImpl(VertxInternal vertx) {
@@ -74,7 +78,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler) {
-    return copy(from, to, CopyOptions.DEFAULT_OPTIONS, handler);
+    return copy(from, to, DEFAULT_OPTIONS, handler);
   }
 
   @Override
@@ -84,7 +88,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem copyBlocking(String from, String to) {
-    copyInternal(from, to, CopyOptions.DEFAULT_OPTIONS, null).perform();
+    copyInternal(from, to, DEFAULT_OPTIONS, null).perform();
     return this;
   }
 
@@ -99,7 +103,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler) {
-    return move(from, to, CopyOptions.DEFAULT_OPTIONS, handler);
+    return move(from, to, DEFAULT_OPTIONS, handler);
   }
 
   @Override
@@ -109,7 +113,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem moveBlocking(String from, String to) {
-    moveInternal(from, to, CopyOptions.DEFAULT_OPTIONS, null).perform();
+    moveInternal(from, to, DEFAULT_OPTIONS, null).perform();
     return this;
   }
 
@@ -358,7 +362,7 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(from);
     Objects.requireNonNull(to);
     Objects.requireNonNull(options);
-    Set<CopyOption> copyOptionSet = options.toCopyOptionSet();
+    Set<CopyOption> copyOptionSet = toCopyOptionSet(options);
     CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[copyOptionSet.size()]);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
@@ -420,7 +424,7 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(from);
     Objects.requireNonNull(to);
     Objects.requireNonNull(options);
-    Set<CopyOption> copyOptionSet = options.toCopyOptionSet();
+    Set<CopyOption> copyOptionSet = toCopyOptionSet(options);
     CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[copyOptionSet.size()]);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
@@ -839,5 +843,15 @@ public class FileSystemImpl implements FileSystem {
     public void run() {
       context.executeBlocking(this, handler);
     }
+  }
+
+  // Visible for testing
+  static Set<CopyOption> toCopyOptionSet(CopyOptions copyOptions) {
+    Set<CopyOption> copyOptionSet = new HashSet<>();
+    if (copyOptions.isReplaceExisting()) copyOptionSet.add(StandardCopyOption.REPLACE_EXISTING);
+    if (copyOptions.isCopyAttributes()) copyOptionSet.add(StandardCopyOption.COPY_ATTRIBUTES);
+    if (copyOptions.isAtomicMove()) copyOptionSet.add(StandardCopyOption.ATOMIC_MOVE);
+    if (copyOptions.isNofollowLinks()) copyOptionSet.add(LinkOption.NOFOLLOW_LINKS);
+    return copyOptionSet;
   }
 }

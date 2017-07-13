@@ -14,8 +14,9 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.file;
+package io.vertx.core.file.impl;
 
+import io.vertx.core.file.CopyOptions;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -23,11 +24,10 @@ import static org.junit.Assert.*;
 /**
  * @author Thomas Segismont
  */
-public class CopyOptionsTest {
+public class FileSystemImplTest {
 
   @Test
   public void shouldDefaultToJdkDefault() throws Exception {
-    assertTrue(CopyOptions.DEFAULT_OPTIONS.toCopyOptionSet().isEmpty());
-    assertTrue(new CopyOptions().toCopyOptionSet().isEmpty());
+    assertTrue(FileSystemImpl.toCopyOptionSet(new CopyOptions()).isEmpty());
   }
 }

@@ -17,14 +17,7 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.json.JsonObject;
-
-import java.nio.file.CopyOption;
-import java.nio.file.LinkOption;
-import java.nio.file.StandardCopyOption;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Describes the copy (and move) options.
@@ -34,11 +27,24 @@ import java.util.Set;
 @DataObject(generateConverter = true)
 public class CopyOptions {
 
-  public static final CopyOptions DEFAULT_OPTIONS = new CopyOptions();
-
+  /**
+   * Whether an existing file, empty directory, or link should be replaced by default = false.
+   */
   public static final boolean DEFAULT_REPLACE_EXISTING = false;
+
+  /**
+   * Whether the file attributes should be copied by default = false.
+   */
   public static final boolean DEFAULT_COPY_ATTRIBUTES = false;
+
+  /**
+   * Whether move should be performed as an atomic filesystem operation by default = false.
+   */
   public static final boolean DEFAULT_ATOMIC_MOVE = false;
+
+  /**
+   * Whether symbolic links should not be followed during copy or move operations by default = false.
+   */
   public static final boolean DEFAULT_NOFOLLOW_LINKS = false;
 
   private boolean replaceExisting = DEFAULT_REPLACE_EXISTING;
@@ -145,18 +151,5 @@ public class CopyOptions {
   public CopyOptions setNofollowLinks(boolean nofollowLinks) {
     this.nofollowLinks = nofollowLinks;
     return this;
-  }
-
-  /**
-   * @return a set of corresponding {@link CopyOption}
-   */
-  @GenIgnore
-  public Set<CopyOption> toCopyOptionSet() {
-    HashSet<CopyOption> options = new HashSet<>();
-    if (replaceExisting) options.add(StandardCopyOption.REPLACE_EXISTING);
-    if (copyAttributes) options.add(StandardCopyOption.COPY_ATTRIBUTES);
-    if (atomicMove) options.add(StandardCopyOption.ATOMIC_MOVE);
-    if (nofollowLinks) options.add(LinkOption.NOFOLLOW_LINKS);
-    return options;
   }
 }
