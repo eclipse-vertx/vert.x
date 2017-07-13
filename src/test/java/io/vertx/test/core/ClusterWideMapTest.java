@@ -81,6 +81,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapPutGetBuffer() {
+    testMapPutGet(randomBuffer(4), randomBuffer(12));
+  }
+
+  @Test
   public void testMapPutGetDouble() {
     testMapPutGet(1.2d, 2.2d);
   }
@@ -155,6 +160,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testMapPutIfAbsentGetFloat() {
     testMapPutIfAbsentGet(1.2f, 2.2f);
+  }
+
+  @Test
+  public void testMapPutIfAbsentGetBuffer() {
+    testMapPutIfAbsentGet(randomBuffer(4), randomBuffer(12));
   }
 
   @Test
@@ -236,6 +246,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapRemoveBuffer() {
+    testMapRemove(randomBuffer(4), randomBuffer(12));
+  }
+
+  @Test
   public void testMapRemoveDouble() {
     testMapRemove(1.2d, 2.2d);
   }
@@ -293,6 +308,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testMapRemoveIfPresentFloat() {
     testMapRemoveIfPresent(1.2f, 2.2f, 3.3f);
+  }
+
+  @Test
+  public void testMapRemoveIfPresentBuffer() {
+    testMapRemoveIfPresent(randomBuffer(4), randomBuffer(12), randomBuffer(14));
   }
 
   @Test
@@ -358,6 +378,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapReplaceBuffer() {
+    testMapReplace(randomBuffer(4), randomBuffer(12), randomBuffer(14));
+  }
+
+  @Test
   public void testMapReplaceDouble() {
     testMapReplace(1.2d, 2.2d, 3.3d);
   }
@@ -417,6 +442,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testMapReplaceIfPresentFloat() {
     testMapReplaceIfPresent(1.2f, 2.2f, 3.3f);
+  }
+
+  @Test
+  public void testMapReplaceIfPresentBuffer() {
+    testMapReplaceIfPresent(randomBuffer(4), randomBuffer(12), randomBuffer(14));
   }
 
   @Test
