@@ -162,8 +162,6 @@ public class HttpClientOptionsConverter {
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("tryUseCompression", obj.isTryUseCompression());
-    json.put("tryWebsocketDefalteFrameCompressionEnabled", obj.isTryWebsocketDefalteFrameCompressionEnabled());
-    json.put("tryWebsocketPermessageDeflateCompressionEnabled", obj.isTryWebsocketPermessageDeflateCompressionEnabled());
     json.put("verifyHost", obj.isVerifyHost());
     json.put("websocketCompressionAllowClientNoContext", obj.getWebsocketCompressionAllowClientNoContext());
     json.put("websocketCompressionDeflateUseWebkitName", obj.getWebsocketCompressionDeflateUseWebkitName());

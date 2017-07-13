@@ -867,17 +867,9 @@ Set the trust options in jks format, aka Java truststore
 +++
 Set whether compression is enabled
 +++
-|[[tryWebsocketDefalteFrameCompressionEnabled]]`tryWebsocketDefalteFrameCompressionEnabled`|`Boolean`|
-+++
-
-+++
 |[[tryWebsocketDeflateFrameCompression]]`tryWebsocketDeflateFrameCompression`|`Boolean`|
 +++
 Set option to offer Deflate Frame websocket compression
-+++
-|[[tryWebsocketPermessageDeflateCompressionEnabled]]`tryWebsocketPermessageDeflateCompressionEnabled`|`Boolean`|
-+++
-
 +++
 |[[tryWebsocketTryPermessageDefalteCompression]]`tryWebsocketTryPermessageDefalteCompression`|`Boolean`|
 +++

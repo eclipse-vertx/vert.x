@@ -164,12 +164,12 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
 
   ArrayList<WebSocketClientExtensionHandshaker> initializeWebsocketExtensionHandshakers (HttpClientOptions options) {
 	  ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<WebSocketClientExtensionHandshaker>();
-	  if (options.isTryWebsocketDefalteFrameCompressionEnabled()) {
+	  if (options.tryWebsocketDeflateFrameCompression()) {
 		  extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getWebsocketCompressionLevel(),
 				  options.getWebsocketCompressionDeflateUseWebkitName()));
 	  }
 	  
-	  if (options.isTryWebsocketPermessageDeflateCompressionEnabled()) {
+	  if (options.tryWebsocketPermessageDeflateCompressionEnabled()) {
 		  extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getWebsocketCompressionLevel(), 
 				  ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE, 
 				  options.getWebsocketCompressionAllowClientNoContext(), options.getWebsocketCompressionRequestServerNoContext()));

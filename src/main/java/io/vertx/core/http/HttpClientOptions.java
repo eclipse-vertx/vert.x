@@ -997,9 +997,9 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @param tryDeflateFrame
    * @return  a reference to this, so the API can be used fluently
    */
- public HttpClientOptions setTryWebsocketDeflateFrameCompression(boolean tryDeflateFrame)
+ public HttpClientOptions setTryWebsocketDeflateFrameCompression(boolean tryWebsocketDeflateFrameCompression)
  {
-	 this.websocketTryUseDeflateFrame = tryDeflateFrame;
+	 this.websocketTryUseDeflateFrame = tryWebsocketDeflateFrameCompression;
 	 return this;
  }
  
@@ -1007,7 +1007,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   * 
   * @return Whether Deflate Frame websocket compression will be offered
   */
- public boolean isTryWebsocketDefalteFrameCompressionEnabled()
+ public boolean tryWebsocketDeflateFrameCompression()
  {
 	 return this.websocketTryUseDeflateFrame;
  }
@@ -1017,9 +1017,9 @@ public class HttpClientOptions extends ClientOptionsBase {
  * @param tryPermessageDeflate
  * @return  a reference to this, so the API can be used fluently
  */
- public HttpClientOptions setTryWebsocketTryPermessageDefalteCompression(boolean tryPermessageDeflate)
+ public HttpClientOptions setTryWebsocketTryPermessageDefalteCompression(boolean tryWebsocketPerMessageDeflateCompression)
  {
-	 this.websocketTryUsePermessageDeflate = tryPermessageDeflate;
+	 this.websocketTryUsePermessageDeflate = tryWebsocketPerMessageDeflateCompression;
 	 return this;
  }
  
@@ -1027,7 +1027,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   * 
   * @return whether Permessage Deflate websocket compression will be offered
   */
- public boolean isTryWebsocketPermessageDeflateCompressionEnabled()
+ public boolean tryWebsocketPermessageDeflateCompressionEnabled()
  {
 	 return this.websocketTryUsePermessageDeflate;
  }
