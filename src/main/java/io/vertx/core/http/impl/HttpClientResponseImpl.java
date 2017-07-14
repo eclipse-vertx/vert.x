@@ -243,14 +243,15 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     synchronized (conn) {
       conn.reportBytesRead(bytesRead);
       bytesRead = 0;
+      if (!paused && lastChunk != null) {
+        handleChunk(lastChunk);
+      }
+      // paused can be updated in the #handleChunk call above, check it again
       if (paused) {
         pausedLastChunk = lastChunk;
         hasPausedEnd = true;
         pausedTrailers = trailers;
       } else {
-        if (lastChunk != null) {
-          handleChunk(lastChunk);
-        }
         this.trailers = trailers;
         if (endHandler != null) {
           try {
