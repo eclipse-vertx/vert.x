@@ -28,10 +28,10 @@ import java.util.List;
  * <p>
  * In the simplest case, just override the {@link #start} method. If you have verticle clean-up to do you can
  * optionally override the {@link #stop} method too.
- * <p>If you're verticle does extra start-up or clean-up which takes some time (e.g. it deploys other verticles) then
+ * <p>If your verticle does extra start-up or clean-up that takes some time (e.g. it deploys other verticles) then
  * you should override the asynchronous {@link #start(Future) start} and {@link #stop(Future) stop} methods.
  * <p>
- * This class also provides maintains references to the {@link io.vertx.core.Vertx} and {@link io.vertx.core.Context}
+ * This class also maintains references to the {@link io.vertx.core.Vertx} and {@link io.vertx.core.Context}
  * instances of the verticle for easy access.<p>
  * It also provides methods for getting the {@link #config verticle configuration}, {@link #processArgs process arguments},
  * and {@link #deploymentID deployment ID}.
@@ -101,7 +101,7 @@ public abstract class AbstractVerticle implements Verticle {
   /**
    * Start the verticle.<p>
    * This is called by Vert.x when the verticle instance is deployed. Don't call it yourself.<p>
-   * If your verticle does things in it's startup which take some time then you can override this method
+   * If your verticle does things in its startup which take some time then you can override this method
    * and call the startFuture some time later when start up is complete.
    * @param startFuture  a future which should be called when verticle start-up is complete.
    * @throws Exception
@@ -115,7 +115,7 @@ public abstract class AbstractVerticle implements Verticle {
   /**
    * Stop the verticle.<p>
    * This is called by Vert.x when the verticle instance is un-deployed. Don't call it yourself.<p>
-   * If your verticle does things in it's shut-down which take some time then you can override this method
+   * If your verticle does things in its shut-down which take some time then you can override this method
    * and call the stopFuture some time later when clean-up is complete.
    * @param stopFuture  a future which should be called when verticle clean-up is complete.
    * @throws Exception
@@ -128,7 +128,7 @@ public abstract class AbstractVerticle implements Verticle {
 
   /**
    * If your verticle does a simple, synchronous start-up then override this method and put your start-up
-   * code in there.
+   * code in here.
    * @throws Exception
    */
   public void start() throws Exception {
@@ -136,7 +136,7 @@ public abstract class AbstractVerticle implements Verticle {
 
   /**
    * If your verticle has simple synchronous clean-up tasks to complete then override this method and put your clean-up
-   * code in there.
+   * code in here.
    * @throws Exception
    */
   public void stop() throws Exception {
