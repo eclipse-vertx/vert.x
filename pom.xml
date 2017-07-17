@@ -278,16 +278,11 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>attach-sources</id>
-              <configuration>
-                <excludes>
-                  <exclude>docoverride/**</exclude>
-                </excludes>
-              </configuration>
-            </execution>
-          </executions>
+          <configuration>
+            <excludes>
+              <exclude>docoverride/**</exclude>
+            </excludes>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
