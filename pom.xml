@@ -289,9 +289,10 @@
             </excludes>
           </configuration>
         </plugin>
-        
+
       </plugins>
     </pluginManagement>
+
     <plugins>
 
       <plugin>
@@ -343,6 +344,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
@@ -536,6 +538,7 @@
           -->
         </executions>
       </plugin>
+
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
@@ -554,6 +557,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <executions>
@@ -581,6 +585,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
@@ -606,7 +611,9 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
+
     <resources>
       <resource>
         <directory>src/main/resources</directory>
@@ -624,23 +631,7 @@
       </resource>
     </resources>
   </build>
-
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.7</version>
-        <reportSets>
-          <reportSet>
-            <reports>
-            </reports>
-          </reportSet>
-        </reportSets>
-      </plugin>
-    </plugins>
-  </reporting>
-
+  
   <profiles>
     <profile>
       <id>coverage</id>
