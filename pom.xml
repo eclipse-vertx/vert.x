@@ -693,7 +693,7 @@
             <artifactId>maven-assembly-plugin</artifactId>
             <executions>
               <execution>
-                <id>assemble-docs</id>
+                <id>assemble-benchmarks</id>
                 <phase>package</phase>
                 <goals>
                   <goal>single</goal>
