@@ -13,7 +13,9 @@
   ~      http://www.opensource.org/licenses/apache2.0.php
   ~
   ~  You may elect to redistribute this code under either of these licenses.
-  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -57,7 +59,9 @@
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>3.5.0-SNAPSHOT</stack.version>
     <jetty.alpnAgent.version>2.0.6</jetty.alpnAgent.version>
-    <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
+    <jetty.alpnAgent.path>
+      ${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar
+    </jetty.alpnAgent.path>
     <jmh.version>1.19</jmh.version>
   </properties>
 
@@ -261,19 +265,14 @@
         </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>default-clean</id>
-              <configuration>
-                <filesets>
-                  <fileset>
-                    <directory>${asciidoc.dir}</directory>
-                    <directory>${generated.dir}</directory>
-                  </fileset>
-                </filesets>
-              </configuration>
-            </execution>
-          </executions>
+          <configuration>
+            <filesets>
+              <fileset>
+                <directory>${asciidoc.dir}</directory>
+                <directory>${generated.dir}</directory>
+              </fileset>
+            </filesets>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -294,7 +293,8 @@
         <version>3.1.0</version>
         <configuration>
           <systemProperties>
-            <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
+            <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n
+            </java.util.logging.SimpleFormatter.format>
           </systemProperties>
         </configuration>
         <executions>
@@ -489,44 +489,44 @@
           <!-- Check some netty compat (dns / http2) with unstable classes -->
           <!-- Uncomment to run them, you need to have also the dependencies in the repo as they won't be downloaded automatically -->
           <!-- It is possible to have them easily by running the build with -Dnetty.version=4.1.9.Final -Dtcnative.version=2.0.0.Final -->
-<!--
-          <execution>
-            <id>netty-4.1.9-compat</id>
-            <goals>
-              <goal>integration-test</goal>
-            </goals>
-            <phase>integration-test</phase>
-            <configuration>
-              <includes>
-                <include>io/vertx/test/it/NettyCompatTest.java</include>
-              </includes>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-common</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-buffer</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-transport</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-handler</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-handler-proxy</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-handler-codec-http</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-handler-codec-http2</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-resolver</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-resolver-dns</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-              <additionalClasspathElements>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-common/4.1.9.Final/netty-common-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-buffer/4.1.9.Final/netty-buffer-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-transport/4.1.9.Final/netty-transport-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-handler/4.1.9.Final/netty-handler-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-handler-proxy/4.1.9.Final/netty-handler-proxy-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-codec-http/4.1.9.Final/netty-codec-http-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-codec-http2/4.1.9.Final/netty-codec-http2-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-resolver/4.1.9.Final/netty-resolver-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-resolver-dns/4.1.9.Final/netty-resolver-dns-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-tcnative-boringssl-static/2.0.0.Final/netty-tcnative-boringssl-static-2.0.0.Final.jar</additionalClasspathElement>
-              </additionalClasspathElements>
-            </configuration>
-          </execution>
--->
+          <!--
+                    <execution>
+                      <id>netty-4.1.9-compat</id>
+                      <goals>
+                        <goal>integration-test</goal>
+                      </goals>
+                      <phase>integration-test</phase>
+                      <configuration>
+                        <includes>
+                          <include>io/vertx/test/it/NettyCompatTest.java</include>
+                        </includes>
+                        <classpathDependencyExcludes>
+                          <classpathDependencyExclude>io.netty:netty-common</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-buffer</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-transport</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-handler</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-handler-proxy</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-handler-codec-http</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-handler-codec-http2</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-resolver</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-resolver-dns</classpathDependencyExclude>
+                          <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
+                        </classpathDependencyExcludes>
+                        <additionalClasspathElements>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-common/4.1.9.Final/netty-common-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-buffer/4.1.9.Final/netty-buffer-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-transport/4.1.9.Final/netty-transport-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-handler/4.1.9.Final/netty-handler-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-handler-proxy/4.1.9.Final/netty-handler-proxy-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-codec-http/4.1.9.Final/netty-codec-http-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-codec-http2/4.1.9.Final/netty-codec-http2-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-resolver/4.1.9.Final/netty-resolver-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-resolver-dns/4.1.9.Final/netty-resolver-dns-4.1.9.Final.jar</additionalClasspathElement>
+                          <additionalClasspathElement>${settings.localRepository}/io/netty/netty-tcnative-boringssl-static/2.0.0.Final/netty-tcnative-boringssl-static-2.0.0.Final.jar</additionalClasspathElement>
+                        </additionalClasspathElements>
+                      </configuration>
+                    </execution>
+          -->
         </executions>
       </plugin>
       <plugin>
