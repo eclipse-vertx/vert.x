@@ -275,6 +275,8 @@
               <fileset>
                 <directory>${asciidoc.dir}</directory>
                 <directory>${generated.dir}</directory>
+                <directory>${project.basedir}/src/test/generated</directory>
+                <directory>${project.basedir}/src/test/asciidoc</directory>
               </fileset>
             </filesets>
           </configuration>
@@ -631,7 +633,7 @@
       </resource>
     </resources>
   </build>
-  
+
   <profiles>
     <profile>
       <id>coverage</id>
