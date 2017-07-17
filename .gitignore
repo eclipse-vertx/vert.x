@@ -20,3 +20,7 @@ test-tmp
 *.class
 *.swp
 .vertx
+src/main/generated/
+src/test/generated/
+src/main/asciidoc/
+src/test/asciidoc/
