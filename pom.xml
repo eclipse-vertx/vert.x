@@ -217,6 +217,7 @@
 
     <pluginManagement>
       <plugins>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -245,11 +246,13 @@
             </excludes>
           </configuration>
         </plugin>
+
         <plugin>
           <groupId>org.asciidoctor</groupId>
           <artifactId>asciidoctor-maven-plugin</artifactId>
           <executions>
             <execution>
+              <id>asciidoc-processing</id>
               <goals>
                 <goal>process-asciidoc</goal>
               </goals>
@@ -257,12 +260,14 @@
             </execution>
           </executions>
         </plugin>
+
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
           <configuration>
             <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
           </configuration>
         </plugin>
+
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <configuration>
@@ -274,6 +279,7 @@
             </filesets>
           </configuration>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
@@ -283,6 +289,7 @@
             </excludes>
           </configuration>
         </plugin>
+        
       </plugins>
     </pluginManagement>
     <plugins>
