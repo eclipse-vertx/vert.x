@@ -17,6 +17,7 @@
 package io.vertx.core.file;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.file.CopyOptions}.
@@ -27,16 +28,16 @@ public class CopyOptionsConverter {
 
   public static void fromJson(JsonObject json, CopyOptions obj) {
     if (json.getValue("atomicMove") instanceof Boolean) {
-      obj.setAtomicMove((Boolean) json.getValue("atomicMove"));
+      obj.setAtomicMove((Boolean)json.getValue("atomicMove"));
     }
     if (json.getValue("copyAttributes") instanceof Boolean) {
-      obj.setCopyAttributes((Boolean) json.getValue("copyAttributes"));
+      obj.setCopyAttributes((Boolean)json.getValue("copyAttributes"));
     }
     if (json.getValue("nofollowLinks") instanceof Boolean) {
-      obj.setNofollowLinks((Boolean) json.getValue("nofollowLinks"));
+      obj.setNofollowLinks((Boolean)json.getValue("nofollowLinks"));
     }
     if (json.getValue("replaceExisting") instanceof Boolean) {
-      obj.setReplaceExisting((Boolean) json.getValue("replaceExisting"));
+      obj.setReplaceExisting((Boolean)json.getValue("replaceExisting"));
     }
   }
 
