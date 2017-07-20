@@ -3397,7 +3397,7 @@ public class Http1xTest extends HttpTest {
         so.write("01234567");
       }
     }, errors -> {
-      assertEquals(1, errors.size());
+      assertEquals(2, errors.size());
       assertEquals(TooLongFrameException.class, errors.get(0).getClass());
     });
   }
@@ -3407,7 +3407,7 @@ public class Http1xTest extends HttpTest {
     testHttpServerRequestDecodeError(so -> {
       so.write("invalid\r\n"); // Empty chunk
     }, errors -> {
-      assertEquals(1, errors.size());
+      assertEquals(2, errors.size());
       assertEquals(NumberFormatException.class, errors.get(0).getClass());
     });
   }
