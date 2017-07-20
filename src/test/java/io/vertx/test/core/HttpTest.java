@@ -1305,6 +1305,26 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testServerRequestExceptionHandlerCalledWhenConnectionClosed() throws Exception {
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    server.requestHandler(request -> {
+      request.exceptionHandler(err -> {
+        testComplete();
+      });
+      request.handler(buff -> {
+        closeLatch.countDown();
+      });
+    });
+    startServer();
+    AtomicReference<HttpConnection> conn = new AtomicReference<>();
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+    }).connectionHandler(conn::set).setChunked(true).write("some_chunk");
+    awaitLatch(closeLatch);
+    conn.get().close();
+    await();
+  }
+
+  @Test
   public void testDefaultStatus() {
     testStatusCode(-1, null);
   }
