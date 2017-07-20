@@ -50,7 +50,7 @@
 
     <netty.version>4.1.8.Final</netty.version>
     <tcnative.version>1.1.33.Fork26</tcnative.version>
-    <jackson.version>2.7.4</jackson.version>
+    <jackson.version>2.8.9</jackson.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
     <log4j2.version>2.5</log4j2.version>
