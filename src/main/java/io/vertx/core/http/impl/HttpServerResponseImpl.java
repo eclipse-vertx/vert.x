@@ -27,6 +27,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpHeaders;
@@ -546,6 +547,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   void handleClosed() {
     synchronized (conn) {
+      if (!written && exceptionHandler != null) {
+        conn.getContext().runOnContext(v -> exceptionHandler.handle(new VertxException("Connection was closed")));
+      }
       if (endHandler != null) {
         conn.getContext().runOnContext(endHandler);
       }

@@ -1787,7 +1787,7 @@ public class Http2ServerTest extends Http2TestBase {
           fail();
         });
         req.response().exceptionHandler(err -> {
-          fail();
+          assertEquals(2, status.getAndIncrement());
         });
       } else {
         assertEquals(0, status.getAndIncrement());
@@ -1795,11 +1795,11 @@ public class Http2ServerTest extends Http2TestBase {
           fail();
         });
         req.response().exceptionHandler(err -> {
-          fail();
+          assertEquals(3, status.getAndIncrement());
         });
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
-          assertEquals(2, status.getAndIncrement());
+          assertEquals(4, status.getAndIncrement());
           complete();
         });
         conn.shutdown();
