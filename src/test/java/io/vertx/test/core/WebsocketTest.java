@@ -28,6 +28,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.WebsocketRejectedException;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
@@ -36,7 +37,6 @@ import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -103,14 +103,18 @@ public class WebsocketTest extends VertxTestBase {
 
   @Test
   public void testRejectHybi00() throws Exception {
-    testReject(WebsocketVersion.V00);
+    testReject(WebsocketVersion.V00, null, 502);
   }
 
   @Test
   public void testRejectHybi08() throws Exception {
-    testReject(WebsocketVersion.V08);
+    testReject(WebsocketVersion.V08, null, 502);
   }
 
+  @Test
+  public void testRejectWithStatusCode() throws Exception {
+    testReject(WebsocketVersion.V08, 404, 404);
+  }
 
   @Test
   public void testWSBinaryHybi00() throws Exception {
@@ -1005,19 +1009,27 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
-  private void testReject(WebsocketVersion version) throws Exception {
+  private void testReject(WebsocketVersion version, Integer rejectionStatus, int expectedRejectionStatus) throws Exception {
 
     String path = "/some/path";
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
-      ws.reject();
+      if (rejectionStatus != null) {
+        ws.reject(rejectionStatus);
+      } else {
+        ws.reject();
+      }
     });
 
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version).
-          exceptionHandler(t -> testComplete()).
+          exceptionHandler(t -> {
+            assertTrue(t instanceof WebsocketRejectedException);
+            assertEquals(expectedRejectionStatus, ((WebsocketRejectedException)t).getStatus());
+            testComplete();
+          }).
           handler(ws -> fail("Should not be called"));
     });
     await();
@@ -1607,10 +1619,9 @@ public class WebsocketTest extends VertxTestBase {
 
   @Test
   public void httpClientWebsocketConnectionFailureHandlerShouldBeCalled() throws Exception {
-    String nonExistingHost = "idont.even.exist";
     int port = 7867;
     HttpClient client = vertx.createHttpClient();
-    client.websocket(port, nonExistingHost, "", websocket -> {
+    client.websocket(port, "localhost", "", websocket -> {
       websocket.handler(data -> {
         fail("connection should not succeed");
       });
@@ -1716,8 +1727,8 @@ public class WebsocketTest extends VertxTestBase {
         throw new AssertionError("Timed out waiting for expected state, current: serverGotClose = " + serverGotClose + ", clientGotCorrectException = " + clientGotCorrectException);
       } else if (result == serverGotCloseException) {
         serverGotClose = true;
-      } else if (result instanceof WebSocketHandshakeException
-              && result.getMessage().equals("Websocket connection attempt returned HTTP status code 200")) {
+      } else if (result instanceof WebsocketRejectedException
+              && ((WebsocketRejectedException)result).getStatus() == 200) {
         clientGotCorrectException = true;
       } else {
         throw result;

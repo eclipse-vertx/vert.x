@@ -177,13 +177,14 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       if (handshaker != null && handshaking) {
         if (msg instanceof HttpResponse) {
           HttpResponse resp = (HttpResponse) msg;
-          if (resp.getStatus().code() != 101) {
+          HttpResponseStatus status = resp.status();
+          if (status.code() != 101) {
             handshaker = null;
             close();
-            handleException(new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code()));
+            handleException(new WebsocketRejectedException(status.code()));
             return;
           }
-          response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
+          response = new DefaultFullHttpResponse(resp.protocolVersion(), status);
           response.headers().add(resp.headers());
         }
 
@@ -214,7 +215,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       }
     }
 
-    private void handleException(WebSocketHandshakeException e) {
+    private void handleException(Exception e) {
       handshaking = false;
       buffered.clear();
       Handler<Throwable> handler = exceptionHandler();
