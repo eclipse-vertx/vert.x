@@ -156,11 +156,15 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   synchronized boolean isRejected() {
-    return rejected;
+    synchronized (conn) {
+      return rejected;
+    }
   }
 
   synchronized HttpResponseStatus getRejectedStatus() {
-    return rejectedStatus;
+    synchronized (conn) {
+      return rejectedStatus;
+    }
   }
 
 }
