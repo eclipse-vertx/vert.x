@@ -29,6 +29,9 @@ public class WebsocketRejectedException extends VertxException {
     this.status = status;
   }
 
+  /**
+   * @return the status code of the response that rejected the upgrade
+   */
   public int getStatus() {
     return status;
   }
