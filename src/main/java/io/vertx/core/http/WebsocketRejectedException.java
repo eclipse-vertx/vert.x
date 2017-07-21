@@ -24,7 +24,7 @@ public class WebsocketRejectedException extends VertxException {
 
   private final int status;
 
-  WebsocketRejectedException(int status) {
+  public WebsocketRejectedException(int status) {
     super("Websocket connection attempt returned HTTP status code " + status);
     this.status = status;
   }
