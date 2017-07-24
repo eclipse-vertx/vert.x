@@ -107,11 +107,16 @@ public interface ServerWebSocket extends WebSocketBase {
    * <p>
    * Calling this method from the websocket handler when it is first passed to you gives you the opportunity to reject
    * the websocket, which will cause the websocket handshake to fail by returning
-   * a 404 response code.
+   * a {@literal 502} response code.
    * <p>
    * You might use this method, if for example you only want to accept WebSockets with a particular path.
    */
   void reject();
+
+  /**
+   * Like {@link #reject()} but with a {@code status}.
+   */
+  void reject(int status);
 
   /**
    * @return an array of the peer certificates. Returns null if connection is
