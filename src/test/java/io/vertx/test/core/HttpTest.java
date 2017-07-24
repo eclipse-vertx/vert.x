@@ -1325,6 +1325,66 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testServerResponseExceptionHandlerCalledWhenConnectionClosed() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      AtomicInteger errs = new AtomicInteger();
+      resp.exceptionHandler(err -> errs.incrementAndGet());
+      resp.endHandler(v -> {
+        assertEquals(1, errs.get());
+        testComplete();
+      });
+      resp.setChunked(true).write("chunk");
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.handler(chunk -> {
+        resp.request().connection().close();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testClientRequestExceptionHandlerCalledWhenConnectionClosed() throws Exception {
+    server.requestHandler(req -> {
+      req.handler(buff -> {
+        req.connection().close();
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.handler(chunk -> {
+        resp.request().connection().close();
+      });
+    }).setChunked(true);
+    req.exceptionHandler(err -> {
+      testComplete();
+    });
+    req.write("chunk");
+    await();
+  }
+
+  @Test
+  public void testClientResponseExceptionHandlerCalledWhenConnectionClosed() throws Exception {
+    AtomicReference<HttpConnection> conn = new AtomicReference<>();
+    server.requestHandler(req -> {
+      conn.set(req.connection());
+      req.response().setChunked(true).write("chunk");
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      resp.handler(buff -> {
+        conn.get().close();
+      });
+      resp.exceptionHandler(err -> {
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
   public void testDefaultStatus() {
     testStatusCode(-1, null);
   }
