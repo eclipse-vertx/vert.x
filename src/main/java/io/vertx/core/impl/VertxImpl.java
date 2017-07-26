@@ -204,19 +204,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       eventBus = new EventBusImpl(this);
     }
-    eventBus.start(ar2 -> {
-      if (ar2.succeeded()) {
+    eventBus.start(ar -> {
+      if (ar.succeeded()) {
         if (metrics != null) {
           // If the metric provider wants to use the event bus, it cannot use it in its constructor as the event bus
           // may not be initialized yet. We invokes the eventBusInitialized so it can starts using the event bus.
           metrics.eventBusInitialized(eventBus);
         }
-
-        if (resultHandler != null) {
-          resultHandler.handle(Future.succeededFuture(this));
-        }
+        if (resultHandler != null) resultHandler.handle(Future.succeededFuture(this));
       } else {
-        log.error("Failed to start event bus", ar2.cause());
+        log.error("Failed to start event bus", ar.cause());
+        if (resultHandler != null) resultHandler.handle(Future.failedFuture(ar.cause()));
       }
     });
   }
