@@ -1162,11 +1162,9 @@ public class FileSystemTest extends VertxTestBase {
     createFile(fileName, existing);
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     Buffer buff = Buffer.buffer(content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions().setAppend(true), ar -> {
       if (ar.succeeded()) {
         AsyncFile ws = ar.result();
-        long size = vertx.fileSystem().propsBlocking(testDir + pathSep + fileName).size();
-        ws.setWritePos(size);
         ws.exceptionHandler(t -> fail(t.getMessage()));
         for (int i = 0; i < chunks; i++) {
           Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
