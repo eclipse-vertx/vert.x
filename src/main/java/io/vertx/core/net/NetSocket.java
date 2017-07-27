@@ -235,9 +235,10 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   boolean isSsl();
 
   /**
-   * @return an array of the peer certificates. Returns null if connection is
+   * @return an ordered array of the peer certificates. Returns null if connection is
    *         not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    */
   @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;

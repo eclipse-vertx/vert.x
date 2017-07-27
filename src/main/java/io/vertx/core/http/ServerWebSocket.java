@@ -119,9 +119,10 @@ public interface ServerWebSocket extends WebSocketBase {
   void reject(int status);
 
   /**
-   * @return an array of the peer certificates. Returns null if connection is
+   * @return an ordered array of the peer certificates. Returns null if connection is
    *         not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    */
   @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
