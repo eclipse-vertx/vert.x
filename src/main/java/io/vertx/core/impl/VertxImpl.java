@@ -469,11 +469,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
     if (clusterManager != null) {
-      // Workaround fo Hazelcast bug https://github.com/hazelcast/hazelcast/issues/5220
-      if (clusterManager instanceof ExtendedClusterManager) {
-        ExtendedClusterManager ecm = (ExtendedClusterManager) clusterManager;
-        ecm.beforeLeave();
-      }
       clusterManager.leave(ar -> {
         if (ar.failed()) {
           log.error("Failed to leave cluster", ar.cause());
