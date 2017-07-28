@@ -31,6 +31,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -281,6 +282,11 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   @Override
   public boolean isSsl() {
     return conn.isSsl();
+  }
+
+  @Override
+  public SSLSession sslSession() {
+    return conn.sslSession();
   }
 
   @Override

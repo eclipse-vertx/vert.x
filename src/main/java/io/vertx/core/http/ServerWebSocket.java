@@ -25,6 +25,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
 /**
@@ -117,6 +118,14 @@ public interface ServerWebSocket extends WebSocketBase {
    * Like {@link #reject()} but with a {@code status}.
    */
   void reject(int status);
+
+  /**
+   * @return SSLSession associated with the underlying socket. Returns null if connection is
+   *         not SSL.
+   * @see javax.net.ssl.SSLSession
+   */
+  @GenIgnore
+  SSLSession sslSession();
 
   /**
    * @return an ordered array of the peer certificates. Returns null if connection is

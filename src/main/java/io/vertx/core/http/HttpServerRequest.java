@@ -29,6 +29,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
 /**
@@ -169,6 +170,14 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @CacheReturn
   SocketAddress localAddress();
+
+  /**
+   * @return SSLSession associated with the underlying socket. Returns null if connection is
+   *         not SSL.
+   * @see javax.net.ssl.SSLSession
+   */
+  @GenIgnore
+  SSLSession sslSession();
 
   /**
    * @return an ordered array of the peer certificates. Returns null if connection is

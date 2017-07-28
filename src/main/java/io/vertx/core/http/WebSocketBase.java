@@ -28,6 +28,7 @@ import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
 /**
@@ -200,6 +201,14 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return true if this {@link io.vertx.core.http.HttpConnection} is encrypted via SSL/TLS.
    */
   boolean isSsl();
+
+  /**
+   * @return SSLSession associated with the underlying socket. Returns null if connection is
+   *         not SSL.
+   * @see javax.net.ssl.SSLSession
+   */
+  @GenIgnore
+  SSLSession sslSession();
 
   /**
    * @return an ordered array of the peer certificates. Returns null if connection is

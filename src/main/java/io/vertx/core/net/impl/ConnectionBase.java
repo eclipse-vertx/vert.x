@@ -29,6 +29,7 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -283,6 +284,17 @@ public abstract class ConnectionBase {
 
   public boolean isSsl() {
     return chctx.pipeline().get(SslHandler.class) != null;
+  }
+
+  public SSLSession sslSession() {
+    if (isSSL()) {
+      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
+      assert sslHandlerContext != null;
+      SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
+      return sslHandler.engine().getSession();
+    } else {
+      return null;
+    }
   }
 
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
