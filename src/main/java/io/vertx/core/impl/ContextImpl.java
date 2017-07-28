@@ -24,13 +24,14 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Starter;
-import io.vertx.core.Vertx;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,9 +57,12 @@ public abstract class ContextImpl implements ContextInternal {
   private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
   private static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
+  private static final String LONG_STACK_PROP_NAME = "vertx.longStacks";
+
   private static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
   private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
   private static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
+  static final boolean LONG_STACKS = Boolean.getBoolean(LONG_STACK_PROP_NAME);
 
   protected final VertxInternal owner;
   protected final String deploymentID;
@@ -74,6 +78,9 @@ public abstract class ContextImpl implements ContextInternal {
   protected final WorkerPool internalBlockingPool;
   final TaskQueue orderedTasks;
   protected final TaskQueue internalOrderedTasks;
+
+  //Keep track potentially of jumps through the stack
+  final Deque<StackTraceElement[]> asyncStack = new ArrayDeque<>();
 
   protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
@@ -207,7 +214,7 @@ public abstract class ContextImpl implements ContextInternal {
   @Override
   public void runOnContext(Handler<Void> task) {
     try {
-      executeAsync(task);
+      executeAsync(new StackTracePropagationHandler(this).wrap(task));
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }
@@ -262,6 +269,11 @@ public abstract class ContextImpl implements ContextInternal {
       Handler<AsyncResult<T>> resultHandler,
       Executor exec, TaskQueue queue, PoolMetrics metrics) {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
+
+    final Action<T> wrappedAction = new StackTracePropagationHandler(this).wrap(action);
+    final Handler<Future<T>> wrappedHandler = new StackTracePropagationHandler(this)
+      .wrapWithFuture(blockingCodeHandler);
+
     try {
       Runnable command = () -> {
         VertxThread current = (VertxThread) Thread.currentThread();
@@ -276,9 +288,9 @@ public abstract class ContextImpl implements ContextInternal {
         try {
           if (blockingCodeHandler != null) {
             ContextImpl.setContext(this);
-            blockingCodeHandler.handle(res);
+            wrappedHandler.handle(res);
           } else {
-            T result = action.perform();
+            T result = wrappedAction.perform();
             res.complete(result);
           }
         } catch (Throwable e) {
@@ -318,6 +330,7 @@ public abstract class ContextImpl implements ContextInternal {
 
   protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread, PoolMetrics metrics) {
     Object metric = metrics != null ? metrics.submitted() : null;
+
     return () -> {
       Thread th = Thread.currentThread();
       if (!(th instanceof VertxThread)) {
@@ -348,6 +361,7 @@ public abstract class ContextImpl implements ContextInternal {
           metrics.end(metric, true);
         }
       } catch (Throwable t) {
+
         log.error("Unhandled exception", t);
         Handler<Throwable> handler = this.exceptionHandler;
         if (handler == null) {
