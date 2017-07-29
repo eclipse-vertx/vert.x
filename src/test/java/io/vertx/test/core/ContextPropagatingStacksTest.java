@@ -3,6 +3,7 @@ package io.vertx.test.core;
 import io.vertx.core.Context;
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -332,6 +333,42 @@ public class ContextPropagatingStacksTest extends VertxTestBase {
     } finally {
       System.clearProperty("vertx.longStacks");
     }
+  }
+
+  @Test
+  public void testLongStacksConsecutive() throws Exception {
+
+    try {
+      System.setProperty("vertx.longStacks", "true");
+      CountDownLatch latch = new CountDownLatch(2);
+
+      Context context = vertx.getOrCreateContext();
+      context.runOnContext(event -> {
+
+        context.executeBlocking(future -> {
+          future.fail(new IllegalStateException("This is a sample exception"));
+        }, result -> {
+          Throwable throwable = result.cause();
+          throwable.printStackTrace();
+          latch.countDown();
+        });
+
+        context.executeBlocking(future -> {
+          future.fail(new IllegalStateException("This is a sample exception"));
+        }, result -> {
+          Throwable throwable = result.cause();
+          throwable.printStackTrace();
+          latch.countDown();
+        });
+
+      });
+
+      latch.await();
+    } finally {
+      System.clearProperty("vertx.longStacks");
+    }
+
+
   }
 
 }

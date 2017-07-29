@@ -32,12 +32,12 @@ class StackTracePropagationHandler {
 
     //Capture current stack
     final StackTraceElement[] currentStack = Thread.currentThread().getStackTrace();
-    final Deque<StackTraceElement[]> threadStack = context.asyncStack.get();
+    final Deque<StackTraceElement[]> threadStack = new ArrayDeque<>(context.asyncStack.get());
     threadStack.addFirst(currentStack);
 
     return (event) -> {
       //set thread local
-      context.asyncStack.set(new ArrayDeque<>(threadStack));
+      context.asyncStack.set(threadStack);
 
       try {
         delegate.handle(event);
@@ -69,12 +69,12 @@ class StackTracePropagationHandler {
 
     //Capture current stack
     final StackTraceElement[] currentStack = Thread.currentThread().getStackTrace();
-    final Deque<StackTraceElement[]> threadStack = context.asyncStack.get();
+    final Deque<StackTraceElement[]> threadStack = new ArrayDeque<>(context.asyncStack.get());
     threadStack.addFirst(currentStack);
 
     return () -> {
       //set thread local
-      context.asyncStack.set(new ArrayDeque<>(threadStack));
+      context.asyncStack.set(threadStack);
 
       try {
         return delegate.perform();
@@ -99,12 +99,12 @@ class StackTracePropagationHandler {
 
     //Capture current stack
     final StackTraceElement[] currentStack = Thread.currentThread().getStackTrace();
-    final Deque<StackTraceElement[]> threadStack = context.asyncStack.get();
+    final Deque<StackTraceElement[]> threadStack = new ArrayDeque<>(context.asyncStack.get());
     threadStack.addFirst(currentStack);
 
     return (event) -> {
       //set thread local
-      context.asyncStack.set(new ArrayDeque<>(threadStack));
+      context.asyncStack.set(threadStack);
 
       try {
         delegate.handle(event);
