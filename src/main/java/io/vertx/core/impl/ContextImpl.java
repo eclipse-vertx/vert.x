@@ -80,7 +80,7 @@ public abstract class ContextImpl implements ContextInternal {
   protected final TaskQueue internalOrderedTasks;
 
   //Keep track potentially of jumps through the stack
-  final Deque<StackTraceElement[]> asyncStack = new ArrayDeque<>();
+  final ThreadLocal<Deque<StackTraceElement[]>> asyncStack = ThreadLocal.withInitial(() -> new ArrayDeque<>());
 
   protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
