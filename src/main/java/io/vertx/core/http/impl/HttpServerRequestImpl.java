@@ -45,6 +45,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 
@@ -267,6 +268,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       }
     }
     return absoluteURI;
+  }
+
+  @Override
+  public SSLSession sslSession() {
+    return conn.sslSession();
   }
 
   @Override

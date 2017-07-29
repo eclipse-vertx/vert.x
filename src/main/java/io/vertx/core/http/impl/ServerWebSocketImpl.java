@@ -24,6 +24,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
@@ -102,6 +103,11 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
       rejected = true;
       rejectedStatus = status;
     }
+  }
+
+  @Override
+  public SSLSession sslSession() {
+    return conn.sslSession();
   }
 
   @Override

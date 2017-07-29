@@ -30,6 +30,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.util.UUID;
 
@@ -101,6 +102,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   @Override
   public boolean isSsl() {
     return conn.isSsl();
+  }
+
+  @Override
+  public SSLSession sslSession() {
+    return conn.sslSession();
   }
 
   @Override
