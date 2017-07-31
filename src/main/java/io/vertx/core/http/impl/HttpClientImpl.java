@@ -153,7 +153,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), wsConnect);
+    return websocket(options, null, wsConnect);
   }
 
   @Override
@@ -164,7 +164,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), wsConnect, failureHandler);
+    return websocket(options, null, wsConnect, failureHandler);
   }
 
   public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler){
@@ -184,7 +184,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, wsConnect);
+    return websocket(options, headers, null, wsConnect);
   }
 
   @Override
@@ -195,7 +195,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, wsConnect, failureHandler);
+    return websocket(options, headers, null, wsConnect, failureHandler);
   }
 
   @Override
@@ -216,7 +216,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, wsConnect);
+    return websocket(options, headers, version, null, wsConnect);
   }
 
   @Override
@@ -227,7 +227,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, wsConnect, failureHandler);
+    return websocket(options, headers, version, null, wsConnect, failureHandler);
   }
 
   @Override
@@ -250,7 +250,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, wsConnect);
+    websocketStream(options, headers, version, subProtocols).handler(wsConnect);
+    return this;
   }
 
   @Override
@@ -262,7 +263,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, wsConnect, failureHandler);
+    websocketStream(options, headers, version, subProtocols).exceptionHandler(failureHandler).handler(wsConnect);
+    return this;
   }
 
   @Override
