@@ -45,6 +45,9 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
@@ -63,6 +66,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
@@ -421,7 +425,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       // some casting and a header check
       handler = new ServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     } else {
-      initializeWebsocketExtensions (pipeline);
+      //initializeWebsocketExtensions (pipeline);
       handler = new ServerHandlerWithWebSockets(sslHelper, options, serverOrigin, holder, metrics);
     }
     handler.addHandler(conn -> {
@@ -675,7 +679,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             break;
           case PING:
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
+            ch.writeAndFlush(new PongWebSocketFrame(wsFrame.getBinaryData()));
             break;
           case PONG:
             // Just ignore it
@@ -684,7 +688,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             if (!closeFrameSent) {
               // Echo back close frame and close the connection once it was written.
               // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
+              ch.writeAndFlush(new CloseWebSocketFrame().replace(wsFrame.getBinaryData())).addListener(ChannelFutureListener.CLOSE);
               closeFrameSent = true;
             }
             break;
