@@ -1339,6 +1339,30 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testDeployClass() throws Exception {
+    JsonObject config = generateJSONObject();
+    vertx.deployVerticle(ReferenceSavingMyVerticle.class, new DeploymentOptions().setInstances(4).setConfig(config), onSuccess(deploymentId -> {
+      ReferenceSavingMyVerticle.myVerticles.forEach(myVerticle -> {
+        assertEquals(deploymentId, myVerticle.deploymentID);
+        assertEquals(config, myVerticle.config);
+        assertTrue(myVerticle.startCalled);
+      });
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testDeployClassNoDefaultPublicConstructor() throws Exception {
+    class NoDefaultPublicConstructorVerticle extends AbstractVerticle {
+    }
+    vertx.deployVerticle(NoDefaultPublicConstructorVerticle.class, new DeploymentOptions(), onFailure(t -> {
+      testComplete();
+    }));
+    await();
+  }
+
   // TODO
 
   // Multi-threaded workers
@@ -1396,7 +1420,7 @@ public class DeploymentTest extends VertxTestBase {
       .put("obj", new JsonObject().put("quux", "flip"));
   }
 
-  public class MyVerticle extends AbstractVerticle {
+  public static class MyVerticle extends AbstractVerticle {
 
     static final int NOOP = 0, THROW_EXCEPTION = 1, THROW_ERROR = 2;
 
@@ -1444,6 +1468,15 @@ public class DeploymentTest extends VertxTestBase {
           stopCalled = true;
           stopContext = Vertx.currentContext();
       }
+    }
+  }
+
+  public static class ReferenceSavingMyVerticle extends MyVerticle {
+    static Set<MyVerticle> myVerticles = Collections.synchronizedSet(new HashSet<>());
+
+    public ReferenceSavingMyVerticle() {
+      super();
+      myVerticles.add(this);
     }
   }
 

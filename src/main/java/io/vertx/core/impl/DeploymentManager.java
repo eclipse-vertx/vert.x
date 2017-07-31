@@ -115,7 +115,7 @@ public class DeploymentManager {
         });
       }
       if (verticles.size() != 1) {
-        throw new RuntimeException("Supplied verticles are not of the same class");
+        throw new RuntimeException("Supplied verticles are not from the same class");
       }
       Set<Verticle> instances = verticles.values().iterator().next();
       if (instances.size() != nbInstances) {
