@@ -41,6 +41,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -52,6 +54,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  *
@@ -436,6 +439,13 @@ public class DeploymentTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     try {
       vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(false).setMultiThreaded(true), ar -> {
+      });
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      vertx.deployVerticle(MyVerticle.class.getName(), new DeploymentOptions().setWorker(false).setMultiThreaded(true), ar -> {
       });
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
@@ -1257,7 +1267,7 @@ public class DeploymentTest extends VertxTestBase {
     }));
     await();
   }
-  
+
   @Test
   public void testUndeployWhenUndeployIsInProgress() throws Exception {
     int numIts = 10;
@@ -1277,6 +1287,56 @@ public class DeploymentTest extends VertxTestBase {
       });
     }
     awaitLatch(latch);
+  }
+
+  @Test
+  public void testDeploySupplier() throws Exception {
+    JsonObject config = generateJSONObject();
+    Set<MyVerticle> myVerticles = Collections.synchronizedSet(new HashSet<>());
+    vertx.deployVerticle(() -> {
+      MyVerticle myVerticle = new MyVerticle();
+      myVerticles.add(myVerticle);
+      return myVerticle;
+    }, new DeploymentOptions().setInstances(4).setConfig(config), onSuccess(deploymentId -> {
+      myVerticles.forEach(myVerticle -> {
+        assertEquals(deploymentId, myVerticle.deploymentID);
+        assertEquals(config, myVerticle.config);
+        assertTrue(myVerticle.startCalled);
+      });
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testDeploySupplierNull() throws Exception {
+    vertx.deployVerticle(() -> null, new DeploymentOptions(), onFailure(t -> {
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testDeploySupplierDuplicate() throws Exception {
+    MyVerticle myVerticle = new MyVerticle();
+    vertx.deployVerticle(() -> myVerticle, new DeploymentOptions().setInstances(2), onFailure(t -> {
+      assertFalse(myVerticle.startCalled);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testDeploySupplierDifferentClasses() throws Exception {
+    AtomicInteger idx = new AtomicInteger();
+    MyVerticle myVerticle = new MyVerticle();
+    MyAsyncVerticle myAsyncVerticle = new MyAsyncVerticle(null, null);
+    Supplier<Verticle> supplier = () -> idx.getAndIncrement() % 2 == 0 ? myAsyncVerticle : myAsyncVerticle;
+    vertx.deployVerticle(supplier, new DeploymentOptions().setInstances(2), onFailure(t -> {
+      assertFalse(myVerticle.startCalled);
+      testComplete();
+    }));
+    await();
   }
 
   // TODO
@@ -1411,7 +1471,5 @@ public class DeploymentTest extends VertxTestBase {
       }
     }
   }
-
-
 }
 
