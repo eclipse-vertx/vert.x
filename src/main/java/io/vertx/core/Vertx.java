@@ -336,6 +336,13 @@ public interface Vertx extends Measured {
 
   /**
    * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
+   * default constructor of {@code verticleClass}.
+   */
+  @GenIgnore
+  void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options);
+
+  /**
+   * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
    * {@code verticleSupplier}.
    * <p>
    * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
@@ -359,6 +366,13 @@ public interface Vertx extends Measured {
    */
   @GenIgnore
   void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+
+  /**
+   * Like {@link #deployVerticle(Verticle, DeploymentOptions, Handler)} but {@link Verticle} instance is created by
+   * invoking the default constructor of {@code verticleClass}.
+   */
+  @GenIgnore
+  void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
    * Like {@link #deployVerticle(Verticle, DeploymentOptions, Handler)} but {@link Verticle} instance is created by

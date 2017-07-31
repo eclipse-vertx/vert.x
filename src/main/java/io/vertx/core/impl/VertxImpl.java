@@ -563,6 +563,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
+    deployVerticle(() -> {
+      try {
+        return verticleClass.newInstance();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }, options);
+  }
+
+  @Override
   public void deployVerticle(Supplier<? extends Verticle> verticleSupplier, DeploymentOptions options) {
     deployVerticle(verticleSupplier, options, null);
   }
@@ -573,6 +584,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
     }
     deployVerticle(() -> verticle, options, completionHandler);
+  }
+
+  @Override
+  public void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+    deployVerticle(() -> {
+      try {
+        return verticleClass.newInstance();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }, options, completionHandler);
   }
 
   @Override
