@@ -27,11 +27,25 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketBase;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.WebsocketRejectedException;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
@@ -48,7 +62,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1734,5 +1753,26 @@ public class WebsocketTest extends VertxTestBase {
         throw result;
       }
     }
+  }
+
+  @Test
+  public void testClearClientSslOptions() {
+    SelfSignedCertificate certificate = SelfSignedCertificate.create();
+    HttpServerOptions serverOptions = new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)
+      .setSsl(true)
+      .setKeyCertOptions(certificate.keyCertOptions());
+    HttpClientOptions options = new HttpClientOptions()
+      .setTrustAll(true)
+      .setVerifyHost(false);
+    client = vertx.createHttpClient(options);
+    server = vertx.createHttpServer(serverOptions).websocketHandler(WebSocketBase::close).listen(onSuccess(server -> {
+      RequestOptions requestOptions = new RequestOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setSsl(true);
+      client.websocket(requestOptions, ws -> {
+        ws.closeHandler(v -> {
+          testComplete();
+        });
+      });
+    }));
+    await();
   }
 }
