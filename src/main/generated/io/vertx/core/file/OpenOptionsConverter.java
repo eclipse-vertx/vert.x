@@ -27,6 +27,9 @@ import io.vertx.core.json.JsonArray;
 public class OpenOptionsConverter {
 
   public static void fromJson(JsonObject json, OpenOptions obj) {
+    if (json.getValue("append") instanceof Boolean) {
+      obj.setAppend((Boolean)json.getValue("append"));
+    }
     if (json.getValue("create") instanceof Boolean) {
       obj.setCreate((Boolean)json.getValue("create"));
     }
@@ -60,6 +63,7 @@ public class OpenOptionsConverter {
   }
 
   public static void toJson(OpenOptions obj, JsonObject json) {
+    json.put("append", obj.isAppend());
     json.put("create", obj.isCreate());
     json.put("createNew", obj.isCreateNew());
     json.put("deleteOnClose", obj.isDeleteOnClose());

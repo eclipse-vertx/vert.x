@@ -1522,6 +1522,10 @@ Set the value of traffic class
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[append]]`append`|`Boolean`|
++++
+Whether the file should be opened in append mode. Defaults to <code>false</code>.
++++
 |[[create]]`create`|`Boolean`|
 +++
 Set whether the file should be created if it does not already exist.
