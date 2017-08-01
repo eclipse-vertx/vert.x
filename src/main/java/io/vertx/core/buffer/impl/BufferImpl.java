@@ -36,7 +36,7 @@ public class BufferImpl implements Buffer {
 
   private ByteBuf buffer;
 
-  BufferImpl() {
+  public BufferImpl() {
     this(0);
   }
 
