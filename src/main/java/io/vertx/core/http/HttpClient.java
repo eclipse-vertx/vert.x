@@ -1309,7 +1309,7 @@ public interface HttpClient extends Measured {
   ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
-   * Create a WebSocket stream with the specified options, the specified headers, using the specified version of WebSockets,
+   * Create a WebSocket stream with the specified absolute url, the specified headers, using the specified version of WebSockets,
    * and the specified websocket sub protocols.
    *
    * @param url          the absolute url
