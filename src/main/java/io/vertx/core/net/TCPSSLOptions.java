@@ -149,7 +149,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
-    sslEngineOptions = null;
+    sslEngineOptions = DEFAULT_SSL_ENGINE;
   }
 
   /**
