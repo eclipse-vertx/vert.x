@@ -421,7 +421,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       // some casting and a header check
       handler = new ServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     } else {
-      //initializeWebsocketExtensions (pipeline);
+      initializeWebsocketExtensions (pipeline);
       handler = new ServerHandlerWithWebSockets(sslHelper, options, serverOrigin, holder, metrics);
     }
     handler.addHandler(conn -> {
