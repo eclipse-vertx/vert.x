@@ -254,6 +254,12 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       } else {
         if (lastChunk != null) {
           handleChunk(lastChunk);
+          if (paused) {
+            pausedLastChunk = null;
+            hasPausedEnd = true;
+            pausedTrailers = trailers;
+            return;
+          }
         }
         this.trailers = trailers;
         if (endHandler != null) {
