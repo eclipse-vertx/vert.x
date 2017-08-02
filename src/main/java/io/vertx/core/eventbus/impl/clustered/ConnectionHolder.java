@@ -56,6 +56,8 @@ class ConnectionHolder {
       if (res.succeeded()) {
         connected(res.result());
       } else {
+        log.error("Error while connecting to host " + serverID.host + " port " + serverID.port, res.cause());
+        // Test
         close();
       }
     });
