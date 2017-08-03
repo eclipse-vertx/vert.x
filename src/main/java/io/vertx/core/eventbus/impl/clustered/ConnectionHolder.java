@@ -56,7 +56,7 @@ class ConnectionHolder {
       if (res.succeeded()) {
         connected(res.result());
       } else {
-        log.error("Connecting to server " + serverID + " failed.", res.cause());
+        log.warn("Connecting to server " + serverID + " failed", res.cause());
         close();
       }
     });
@@ -72,6 +72,9 @@ class ConnectionHolder {
       socket.write(data);
     } else {
       if (pending == null) {
+        if (log.isDebugEnabled()) {
+          log.debug("Not connected to server " + serverID + " - starting queuing");
+        }
         pending = new ArrayDeque<>();
       }
       pending.add(message);
@@ -124,14 +127,19 @@ class ConnectionHolder {
     });
     // Start a pinger
     schedulePing();
-    for (ClusteredMessage message : pending) {
-      Buffer data = message.encodeToWire();
-      if (metrics != null) {
-        metrics.messageWritten(message.address(), data.length());
+    if (pending != null) {
+      if (log.isDebugEnabled()) {
+        log.debug("Draining the queue for server " + serverID);
       }
-      socket.write(data);
+      for (ClusteredMessage message : pending) {
+        Buffer data = message.encodeToWire();
+        if (metrics != null) {
+          metrics.messageWritten(message.address(), data.length());
+        }
+        socket.write(data);
+      }
     }
-    pending.clear();
+    pending = null;
   }
 
 }
