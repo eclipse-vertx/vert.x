@@ -95,7 +95,9 @@ class ConnectionHolder {
     // The holder can be null or different if the target server is restarted with same serverid
     // before the cleanup for the previous one has been processed
     if (eventBus.connections().remove(serverID, this)) {
-      log.debug("Cluster connection closed: " + serverID + " holder " + this);
+      if (log.isDebugEnabled()) {
+        log.debug("Cluster connection closed for server " + serverID);
+      }
     }
   }
 
