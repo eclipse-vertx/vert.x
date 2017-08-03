@@ -56,6 +56,7 @@ class ConnectionHolder {
       if (res.succeeded()) {
         connected(res.result());
       } else {
+        log.error("Connecting to server " + serverID + " failed.", res.cause());
         close();
       }
     });
