@@ -19,6 +19,7 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.eventbus.EventBusOptions;
+import io.vertx.core.impl.cpu.CpuCoreSensor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -38,7 +39,7 @@ public class VertxOptions {
   /**
    * The default number of event loop threads to be used  = 2 * number of cores on the machine
    */
-  public static final int DEFAULT_EVENT_LOOP_POOL_SIZE = 2 * Runtime.getRuntime().availableProcessors();
+  public static final int DEFAULT_EVENT_LOOP_POOL_SIZE = 2 * CpuCoreSensor.availableProcessors();
 
   /**
    * The default number of threads in the worker pool = 20
