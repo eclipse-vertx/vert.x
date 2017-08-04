@@ -82,7 +82,7 @@ public class DeploymentManager {
     return UUID.randomUUID().toString();
   }
 
-  public void deployVerticle(Supplier<? extends Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+  public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     if (options.getInstances() < 1) {
       throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
     }
@@ -100,38 +100,29 @@ public class DeploymentManager {
     }
     ContextImpl currentContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(options, currentContext);
-    currentContext.<Set<Verticle>>executeBlocking(fut -> {
-      int nbInstances = options.getInstances();
-      IdentityHashMap<Class<? extends Verticle>, Set<Verticle>> verticles = new IdentityHashMap<>();
-      for (int i = 0; i < nbInstances; i++) {
-        Verticle verticle = verticleSupplier.get();
-        if (verticle == null) {
-          throw new RuntimeException("Supplied verticle is null");
-        }
-        verticles.compute(verticle.getClass(), (k, v) -> {
-          if (v == null) v = new HashSet<>();
-          v.add(verticle);
-          return v;
-        });
+    int nbInstances = options.getInstances();
+    Set<Verticle> verticles = Collections.newSetFromMap(new IdentityHashMap<>());
+    for (int i = 0; i < nbInstances; i++) {
+      Verticle verticle;
+      try {
+        verticle = verticleSupplier.get();
+      } catch (Exception e) {
+        completionHandler.handle(Future.failedFuture(e));
+        return;
       }
-      if (verticles.size() != 1) {
-        throw new RuntimeException("Supplied verticles are not from the same class");
+      if (verticle == null) {
+        completionHandler.handle(Future.failedFuture("Supplied verticle is null"));
+        return;
       }
-      Set<Verticle> instances = verticles.values().iterator().next();
-      if (instances.size() != nbInstances) {
-        throw new RuntimeException("Same verticle supplied more than once");
-      }
-      fut.complete(instances);
-    }, false, ar -> {
-      if (ar.succeeded()) {
-        Set<Verticle> result = ar.result();
-        Verticle[] verticles = result.toArray(new Verticle[result.size()]);
-        String verticleClass = verticles[0].getClass().getName();
-        doDeploy("java:" + verticleClass, generateDeploymentID(), options, currentContext, currentContext, completionHandler, cl, verticles);
-      } else {
-        completionHandler.handle(Future.failedFuture(ar.cause()));
-      }
-    });
+      verticles.add(verticle);
+    }
+    if (verticles.size() != nbInstances) {
+      completionHandler.handle(Future.failedFuture("Same verticle supplied more than once"));
+      return;
+    }
+    Verticle[] verticlesArray = verticles.toArray(new Verticle[verticles.size()]);
+    String verticleClass = verticlesArray[0].getClass().getName();
+    doDeploy("java:" + verticleClass, generateDeploymentID(), options, currentContext, currentContext, completionHandler, cl, verticlesArray);
   }
 
   public void deployVerticle(String identifier,

@@ -41,7 +41,6 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  *
@@ -1292,7 +1290,7 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testDeploySupplier() throws Exception {
     JsonObject config = generateJSONObject();
-    Set<MyVerticle> myVerticles = Collections.synchronizedSet(new HashSet<>());
+    Set<MyVerticle> myVerticles = new HashSet<>();
     vertx.deployVerticle(() -> {
       MyVerticle myVerticle = new MyVerticle();
       myVerticles.add(myVerticle);
@@ -1327,13 +1325,10 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testDeploySupplierDifferentClasses() throws Exception {
-    AtomicInteger idx = new AtomicInteger();
-    MyVerticle myVerticle = new MyVerticle();
-    MyAsyncVerticle myAsyncVerticle = new MyAsyncVerticle(null, null);
-    Supplier<Verticle> supplier = () -> idx.getAndIncrement() % 2 == 0 ? myAsyncVerticle : myAsyncVerticle;
-    vertx.deployVerticle(supplier, new DeploymentOptions().setInstances(2), onFailure(t -> {
-      assertFalse(myVerticle.startCalled);
+  public void testDeploySupplierThrowsException() throws Exception {
+    vertx.deployVerticle(() -> {
+      throw new RuntimeException("boum");
+    }, new DeploymentOptions().setInstances(2), onFailure(t -> {
       testComplete();
     }));
     await();
@@ -1472,7 +1467,7 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   public static class ReferenceSavingMyVerticle extends MyVerticle {
-    static Set<MyVerticle> myVerticles = Collections.synchronizedSet(new HashSet<>());
+    static Set<MyVerticle> myVerticles = new HashSet<>();
 
     public ReferenceSavingMyVerticle() {
       super();

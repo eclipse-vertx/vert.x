@@ -569,7 +569,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(Supplier<? extends Verticle> verticleSupplier, DeploymentOptions options) {
+  public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
     deployVerticle(verticleSupplier, options, null);
   }
 
@@ -593,7 +593,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(Supplier<? extends Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+  public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     boolean closed;
     synchronized (this) {
       closed = this.closed;

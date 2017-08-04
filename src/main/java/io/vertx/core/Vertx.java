@@ -346,15 +346,12 @@ public interface Vertx extends Measured {
    * {@code verticleSupplier}.
    * <p>
    * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
-   * It must not return:
-   * <ul>
-   * <li>null</li>
-   * <li>the same instance twice</li>
-   * <li>instances of different verticle classes</li>
-   * </ul>
+   * It must not return the same instance twice.
+   * <p>
+   * Note that the supplier will be invoked on the caller thread.
    */
   @GenIgnore
-  void deployVerticle(Supplier<? extends Verticle> verticleSupplier, DeploymentOptions options);
+  void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
 
   /**
    * Like {@link #deployVerticle(Verticle, Handler)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
@@ -379,15 +376,12 @@ public interface Vertx extends Measured {
    * invoking the {@code verticleSupplier}.
    * <p>
    * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
-   * It must not return:
-   * <ul>
-   * <li>null</li>
-   * <li>the same instance twice</li>
-   * <li>instances of different verticle classes</li>
-   * </ul>
+   * It must not return the same instance twice.
+   * <p>
+   * Note that the supplier will be invoked on the caller thread.
    */
   @GenIgnore
-  void deployVerticle(Supplier<? extends Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+  void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
    * Deploy a verticle instance given a name.
