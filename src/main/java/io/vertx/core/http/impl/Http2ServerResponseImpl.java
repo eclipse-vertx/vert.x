@@ -145,7 +145,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       exceptionHandler = handler;
       return this;
     }
@@ -300,7 +302,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse closeHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       closeHandler = handler;
       return this;
     }
@@ -309,7 +313,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       endHandler = handler;
       return this;
     }
@@ -490,7 +496,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse drainHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       drainHandler = handler;
       return this;
     }

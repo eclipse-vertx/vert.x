@@ -245,8 +245,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse drainHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkWritten();
-      this.drainHandler = handler;
+      if (handler != null) {
+        checkWritten();
+      }
+      drainHandler = handler;
       conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
       return this;
     }
@@ -255,8 +257,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
-      checkWritten();
-      this.exceptionHandler = handler;
+      if (handler != null) {
+        checkWritten();
+      }
+      exceptionHandler = handler;
       return this;
     }
   }
@@ -264,8 +268,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse closeHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkWritten();
-      this.closeHandler = handler;
+      if (handler != null) {
+        checkWritten();
+      }
+      closeHandler = handler;
       return this;
     }
   }
@@ -273,8 +279,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
     synchronized (conn) {
-      checkWritten();
-      this.endHandler = handler;
+      if (handler != null) {
+        checkWritten();
+      }
+      endHandler = handler;
       return this;
     }
   }

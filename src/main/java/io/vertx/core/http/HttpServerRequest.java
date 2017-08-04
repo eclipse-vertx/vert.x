@@ -77,7 +77,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the HTTP method as sent by the client
    */
   String rawMethod();
-  
+
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS
    */
@@ -208,9 +208,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @Fluent
   default HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
-    Buffer body = Buffer.buffer();
-    handler(body::appendBuffer);
-    endHandler(v -> bodyHandler.handle(body));
+    if (bodyHandler != null) {
+      Buffer body = Buffer.buffer();
+      handler(body::appendBuffer);
+      endHandler(v -> bodyHandler.handle(body));
+    }
     return this;
   }
 

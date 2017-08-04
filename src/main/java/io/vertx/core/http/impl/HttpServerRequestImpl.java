@@ -202,10 +202,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest handler(Handler<Buffer> dataHandler) {
+  public HttpServerRequest handler(Handler<Buffer> handler) {
     synchronized (conn) {
-      checkEnded();
-      this.dataHandler = dataHandler;
+      if (handler != null) {
+        checkEnded();
+      }
+      dataHandler = handler;
       return this;
     }
   }
@@ -237,8 +239,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
-      this.endHandler = handler;
+      if (handler != null) {
+        checkEnded();
+      }
+      endHandler = handler;
       return this;
     }
   }
@@ -252,7 +256,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   public boolean isSSL() {
     return conn.isSSL();
   }
-  
+
   @Override
   public SocketAddress remoteAddress() {
     return conn.remoteAddress();
@@ -291,8 +295,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
     synchronized (conn) {
-      checkEnded();
-      this.uploadHandler = handler;
+      if (handler != null) {
+        checkEnded();
+      }
+      uploadHandler = handler;
       return this;
     }
   }

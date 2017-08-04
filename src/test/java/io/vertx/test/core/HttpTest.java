@@ -2836,7 +2836,32 @@ public abstract class HttpTest extends HttpTestBase {
   public void testClearHandlersOnEnd() {
     String path = "/some/path";
     server = vertx.createHttpServer(createBaseServerOptions());
-    server.requestHandler(req -> req.response().setStatusCode(200).end());
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        try {
+          req.endHandler(null);
+          req.exceptionHandler(null);
+          req.handler(null);
+          req.bodyHandler(null);
+          req.uploadHandler(null);
+        } catch (Exception e) {
+          fail("Was expecting to set to null the handlers when the request is completed");
+          return;
+        }
+        HttpServerResponse resp = req.response();
+        resp.setStatusCode(200).end();
+        try {
+          resp.endHandler(null);
+          resp.exceptionHandler(null);
+          resp.drainHandler(null);
+          resp.bodyEndHandler(null);
+          resp.closeHandler(null);
+          resp.headersEndHandler(null);
+        } catch (Exception e) {
+          fail("Was expecting to set to null the handlers when the response is completed");
+        }
+      });
+    });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
