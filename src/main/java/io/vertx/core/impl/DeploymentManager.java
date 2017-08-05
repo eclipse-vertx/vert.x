@@ -16,7 +16,13 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.Verticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -27,11 +33,23 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  *
@@ -64,10 +82,12 @@ public class DeploymentManager {
     return UUID.randomUUID().toString();
   }
 
-  public void deployVerticle(Verticle verticle, DeploymentOptions options,
-                             Handler<AsyncResult<String>> completionHandler) {
-    if (options.getInstances() != 1) {
-      throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
+  public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+    if (options.getInstances() < 1) {
+      throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
+    }
+    if (options.isMultiThreaded() && !options.isWorker()) {
+      throw new IllegalArgumentException("If multi-threaded then must be worker too");
     }
     if (options.getExtraClasspath() != null) {
       throw new IllegalArgumentException("Can't specify extraClasspath for already created verticle");
@@ -79,13 +99,38 @@ public class DeploymentManager {
       throw new IllegalArgumentException("Can't specify isolatedClasses for already created verticle");
     }
     ContextImpl currentContext = vertx.getOrCreateContext();
-    doDeploy("java:" + verticle.getClass().getName(), generateDeploymentID(), options, currentContext, currentContext, completionHandler,
-        getCurrentClassLoader(), verticle);
+    ClassLoader cl = getClassLoader(options, currentContext);
+    int nbInstances = options.getInstances();
+    Set<Verticle> verticles = Collections.newSetFromMap(new IdentityHashMap<>());
+    for (int i = 0; i < nbInstances; i++) {
+      Verticle verticle;
+      try {
+        verticle = verticleSupplier.get();
+      } catch (Exception e) {
+        completionHandler.handle(Future.failedFuture(e));
+        return;
+      }
+      if (verticle == null) {
+        completionHandler.handle(Future.failedFuture("Supplied verticle is null"));
+        return;
+      }
+      verticles.add(verticle);
+    }
+    if (verticles.size() != nbInstances) {
+      completionHandler.handle(Future.failedFuture("Same verticle supplied more than once"));
+      return;
+    }
+    Verticle[] verticlesArray = verticles.toArray(new Verticle[verticles.size()]);
+    String verticleClass = verticlesArray[0].getClass().getName();
+    doDeploy("java:" + verticleClass, generateDeploymentID(), options, currentContext, currentContext, completionHandler, cl, verticlesArray);
   }
 
   public void deployVerticle(String identifier,
                              DeploymentOptions options,
                              Handler<AsyncResult<String>> completionHandler) {
+    if (options.isMultiThreaded() && !options.isWorker()) {
+      throw new IllegalArgumentException("If multi-threaded then must be worker too");
+    }
     ContextImpl callingContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(options, callingContext);
     doDeployVerticle(identifier, generateDeploymentID(), options, callingContext, callingContext, cl, completionHandler);
@@ -407,15 +452,12 @@ public class DeploymentManager {
                         ContextImpl callingContext,
                         Handler<AsyncResult<String>> completionHandler,
                         ClassLoader tccl, Verticle... verticles) {
-    if (options.isMultiThreaded() && !options.isWorker()) {
-      throw new IllegalArgumentException("If multi-threaded then must be worker too");
-    }
     JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
     String poolName = options.getWorkerPoolName();
 
     Deployment parent = parentContext.getDeployment();
     DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
-    
+
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {

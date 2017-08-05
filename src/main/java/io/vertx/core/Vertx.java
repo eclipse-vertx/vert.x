@@ -42,6 +42,7 @@ import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * The entry point into the Vert.x Core API.
@@ -334,6 +335,25 @@ public interface Vertx extends Measured {
   void deployVerticle(Verticle verticle, DeploymentOptions options);
 
   /**
+   * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
+   * default constructor of {@code verticleClass}.
+   */
+  @GenIgnore
+  void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options);
+
+  /**
+   * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
+   * {@code verticleSupplier}.
+   * <p>
+   * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
+   * It must not return the same instance twice.
+   * <p>
+   * Note that the supplier will be invoked on the caller thread.
+   */
+  @GenIgnore
+  void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
+
+  /**
    * Like {@link #deployVerticle(Verticle, Handler)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
    * deployment.
    *
@@ -343,6 +363,25 @@ public interface Vertx extends Measured {
    */
   @GenIgnore
   void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+
+  /**
+   * Like {@link #deployVerticle(Verticle, DeploymentOptions, Handler)} but {@link Verticle} instance is created by
+   * invoking the default constructor of {@code verticleClass}.
+   */
+  @GenIgnore
+  void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+
+  /**
+   * Like {@link #deployVerticle(Verticle, DeploymentOptions, Handler)} but {@link Verticle} instance is created by
+   * invoking the {@code verticleSupplier}.
+   * <p>
+   * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
+   * It must not return the same instance twice.
+   * <p>
+   * Note that the supplier will be invoked on the caller thread.
+   */
+  @GenIgnore
+  void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
    * Deploy a verticle instance given a name.
