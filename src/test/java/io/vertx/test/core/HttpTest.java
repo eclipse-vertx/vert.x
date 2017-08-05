@@ -2872,6 +2872,7 @@ public abstract class HttpTest extends HttpTestBase {
             resp.endHandler(null);
             resp.exceptionHandler(null);
             resp.handler(null);
+            resp.bodyHandler(null);
           } catch (Exception e) {
             fail("Was expecting to set to null the handlers when the response is completed");
             return;
@@ -2886,8 +2887,10 @@ public abstract class HttpTest extends HttpTestBase {
           req.handler(null);
           req.exceptionHandler(null);
           req.endHandler(null);
+          req.drainHandler(null);
+          req.connectionHandler(null);
+          req.continueHandler(null);
         } catch (Exception e) {
-          e.printStackTrace();
           fail("Was expecting to set to null the handlers when the response is completed");
           return;
         }
