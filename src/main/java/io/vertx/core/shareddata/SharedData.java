@@ -80,4 +80,11 @@ public interface SharedData {
    */
   <K, V> LocalMap<K, V> getLocalMap(String name);
 
+  /**
+   * Get the cluster wide map if Vert.x instance is clustered or local otherwise.
+   *
+   * @param name  the name of the map
+   * @param resultHandler  the map will be returned asynchronously in this handler
+   */
+  <K, V> void getMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 }
