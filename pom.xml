@@ -23,7 +23,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>3.5.0.Beta1</version>
+  <version>3.5.0-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -55,7 +55,7 @@
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>3.5.0.Beta1</stack.version>
+    <stack.version>3.5.0-SNAPSHOT</stack.version>
     <jetty.alpnAgent.version>2.0.6</jetty.alpnAgent.version>
     <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
     <jmh.version>1.19</jmh.version>
