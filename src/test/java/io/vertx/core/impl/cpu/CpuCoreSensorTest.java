@@ -1,4 +1,4 @@
-package io.vertx.core.impl;
+package io.vertx.core.impl.cpu;
 
 import io.vertx.core.impl.cpu.CpuCoreSensor;
 import org.junit.Test;
