@@ -31,7 +31,7 @@ import java.util.Locale;
  *
  * @author Jason T. Greene
  */
-public class ProcessorInfo {
+public class CpuCoreSensor {
 
     private static final String CPUS_ALLOWED = "Cpus_allowed:";
     private static final byte[] BITS = new byte[]{0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
