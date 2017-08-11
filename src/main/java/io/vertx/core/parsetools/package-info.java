@@ -43,18 +43,69 @@
  *
  * [source, $lang]
  * ----
- * {@link examples.RecordParserExamples#example1()}
+ * {@link examples.ParseToolsExamples#recordParserExample1()}
  * ----
  *
  * You can also produce fixed sized chunks as follows:
  *
  * [source, $lang]
  * ----
- * {@link examples.RecordParserExamples#example2()}
+ * {@link examples.ParseToolsExamples#recordParserExample2()}
  * ----
  *
  * For more details, check out the {@link io.vertx.core.parsetools.RecordParser} class.
  *
+ * == Json Parser
+ *
+ * You can easily parse JSON structures but that requires to provide the JSON string at once, but it
+ * may not be convenient when you need to parse very large structures.
+ *
+ * The non-blocking JSON parser is an event driven parser able to deal with very large structures.
+ * It transforms a sequence of input buffer to a sequence of JSON parse events.
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.ParseToolsExamples#jsonParserExample1()}
+ * ----
+ *
+ * The parser is non-blocking and emitted events are driven by the input buffers
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.ParseToolsExamples#jsonParserExample2}
+ * ----
+ *
+ * Event driven parsing provides more control but comes at the price of flexibility. The parser allows you
+ * to handle JSON structures as values when it is desired:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.ParseToolsExamples#jsonParserExample3}
+ * ----
+ *
+ * The value mode can be set and unset during the parsing allowing you to switch between fine grained
+ * events or JSON object/array value events.
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.ParseToolsExamples#jsonParserExample4}
+ * ----
+ *
+ * You can also decode POJOs
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.ParseToolsExamples#jsonParserExample5}
+ * ----
+ *
+ * Whenever the parser fails to process a buffer, an exception will be thrown unless you set an exception handler:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.ParseToolsExamples#jsonParserExample5}
+ * ----
+ *
+ * For more details, check out the {@link io.vertx.core.parsetools.JsonParser} class.
  */
 @Document(fileName = "parsetools.adoc")
 package io.vertx.core.parsetools;
