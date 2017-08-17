@@ -20,20 +20,42 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.impl.PipeImpl;
 
-
+/**
+ * 
+ * @author arnaud le roy
+ *
+ */
 @VertxGen
 public interface Pipe {
 	
+	/**
+	 * 
+	 * @param rs
+	 * @return
+	 */
 	static <T> Pipe pipe(ReadStream<T> rs) {
 		return new PipeImpl<>(rs);
 	}
 
+	/**
+	 * 
+	 * @param ws
+	 * @return
+	 */
 	@Fluent
 	public <T> Pipe pipe(WriteStream<T> ws);
 
+	/**
+	 * 
+	 * @return
+	 */
 	@Fluent
 	public Pipe start();
 
+	/**
+	 * 
+	 * @return
+	 */
 	@Fluent
 	public Pipe stop();
 }

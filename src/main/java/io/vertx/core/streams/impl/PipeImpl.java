@@ -24,7 +24,12 @@ import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
-
+/**
+ * 
+ * @author arnaud le roy
+ *
+ * @param <T>
+ */
 @VertxGen
 public class PipeImpl<T> implements Pipe {
 
@@ -32,6 +37,10 @@ public class PipeImpl<T> implements Pipe {
 	private Pump pump;
 	private Boolean ended;
 
+	/**
+	 * 
+	 * @param rs
+	 */
 	public PipeImpl(ReadStream<T> rs) {
 		Objects.requireNonNull(rs);
 		this._pipedStream = rs;
@@ -39,6 +48,9 @@ public class PipeImpl<T> implements Pipe {
 		this.pump = null;
 	}
 
+	/**
+	 * @param ws
+	 */
 	@Override
 	public Pipe pipe(WriteStream ws) {
 		Objects.requireNonNull(ws);
@@ -60,6 +72,9 @@ public class PipeImpl<T> implements Pipe {
 		return this;
 	}
 
+	/**
+	 * 
+	 */
 	@Override
 	public Pipe start() {
 		if (pump != null) {
@@ -69,6 +84,9 @@ public class PipeImpl<T> implements Pipe {
 		return this;
 	}
 
+	/**
+	 * 
+	 */
 	@Override
 	public Pipe stop() {
 		if (pump != null) {
