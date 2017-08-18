@@ -31,7 +31,7 @@ import io.vertx.core.streams.WriteStream;
  * @param <T>
  */
 @VertxGen
-public class PipeImpl<T> implements Pipe {
+public class PipeImpl<T> implements Pipe<T> {
 
 	private ReadStream<T> _pipedStream;
 	private Pump pump;
@@ -52,7 +52,7 @@ public class PipeImpl<T> implements Pipe {
 	 * @param ws
 	 */
 	@Override
-	public Pipe pipe(WriteStream ws) {
+	public Pipe<T> pipe(WriteStream<T> ws) {
 		Objects.requireNonNull(ws);
 		if (ended) {
 			throw new VertxException("Piped Flow is ended");		
@@ -67,7 +67,7 @@ public class PipeImpl<T> implements Pipe {
 		if ((ws instanceof ReadStream) == false) {			
 			ended = true;
 		} else {
-			_pipedStream = (ReadStream)ws;
+			_pipedStream = (ReadStream<T>)ws;
 		}
 		return this;
 	}
@@ -76,7 +76,7 @@ public class PipeImpl<T> implements Pipe {
 	 * 
 	 */
 	@Override
-	public Pipe start() {
+	public Pipe<T> start() {
 		if (pump != null) {
 			pump.start();
 		}
@@ -88,7 +88,7 @@ public class PipeImpl<T> implements Pipe {
 	 * 
 	 */
 	@Override
-	public Pipe stop() {
+	public Pipe<T> stop() {
 		if (pump != null) {
 			pump.stop();
 		}

@@ -26,14 +26,14 @@ import io.vertx.core.streams.impl.PipeImpl;
  *
  */
 @VertxGen
-public interface Pipe {
+public interface Pipe<T> {
 	
 	/**
 	 * 
 	 * @param rs
 	 * @return
 	 */
-	static <T> Pipe create(ReadStream<T> rs) {
+	static <T> Pipe<T> create(ReadStream<T> rs) {
 		return new PipeImpl<>(rs);
 	}
 
@@ -43,19 +43,19 @@ public interface Pipe {
 	 * @return
 	 */
 	@Fluent
-	public <T> Pipe pipe(WriteStream<T> ws);
+	public Pipe<T> pipe(WriteStream<T> ws);
 
 	/**
 	 * 
 	 * @return
 	 */
 	@Fluent
-	public Pipe start();
+	public Pipe<T> start();
 
 	/**
 	 * 
 	 * @return
 	 */
 	@Fluent
-	public Pipe stop();
+	public Pipe<T> stop();
 }
