@@ -33,7 +33,7 @@ public interface Pipe {
 	 * @param rs
 	 * @return
 	 */
-	static <T> Pipe pipe(ReadStream<T> rs) {
+	static <T> Pipe create(ReadStream<T> rs) {
 		return new PipeImpl<>(rs);
 	}
 
