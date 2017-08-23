@@ -104,6 +104,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("tryUseCompression") instanceof Boolean) {
       obj.setTryUseCompression((Boolean)json.getValue("tryUseCompression"));
     }
+    if (json.getValue("validateHeaderValues") instanceof Boolean) {
+      obj.setValidateHeaderValues((Boolean)json.getValue("validateHeaderValues"));
+    }
     if (json.getValue("verifyHost") instanceof Boolean) {
       obj.setVerifyHost((Boolean)json.getValue("verifyHost"));
     }
@@ -144,6 +147,7 @@ public class HttpClientOptionsConverter {
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("tryUseCompression", obj.isTryUseCompression());
+    json.put("validateHeaderValues", obj.isValidateHeaderValues());
     json.put("verifyHost", obj.isVerifyHost());
   }
 }

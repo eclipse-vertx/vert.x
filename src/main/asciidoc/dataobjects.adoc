@@ -905,6 +905,11 @@ Set the ALPN usage.
 +++
 Set whether Netty pooled buffers are enabled
 +++
+|[[validateHeaderValues]]`validateHeaderValues`|`Boolean`|
++++
+By default, the client verify that all headers have a valid value, setting
+ this property to <code>true</code> forces the server to validate headers values
++++
 |[[verifyHost]]`verifyHost`|`Boolean`|
 +++
 Set whether hostname verification is enabled

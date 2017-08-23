@@ -447,8 +447,8 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     pool.responseEnded(this, true);
   }
 
-  private HttpRequest createRequest(HttpVersion version, HttpMethod method, String rawMethod, String uri, MultiMap headers) {
-    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpUtils.toNettyHttpMethod(method, rawMethod), uri, false);
+  private HttpRequest createRequest(HttpVersion version, HttpMethod method, String rawMethod, String uri, MultiMap headers, boolean validateHeaderValues) {
+    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpUtils.toNettyHttpMethod(method, rawMethod), uri, validateHeaderValues);
     if (headers != null) {
       for (Map.Entry<String, String> header : headers) {
         // Todo : multi valued headers
@@ -478,14 +478,14 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     }
   }
 
-  public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked) {
-    HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
+  public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, boolean validateHeaderValues) {
+    HttpRequest request = createRequest(version, method, rawMethod, uri, headers, validateHeaderValues);
     prepareHeaders(request, hostHeader, chunked);
     writeToChannel(request);
   }
 
-  public void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
-    HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
+  public void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, boolean validateHeaderValues) {
+    HttpRequest request = createRequest(version, method, rawMethod, uri, headers, validateHeaderValues);
     prepareHeaders(request, hostHeader, chunked);
     if (end) {
       if (buf != null) {

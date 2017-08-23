@@ -41,8 +41,8 @@ interface HttpClientStream {
   HttpClientConnection connection();
   Context getContext();
 
-  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked);
-  void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
+  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, boolean validateHeaderValues);
+  void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, boolean validateHeaderValues);
   void writeBuffer(ByteBuf buf, boolean end);
   void writeFrame(int type, int flags, ByteBuf payload);
 

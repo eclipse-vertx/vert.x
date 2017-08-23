@@ -155,6 +155,12 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
 
+  /*
+   * Default validate header values = true
+   */
+  public static final boolean DEFAULT_VALIDATE_HEADERS_VALUES = true;
+
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -181,6 +187,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxRedirects;
   private boolean forceSni;
   private int decoderInitialBufferSize;
+  private boolean validateHeaderValues;
 
   /**
    * Default constructor
@@ -222,6 +229,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
+    this.validateHeaderValues = other.isValidateHeaderValues();
   }
 
   /**
@@ -272,6 +280,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
+    validateHeaderValues = DEFAULT_VALIDATE_HEADERS_VALUES;
   }
 
   @Override
@@ -958,6 +967,26 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * By default, the client verify that all headers have a valid value, setting
+   * this property to {@code false} makes the server to skip headers validation
+   *
+   * @param validateHeaderValues true when the client should always validate headers values
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setValidateHeaderValues(boolean validateHeaderValues) {
+    this.validateHeaderValues = validateHeaderValues;
+    return this;
+  }
+
+  /**
+   * @return whether the client should validate header values
+   */
+  public boolean isValidateHeaderValues() {
+    return validateHeaderValues;
+  }
+
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -987,6 +1016,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (sendUnmaskedFrames != that.sendUnmaskedFrames) return false;
     if (maxRedirects != that.maxRedirects) return false;
     if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
+    if (validateHeaderValues != that.validateHeaderValues) return false;
 
     return true;
   }
@@ -1015,6 +1045,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (sendUnmaskedFrames ? 1 : 0);
     result = 31 * result + maxRedirects;
     result = 31 * result + decoderInitialBufferSize;
+    result = 31 * result + (validateHeaderValues ? 1 : 0);
     return result;
   }
 

@@ -288,12 +288,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked) {
-      writeHeadWithContent(method, rawMethod, uri, headers, hostHeader, chunked, null, false);
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, boolean validateHeaderValues) {
+      writeHeadWithContent(method, rawMethod, uri, headers, hostHeader, chunked, null, false, validateHeaderValues);
     }
 
     @Override
-    public void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
+    public void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, boolean validateHeaderValues) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
