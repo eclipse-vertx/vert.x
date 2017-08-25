@@ -16,14 +16,10 @@
 
 package io.vertx.core.parsetools;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.parsetools.impl.RecordParserImpl;
-
-import java.util.Objects;
 
 /**
  * A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
@@ -65,10 +61,8 @@ public interface RecordParser extends Handler<Buffer> {
   void setOutput(Handler<Buffer> output);
 
   /**
-   * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
-   * by the String {@code} delim endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
-   * <p>
-   * {@code output} Will receive whole records which have been parsed.
+   * Like {@link #newDelimited(String)} but set the {@code output} that will receive whole records
+   * which have been parsed.
    *
    * @param delim  the initial delimiter string
    * @param output  handler that will receive the output
@@ -79,15 +73,37 @@ public interface RecordParser extends Handler<Buffer> {
 
   /**
    * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
+   * by the String {@code} delim endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
+   * <p>
+   * {@code output} Will receive whole records which have been parsed.
+   *
+   * @param delim  the initial delimiter string
+   */
+  static RecordParser newDelimited(String delim) {
+    return RecordParserImpl.newDelimited(delim, null);
+  }
+
+  /**
+   * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
    * by the {@code Buffer} delim.
    * <p>
    * {@code output} Will receive whole records which have been parsed.
    *
    * @param delim  the initial delimiter buffer
+   */
+  static RecordParser newDelimited(Buffer delim) {
+    return RecordParserImpl.newDelimited(delim, null);
+  }
+
+  /**
+   * Like {@link #newDelimited(Buffer)} but set the {@code output} that will receive whole records
+   * which have been parsed.
+   *
+   * @param delim  the initial delimiter buffer
    * @param output  handler that will receive the output
    */
    static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
-     return RecordParserImpl.newDelimited(delim, output); 
+     return RecordParserImpl.newDelimited(delim, output);
    }
 
   /**
@@ -95,6 +111,16 @@ public interface RecordParser extends Handler<Buffer> {
    * by the {@code size} parameter.
    * <p>
    * {@code output} Will receive whole records which have been parsed.
+   *
+   * @param size  the initial record size
+   */
+  static RecordParser newFixed(int size) {
+    return RecordParserImpl.newFixed(size, null);
+  }
+
+  /**
+   * Like {@link #newFixed(int)} but set the {@code output} that will receive whole records
+   * which have been parsed.
    *
    * @param size  the initial record size
    * @param output  handler that will receive the output
