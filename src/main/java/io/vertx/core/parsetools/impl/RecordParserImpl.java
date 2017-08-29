@@ -20,6 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.Objects;
 
@@ -39,8 +40,13 @@ public class RecordParserImpl implements RecordParser {
   private byte[] delim;
   private int recordSize;
   private Handler<Buffer> output;
+  private Handler<Void> endHandler;
+  private Handler<Throwable> exceptionHandler;
 
-  private RecordParserImpl(Handler<Buffer> output) {
+  private final ReadStream<Buffer> stream;
+
+  private RecordParserImpl(ReadStream<Buffer> stream, Handler<Buffer> output) {
+    this.stream = stream;
     this.output = output;
   }
 
@@ -74,8 +80,8 @@ public class RecordParserImpl implements RecordParser {
    * @param delim  the initial delimiter string
    * @param output  handler that will receive the output
    */
-  public static RecordParser newDelimited(String delim, Handler<Buffer> output) {
-    return newDelimited(latin1StringToBytes(delim), output);
+  public static RecordParser newDelimited(String delim, ReadStream<Buffer> stream, Handler<Buffer> output) {
+    return newDelimited(latin1StringToBytes(delim), stream, output);
   }
 
   /**
@@ -87,8 +93,8 @@ public class RecordParserImpl implements RecordParser {
    * @param delim  the initial delimiter buffer
    * @param output  handler that will receive the output
    */
-  public static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
-    RecordParserImpl ls = new RecordParserImpl(output);
+  public static RecordParser newDelimited(Buffer delim, ReadStream<Buffer> stream, Handler<Buffer> output) {
+    RecordParserImpl ls = new RecordParserImpl(stream, output);
     ls.delimitedMode(delim);
     return ls;
   }
@@ -102,9 +108,9 @@ public class RecordParserImpl implements RecordParser {
    * @param size  the initial record size
    * @param output  handler that will receive the output
    */
-  public static RecordParser newFixed(int size, Handler<Buffer> output) {
+  public static RecordParser newFixed(int size, ReadStream<Buffer> stream, Handler<Buffer> output) {
     Arguments.require(size > 0, "Size must be > 0");
-    RecordParserImpl ls = new RecordParserImpl(output);
+    RecordParserImpl ls = new RecordParserImpl(stream, output);
     ls.fixedSizeMode(size);
     return ls;
   }
@@ -216,5 +222,61 @@ public class RecordParserImpl implements RecordParser {
       buff.appendBuffer(buffer);
     }
     handleParsing();
+  }
+
+  private void end() {
+    Handler<Void> handler = endHandler;
+    if (handler != null) {
+      handler.handle(null);
+    }
+  }
+
+  @Override
+  public RecordParser exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public RecordParser handler(Handler<Buffer> handler) {
+    output = handler;
+    if (stream != null) {
+      if (handler != null) {
+        stream.endHandler(v -> end());
+        stream.exceptionHandler(err -> {
+          if (exceptionHandler != null) {
+            exceptionHandler.handle(err);
+          }
+        });
+        stream.handler(this);
+      } else {
+        stream.handler(null);
+        stream.endHandler(null);
+        stream.exceptionHandler(null);
+      }
+    }
+    return this;
+  }
+
+  @Override
+  public RecordParser pause() {
+    if (stream != null) {
+      stream.pause();
+    }
+    return this;
+  }
+
+  @Override
+  public RecordParser resume() {
+    if (stream != null) {
+      stream.resume();
+    }
+    return this;
+  }
+
+  @Override
+  public RecordParser endHandler(Handler<Void> handler) {
+    endHandler = handler;
+    return this;
   }
 }
