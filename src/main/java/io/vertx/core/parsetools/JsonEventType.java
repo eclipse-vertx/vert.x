@@ -16,18 +16,35 @@
 package io.vertx.core.parsetools;
 
 /**
+ * The possibles types of {@link JsonEvent} emitted by the {@link JsonParser}.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public enum JsonEventType {
 
+  /**
+   * Signals the start of a JSON object.
+   */
   START_OBJECT,
 
+  /**
+   * Signals the end of a JSON object.
+   */
   END_OBJECT,
 
+  /**
+   * Signals the start of a JSON array.
+   */
   START_ARRAY,
 
+  /**
+   * Signals the end of a JSON object.
+   */
   END_ARRAY,
 
+  /**
+   * Signals a JSON value.
+   */
   VALUE,
 
 }
