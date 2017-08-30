@@ -159,6 +159,12 @@ public class BareCommand extends ClasspathHandler {
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
+      if (!options.getClusterHost().equals(VertxOptions.DEFAULT_CLUSTER_HOST)) {
+        clusterHost = options.getClusterHost();
+      }
+      if (options.getClusterPort() != VertxOptions.DEFAULT_CLUSTER_PORT) {
+        clusterPort = options.getClusterPort();
+      }
       if (clusterHost == null) {
         clusterHost = getDefaultAddress();
         if (clusterHost == null) {
