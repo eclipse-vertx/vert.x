@@ -552,8 +552,10 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals(launcher.options.getClusterHost(), "127.0.0.1");
-    assertEquals(launcher.options.getClusterPort(), clusterPort);
+    assertEquals("127.0.0.1", launcher.options.getClusterHost());
+    assertEquals(clusterPort, launcher.options.getClusterPort());
+    assertNull(launcher.options.getClusterPublicHost());
+    assertEquals(-1, launcher.options.getClusterPublicPort());
   }
 
   @Test
@@ -563,38 +565,50 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-host", "127.0.0.1", "--cluster-port", Integer.toString(clusterPort)};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals(launcher.options.getClusterHost(), "127.0.0.1");
-    assertEquals(launcher.options.getClusterPort(), clusterPort);
+    assertEquals("127.0.0.1", launcher.options.getClusterHost());
+    assertEquals(clusterPort, launcher.options.getClusterPort());
+    assertNull(launcher.options.getClusterPublicHost());
+    assertEquals(-1, launcher.options.getClusterPublicPort());
   }
 
   @Test
   public void testOverrideClusterHostPortFromProperties() throws Exception {
     int clusterPort = TestUtils.randomHighPortInt();
     int newClusterPort = TestUtils.randomHighPortInt();
+    int newClusterPublicPort = TestUtils.randomHighPortInt();
     System.setProperty(RunCommand.VERTX_OPTIONS_PROP_PREFIX + "clusterHost", "127.0.0.1");
     System.setProperty(RunCommand.VERTX_OPTIONS_PROP_PREFIX + "clusterPort", Integer.toString(clusterPort));
     MyLauncher launcher = new MyLauncher();
     launcher.clusterHost = "127.0.0.2";
     launcher.clusterPort = newClusterPort;
+    launcher.clusterPublicHost = "127.0.0.3";
+    launcher.clusterPublicPort = newClusterPublicPort;
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals(launcher.options.getClusterHost(), "127.0.0.2");
-    assertEquals(launcher.options.getClusterPort(), newClusterPort);
+    assertEquals("127.0.0.2", launcher.options.getClusterHost());
+    assertEquals(newClusterPort, launcher.options.getClusterPort());
+    assertEquals("127.0.0.3", launcher.options.getClusterPublicHost());
+    assertEquals(newClusterPublicPort, launcher.options.getClusterPublicPort());
   }
 
   @Test
   public void testOverrideClusterHostPortFromCommandLine() throws Exception {
     int clusterPort = TestUtils.randomHighPortInt();
     int newClusterPort = TestUtils.randomHighPortInt();
+    int newClusterPublicPort = TestUtils.randomHighPortInt();
     MyLauncher launcher = new MyLauncher();
     launcher.clusterHost = "127.0.0.2";
     launcher.clusterPort = newClusterPort;
+    launcher.clusterPublicHost = "127.0.0.3";
+    launcher.clusterPublicPort = newClusterPublicPort;
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-host", "127.0.0.1", "--cluster-port", Integer.toString(clusterPort)};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals(launcher.options.getClusterHost(), "127.0.0.2");
-    assertEquals(launcher.options.getClusterPort(), newClusterPort);
+    assertEquals("127.0.0.2", launcher.options.getClusterHost());
+    assertEquals(newClusterPort, launcher.options.getClusterPort());
+    assertEquals("127.0.0.3", launcher.options.getClusterPublicHost());
+    assertEquals(newClusterPublicPort, launcher.options.getClusterPublicPort());
   }
 
   class MyLauncher extends Launcher {
@@ -608,6 +622,8 @@ public class LauncherTest extends VertxTestBase {
     JsonObject config;
     String clusterHost;
     int clusterPort;
+    String clusterPublicHost;
+    int clusterPublicPort;
 
 
     PrintStream stream = new PrintStream(out);
@@ -641,6 +657,8 @@ public class LauncherTest extends VertxTestBase {
       if(clusterHost != null) {
         options.setClusterHost(clusterHost);
         options.setClusterPort(clusterPort);
+        options.setClusterPublicHost(clusterPublicHost);
+        options.setClusterPublicPort(clusterPublicPort);
         super.beforeStartingVertx(options);
       }
     }
