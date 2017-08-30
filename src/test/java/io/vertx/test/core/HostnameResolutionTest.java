@@ -469,13 +469,26 @@ public class HostnameResolutionTest extends VertxTestBase {
   @Test
   public void testSearchDomain() throws Exception {
 
+    String addr_host1_foo_com = "127.0.0.1";
+    String addr_host1 = "127.0.0.2";
+    String addr_host3 = "127.0.0.3";
+    String addr_host4_sub_foo_com = "127.0.0.4";
+    String addr_host5_sub_foo_com = "127.0.0.5";
+    String addr_host5_sub = "127.0.0.6";
+    String addr_host6_sub_sub_foo_com = "127.0.0.7";
+    String addr_host7_sub_sub_foo_com = "127.0.0.8";
+    String addr_host7_sub_sub = "127.0.0.9";
+
     Map<String, String> records = new HashMap<>();
-    records.put("host1.foo.com", "127.0.0.1");
-    records.put("host1", "127.0.0.2");
-    records.put("host3", "127.0.0.3");
-    records.put("host4.sub.foo.com", "127.0.0.4");
-    records.put("host5.sub.foo.com", "127.0.0.5");
-    records.put("host5.sub", "127.0.0.6");
+    records.put("host1.foo.com", addr_host1_foo_com);
+    records.put("host1", addr_host1);
+    records.put("host3", addr_host3);
+    records.put("host4.sub.foo.com", addr_host4_sub_foo_com);
+    records.put("host5.sub.foo.com", addr_host5_sub_foo_com);
+    records.put("host5.sub", addr_host5_sub);
+    records.put("host6.sub.sub.foo.com", addr_host6_sub_sub_foo_com);
+    records.put("host7.sub.sub.foo.com", addr_host7_sub_sub_foo_com);
+    records.put("host7.sub.sub", addr_host7_sub_sub);
 
     dnsServer.stop();
     dnsServer = FakeDNSServer.testResolveA(records);
@@ -484,13 +497,14 @@ public class HostnameResolutionTest extends VertxTestBase {
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
             setOptResourceEnabled(false).
+            setNdots(2).
             addSearchDomain("foo.com")
     ));
 
     // host1 resolves host1.foo.com with foo.com search domain
     CountDownLatch latch1 = new CountDownLatch(1);
     vertx.resolveAddress("host1", onSuccess(resolved -> {
-      assertEquals("127.0.0.1", resolved.getHostAddress());
+      assertEquals(addr_host1_foo_com, resolved.getHostAddress());
       latch1.countDown();
     }));
     awaitLatch(latch1);
@@ -498,7 +512,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     // "host1." absolute query
     CountDownLatch latch2 = new CountDownLatch(1);
     vertx.resolveAddress("host1.", onSuccess(resolved -> {
-      assertEquals("127.0.0.2", resolved.getHostAddress());
+      assertEquals(addr_host1, resolved.getHostAddress());
       latch2.countDown();
     }));
     awaitLatch(latch2);
@@ -522,7 +536,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     // "host3." does not contain a dot but is absolute
     CountDownLatch latch5 = new CountDownLatch(1);
     vertx.resolveAddress("host3.", onSuccess(resolved -> {
-      assertEquals("127.0.0.3", resolved.getHostAddress());
+      assertEquals(addr_host3, resolved.getHostAddress());
       latch5.countDown();
     }));
     awaitLatch(latch5);
@@ -530,18 +544,33 @@ public class HostnameResolutionTest extends VertxTestBase {
     // "host4.sub" contains a dot but not resolved then resolved to "host4.sub.foo.com" with "foo.com" search domain
     CountDownLatch latch6 = new CountDownLatch(1);
     vertx.resolveAddress("host4.sub", onSuccess(resolved -> {
-      assertEquals("127.0.0.4", resolved.getHostAddress());
+      assertEquals(addr_host4_sub_foo_com, resolved.getHostAddress());
       latch6.countDown();
     }));
     awaitLatch(latch6);
 
-    // "host5.sub" contains a dot and is resolved
+    // "host5.sub" contains one dots and is resolved via search domain to "host5.sub.foo.com" and not to "host5.sub"
     CountDownLatch latch7 = new CountDownLatch(1);
     vertx.resolveAddress("host5.sub", onSuccess(resolved -> {
-      assertEquals("127.0.0.6", resolved.getHostAddress());
+      assertEquals(addr_host5_sub_foo_com, resolved.getHostAddress());
       latch7.countDown();
     }));
     awaitLatch(latch7);
+
+    // "host7.sub.sub" contains two dots and is not resolved to "host6.sub.sub.foo.com"
+    CountDownLatch latch8 = new CountDownLatch(1);
+    vertx.resolveAddress("host6.sub.sub", onFailure(resolved -> {
+      latch8.countDown();
+    }));
+    awaitLatch(latch8);
+
+    // "host6.sub.sub" contains two dots and is resolved to "host6.sub.sub" and not to "host6.sub.sub.foo.com"
+    CountDownLatch latch9 = new CountDownLatch(1);
+    vertx.resolveAddress("host7.sub.sub", onSuccess(resolved -> {
+      assertEquals(addr_host7_sub_sub, resolved.getHostAddress());
+      latch9.countDown();
+    }));
+    awaitLatch(latch9);
   }
 
   @Test
