@@ -47,7 +47,7 @@
   </scm>
 
   <properties>
-    <tcnative.version>1.1.33.Fork26</tcnative.version>
+    <tcnative.version>2.0.6.Final</tcnative.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
     <log4j2.version>2.8.2</log4j2.version>
@@ -79,38 +79,47 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-common</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-handler</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-handler-proxy</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-http</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-http2</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-resolver</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-resolver-dns</artifactId>
+      <version>4.1.15.Final</version>
     </dependency>
 
     <!-- Jackson -->
