@@ -21,6 +21,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
@@ -136,6 +137,39 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase writeTextMessage(String text);
 
   /**
+   * Writes a ping to the connection. This will be written in a single frame. Ping frames may be at most 125 bytes (octets).
+   * <p>
+   * This method should not be used to write application data and should only be used for implementing a keep alive or
+   * to ensure the client is still responsive, see RFC 6455 Section 5.5.2.
+   * <p>
+   * There is no pingHandler because RFC 6455 section 5.5.2 clearly states that the only response to a ping is a pong
+   * with identical contents.
+   *
+   * @param data the data to write, may be at most 125 bytes
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  WebSocketBase writePing(Buffer data);
+
+  /**
+   * Writes a pong to the connection. This will be written in a single frame. Pong frames may be at most 125 bytes (octets).
+   * <p>
+   * This method should not be used to write application data and should only be used for implementing a keep alive or
+   * to ensure the client is still responsive, see RFC 6455 Section 5.5.2.
+   * <p>
+   * There is no need to manually write a Pong, as the server and client both handle responding to a ping with a pong
+   * automatically and this is exposed to users.RFC 6455 Section 5.5.3 states that pongs may be sent unsolicited in order
+   * to implement a one way heartbeat.
+   *
+   * @param data the data to write, may be at most 125 bytes
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  WebSocketBase writePong(Buffer data);
+
+
+
+  /**
    * Set a close handler. This will be called when the WebSocket is closed.
    *
    * @param handler  the handler
@@ -173,6 +207,23 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   WebSocketBase binaryMessageHandler(@Nullable Handler<Buffer> handler);
+
+  /**
+   * Set a pong message handler on the connection.  This handler will be invoked every time a pong message is received
+   * on the server, and can be used by both clients and servers since the RFC 6455 Sections 5.5.2 and 5.5.3 do not
+   * specify whether the client or server sends a ping.
+   * <p>
+   * Pong frames may be at most 125 bytes (octets).
+   * <p>
+   * There is no ping handler since pings should immediately be responded to with a pong with identical content
+   * <p>
+   * Pong frames may be received unsolicited.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  WebSocketBase pongHandler(@Nullable Handler<Buffer> handler);
 
   /**
    * Calls {@link #close()}
