@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 
+import java.io.DataInput;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -166,7 +167,7 @@ public class Json {
    */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
     try {
-      return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), clazz);
+      return mapper.readValue((DataInput) new ByteBufInputStream(buf.getByteBuf()), clazz);
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
