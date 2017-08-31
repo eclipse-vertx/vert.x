@@ -3103,7 +3103,7 @@ public class NetTest extends VertxTestBase {
       assertEquals(200, resp.statusCode());
       resp.bodyHandler(buff -> {
         assertEquals("Hello World", buff.toString());
-        testComplete();
+        complete();
       });
     });
     await();
