@@ -18,6 +18,7 @@ package io.vertx.core.parsetools;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -107,7 +108,7 @@ public interface JsonEvent {
    * @throws java.lang.ClassCastException if the value is not a String
    * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
    */
-  byte[] binaryValue();
+  Buffer binaryValue();
 
   /**
    * Return the {@code Instant} value.
@@ -120,6 +121,7 @@ public interface JsonEvent {
    * @throws java.lang.ClassCastException if the value is not a String
    * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
    */
+  @GenIgnore
   Instant instantValue();
 
   /**

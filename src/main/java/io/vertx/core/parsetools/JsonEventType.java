@@ -38,7 +38,7 @@ public enum JsonEventType {
   START_ARRAY,
 
   /**
-   * Signals the end of a JSON object.
+   * Signals the end of a JSON array.
    */
   END_ARRAY,
 

@@ -51,7 +51,7 @@ For more details, check out the `link:../../apidocs/io/vertx/core/parsetools/Rec
 
 == Json Parser
 
-You can easily parse JSON structures but that requires to provide the JSON string at once, but it
+You can easily parse JSON structures but that requires to provide the JSON content at once, but it
 may not be convenient when you need to parse very large structures.
 
 The non-blocking JSON parser is an event driven parser able to deal with very large structures.
@@ -78,7 +78,7 @@ parser.handler(event -> {
       break;
     case VALUE:
       // Handle a value
-      String field = event.field();
+      String field = event.fieldName();
       if (field != null) {
         // In an object
       } else {
@@ -94,7 +94,7 @@ parser.handler(event -> {
 });
 ----
 
-The parser is non-blocking and emitted events are driven by the input buffers
+The parser is non-blocking and emitted events are driven by the input buffers.
 
 [source, java]
 ----
@@ -122,8 +122,8 @@ parser.handle(Buffer.buffer("]"));
 parser.end();
 ----
 
-Event driven parsing provides more control but comes at the price of flexibility. The parser allows you
-to handle JSON structures as values when it is desired:
+Event driven parsing provides more control but comes at the price of dealing with fine grained events, which can be
+inconvenient sometimes. The JSON parser allows you to handle JSON structures as values when it is desired:
 
 [source, java]
 ----
@@ -150,7 +150,7 @@ parser.end();
 ----
 
 The value mode can be set and unset during the parsing allowing you to switch between fine grained
-events or JSON object/array value events.
+events or JSON object value events.
 
 [source, java]
 ----
@@ -167,7 +167,7 @@ parser.handler(event -> {
     case VALUE:
       // Handle each object
       // Get the field in which this object was parsed
-      String id = event.field();
+      String id = event.fieldName();
       System.out.println("User with id " + id + " : " + event.value());
       break;
     case END_OBJECT:
@@ -181,6 +181,36 @@ parser.handle(Buffer.buffer("{\"39877483847\":{\"firstName\":\"Bob\"},\"lastName
 parser.end();
 ----
 
+You can do the same with arrays as well
+
+[source, java]
+----
+JsonParser parser = JsonParser.newParser();
+
+parser.handler(event -> {
+  // Start the object
+
+  switch (event.type()) {
+    case START_OBJECT:
+      // Set array value mode to handle each entry, from now on the parser won't emit start array events
+      parser.arrayValueMode();
+      break;
+    case VALUE:
+      // Handle each array
+      // Get the field in which this object was parsed
+      System.out.println("Value : " + event.value());
+      break;
+    case END_OBJECT:
+      // Set the array event mode so the parser emits start/end object events again
+      parser.arrayEventMode();
+      break;
+  }
+});
+
+parser.handle(Buffer.buffer("[0,1,2,3,4,...]"));
+parser.end();
+----
+
 You can also decode POJOs
 
 [source, java]
@@ -188,8 +218,8 @@ You can also decode POJOs
 parser.handler(event -> {
   // Handle each object
   // Get the field in which this object was parsed
-  String id = event.field();
-  User user = event.as(User.class);
+  String id = event.fieldName();
+  User user = event.mapTo(User.class);
   System.out.println("User with id " + id + " : " + user.firstName + " " + user.lastName);
 });
 ----
@@ -198,12 +228,10 @@ Whenever the parser fails to process a buffer, an exception will be thrown unles
 
 [source, java]
 ----
-parser.handler(event -> {
-  // Handle each object
-  // Get the field in which this object was parsed
-  String id = event.field();
-  User user = event.as(User.class);
-  System.out.println("User with id " + id + " : " + user.firstName + " " + user.lastName);
+JsonParser parser = JsonParser.newParser();
+
+parser.exceptionHandler(err -> {
+  // Catch any parsing or decoding error
 });
 ----
 

@@ -57,7 +57,7 @@
  *
  * == Json Parser
  *
- * You can easily parse JSON structures but that requires to provide the JSON string at once, but it
+ * You can easily parse JSON structures but that requires to provide the JSON content at once, but it
  * may not be convenient when you need to parse very large structures.
  *
  * The non-blocking JSON parser is an event driven parser able to deal with very large structures.
@@ -68,15 +68,15 @@
  * {@link examples.ParseToolsExamples#jsonParserExample1()}
  * ----
  *
- * The parser is non-blocking and emitted events are driven by the input buffers
+ * The parser is non-blocking and emitted events are driven by the input buffers.
  *
  * [source, $lang]
  * ----
  * {@link examples.ParseToolsExamples#jsonParserExample2}
  * ----
  *
- * Event driven parsing provides more control but comes at the price of flexibility. The parser allows you
- * to handle JSON structures as values when it is desired:
+ * Event driven parsing provides more control but comes at the price of dealing with fine grained events, which can be
+ * inconvenient sometimes. The JSON parser allows you to handle JSON structures as values when it is desired:
  *
  * [source, $lang]
  * ----
@@ -84,25 +84,32 @@
  * ----
  *
  * The value mode can be set and unset during the parsing allowing you to switch between fine grained
- * events or JSON object/array value events.
+ * events or JSON object value events.
  *
  * [source, $lang]
  * ----
  * {@link examples.ParseToolsExamples#jsonParserExample4}
  * ----
  *
- * You can also decode POJOs
+ * You can do the same with arrays as well
  *
  * [source, $lang]
  * ----
  * {@link examples.ParseToolsExamples#jsonParserExample5}
+ * ----
+ *
+ * You can also decode POJOs
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.ParseToolsExamples#jsonParserExample6}
  * ----
  *
  * Whenever the parser fails to process a buffer, an exception will be thrown unless you set an exception handler:
  *
  * [source, $lang]
  * ----
- * {@link examples.ParseToolsExamples#jsonParserExample5}
+ * {@link examples.ParseToolsExamples#jsonParserExample7}
  * ----
  *
  * For more details, check out the {@link io.vertx.core.parsetools.JsonParser} class.

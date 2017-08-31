@@ -143,12 +143,40 @@ public class ParseToolsExamples {
     parser.end();
   }
 
+  public void jsonParserExample5() {
+
+    JsonParser parser = JsonParser.newParser();
+
+    parser.handler(event -> {
+      // Start the object
+
+      switch (event.type()) {
+        case START_OBJECT:
+          // Set array value mode to handle each entry, from now on the parser won't emit start array events
+          parser.arrayValueMode();
+          break;
+        case VALUE:
+          // Handle each array
+          // Get the field in which this object was parsed
+          System.out.println("Value : " + event.value());
+          break;
+        case END_OBJECT:
+          // Set the array event mode so the parser emits start/end object events again
+          parser.arrayEventMode();
+          break;
+      }
+    });
+
+    parser.handle(Buffer.buffer("[0,1,2,3,4,...]"));
+    parser.end();
+  }
+
   private static class User {
     private String firstName;
     private String lastName;
   }
 
-  public void jsonParserExample5(JsonParser parser) {
+  public void jsonParserExample6(JsonParser parser) {
     parser.handler(event -> {
       // Handle each object
       // Get the field in which this object was parsed
@@ -158,7 +186,7 @@ public class ParseToolsExamples {
     });
   }
 
-  public void jsonParserExample6() {
+  public void jsonParserExample7() {
 
     JsonParser parser = JsonParser.newParser();
 

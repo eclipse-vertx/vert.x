@@ -17,6 +17,7 @@ package io.vertx.core.parsetools.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -184,8 +185,8 @@ public class JsonEventImpl implements JsonEvent {
   }
 
   @Override
-  public byte[] binaryValue() {
-    return value != null ? Base64.getDecoder().decode((String) value) : null;
+  public Buffer binaryValue() {
+    return value != null ? Buffer.buffer(Base64.getDecoder().decode((String) value)) : null;
   }
 
   @Override

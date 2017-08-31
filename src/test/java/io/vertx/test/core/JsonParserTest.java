@@ -150,9 +150,15 @@ public class JsonParserTest {
     parser.handler(event -> {
       assertEquals(0, status.getAndIncrement());
       assertEquals(JsonEventType.VALUE, event.type());
-      assertEquals(new JsonObject().put("number", 3).put("true", true).put("false", false).put("string", "s").putNull("null"), event.value());
+      assertEquals(new JsonObject().put("number", 3)
+        .put("true", true)
+        .put("false", false)
+        .put("string", "s")
+        .put("object", new JsonObject().put("foo", "bar"))
+        .put("array", new JsonArray().add(0).add(1).add(2))
+        .putNull("null"), event.value());
     });
-    parser.handle(Buffer.buffer("{\"number\":3,\"true\":true,\"false\":false,\"string\":\"s\",\"null\":null}"));
+    parser.handle(Buffer.buffer("{\"number\":3,\"true\":true,\"false\":false,\"string\":\"s\",\"null\":null,\"object\":{\"foo\":\"bar\"},\"array\":[0,1,2]}"));
     assertEquals(1, status.get());
   }
 
@@ -162,10 +168,16 @@ public class JsonParserTest {
     AtomicInteger status = new AtomicInteger();
     parser.arrayValueMode();
     parser.handler(event -> {
-      assertEquals(new JsonArray().add(1).add(2).add(3), event.value());
+      assertEquals(new JsonArray().add(3)
+        .add(true)
+        .add(false)
+        .add("s")
+        .addNull()
+        .add(new JsonObject().put("foo", "bar"))
+        .add(new JsonArray().add(0).add(1).add(2)), event.value());
       assertEquals(0, status.getAndIncrement());
     });
-    parser.handle(Buffer.buffer("[1,2,3]"));
+    parser.handle(Buffer.buffer("[3,true,false,\"s\",null,{\"foo\":\"bar\"},[0,1,2]]"));
     assertEquals(1, status.get());
   }
 
@@ -246,7 +258,7 @@ public class JsonParserTest {
       assertFalse(event.isBoolean());
       assertTrue(event.isString());
       assertEquals(encoded, event.stringValue());
-      assertTrue(Arrays.equals(value, event.binaryValue()));
+      assertEquals(Buffer.buffer(value), event.binaryValue());
       assertThrowCCE(event,
         JsonEvent::integerValue,
         JsonEvent::longValue,
