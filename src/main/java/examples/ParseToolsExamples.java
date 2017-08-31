@@ -71,17 +71,17 @@ public class ParseToolsExamples {
     // start array event
     // start object event
     // "firstName":"Bob" event
-    parser.handle(Buffer.buffer("[{\"firstName\":\"Bob\"},"));
+    parser.handle(Buffer.buffer("[{\"firstName\":\"Bob\","));
 
     // "lastName":"Morane" event
     // end object event
-    parser.handle(Buffer.buffer("\"lastName\":\"Morane\")},"));
+    parser.handle(Buffer.buffer("\"lastName\":\"Morane\"},"));
 
     // start object event
     // "firstName":"Luke" event
     // "lastName":"Lucky" event
     // end object event
-    parser.handle(Buffer.buffer("{\"firstName\":\"Luke\",\"lastName\":\"Lucky\")}"));
+    parser.handle(Buffer.buffer("{\"firstName\":\"Luke\",\"lastName\":\"Lucky\"}"));
 
     // end array event
     parser.handle(Buffer.buffer("]"));
