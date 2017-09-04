@@ -73,7 +73,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
   }
 
   /**
-   * Like {@link #newDelimited(String)} but wraps the {@code stream}, the stream handlers will be set/unset
+   * Like {@link #newDelimited(String)} but wraps the {@code stream}. The {@code stream} handlers will be set/unset
    * when the {@link #handler(Handler)} is set.
    * <p/>
    * The {@code pause()}/{@code resume()} operations are propagated to the {@code stream}.
@@ -120,7 +120,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    }
 
   /**
-   * Like {@link #newDelimited(Buffer)} but wraps the {@code stream}, the stream handlers will be set/unset
+   * Like {@link #newDelimited(Buffer)} but wraps the {@code stream}. The {@code stream} handlers will be set/unset
    * when the {@link #handler(Handler)} is set.
    * <p/>
    * The {@code pause()}/{@code resume()} operations are propagated to the {@code stream}.
@@ -156,7 +156,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
   }
 
   /**
-   * Like {@link #newFixed(int)} but wraps the {@code stream}, the stream handlers will be set/unset
+   * Like {@link #newFixed(int)} but wraps the {@code stream}. The {@code stream} handlers will be set/unset
    * when the {@link #handler(Handler)} is set.
    * <p/>
    * The {@code pause()}/{@code resume()} operations are propagated to the {@code stream}.
