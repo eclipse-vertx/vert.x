@@ -314,7 +314,7 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private Handler<NetSocket> getServerHandler() {
     return socket -> {
-      RecordParser parser = RecordParser.newFixed(4, null);
+      RecordParser parser = RecordParser.newFixed(4);
       Handler<Buffer> handler = new Handler<Buffer>() {
         int size = -1;
 
