@@ -1361,8 +1361,10 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testFailedDeployRunsContextShutdownHook() throws Exception {
     CountDownLatch closeCountdownLatch = new CountDownLatch(1);
+    AtomicBoolean closableCalledFirst = new AtomicBoolean(false);
     Closeable closeable = completionHandler -> {
       closeCountdownLatch.countDown();
+      closableCalledFirst.set(true);
       completionHandler.handle(Future.succeededFuture());
     };
     Verticle v = new AbstractVerticle() {
@@ -1373,6 +1375,7 @@ public class DeploymentTest extends VertxTestBase {
       }
     };
     vertx.deployVerticle(v, asyncResult -> {
+      assertTrue(closableCalledFirst.get());    // ensure shutdown hook is called before deploy verticle callback
       assertTrue(asyncResult.failed());
       assertNull(asyncResult.result());
     });
