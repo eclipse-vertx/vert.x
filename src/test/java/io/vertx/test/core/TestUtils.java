@@ -116,13 +116,6 @@ public class TestUtils {
   }
 
   /**
-   * @return a random port > 1024
-   */
-  public static int randomHighPortInt() {
-    return random.nextInt(65536-1024)+1024;
-  }
-
-  /**
    * @return a random positive int
    */
   public static int randomPositiveInt() {
@@ -320,7 +313,7 @@ public class TestUtils {
       // OK
     }
   }
-
+  
   /**
    * @param source
    * @return gzipped data
