@@ -490,11 +490,11 @@ public class DeploymentManager {
                 reportSuccess(deploymentID, callingContext, completionHandler);
               }
             } else if (!failureReported.get()) {
-              reportFailure(ar.cause(), callingContext, completionHandler);
+              context.runCloseHooks(closeHookAsyncResult -> reportFailure(ar.cause(), callingContext, completionHandler));
             }
           });
         } catch (Throwable t) {
-          reportFailure(t, callingContext, completionHandler);
+          context.runCloseHooks(closeHookAsyncResult -> reportFailure(t, callingContext, completionHandler));
         }
       });
     }

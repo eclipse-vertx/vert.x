@@ -1358,6 +1358,29 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testFailedDeployRunsContextShutdownHook() throws Exception {
+    AtomicBoolean closeHookCalledBeforeDeployFailure = new AtomicBoolean(false);
+    Closeable closeable = completionHandler -> {
+      closeHookCalledBeforeDeployFailure.set(true);
+      completionHandler.handle(Future.succeededFuture());
+    };
+    Verticle v = new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        this.context.addCloseHook(closeable);
+        startFuture.fail("Fail to deploy.");
+      }
+    };
+    vertx.deployVerticle(v, asyncResult -> {
+      assertTrue(closeHookCalledBeforeDeployFailure.get());
+      assertTrue(asyncResult.failed());
+      assertNull(asyncResult.result());
+      testComplete();
+    });
+    await();
+  }
+
   // TODO
 
   // Multi-threaded workers
