@@ -89,17 +89,7 @@ public class IterableStream<T> implements ReadStream<T> {
       queue = new ArrayDeque<>(BATCH_SIZE);
     }
     if (!queue.isEmpty()) {
-      context.runOnContext(v -> {
-        synchronized (this) {
-          while (!queue.isEmpty() && dataHandler != null && !paused) {
-            dataHandler.handle(queue.remove());
-          }
-          readInProgress = false;
-          if (dataHandler != null && !paused) {
-            doRead();
-          }
-        }
-      });
+      context.runOnContext(v -> emitQueued());
       return;
     }
     for (int i = 0; i < BATCH_SIZE && iterator.hasNext(); i++) {
@@ -116,17 +106,17 @@ public class IterableStream<T> implements ReadStream<T> {
       });
       return;
     }
-    context.runOnContext(v -> {
-      synchronized (this) {
-        while (!queue.isEmpty() && dataHandler != null && !paused) {
-          dataHandler.handle(queue.remove());
-        }
-        readInProgress = false;
-        if (dataHandler != null && !paused) {
-          doRead();
-        }
-      }
-    });
+    context.runOnContext(v -> emitQueued());
+  }
+
+  private synchronized void emitQueued() {
+    while (!queue.isEmpty() && dataHandler != null && !paused) {
+      dataHandler.handle(queue.remove());
+    }
+    readInProgress = false;
+    if (dataHandler != null && !paused) {
+      doRead();
+    }
   }
 
   @Override
