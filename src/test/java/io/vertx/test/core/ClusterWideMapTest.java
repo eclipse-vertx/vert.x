@@ -23,8 +23,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.AsyncMap;
+import io.vertx.core.shareddata.AsyncMapStream;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
@@ -654,7 +654,7 @@ public class ClusterWideMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       List<JsonObject> keys = new ArrayList<>();
-      ReadStream<JsonObject> stream = asyncMap.keyStream();
+      AsyncMapStream<JsonObject> stream = asyncMap.keyStream();
       long pause = 500;
       Long start = System.nanoTime();
       stream.endHandler(end -> {
@@ -662,7 +662,10 @@ public class ClusterWideMapTest extends VertxTestBase {
         assertTrue(keys.containsAll(map.keySet()));
         long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(duration >= 3 * pause);
-        testComplete();
+        stream.close(v -> testComplete());
+      }).exceptionHandler(t -> {
+        stream.close(null);
+        fail(t);
       }).handler(jsonObject -> {
         keys.add(jsonObject);
         if (jsonObject.getInteger("key") == 3 || jsonObject.getInteger("key") == 16 || jsonObject.getInteger("key") == 38) {
@@ -683,7 +686,7 @@ public class ClusterWideMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       List<Buffer> values = new ArrayList<>();
-      ReadStream<Buffer> stream = asyncMap.valueStream();
+      AsyncMapStream<Buffer> stream = asyncMap.valueStream();
       AtomicInteger idx = new AtomicInteger();
       long pause = 500;
       Long start = System.nanoTime();
@@ -693,7 +696,10 @@ public class ClusterWideMapTest extends VertxTestBase {
         assertTrue(map.values().containsAll(values));
         long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(duration >= 3 * pause);
-        testComplete();
+        stream.close(v -> testComplete());
+      }).exceptionHandler(t -> {
+        stream.close(null);
+        fail(t);
       }).handler(buffer -> {
         values.add(buffer);
         int j = idx.getAndIncrement();
@@ -715,7 +721,7 @@ public class ClusterWideMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       List<Entry<JsonObject, Buffer>> entries = new ArrayList<>();
-      ReadStream<Entry<JsonObject, Buffer>> stream = asyncMap.entryStream();
+      AsyncMapStream<Entry<JsonObject, Buffer>> stream = asyncMap.entryStream();
       long pause = 500;
       Long start = System.nanoTime();
       stream.endHandler(end -> {
@@ -723,7 +729,10 @@ public class ClusterWideMapTest extends VertxTestBase {
         assertTrue(entries.containsAll(map.entrySet()));
         long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(duration >= 3 * pause);
-        testComplete();
+        stream.close(v -> testComplete());
+      }).exceptionHandler(t -> {
+        stream.close(null);
+        fail(t);
       }).handler(entry -> {
         entries.add(entry);
         if (entry.getKey().getInteger("key") == 3 || entry.getKey().getInteger("key") == 16 || entry.getKey().getInteger("key") == 38) {
@@ -733,6 +742,31 @@ public class ClusterWideMapTest extends VertxTestBase {
             assertTrue("Items emitted during pause", emitted == entries.size());
             stream.resume();
           });
+        }
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testClosedKeyStream() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      List<JsonObject> keys = new ArrayList<>();
+      AsyncMapStream<JsonObject> stream = asyncMap.keyStream();
+      stream.exceptionHandler(t -> {
+        stream.close(null);
+        fail(t);
+      }).handler(jsonObject -> {
+        keys.add(jsonObject);
+        if (jsonObject.getInteger("key") == 38) {
+          stream.close(onSuccess(v -> {
+            int emitted = keys.size();
+            vertx.setTimer(500, tid -> {
+              assertTrue("Items emitted after close", emitted == keys.size());
+              testComplete();
+            });
+          }));
         }
       });
     });

@@ -143,10 +143,10 @@ public interface AsyncMap<K, V> {
 
   /**
    * Get the keys of the map, asynchronously.
-   *
+   * <p>
    * Use this method with care as the map may contain a huge number of entries.
    * In such cases, the invocation will much likely result in {@link OutOfMemoryError}.
-   *
+   * <p>
    * When in doubt, prefer usage of {@link #keyStream()}.
    *
    * @param resultHandler invoked when the operation completes
@@ -156,10 +156,10 @@ public interface AsyncMap<K, V> {
 
   /**
    * Get the values of the map, asynchronously.
-   *
+   * <p>
    * Use this method with care as the map may contain a huge number of entries.
    * In such cases, the invocation will much likely result in {@link OutOfMemoryError}.
-   *
+   * <p>
    * When in doubt, prefer usage of {@link #valueStream()}.
    *
    * @param resultHandler invoked when the operation completes
@@ -169,10 +169,10 @@ public interface AsyncMap<K, V> {
 
   /**
    * Get the entries of the map, asynchronously.
-   *
+   * <p>
    * Use this method with care as the map may contain a huge number of entries.
    * In such cases, the invocation will much likely result in {@link OutOfMemoryError}.
-   *
+   * <p>
    * When in doubt, prefer usage of {@link #entryStream()}.
    *
    * @param resultHandler invoked when the operation completes
@@ -182,37 +182,43 @@ public interface AsyncMap<K, V> {
 
   /**
    * Get the keys of the map as a {@link ReadStream}.
-   *
+   * <p>
    * Beware that some cluster manager may not support key/value/entry streaming.
    * In this case, all the data will be loaded at once.
    * If the map contains a huge number of entries, the invocation will much likely result in {@link OutOfMemoryError}.
+   * <p>
+   * Make sure to invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
    *
    * @return a stream of map keys
    */
-  ReadStream<K> keyStream();
+  AsyncMapStream<K> keyStream();
 
 
   /**
    * Get the values of the map as a {@link ReadStream}.
-   *
+   * <p>
    * Beware that some cluster manager may not support key/value/entry streaming.
    * In this case, all the data will be loaded at once.
    * If the map contains a huge number of entries, the invocation will much likely result in {@link OutOfMemoryError}.
+   * <p>
+   * Make sure to invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
    *
    * @return a stream of map values
    */
-  ReadStream<V> valueStream();
+  AsyncMapStream<V> valueStream();
 
 
   /**
    * Get the entries of the map as a {@link ReadStream}.
-   *
+   * <p>
    * Beware that some cluster manager may not support key/value/entry streaming.
    * In this case, all the data will be loaded at once.
    * If the map contains a huge number of entries, the invocation will much likely result in {@link OutOfMemoryError}.
+   * <p>
+   * Make sure to invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
    *
    * @return a stream of map entries
    */
   @GenIgnore
-  ReadStream<Entry<K, V>> entryStream();
+  AsyncMapStream<Entry<K, V>> entryStream();
 }
