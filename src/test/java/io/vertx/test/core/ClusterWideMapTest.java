@@ -612,7 +612,7 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
-  public void testKeySet() {
+  public void testKeys() {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       asyncMap.keys(onSuccess(keys -> {
@@ -638,7 +638,7 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
-  public void testEntrySet() {
+  public void testEntries() {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       asyncMap.entries(onSuccess(res -> {
