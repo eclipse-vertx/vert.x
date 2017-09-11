@@ -20,6 +20,8 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 
 /**
  *
@@ -66,6 +68,11 @@ public interface WriteStream<T> extends StreamBase {
   default void end(T t) {
     write(t);
     end();
+  }
+
+  default void end(Handler<AsyncResult<Void>> handler) {
+    end();
+    handler.handle(Future.succeededFuture());
   }
 
   /**
