@@ -20,9 +20,9 @@ import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author Thomas Segismont
@@ -35,6 +35,7 @@ public class IterableStream<T> implements ReadStream<T> {
   private final Iterable<T> iterable;
 
   private Iterator<T> iterator;
+  private Deque<T> queue;
   private Handler<T> dataHandler;
   private Handler<Void> endHandler;
   private boolean paused;
@@ -84,36 +85,48 @@ public class IterableStream<T> implements ReadStream<T> {
     if (iterator == null) {
       iterator = iterable.iterator();
     }
-    List<T> values = new ArrayList<>(BATCH_SIZE);
-    for (int i = 0; i < BATCH_SIZE && iterator.hasNext(); i++) {
-      values.add(iterator.next());
+    if (queue == null) {
+      queue = new ArrayDeque<>(BATCH_SIZE);
     }
-    if (values.isEmpty()) {
-      readInProgress = false;
-      Handler<Void> endHandler = this.endHandler;
-      if (endHandler != null) {
-        context.runOnContext(v -> {
-          endHandler.handle(null);
-        });
-      }
-    } else {
-      Handler<T> dataHandler = this.dataHandler;
-      if (dataHandler != null) {
-        context.runOnContext(v -> {
-          values.forEach(dataHandler::handle);
-          synchronized (this) {
-            readInProgress = false;
+    if (!queue.isEmpty()) {
+      context.runOnContext(v -> {
+        synchronized (this) {
+          while (!queue.isEmpty() && dataHandler != null && !paused) {
+            dataHandler.handle(queue.remove());
           }
-          context.runOnContext(v2 -> {
-            synchronized (this) {
-              if (this.dataHandler != null && !paused) {
-                doRead();
-              }
-            }
-          });
-        });
-      }
+          readInProgress = false;
+          if (dataHandler != null && !paused) {
+            doRead();
+          }
+        }
+      });
+      return;
     }
+    for (int i = 0; i < BATCH_SIZE && iterator.hasNext(); i++) {
+      queue.add(iterator.next());
+    }
+    if (queue.isEmpty()) {
+      context.runOnContext(v -> {
+        synchronized (this) {
+          readInProgress = false;
+          if (endHandler != null) {
+            endHandler.handle(null);
+          }
+        }
+      });
+      return;
+    }
+    context.runOnContext(v -> {
+      synchronized (this) {
+        while (!queue.isEmpty() && dataHandler != null && !paused) {
+          dataHandler.handle(queue.remove());
+        }
+        readInProgress = false;
+        if (dataHandler != null && !paused) {
+          doRead();
+        }
+      }
+    });
   }
 
   @Override

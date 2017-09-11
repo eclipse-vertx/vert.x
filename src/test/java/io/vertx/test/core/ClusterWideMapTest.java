@@ -667,7 +667,11 @@ public class ClusterWideMapTest extends VertxTestBase {
         keys.add(jsonObject);
         if (jsonObject.getInteger("key") == 3 || jsonObject.getInteger("key") == 16 || jsonObject.getInteger("key") == 38) {
           stream.pause();
-          vertx.setTimer(pause, tid -> stream.resume());
+          int emitted = keys.size();
+          vertx.setTimer(pause, tid -> {
+            assertTrue("Items emitted during pause", emitted == keys.size());
+            stream.resume();
+          });
         }
       });
     });
@@ -695,7 +699,11 @@ public class ClusterWideMapTest extends VertxTestBase {
         int j = idx.getAndIncrement();
         if (j == 3 || j == 16 || j == 38) {
           stream.pause();
-          vertx.setTimer(pause, tid -> stream.resume());
+          int emitted = values.size();
+          vertx.setTimer(pause, tid -> {
+            assertTrue("Items emitted during pause", emitted == values.size());
+            stream.resume();
+          });
         }
       });
     });
@@ -720,7 +728,11 @@ public class ClusterWideMapTest extends VertxTestBase {
         entries.add(entry);
         if (entry.getKey().getInteger("key") == 3 || entry.getKey().getInteger("key") == 16 || entry.getKey().getInteger("key") == 38) {
           stream.pause();
-          vertx.setTimer(pause, tid -> stream.resume());
+          int emitted = entries.size();
+          vertx.setTimer(pause, tid -> {
+            assertTrue("Items emitted during pause", emitted == entries.size());
+            stream.resume();
+          });
         }
       });
     });
