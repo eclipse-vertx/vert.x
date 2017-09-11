@@ -183,6 +183,10 @@ public interface AsyncMap<K, V> {
   /**
    * Get the keys of the map as a {@link ReadStream}.
    *
+   * Beware that some cluster manager may not support key/value/entry streaming.
+   * In this case, all the data will be loaded at once.
+   * If the map contains a huge number of entries, the invocation will much likely result in {@link OutOfMemoryError}.
+   *
    * @return a stream of map keys
    */
   ReadStream<K> keyStream();
@@ -191,6 +195,10 @@ public interface AsyncMap<K, V> {
   /**
    * Get the values of the map as a {@link ReadStream}.
    *
+   * Beware that some cluster manager may not support key/value/entry streaming.
+   * In this case, all the data will be loaded at once.
+   * If the map contains a huge number of entries, the invocation will much likely result in {@link OutOfMemoryError}.
+   *
    * @return a stream of map values
    */
   ReadStream<V> valueStream();
@@ -198,6 +206,10 @@ public interface AsyncMap<K, V> {
 
   /**
    * Get the entries of the map as a {@link ReadStream}.
+   *
+   * Beware that some cluster manager may not support key/value/entry streaming.
+   * In this case, all the data will be loaded at once.
+   * If the map contains a huge number of entries, the invocation will much likely result in {@link OutOfMemoryError}.
    *
    * @return a stream of map entries
    */
