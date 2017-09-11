@@ -270,6 +270,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 if (DISABLE_HC2) {
                   configureHttp1(pipeline);
                 } else {
+                  if (options.getIdleTimeout() > 0) {
+                    pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+                  }
                   pipeline.addLast(new Http1xOrHttp2Handler());
                 }
               }
@@ -941,6 +944,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     @Override
     protected void configure(ChannelHandlerContext ctx, boolean h2c) {
+      if (options.getIdleTimeout() > 0) {
+        ctx.pipeline().remove("idle");
+      }
       if (h2c) {
         handleHttp2(ctx.channel());
       } else {
