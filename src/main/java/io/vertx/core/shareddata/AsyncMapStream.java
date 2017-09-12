@@ -24,7 +24,8 @@ import io.vertx.core.streams.ReadStream;
 /**
  * An {@link AsyncMap} keys, values, or entries {@link ReadStream stream}.
  * <p>
- * Make sure to invoke {@link #close(Handler)} after usage to avoid leaking resources.
+ * The stream will be automatically closed if it fails or ends.
+ * Otherwise you must invoke {@link #close(Handler)} after usage to avoid leaking resources.
  *
  * @author Thomas Segismont
  */

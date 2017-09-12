@@ -662,9 +662,8 @@ public class ClusterWideMapTest extends VertxTestBase {
         assertTrue(keys.containsAll(map.keySet()));
         long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(duration >= 3 * pause);
-        stream.close(v -> testComplete());
+        testComplete();
       }).exceptionHandler(t -> {
-        stream.close(null);
         fail(t);
       }).handler(jsonObject -> {
         keys.add(jsonObject);
@@ -696,9 +695,8 @@ public class ClusterWideMapTest extends VertxTestBase {
         assertTrue(map.values().containsAll(values));
         long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(duration >= 3 * pause);
-        stream.close(v -> testComplete());
+        testComplete();
       }).exceptionHandler(t -> {
-        stream.close(null);
         fail(t);
       }).handler(buffer -> {
         values.add(buffer);
@@ -729,9 +727,8 @@ public class ClusterWideMapTest extends VertxTestBase {
         assertTrue(entries.containsAll(map.entrySet()));
         long duration = NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(duration >= 3 * pause);
-        stream.close(v -> testComplete());
+        testComplete();
       }).exceptionHandler(t -> {
-        stream.close(null);
         fail(t);
       }).handler(entry -> {
         entries.add(entry);
@@ -755,7 +752,6 @@ public class ClusterWideMapTest extends VertxTestBase {
       List<JsonObject> keys = new ArrayList<>();
       AsyncMapStream<JsonObject> stream = asyncMap.keyStream();
       stream.exceptionHandler(t -> {
-        stream.close(null);
         fail(t);
       }).handler(jsonObject -> {
         keys.add(jsonObject);

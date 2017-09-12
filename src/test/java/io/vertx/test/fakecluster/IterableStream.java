@@ -111,6 +111,7 @@ public class IterableStream<T> implements AsyncMapStream<T> {
       context.runOnContext(v -> {
         synchronized (this) {
           readInProgress = false;
+          closed = true;
           if (endHandler != null) {
             endHandler.handle(null);
           }

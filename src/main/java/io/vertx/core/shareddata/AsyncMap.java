@@ -190,7 +190,8 @@ public interface AsyncMap<K, V> {
    * All the data will be loaded at once, but may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    * <p>
-   * Make sure to invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
+   * The stream will be automatically closed if it fails or ends.
+   * Otherwise you must invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
    *
    * @return a stream of map keys
    */
@@ -204,7 +205,8 @@ public interface AsyncMap<K, V> {
    * All the data will be loaded at once, but may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    * <p>
-   * Make sure to invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
+   * The stream will be automatically closed if it fails or ends.
+   * Otherwise you must invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
    *
    * @return a stream of map values
    */
@@ -218,7 +220,8 @@ public interface AsyncMap<K, V> {
    * All the data will be loaded at once, but may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    * <p>
-   * Make sure to invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
+   * The stream will be automatically closed if it fails or ends.
+   * Otherwise you must invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
    *
    * @return a stream of map entries
    */
