@@ -124,11 +124,11 @@ public class IterableStream<T> implements io.vertx.core.streams.ReadStream<T> {
   }
 
   private synchronized void emitQueued() {
-    while (!queue.isEmpty() && dataHandler != null && !paused && !closed) {
+    while (!queue.isEmpty() && !paused && !closed) {
       dataHandler.handle(queue.remove());
     }
     readInProgress = false;
-    if (dataHandler != null && !paused && !closed) {
+    if (!paused && !closed) {
       doRead();
     }
   }
