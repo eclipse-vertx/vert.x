@@ -25,7 +25,6 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.shareddata.AsyncMapStream;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.shareddata.impl.AsynchronousCounter;
@@ -34,6 +33,7 @@ import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -351,17 +351,17 @@ public class FakeClusterManager implements ClusterManager {
     }
 
     @Override
-    public AsyncMapStream<K> keyStream() {
+    public ReadStream<K> keyStream() {
       return new IterableStream<>(vertx.getOrCreateContext(), map.keySet());
     }
 
     @Override
-    public AsyncMapStream<V> valueStream() {
+    public ReadStream<V> valueStream() {
       return new IterableStream<>(vertx.getOrCreateContext(), map.values());
     }
 
     @Override
-    public AsyncMapStream<Entry<K, V>> entryStream() {
+    public ReadStream<Entry<K, V>> entryStream() {
       return new IterableStream<>(vertx.getOrCreateContext(), map.entrySet());
     }
 

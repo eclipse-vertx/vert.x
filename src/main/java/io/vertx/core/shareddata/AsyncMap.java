@@ -191,11 +191,11 @@ public interface AsyncMap<K, V> {
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    * <p>
    * The stream will be automatically closed if it fails or ends.
-   * Otherwise you must invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
+   * Otherwise you must set a null {@link ReadStream#handler(Handler) data handler} after usage to avoid leaking resources.
    *
    * @return a stream of map keys
    */
-  AsyncMapStream<K> keyStream();
+  ReadStream<K> keyStream();
 
 
   /**
@@ -206,11 +206,11 @@ public interface AsyncMap<K, V> {
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    * <p>
    * The stream will be automatically closed if it fails or ends.
-   * Otherwise you must invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
+   * Otherwise you must set a null {@link ReadStream#handler(Handler) data handler} after usage to avoid leaking resources.
    *
    * @return a stream of map values
    */
-  AsyncMapStream<V> valueStream();
+  ReadStream<V> valueStream();
 
 
   /**
@@ -221,10 +221,10 @@ public interface AsyncMap<K, V> {
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    * <p>
    * The stream will be automatically closed if it fails or ends.
-   * Otherwise you must invoke {@link AsyncMapStream#close(Handler)} after usage to avoid leaking resources.
+   * Otherwise you must set a null {@link ReadStream#handler(Handler) data handler} after usage to avoid leaking resources.
    *
    * @return a stream of map entries
    */
   @GenIgnore
-  AsyncMapStream<Entry<K, V>> entryStream();
+  ReadStream<Entry<K, V>> entryStream();
 }

@@ -23,8 +23,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.shareddata.AsyncMapStream;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
@@ -654,7 +654,7 @@ public class ClusterWideMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       List<JsonObject> keys = new ArrayList<>();
-      AsyncMapStream<JsonObject> stream = asyncMap.keyStream();
+      ReadStream<JsonObject> stream = asyncMap.keyStream();
       long pause = 500;
       Long start = System.nanoTime();
       stream.endHandler(end -> {
@@ -685,7 +685,7 @@ public class ClusterWideMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       List<Buffer> values = new ArrayList<>();
-      AsyncMapStream<Buffer> stream = asyncMap.valueStream();
+      ReadStream<Buffer> stream = asyncMap.valueStream();
       AtomicInteger idx = new AtomicInteger();
       long pause = 500;
       Long start = System.nanoTime();
@@ -719,7 +719,7 @@ public class ClusterWideMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       List<Entry<JsonObject, Buffer>> entries = new ArrayList<>();
-      AsyncMapStream<Entry<JsonObject, Buffer>> stream = asyncMap.entryStream();
+      ReadStream<Entry<JsonObject, Buffer>> stream = asyncMap.entryStream();
       long pause = 500;
       Long start = System.nanoTime();
       stream.endHandler(end -> {
@@ -750,19 +750,18 @@ public class ClusterWideMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       List<JsonObject> keys = new ArrayList<>();
-      AsyncMapStream<JsonObject> stream = asyncMap.keyStream();
+      ReadStream<JsonObject> stream = asyncMap.keyStream();
       stream.exceptionHandler(t -> {
         fail(t);
       }).handler(jsonObject -> {
         keys.add(jsonObject);
         if (jsonObject.getInteger("key") == 38) {
-          stream.close(onSuccess(v -> {
-            int emitted = keys.size();
-            vertx.setTimer(500, tid -> {
-              assertTrue("Items emitted after close", emitted == keys.size());
-              testComplete();
-            });
-          }));
+          stream.handler(null);
+          int emitted = keys.size();
+          vertx.setTimer(500, tid -> {
+            assertTrue("Items emitted after close", emitted == keys.size());
+            testComplete();
+          });
         }
       });
     });

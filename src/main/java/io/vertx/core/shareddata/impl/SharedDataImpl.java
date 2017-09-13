@@ -23,12 +23,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.shareddata.AsyncMapStream;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.streams.ReadStream;
 
 import java.io.Serializable;
 import java.util.List;
@@ -237,17 +237,17 @@ public class SharedDataImpl implements SharedData {
     }
 
     @Override
-    public AsyncMapStream<K> keyStream() {
+    public ReadStream<K> keyStream() {
       return delegate.keyStream();
     }
 
     @Override
-    public AsyncMapStream<V> valueStream() {
+    public ReadStream<V> valueStream() {
       return delegate.valueStream();
     }
 
     @Override
-    public AsyncMapStream<Map.Entry<K, V>> entryStream() {
+    public ReadStream<Map.Entry<K, V>> entryStream() {
       return delegate.entryStream();
     }
   }

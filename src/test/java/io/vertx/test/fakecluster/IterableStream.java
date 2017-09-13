@@ -16,11 +16,8 @@
 
 package io.vertx.test.fakecluster;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.shareddata.AsyncMapStream;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -29,7 +26,7 @@ import java.util.Iterator;
 /**
  * @author Thomas Segismont
  */
-public class IterableStream<T> implements AsyncMapStream<T> {
+public class IterableStream<T> implements io.vertx.core.streams.ReadStream<T> {
 
   private static final int BATCH_SIZE = 10;
 
@@ -57,9 +54,13 @@ public class IterableStream<T> implements AsyncMapStream<T> {
   @Override
   public synchronized IterableStream<T> handler(Handler<T> handler) {
     checkClosed();
-    this.dataHandler = handler;
-    if (dataHandler != null && !paused) {
-      doRead();
+    if (handler == null) {
+      closed = true;
+    } else {
+      dataHandler = handler;
+      if (!paused) {
+        doRead();
+      }
     }
     return this;
   }
@@ -136,17 +137,5 @@ public class IterableStream<T> implements AsyncMapStream<T> {
   public synchronized IterableStream<T> endHandler(Handler<Void> handler) {
     endHandler = handler;
     return this;
-  }
-
-  @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
-    context.runOnContext(v -> {
-      synchronized (this) {
-        closed = true;
-        if (completionHandler != null) {
-          completionHandler.handle(Future.succeededFuture());
-        }
-      }
-    });
   }
 }
