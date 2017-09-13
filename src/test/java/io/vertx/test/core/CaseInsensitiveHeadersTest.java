@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 
 public class CaseInsensitiveHeadersTest extends MultiMapTest {
 
+  @Override
   protected MultiMap newMultiMap() {
     return new CaseInsensitiveHeaders();
   }

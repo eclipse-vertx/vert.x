@@ -2,21 +2,13 @@ package io.vertx.test.core;
 
 import io.vertx.core.CaseSensitiveMultiMap;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.*;
 
 public class CaseSensitiveMultiMapTest extends MultiMapTest {
 
+  @Override
   protected MultiMap newMultiMap() {
     return new CaseSensitiveMultiMap();
   }
