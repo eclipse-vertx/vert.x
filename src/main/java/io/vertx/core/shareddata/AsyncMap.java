@@ -20,11 +20,9 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 
@@ -147,8 +145,6 @@ public interface AsyncMap<K, V> {
    * Use this method with care as the map may contain a large number of keys,
    * which may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
-   * <p>
-   * When in doubt, prefer usage of {@link #keyStream()}.
    *
    * @param resultHandler invoked when the operation completes
    */
@@ -161,8 +157,6 @@ public interface AsyncMap<K, V> {
    * Use this method with care as the map may contain a large number of values,
    * which may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
-   * <p>
-   * When in doubt, prefer usage of {@link #valueStream()}.
    *
    * @param resultHandler invoked when the operation completes
    */
@@ -175,56 +169,9 @@ public interface AsyncMap<K, V> {
    * Use this method with care as the map may contain a large number of entries,
    * which may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
-   * <p>
-   * When in doubt, prefer usage of {@link #entryStream()}.
    *
    * @param resultHandler invoked when the operation completes
    */
   @GenIgnore
   void entries(Handler<AsyncResult<Map<K, V>>> resultHandler);
-
-  /**
-   * Get the keys of the map as a {@link ReadStream}.
-   * <p>
-   * Beware that some cluster manager may not support key streaming.
-   * All the data will be loaded at once, but may not fit entirely in memory of a single node.
-   * In this case, the invocation will result in an {@link OutOfMemoryError}.
-   * <p>
-   * The stream will be automatically closed if it fails or ends.
-   * Otherwise you must set a null {@link ReadStream#handler(Handler) data handler} after usage to avoid leaking resources.
-   *
-   * @return a stream of map keys
-   */
-  ReadStream<K> keyStream();
-
-
-  /**
-   * Get the values of the map as a {@link ReadStream}.
-   * <p>
-   * Beware that some cluster manager may not support value streaming.
-   * All the data will be loaded at once, but may not fit entirely in memory of a single node.
-   * In this case, the invocation will result in an {@link OutOfMemoryError}.
-   * <p>
-   * The stream will be automatically closed if it fails or ends.
-   * Otherwise you must set a null {@link ReadStream#handler(Handler) data handler} after usage to avoid leaking resources.
-   *
-   * @return a stream of map values
-   */
-  ReadStream<V> valueStream();
-
-
-  /**
-   * Get the entries of the map as a {@link ReadStream}.
-   * <p>
-   * Beware that some cluster manager may not support entry streaming.
-   * All the data will be loaded at once, but may not fit entirely in memory of a single node.
-   * In this case, the invocation will result in an {@link OutOfMemoryError}.
-   * <p>
-   * The stream will be automatically closed if it fails or ends.
-   * Otherwise you must set a null {@link ReadStream#handler(Handler) data handler} after usage to avoid leaking resources.
-   *
-   * @return a stream of map entries
-   */
-  @GenIgnore
-  ReadStream<Entry<K, V>> entryStream();
 }

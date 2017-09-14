@@ -33,7 +33,6 @@ import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -348,21 +347,6 @@ public class FakeClusterManager implements ClusterManager {
     @Override
     public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
       vertx.executeBlocking(fut -> fut.complete(new HashMap<>(map)), asyncResultHandler);
-    }
-
-    @Override
-    public ReadStream<K> keyStream() {
-      return new IterableStream<>(vertx.getOrCreateContext(), map.keySet());
-    }
-
-    @Override
-    public ReadStream<V> valueStream() {
-      return new IterableStream<>(vertx.getOrCreateContext(), map.values());
-    }
-
-    @Override
-    public ReadStream<Entry<K, V>> entryStream() {
-      return new IterableStream<>(vertx.getOrCreateContext(), map.entrySet());
     }
 
     @Override

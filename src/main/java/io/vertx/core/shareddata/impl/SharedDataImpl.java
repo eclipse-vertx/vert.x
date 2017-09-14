@@ -28,7 +28,6 @@ import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.streams.ReadStream;
 
 import java.io.Serializable;
 import java.util.List;
@@ -234,21 +233,6 @@ public class SharedDataImpl implements SharedData {
     @Override
     public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
       delegate.entries(asyncResultHandler);
-    }
-
-    @Override
-    public ReadStream<K> keyStream() {
-      return delegate.keyStream();
-    }
-
-    @Override
-    public ReadStream<V> valueStream() {
-      return delegate.valueStream();
-    }
-
-    @Override
-    public ReadStream<Map.Entry<K, V>> entryStream() {
-      return delegate.entryStream();
     }
   }
 }
