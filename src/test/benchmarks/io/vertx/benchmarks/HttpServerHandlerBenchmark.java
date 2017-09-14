@@ -231,7 +231,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
           .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH);
       response.end(HELLO_WORLD_BUFFER);
     };
-    HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null));
+    HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null, null));
     ServerHandler handler = new ServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
 

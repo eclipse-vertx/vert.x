@@ -32,11 +32,17 @@ public class HttpHandlers {
   final Handler<HttpServerRequest> requesthHandler;
   final Handler<ServerWebSocket> wsHandler;
   final Handler<HttpConnection> connectionHandler;
+  final Handler<Throwable> exceptionHandler;
 
-  public HttpHandlers(Handler<HttpServerRequest> requesthHandler, Handler<ServerWebSocket> wsHandler, Handler<HttpConnection> connectionHandler) {
+  public HttpHandlers(
+    Handler<HttpServerRequest> requesthHandler,
+    Handler<ServerWebSocket> wsHandler,
+    Handler<HttpConnection> connectionHandler,
+    Handler<Throwable> exceptionHandler) {
     this.requesthHandler = requesthHandler;
     this.wsHandler = wsHandler;
     this.connectionHandler = connectionHandler;
+    this.exceptionHandler = exceptionHandler;
   }
 
   @Override
@@ -49,6 +55,7 @@ public class HttpHandlers {
     if (!Objects.equals(requesthHandler, that.requesthHandler)) return false;
     if (!Objects.equals(wsHandler, that.wsHandler)) return false;
     if (!Objects.equals(connectionHandler, that.connectionHandler)) return false;
+    if (!Objects.equals(exceptionHandler, that.exceptionHandler)) return false;
 
     return true;
   }
@@ -64,6 +71,9 @@ public class HttpHandlers {
     }
     if (connectionHandler != null) {
       result = 31 * result + connectionHandler.hashCode();
+    }
+    if (exceptionHandler != null) {
+      result = 31 * result + exceptionHandler.hashCode();
     }
     return result;
   }

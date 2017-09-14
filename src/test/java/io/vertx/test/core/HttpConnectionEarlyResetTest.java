@@ -46,11 +46,11 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     httpServer = vertx.createHttpServer()
       .requestHandler(request -> {})
+      .exceptionHandler(t -> {
+        caught.set(t);
+        resetLatch.countDown();
+      })
       .listen(8080, onSuccess(server -> listenLatch.countDown()));
-    ((HttpServerImpl) httpServer).setConnectionExceptionHandler(t -> {
-      caught.set(t);
-      resetLatch.countDown();
-    });
     awaitLatch(listenLatch);
   }
 

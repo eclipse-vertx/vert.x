@@ -17,8 +17,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
@@ -39,6 +37,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.impl.HttpHandlers;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -54,9 +53,8 @@ import io.vertx.core.streams.ReadStream;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
 /**
  *
@@ -75,7 +73,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   protected final boolean logEnabled;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
-  private final HandlerManager<Handler<NetSocket>> handlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<Handlers> handlerManager = new HandlerManager<>(availableWorkers);
   private final NetSocketStream connectStream = new NetSocketStream();
   private ChannelGroup serverChannelGroup;
   private boolean paused;
@@ -89,6 +87,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private TCPMetrics metrics;
   private Handler<NetSocket> handler;
   private Handler<Void> endHandler;
+  private Handler<Throwable> exceptionHandler;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
@@ -131,6 +130,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
       throw new IllegalStateException("Cannot set connectHandler when server is listening");
     }
     this.handler = handler;
+    return this;
+  }
+
+  @Override
+  public synchronized NetServer exceptionHandler(Handler<Throwable> handler) {
+    if (isListening()) {
+      throw new IllegalStateException("Cannot set exceptionHandler when server is listening");
+    }
+    this.exceptionHandler = handler;
     return this;
   }
 
@@ -178,33 +186,43 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
               ch.close();
               return;
             }
-            if (sslHelper.isSSL()) {
-              io.netty.util.concurrent.Future<Channel> handshakeFuture;
-              if (options.isSni()) {
-                VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
-                handshakeFuture = sniHandler.handshakeFuture();
-                ch.pipeline().addFirst("ssl", sniHandler);
-              } else {
-                SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
-                handshakeFuture = sslHandler.handshakeFuture();
-                ch.pipeline().addFirst("ssl", sslHandler);
-              }
-              handshakeFuture.addListener(future -> {
-                if (future.isSuccess()) {
-                  connected(ch);
+            HandlerHolder<Handlers> handler = handlerManager.chooseHandler(ch.eventLoop());
+            if (handler != null) {
+              if (sslHelper.isSSL()) {
+                io.netty.util.concurrent.Future<Channel> handshakeFuture;
+                if (options.isSni()) {
+                  VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
+                  handshakeFuture = sniHandler.handshakeFuture();
+                  ch.pipeline().addFirst("ssl", sniHandler);
                 } else {
-                  log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + future.cause());
+                  SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
+                  handshakeFuture = sslHandler.handshakeFuture();
+                  ch.pipeline().addFirst("ssl", sslHandler);
                 }
-              });
-            } else {
-              connected(ch);
+                handshakeFuture.addListener(future -> {
+                  if (future.isSuccess()) {
+                    connected(handler, ch);
+                  } else {
+                    Handler<Throwable> exceptionHandler = handler.handler.exceptionHandler;
+                    if (exceptionHandler != null) {
+                      handler.context.executeFromIO(() -> {
+                        exceptionHandler.handle(future.cause());
+                      });
+                    } else {
+                      log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + future.cause());
+                    }
+                  }
+                });
+              } else {
+                connected(handler, ch);
+              }
             }
           }
         });
 
         applyConnectionOptions(bootstrap);
 
-        handlerManager.addHandler(handler, listenContext);
+        handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
 
         try {
           bindFuture = AsyncResolveConnectHelper.doBind(vertx, port, host, bootstrap);
@@ -247,7 +265,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         this.actualPort = shared.actualPort();
         VertxMetrics metrics = vertx.metricsSPI();
         this.metrics = metrics != null ? metrics.createMetrics(new SocketAddressImpl(id.port, id.host), options) : null;
-        actualServer.handlerManager.addHandler(handler, listenContext);
+        actualServer.handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
       }
 
       // just add it to the future so it gets notified once the bind is complete
@@ -345,7 +363,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(registeredHandler, listenContext);
+        actualServer.handlerManager.removeHandler(new Handlers(registeredHandler, exceptionHandler), listenContext);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
@@ -405,13 +423,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
   }
 
-  private void connected(Channel ch) {
+  private void connected(HandlerHolder<Handlers> handler, Channel ch) {
     EventLoop worker = ch.eventLoop();
-    HandlerHolder<Handler<NetSocket>> handler = handlerManager.chooseHandler(worker);
-    if (handler == null) {
-      //Ignore
-      return;
-    }
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(handler.context);
 
@@ -431,7 +444,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       }
-      handler.handler.handle(sock);
+      handler.handler.connectionHandler.handle(sock);
     });
   }
 
@@ -517,6 +530,36 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     public NetSocketStream exceptionHandler(Handler<Throwable> handler) {
       // Should we use it in the server close exception handler ?
       return this;
+    }
+  }
+
+  static class Handlers {
+    final Handler<NetSocket> connectionHandler;
+    final Handler<Throwable> exceptionHandler;
+    public Handlers(Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
+      this.connectionHandler = connectionHandler;
+      this.exceptionHandler = exceptionHandler;
+    }
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      Handlers that = (Handlers) o;
+
+      if (!Objects.equals(connectionHandler, that.connectionHandler)) return false;
+      if (!Objects.equals(exceptionHandler, that.exceptionHandler)) return false;
+
+      return true;
+    }
+    public int hashCode() {
+      int result = 0;
+      if (connectionHandler != null) {
+        result = 31 * result + connectionHandler.hashCode();
+      }
+      if (exceptionHandler != null) {
+        result = 31 * result + exceptionHandler.hashCode();
+      }
+      return result;
     }
   }
 }

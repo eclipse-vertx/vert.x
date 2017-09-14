@@ -47,6 +47,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -912,6 +913,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
     }
 
     TLSTest run(boolean shouldPass) {
+      if (proxyType == null || shouldPass) {
+        // The test with proxy that fails will not connect
+        waitFor(2);
+      }
       server.close();
       HttpClientOptions options = new HttpClientOptions();
       options.setProtocolVersion(version);
@@ -973,6 +978,17 @@ public abstract class HttpTLSTest extends HttpTestBase {
         serverOptions.addEnabledSecureTransportProtocol(protocols);
       }
       server = createHttpServer(serverOptions.setPort(4043));
+      server.connectionHandler(conn -> complete());
+      AtomicInteger count = new AtomicInteger();
+      server.exceptionHandler(err -> {
+        if (shouldPass) {
+          fail();
+        } else {
+          if (count.incrementAndGet() == 1) {
+            complete();
+          }
+        }
+      });
       server.requestHandler(req -> {
         indicatedServerName = req.connection().indicatedServerName();
         assertEquals(version, req.version());
@@ -1003,7 +1019,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
           if (shouldPass) {
             response.version();
             response.bodyHandler(data -> assertEquals("bar", data.toString()));
-            testComplete();
+            complete();
           } else {
             HttpTLSTest.this.fail("Should not get a response");
           }
@@ -1013,7 +1029,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
             t.printStackTrace();
             HttpTLSTest.this.fail("Should not throw exception");
           } else {
-            testComplete();
+            complete();
           }
         });
         req.end("foo");
