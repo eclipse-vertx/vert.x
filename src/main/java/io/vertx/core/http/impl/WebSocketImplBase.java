@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -32,7 +33,9 @@ import io.vertx.core.net.impl.ConnectionBase;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
+import java.util.ArrayDeque;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -54,6 +57,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final MessageConsumer textHandlerRegistration;
   private Object metric;
   private Handler<WebSocketFrameInternal> frameHandler;
+  private Handler<Buffer> pongHandler;
   private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
@@ -61,6 +65,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Void> endHandler;
   protected final ConnectionBase conn;
   protected boolean closed;
+
 
   WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
@@ -161,6 +166,18 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
+  @Override
+  public S writePing(Buffer data) {
+    if(data.length() > maxWebSocketFrameSize || data.length() > 125) throw new IllegalStateException("Ping cannot exceed maxWebSocketFrameSize or 125 bytes");
+    return writeFrame(WebSocketFrame.pingFrame(data));
+  }
+
+  @Override
+  public S writePong(Buffer data) {
+    if(data.length() > maxWebSocketFrameSize || data.length() > 125) throw new IllegalStateException("Pong cannot exceed maxWebSocketFrameSize or 125 bytes");
+    return writeFrame(WebSocketFrame.pongFrame(data));
+  }
+
   private void writeMessageInternal(Buffer data) {
     checkClosed();
     writePartialMessage(FrameType.BINARY, data, 0);
@@ -233,17 +250,25 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         Buffer buff = Buffer.buffer(frame.getBinaryData());
         dataHandler.handle(buff);
       }
-
-      if (frameHandler != null) {
-        frameHandler.handle(frame);
+      switch(frame.type()) {
+        case PONG:
+          pongHandler.handle(frame.binaryData().copy());
+          break;
+        case TEXT:
+        case BINARY:
+        case CONTINUATION:
+          if (frameHandler != null) {
+            frameHandler.handle(frame);
+          }
+          break;
       }
     }
   }
 
   private class FrameAggregator implements Handler<WebSocketFrameInternal> {
-
     private Handler<String> textMessageHandler;
     private Handler<Buffer> binaryMessageHandler;
+
     private Buffer textMessageBuffer;
     private Buffer binaryMessageBuffer;
 
@@ -288,7 +313,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
           textMessageHandler.handle(fullMessage);
         }
       }
-
     }
 
     private void handleBinaryFrame(WebSocketFrameInternal frame) {
@@ -345,6 +369,15 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         frameHandler = new FrameAggregator();
       }
       ((FrameAggregator) frameHandler).binaryMessageHandler = handler;
+      return (S) this;
+    }
+  }
+
+  @Override
+  public WebSocketBase pongHandler(Handler<Buffer> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.pongHandler = handler;
       return (S) this;
     }
   }

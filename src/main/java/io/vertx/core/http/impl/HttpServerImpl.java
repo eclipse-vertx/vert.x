@@ -45,6 +45,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
@@ -638,14 +639,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           case BINARY:
           case CONTINUATION:
           case TEXT:
+          case PONG:
             conn.handleMessage(msg);
             break;
           case PING:
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
-            break;
-          case PONG:
-            // Just ignore it
+            chctx.writeAndFlush(new PongWebSocketFrame(wsFrame.getBinaryData().copy()));
             break;
           case CLOSE:
             if (!closeFrameSent) {

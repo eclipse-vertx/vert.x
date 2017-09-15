@@ -63,6 +63,26 @@ public interface WebSocketFrame {
   }
 
   /**
+   * Create a ping WebSocket frame.  Will be a final frame. There is no option for non final ping frames.
+   *
+   * @param data the bytes for the frame, may be at most 125 bytes
+   * @return the frame
+   */
+  static WebSocketFrame pingFrame(Buffer data) {
+    return factory.pingFrame(data);
+  }
+
+  /**
+   * Create a pong WebSocket frame.  Will be a final frame. There is no option for non final pong frames.
+   *
+   * @param data the bytes for the frame, may be at most 125 bytes
+   * @return the frame
+   */
+  static WebSocketFrame pongFrame(Buffer data) {
+    return factory.pongFrame(data);
+  }
+
+  /**
    * Create a continuation frame
    *
    * @param data  the data for the frame
