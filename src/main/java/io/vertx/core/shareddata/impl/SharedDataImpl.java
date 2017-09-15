@@ -149,7 +149,7 @@ public class SharedDataImpl implements SharedData {
     }
   }
 
-  private static class WrappedAsyncMap<K, V> implements AsyncMap<K, V> {
+  public static final class WrappedAsyncMap<K, V> implements AsyncMap<K, V> {
 
     private final AsyncMap<K, V> delegate;
 
@@ -233,6 +233,10 @@ public class SharedDataImpl implements SharedData {
     @Override
     public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
       delegate.entries(asyncResultHandler);
+    }
+
+    public AsyncMap<K, V> getDelegate() {
+      return delegate;
     }
   }
 }
