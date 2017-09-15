@@ -1046,6 +1046,13 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void socketEndHandler() {
+    server.connectHandler(sock -> sock.end(v -> testComplete()))
+      .listen(s -> client.connect(1234, "localhost", ar -> { }));
+    await();
+  }
+
+  @Test
   public void testClientDrainHandler() {
     pausingServer((s) -> {
       client.connect(testAddress, onSuccess(sock -> {

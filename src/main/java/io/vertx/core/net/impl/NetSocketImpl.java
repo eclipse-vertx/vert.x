@@ -339,6 +339,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    closeHandler((v) -> handler.handle(Future.succeededFuture()));
+    close();
+  }
+
+  @Override
   protected synchronized void handleClosed() {
     checkContext();
     if (endHandler != null) {
