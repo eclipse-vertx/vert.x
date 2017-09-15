@@ -1556,6 +1556,21 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testAsyncFileEndWithHandlerClosesFile() throws Exception {
+    String fileName = "some-file.dat";
+    createFileWithJunk(fileName, 100);
+    AsyncFile file = vertx.fileSystem().openBlocking(testDir + pathSep + fileName, new OpenOptions());
+    file.end(ar -> {
+      try {
+        file.close(ar2 -> fail("Should not reach here"));
+      } catch (IllegalStateException ignore) {
+        testComplete();
+      }
+    });
+    await();
+  }
+
+  @Test
   public void testDrainNotCalledAfterClose() throws Exception {
     String fileName = "some-file.dat";
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
