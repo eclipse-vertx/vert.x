@@ -105,6 +105,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2422,6 +2424,54 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testAsyncWriteIsFlushed() throws Exception {
+    // Test that if we do a concurrent write (by another thread) during a channel read operation
+    // the channel will be flished after the concurrent write
+    int num = 128;
+    Buffer expected = TestUtils.randomBuffer(1024);
+    ExecutorService exec = Executors.newFixedThreadPool(1);
+    try {
+      server.connectHandler(so -> {
+        so.handler(buff -> {
+          assertEquals(256, buff.length());
+          CountDownLatch latch = new CountDownLatch(1);
+          exec.execute(() -> {
+            latch.countDown();
+            so.write(expected);
+          });
+          try {
+            awaitLatch(latch);
+          } catch (InterruptedException e) {
+            fail(e);
+          }
+        });
+      });
+      startServer();
+      AtomicInteger done = new AtomicInteger();
+      for (int i = 0;i < num;i++) {
+        client.connect(1234, "localhost", ar -> {
+          if (ar.succeeded()) {
+            NetSocket so = ar.result();
+            so.handler(buff -> {
+              assertEquals(expected, buff);
+              so.close();
+              int val = done.incrementAndGet();
+              if (val == num) {
+                testComplete();
+              }
+            });
+            so.write(TestUtils.randomBuffer(256));
+          } else {
+            ar.cause().printStackTrace();
+          }
+        });
+      }
+      await();
+    } finally {
+      exec.shutdown();
+    }
+  }
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
