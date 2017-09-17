@@ -37,6 +37,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.shareddata.SharedData;
+import io.vertx.core.spi.Transport;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.streams.ReadStream;
@@ -545,6 +546,12 @@ public interface Vertx extends Measured {
    * @return the named worker executor
    */
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
+
+  /**
+   * @return wether the native transport is used
+   */
+  @CacheReturn
+  boolean isNativeTransport();
 
   /**
    * Set a default exception handler for {@link Context}, set on {@link Context#exceptionHandler(Handler)} at creation.

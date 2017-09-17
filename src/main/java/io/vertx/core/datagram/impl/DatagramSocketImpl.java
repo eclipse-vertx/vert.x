@@ -15,7 +15,6 @@
  */
 package io.vertx.core.datagram.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
@@ -23,7 +22,6 @@ import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.logging.LoggingHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -43,6 +41,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.spi.transport.JdkTransport;
 import io.vertx.core.streams.WriteStream;
 
 import java.net.*;
@@ -68,8 +67,8 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   private Handler<Throwable> exceptionHandler;
 
   private DatagramSocketImpl(VertxInternal vertx, DatagramSocketOptions options) {
-    DatagramChannel channel = createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-        new DatagramSocketOptions(options));
+    DatagramChannel channel = vertx.transport().datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
+    configureChannel(channel, new DatagramSocketOptions(options));
 
     ContextImpl context = vertx.getOrCreateContext();
     if (context.isMultiThreadedWorkerContext()) {
@@ -314,23 +313,8 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     return metrics;
   }
 
-  private static NioDatagramChannel createChannel(io.vertx.core.datagram.impl.InternetProtocolFamily family,
-                                                  DatagramSocketOptions options) {
-    NioDatagramChannel channel;
-    if (family == null) {
-      channel = new NioDatagramChannel();
-    } else {
-      switch (family) {
-        case IPv4:
-          channel = new NioDatagramChannel(InternetProtocolFamily.IPv4);
-          break;
-        case IPv6:
-          channel = new NioDatagramChannel(InternetProtocolFamily.IPv6);
-          break;
-        default:
-          channel = new NioDatagramChannel();
-      }
-    }
+  private static void configureChannel(DatagramChannel channel,
+                                       DatagramSocketOptions options) {
     if (options.getSendBufferSize() != -1) {
       channel.config().setSendBufferSize(options.getSendBufferSize());
     }
@@ -354,7 +338,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         throw new IllegalArgumentException("Could not find network interface with name " + options.getMulticastNetworkInterface());
       }
     }
-    return channel;
   }
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {

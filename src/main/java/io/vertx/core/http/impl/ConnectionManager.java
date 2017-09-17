@@ -23,7 +23,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -31,7 +30,6 @@ import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.logging.LoggingHandler;
@@ -296,7 +294,7 @@ public class ConnectionManager {
       sslHelper.validate(vertx);
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
-      bootstrap.channel(NioSocketChannel.class);
+      bootstrap.channelFactory(() -> vertx.transport().socketChannel());
       connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, waiter);
     }
 

@@ -18,7 +18,6 @@ package io.vertx.core.impl.resolver;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.EventLoop;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.HostsFileEntries;
 import io.netty.resolver.HostsFileEntriesResolver;
@@ -127,7 +126,8 @@ public class DnsResolverProvider implements ResolverProvider {
     this.resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
       @Override
       protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
-        DnsAddressResolverGroup group = new DnsAddressResolverGroup(NioDatagramChannel.class, nameServerAddressProvider) {
+        ChannelFactory<DatagramChannel> channelFactory = () -> vertx.transport().datagramChannel();
+        DnsAddressResolverGroup group = new DnsAddressResolverGroup(channelFactory, nameServerAddressProvider) {
           @Override
           protected NameResolver<InetAddress> newNameResolver(EventLoop eventLoop, ChannelFactory<? extends DatagramChannel> channelFactory, DnsServerAddressStreamProvider nameServerProvider) throws Exception {
             DnsNameResolverBuilder builder = new DnsNameResolverBuilder((EventLoop) executor);
@@ -157,7 +157,7 @@ public class DnsResolverProvider implements ResolverProvider {
                 }
               }
             });
-            builder.channelType(NioDatagramChannel.class);
+            builder.channelFactory(channelFactory);
             builder.nameServerProvider(nameServerAddressProvider);
             builder.optResourceEnabled(options.isOptResourceEnabled());
             builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());

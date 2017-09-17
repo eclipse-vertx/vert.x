@@ -310,31 +310,35 @@ public class HostnameResolutionTest extends VertxTestBase {
   @Test
   public void testAsyncResolveConnectIsNotifiedOnChannelEventLoop() throws Exception {
     CountDownLatch listenLatch = new CountDownLatch(1);
-    NetServer s = vertx.createNetServer().connectHandler(so -> {
+    NetServer server = vertx.createNetServer().connectHandler(so -> {
     });
-    s.listen(1234, "localhost", onSuccess(v -> listenLatch.countDown()));
-    awaitLatch(listenLatch);
-    AtomicReference<Thread> channelThread = new AtomicReference<>();
-    CountDownLatch connectLatch = new CountDownLatch(1);
-    Bootstrap bootstrap = new Bootstrap();
-    bootstrap.channel(NioSocketChannel.class);
-    bootstrap.group(vertx.nettyEventLoopGroup());
-    bootstrap.resolver(((VertxInternal) vertx).nettyAddressResolverGroup());
-    bootstrap.handler(new ChannelInitializer<Channel>() {
-      @Override
-      protected void initChannel(Channel ch) throws Exception {
-        channelThread.set(Thread.currentThread());
-        connectLatch.countDown();
-      }
-    });
-    ChannelFuture channelFut = bootstrap.connect("localhost", 1234);
-    awaitLatch(connectLatch);
-    channelFut.addListener(v -> {
-      assertTrue(v.isSuccess());
-      assertEquals(channelThread.get(), Thread.currentThread());
-      testComplete();
-    });
-    await();
+    try {
+      server.listen(1234, "localhost", onSuccess(v -> listenLatch.countDown()));
+      awaitLatch(listenLatch);
+      AtomicReference<Thread> channelThread = new AtomicReference<>();
+      CountDownLatch connectLatch = new CountDownLatch(1);
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.channelFactory(() -> ((VertxInternal)vertx).transport().socketChannel(false));
+      bootstrap.group(vertx.nettyEventLoopGroup());
+      bootstrap.resolver(((VertxInternal) vertx).nettyAddressResolverGroup());
+      bootstrap.handler(new ChannelInitializer<Channel>() {
+        @Override
+        protected void initChannel(Channel ch) throws Exception {
+          channelThread.set(Thread.currentThread());
+          connectLatch.countDown();
+        }
+      });
+      ChannelFuture channelFut = bootstrap.connect("localhost", 1234);
+      awaitLatch(connectLatch);
+      channelFut.addListener(v -> {
+        assertTrue(v.isSuccess());
+        assertEquals(channelThread.get(), Thread.currentThread());
+        testComplete();
+      });
+      await();
+    } finally {
+      server.close();
+    }
   }
 
   @Test
@@ -442,28 +446,32 @@ public class HostnameResolutionTest extends VertxTestBase {
     // Test using bootstrap
     CompletableFuture<Void> test3 = new CompletableFuture<>();
     NetServer server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost(localhost.getHostAddress()));
-    server.connectHandler(so -> {
-      so.write("hello").end();
-    });
-    server.listen(ar -> {
-      if (ar.succeeded()) {
-        test3.complete(null);
-      } else {
-        test3.completeExceptionally(ar.cause());
-      }
-    });
-    test3.get(10, TimeUnit.SECONDS);
+    try {
+      server.connectHandler(so -> {
+        so.write("hello").end();
+      });
+      server.listen(ar -> {
+        if (ar.succeeded()) {
+          test3.complete(null);
+        } else {
+          test3.completeExceptionally(ar.cause());
+        }
+      });
+      test3.get(10, TimeUnit.SECONDS);
 
-    CompletableFuture<Void> test4 = new CompletableFuture<>();
-    NetClient client = vertx.createNetClient();
-    client.connect(1234, "localhost", ar -> {
-      if (ar.succeeded()) {
-        test4.complete(null);
-      } else {
-        test4.completeExceptionally(ar.cause());
-      }
-    });
-    test4.get(10, TimeUnit.SECONDS);
+      CompletableFuture<Void> test4 = new CompletableFuture<>();
+      NetClient client = vertx.createNetClient();
+      client.connect(1234, "localhost", ar -> {
+        if (ar.succeeded()) {
+          test4.complete(null);
+        } else {
+          test4.completeExceptionally(ar.cause());
+        }
+      });
+      test4.get(10, TimeUnit.SECONDS);
+    } finally {
+      server.close();
+    }
   }
 
   @Test

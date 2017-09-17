@@ -2116,6 +2116,10 @@ Sets the value of max worker execute time, in ns.
 +++
 Set the metrics options
 +++
+|[[preferNativeTransport]]`preferNativeTransport`|`Boolean`|
++++
+Set wether to prefer the native transport to the JDK transport.
++++
 |[[quorumSize]]`quorumSize`|`Number (int)`|
 +++
 Set the quorum size to be used when HA is enabled.

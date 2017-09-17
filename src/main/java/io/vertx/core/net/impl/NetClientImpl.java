@@ -17,14 +17,11 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -48,8 +45,6 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
 /**
  *
@@ -192,7 +187,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
-    bootstrap.channel(NioSocketChannel.class);
+    bootstrap.channelFactory(() -> vertx.transport().socketChannel());
 
     applyConnectionOptions(bootstrap);
 

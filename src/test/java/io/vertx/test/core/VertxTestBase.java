@@ -30,6 +30,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.spi.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
@@ -46,6 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class VertxTestBase extends AsyncTestBase {
 
+  private static final boolean useNativeTransport = Boolean.getBoolean("vertx.useNativeTransport");
   private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
 
   @Rule
@@ -66,11 +68,18 @@ public class VertxTestBase extends AsyncTestBase {
   public void setUp() throws Exception {
     super.setUp();
     vinit();
-    vertx = Vertx.vertx(getOptions());
+    VertxOptions options = getOptions();
+    boolean nativeTransport = options.getPreferNativeTransport();
+    vertx = Vertx.vertx(options);
+    if (nativeTransport) {
+      assertTrue(vertx.isNativeTransport());
+    }
   }
 
   protected VertxOptions getOptions() {
-    return new VertxOptions();
+    VertxOptions options = new VertxOptions();
+    options.setPreferNativeTransport(useNativeTransport);
+    return options;
   }
 
   protected void tearDown() throws Exception {

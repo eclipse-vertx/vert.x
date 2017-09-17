@@ -74,8 +74,7 @@ public class StarterTest extends VertxTestBase {
     String[] args = {"-version"};
     MyStarter starter = new MyStarter();
     starter.run(args);
-    // TODO some way of getting this from the version in pom.xml
-    assertEquals(System.getProperty("vertxVersion"), starter.getVersion());
+    assertEquals(System.getProperty("vertx.version"), starter.getVersion());
     cleanup(starter);
   }
 

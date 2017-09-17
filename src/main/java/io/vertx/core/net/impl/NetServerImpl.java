@@ -27,7 +27,6 @@ import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -176,7 +175,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
-        bootstrap.channel(NioServerSocketChannel.class);
+        bootstrap.channelFactory(() -> vertx.transport().serverSocketChannel());
         sslHelper.validate(vertx);
 
         bootstrap.childHandler(new ChannelInitializer<Channel>() {

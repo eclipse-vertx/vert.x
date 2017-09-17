@@ -24,7 +24,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.codec.dns.DatagramDnsQuery;
 import io.netty.handler.codec.dns.DatagramDnsQueryEncoder;
 import io.netty.handler.codec.dns.DatagramDnsResponseDecoder;
@@ -45,6 +45,7 @@ import io.vertx.core.dns.impl.decoder.RecordDecoder;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.spi.Transport;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -63,9 +64,9 @@ public final class DnsClientImpl implements DnsClient {
 
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
 
-  private final Bootstrap bootstrap;
   private final InetSocketAddress dnsServer;
   private final ContextImpl actualCtx;
+  private final DatagramChannel channel;
 
   public DnsClientImpl(VertxInternal vertx, int port, String host) {
 
@@ -76,19 +77,15 @@ public final class DnsClientImpl implements DnsClient {
 
     this.dnsServer = new InetSocketAddress(host, port);
 
+    Transport transport = vertx.transport();
     actualCtx = vertx.getOrCreateContext();
-    bootstrap = new Bootstrap();
-    bootstrap.group(actualCtx.nettyEventLoop());
-    bootstrap.channel(NioDatagramChannel.class);
-    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-    bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
-      @Override
-      protected void initChannel(DatagramChannel ch) throws Exception {
-        ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast(new DatagramDnsQueryEncoder());
-        pipeline.addLast(new DatagramDnsResponseDecoder());
-      }
-    });
+    channel = transport.datagramChannel(InternetProtocolFamily.IPv4);
+    channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
+    channel.config().setMaxMessagesPerRead(1);
+    channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
+    actualCtx.nettyEventLoop().register(channel);
+    channel.pipeline().addLast(new DatagramDnsQueryEncoder());
+    channel.pipeline().addLast(new DatagramDnsResponseDecoder());
   }
 
   @Override
@@ -224,60 +221,55 @@ public final class DnsClientImpl implements DnsClient {
   @SuppressWarnings("unchecked")
   private <T> void lookup(String name, Future<List<T>> result, DnsRecordType... types) {
     Objects.requireNonNull(name, "no null name accepted");
-    bootstrap.connect(dnsServer).addListener(new RetryChannelFutureListener(result) {
+    DatagramDnsQuery query = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt());
+    for (DnsRecordType type: types) {
+      query.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
+    }
+    channel.writeAndFlush(query).addListener(new RetryChannelFutureListener(result) {
       @Override
       public void onSuccess(ChannelFuture future) throws Exception {
-        DatagramDnsQuery query = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt());
-        for (DnsRecordType type: types) {
-          query.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
-        }
-        future.channel().writeAndFlush(query).addListener(new RetryChannelFutureListener(result) {
+        future.channel().pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
           @Override
-          public void onSuccess(ChannelFuture future) throws Exception {
-            future.channel().pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
-              @Override
-              protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
-                DnsResponseCode code = DnsResponseCode.valueOf(msg.code().intValue());
+          protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
+            DnsResponseCode code = DnsResponseCode.valueOf(msg.code().intValue());
 
-                if (code == DnsResponseCode.NOERROR) {
+            if (code == DnsResponseCode.NOERROR) {
 
-                  int count = msg.count(DnsSection.ANSWER);
+              int count = msg.count(DnsSection.ANSWER);
 
-                  List<T> records = new ArrayList<>(count);
-                  for (int idx = 0;idx < count;idx++) {
-                    DnsRecord a = msg.recordAt(DnsSection.ANSWER, idx);
-                    T record = RecordDecoder.decode(a);
-                    if (isRequestedType(a.type(), types)) {
-                      records.add(record);
-                    }
-                  }
-
-                  if (records.size() > 0 && (records.get(0) instanceof MxRecordImpl || records.get(0) instanceof SrvRecordImpl)) {
-                    Collections.sort((List) records);
-                  }
-
-                  setResult(result, records);
-                } else {
-                  setFailure(result, new DnsException(code));
+              List<T> records = new ArrayList<>(count);
+              for (int idx = 0;idx < count;idx++) {
+                DnsRecord a = msg.recordAt(DnsSection.ANSWER, idx);
+                T record = RecordDecoder.decode(a);
+                if (isRequestedType(a.type(), types)) {
+                  records.add(record);
                 }
-                ctx.close();
               }
 
-              private boolean isRequestedType(DnsRecordType dnsRecordType, DnsRecordType[] types) {
-                for (DnsRecordType t : types) {
-                  if (t.equals(dnsRecordType)) {
-                    return true;
-                  }
-                }
-                return false;
+              if (records.size() > 0 && (records.get(0) instanceof MxRecordImpl || records.get(0) instanceof SrvRecordImpl)) {
+                Collections.sort((List) records);
               }
 
-              @Override
-              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                setFailure(result, cause);
-                ctx.close();
+              setResult(result, records);
+            } else {
+              setFailure(result, new DnsException(code));
+            }
+            ctx.close();
+          }
+
+          private boolean isRequestedType(DnsRecordType dnsRecordType, DnsRecordType[] types) {
+            for (DnsRecordType t : types) {
+              if (t.equals(dnsRecordType)) {
+                return true;
               }
-            });
+            }
+            return false;
+          }
+
+          @Override
+          public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+            setFailure(result, cause);
+            ctx.close();
           }
         });
       }
