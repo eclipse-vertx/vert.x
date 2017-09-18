@@ -306,6 +306,9 @@ public class DatagramTest extends VertxTestBase {
 
   @Test
   public void testBroadcast() {
+    if (USE_NATIVE_TRANSPORT) {
+      return;
+    }
     peer1 = vertx.createDatagramSocket(new DatagramSocketOptions().setBroadcast(true));
     peer2 = vertx.createDatagramSocket(new DatagramSocketOptions().setBroadcast(true));
     peer2.exceptionHandler(t -> fail(t.getMessage()));
@@ -340,6 +343,9 @@ public class DatagramTest extends VertxTestBase {
 
   @Test
   public void testMulticastJoinLeave() throws Exception {
+    if (USE_NATIVE_TRANSPORT) {
+      return;
+    }
     Buffer buffer = TestUtils.randomBuffer(128);
     String groupAddress = "230.0.0.1";
     String iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1")).getName();
