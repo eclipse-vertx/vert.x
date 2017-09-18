@@ -18,6 +18,8 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -550,7 +552,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       checkSendHeaders(false);
 
-      FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
+      Future<Long> result = Future.future();
+      result.setHandler(ar -> {
         if (ar.succeeded()) {
           bytesWritten += ar.result();
           end();
@@ -560,10 +563,20 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
             resultHandler.handle(Future.succeededFuture());
           });
         }
-      }, stream, offset, contentLength);
+      });
+
+      FileStreamChannel fileChannel = new FileStreamChannel(result, stream, offset, contentLength);
       drainHandler(fileChannel.drainHandler);
-      ctx.channel().eventLoop().register(fileChannel);
-      fileChannel.pipeline().fireUserEventTriggered(raf);
+      ctx.channel()
+        .eventLoop()
+        .register(fileChannel)
+        .addListener((ChannelFutureListener) future -> {
+        if (future.isSuccess()) {
+          fileChannel.pipeline().fireUserEventTriggered(raf);
+        } else {
+          result.tryFail(future.cause());
+        }
+      });
     }
     return this;
   }
