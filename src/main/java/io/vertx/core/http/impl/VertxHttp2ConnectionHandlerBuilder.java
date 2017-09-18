@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 The original author or authors
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v2.0
+ * and Apache License v2.0 which accompanies this distribution.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
+ *     The Eclipse Public License is available at
+ *     https://www.eclipse.org/legal/epl-2.0/
  *
- *  You may elect to redistribute this code under either of these licenses.
+ *     The Apache License v2.0 is available at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * You may elect to redistribute this code under either of these licenses.
  */
 
 package io.vertx.core.http.impl;
@@ -88,22 +88,22 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   }
 
   /**
-   * This method allows to set the compression level to be used in the http/2 connection encoder 
-   * (for data sent to client) when compression support is turned on (@see useCompression) and 
+   * This method allows to set the compression level to be used in the http/2 connection encoder
+   * (for data sent to client) when compression support is turned on (@see useCompression) and
    * the client advertises to support deflate/gizip compression in the Accept-Encoding header
-   * 
+   *
    * default value is : 6 (Netty legacy)
-   * 
-   * While one can think that best value is always the maximum compression ratio, 
-   * there's a trade-off to consider: the most compressed level requires the most computatinal work to compress/decompress, 
-   * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
-   * and latency on resource serving due to CPU overload, and however - as the comptational work is required also client side 
+   *
+   * While one can think that best value is always the maximum compression ratio,
+   * there's a trade-off to consider: the most compressed level requires the most computatinal work to compress/decompress,
+   * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation
+   * and latency on resource serving due to CPU overload, and however - as the comptational work is required also client side
    * while decompressing - setting an higher compression level can result in an overall higher page load time
    * especially nowadays when many clients are handled mobile devices with a low CPU profile.
-   * 
+   *
    * see also: http://www.gzip.org/algorithm.txt
-   * 
-   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9 slower algorithm but better compression ratio 
+   *
+   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9 slower algorithm but better compression ratio
    * @return a reference to this instance for fulent API coding style
    */
   VertxHttp2ConnectionHandlerBuilder<C> compressionLevel(int compressionLevel) {
@@ -115,7 +115,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     this.useDecompression = useDecompression;
     return this;
   }
-  
+
   VertxHttp2ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
     return this;

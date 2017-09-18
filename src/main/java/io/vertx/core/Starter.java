@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2011-2014 The original author or authors
- * ------------------------------------------------------
+ * Copyright (c) 2011-2017 The original author or authors
+ *
  * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * are made available under the terms of the Eclipse Public License v2.0
  * and Apache License v2.0 which accompanies this distribution.
  *
  *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ *     https://www.eclipse.org/legal/epl-2.0/
  *
  *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * You may elect to redistribute this code under either of these licenses.
  */
@@ -157,21 +157,21 @@ public class Starter {
    * Hook for sub classes of {@link Starter} before the vertx instance is started.
    */
   protected void beforeStartingVertx(VertxOptions options) {
-    
+
   }
-  
+
   /**
    * Hook for sub classes of {@link Starter} after the vertx instance is started.
    */
   protected void afterStartingVertx() {
-    
+
   }
-  
+
   /**
    * Hook for sub classes of {@link Starter} before the verticle is deployed.
    */
   protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
-    
+
   }
 
   /**
@@ -182,7 +182,7 @@ public class Starter {
     // Default behaviour is to close Vert.x if the deploy failed
     vertx.close();
   }
-  
+
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     MetricsOptions metricsOptions;
