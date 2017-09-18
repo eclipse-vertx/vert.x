@@ -2248,9 +2248,10 @@ public abstract class HttpTest extends HttpTestBase {
   public void testSetHandlersAfterListening2() throws Exception {
     server.requestHandler(noOpHandler());
 
-    server.listen();
+    server.listen(onSuccess(v -> testComplete()));
     assertIllegalStateException(() -> server.requestHandler(noOpHandler()));
     assertIllegalStateException(() -> server.websocketHandler(noOpHandler()));
+    await();
   }
 
   @Test
@@ -2267,8 +2268,9 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenTwice() throws Exception {
     server.requestHandler(noOpHandler());
-    server.listen();
+    server.listen(onSuccess(v -> testComplete()));
     assertIllegalStateException(() -> server.listen());
+    await();
   }
 
   @Test

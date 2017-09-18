@@ -2005,7 +2005,7 @@ public class NetTest extends VertxTestBase {
   public void testSetHandlerAfterListen() {
     server.connectHandler(sock -> {
     });
-    server.listen();
+    server.listen(onSuccess(v -> testComplete()));
     try {
       server.connectHandler(sock -> {
       });
@@ -2013,6 +2013,7 @@ public class NetTest extends VertxTestBase {
     } catch (IllegalStateException e) {
       // OK
     }
+    await();
   }
 
   @Test
