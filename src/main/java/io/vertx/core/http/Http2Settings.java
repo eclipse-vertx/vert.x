@@ -295,8 +295,8 @@ public class Http2Settings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings set(int id, long value) {
-    Arguments.require(id >= 0 || id <= 0xFFFF, "Setting id must me an unsigned 16-bit value");
-    Arguments.require(value >= 0 || value <= 0xFFFFFFFF, "Setting value must me an unsigned 32-bit value");
+    Arguments.require(id >= 0 && id <= 0xFFFF, "Setting id must me an unsigned 16-bit value");
+    Arguments.require(value >= 0L && value <= 0xFFFFFFFFL, "Setting value must me an unsigned 32-bit value");
     switch (id) {
       case 1:
         setHeaderTableSize(value);

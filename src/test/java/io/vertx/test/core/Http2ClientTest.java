@@ -178,6 +178,25 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testInvalidSettings() throws Exception {
+    io.vertx.core.http.Http2Settings settings = new io.vertx.core.http.Http2Settings();
+
+    try {
+      settings.set(Integer.MAX_VALUE, 0);
+      fail("max id should be 0-0xFFFF");
+    } catch (RuntimeException e) {
+      // expected
+    }
+
+    try {
+      settings.set(7, -1);
+      fail("max value should be 0-0xFFFFFFFF");
+    } catch (RuntimeException e) {
+      // expected
+    }
+  }
+
+  @Test
   public void testServerSettings() throws Exception {
     waitFor(2);
     io.vertx.core.http.Http2Settings expectedSettings = TestUtils.randomHttp2Settings();
