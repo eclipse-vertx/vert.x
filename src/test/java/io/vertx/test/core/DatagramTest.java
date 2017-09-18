@@ -447,6 +447,7 @@ public class DatagramTest extends VertxTestBase {
     testComplete();
   }
 
+  // Does not pass with native on OSX - it requires SO_REUSEPORT
   @Test
   public void testCopyOptions() {
     DatagramSocketOptions options = new DatagramSocketOptions();
