@@ -50,22 +50,24 @@ public class DatagramTest extends VertxTestBase {
   private volatile DatagramSocket peer2;
 
   protected void tearDown() throws Exception {
+    CountDownLatch latch = new CountDownLatch(2);
     if (peer1 != null) {
-      CountDownLatch latch = new CountDownLatch(2);
       peer1.close(ar -> {
         assertTrue(ar.succeeded());
         latch.countDown();
-        if (peer2 != null) {
-          peer2.close(ar2 -> {
-            assertTrue(ar2.succeeded());
-            latch.countDown();
-          });
-        } else {
-          latch.countDown();
-        }
       });
-      latch.await(10L, TimeUnit.SECONDS);
+    } else {
+      latch.countDown();
     }
+    if (peer2 != null) {
+      peer2.close(ar2 -> {
+        assertTrue(ar2.succeeded());
+        latch.countDown();
+      });
+    } else {
+      latch.countDown();
+    }
+    latch.await(10L, TimeUnit.SECONDS);
     super.tearDown();
   }
 
