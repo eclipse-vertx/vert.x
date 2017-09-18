@@ -114,7 +114,7 @@ class FileStreamChannel extends AbstractChannel {
 
   @Override
   protected boolean isCompatible(EventLoop loop) {
-    return loop instanceof NioEventLoop;
+    return true;
   }
 
   @Override
