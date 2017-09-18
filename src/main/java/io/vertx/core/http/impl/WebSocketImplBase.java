@@ -17,6 +17,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -518,5 +520,13 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   @Override
   public void end() {
     close();
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    synchronized (conn) {
+      endHandler(v -> handler.handle(Future.succeededFuture()));
+      end();
+    }
   }
 }

@@ -3711,6 +3711,7 @@ public abstract class HttpTest extends HttpTestBase {
       public void end(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public void end(Buffer chunk) { throw new UnsupportedOperationException(); }
       public void end() { throw new UnsupportedOperationException(); }
+      public void end(Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
       public boolean reset(long code) { return false; }

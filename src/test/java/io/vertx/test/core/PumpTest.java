@@ -16,6 +16,8 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
@@ -206,6 +208,11 @@ public class PumpTest {
 
     @Override
     public void end() {
+    }
+
+    @Override
+    public void end(Handler<AsyncResult<Void>> handler) {
+      handler.handle(Future.succeededFuture());
     }
   }
 

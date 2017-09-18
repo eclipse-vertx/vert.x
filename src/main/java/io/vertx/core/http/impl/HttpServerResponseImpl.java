@@ -348,6 +348,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    synchronized (conn) {
+      endHandler(v -> handler.handle(Future.succeededFuture()));
+      end();
+    }
+  }
+
+  @Override
   public HttpServerResponseImpl sendFile(String filename, long offset, long length) {
     doSendFile(filename, offset, length, null);
     return this;

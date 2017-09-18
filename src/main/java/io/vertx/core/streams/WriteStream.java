@@ -70,10 +70,10 @@ public interface WriteStream<T> extends StreamBase {
     end();
   }
 
-  default void end(Handler<AsyncResult<Void>> handler) {
-    end();
-    handler.handle(Future.succeededFuture());
-  }
+  /**
+   * Same as {@link #end()} but sets handler that will be called after completion of ending.
+   */
+  void end(Handler<AsyncResult<Void>> handler);
 
   /**
    * Set the maximum size of the write queue to {@code maxSize}. You will still be able to write to the stream even

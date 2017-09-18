@@ -17,6 +17,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
@@ -42,6 +43,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   private int maxSize = DEFAULT_WRITE_QUEUE_MAX_SIZE;
   private int credits = DEFAULT_WRITE_QUEUE_MAX_SIZE;
   private Handler<Void> drainHandler;
+  private Handler<Void> endHandler;
 
   public MessageProducerImpl(Vertx vertx, String address, boolean send, DeliveryOptions options) {
     this.vertx = vertx;
@@ -116,6 +118,11 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     return this;
   }
 
+  public synchronized MessageProducer<T> endHandler(Handler<Void> handler) {
+    this.endHandler = handler;
+    return this;
+  }
+
   @Override
   public String address() {
     return address;
@@ -127,9 +134,18 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
+  public synchronized void end(Handler<AsyncResult<Void>> handler) {
+    endHandler(v -> handler.handle(Future.succeededFuture()));
+    end();
+  }
+
+  @Override
   public void close() {
     if (creditConsumer != null) {
       creditConsumer.unregister();
+    }
+    if (endHandler != null) {
+      vertx.runOnContext(v -> endHandler.handle(null));
     }
   }
 

@@ -262,6 +262,14 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   }
 
   @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    synchronized (conn) {
+      endHandler(v -> handler.handle(Future.succeededFuture()));
+      end();
+    }
+  }
+
+  @Override
   public void end(Buffer buffer) {
     synchronized (conn) {
       writeData(buffer.getByteBuf(), true);

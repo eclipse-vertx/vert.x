@@ -16,6 +16,8 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
@@ -125,6 +127,14 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
       currentTimeoutMs = timeoutMs;
       currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
       return this;
+    }
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    synchronized (getLock()) {
+      endHandler(v -> handler.handle(Future.succeededFuture()));
+      end();
     }
   }
 

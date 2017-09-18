@@ -374,6 +374,14 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     end((ByteBuf) null);
   }
 
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    synchronized (conn) {
+      endHandler(v -> handler.handle(Future.succeededFuture()));
+      end();
+    }
+  }
+
   void toNetSocket() {
     checkEnded();
     checkSendHeaders(false);
