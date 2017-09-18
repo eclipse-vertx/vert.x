@@ -36,6 +36,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.spi.Transport;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -67,8 +68,9 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   private Handler<Throwable> exceptionHandler;
 
   private DatagramSocketImpl(VertxInternal vertx, DatagramSocketOptions options) {
-    DatagramChannel channel = vertx.transport().datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
-    configureChannel(channel, new DatagramSocketOptions(options));
+    Transport transport = vertx.transport();
+    DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
+    configureChannel(transport == JdkTransport.INSTANCE, channel, new DatagramSocketOptions(options));
 
     ContextImpl context = vertx.getOrCreateContext();
     if (context.isMultiThreadedWorkerContext()) {
@@ -313,7 +315,8 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     return metrics;
   }
 
-  private static void configureChannel(DatagramChannel channel,
+  private static void configureChannel(boolean configureMulticast,
+                                       DatagramChannel channel,
                                        DatagramSocketOptions options) {
     if (options.getSendBufferSize() != -1) {
       channel.config().setSendBufferSize(options.getSendBufferSize());
@@ -327,15 +330,17 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
       channel.config().setTrafficClass(options.getTrafficClass());
     }
     channel.config().setBroadcast(options.isBroadcast());
-    channel.config().setLoopbackModeDisabled(options.isLoopbackModeDisabled());
-    if (options.getMulticastTimeToLive() != -1) {
-      channel.config().setTimeToLive(options.getMulticastTimeToLive());
-    }
-    if (options.getMulticastNetworkInterface() != null) {
-      try {
-        channel.config().setNetworkInterface(NetworkInterface.getByName(options.getMulticastNetworkInterface()));
-      } catch (SocketException e) {
-        throw new IllegalArgumentException("Could not find network interface with name " + options.getMulticastNetworkInterface());
+    if (configureMulticast) {
+      channel.config().setLoopbackModeDisabled(options.isLoopbackModeDisabled());
+      if (options.getMulticastTimeToLive() != -1) {
+        channel.config().setTimeToLive(options.getMulticastTimeToLive());
+      }
+      if (options.getMulticastNetworkInterface() != null) {
+        try {
+          channel.config().setNetworkInterface(NetworkInterface.getByName(options.getMulticastNetworkInterface()));
+        } catch (SocketException e) {
+          throw new IllegalArgumentException("Could not find network interface with name " + options.getMulticastNetworkInterface());
+        }
       }
     }
   }
