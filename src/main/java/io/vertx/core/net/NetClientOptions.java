@@ -106,6 +106,12 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
+    return this;
+  }
+
+  @Override
   public NetClientOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;

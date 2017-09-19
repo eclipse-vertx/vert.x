@@ -37,7 +37,6 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.shareddata.SharedData;
-import io.vertx.core.spi.Transport;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.streams.ReadStream;

@@ -13,14 +13,14 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.spi;
+package io.vertx.core.spi.transport;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.vertx.core.spi.transport.JdkTransport;
 
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
@@ -77,6 +77,15 @@ public interface Transport {
   Throwable unavailabilityCause();
 
   SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved);
+
+  /**
+   * Return a channel option for given {@code name} or null if that options does not exist
+   * for this transport.
+   *
+   * @param name the option name
+   * @return the channel option
+   */
+  ChannelOption<?> channelOption(String name);
 
   /**
    * @return a new event loop group

@@ -293,6 +293,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;

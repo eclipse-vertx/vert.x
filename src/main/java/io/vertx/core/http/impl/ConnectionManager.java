@@ -20,9 +20,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -49,9 +47,9 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.TransportHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -553,27 +551,7 @@ public class ConnectionManager {
     }
 
     void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
-      if (options.getLocalAddress() != null) {
-        bootstrap.localAddress(options.getLocalAddress(), 0);
-      }
-      bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-      if (options.getSendBufferSize() != -1) {
-        bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-      }
-      if (options.getReceiveBufferSize() != -1) {
-        bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-      }
-      if (options.getSoLinger() != -1) {
-        bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-      }
-      if (options.getTrafficClass() != -1) {
-        bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
-      }
-      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-      bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+      new TransportHelper(vertx.transport()).configure(options, bootstrap);
     }
 
     void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {

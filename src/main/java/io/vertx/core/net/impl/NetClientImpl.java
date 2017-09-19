@@ -19,9 +19,7 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -153,26 +151,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
   }
 
   private void applyConnectionOptions(Bootstrap bootstrap) {
-    if (options.getLocalAddress() != null) {
-      bootstrap.localAddress(options.getLocalAddress(), 0);
-    }
-    bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-    if (options.getSendBufferSize() != -1) {
-      bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-    }
-    if (options.getReceiveBufferSize() != -1) {
-      bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-      bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-    }
-    if (options.getSoLinger() != -1) {
-      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-    }
-    if (options.getTrafficClass() != -1) {
-      bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
-    }
-    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-    bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+    new TransportHelper(vertx.transport()).configure(options, bootstrap);
   }
 
   @Override

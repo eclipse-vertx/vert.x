@@ -15,13 +15,10 @@
  */
 package io.vertx.core.dns.impl;
 
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
@@ -45,7 +42,7 @@ import io.vertx.core.dns.impl.decoder.RecordDecoder;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
-import io.vertx.core.spi.Transport;
+import io.vertx.core.spi.transport.Transport;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;

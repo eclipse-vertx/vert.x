@@ -311,6 +311,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setReusePort(boolean reusePort) {
+    return (ClientOptionsBase) super.setReusePort(reusePort);
+  }
+
+  @Override
   public ClientOptionsBase setTrafficClass(int trafficClass) {
     return (ClientOptionsBase) super.setTrafficClass(trafficClass);
   }

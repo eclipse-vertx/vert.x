@@ -16,9 +16,11 @@
 package io.vertx.core.spi.transport;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.kqueue.KQueueChannelOption;
 import io.netty.channel.kqueue.KQueueDatagramChannel;
 import io.netty.channel.kqueue.KQueueDomainSocketChannel;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
@@ -28,7 +30,6 @@ import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
-import io.vertx.core.spi.Transport;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -37,7 +38,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class KQeueTransport implements Transport {
+class KQeueTransport implements Transport {
 
   @Override
   public SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved) {
@@ -95,5 +96,14 @@ public class KQeueTransport implements Transport {
     } else {
       return new KQueueServerSocketChannel();
     }
+  }
+
+  @Override
+  public ChannelOption<?> channelOption(String name) {
+    switch (name) {
+      case "SO_REUSEPORT":
+        return KQueueChannelOption.SO_REUSEPORT;
+    }
+    return null;
   }
 }

@@ -20,10 +20,8 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
-import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -36,7 +34,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.impl.HttpHandlers;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -473,27 +470,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
    * @param bootstrap the Netty server bootstrap
    */
   protected void applyConnectionOptions(ServerBootstrap bootstrap) {
-    bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-    if (options.getSendBufferSize() != -1) {
-      bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-    }
-    if (options.getReceiveBufferSize() != -1) {
-      bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-    }
-    if (options.getSoLinger() != -1) {
-      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-    }
-    if (options.getTrafficClass() != -1) {
-      bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
-    }
-    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-
-    bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    if (options.getAcceptBacklog() != -1) {
-      bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
-    }
+    new TransportHelper(vertx.transport()).configure(options, bootstrap);
   }
 
   @Override

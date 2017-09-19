@@ -136,6 +136,11 @@ public class DatagramSocketOptions extends NetworkOptions {
   }
 
   @Override
+  public DatagramSocketOptions setReusePort(boolean reusePort) {
+    return (DatagramSocketOptions) super.setReusePort(reusePort);
+  }
+
+  @Override
   public int getTrafficClass() {
     return super.getTrafficClass();
   }

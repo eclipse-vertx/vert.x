@@ -125,6 +125,12 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
+    return this;
+  }
+
+  @Override
   public NetServerOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;

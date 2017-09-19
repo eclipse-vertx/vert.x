@@ -36,6 +36,9 @@ public class NetworkOptionsConverter {
     if (json.getValue("reuseAddress") instanceof Boolean) {
       obj.setReuseAddress((Boolean)json.getValue("reuseAddress"));
     }
+    if (json.getValue("reusePort") instanceof Boolean) {
+      obj.setReusePort((Boolean)json.getValue("reusePort"));
+    }
     if (json.getValue("sendBufferSize") instanceof Number) {
       obj.setSendBufferSize(((Number)json.getValue("sendBufferSize")).intValue());
     }
@@ -48,6 +51,7 @@ public class NetworkOptionsConverter {
     json.put("logActivity", obj.getLogActivity());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reuseAddress", obj.isReuseAddress());
+    json.put("reusePort", obj.isReusePort());
     json.put("sendBufferSize", obj.getSendBufferSize());
     json.put("trafficClass", obj.getTrafficClass());
   }

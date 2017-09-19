@@ -16,6 +16,7 @@
 package io.vertx.core.spi.transport;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -24,7 +25,6 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.vertx.core.spi.Transport;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -33,7 +33,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JdkTransport implements Transport {
+class JdkTransport implements Transport {
 
   public static final JdkTransport INSTANCE = new JdkTransport();
 
@@ -51,6 +51,11 @@ public class JdkTransport implements Transport {
         return InetSocketAddress.createUnresolved(address.host(), address.port());
       }
     }
+  }
+
+  @Override
+  public ChannelOption<?> channelOption(String name) {
+    return null;
   }
 
   @Override

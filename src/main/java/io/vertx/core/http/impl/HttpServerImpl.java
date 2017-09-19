@@ -24,9 +24,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -76,9 +74,9 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.AsyncResolveConnectHelper;
+import io.vertx.core.net.impl.TransportHelper;
 import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.HandlerManager;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.SocketAddressImpl;
@@ -535,29 +533,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   private void applyConnectionOptions(ServerBootstrap bootstrap) {
-    bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-    if (options.getSendBufferSize() != -1) {
-      bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-    }
-    if (options.getReceiveBufferSize() != -1) {
-      bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-    }
-
-    if (options.getSoLinger() != -1) {
-      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-    }
-    if (options.getTrafficClass() != -1) {
-      bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
-    }
-    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-
-    bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-
-    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    if (options.getAcceptBacklog() != -1) {
-      bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
-    }
+    new TransportHelper(vertx.transport()).configure(options, bootstrap);
   }
 
 

@@ -16,9 +16,11 @@
 package io.vertx.core.spi.transport;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.epoll.EpollDatagramChannel;
 import io.netty.channel.epoll.EpollDomainSocketChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -28,7 +30,6 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
-import io.vertx.core.spi.Transport;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -37,7 +38,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EpollTransport implements Transport {
+class EpollTransport implements Transport {
 
   @Override
   public SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved) {
@@ -94,6 +95,22 @@ public class EpollTransport implements Transport {
       return new EpollServerDomainSocketChannel();
     } else {
       return new EpollServerSocketChannel();
+    }
+  }
+
+  @Override
+  public ChannelOption<?> channelOption(String name) {
+    switch (name) {
+      case "SO_REUSEPORT":
+        return EpollChannelOption.SO_REUSEPORT;
+      case "TCP_QUICKACK":
+        return EpollChannelOption.TCP_QUICKACK;
+      case "TCP_CORK":
+        return EpollChannelOption.TCP_CORK;
+      case "TCP_FASTOPEN":
+        return EpollChannelOption.TCP_FASTOPEN;
+      default:
+        return null;
     }
   }
 }
