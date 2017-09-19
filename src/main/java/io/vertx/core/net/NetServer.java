@@ -124,6 +124,16 @@ public interface NetServer extends Measured {
   NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler);
 
   /**
+   * Set an exception handler called for socket errors happening before the connection
+   * is passed to the {@link #connectHandler}, e.g during the TLS handshake.
+   *
+   * @param handler the handler to set
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetServer exceptionHandler(Handler<Throwable> handler);
+
+  /**
    * Close the server. This will close any currently open connections. The close may not complete until after this
    * method has returned.
    */

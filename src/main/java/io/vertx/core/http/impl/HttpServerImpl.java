@@ -96,7 +96,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -112,6 +111,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
+  private static final Handler<Throwable> DEFAULT_EXCEPTION_HANDLER = t -> log.trace("Connection failure", t);
   private static final String FLASH_POLICY_HANDLER_PROP_NAME = "vertx.flashPolicyHandler";
   private static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
   private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
@@ -142,7 +142,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private ContextImpl listenContext;
   private HttpServerMetrics metrics;
   private boolean logEnabled;
-  private Handler<Throwable> connectionExceptionHandler;
+  private Handler<Throwable> exceptionHandler;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
@@ -156,7 +156,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.logEnabled = options.getLogActivity();
-    connectionExceptionHandler = t -> {log.trace("Connection failure", t);};
   }
 
   @Override
@@ -187,6 +186,15 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       throw new IllegalStateException("Please set handler before server is listening");
     }
     connectionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public synchronized HttpServer exceptionHandler(Handler<Throwable> handler) {
+    if (listening) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
+    exceptionHandler = handler;
     return this;
   }
 
@@ -260,13 +268,24 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
+                io.netty.util.concurrent.Future<Channel> handshakeFuture;
                 if (options.isSni()) {
                   VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
                   pipeline.addLast(sniHandler);
+                  handshakeFuture = sniHandler.handshakeFuture();
                 } else {
-                  pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx)));
+                  SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
+                  pipeline.addLast("ssl", handler);
+                  handshakeFuture = handler.handshakeFuture();
                 }
-                postSSLConfig(pipeline);
+                handshakeFuture.addListener(future -> {
+                  if (future.isSuccess()) {
+                    postSSLConfig(pipeline);
+                  } else {
+                    HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
+                    handler.context.executeFromIO(() -> handler.handler.exceptionHandler.handle(future.cause()));
+                  }
+                });
               } else {
                 if (DISABLE_HC2) {
                   configureHttp1(pipeline);
@@ -332,13 +351,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return this;
   }
 
-  // Visible for testing
-  public HttpServerImpl setConnectionExceptionHandler(Handler<Throwable> connectionExceptionHandler) {
-    Objects.requireNonNull(connectionExceptionHandler, "connectionExceptionHandler");
-    this.connectionExceptionHandler = connectionExceptionHandler;
-    return this;
-  }
-
   private VertxHttp2ConnectionHandler<Http2ServerConnection> setHandler(HandlerHolder<HttpHandlers> holder, Http2Settings upgrade, Channel ch) {
     return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>(ch)
         .connectionMap(connectionMap2)
@@ -372,6 +384,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           } else {
             handleHttp2(pipeline.channel());
           }
+        }
+        @Override
+        protected void handshakeFailure(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+          // Will close the channel
+          super.handshakeFailure(ctx, cause);
         }
       });
     } else {
@@ -479,7 +496,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
       if (actualServer != null) {
 
-        actualServer.httpHandlerMgr.removeHandler(new HttpHandlers(requestStream.handler(), wsStream.handler(), connectionHandler), listenContext);
+        actualServer.httpHandlerMgr.removeHandler(
+          new HttpHandlers(
+            requestStream.handler(),
+            wsStream.handler(),
+            connectionHandler,
+            exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler)
+          , listenContext);
 
         if (actualServer.httpHandlerMgr.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
@@ -541,7 +564,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
 
   private void addHandlers(HttpServerImpl server, ContextImpl context) {
-    server.httpHandlerMgr.addHandler(new HttpHandlers(requestStream.handler(), wsStream.handler(), connectionHandler), context);
+    server.httpHandlerMgr.addHandler(
+      new HttpHandlers(
+        requestStream.handler(),
+        wsStream.handler(),
+        connectionHandler,
+        exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler)
+      , context);
   }
 
   private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
@@ -950,8 +979,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       super.exceptionCaught(ctx, cause);
-      HandlerHolder<HttpHandlers> reqHandler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
-      reqHandler.context.executeFromIO(() -> HttpServerImpl.this.connectionExceptionHandler.handle(cause));
+      HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
+      handler.context.executeFromIO(() -> handler.handler.exceptionHandler.handle(cause));
+    }
   }
-}
 }

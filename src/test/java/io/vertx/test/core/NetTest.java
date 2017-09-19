@@ -1526,6 +1526,10 @@ public class NetTest extends VertxTestBase {
 
       options.setPort(4043);
       server = vertx.createNetServer(options);
+      if (!shouldPass) {
+        waitForMore(1);
+      }
+      server.exceptionHandler(err -> complete());
       Handler<NetSocket> serverHandler = socket -> {
         indicatedServerName = socket.indicatedServerName();
         if (socket.isSsl()) {
@@ -1601,7 +1605,7 @@ public class NetTest extends VertxTestBase {
               received.appendBuffer(buffer);
               if (received.length() == expected.length()) {
                 assertEquals(expected, received);
-                testComplete();
+                complete();
               }
               if (startTLS && !upgradedClient.get()) {
                 upgradedClient.set(true);
@@ -1636,7 +1640,7 @@ public class NetTest extends VertxTestBase {
             if (shouldPass) {
               fail("Should not fail to connect");
             } else {
-              testComplete();
+              complete();
             }
           }
         });
