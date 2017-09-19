@@ -74,6 +74,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.AsyncResolveConnectHelper;
 import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.HandlerManager;
@@ -254,7 +255,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
-        bootstrap.channelFactory(() -> vertx.transport().serverSocketChannel());
         applyConnectionOptions(bootstrap);
         sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
@@ -296,7 +296,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         addHandlers(this, listenContext);
         try {
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, port, host, bootstrap);
+          bindFuture = AsyncResolveConnectHelper.doBind(vertx, SocketAddress.inetSocketAddress(port, host), bootstrap);
           bindFuture.addListener(res -> {
             if (res.failed()) {
               vertx.sharedHttpServers().remove(id);

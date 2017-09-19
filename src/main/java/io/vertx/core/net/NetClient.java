@@ -64,6 +64,29 @@ public interface NetClient extends Measured {
   NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler);
 
   /**
+   * Open a connection to a server at the specific {@code remoteAddress}.
+   * <p>
+   * The connect is done asynchronously and on success, a {@link NetSocket} instance is supplied via the {@code connectHandler} instance
+   *
+   * @param remoteAddress the remote address
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetClient connect(SocketAddress remoteAddress, Handler<AsyncResult<NetSocket>> connectHandler);
+
+  /**
+   * Open a connection to a server at the specific {@code remoteAddress}.
+   * <p>
+   * The connect is done asynchronously and on success, a {@link NetSocket} instance is supplied via the {@code connectHandler} instance
+   *
+   * @param remoteAddress the remote address
+   * @param serverName the SNI server name
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetClient connect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler);
+
+  /**
    * Close the client.
    * <p>
    * Any sockets which have not been closed manually will be closed here. The close is asynchronous and may not

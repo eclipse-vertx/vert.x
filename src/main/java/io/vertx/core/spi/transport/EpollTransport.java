@@ -15,24 +15,42 @@
  */
 package io.vertx.core.spi.transport;
 
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollDatagramChannel;
+import io.netty.channel.epoll.EpollDomainSocketChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.ServerSocketChannel;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.unix.DomainSocketAddress;
 import io.vertx.core.spi.Transport;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class EpollTransport implements Transport {
+
+  @Override
+  public SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved) {
+    if (address.path() != null) {
+      return new DomainSocketAddress(address.path());
+    } else {
+      if (resolved) {
+        return new InetSocketAddress(address.host(), address.port());
+      } else {
+        return InetSocketAddress.createUnresolved(address.host(), address.port());
+      }
+    }
+  }
 
   @Override
   public boolean isAvailable() {
@@ -62,12 +80,20 @@ public class EpollTransport implements Transport {
   }
 
   @Override
-  public SocketChannel socketChannel() {
-    return new EpollSocketChannel();
+  public Channel socketChannel(boolean domain) {
+    if (domain) {
+      return new EpollDomainSocketChannel();
+    } else {
+      return new EpollSocketChannel();
+    }
   }
 
   @Override
-  public ServerSocketChannel serverSocketChannel() {
-    return new EpollServerSocketChannel();
+  public ServerChannel serverChannel(boolean domain) {
+    if (domain) {
+      return new EpollServerDomainSocketChannel();
+    } else {
+      return new EpollServerSocketChannel();
+    }
   }
 }

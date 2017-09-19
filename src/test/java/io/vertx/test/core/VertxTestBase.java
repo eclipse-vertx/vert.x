@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 public class VertxTestBase extends AsyncTestBase {
 
   public static final boolean USE_NATIVE_TRANSPORT = Boolean.getBoolean("vertx.useNativeTransport");
+  public static final boolean USE_DOMAIN_SOCKETS = Boolean.getBoolean("vertx.useDomainSockets");
   private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
 
   @Rule

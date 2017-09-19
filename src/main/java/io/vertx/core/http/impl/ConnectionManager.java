@@ -47,6 +47,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.ProxyChannelProvider;
@@ -294,7 +295,7 @@ public class ConnectionManager {
       sslHelper.validate(vertx);
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
-      bootstrap.channelFactory(() -> vertx.transport().socketChannel());
+      bootstrap.channelFactory(() -> vertx.transport().socketChannel(false));
       connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, waiter);
     }
 
@@ -548,7 +549,7 @@ public class ConnectionManager {
         }
       };
 
-      channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelInitializer, channelHandler);
+      channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), SocketAddress.inetSocketAddress(port, host), channelInitializer, channelHandler);
     }
 
     void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {

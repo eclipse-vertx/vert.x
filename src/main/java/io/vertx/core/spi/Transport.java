@@ -15,13 +15,14 @@
  */
 package io.vertx.core.spi;
 
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.ServerSocketChannel;
-import io.netty.channel.socket.SocketChannel;
 import io.vertx.core.spi.transport.JdkTransport;
 
+import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -75,6 +76,8 @@ public interface Transport {
    */
   Throwable unavailabilityCause();
 
+  SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved);
+
   /**
    * @return a new event loop group
    */
@@ -92,12 +95,14 @@ public interface Transport {
 
   /**
    * @return a new socket channel
+   * @param domain wether to create a domain socket or a regular socket
    */
-  SocketChannel socketChannel();
+  Channel socketChannel(boolean domain);
 
   /**
    * @return a new server socket channel
+   * @param domain wether to create a domain socket or a regular socket
    */
-  ServerSocketChannel serverSocketChannel();
+  ServerChannel serverChannel(boolean domain);
 
 }

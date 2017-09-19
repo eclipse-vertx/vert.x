@@ -44,6 +44,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -154,7 +155,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     }
   }
 
-  public synchronized void listen(Handler<NetSocket> handler, int port, String host, Handler<AsyncResult<Void>> listenHandler) {
+  public synchronized void listen(Handler<NetSocket> handler, SocketAddress socketAddress, Handler<AsyncResult<Void>> listenHandler) {
     if (handler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -167,15 +168,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     registeredHandler = handler;
 
     synchronized (vertx.sharedNetServers()) {
-      this.actualPort = port; // Will be updated on bind for a wildcard port
-      id = new ServerID(port, host);
+      this.actualPort = socketAddress.port(); // Will be updated on bind for a wildcard port
+      String hostOrPath = socketAddress.host() != null ? socketAddress.host() : socketAddress.path();
+      id = new ServerID(actualPort, hostOrPath);
       NetServerImpl shared = vertx.sharedNetServers().get(id);
-      if (shared == null || port == 0) { // Wildcard port will imply a new actual server each time
+      if (shared == null || actualPort == 0) { // Wildcard port will imply a new actual server each time
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
-        bootstrap.channelFactory(() -> vertx.transport().serverSocketChannel());
         sslHelper.validate(vertx);
 
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
@@ -224,13 +225,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
 
         try {
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, port, host, bootstrap);
+          bindFuture = AsyncResolveConnectHelper.doBind(vertx, socketAddress, bootstrap);
           bindFuture.addListener(res -> {
             if (res.succeeded()) {
               Channel ch = res.result();
-              log.trace("Net server listening on " + host + ":" + ch.localAddress());
+              log.trace("Net server listening on " + (hostOrPath) + ":" + ch.localAddress());
               // Update port to actual port - wildcard port 0 might have been used
-              NetServerImpl.this.actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+              if (NetServerImpl.this.actualPort != -1) {
+                NetServerImpl.this.actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+              }
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
               serverChannelGroup.add(ch);
               vertx.sharedNetServers().put(id, NetServerImpl.this);
@@ -254,7 +257,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
           listening = false;
           return;
         }
-        if (port != 0) {
+        if (actualPort != 0) {
           vertx.sharedNetServers().put(id, this);
         }
         actualServer = this;
@@ -311,19 +314,29 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   @Override
-  public NetServer listen() {
-    listen(null);
-    return this;
+  public NetServer listen(SocketAddress localAddress) {
+    return listen(localAddress, null);
   }
 
   @Override
-  public synchronized NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
-    listen(handler, port, host, ar -> {
+  public synchronized NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler) {
+    listen(handler, localAddress, ar -> {
       if (listenHandler != null) {
         listenHandler.handle(ar.map(this));
       }
     });
     return this;
+  }
+
+  @Override
+  public NetServer listen() {
+    listen((Handler<AsyncResult<NetServer>>) null);
+    return this;
+  }
+
+  @Override
+  public NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
+    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
   }
 
   @Override

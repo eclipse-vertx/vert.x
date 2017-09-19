@@ -37,6 +37,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -116,7 +117,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   @Override
   public NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
-    doConnect(port, host, serverName, connectHandler != null ? ar -> connectHandler.handle(ar.map(s -> (NetSocket) s)) : null);
+    doConnect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler != null ? ar -> connectHandler.handle(ar.map(s -> (NetSocket) s)) : null);
     return this;
   }
 
@@ -174,20 +175,31 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
   }
 
-  protected void doConnect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
-    doConnect(port, host, serverName, connectHandler, options.getReconnectAttempts());
+  @Override
+  public NetClient connect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
+    doConnect(remoteAddress, serverName, connectHandler);
+    return this;
   }
 
-  protected void doConnect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler,
+  @Override
+  public NetClient connect(SocketAddress remoteAddress, Handler<AsyncResult<NetSocket>> connectHandler) {
+    doConnect(remoteAddress, null, connectHandler);
+    return this;
+  }
+
+  protected void doConnect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
+    doConnect(remoteAddress, serverName, connectHandler, options.getReconnectAttempts());
+  }
+
+  protected void doConnect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler,
                            int remainingAttempts) {
     checkClosed();
-    Objects.requireNonNull(host, "No null host accepted");
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextImpl context = vertx.getOrCreateContext();
     sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
-    bootstrap.channelFactory(() -> vertx.transport().socketChannel());
+    bootstrap.channelFactory(() -> vertx.transport().socketChannel(remoteAddress.path() != null));
 
     applyConnectionOptions(bootstrap);
 
@@ -200,7 +212,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     Handler<Channel> channelInitializer = ch -> {
       if (sslHelper.isSSL()) {
-        SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx, host, port, serverName));
+        SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx, remoteAddress, serverName));
         ch.pipeline().addLast("ssl", sslHandler);
       }
     };
@@ -217,13 +229,13 @@ public class NetClientImpl implements MetricsProvider, NetClient {
           io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
           fut.addListener(future2 -> {
             if (future2.isSuccess()) {
-              connected(context, ch, connectHandler, host, port);
+              connected(context, ch, connectHandler, remoteAddress);
             } else {
               failed(context, ch, future2.cause(), connectHandler);
             }
           });
         } else {
-          connected(context, ch, connectHandler, host, port);
+          connected(context, ch, connectHandler, remoteAddress);
         }
 
       } else {
@@ -232,7 +244,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
-                doConnect(port, host, serverName, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+                doConnect(remoteAddress, serverName, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
             );
           });
         } else {
@@ -241,16 +253,16 @@ public class NetClientImpl implements MetricsProvider, NetClient {
       }
     };
 
-    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelInitializer, channelHandler);
+    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), remoteAddress, channelInitializer, channelHandler);
   }
 
-  private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, String host, int port) {
+  private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {
 
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
     initChannel(ch.pipeline());
 
-    VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, host, port, context, sslHelper, metrics)) {
+    VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics)) {
       @Override
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         connection.handleMessageReceived(msg);;

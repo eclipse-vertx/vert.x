@@ -15,17 +15,19 @@
  */
 package io.vertx.core.spi.transport;
 
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.ServerSocketChannel;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.spi.Transport;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -36,6 +38,19 @@ public class JdkTransport implements Transport {
   public static final JdkTransport INSTANCE = new JdkTransport();
 
   private JdkTransport() {
+  }
+
+  @Override
+  public SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved) {
+    if (address.path() != null) {
+      throw new IllegalArgumentException("Domain socket not supported by JDK transport");
+    } else {
+      if (resolved) {
+        return new InetSocketAddress(address.host(), address.port());
+      } else {
+        return InetSocketAddress.createUnresolved(address.host(), address.port());
+      }
+    }
   }
 
   @Override
@@ -73,12 +88,18 @@ public class JdkTransport implements Transport {
   }
 
   @Override
-  public SocketChannel socketChannel() {
+  public Channel socketChannel(boolean domain) {
+    if (domain) {
+      throw new IllegalArgumentException();
+    }
     return new NioSocketChannel();
   }
 
   @Override
-  public ServerSocketChannel serverSocketChannel() {
+  public ServerChannel serverChannel(boolean domain) {
+    if (domain) {
+      throw new IllegalArgumentException();
+    }
     return new NioServerSocketChannel();
   }
 }
