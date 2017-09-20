@@ -1767,7 +1767,7 @@ public class JsonObjectTest {
     otherObj.putNull("key");
 
     obj.mergeIn(otherObj, true);
-    assertNull(obj.getString("key"));
+    assertNull(obj.getString("key", "other"));
   }
 
   private void testStreamCorrectTypes(JsonObject object) {
