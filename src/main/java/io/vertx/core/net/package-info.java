@@ -156,8 +156,8 @@
  *
  * Files and classpath resources can be written to the socket directly using {@link io.vertx.core.net.NetSocket#sendFile}. This can be a very
  * efficient way to send files, as it can be handled by the OS kernel directly where supported by the operating system.
- * 
- * Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the 
+ *
+ * Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the
  * classpath resolution or disabling it.
  *
  * [source,$lang]
@@ -385,7 +385,9 @@
  * {@link examples.NetExamples#example22}
  * ----
  *
- * Keep in mind that pem configuration, the private key is not crypted.
+ * PKCS8, PKCS1 and X.509 certificates wrapped in a PEM block formats are supported.
+ *
+ * WARNING: keep in mind that pem configuration, the private key is not crypted.
  *
  * ==== Specifying trust for the server
  *
