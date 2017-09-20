@@ -1582,6 +1582,8 @@
  * </dependency>
  * ----
  *
+ * MacOS Sierra and above are supported.
+ *
  * Native on BSD gives you extra networking options:
  *
  * * SO_REUSEPORT
