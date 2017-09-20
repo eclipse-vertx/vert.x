@@ -69,7 +69,7 @@ public class Transport {
       // Jar not here
     }
     try {
-      Transport kqueue = new KQeueTransport();
+      Transport kqueue = new KQueueTransport();
       if (kqueue.isAvailable()) {
         return kqueue;
       } else if (transport == null) {

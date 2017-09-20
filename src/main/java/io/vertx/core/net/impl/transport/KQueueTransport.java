@@ -38,9 +38,9 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class KQeueTransport extends Transport {
+class KQueueTransport extends Transport {
 
-  KQeueTransport() {
+  KQueueTransport() {
   }
 
   @Override
