@@ -2466,6 +2466,42 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testServerNetSocketEndWithHandler() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      NetSocket socket = req.netSocket();
+      socket.handler(buff -> {
+        socket.write(buff);
+        socket.end(v -> complete());
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          request.encoder.writeData(request.context, id, Buffer.buffer("some-data").getByteBuf(), 0, false, request.context.newPromise());
+          request.context.flush();
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          if (endOfStream) {
+            request.encoder.writeData(request.context, id, Buffer.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
+            vertx.runOnContext(v -> complete());
+          }
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
   public void testNetSocketHandleReset() throws Exception {
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();
