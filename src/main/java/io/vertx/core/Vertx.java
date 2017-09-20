@@ -550,7 +550,7 @@ public interface Vertx extends Measured {
    * @return wether the native transport is used
    */
   @CacheReturn
-  boolean isNativeTransport();
+  boolean isNativeTransportEnabled();
 
   /**
    * Set a default exception handler for {@link Context}, set on {@link Context#exceptionHandler(Handler)} at creation.

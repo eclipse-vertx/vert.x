@@ -251,6 +251,21 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (NetServerOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public NetServerOptions setTcpCork(boolean tcpCork) {
+    return (NetServerOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public NetServerOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (NetServerOptions) super.setTcpQuickAck(tcpQuickAck);
+  }
+
+  @Override
   public NetServerOptions addCrlPath(String crlPath) throws NullPointerException {
     return (NetServerOptions) super.addCrlPath(crlPath);
   }

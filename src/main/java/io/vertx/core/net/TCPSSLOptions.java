@@ -633,6 +633,31 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   @Override
+  public TCPSSLOptions setSendBufferSize(int sendBufferSize) {
+    return (TCPSSLOptions) super.setSendBufferSize(sendBufferSize);
+  }
+
+  @Override
+  public TCPSSLOptions setReceiveBufferSize(int receiveBufferSize) {
+    return (TCPSSLOptions) super.setReceiveBufferSize(receiveBufferSize);
+  }
+
+  @Override
+  public TCPSSLOptions setReuseAddress(boolean reuseAddress) {
+    return (TCPSSLOptions) super.setReuseAddress(reuseAddress);
+  }
+
+  @Override
+  public TCPSSLOptions setTrafficClass(int trafficClass) {
+    return (TCPSSLOptions) super.setTrafficClass(trafficClass);
+  }
+
+  @Override
+  public TCPSSLOptions setReusePort(boolean reusePort) {
+    return (TCPSSLOptions) super.setReusePort(reusePort);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof TCPSSLOptions)) return false;

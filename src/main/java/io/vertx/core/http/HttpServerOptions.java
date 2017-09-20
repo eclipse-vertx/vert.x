@@ -329,6 +329,21 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (HttpServerOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public HttpServerOptions setTcpCork(boolean tcpCork) {
+    return (HttpServerOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public HttpServerOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (HttpServerOptions) super.setTcpQuickAck(tcpQuickAck);
+  }
+
+  @Override
   public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
     return (HttpServerOptions) super.addCrlPath(crlPath);
   }

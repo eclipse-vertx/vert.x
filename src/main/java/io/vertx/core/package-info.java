@@ -34,6 +34,7 @@
  * * DNS client
  * * File system access
  * * High availability
+ * * Native transports
  * * Clustering
  *
  * The functionality in core is fairly low level - you won't find stuff like database access, authorisation or high level
@@ -1528,6 +1529,85 @@
  *
  * Quora can also be used in conjunction with ha groups. In that case, quora are resolved for each particular
  * group.
+ *
+ * == Native transports
+ *
+ * Vert.x can run with http://netty.io/wiki/native-transports.html[native transports] (when available) on BSD (OSX) and Linux:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#configureNative()}
+ * ----
+ *
+ * NOTE: preferring native transport will not prevent the application to execute, if your application requires native
+ * transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.
+ *
+ * === Native Linux Transport
+ *
+ * You need to add the following dependency in your classpath:
+ *
+ * [source,xml]
+ * ----
+ * <dependency>
+ *   <groupId>io.netty</groupId>
+ *   <artifactId>netty-transport-native-epoll</artifactId>
+ *   <version>4.1.15.Final</version>
+ *   <classifier>linux-x86_64</classifier>
+ * </dependency>
+ * ----
+ *
+ * Native on Linux gives you extra networking options:
+ *
+ * * SO_REUSEPORT
+ * * TCP_QUICKACK
+ * * TCP_CORK
+ * * TCP_FASTOPEN
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#configureLinuxOptions}
+ * ----
+ *
+ * === Native BSD Transport
+ *
+ * You need to add the following dependency in your classpath:
+ *
+ * [source,xml]
+ * ----
+ * <dependency>
+ *   <groupId>io.netty</groupId>
+ *   <artifactId>netty-transport-native-epoll</artifactId>
+ *   <version>4.1.15.Final</version>
+ *   <classifier>osx-x86_64</classifier>
+ * </dependency>
+ * ----
+ *
+ * Native on BSD gives you extra networking options:
+ *
+ * * SO_REUSEPORT
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#configureBSDOptions}
+ * ----
+ *
+ * === Domain sockets
+ *
+ * Natives provide support domain sockets for `NetServer`:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#serverWithDomainSockets}
+ * ----
+ *
+ * As well as `NetClient`:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#clientWithDomainSockets}
+ * ----
+ *
+ * NOTE: support for `HttpServer` and `HttpClient` can be expected in later versions of Vert.x
  *
  * == Security notes
  *

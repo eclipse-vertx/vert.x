@@ -51,13 +51,13 @@ public class TransportTest extends AsyncTestBase {
       // Expected
     }
     testNetServer(new VertxOptions());
-    assertFalse(vertx.isNativeTransport());
+    assertFalse(vertx.isNativeTransportEnabled());
   }
 
   @Test
   public void testFallbackOnJDK() {
     testNetServer(new VertxOptions().setPreferNativeTransport(true));
-    assertFalse(vertx.isNativeTransport());
+    assertFalse(vertx.isNativeTransportEnabled());
   }
 
   private void testNetServer(VertxOptions options) {

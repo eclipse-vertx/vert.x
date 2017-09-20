@@ -397,6 +397,21 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (HttpClientOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public HttpClientOptions setTcpCork(boolean tcpCork) {
+    return (HttpClientOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public HttpClientOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (HttpClientOptions) super.setTcpQuickAck(tcpQuickAck);
+  }
+
+  @Override
   public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
     return (HttpClientOptions) super.addCrlPath(crlPath);
   }

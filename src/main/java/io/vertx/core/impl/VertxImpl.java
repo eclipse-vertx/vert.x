@@ -270,7 +270,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public boolean isNativeTransport() {
+  public boolean isNativeTransportEnabled() {
     return transport != Transport.JDK;
   }
 
