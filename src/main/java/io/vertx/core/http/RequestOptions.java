@@ -37,12 +37,12 @@ public class RequestOptions {
   public static final int DEFAULT_PORT = 80;
 
   /**
-   * SSL enable by default = false
+   * SSL enabled by default = false
    */
   public static final boolean DEFAULT_SSL = false;
 
   /**
-   * SSL enable by default = false
+   * The default relative request URI = ""
    */
   public static final String DEFAULT_URI = "";
 

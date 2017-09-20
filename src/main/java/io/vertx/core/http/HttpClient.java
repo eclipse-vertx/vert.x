@@ -1049,6 +1049,21 @@ public interface HttpClient extends Measured {
                        String subProtocols, Handler<WebSocket> wsConnect);
 
   /**
+   * Connect a WebSocket with the specified absolute url, with the specified headers, using
+   * the specified version of WebSockets, and the specified websocket sub protocols.
+   *
+   * @param url            the absolute url
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param subProtocols   the subprotocols to use
+   * @param wsConnect      handler that will be called with the websocket when connected
+   * @param failureHandler handler that will be called if websocket connection fails
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClient websocketAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
+
+  /**
    * Connect a WebSocket with the specified options, with the specified headers, using
    * the specified version of WebSockets, and the specified websocket sub protocols
    * @param options  the request options
@@ -1292,6 +1307,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version);
+
+  /**
+   * Create a WebSocket stream with the specified absolute url, the specified headers, using the specified version of WebSockets,
+   * and the specified websocket sub protocols.
+   *
+   * @param url          the absolute url
+   * @param headers      the headers
+   * @param version      the websocket version
+   * @param subProtocols the subprotocols to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  ReadStream<WebSocket> websocketStreamAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols);
 
   /**
    * Create a WebSocket stream to the specified port, host and relative request URI, with the specified headers, using
