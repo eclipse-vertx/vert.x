@@ -32,7 +32,7 @@ Vert.x supports domain sockets on Linux exclusively, to run the tests with domai
 > mvn test -Dvertx.testNativeTransport=true -Dtest.useDomainSockets
 ```
 
-Vert.x has a few integrations tests that runs a differently configured JVM (classpath, system properties, etc....)
+Vert.x has a few integrations tests that run a differently configured JVM (classpath, system properties, etc....)
 for ALPN, native and logging
 
 ```
