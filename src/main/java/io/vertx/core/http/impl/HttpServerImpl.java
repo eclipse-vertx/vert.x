@@ -55,6 +55,8 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -290,7 +292,43 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 if (DISABLE_HC2) {
                   configureHttp1(pipeline);
                 } else {
-                  pipeline.addLast(new Http1xOrHttp2Handler());
+                  IdleStateHandler idle;
+                  if (options.getIdleTimeout() > 0) {
+                    pipeline.addLast("idle", idle = new IdleStateHandler(0, 0, options.getIdleTimeout()));
+                  } else {
+                    idle = null;
+                  }
+                  // Handler that detects whether the HTTP/2 connection preface or just process the request
+                  // with the HTTP 1.x pipeline to support H2C with prior knowledge, i.e a client that connects
+                  // and uses HTTP/2 in clear text directly without an HTTP upgrade.
+                  pipeline.addLast(new Http1xOrH2CHandler() {
+                    @Override
+                    protected void configure(ChannelHandlerContext ctx, boolean h2c) {
+                      if (idle != null) {
+                        // It will be re-added but this way we don't need to pay attention to order
+                        pipeline.remove(idle);
+                      }
+                      if (h2c) {
+                        handleHttp2(ctx.channel());
+                      } else {
+                        configureHttp1(ctx.pipeline());
+                      }
+                    }
+
+                    @Override
+                    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                      if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
+                        ctx.close();
+                      }
+                    }
+
+                    @Override
+                    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                      super.exceptionCaught(ctx, cause);
+                      HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
+                      handler.context.executeFromIO(() -> handler.handler.exceptionHandler.handle(cause));
+                    }
+                  });
                 }
               }
             }
@@ -957,30 +995,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         res.headers().set(HttpHeaderNames.CONNECTION, "close");
         ctx.writeAndFlush(res);
       }
-    }
-  }
-
-  /**
-   * Handler that detects whether the HTTP/2 connection preface or just process the request
-   * with the HTTP 1.x pipeline to support H2C with prior knowledge, i.e a client that connects
-   * and uses HTTP/2 in clear text directly without an HTTP upgrade.
-   */
-  private class Http1xOrHttp2Handler extends Http1xOrH2CHandler {
-
-    @Override
-    protected void configure(ChannelHandlerContext ctx, boolean h2c) {
-      if (h2c) {
-        handleHttp2(ctx.channel());
-      } else {
-        configureHttp1(ctx.pipeline());
-      }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      super.exceptionCaught(ctx, cause);
-      HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
-      handler.context.executeFromIO(() -> handler.handler.exceptionHandler.handle(cause));
     }
   }
 }

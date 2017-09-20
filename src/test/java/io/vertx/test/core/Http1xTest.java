@@ -3702,4 +3702,24 @@ public class Http1xTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testIdleTimeoutWithPartialH2CRequest() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setIdleTimeout(1));
+    server.requestHandler(req -> {
+      testComplete();
+    });
+    startServer();
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+      so.closeHandler(v -> {
+        testComplete();
+      });
+    }));
+    await();
+  }
 }
