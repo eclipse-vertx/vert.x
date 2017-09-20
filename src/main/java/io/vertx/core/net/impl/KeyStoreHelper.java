@@ -36,6 +36,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.Principal;
@@ -44,6 +45,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -53,9 +55,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -65,6 +68,13 @@ public class KeyStoreHelper {
 
   // Dummy password for encrypting pem based stores in memory
   private static final String DUMMY_PASSWORD = "dummy";
+  private static final Pattern BEGIN_PATTERN = Pattern.compile("-----BEGIN ([A-Z ]+)-----");
+  private static final Pattern END_PATTERN = Pattern.compile("-----END ([A-Z ]+)-----");
+
+  private static class Pem {
+    private String delimitier;
+    private byte[] content;
+  }
 
   public static KeyStoreHelper create(VertxInternal vertx, KeyCertOptions options) throws Exception {
     if (options instanceof JksOptions) {
@@ -112,11 +122,8 @@ public class KeyStoreHelper {
       return create(vertx, (KeyCertOptions) options);
     } else if (options instanceof PemTrustOptions) {
       PemTrustOptions trustOptions = (PemTrustOptions) options;
-      Stream<Buffer> certValues = trustOptions.
-          getCertPaths().
-          stream().
-          map(path -> vertx.resolveFile(path).getAbsolutePath()).
-          map(vertx.fileSystem()::readFileBlocking);
+      Stream<Buffer> certValues = trustOptions.getCertPaths().stream()
+          .map(path -> vertx.resolveFile(path).getAbsolutePath()).map(vertx.fileSystem()::readFileBlocking);
       certValues = Stream.concat(certValues, trustOptions.getCertValues().stream());
       return new KeyStoreHelper(loadCA(certValues), null);
     } else {
@@ -161,31 +168,34 @@ public class KeyStoreHelper {
             // It's a private key
             continue;
           }
-          List<X509Certificate> chain = Arrays.asList(tmp)
-              .stream()
-              .map(c -> (X509Certificate)c)
+          List<X509Certificate> chain = Arrays.asList(tmp).stream().map(c -> (X509Certificate) c)
               .collect(Collectors.toList());
           X509KeyManager mgr = new X509KeyManager() {
             @Override
             public String[] getClientAliases(String s, Principal[] principals) {
               throw new UnsupportedOperationException();
             }
+
             @Override
             public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
               throw new UnsupportedOperationException();
             }
+
             @Override
             public String[] getServerAliases(String s, Principal[] principals) {
               throw new UnsupportedOperationException();
             }
+
             @Override
             public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
               throw new UnsupportedOperationException();
             }
+
             @Override
             public X509Certificate[] getCertificateChain(String s) {
               return chain.toArray(new X509Certificate[chain.size()]);
             }
+
             @Override
             public PrivateKey getPrivateKey(String s) {
               return key;
@@ -207,7 +217,7 @@ public class KeyStoreHelper {
 
   public KeyManagerFactory getKeyMgrFactory() throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    fact.init(store, password != null ? password.toCharArray(): null);
+    fact.init(store, password != null ? password.toCharArray() : null);
     return fact;
   }
 
@@ -249,7 +259,7 @@ public class KeyStoreHelper {
     InputStream in = null;
     try {
       in = new ByteArrayInputStream(value.get().getBytes());
-      ks.load(in, password != null ? password.toCharArray(): null);
+      ks.load(in, password != null ? password.toCharArray() : null);
     } finally {
       if (in != null) {
         try {
@@ -275,7 +285,8 @@ public class KeyStoreHelper {
     while (keyValueIt.hasNext() && certValueIt.hasNext()) {
       PrivateKey key = loadPrivateKey(keyValueIt.next());
       Certificate[] chain = loadCerts(certValueIt.next());
-      keyStore.setEntry("dummy-entry-" + index++, new KeyStore.PrivateKeyEntry(key, chain), new KeyStore.PasswordProtection(DUMMY_PASSWORD.toCharArray()));
+      keyStore.setEntry("dummy-entry-" + index++, new KeyStore.PrivateKeyEntry(key, chain),
+          new KeyStore.PasswordProtection(DUMMY_PASSWORD.toCharArray()));
     }
     return keyStore;
   }
@@ -284,9 +295,68 @@ public class KeyStoreHelper {
     if (keyValue == null) {
       throw new RuntimeException("Missing private key path");
     }
-    byte[] value = loadPems(keyValue, "PRIVATE KEY").get(0);
+    List<Pem> pems = loadPems(keyValue, "PRIVATE KEY");
     KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
-    return rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(value));
+    Pem pem = pems.get(0);
+    if ("RSA PRIVATE KEY".equals(pem.delimitier))
+      return rsaKeyFactory.generatePrivate(parseRsa(pem.content));
+    else
+      return rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(pem.content));
+  }
+
+  private static RSAPrivateCrtKeySpec parseRsa(byte[] keyBytes) {
+    List<BigInteger> rsaIntegers = new ArrayList<BigInteger>(8);
+    ASN1Parse(keyBytes, rsaIntegers);
+    if (rsaIntegers.size() < 8) {
+      throw new RuntimeException("Invalid formatted RSA key");
+    }
+
+    BigInteger modulus = rsaIntegers.get(1);
+    BigInteger pubExp = rsaIntegers.get(2);
+    BigInteger privExp = rsaIntegers.get(3);
+    BigInteger primeP = rsaIntegers.get(4);
+    BigInteger primeQ = rsaIntegers.get(5);
+    BigInteger primeExponentP = rsaIntegers.get(6);
+    BigInteger primeExponentQ = rsaIntegers.get(7);
+    BigInteger crtCoefficient = rsaIntegers.get(8);
+
+    RSAPrivateCrtKeySpec privSpec = new RSAPrivateCrtKeySpec(modulus, pubExp, privExp, primeP, primeQ, primeExponentP,
+        primeExponentQ, crtCoefficient);
+    return privSpec;
+  }
+
+  /**
+   * @author jeho0815
+   */
+  private static void ASN1Parse(byte[] b, List<BigInteger> integers) {
+    int pos = 0;
+    while (pos < b.length) {
+      byte tag = b[pos++];
+      int length = b[pos++];
+      if ((length & 0x80) != 0) {
+        int extLen = 0;
+        for (int i = 0; i < (length & 0x7F); i++) {
+          extLen = (extLen << 8) | (b[pos++] & 0xFF);
+        }
+        length = extLen;
+      }
+      byte[] contents = new byte[length];
+      System.arraycopy(b, pos, contents, 0, length);
+      pos += length;
+
+      if (tag == 0x30) { // sequence
+        ASN1Parse(contents, integers);
+      } else if (tag == 0x02) { // Integer
+        BigInteger i = new BigInteger(contents);
+        integers.add(i);
+      } else {
+        throw new RuntimeException("Unsupported ASN.1 tag " + tag + " encountered.  Is this a " + "valid RSA key?");
+      }
+    }
+  }
+
+  public X509Certificate[] loadCerts(Supplier<Buffer> certValue) throws Exception {
+    return KeyStoreHelper.loadCerts(certValue.get());
   }
 
   private static KeyStore loadCA(Stream<Buffer> certValues) throws Exception {
@@ -302,32 +372,46 @@ public class KeyStoreHelper {
     return keyStore;
   }
 
-  private static List<byte[]> loadPems(Buffer data, String delimiter) throws IOException {
+  private static List<Pem> loadPems(Buffer data, String delimiter) throws IOException {
     String pem = data.toString();
-    String beginDelimiter = "-----BEGIN " + delimiter + "-----";
-    String endDelimiter = "-----END " + delimiter + "-----";
-    List<byte[]> pems = new ArrayList<>();
+    List<Pem> pems = new ArrayList<>();
     int index = 0;
+    Matcher beginMatcher = BEGIN_PATTERN.matcher(pem);
+    Matcher endMatcher = END_PATTERN.matcher(pem);
+
     while (true) {
-      index = pem.indexOf(beginDelimiter, index);
-      if (index == -1) {
+      boolean begin = beginMatcher.find();
+      if (!begin) {
         break;
       }
-      index += beginDelimiter.length();
-      int end = pem.indexOf(endDelimiter, index);
-      if (end == -1) {
-        throw new RuntimeException("Missing " + endDelimiter + " delimiter");
+
+      String beginDelimiter = beginMatcher.group(1);
+      index += beginMatcher.end();
+      boolean end = endMatcher.find();
+
+      if (!end) {
+        throw new RuntimeException("Missing -----END" + beginDelimiter + "----- delimiter");
+      } else {
+        String endDelimiter = endMatcher.group(1);
+        if (!beginDelimiter.equals(endDelimiter)) {
+          throw new RuntimeException("Missing -----END" + beginDelimiter + "----- delimiter");
+        } else if (endDelimiter.contains(delimiter)) {
+          String content = pem.substring(index, endMatcher.start());
+          content = content.replaceAll("\\s", "");
+          if (content.length() == 0) {
+            throw new RuntimeException("Empty pem file");
+          }
+          Pem pemItem = new Pem();
+          pemItem.content = Base64.getDecoder().decode(content);
+          pemItem.delimitier = endDelimiter;
+          pems.add(pemItem);
+        }
+
+        index = endMatcher.end() + 1;
       }
-      String content = pem.substring(index, end);
-      content = content.replaceAll("\\s", "");
-      if (content.length() == 0) {
-        throw new RuntimeException("Empty pem file");
-      }
-      index = end + 1;
-      pems.add(Base64.getDecoder().decode(content));
     }
     if (pems.isEmpty()) {
-      throw new RuntimeException("Missing " + beginDelimiter + " delimiter");
+      throw new RuntimeException("Missing -----BEGIN " + delimiter + "----- delimiter");
     }
     return pems;
   }
@@ -336,12 +420,15 @@ public class KeyStoreHelper {
     if (buffer == null) {
       throw new RuntimeException("Missing X.509 certificate path");
     }
-    List<byte[]> pems = loadPems(buffer, "CERTIFICATE");
+    String delimitier = "CERTIFICATE";
+    List<Pem> pems = loadPems(buffer, delimitier);
     CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
     List<X509Certificate> certs = new ArrayList<>(pems.size());
-    for (byte[] pem : pems) {
-      for (Certificate cert : certFactory.generateCertificates(new ByteArrayInputStream(pem))) {
-        certs.add((X509Certificate) cert);
+    for (Pem pem : pems) {
+      if (delimitier.equals(pem.delimitier)) {
+        for (Certificate cert : certFactory.generateCertificates(new ByteArrayInputStream(pem.content))) {
+          certs.add((X509Certificate) cert);
+        }
       }
     }
     return certs.toArray(new X509Certificate[certs.size()]);

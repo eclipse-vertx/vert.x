@@ -421,6 +421,15 @@ public class KeyStoreTest extends VertxTestBase {
     testKeyStore(Cert.SERVER_PEM.get());
   }
 
+  /**
+   * Test RSA PKCS#1 PEM key
+   * #1851 
+   */
+  @Test
+  public void testRsaKeyCertPath() throws Exception {
+    testKeyStore(Cert.SERVER_PEM_RSA.get());
+  }
+  
   @Test
   public void testKeyCertValue() throws Exception {
     PemKeyCertOptions options = Cert.SERVER_PEM.get();
