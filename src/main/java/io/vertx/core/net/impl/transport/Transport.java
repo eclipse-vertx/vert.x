@@ -13,35 +13,168 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.net.impl.transport;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.ServerChannel;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
+import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.spi.transport.Transport;
+import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.SocketAddress;
 import java.net.SocketException;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.BiConsumer;
 
 /**
+ * The transport used by a {@link io.vertx.core.Vertx} instance.
+ * <p/>
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TransportHelper {
+public class Transport {
 
-  private final Transport transport;
+  /**
+   * The JDK transport, always there.
+   */
+  public static Transport JDK = new Transport();
 
-  public TransportHelper(Transport transport) {
-    this.transport = transport;
+  /**
+   * The native transport, it may be {@code null} or failed.
+   */
+  public static Transport nativeTransport() {
+    Transport transport = null;
+    try {
+      Transport epoll = new EpollTransport();
+      if (epoll.isAvailable()) {
+        return epoll;
+      } else {
+        transport = epoll;
+      }
+    } catch (Throwable ignore) {
+      // Jar not here
+    }
+    try {
+      Transport kqueue = new KQeueTransport();
+      if (kqueue.isAvailable()) {
+        return kqueue;
+      } else if (transport == null) {
+        transport = kqueue;
+      }
+    } catch (Throwable ignore) {
+      // Jar not here
+    }
+    return transport;
+  }
+
+  Transport() {
+  }
+
+  /**
+   * @return true when the transport is available.
+   */
+  public boolean isAvailable() {
+    return true;
+  }
+
+  /**
+   * @return the error that cause the unavailability when {@link #isAvailable()} returns {@code null}.
+   */
+  public Throwable unavailabilityCause() {
+    return null;
+  }
+
+  public SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved) {
+    if (address.path() != null) {
+      throw new IllegalArgumentException("Domain socket not supported by JDK transport");
+    } else {
+      if (resolved) {
+        return new InetSocketAddress(address.host(), address.port());
+      } else {
+        return InetSocketAddress.createUnresolved(address.host(), address.port());
+      }
+    }
+  }
+
+  /**
+   * Return a channel option for given {@code name} or null if that options does not exist
+   * for this transport.
+   *
+   * @param name the option name
+   * @return the channel option
+   */
+  ChannelOption<?> channelOption(String name) {
+    return null;
+  }
+
+  /**
+   * @return a new event loop group
+   */
+  public EventLoopGroup eventLoopGroup(int nThreads, ThreadFactory threadFactory, int ioRatio) {
+    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(nThreads, threadFactory);
+    eventLoopGroup.setIoRatio(ioRatio);
+    return eventLoopGroup;
+  }
+
+  /**
+   * @return a new datagram channel
+   */
+  public DatagramChannel datagramChannel() {
+    return new NioDatagramChannel();
+  }
+
+  /**
+   * @return a new datagram channel
+   */
+  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
+    switch (family) {
+      case IPv4:
+        return new NioDatagramChannel(InternetProtocolFamily.IPv4);
+      case IPv6:
+        return new NioDatagramChannel(InternetProtocolFamily.IPv6);
+      default:
+        throw new UnsupportedOperationException();
+    }
+  }
+
+  /**
+   * @return a new socket channel
+   * @param domain wether to create a domain socket or a regular socket
+   */
+  public Channel socketChannel(boolean domain) {
+    if (domain) {
+      throw new IllegalArgumentException();
+    }
+    return new NioSocketChannel();
+  }
+
+  /**
+   * @return a new server socket channel
+   * @param domain wether to create a domain socket or a regular socket
+   */
+  public ServerChannel serverChannel(boolean domain) {
+    if (domain) {
+      throw new IllegalArgumentException();
+    }
+    return new NioServerSocketChannel();
   }
 
   private void setOption(String name, Object value, BiConsumer<ChannelOption<Object>, Object> consumer) {
-    ChannelOption<Object> option = (ChannelOption<Object>) transport.channelOption(name);
+    ChannelOption<Object> option = (ChannelOption<Object>) channelOption(name);
     if (option != null) {
       consumer.accept(option, value);
     }
@@ -62,7 +195,7 @@ public class TransportHelper {
       channel.config().setTrafficClass(options.getTrafficClass());
     }
     channel.config().setBroadcast(options.isBroadcast());
-    if (transport == Transport.JDK) {
+    if (this == Transport.JDK) {
       channel.config().setLoopbackModeDisabled(options.isLoopbackModeDisabled());
       if (options.getMulticastTimeToLive() != -1) {
         channel.config().setTimeToLive(options.getMulticastTimeToLive());

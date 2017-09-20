@@ -13,7 +13,7 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.spi.transport;
+package io.vertx.core.net.impl.transport;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -38,7 +38,10 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class EpollTransport implements Transport {
+class EpollTransport extends Transport {
+
+  EpollTransport() {
+  }
 
   @Override
   public SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved) {

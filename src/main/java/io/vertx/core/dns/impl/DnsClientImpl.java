@@ -42,7 +42,7 @@ import io.vertx.core.dns.impl.decoder.RecordDecoder;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
-import io.vertx.core.spi.transport.Transport;
+import io.vertx.core.net.impl.transport.Transport;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;

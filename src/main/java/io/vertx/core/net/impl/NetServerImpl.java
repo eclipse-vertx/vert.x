@@ -470,7 +470,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
    * @param bootstrap the Netty server bootstrap
    */
   protected void applyConnectionOptions(ServerBootstrap bootstrap) {
-    new TransportHelper(vertx.transport()).configure(options, bootstrap);
+    vertx.transport().configure(options, bootstrap);
   }
 
   @Override

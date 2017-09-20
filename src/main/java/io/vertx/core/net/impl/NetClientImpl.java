@@ -151,7 +151,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
   }
 
   private void applyConnectionOptions(Bootstrap bootstrap) {
-    new TransportHelper(vertx.transport()).configure(options, bootstrap);
+    vertx.transport().configure(options, bootstrap);
   }
 
   @Override

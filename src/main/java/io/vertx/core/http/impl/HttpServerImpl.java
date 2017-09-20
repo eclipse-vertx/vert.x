@@ -74,7 +74,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.AsyncResolveConnectHelper;
-import io.vertx.core.net.impl.TransportHelper;
 import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.HandlerManager;
 import io.vertx.core.net.impl.SSLHelper;
@@ -533,7 +532,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   private void applyConnectionOptions(ServerBootstrap bootstrap) {
-    new TransportHelper(vertx.transport()).configure(options, bootstrap);
+    vertx.transport().configure(options, bootstrap);
   }
 
 

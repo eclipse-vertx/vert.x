@@ -49,7 +49,6 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
 import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.TransportHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -551,7 +550,7 @@ public class ConnectionManager {
     }
 
     void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
-      new TransportHelper(vertx.transport()).configure(options, bootstrap);
+      vertx.transport().configure(options, bootstrap);
     }
 
     void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {

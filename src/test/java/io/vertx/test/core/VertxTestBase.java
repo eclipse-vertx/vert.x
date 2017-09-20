@@ -84,11 +84,7 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected void tearDown() throws Exception {
     if (vertx != null) {
-      CountDownLatch latch = new CountDownLatch(1);
-      vertx.close(ar -> {
-        latch.countDown();
-      });
-      awaitLatch(latch);
+      close(vertx);
     }
     if (created != null) {
       CountDownLatch latch = new CountDownLatch(created.size());

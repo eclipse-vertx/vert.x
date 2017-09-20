@@ -486,6 +486,22 @@
             </configuration>
           </execution>
           <execution>
+            <id>no-native</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/test/it/TransportTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
             <id>slf4j</id>
             <goals>
               <goal>integration-test</goal>

@@ -13,18 +13,23 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.spi.transport;
+package io.vertx.core.net.impl.transport;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.kqueue.KQueueChannelOption;
+import io.netty.channel.kqueue.KQueueDatagramChannel;
+import io.netty.channel.kqueue.KQueueDomainSocketChannel;
+import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.kqueue.KQueueServerDomainSocketChannel;
+import io.netty.channel.kqueue.KQueueServerSocketChannel;
+import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.unix.DomainSocketAddress;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -33,17 +38,15 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class JdkTransport implements Transport {
+class KQeueTransport extends Transport {
 
-  public static final JdkTransport INSTANCE = new JdkTransport();
-
-  private JdkTransport() {
+  KQeueTransport() {
   }
 
   @Override
   public SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved) {
     if (address.path() != null) {
-      throw new IllegalArgumentException("Domain socket not supported by JDK transport");
+      return new DomainSocketAddress(address.path());
     } else {
       if (resolved) {
         return new InetSocketAddress(address.host(), address.port());
@@ -54,57 +57,56 @@ class JdkTransport implements Transport {
   }
 
   @Override
-  public ChannelOption<?> channelOption(String name) {
-    return null;
+  public boolean isAvailable() {
+    return KQueue.isAvailable();
   }
 
   @Override
   public Throwable unavailabilityCause() {
-    return null;
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return true;
+    return KQueue.unavailabilityCause();
   }
 
   @Override
   public EventLoopGroup eventLoopGroup(int nThreads, ThreadFactory threadFactory, int ioRatio) {
-    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(nThreads, threadFactory);
+    KQueueEventLoopGroup eventLoopGroup = new KQueueEventLoopGroup(nThreads, threadFactory);
     eventLoopGroup.setIoRatio(ioRatio);
     return eventLoopGroup;
   }
 
   @Override
   public DatagramChannel datagramChannel() {
-    return new NioDatagramChannel();
+    return new KQueueDatagramChannel();
   }
 
   @Override
   public DatagramChannel datagramChannel(InternetProtocolFamily family) {
-    switch (family) {
-      case IPv4:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv4);
-      case IPv6:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv6);
-      default:
-        throw new UnsupportedOperationException();
-    }
+    return new KQueueDatagramChannel();
   }
 
   @Override
   public Channel socketChannel(boolean domain) {
     if (domain) {
-      throw new IllegalArgumentException();
+      return new KQueueDomainSocketChannel();
+    } else {
+      return new KQueueSocketChannel();
     }
-    return new NioSocketChannel();
   }
 
   @Override
   public ServerChannel serverChannel(boolean domain) {
     if (domain) {
-      throw new IllegalArgumentException();
+      return new KQueueServerDomainSocketChannel();
+    } else {
+      return new KQueueServerSocketChannel();
     }
-    return new NioServerSocketChannel();
+  }
+
+  @Override
+  public ChannelOption<?> channelOption(String name) {
+    switch (name) {
+      case "SO_REUSEPORT":
+        return KQueueChannelOption.SO_REUSEPORT;
+    }
+    return null;
   }
 }

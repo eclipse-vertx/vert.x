@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.hamcrest.Matcher;
@@ -632,5 +633,13 @@ public class AsyncTestBase {
         consumer.accept(result.result());
       }
     };
+  }
+
+  protected void close(Vertx vertx) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.close(ar -> {
+      latch.countDown();
+    });
+    awaitLatch(latch);
   }
 }
