@@ -42,6 +42,18 @@ import java.util.List;
  * -----END PRIVATE KEY-----
  * </pre><p>
  *
+ * Or contain a <b>non encrypted</b> private key in <b>PKCS1</b> format wrapped in a PEM
+ * block, for example:
+ * <p>
+ *
+ * <pre>
+ * -----BEGIN RSA PRIVATE KEY-----
+ * MIIEowIBAAKCAQEAlO4gbHeFb/fmbUF/tOJfNPJumJUEqgzAzx8MBXv9Acyw9IRa
+ * ...
+ * zJ14Yd+t2fsLYVs2H0gxaA4DW6neCzgY3eKpSU0EBHUCFSXp/1+/
+ * -----END RSA PRIVATE KEY-----
+ * </pre><p>
+ *
  * A certificate file must contain an X.509 certificate wrapped in a PEM block, for example:
  * <p>
  *
