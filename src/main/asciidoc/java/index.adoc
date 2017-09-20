@@ -1741,6 +1741,8 @@ netClient.connect(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), 
 });
 ----
 
+NOTE: support for `HttpServer` and `HttpClient` can be expected in later versions of Vert.x
+
 == Security notes
 
 Vert.x is a toolkit, not an opinionated framework where we force you to do things in a certain way. This gives you

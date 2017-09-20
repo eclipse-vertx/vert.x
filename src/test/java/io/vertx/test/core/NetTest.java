@@ -92,7 +92,6 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -130,8 +129,7 @@ public class NetTest extends VertxTestBase {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
       assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
-      tmp = Files.createTempFile("vertx", ".sock").toFile();
-      assertTrue(tmp.delete());
+      tmp = TestUtils.tmpFile("vertx", ".sock");
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
     } else {
       testAddress = SocketAddress.inetSocketAddress(1234, "localhost");

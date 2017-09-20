@@ -19,8 +19,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.TestUtils;
 import org.junit.Test;
+
+import java.io.File;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -81,6 +85,31 @@ public class TransportTest extends AsyncTestBase {
           so.close();
         });
       }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testDomainSocketServer() throws Exception {
+    File sock = TestUtils.tmpFile("vertx", ".sock");
+    vertx = Vertx.vertx();
+    NetServer server = vertx.createNetServer();
+    server.connectHandler(so -> {});
+    server.listen(SocketAddress.domainSocketAddress(sock.getAbsolutePath()), onFailure(err -> {
+      assertEquals(err.getClass(), IllegalArgumentException.class);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testDomainSocketClient() throws Exception {
+    File sock = TestUtils.tmpFile("vertx", ".sock");
+    vertx = Vertx.vertx();
+    NetClient client = vertx.createNetClient();
+    client.connect(SocketAddress.domainSocketAddress(sock.getAbsolutePath()), onFailure(err -> {
+      assertEquals(err.getClass(), IllegalArgumentException.class);
+      testComplete();
     }));
     await();
   }
