@@ -16,14 +16,23 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -596,6 +605,70 @@ public class ClusterWideMapTest extends VertxTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testKeys() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.keys(onSuccess(keys -> {
+        assertEquals(map.keySet(), keys);
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testValues() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.values(onSuccess(values -> {
+        assertEquals(map.values().size(), values.size());
+        assertTrue(map.values().containsAll(values));
+        assertTrue(values.containsAll(map.values()));
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testEntries() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.entries(onSuccess(res -> {
+        assertEquals(map.entrySet(), res.entrySet());
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  protected Map<JsonObject, Buffer> genJsonToBuffer(int size) {
+    Map<JsonObject, Buffer> map = new HashMap<>();
+    for (int i = 0; i < size; i++) {
+      JsonObject key = new JsonObject().put("key", i);
+      map.put(key, key.toBuffer());
+    }
+    return map;
+  }
+
+  protected void loadData(Map<JsonObject, Buffer> map, BiConsumer<Vertx, AsyncMap<JsonObject, Buffer>> test) {
+    List<Future> futures = new ArrayList<>(map.size());
+    map.forEach((key, value) -> {
+      Future future = Future.future();
+      getVertx().sharedData().getClusterWideMap("foo", onSuccess(asyncMap -> {
+        asyncMap.put(key, value, future);
+      }));
+      futures.add(future);
+    });
+    CompositeFuture.all(futures).setHandler(onSuccess(cf -> {
+      Vertx v = getVertx();
+      v.sharedData().<JsonObject, Buffer>getClusterWideMap("foo", onSuccess(asyncMap -> {
+        test.accept(v, asyncMap);
+      }));
+    }));
   }
 
   private <K, V> void testMapPutGet(K k, V v) {

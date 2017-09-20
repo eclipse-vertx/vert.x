@@ -36,10 +36,14 @@ import io.vertx.core.spi.cluster.NodeListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -70,7 +74,7 @@ public class FakeClusterManager implements ClusterManager {
     }
     nodes.put(nodeID, node);
     synchronized (nodes) {
-      for (Map.Entry<String, FakeClusterManager> entry : nodes.entrySet()) {
+      for (Entry<String, FakeClusterManager> entry : nodes.entrySet()) {
         if (!entry.getKey().equals(nodeID)) {
           new Thread(() -> entry.getValue().memberAdded(nodeID)).start();
         }
@@ -93,7 +97,7 @@ public class FakeClusterManager implements ClusterManager {
   private static void doLeave(String nodeID) {
     nodes.remove(nodeID);
     synchronized (nodes) {
-      for (Map.Entry<String, FakeClusterManager> entry : nodes.entrySet()) {
+      for (Entry<String, FakeClusterManager> entry : nodes.entrySet()) {
         if (!entry.getKey().equals(nodeID)) {
           new Thread(() -> entry.getValue().memberRemoved(nodeID)).start();
         }
@@ -331,6 +335,21 @@ public class FakeClusterManager implements ClusterManager {
     }
 
     @Override
+    public void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
+      vertx.executeBlocking(fut -> fut.complete(new HashSet<>(map.keySet())), resultHandler);
+    }
+
+    @Override
+    public void values(Handler<AsyncResult<List<V>>> asyncResultHandler) {
+      vertx.executeBlocking(fut -> fut.complete(new ArrayList<>(map.values())), asyncResultHandler);
+    }
+
+    @Override
+    public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
+      vertx.executeBlocking(fut -> fut.complete(new HashMap<>(map)), asyncResultHandler);
+    }
+
+    @Override
     public void remove(final K k, Handler<AsyncResult<V>> resultHandler) {
       vertx.executeBlocking(fut -> fut.complete(map.remove(k)), resultHandler);
     }
@@ -404,9 +423,9 @@ public class FakeClusterManager implements ClusterManager {
     public void removeAllMatching(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler) {
       ContextInternal ctx = vertx.getOrCreateContext();
       ctx.executeBlocking(fut -> {
-        Iterator<Map.Entry<K, ChoosableSet<V>>> mapIter = map.entrySet().iterator();
+        Iterator<Entry<K, ChoosableSet<V>>> mapIter = map.entrySet().iterator();
         while (mapIter.hasNext()) {
-          Map.Entry<K, ChoosableSet<V>> entry = mapIter.next();
+          Entry<K, ChoosableSet<V>> entry = mapIter.next();
           ChoosableSet<V> vals = entry.getValue();
           Iterator<V> iter = vals.iterator();
           while (iter.hasNext()) {
