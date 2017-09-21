@@ -473,7 +473,9 @@ NetServerOptions options = new NetServerOptions().
 NetServer server = vertx.createNetServer(options);
 ----
 
-Keep in mind that pem configuration, the private key is not crypted.
+PKCS8, PKCS1 and X.509 certificates wrapped in a PEM block formats are supported.
+
+WARNING: keep in mind that pem configuration, the private key is not crypted.
 
 ==== Specifying trust for the server
 
