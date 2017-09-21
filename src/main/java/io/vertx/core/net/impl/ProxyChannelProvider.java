@@ -19,6 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SocketAddress;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -36,8 +37,12 @@ public class ProxyChannelProvider extends ChannelProvider {
   }
 
   @Override
-  public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
-                           Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
+  public void connect(VertxInternal vertx,
+                      Bootstrap bootstrap,
+                      ProxyOptions options,
+                      SocketAddress remoteAddress,
+                      Handler<Channel> channelInitializer,
+                      Handler<AsyncResult<Channel>> channelHandler) {
 
     final String proxyHost = options.getHost();
     final int proxyPort = options.getPort();
@@ -69,7 +74,7 @@ public class ProxyChannelProvider extends ChannelProvider {
         }
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
-        InetSocketAddress targetAddress = InetSocketAddress.createUnresolved(host, port);
+        java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress, false);
 
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override

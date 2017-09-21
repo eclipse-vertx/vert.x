@@ -547,6 +547,12 @@ public interface Vertx extends Measured {
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 
   /**
+   * @return wether the native transport is used
+   */
+  @CacheReturn
+  boolean isNativeTransportEnabled();
+
+  /**
    * Set a default exception handler for {@link Context}, set on {@link Context#exceptionHandler(Handler)} at creation.
    *
    * @param handler the exception handler

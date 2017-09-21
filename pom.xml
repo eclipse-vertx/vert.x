@@ -47,7 +47,7 @@
   </scm>
 
   <properties>
-    <tcnative.version>1.1.33.Fork26</tcnative.version>
+    <tcnative.version>2.0.6.Final</tcnative.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
     <log4j2.version>2.8.2</log4j2.version>
@@ -59,6 +59,8 @@
     <jetty.alpnAgent.version>2.0.6</jetty.alpnAgent.version>
     <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
     <jmh.version>1.19</jmh.version>
+    <vertx.testNativeTransport>false</vertx.testNativeTransport>
+    <vertx.testDomainSockets>false</vertx.testDomainSockets>
   </properties>
 
   <dependencyManagement>
@@ -111,6 +113,18 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-resolver-dns</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
+      <optional>true</optional>
+      <classifier>linux-x86_64</classifier>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-kqueue</artifactId>
+      <optional>true</optional>
+      <classifier>osx-x86_64</classifier>
     </dependency>
 
     <!-- Jackson -->
@@ -228,8 +242,10 @@
               <!--<javax.net.debug>ssl</javax.net.debug>-->
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
               <buildDirectory>${project.build.directory}</buildDirectory>
-              <vertxVersion>${project.version}</vertxVersion>
+              <vertx.version>${project.version}</vertx.version>
               <vertx.handle100Continue>true</vertx.handle100Continue>
+              <vertx.useNativeTransport>${vertx.testNativeTransport}</vertx.useNativeTransport>
+              <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
@@ -456,6 +472,22 @@
                 <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
                 <vertx-test-sslcontext>jdk</vertx-test-sslcontext>
               </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
+            <id>no-native</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/test/it/TransportTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
+              </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>

@@ -72,8 +72,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final String writeHandlerID;
   private final MessageConsumer registration;
   private final SSLHelper helper;
-  private final String host;
-  private final int port;
+  private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
   private Handler<Object> messageHandler = NULL_MSG_HANDLER;
   private Handler<Void> endHandler;
@@ -83,16 +82,15 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextImpl context,
                        SSLHelper helper, TCPMetrics metrics) {
-    this(vertx, channel, null, 0, context, helper, metrics);
+    this(vertx, channel, null, context, helper, metrics);
   }
 
-  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, String host, int port, ContextImpl context,
+  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, SocketAddress remoteAddress, ContextImpl context,
                        SSLHelper helper, TCPMetrics metrics) {
     super(vertx, channel, context);
     this.helper = helper;
     this.writeHandlerID = UUID.randomUUID().toString();
-    this.host = host;
-    this.port = port;
+    this.remoteAddress = remoteAddress;
     this.metrics = metrics;
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
@@ -302,8 +300,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   public NetSocket upgradeToSsl(String serverName, Handler<Void> handler) {
     ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
     if (sslHandler == null) {
-      if (host != null) {
-        sslHandler = new SslHandler(helper.createEngine(vertx, host, port, serverName));
+      if (remoteAddress != null) {
+        sslHandler = new SslHandler(helper.createEngine(vertx, remoteAddress, serverName));
       } else {
         if (helper.isSNI()) {
           sslHandler = new VertxSniHandler(helper, vertx);

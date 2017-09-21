@@ -28,6 +28,7 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
@@ -60,6 +61,8 @@ public interface VertxInternal extends Vertx {
   Map<ServerID, NetServerImpl> sharedNetServers();
 
   VertxMetrics metricsSPI();
+
+  Transport transport();
 
   /**
    * Get the current context

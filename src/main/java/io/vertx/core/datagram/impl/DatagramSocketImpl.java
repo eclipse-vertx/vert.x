@@ -15,15 +15,12 @@
  */
 package io.vertx.core.datagram.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.logging.LoggingHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -36,8 +33,8 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -68,16 +65,15 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   private Handler<Throwable> exceptionHandler;
 
   private DatagramSocketImpl(VertxInternal vertx, DatagramSocketOptions options) {
-    DatagramChannel channel = createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-        new DatagramSocketOptions(options));
-
+    Transport transport = vertx.transport();
+    DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
+    transport.configure(channel, new DatagramSocketOptions(options));
     ContextImpl context = vertx.getOrCreateContext();
     if (context.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
     }
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     channel.config().setMaxMessagesPerRead(1);
-    channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     context.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
       channel.pipeline().addLast("logging", new LoggingHandler());
@@ -312,49 +308,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   @Override
   public Metrics getMetrics() {
     return metrics;
-  }
-
-  private static NioDatagramChannel createChannel(io.vertx.core.datagram.impl.InternetProtocolFamily family,
-                                                  DatagramSocketOptions options) {
-    NioDatagramChannel channel;
-    if (family == null) {
-      channel = new NioDatagramChannel();
-    } else {
-      switch (family) {
-        case IPv4:
-          channel = new NioDatagramChannel(InternetProtocolFamily.IPv4);
-          break;
-        case IPv6:
-          channel = new NioDatagramChannel(InternetProtocolFamily.IPv6);
-          break;
-        default:
-          channel = new NioDatagramChannel();
-      }
-    }
-    if (options.getSendBufferSize() != -1) {
-      channel.config().setSendBufferSize(options.getSendBufferSize());
-    }
-    if (options.getReceiveBufferSize() != -1) {
-      channel.config().setReceiveBufferSize(options.getReceiveBufferSize());
-      channel.config().setRecvByteBufAllocator(new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-    }
-    channel.config().setReuseAddress(options.isReuseAddress());
-    if (options.getTrafficClass() != -1) {
-      channel.config().setTrafficClass(options.getTrafficClass());
-    }
-    channel.config().setBroadcast(options.isBroadcast());
-    channel.config().setLoopbackModeDisabled(options.isLoopbackModeDisabled());
-    if (options.getMulticastTimeToLive() != -1) {
-      channel.config().setTimeToLive(options.getMulticastTimeToLive());
-    }
-    if (options.getMulticastNetworkInterface() != null) {
-      try {
-        channel.config().setNetworkInterface(NetworkInterface.getByName(options.getMulticastNetworkInterface()));
-      } catch (SocketException e) {
-        throw new IllegalArgumentException("Could not find network interface with name " + options.getMulticastNetworkInterface());
-      }
-    }
-    return channel;
   }
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {

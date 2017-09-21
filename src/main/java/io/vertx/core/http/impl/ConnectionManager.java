@@ -20,10 +20,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -31,7 +28,6 @@ import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.logging.LoggingHandler;
@@ -49,8 +45,8 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -296,7 +292,7 @@ public class ConnectionManager {
       sslHelper.validate(vertx);
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
-      bootstrap.channel(NioSocketChannel.class);
+      bootstrap.channelFactory(() -> vertx.transport().socketChannel(false));
       connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, waiter);
     }
 
@@ -550,31 +546,11 @@ public class ConnectionManager {
         }
       };
 
-      channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), host, port, channelInitializer, channelHandler);
+      channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), SocketAddress.inetSocketAddress(port, host), channelInitializer, channelHandler);
     }
 
     void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
-      if (options.getLocalAddress() != null) {
-        bootstrap.localAddress(options.getLocalAddress(), 0);
-      }
-      bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-      if (options.getSendBufferSize() != -1) {
-        bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-      }
-      if (options.getReceiveBufferSize() != -1) {
-        bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-      }
-      if (options.getSoLinger() != -1) {
-        bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-      }
-      if (options.getTrafficClass() != -1) {
-        bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
-      }
-      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-      bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+      vertx.transport().configure(options, bootstrap);
     }
 
     void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {

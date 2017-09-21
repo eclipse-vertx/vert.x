@@ -2248,9 +2248,10 @@ public abstract class HttpTest extends HttpTestBase {
   public void testSetHandlersAfterListening2() throws Exception {
     server.requestHandler(noOpHandler());
 
-    server.listen();
+    server.listen(onSuccess(v -> testComplete()));
     assertIllegalStateException(() -> server.requestHandler(noOpHandler()));
     assertIllegalStateException(() -> server.websocketHandler(noOpHandler()));
+    await();
   }
 
   @Test
@@ -2267,8 +2268,9 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenTwice() throws Exception {
     server.requestHandler(noOpHandler());
-    server.listen();
+    server.listen(onSuccess(v -> testComplete()));
     assertIllegalStateException(() -> server.listen());
+    await();
   }
 
   @Test
@@ -2905,38 +2907,35 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSetHandlersOnEnd() {
+  public void testSetHandlersOnEnd() throws Exception {
     String path = "/some/path";
     server.requestHandler(req -> req.response().setStatusCode(200).end());
-    server.listen(ar -> {
-      assertTrue(ar.succeeded());
-      HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
-      req.handler(resp -> {
-      });
-      req.endHandler(done -> {
-        try {
-          req.handler(arg -> {
-          });
-          fail();
-        } catch (Exception ignore) {
-        }
-        try {
-          req.exceptionHandler(arg -> {
-          });
-          fail();
-        } catch (Exception ignore) {
-        }
-        try {
-          req.endHandler(arg -> {
-          });
-          fail();
-        } catch (Exception ignore) {
-        }
-        testComplete();
-      });
-      req.end();
-
+    startServer();
+    HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
+    req.handler(resp -> {
     });
+    req.endHandler(done -> {
+      try {
+        req.handler(arg -> {
+        });
+        fail();
+      } catch (Exception ignore) {
+      }
+      try {
+        req.exceptionHandler(arg -> {
+        });
+        fail();
+      } catch (Exception ignore) {
+      }
+      try {
+        req.endHandler(arg -> {
+        });
+        fail();
+      } catch (Exception ignore) {
+      }
+      testComplete();
+    });
+    req.end();
     await();
   }
 

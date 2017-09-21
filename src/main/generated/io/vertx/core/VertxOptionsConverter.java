@@ -81,6 +81,9 @@ public class VertxOptionsConverter {
     if (json.getValue("metricsOptions") instanceof JsonObject) {
       obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)json.getValue("metricsOptions")));
     }
+    if (json.getValue("preferNativeTransport") instanceof Boolean) {
+      obj.setPreferNativeTransport((Boolean)json.getValue("preferNativeTransport"));
+    }
     if (json.getValue("quorumSize") instanceof Number) {
       obj.setQuorumSize(((Number)json.getValue("quorumSize")).intValue());
     }
@@ -123,6 +126,7 @@ public class VertxOptionsConverter {
     if (obj.getMetricsOptions() != null) {
       json.put("metricsOptions", obj.getMetricsOptions().toJson());
     }
+    json.put("preferNativeTransport", obj.getPreferNativeTransport());
     json.put("quorumSize", obj.getQuorumSize());
     json.put("warningExceptionTime", obj.getWarningExceptionTime());
     json.put("workerPoolSize", obj.getWorkerPoolSize());

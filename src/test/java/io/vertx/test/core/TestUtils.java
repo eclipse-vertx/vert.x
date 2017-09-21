@@ -29,11 +29,14 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import javax.security.cert.X509Certificate;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -404,5 +407,14 @@ public class TestUtils {
       }
     }
     return null;
+  }
+
+  /**
+   * Create a temp file that does not exists.
+   */
+  public static File tmpFile(String prefix, String suffix) throws Exception {
+    File tmp = Files.createTempFile(prefix, suffix).toFile();
+    assertTrue(tmp.delete());
+    return tmp;
   }
 }

@@ -44,7 +44,7 @@ public class HeadersEncodeBenchmark extends BenchmarkBase {
 
     // Make it public
     @Override
-    public void encodeHeaders(HttpHeaders headers, ByteBuf buf) throws Exception {
+    public void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
       super.encodeHeaders(headers, buf);
     }
   }

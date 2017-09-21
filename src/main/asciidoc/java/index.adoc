@@ -17,6 +17,7 @@ Vert.x core provides functionality for things like:
 * DNS client
 * File system access
 * High availability
+* Native transports
 * Clustering
 
 The functionality in core is fairly low level - you won't find stuff like database access, authorisation or high level
@@ -1640,6 +1641,107 @@ is no longer a quorum.
 
 Quora can also be used in conjunction with ha groups. In that case, quora are resolved for each particular
 group.
+
+== Native transports
+
+Vert.x can run with http://netty.io/wiki/native-transports.html[native transports] (when available) on BSD (OSX) and Linux:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+  setPreferNativeTransport(true)
+);
+
+// True when native is available
+boolean usingNative = vertx.isNativeTransportEnabled();
+System.out.println("Running with native: " + usingNative);
+----
+
+NOTE: preferring native transport will not prevent the application to execute, if your application requires native
+transport, you need to check `link:../../apidocs/io/vertx/core/Vertx.html#isNativeTransportEnabled--[isNativeTransportEnabled]`.
+
+=== Native Linux Transport
+
+You need to add the following dependency in your classpath:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-transport-native-epoll</artifactId>
+  <version>4.1.15.Final</version>
+  <classifier>linux-x86_64</classifier>
+</dependency>
+----
+
+Native on Linux gives you extra networking options:
+
+* SO_REUSEPORT
+* TCP_QUICKACK
+* TCP_CORK
+* TCP_FASTOPEN
+
+[source,java]
+----
+vertx.createHttpServer(new HttpServerOptions()
+  .setTcpFastOpen(fastOpen)
+  .setTcpCork(cork)
+  .setTcpQuickAck(quickAck)
+  .setReusePort(reusePort)
+);
+----
+
+=== Native BSD Transport
+
+You need to add the following dependency in your classpath:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-transport-native-epoll</artifactId>
+  <version>4.1.15.Final</version>
+  <classifier>osx-x86_64</classifier>
+</dependency>
+----
+
+Native on BSD gives you extra networking options:
+
+* SO_REUSEPORT
+
+[source,java]
+----
+vertx.createHttpServer(new HttpServerOptions().setReusePort(reusePort));
+----
+
+=== Domain sockets
+
+Natives provide support domain sockets for `NetServer`:
+
+[source,java]
+----
+vertx.createNetServer().connectHandler(so -> {
+  // Handle application
+}).listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"));
+----
+
+As well as `NetClient`:
+
+[source,java]
+----
+NetClient netClient = vertx.createNetClient();
+
+// Only available on BSD and Linux
+netClient.connect(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), ar -> {
+  if (ar.succeeded()) {
+    // Connected
+  } else {
+    ar.cause().printStackTrace();
+  }
+});
+----
+
+NOTE: support for `HttpServer` and `HttpClient` can be expected in later versions of Vert.x
 
 == Security notes
 
