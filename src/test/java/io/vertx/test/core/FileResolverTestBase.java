@@ -99,7 +99,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
         assertTrue(file.exists());
         assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
         assertFalse(file.isDirectory());
-        assertEquals("<html><body>afile</body></html>", readFile(file));
+        assertTrue(readFile(file).contains("<html><body>afile</body></html>"));
       }
     } finally {
       vertx.close();
