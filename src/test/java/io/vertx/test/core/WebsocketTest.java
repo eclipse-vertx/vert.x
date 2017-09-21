@@ -1423,6 +1423,21 @@ public class WebsocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testEndWithHandler() {
+    waitFor(2);
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(sws -> {
+      sws.end(v -> complete());
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null)
+        .handler(ws -> ws.endHandler(v -> complete()));
+    });
+    await();
+  }
+
+  @Test
   public void testUpgrade() {
     testUpgrade(false);
   }
