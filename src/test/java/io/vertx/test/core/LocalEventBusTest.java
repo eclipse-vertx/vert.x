@@ -1170,6 +1170,15 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testSenderEndWithHandler() {
+    eb.consumer(ADDRESS1).handler(message -> {});
+    WriteStream<String> sender = eb.sender(ADDRESS1);
+    sender.write(TestUtils.randomUnicodeString(100));
+    sender.end(v -> complete());
+    await();
+  }
+
+  @Test
   public void testSenderWithOptions() {
     String str = TestUtils.randomUnicodeString(100);
     WriteStream<String> sender = eb.sender(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
