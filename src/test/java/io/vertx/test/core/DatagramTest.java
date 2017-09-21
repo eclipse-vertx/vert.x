@@ -213,6 +213,22 @@ public class DatagramTest extends VertxTestBase {
   }
 
   @Test
+  public void testWriteStreamEndWithHandler() {
+    waitFor(2);
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
+    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
+    peer2.exceptionHandler(t -> fail(t.getMessage()));
+    peer2.listen(1234, "127.0.0.1", ar -> {
+      peer2.handler(packet -> complete());
+
+      WriteStream<Buffer> sender1 = peer1.sender(1234, "127.0.0.1");
+      sender1.write(TestUtils.randomBuffer(8));
+      sender1.end(v -> complete());
+    });
+    await();
+  }
+
+  @Test
   public void testListenHostPort() {
     peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
     peer2.listen(1234, "127.0.0.1", ar -> {
