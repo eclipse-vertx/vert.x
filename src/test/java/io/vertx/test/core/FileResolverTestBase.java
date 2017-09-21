@@ -86,7 +86,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
       assertFalse(file.isDirectory());
-      assertEquals("<html><body>afile</body></html>", readFile(file));
+      assertTrue(readFile(file).contains("<html><body>afile</body></html>"));
     }
   }
 
@@ -113,7 +113,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
       assertFalse(file.isDirectory());
-      assertEquals("<html><body>afile with spaces</body></html>", readFile(file));
+      assertTrue(readFile(file).contains("<html><body>afile with spaces</body></html>"));
     }
   }
 
@@ -134,7 +134,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
       assertFalse(file.isDirectory());
-      assertEquals("<html><body>blah</body></html>", readFile(file));
+      assertTrue(readFile(file).contains("<html><body>blah</body></html>"));
     }
   }
 
@@ -155,7 +155,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
       assertFalse(file.isDirectory());
-      assertEquals("<html><body>subfile</body></html>", readFile(file));
+      assertTrue(readFile(file).contains("<html><body>subfile</body></html>"));
     }
   }
 
@@ -165,7 +165,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(file.exists());
     File sub = new File(file, "subfile.html");
     assertTrue(sub.exists());
-    assertEquals("<html><body>subfile</body></html>", readFile(sub));
+    assertTrue(readFile(sub).contains("<html><body>subfile</body></html>"));
   }
 
   @Test
@@ -174,7 +174,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(file.exists());
     File sub = new File(new File(file, "subdir2"), "subfile2.html");
     assertTrue(sub.exists());
-    assertEquals("<html><body>subfile2</body></html>", readFile(sub));
+    assertTrue(readFile(sub).contains("<html><body>subfile2</body></html>"));
   }
 
   @Test
