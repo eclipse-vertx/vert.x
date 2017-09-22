@@ -246,9 +246,8 @@ public class SSLHelper {
     If you don't specify a key store, and don't specify a system property no key store will be used
     You can override this by specifying the javax.echo.ssl.keyStore system property
      */
-  private SslContext createContext(VertxInternal vertx, X509KeyManager mgr) {
+  private SslContext createContext(VertxInternal vertx, X509KeyManager mgr, TrustManagerFactory trustMgrFactory) {
     try {
-      TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx);
       SslContextBuilder builder;
       if (client) {
         builder = SslContextBuilder.forClient();
@@ -310,13 +309,17 @@ public class SSLHelper {
     return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx);
   }
 
-  private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
+  private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, String serverName) throws Exception {
     TrustManagerFactory fact;
     if (trustAll) {
       TrustManager[] mgrs = new TrustManager[]{createTrustAllTrustManager()};
       fact = new VertxTrustManagerFactory(mgrs);
     } else if (trustOptions != null) {
-      fact = trustOptions.getTrustManagerFactory(vertx);
+      if (serverName != null){
+        fact = trustOptions.trustManagerMapper(vertx).apply(serverName);
+      } else {
+        fact = trustOptions.getTrustManagerFactory(vertx);
+      }
     } else {
       return null;
     }
@@ -444,7 +447,13 @@ public class SSLHelper {
   public SslContext getContext(VertxInternal vertx, String serverName) {
     if (serverName == null) {
       if (sslContext == null) {
-        sslContext = createContext(vertx, null);
+        TrustManagerFactory trustMgrFactory = null;
+        try {
+          trustMgrFactory = getTrustMgrFactory(vertx, null);
+        } catch (Exception e) {
+          throw new VertxException(e);
+        }
+        sslContext = createContext(vertx, null, trustMgrFactory);
       }
       return sslContext;
     } else {
@@ -457,7 +466,12 @@ public class SSLHelper {
       if (mgr == null) {
         return sslContext;
       }
-      return sslContextMap.computeIfAbsent(mgr.getCertificateChain(null)[0], s -> createContext(vertx, mgr));
+      try {
+        TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx, serverName);
+        return sslContextMap.computeIfAbsent(mgr.getCertificateChain(null)[0], s -> createContext(vertx, mgr, trustMgrFactory));
+      } catch (Exception e) {
+        throw new VertxException(e);
+      }
     }
   }
 
