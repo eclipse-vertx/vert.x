@@ -95,6 +95,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -745,13 +746,16 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           }
           conn.wsHandler(shake, wsHandler.handler.wsHandler);
 
-          Runnable connectRunnable = () -> {
+          Supplier<String> connectRunnable = () -> {
             try {
               shake.handshake(ch, request);
+              return shake.selectedSubprotocol();
             } catch (WebSocketHandshakeException e) {
               conn.handleException(e);
+              return null;
             } catch (Exception e) {
               log.error("Failed to generate shake response", e);
+              return null;
             }
           };
 

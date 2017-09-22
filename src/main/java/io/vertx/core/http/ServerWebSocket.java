@@ -104,6 +104,14 @@ public interface ServerWebSocket extends WebSocketBase {
   MultiMap headers();
 
   /**
+   * Accept the WebSocket and terminate the WebSocket handshake.
+   * <p/>
+   * This method should be called from the websocket handler to explicitely accept the websocker and
+   * terminate the WebSocket handshake.
+   */
+  void accept();
+
+  /**
    * Reject the WebSocket.
    * <p>
    * Calling this method from the websocket handler when it is first passed to you gives you the opportunity to reject

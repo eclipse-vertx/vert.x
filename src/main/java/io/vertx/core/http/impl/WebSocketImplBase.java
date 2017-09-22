@@ -17,7 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -33,9 +32,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
-import java.util.ArrayDeque;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -55,6 +52,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final int maxWebSocketMessageSize;
   private final MessageConsumer binaryHandlerRegistration;
   private final MessageConsumer textHandlerRegistration;
+  private String subProtocol;
   private Object metric;
   private Handler<WebSocketFrameInternal> frameHandler;
   private Handler<Buffer> pongHandler;
@@ -137,6 +135,19 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   @Override
   public S writeFinalBinaryFrame(Buffer data) {
     return (S) writeFrame(WebSocketFrame.binaryFrame(data, true));
+  }
+
+  @Override
+  public String subProtocol() {
+    synchronized(conn) {
+      return subProtocol;
+    }
+  }
+
+  void subProtocol(String subProtocol) {
+    synchronized (conn) {
+      this.subProtocol = subProtocol;
+    }
   }
 
   @Override

@@ -242,6 +242,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
                                                   client.getOptions().getMaxWebsocketMessageSize());
       ws = webSocket;
       handshaker.finishHandshake(chctx.channel(), response);
+      ws.subProtocol(handshaker.actualSubprotocol());
       context.executeFromIO(() -> {
         log.debug("WebSocket handshake complete");
         if (metrics != null ) {

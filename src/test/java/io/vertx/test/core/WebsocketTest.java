@@ -17,7 +17,6 @@
 package io.vertx.test.core;
 
 
-import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -953,15 +952,20 @@ public class WebsocketTest extends VertxTestBase {
 
   private void testValidSubProtocol(WebsocketVersion version) throws Exception {
     String path = "/some/path";
-    String subProtocol = "myprotocol";
+    String clientSubProtocols = "clientproto,commonproto";
+    String serverSubProtocols = "serverproto,commonproto";
     Buffer buff = Buffer.buffer("AAA");
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocols(subProtocol)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocols(serverSubProtocols)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
+      assertNull(ws.subProtocol());
+      ws.accept();
+      assertEquals("commonproto", ws.subProtocol());
       ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol, ws -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, clientSubProtocols, ws -> {
+        assertEquals("commonproto", ws.subProtocol());
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);

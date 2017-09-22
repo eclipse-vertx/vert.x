@@ -90,6 +90,14 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String textHandlerID();
 
   /**
+   * Returns the websocket sub protocol selected by the websocket handshake.
+   * <p/>
+   * On the server, the value will be {@code null} when the handler receives the websocket callback as the
+   * handshake will not be completed yet.
+   */
+  String subProtocol();
+
+  /**
    * Write a WebSocket frame to the connection
    *
    * @param frame  the frame to write
