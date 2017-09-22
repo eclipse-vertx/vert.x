@@ -118,13 +118,11 @@
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-native-epoll</artifactId>
       <optional>true</optional>
-      <classifier>linux-x86_64</classifier>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-native-kqueue</artifactId>
       <optional>true</optional>
-      <classifier>osx-x86_64</classifier>
     </dependency>
 
     <!-- Jackson -->
@@ -678,6 +676,52 @@
           </plugins>
         </pluginManagement>
       </build>
+    </profile>
+
+    <!-- Run tests with native transport -->
+    <profile>
+      <id>testNativeTransport</id>
+      <properties>
+        <vertx.testNativeTransport>true</vertx.testNativeTransport>
+        <vertx.testDomainSockets>false</vertx.testDomainSockets>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <optional>true</optional>
+          <classifier>linux-x86_64</classifier>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-kqueue</artifactId>
+          <optional>true</optional>
+          <classifier>osx-x86_64</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <!-- Run tests with native transport and domain sockets -->
+    <profile>
+      <id>testDomainSockets</id>
+      <properties>
+        <vertx.testNativeTransport>true</vertx.testNativeTransport>
+        <vertx.testDomainSockets>true</vertx.testDomainSockets>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <optional>true</optional>
+          <classifier>linux-x86_64</classifier>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-kqueue</artifactId>
+          <optional>true</optional>
+          <classifier>osx-x86_64</classifier>
+        </dependency>
+      </dependencies>
     </profile>
 
     <!-- Documentation generation : activate with -Pdocs -->
