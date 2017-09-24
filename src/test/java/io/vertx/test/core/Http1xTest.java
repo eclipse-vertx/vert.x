@@ -2686,6 +2686,27 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testClientRequestEndWithHandler() throws Exception {
+    waitFor(2);
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        complete();
+        req.response().end();
+      });
+    });
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true));
+    HttpClientRequestImpl req = (HttpClientRequestImpl) client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
+    });
+    req.end(v -> complete());
+    await();
+  }
+
+  @Test
   public void testClientConnectionExceptionHandler() throws Exception {
     server.requestHandler(req -> {
       NetSocket so = req.netSocket();
