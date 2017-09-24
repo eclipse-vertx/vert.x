@@ -1055,7 +1055,7 @@ public class NetTest extends VertxTestBase {
           ar2.result().endHandler(v -> complete());
         });
       });
-    await(3, TimeUnit.SECONDS);
+    await();
   }
 
   @Test
