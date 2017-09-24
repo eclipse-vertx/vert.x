@@ -2698,8 +2698,6 @@ public class Http1xTest extends HttpTest {
     server.listen(onSuccess(s -> listenLatch.countDown()));
     awaitLatch(listenLatch);
 
-    client.close();
-    client = vertx.createHttpClient();
     HttpClientRequestImpl req = (HttpClientRequestImpl) client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
     });
     req.end(v -> complete());
@@ -2714,8 +2712,6 @@ public class Http1xTest extends HttpTest {
     server.listen(onSuccess(s -> listenLatch.countDown()));
     awaitLatch(listenLatch);
 
-    client.close();
-    client = vertx.createHttpClient();
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> complete());
     await();
   }
