@@ -2699,10 +2699,24 @@ public class Http1xTest extends HttpTest {
     awaitLatch(listenLatch);
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true));
+    client = vertx.createHttpClient();
     HttpClientRequestImpl req = (HttpClientRequestImpl) client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
     });
     req.end(v -> complete());
+    await();
+  }
+
+  @Test
+  public void testServerResponseEndWithHandler() throws Exception {
+    waitFor(2);
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.requestHandler(req -> req.response().end(v -> complete()));
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+
+    client.close();
+    client = vertx.createHttpClient();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> complete());
     await();
   }
 
