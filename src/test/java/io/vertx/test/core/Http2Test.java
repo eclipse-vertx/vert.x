@@ -133,6 +133,18 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
+  public void testServerResponseEndWithHandler() throws Exception {
+    waitFor(2);
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.requestHandler(req -> req.response().end(v -> complete()));
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> complete());
+    await();
+  }
+
+  @Test
   public void testServerOpenSSL() throws Exception {
     HttpServerOptions opts = new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
