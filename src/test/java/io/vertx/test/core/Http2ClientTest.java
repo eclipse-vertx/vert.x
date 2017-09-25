@@ -760,9 +760,15 @@ public class Http2ClientTest extends Http2TestBase {
       req.exceptionHandler(err -> {
         assertTrue(err instanceof StreamResetException);
       });
+      AtomicReference<StreamResetException> reset = new AtomicReference<>();
       req.response().exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
-        assertEquals(10L, ((StreamResetException) err).getCode());
+        if (err instanceof StreamResetException) {
+          assertTrue(reset.compareAndSet(null, (StreamResetException) err));
+        }
+      });
+      req.response().closeHandler(v -> {
+        assertNotNull(reset.get());
+        assertEquals(10L, reset.get().getCode());
         testComplete();
       });
       req.response().setChunked(true).write(Buffer.buffer("some-data"));
