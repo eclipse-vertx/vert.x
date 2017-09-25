@@ -484,7 +484,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       RandomAccessFile raf = null;
       try {
         raf = new RandomAccessFile(file, "r");
-        conn.queueForWrite(new DefaultHttpResponse(version, status, headers));
+        conn.writeToChannel(new DefaultHttpResponse(version, status, headers));
         conn.sendFile(raf, Math.min(offset, file.length()), contentLength);
       } catch (IOException e) {
         try {
