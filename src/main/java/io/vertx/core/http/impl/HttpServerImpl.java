@@ -57,10 +57,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServer;
@@ -92,6 +89,8 @@ import io.vertx.core.streams.ReadStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.cert.CRLException;
+import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -230,6 +229,26 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   @Override
   public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
     return listen(port, "0.0.0.0", listenHandler);
+  }
+
+  @Override
+  public void reloadCrlFromPath() throws CertificateException, CRLException {
+    if (!listening) {
+      throwCrlError();
+    }
+    sslHelper.reloadCrlFromPath(vertx);
+  }
+
+  @Override
+  public void reloadCrlFromBuffer(final List<Buffer> buffers) throws CertificateException, CRLException {
+    if (!listening) {
+      throwCrlError();
+    }
+    sslHelper.reloadCrlFromBuffer(buffers);
+  }
+
+  private void throwCrlError() {
+    throw new VertxException("Server not started yet! CRL reloading is only meant for runtime change.");
   }
 
   public synchronized HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {

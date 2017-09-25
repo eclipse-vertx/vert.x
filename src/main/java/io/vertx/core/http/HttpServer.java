@@ -23,8 +23,13 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.streams.ReadStream;
+
+import java.security.cert.CRLException;
+import java.security.cert.CertificateException;
+import java.util.List;
 
 /**
  * An HTTP and WebSockets server.
@@ -191,4 +196,25 @@ public interface HttpServer extends Measured {
    * @return the actual port the server is listening on.
    */
   int actualPort();
+
+  /**
+   * If HTTP Server was started with CRL options (see {@link HttpServerOptions#addCrlPath(String)}), then it allows to reload
+   * the CRL files at runtime. This is specifically useful when application has a new/updated CRLs from CA.
+   * <p>
+   * This will only re-load the CRL files with same name that were provided into {@link HttpServerOptions#addCrlPath}.
+   * <p>
+   * @throws CertificateException
+   * @throws CRLException
+   */
+  void reloadCrlFromPath() throws CertificateException, CRLException;
+
+  /**
+   * If HTTP Server was started with CRL options (see {@link HttpServerOptions#addCrlValue(Buffer)}), then it allows to reload
+   * the CRL buffer at runtime. This is specifically useful when application has a new/updated CRLs from CA.
+   * <p>
+   * @throws CertificateException
+   * @throws CRLException
+   */
+  void reloadCrlFromBuffer(List<Buffer> buffers) throws CertificateException, CRLException;
+
 }

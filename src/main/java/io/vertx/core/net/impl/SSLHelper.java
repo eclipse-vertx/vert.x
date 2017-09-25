@@ -18,6 +18,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -39,11 +40,7 @@ import io.vertx.core.net.TrustOptions;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
-import java.security.cert.CRL;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -133,6 +130,7 @@ public class SSLHelper {
   private boolean trustAll;
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
+  private List<CRL> crls;
   private ClientAuth clientAuth = ClientAuth.NONE;
   private Set<String> enabledCipherSuites;
   private boolean openSsl;
@@ -321,27 +319,51 @@ public class SSLHelper {
       return null;
     }
     if (crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
-      Stream<Buffer> tmp = crlPaths.
-          stream().
-          map(path -> vertx.resolveFile(path).getAbsolutePath()).
-          map(vertx.fileSystem()::readFileBlocking);
+      Stream<Buffer> tmp = readCrlFromFile(vertx);
       tmp = Stream.concat(tmp, crlValues.stream());
-      CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
-      ArrayList<CRL> crls = new ArrayList<>();
-      for (Buffer crlValue : tmp.collect(Collectors.toList())) {
-        crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
-      }
-      TrustManager[] mgrs = createUntrustRevokedCertTrustManager(fact.getTrustManagers(), crls);
+      this.crls = generateCrl(tmp);
+      TrustManager[] mgrs = createUntrustRevokedCertTrustManager(fact.getTrustManagers());
       fact = new VertxTrustManagerFactory(mgrs);
     }
     return fact;
+  }
+
+  public void reloadCrlFromPath(final VertxInternal vertx) throws CertificateException, CRLException {
+    if (crlPaths == null || crlPaths.size() == 0) {
+      throw new VertxException("No CRL path were provided in initial configuration. Won't reload any CRL file.");
+    }
+    Stream<Buffer> stream = readCrlFromFile(vertx);
+    this.crls = generateCrl(stream);
+  }
+
+  public void reloadCrlFromBuffer(final List<Buffer> buffers) throws CertificateException, CRLException {
+    if (buffers == null || buffers.size() == 0) {
+      throw new VertxException("Can't reload CRL from empty buffer.");
+    }
+    this.crls = generateCrl(buffers.stream());
+  }
+
+  private List<CRL> generateCrl(final Stream<Buffer> stream) throws CertificateException, CRLException {
+    List<CRL> crls = new ArrayList<>();
+    CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
+    for (Buffer crlValue : stream.collect(Collectors.toList())) {
+      crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
+    }
+    return crls;
+  }
+
+  private Stream<Buffer> readCrlFromFile(final VertxInternal vertx) {
+    return crlPaths.
+        stream().
+        map(path -> vertx.resolveFile(path).getAbsolutePath()).
+        map(vertx.fileSystem()::readFileBlocking);
   }
 
   /*
   Proxy the specified trust managers with an implementation checking first the provided certificates
   against the the Certificate Revocation List (crl) before delegating to the original trust managers.
    */
-  private static TrustManager[] createUntrustRevokedCertTrustManager(TrustManager[] trustMgrs, ArrayList<CRL> crls) {
+  private TrustManager[] createUntrustRevokedCertTrustManager(TrustManager[] trustMgrs) {
     trustMgrs = trustMgrs.clone();
     for (int i = 0;i < trustMgrs.length;i++) {
       TrustManager trustMgr = trustMgrs[i];
