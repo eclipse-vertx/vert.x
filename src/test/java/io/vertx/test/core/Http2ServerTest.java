@@ -1603,30 +1603,37 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testConnectionDecodeError() throws Exception {
     Context ctx = vertx.getOrCreateContext();
-    waitFor(6);
+    waitFor(3);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
+      AtomicInteger reqFailures = new AtomicInteger();
+      AtomicInteger respFailures = new AtomicInteger();
       req.exceptionHandler(err -> {
-        // Called twice : reset + close
         assertSame(ctx, Vertx.currentContext());
-        complete();
+        reqFailures.incrementAndGet();
       });
       req.response().exceptionHandler(err -> {
-        // Called once : reset
         assertSame(ctx, Vertx.currentContext());
-        complete();
+        respFailures.incrementAndGet();
       });
       req.response().closeHandler(v -> {
-        // Called once : close
         assertSame(ctx, Vertx.currentContext());
         complete();
       });
       req.response().endHandler(v -> {
-        // Called once : close
+        assertTrue(reqFailures.get() > 0);
+        assertTrue(respFailures.get() > 0);
         assertSame(ctx, Vertx.currentContext());
         complete();
       });
-      req.connection().exceptionHandler(err -> {
+      HttpConnection conn = req.connection();
+      AtomicInteger connFailures = new AtomicInteger();
+      conn.exceptionHandler(err -> {
+        assertSame(ctx, Vertx.currentContext());
+        connFailures.incrementAndGet();
+      });
+      conn.closeHandler(v -> {
+        assertTrue(connFailures.get() > 0);
         assertSame(ctx, Vertx.currentContext());
         complete();
       });
@@ -1638,6 +1645,7 @@ public class Http2ServerTest extends Http2TestBase {
       int id = request.nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
       when.setHandler(ar -> {
+        // Send a stream ID that does not exists
         encoder.frameWriter().writeRstStream(request.context, 10, 0, request.context.newPromise());
         request.context.flush();
       });
