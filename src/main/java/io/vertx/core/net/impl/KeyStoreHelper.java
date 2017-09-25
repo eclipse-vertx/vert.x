@@ -146,7 +146,6 @@ public class KeyStoreHelper {
         KeyStore keyStore = KeyStore.getInstance("jks");
         keyStore.load(null, null);
         keyStore.setCertificateEntry("cert-1", cert);
-        System.out.println("=========> creating store for alias " + alias);
         trustMgrMap.put(alias, keyStore);
       }
       // TODO this should only be done if: ks.isKeyEntry(alias)
@@ -244,11 +243,14 @@ public class KeyStoreHelper {
   }
 
   public TrustManagerFactory getTrustMgr(String serverName)  {
-    KeyStore trustStore = trustMgrMap.get(serverName) != null ? trustMgrMap.get(serverName) : store;
     try {
-      TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-      fact.init(trustStore);
-      return fact;
+      KeyStore trustStore = trustMgrMap.get(serverName);
+      if (trustStore != null) {
+        TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        fact.init(trustStore);
+        return fact;
+      }
+      return null;
     } catch (NoSuchAlgorithmException | KeyStoreException e) {
       throw new RuntimeException(e);
     }

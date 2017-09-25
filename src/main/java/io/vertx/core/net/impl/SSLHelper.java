@@ -317,6 +317,9 @@ public class SSLHelper {
     } else if (trustOptions != null) {
       if (serverName != null){
         fact = trustOptions.trustManagerMapper(vertx).apply(serverName);
+        if (fact == null){
+          fact = trustOptions.getTrustManagerFactory(vertx);
+        }
       } else {
         fact = trustOptions.getTrustManagerFactory(vertx);
       }
