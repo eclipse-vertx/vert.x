@@ -100,6 +100,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public synchronized MessageProducer<T> write(T data) {
+    checkClosed();
     if (send) {
       doSend(data, null);
     } else {
@@ -141,7 +142,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
     checkClosed();
     closed = true;
     if (pending.isEmpty()) {

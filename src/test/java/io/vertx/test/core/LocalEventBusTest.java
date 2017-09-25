@@ -1170,12 +1170,25 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testCantWriteToPublisherAfterClose() {
+    MessageProducer<Object> publisher = eb.publisher(ADDRESS1);
+    publisher.close();
+    try {
+      publisher.write(TestUtils.randomUnicodeString(100));
+      fail();
+    } catch (IllegalStateException e) {
+      complete();
+    }
+    await();
+  }
+
+  @Test
   public void testPublisherEndWithHandler() {
     waitFor(2);
     eb.consumer(ADDRESS1).handler(message -> testComplete());
-    WriteStream<String> sender = eb.publisher(ADDRESS1);
-    sender.write(TestUtils.randomUnicodeString(100));
-    sender.end(v -> testComplete());
+    WriteStream<String> publisher = eb.publisher(ADDRESS1);
+    publisher.write(TestUtils.randomUnicodeString(100));
+    publisher.end(v -> testComplete());
     await();
   }
 
