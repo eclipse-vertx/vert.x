@@ -29,7 +29,7 @@ import io.vertx.core.net.*;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-@DataObject(generateConverter = true, inheritConverter = true)
+@DataObject(generateConverter = true, inheritConverter = true, publicConverter = false)
 public class EventBusOptions extends TCPSSLOptions {
 
   private boolean clustered = VertxOptions.DEFAULT_CLUSTERED;

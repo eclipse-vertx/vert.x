@@ -92,7 +92,7 @@ import java.util.List;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
 
   private List<String> keyPaths;

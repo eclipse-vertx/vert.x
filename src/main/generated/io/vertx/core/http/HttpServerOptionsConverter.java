@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.HttpServerOptions} original class using Vert.x codegen.
  */
-public class HttpServerOptionsConverter {
+ class HttpServerOptionsConverter {
 
-  public static void fromJson(JsonObject json, HttpServerOptions obj) {
+   static void fromJson(JsonObject json, HttpServerOptions obj) {
     if (json.getValue("acceptUnmaskedFrames") instanceof Boolean) {
       obj.setAcceptUnmaskedFrames((Boolean)json.getValue("acceptUnmaskedFrames"));
     }
@@ -79,7 +79,7 @@ public class HttpServerOptionsConverter {
     }
   }
 
-  public static void toJson(HttpServerOptions obj, JsonObject json) {
+   static void toJson(HttpServerOptions obj, JsonObject json) {
     json.put("acceptUnmaskedFrames", obj.isAcceptUnmaskedFrames());
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();

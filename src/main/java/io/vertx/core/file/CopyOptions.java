@@ -24,7 +24,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author Thomas Segismont
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class CopyOptions {
 
   /**

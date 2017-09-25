@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.file.CopyOptions} original class using Vert.x codegen.
  */
-public class CopyOptionsConverter {
+ class CopyOptionsConverter {
 
-  public static void fromJson(JsonObject json, CopyOptions obj) {
+   static void fromJson(JsonObject json, CopyOptions obj) {
     if (json.getValue("atomicMove") instanceof Boolean) {
       obj.setAtomicMove((Boolean)json.getValue("atomicMove"));
     }
@@ -41,7 +41,7 @@ public class CopyOptionsConverter {
     }
   }
 
-  public static void toJson(CopyOptions obj, JsonObject json) {
+   static void toJson(CopyOptions obj, JsonObject json) {
     json.put("atomicMove", obj.isAtomicMove());
     json.put("copyAttributes", obj.isCopyAttributes());
     json.put("nofollowLinks", obj.isNofollowLinks());

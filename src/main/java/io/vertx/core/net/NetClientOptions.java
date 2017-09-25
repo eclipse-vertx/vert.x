@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class NetClientOptions extends ClientOptionsBase {
 
   /**

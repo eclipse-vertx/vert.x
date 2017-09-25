@@ -28,7 +28,7 @@ import java.util.Objects;
  * @author Clement Escoffier <clement@apache.org>
  * @see Option
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class Argument {
 
   /**

@@ -28,7 +28,7 @@ import java.util.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**

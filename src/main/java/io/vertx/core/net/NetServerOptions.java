@@ -26,7 +26,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class NetServerOptions extends TCPSSLOptions {
 
   // Server specific HTTP stuff

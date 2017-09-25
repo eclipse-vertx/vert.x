@@ -26,7 +26,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class ProxyOptions {
 
   /**

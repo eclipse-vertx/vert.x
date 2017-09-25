@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.TCPSSLOptions} original class using Vert.x codegen.
  */
-public class TCPSSLOptionsConverter {
+ class TCPSSLOptionsConverter {
 
-  public static void fromJson(JsonObject json, TCPSSLOptions obj) {
+   static void fromJson(JsonObject json, TCPSSLOptions obj) {
     if (json.getValue("crlPaths") instanceof JsonArray) {
       json.getJsonArray("crlPaths").forEach(item -> {
         if (item instanceof String)
@@ -107,7 +107,7 @@ public class TCPSSLOptionsConverter {
     }
   }
 
-  public static void toJson(TCPSSLOptions obj, JsonObject json) {
+   static void toJson(TCPSSLOptions obj, JsonObject json) {
     if (obj.getCrlPaths() != null) {
       JsonArray array = new JsonArray();
       obj.getCrlPaths().forEach(item -> array.add(item));

@@ -33,7 +33,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class Http2Settings {
 
   /**

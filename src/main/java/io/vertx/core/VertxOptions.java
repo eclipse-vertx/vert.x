@@ -33,7 +33,7 @@ import static io.vertx.core.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class VertxOptions {
 
   /**

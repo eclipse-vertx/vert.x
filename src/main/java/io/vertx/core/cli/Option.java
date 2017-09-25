@@ -31,7 +31,7 @@ import java.util.TreeSet;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class Option {
 
   /**

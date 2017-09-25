@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.eventbus.EventBusOptions} original class using Vert.x codegen.
  */
-public class EventBusOptionsConverter {
+ class EventBusOptionsConverter {
 
-  public static void fromJson(JsonObject json, EventBusOptions obj) {
+   static void fromJson(JsonObject json, EventBusOptions obj) {
     if (json.getValue("acceptBacklog") instanceof Number) {
       obj.setAcceptBacklog(((Number)json.getValue("acceptBacklog")).intValue());
     }
@@ -164,7 +164,7 @@ public class EventBusOptionsConverter {
     }
   }
 
-  public static void toJson(EventBusOptions obj, JsonObject json) {
+   static void toJson(EventBusOptions obj, JsonObject json) {
     json.put("acceptBacklog", obj.getAcceptBacklog());
     if (obj.getClientAuth() != null) {
       json.put("clientAuth", obj.getClientAuth().name());

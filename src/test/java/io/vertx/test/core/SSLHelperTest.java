@@ -22,13 +22,9 @@ import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerOptionsConverter;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetServerOptionsConverter;
-import io.vertx.core.net.NetworkOptionsConverter;
 import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.TCPSSLOptionsConverter;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
@@ -115,11 +111,7 @@ public class SSLHelperTest extends VertxTestBase {
     }
     assertEquals(new ArrayList<>(options.getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
     assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
-    JsonObject json = new JsonObject();
-    NetworkOptionsConverter.toJson(options, json);
-    TCPSSLOptionsConverter.toJson(options, json);
-    NetServerOptionsConverter.toJson(options, json);
-    HttpServerOptionsConverter.toJson(options, json);
+    JsonObject json = options.toJson();
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
     SSLHelper helper = new SSLHelper(options, Cert.SERVER_JKS.get(), null);
     assertEquals(Arrays.asList(helper.createEngine((VertxInternal) vertx).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
@@ -134,11 +126,7 @@ public class SSLHelperTest extends VertxTestBase {
     }
     assertEquals(new ArrayList<>(options.getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
     assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
-    JsonObject json = new JsonObject();
-    NetworkOptionsConverter.toJson(options, json);
-    TCPSSLOptionsConverter.toJson(options, json);
-    NetServerOptionsConverter.toJson(options, json);
-    HttpServerOptionsConverter.toJson(options, json);
+    JsonObject json = options.toJson();
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
     SSLHelper helper = new SSLHelper(options, Cert.SERVER_JKS.get(), null);
     List<String> engineProtocols = Arrays.asList(helper.createEngine((VertxInternal) vertx).getEnabledProtocols());
