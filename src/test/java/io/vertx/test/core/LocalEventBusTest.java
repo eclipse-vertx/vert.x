@@ -1170,11 +1170,35 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testSenderEndWithHandler() {
-    eb.consumer(ADDRESS1).handler(message -> {});
-    WriteStream<String> sender = eb.sender(ADDRESS1);
+  public void testPublisherEndWithHandler() {
+    waitFor(2);
+    eb.consumer(ADDRESS1).handler(message -> testComplete());
+    WriteStream<String> sender = eb.publisher(ADDRESS1);
     sender.write(TestUtils.randomUnicodeString(100));
-    sender.end(v -> complete());
+    sender.end(v -> testComplete());
+    await();
+  }
+
+  @Test
+  public void testSenderEndWithHandler() throws InterruptedException {
+    AtomicBoolean messageDelivered = new AtomicBoolean(false);
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1).handler(message -> { });
+    consumer.pause();
+
+    WriteStream<String> sender = eb.sender(ADDRESS1);
+    sender.setWriteQueueMaxSize(1);
+    sender.write(TestUtils.randomUnicodeString(100));
+    sender.write(TestUtils.randomUnicodeString(100));
+    sender.end(v -> {
+      if (messageDelivered.get()) {
+        complete();
+      } else {
+        fail();
+      }
+    });
+    Thread.sleep(100);
+    messageDelivered.set(true);
+    consumer.resume();
     await();
   }
 

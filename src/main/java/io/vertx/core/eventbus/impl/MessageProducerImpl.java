@@ -44,6 +44,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   private int credits = DEFAULT_WRITE_QUEUE_MAX_SIZE;
   private Handler<Void> drainHandler;
   private Handler<Void> endHandler;
+  private boolean closed;
 
   public MessageProducerImpl(Vertx vertx, String address, boolean send, DeliveryOptions options) {
     this.vertx = vertx;
@@ -141,11 +142,16 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public void close() {
-    if (creditConsumer != null) {
-      creditConsumer.unregister();
+    checkClosed();
+    closed = true;
+    if (pending.isEmpty()) {
+      handleClosed();
     }
-    if (endHandler != null) {
-      vertx.runOnContext(v -> endHandler.handle(null));
+  }
+
+  private void checkClosed() {
+    if (closed) {
+      throw new IllegalStateException("MessageProducer is closed");
     }
   }
 
@@ -184,6 +190,20 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     if (theDrainHandler != null && credits >= maxSize / 2) {
       this.drainHandler = null;
       vertx.runOnContext(v -> theDrainHandler.handle(null));
+    }
+    if (closed && pending.isEmpty()) {
+      handleClosed();
+    }
+  }
+
+  private void handleClosed() {
+    if (creditConsumer != null) {
+      creditConsumer.unregister();
+    }
+    final Handler<Void> theEndHandler = endHandler;
+    if (endHandler != null) {
+      endHandler = null;
+      vertx.runOnContext(v -> theEndHandler.handle(null));
     }
   }
 }
