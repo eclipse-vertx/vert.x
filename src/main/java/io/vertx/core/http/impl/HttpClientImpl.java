@@ -22,6 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -48,6 +49,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.cert.CRLException;
+import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -881,6 +884,26 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest deleteAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
     return requestAbs(HttpMethod.DELETE, absoluteURI, responseHandler);
+  }
+
+  @Override
+  public void reloadCrlFromPath() throws CertificateException, CRLException {
+    if (closed) {
+      throwCrlReloadError();
+    }
+    sslHelper.reloadCrlFromPath(vertx);
+  }
+
+  @Override
+  public void reloadCrlFromBuffer(final List<Buffer> buffers) throws CertificateException, CRLException {
+    if (closed) {
+      throwCrlReloadError();
+    }
+    sslHelper.reloadCrlFromBuffer(buffers);
+  }
+
+  private void throwCrlReloadError() {
+    throw new VertxException("HTTP Client is closed. CRL can't be reloaded on closed client.");
   }
 
   @Override

@@ -130,7 +130,9 @@ public class SSLHelper {
   private boolean trustAll;
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
-  private List<CRL> crls;
+  // TODO - HTTP Server has own instance of SSL Helper. How do we invalidate/reload CRLs for
+  // TODO - all instances of HTTP Server. For now making it static. Lets see what Julien think.
+  private static List<CRL> crls;
   private ClientAuth clientAuth = ClientAuth.NONE;
   private Set<String> enabledCipherSuites;
   private boolean openSsl;
@@ -321,7 +323,7 @@ public class SSLHelper {
     if (crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
       Stream<Buffer> tmp = readCrlFromFile(vertx);
       tmp = Stream.concat(tmp, crlValues.stream());
-      this.crls = generateCrl(tmp);
+      crls = generateCrl(tmp);
       TrustManager[] mgrs = createUntrustRevokedCertTrustManager(fact.getTrustManagers());
       fact = new VertxTrustManagerFactory(mgrs);
     }
@@ -333,14 +335,14 @@ public class SSLHelper {
       throw new VertxException("No CRL path were provided in initial configuration. Won't reload any CRL file.");
     }
     Stream<Buffer> stream = readCrlFromFile(vertx);
-    this.crls = generateCrl(stream);
+    crls = generateCrl(stream);
   }
 
   public void reloadCrlFromBuffer(final List<Buffer> buffers) throws CertificateException, CRLException {
     if (buffers == null || buffers.size() == 0) {
       throw new VertxException("Can't reload CRL from empty buffer.");
     }
-    this.crls = generateCrl(buffers.stream());
+    crls = generateCrl(buffers.stream());
   }
 
   private List<CRL> generateCrl(final Stream<Buffer> stream) throws CertificateException, CRLException {

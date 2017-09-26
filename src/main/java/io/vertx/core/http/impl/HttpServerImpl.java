@@ -234,7 +234,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   @Override
   public void reloadCrlFromPath() throws CertificateException, CRLException {
     if (!listening) {
-      throwCrlError();
+      throwCrlReloadError();
     }
     sslHelper.reloadCrlFromPath(vertx);
   }
@@ -242,12 +242,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   @Override
   public void reloadCrlFromBuffer(final List<Buffer> buffers) throws CertificateException, CRLException {
     if (!listening) {
-      throwCrlError();
+      throwCrlReloadError();
     }
     sslHelper.reloadCrlFromBuffer(buffers);
   }
 
-  private void throwCrlError() {
+  private void throwCrlReloadError() {
     throw new VertxException("Server not started yet! CRL reloading is only meant for runtime change.");
   }
 

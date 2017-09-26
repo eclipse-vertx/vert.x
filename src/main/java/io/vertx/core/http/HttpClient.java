@@ -22,9 +22,13 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.streams.ReadStream;
 
+import java.security.cert.CRLException;
+import java.security.cert.CertificateException;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -1426,4 +1430,24 @@ public interface HttpClient extends Measured {
    * Clients should always be closed after use.
    */
   void close();
+
+  /**
+   * If HTTP Server was started with CRL options (see {@link HttpServerOptions#addCrlPath(String)}), then it allows to reload
+   * the CRL files at runtime. This is specifically useful when application has a new/updated CRLs from CA.
+   * <p>
+   * This will only re-load the CRL files with same name that were provided into {@link HttpServerOptions#addCrlPath}.
+   * <p>
+   * @throws CertificateException
+   * @throws CRLException
+   */
+  void reloadCrlFromPath() throws CertificateException, CRLException;
+
+  /**
+   * If HTTP Server was started with CRL options (see {@link HttpServerOptions#addCrlValue(Buffer)}), then it allows to reload
+   * the CRL buffer at runtime. This is specifically useful when application has a new/updated CRLs from CA.
+   * <p>
+   * @throws CertificateException
+   * @throws CRLException
+   */
+  void reloadCrlFromBuffer(List<Buffer> buffers) throws CertificateException, CRLException;
 }
