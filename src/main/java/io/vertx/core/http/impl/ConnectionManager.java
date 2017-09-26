@@ -447,8 +447,8 @@ public class ConnectionManager {
                 queue.http2Connected(context, ch, waiter, false);
               } else {
                 applyHttp1xConnectionOptions(ch.pipeline(), context);
-                HttpVersion fallbackProtocol = ApplicationProtocolNames.HTTP_1_1.equals(protocol) ?
-                    HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
+                HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
+                    HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
                 queue.fallbackToHttp1x(ch, context, fallbackProtocol, port, host, waiter);
               }
             }
