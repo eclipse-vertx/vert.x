@@ -205,16 +205,16 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
   }
 
   @Override
-  public void writeToChannel(Object obj, ChannelPromise promise) {
+  public void writeToChannel(Object msg, ChannelPromise promise) {
     if (METRICS_ENABLED && metrics != null) {
-      long bytes = getBytes(obj);
+      long bytes = getBytes(msg);
       if (bytes == -1) {
-        log.warn("Metrics could not be updated to include bytes written because of unknown object " + obj.getClass() + " being written.");
+        log.warn("Metrics could not be updated to include bytes written because of unknown object " + msg.getClass() + " being written.");
       } else {
         bytesWritten += bytes;
       }
     }
-    super.writeToChannel(obj, promise);
+    super.writeToChannel(msg, promise);
   }
 
   ServerWebSocket upgrade(HttpServerRequest request, HttpRequest nettyReq) {

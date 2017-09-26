@@ -1895,28 +1895,27 @@ public class Http1xTest extends HttpTest {
 
   private void testClientContext() throws Exception {
     CountDownLatch serverLatch = new CountDownLatch(1);
+    CountDownLatch req1Latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.response().end();
+      req1Latch.countDown();
     } ).listen(ar -> {
       assertTrue(ar.succeeded());
-      serverLatch.countDown();;
+      serverLatch.countDown();
     });
     awaitLatch(serverLatch);
-    CountDownLatch req1Latch = new CountDownLatch(1);
     AtomicReference<Context> c = new AtomicReference<>();
     HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1");
     AtomicReference<HttpConnection> conn = new AtomicReference<>();
     req1.handler(res -> {
       c.set(Vertx.currentContext());
       conn.set(req1.connection());
-      res.endHandler(v -> req1Latch.countDown());
     });
     req1.end();
     Consumer<HttpClientRequest> checker = req -> {
       assertSame(Vertx.currentContext(), c.get());
       assertSame(conn.get(), req.connection());
     };
-    awaitLatch(req1Latch);
     CountDownLatch req2Latch = new CountDownLatch(2);
     HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2");
     req2.handler(res -> {
@@ -1925,6 +1924,7 @@ public class Http1xTest extends HttpTest {
     }).exceptionHandler(err -> {
       fail(err);
     }).sendHead();
+    awaitLatch(req1Latch);
     HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3");
     req3.handler(res -> {
       checker.accept(req3);
