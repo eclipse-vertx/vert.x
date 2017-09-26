@@ -1374,6 +1374,58 @@ public class NetTest extends VertxTestBase {
     assertEquals("host1", cnOf(test.clientPeerCert()));
   }
 
+  @Test
+  public void testSniWithServerNameTrust(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_ROOT_CA_AND_OTHER_CA_1);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  public void testSniWithServerNameTrustFallback(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_ROOT_CA_FALLBACK);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  public void testSniWithServerNameTrustFallbackFail(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_OTHER_CA_FALLBACK);
+    test.run(false);
+    await();
+  }
+
+  @Test
+  public void testSniWithServerNameTrustFail(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_ROOT_CA_AND_OTHER_CA_2);
+    test.run(false);
+    await();
+  }
+
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
                Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,
