@@ -173,7 +173,7 @@ public class BufferImpl implements Buffer {
   }
 
   @Override
-  public Buffer getBytes(byte[] dst) {
+  public Buffer getBytes( byte... dst) /*varagrs refactor*/{
     return getBytes(dst, 0);
   }
 
@@ -221,7 +221,7 @@ public class BufferImpl implements Buffer {
     return this;
   }
 
-  public Buffer appendBytes(byte[] bytes) {
+  public Buffer appendBytes( byte... bytes) /*varagrs refactor*/{
     buffer.writeBytes(bytes);
     return this;
   }
