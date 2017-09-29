@@ -92,7 +92,7 @@ public interface Buffer extends ClusterSerializable {
    * @return the buffer
    */
   @GenIgnore
-  static Buffer buffer(byte[] bytes) {
+  static Buffer buffer( byte... bytes) /*varagrs refactor*/{
     return factory.buffer(bytes);
   }
 
@@ -290,7 +290,7 @@ public interface Buffer extends ClusterSerializable {
    * @throws IndexOutOfBoundsException if the content of the Buffer cannot fit into the destination byte array
    */
   @GenIgnore
-  Buffer getBytes(byte[] dst);
+  Buffer getBytes( byte... dst) /*varagrs refactor*/;
 
   /**
    * Transfers the content of the Buffer into a {@code byte[]} at the specific destination.
@@ -361,7 +361,7 @@ public interface Buffer extends ClusterSerializable {
    */
   @GenIgnore
   @Fluent
-  Buffer appendBytes(byte[] bytes);
+  Buffer appendBytes( byte... bytes) /*varagrs refactor*/;
 
   /**
    * Appends the specified number of bytes from {@code byte[]} to the end of the Buffer, starting at the given offset.

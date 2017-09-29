@@ -820,22 +820,22 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
-    TLSTest clientEnabledCipherSuites(String[] value) {
+    TLSTest clientEnabledCipherSuites( String... value) /*varagrs refactor*/{
       clientEnabledCipherSuites = value;
       return this;
     }
 
-    TLSTest serverEnabledCipherSuites(String[] value) {
+    TLSTest serverEnabledCipherSuites( String... value) /*varagrs refactor*/{
      serverEnabledCipherSuites = value;
      return this;
     }
 
-    TLSTest clientEnabledSecureTransportProtocol(String[] value) {
+    TLSTest clientEnabledSecureTransportProtocol( String... value) /*varagrs refactor*/{
       clientEnabledSecureTransportProtocol = value;
       return this;
     }
 
-    TLSTest serverEnabledSecureTransportProtocol(String[] value) {
+    TLSTest serverEnabledSecureTransportProtocol( String... value) /*varagrs refactor*/{
       serverEnabledSecureTransportProtocol = value;
       return this;
     }

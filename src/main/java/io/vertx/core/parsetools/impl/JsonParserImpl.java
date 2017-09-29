@@ -211,7 +211,7 @@ public class JsonParserImpl implements JsonParser {
     handle((byte[]) null);
   }
 
-  private void handle(byte[] bytes) {
+  private void handle( byte... bytes) /*varagrs refactor*/{
     if (parser == null) {
       throw new IllegalStateException("Parsing already done");
     }
