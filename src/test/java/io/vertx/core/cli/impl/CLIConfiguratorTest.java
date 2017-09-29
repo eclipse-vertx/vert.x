@@ -138,7 +138,7 @@ public class CLIConfiguratorTest {
     }
 
     @io.vertx.core.cli.annotations.Option(longName = "array", shortName = "a")
-    public void setFoo(int[] list) {
+    public void setFoo( int... list) /*varagrs refactor*/{
     }
   }
 
@@ -561,7 +561,7 @@ public class CLIConfiguratorTest {
     List<Person> persons4;
 
     @io.vertx.core.cli.annotations.Option(longName = "doubles", shortName = "ds")
-    public void setDoubles(double[] doubles) {
+    public void setDoubles( double... doubles) /*varagrs refactor*/{
       this.doubles = doubles;
     }
 

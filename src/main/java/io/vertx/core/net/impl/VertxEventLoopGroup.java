@@ -222,7 +222,7 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
     }
 
     @Override
-    public <T> T[] toArray(T[] a) {
+    public <T> T[] toArray( T... a) /*varagrs refactor*/{
       return workers.toArray(a);
     }
 

@@ -260,7 +260,7 @@ public class TestUtils {
     return set;
   }
 
-  public static <E> E randomElement(E[] array) {
+  public static <E> E randomElement( E... array) /*varagrs refactor*/{
     return array[randomPositiveInt() % array.length];
   }
 
