@@ -322,6 +322,9 @@ public class JsonParserImpl implements JsonParser {
           case VALUE_NUMBER_INT:
             buffer.writeNumber(parser.getLongValue());
             break;
+          case VALUE_NUMBER_FLOAT:
+            buffer.writeNumber(parser.getDoubleValue());
+            break;
           case VALUE_STRING:
             buffer.writeString(parser.getText());
             break;
