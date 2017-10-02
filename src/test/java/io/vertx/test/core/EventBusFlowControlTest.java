@@ -65,7 +65,7 @@ public class EventBusFlowControlTest extends VertxTestBase {
     vertx.runOnContext(v -> {
       sendBatch(prod, wqms, numBatches, 0);
     });
-    await(10, TimeUnit.SECONDS);
+    await();
   }
 
   private void sendBatch(MessageProducer<String> prod, int batchSize, int numBatches, int batchNumber) {
