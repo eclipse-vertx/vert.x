@@ -52,6 +52,6 @@ public class ClusteredEventBusStartFailureTest extends AsyncTestBase {
 
     assertFalse(resultRef.get() == null);
     assertTrue(resultRef.get().failed());
-    assertEquals(UnknownHostException.class, resultRef.get().cause().getClass());
+    assertTrue("Was expecting failure to be an instance of UnknownHostException", resultRef.get().cause() instanceof UnknownHostException);
   }
 }
