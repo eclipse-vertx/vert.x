@@ -736,11 +736,16 @@ public class Http2ClientTest extends Http2TestBase {
         bufReceived.complete();
       });
       req.exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
+        assertEquals(err.getClass(), StreamResetException.class);
       });
+      AtomicLong reset = new AtomicLong();
       req.response().exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
-        assertEquals(10L, ((StreamResetException) err).getCode());
+        if (err instanceof StreamResetException) {
+          reset.set(((StreamResetException) err).getCode());
+        }
+      });
+      req.response().closeHandler(v -> {
+        assertEquals(10L, reset.get());
         testComplete();
       });
     });
@@ -758,17 +763,16 @@ public class Http2ClientTest extends Http2TestBase {
   public void testClientResetServerStreamDuringResponse() throws Exception {
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
+        assertEquals(err.getClass(), StreamResetException.class);
       });
-      AtomicReference<StreamResetException> reset = new AtomicReference<>();
+      AtomicLong reset = new AtomicLong();
       req.response().exceptionHandler(err -> {
         if (err instanceof StreamResetException) {
-          assertTrue(reset.compareAndSet(null, (StreamResetException) err));
+          reset.set(((StreamResetException) err).getCode());
         }
       });
       req.response().closeHandler(v -> {
-        assertNotNull(reset.get());
-        assertEquals(10L, reset.get().getCode());
+        assertEquals(10L, reset.get());
         testComplete();
       });
       req.response().setChunked(true).write(Buffer.buffer("some-data"));
