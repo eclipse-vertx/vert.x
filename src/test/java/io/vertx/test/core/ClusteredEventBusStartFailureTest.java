@@ -22,22 +22,24 @@ import io.vertx.core.VertxOptions;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
+import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Thomas Segismont
  */
-public class ClusteredEventBusStartFailureTest {
+public class ClusteredEventBusStartFailureTest extends AsyncTestBase {
 
   @Test
   public void testCallbackInvokedOnFailure() throws Exception {
+
+    // will trigger java.net.UnknownHostException
+    String hostName = getClass().getSimpleName();
+
     VertxOptions options = new VertxOptions()
       .setClusterManager(new FakeClusterManager())
-      .setClusterHost(getClass().getSimpleName());
+      .setClusterHost(hostName);
 
     AtomicReference<AsyncResult<Vertx>> resultRef = new AtomicReference<>();
 
@@ -46,9 +48,10 @@ public class ClusteredEventBusStartFailureTest {
       resultRef.set(ar);
       latch.countDown();
     });
-    latch.await(5, TimeUnit.SECONDS);
+    awaitLatch(latch);
 
     assertFalse(resultRef.get() == null);
     assertTrue(resultRef.get().failed());
+    assertEquals(UnknownHostException.class, resultRef.get().cause().getClass());
   }
 }
