@@ -24,6 +24,7 @@ import io.vertx.core.spi.VerticleFactory;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URLClassLoader;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -213,10 +214,13 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testResolve() {
+    if (!(Thread.currentThread().getContextClassLoader() instanceof URLClassLoader)) {
+      return;
+    }
     TestVerticle verticle = new TestVerticle();
     TestVerticleFactory fact = new TestVerticleFactory("actual", verticle);
     vertx.registerVerticleFactory(fact);
-    TestVerticleFactory factResolve = new TestVerticleFactory("resolve", "actual:myverticle");
+    TestVerticleFactory factResolve = new TestVerticleFactory("resolve", "actual:myverticle", "othergroup");
     vertx.registerVerticleFactory(factResolve);
     JsonObject config = new JsonObject().put("foo", "bar");
     DeploymentOptions original = new DeploymentOptions().setWorker(false).setConfig(config).setIsolationGroup("somegroup");
@@ -477,6 +481,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     String prefix;
     Verticle verticle;
     String identifier;
+    String isolationGroup;
 
     String resolvedIdentifier;
 
@@ -501,6 +506,12 @@ public class VerticleFactoryTest extends VertxTestBase {
     TestVerticleFactory(String prefix, String resolvedIdentifier) {
       this.prefix = prefix;
       this.resolvedIdentifier = resolvedIdentifier;
+    }
+
+    TestVerticleFactory(String prefix, String resolvedIdentifier, String isolationGroup) {
+      this.prefix = prefix;
+      this.resolvedIdentifier = resolvedIdentifier;
+      this.isolationGroup = isolationGroup;
     }
 
     TestVerticleFactory(String prefix, Verticle verticle, int order) {
@@ -549,7 +560,7 @@ public class VerticleFactoryTest extends VertxTestBase {
         // Now we change the deployment options
         deploymentOptions.setConfig(new JsonObject().put("wibble", "quux"));
         deploymentOptions.setWorker(true);
-        deploymentOptions.setIsolationGroup("othergroup");
+        deploymentOptions.setIsolationGroup(isolationGroup);
         resolution.complete(resolvedIdentifier);
       }
     }

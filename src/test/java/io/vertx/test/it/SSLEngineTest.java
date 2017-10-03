@@ -22,9 +22,18 @@ import org.junit.Test;
  */
 public class SSLEngineTest extends HttpTestBase {
 
+  private static boolean isJava9() {
+    try {
+      SSLEngineTest.class.getClassLoader().loadClass("java.lang.invoke.VarHandle");
+      return true;
+    } catch (Throwable ignore) {
+      return false;
+    }
+  }
+
   private static final boolean JDK = Boolean.getBoolean("vertx-test-alpn-jdk");
   private static boolean OPEN_SSL = Boolean.getBoolean("vertx-test-alpn-openssl");
-  private static final String EXPECTED_SSL_CONTEXT = System.getProperty("vertx-test-sslcontext");
+  private static final String EXPECTED_SSL_CONTEXT = isJava9() ? "jdk" : System.getProperty("vertx-test-sslcontext");
 
   public SSLEngineTest() {
   }
@@ -92,7 +101,7 @@ public class SSLEngineTest extends HttpTestBase {
       HttpServerImpl impl = (HttpServerImpl) s;
       SSLHelper sslHelper = impl.getSslHelper();
       SslContext ctx = sslHelper.getContext((VertxInternal) vertx);
-      switch (expectedSslContext) {
+      switch (expectedSslContext != null ? expectedSslContext : "jdk") {
         case "jdk":
           assertTrue(ctx instanceof JdkSslContext);
           break;
