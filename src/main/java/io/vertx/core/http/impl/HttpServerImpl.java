@@ -49,7 +49,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleState;
@@ -278,7 +277,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 }
                 handshakeFuture.addListener(future -> {
                   if (future.isSuccess()) {
-                    postSSLConfig(pipeline);
+                    if (options.isUseAlpn()) {
+                      SslHandler sslHandler = pipeline.get(SslHandler.class);
+                      String protocol = sslHandler.applicationProtocol();
+                      if (protocol.equals("h2")) {
+                        handleHttp2(pipeline.channel());
+                      } else {
+                        configureHttp1(pipeline);
+                      }
+                    } else {
+                      configureHttp1(pipeline);
+                    }
                   } else {
                     HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
                     handler.context.executeFromIO(() -> handler.handler.exceptionHandler.handle(future.cause()));
@@ -406,28 +415,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         })
         .logEnabled(logEnabled)
         .build();
-  }
-
-  private void postSSLConfig(ChannelPipeline pipeline) {
-    if (options.isUseAlpn()) {
-      pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
-        @Override
-        protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
-          if (protocol.equals("http/1.1")) {
-            configureHttp1(pipeline);
-          } else {
-            handleHttp2(pipeline.channel());
-          }
-        }
-        @Override
-        protected void handshakeFailure(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-          // Will close the channel
-          super.handshakeFailure(ctx, cause);
-        }
-      });
-    } else {
-      configureHttp1(pipeline);
-    }
   }
 
   private void configureHttp1(ChannelPipeline pipeline) {
