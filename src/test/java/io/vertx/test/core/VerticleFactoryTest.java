@@ -246,6 +246,44 @@ public class VerticleFactoryTest extends VertxTestBase {
   }
 
   @Test
+  public void testResolve2() {
+    if (!(Thread.currentThread().getContextClassLoader() instanceof URLClassLoader)) {
+      return;
+    }
+    VerticleFactory fact = new VerticleFactory() {
+      @Override
+      public String prefix() {
+        return "resolve";
+      }
+      @Override
+      public boolean requiresResolve() {
+        return true;
+      }
+      @Override
+      public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
+        deploymentOptions.setMultiThreaded(true);
+        vertx.runOnContext(v -> {
+          // Async resolution
+          resolution.complete("whatever");
+        });
+      }
+      @Override
+      public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
+        throw new AssertionError("Should not be called");
+      }
+    }; ;
+    vertx.registerVerticleFactory(fact);
+    vertx.runOnContext(v -> {
+      vertx.deployVerticle("resolve:someid", onFailure(err -> {
+        // Expected since we deploy a non multi-threaded worker verticle
+        assertEquals(IllegalArgumentException.class, err.getClass());
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
   public void testOrdering() {
     TestVerticle verticle = new TestVerticle();
     TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2);

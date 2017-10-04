@@ -178,7 +178,11 @@ public class DeploymentManager {
         if (ar.succeeded()) {
           String resolvedName = ar.result();
           if (!resolvedName.equals(identifier)) {
-            deployVerticle(resolvedName, options, completionHandler);
+            try {
+              deployVerticle(resolvedName, options, completionHandler);
+            } catch (Exception e) {
+              completionHandler.handle(Future.failedFuture(e));
+            }
             return;
           } else {
             if (verticleFactory.blockingCreate()) {
