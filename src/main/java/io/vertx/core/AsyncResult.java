@@ -16,6 +16,8 @@
 
 package io.vertx.core;
 
+import io.vertx.core.impl.NoStackTraceThrowable;
+
 import java.util.function.Function;
 
 /**
@@ -32,6 +34,79 @@ import java.util.function.Function;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface AsyncResult<T> {
+
+  /**
+   * Created a succeeded async result with the specified result.
+   *
+   * @param result  the result
+   * @param <T>  the result type
+   * @return  the async result
+   */
+  static <T> AsyncResult<T> succeededAsyncResult(T result) {
+    return new AsyncResult<T>() {
+      @Override
+      public T result() {
+        return result;
+      }
+
+      @Override
+      public Throwable cause() {
+        return null;
+      }
+
+      @Override
+      public boolean succeeded() {
+        return true;
+      }
+
+      @Override
+      public boolean failed() {
+        return false;
+      }
+    };
+  }
+
+  /**
+   * Create a failed async result with the specified failure cause.
+   *
+   * @param t  the failure cause as a Throwable
+   * @param <T>  the result type
+   * @return  the async result
+   */
+  static <T> AsyncResult<T> failedAsyncResult(Throwable t) {
+    return new AsyncResult<T>() {
+      @Override
+      public T result() {
+        return null;
+      }
+
+      @Override
+      public Throwable cause() {
+        return t;
+      }
+
+      @Override
+      public boolean succeeded() {
+        return false;
+      }
+
+      @Override
+      public boolean failed() {
+        return true;
+      }
+    };
+  }
+
+  /**
+   * Create a failed async result with the specified failure message.
+   *
+   * @param failureMessage  the failure message
+   * @param <T>  the result type
+   * @return  the async result
+   */
+  static <T> AsyncResult<T> failedAsyncResult(String failureMessage) {
+    return failedAsyncResult(new NoStackTraceThrowable(failureMessage));
+  }
 
   /**
    * The result of the operation. This will be null if the operation failed.
@@ -75,31 +150,17 @@ public interface AsyncResult<T> {
     if (mapper == null) {
       throw new NullPointerException();
     }
-    return new AsyncResult<U>() {
-      @Override
-      public U result() {
-        if (succeeded()) {
-          return mapper.apply(AsyncResult.this.result());
-        } else {
-          return null;
-        }
+    if (succeeded()) {
+      U mapped;
+      try {
+        mapped = mapper.apply(result());
+      } catch (Throwable t) {
+        return failedAsyncResult(t);
       }
-
-      @Override
-      public Throwable cause() {
-        return AsyncResult.this.cause();
-      }
-
-      @Override
-      public boolean succeeded() {
-        return AsyncResult.this.succeeded();
-      }
-
-      @Override
-      public boolean failed() {
-        return AsyncResult.this.failed();
-      }
-    };
+      return succeededAsyncResult(mapped);
+    } else {
+      return failedAsyncResult(cause());
+    }
   }
 
   /**
@@ -145,33 +206,17 @@ public interface AsyncResult<T> {
     if (mapper == null) {
       throw new NullPointerException();
     }
-    return new AsyncResult<T>() {
-      @Override
-      public T result() {
-        if (AsyncResult.this.succeeded()) {
-          return AsyncResult.this.result();
-        } else if (AsyncResult.this.failed()) {
-          return mapper.apply(AsyncResult.this.cause());
-        } else {
-          return null;
-        }
+    if (succeeded()) {
+      return this;
+    } else {
+      T mapped;
+      try {
+        mapped = mapper.apply(cause());
+      } catch (Throwable t) {
+        return failedAsyncResult(t);
       }
-
-      @Override
-      public Throwable cause() {
-        return null;
-      }
-
-      @Override
-      public boolean succeeded() {
-        return AsyncResult.this.succeeded() || AsyncResult.this.failed();
-      }
-
-      @Override
-      public boolean failed() {
-        return false;
-      }
-    };
+      return succeededAsyncResult(mapped);
+    }
   }
 
   /**
