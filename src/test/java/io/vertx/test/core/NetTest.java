@@ -1463,12 +1463,12 @@ public class NetTest extends VertxTestBase {
       return this;
     }
 
-    public TLSTest enabledCipherSuites(String[] enabledCipherSuites) {
+    public TLSTest enabledCipherSuites( String... enabledCipherSuites) /*varagrs refactor*/{
       this.enabledCipherSuites = enabledCipherSuites;
       return this;
     }
 
-    public TLSTest enabledSecureTransportProtocols(String[] enabledSecureTransportProtocols) {
+    public TLSTest enabledSecureTransportProtocols( String... enabledSecureTransportProtocols) /*varagrs refactor*/{
       this.enabledSecureTransportProtocols = enabledSecureTransportProtocols;
       return this;
     }

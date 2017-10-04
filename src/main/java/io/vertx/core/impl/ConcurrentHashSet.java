@@ -65,7 +65,7 @@ public class ConcurrentHashSet<E> implements Set<E> {
   }
 
   @Override
-  public <T> T[] toArray(T[] a) {
+  public <T> T[] toArray( T... a) /*varagrs refactor here*/ {
     return map.keySet().toArray(a);
   }
 

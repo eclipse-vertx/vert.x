@@ -32,7 +32,7 @@ public interface BufferFactory {
 
   Buffer buffer(String str, String enc);
 
-  Buffer buffer(byte[] bytes);
+  Buffer buffer( byte... bytes) /*varagrs refactor*/;
 
   Buffer buffer(ByteBuf byteBuffer);
 }

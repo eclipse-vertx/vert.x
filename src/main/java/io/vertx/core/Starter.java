@@ -64,7 +64,7 @@ public class Starter {
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
   public static List<String> PROCESS_ARGS;
 
-  public static void main(String[] sargs) {
+  public static void main( String... sargs) /*varagrs refactor*/{
     Args args = new Args(sargs);
 
     String extraCP = args.map.get("-cp");
@@ -116,7 +116,7 @@ public class Starter {
     run(args, sargs);
   }
 
-  protected void run(String[] sargs) {
+  protected void run( String... sargs) /*varagrs refactor*/{
     run(new Args(sargs), sargs);
   }
 
