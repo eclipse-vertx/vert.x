@@ -951,7 +951,7 @@ public class WebsocketTest extends VertxTestBase {
       assertTrue(ar.succeeded());
 
       HttpClientOptions options = new HttpClientOptions();
-      options.setTryWebsocketDeflateFrameCompression(true);
+      options.setTryUsePerFrameWebsocketCompression(true);
       client = vertx.createHttpClient(options);
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
         final Buffer received = Buffer.buffer();
@@ -986,7 +986,7 @@ public class WebsocketTest extends VertxTestBase {
 		  assertTrue(ar.succeeded());
 		  
 		  HttpClientOptions options = new HttpClientOptions();
-	      options.setTryWebsocketTryPermessageDefalteCompression(true);
+	      options.setTryUsePerMessageWebsocketCompression(true);
 	      client = vertx.createHttpClient(options);
 		  client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
 			  final Buffer received = Buffer.buffer();
@@ -1013,8 +1013,8 @@ public class WebsocketTest extends VertxTestBase {
 	  // client needs to ask for it
 	  server = vertx.createHttpServer(new HttpServerOptions()
 			  .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
-			  .setWebsocketFrameDeflateCompressionSupported(false)
-			  .setWebsocketPermessageDeflateCompressionSupported(false)
+			  .setPerFrameWebsocketCompressionSupported(false)
+			  .setPerMessageWebsocketCompressionSupported(false)
 			  ).websocketHandler(ws -> {
 				  
 		  assertEquals("upgrade", ws.headers().get("Connection"));
