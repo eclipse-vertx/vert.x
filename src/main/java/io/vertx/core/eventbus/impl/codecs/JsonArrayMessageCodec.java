@@ -16,7 +16,6 @@
 
 package io.vertx.core.eventbus.impl.codecs;
 
-import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonArray;
@@ -28,20 +27,16 @@ public class JsonArrayMessageCodec implements MessageCodec<JsonArray, JsonArray>
 
   @Override
   public void encodeToWire(Buffer buffer, JsonArray jsonArray) {
-    String strJson = jsonArray.encode();
-    byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
-    buffer.appendInt(encoded.length);
-    Buffer buff = Buffer.buffer(encoded);
-    buffer.appendBuffer(buff);
+    Buffer encoded = jsonArray.toBuffer();
+    buffer.appendInt(encoded.length());
+    buffer.appendBuffer(encoded);
   }
 
   @Override
   public JsonArray decodeFromWire(int pos, Buffer buffer) {
     int length = buffer.getInt(pos);
     pos += 4;
-    byte[] encoded = buffer.getBytes(pos, pos + length);
-    String str = new String(encoded, CharsetUtil.UTF_8);
-    return new JsonArray(str);
+    return new JsonArray(buffer.slice(pos, pos + length));
   }
 
   @Override

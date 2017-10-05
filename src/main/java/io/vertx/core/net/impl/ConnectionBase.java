@@ -29,6 +29,7 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -55,43 +56,13 @@ public abstract class ConnectionBase {
   private Handler<Void> closeHandler;
   private boolean read;
   private boolean needsFlush;
-  private Thread ctxThread;
-  private boolean needsAsyncFlush;
+  private int writeInProgress;
   private Object metric;
 
   protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context) {
     this.vertx = vertx;
     this.chctx = chctx;
     this.context = context;
-  }
-
-  public synchronized final void startRead() {
-    checkContext();
-    read = true;
-    if (ctxThread == null) {
-      ctxThread = Thread.currentThread();
-    }
-  }
-
-  protected synchronized final void endReadAndFlush() {
-    read = false;
-    if (needsFlush) {
-      needsFlush = false;
-      if (needsAsyncFlush) {
-        // If the connection has been written to from outside the event loop thread e.g. from a worker thread
-        // Then Netty might end up executing the flush *before* the write as Netty checks for event loop and if not
-        // it executes using the executor.
-        // To avoid this ordering issue we must runOnContext in this situation
-        context.runOnContext(v -> chctx.flush());
-      } else {
-        // flush now
-        chctx.flush();
-      }
-    }
-  }
-
-  public void queueForWrite(final Object obj) {
-    queueForWrite(obj, chctx.voidPromise());
   }
 
   /**
@@ -104,22 +75,56 @@ public abstract class ConnectionBase {
     return obj;
   }
 
-  public synchronized void queueForWrite(final Object obj, ChannelPromise promise) {
-    needsFlush = true;
-    needsAsyncFlush = Thread.currentThread() != ctxThread;
-    chctx.write(encode(obj), promise);
+  public synchronized final void startRead() {
+    checkContext();
+    read = true;
+  }
+
+  protected synchronized final void endReadAndFlush() {
+    if (read) {
+      read = false;
+      if (needsFlush && writeInProgress == 0) {
+        needsFlush = false;
+        chctx.flush();
+      }
+    }
+  }
+
+  private void write(Object msg, ChannelPromise promise) {
+    msg = encode(msg);
+    if (read || writeInProgress > 0) {
+      needsFlush = true;
+      chctx.write(msg, promise);
+    } else {
+      needsFlush = false;
+      chctx.writeAndFlush(msg, promise);
+    }
+  }
+
+  public synchronized void writeToChannel(Object msg, ChannelPromise promise) {
+    // Make sure we serialize all the messages as this method can be called from various threads:
+    // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
+    // the message order independently of the thread. To achieve this we need to reschedule messages
+    // not on the event loop or if there are pending async message for the channel.
+    if (chctx.executor().inEventLoop() && writeInProgress == 0) {
+      write(msg, promise);
+    } else {
+      queueForWrite(msg, promise);
+    }
+  }
+
+  private void queueForWrite(Object msg, ChannelPromise promise) {
+    writeInProgress++;
+    context.runOnContext(v -> {
+      synchronized (ConnectionBase.this) {
+        writeInProgress--;
+        write(msg, promise);
+      }
+    });
   }
 
   public void writeToChannel(Object obj) {
     writeToChannel(obj, chctx.voidPromise());
-  }
-
-  public synchronized void writeToChannel(Object obj, ChannelPromise promise) {
-    if (read) {
-      queueForWrite(obj, promise);
-    } else {
-      chctx.writeAndFlush(encode(obj), promise);
-    }
   }
 
   // This is a volatile read inside the Netty channel implementation
@@ -283,6 +288,17 @@ public abstract class ConnectionBase {
 
   public boolean isSsl() {
     return chctx.pipeline().get(SslHandler.class) != null;
+  }
+
+  public SSLSession sslSession() {
+    if (isSSL()) {
+      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
+      assert sslHandlerContext != null;
+      SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
+      return sslHandler.engine().getSession();
+    } else {
+      return null;
+    }
   }
 
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {

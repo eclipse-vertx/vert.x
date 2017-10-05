@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.eventbus.EventBusOptions} original class using Vert.x codegen.
  */
-public class EventBusOptionsConverter {
+ class EventBusOptionsConverter {
 
-  public static void fromJson(JsonObject json, EventBusOptions obj) {
+   static void fromJson(JsonObject json, EventBusOptions obj) {
     if (json.getValue("acceptBacklog") instanceof Number) {
       obj.setAcceptBacklog(((Number)json.getValue("acceptBacklog")).intValue());
     }
@@ -120,6 +120,9 @@ public class EventBusOptionsConverter {
     if (json.getValue("reuseAddress") instanceof Boolean) {
       obj.setReuseAddress((Boolean)json.getValue("reuseAddress"));
     }
+    if (json.getValue("reusePort") instanceof Boolean) {
+      obj.setReusePort((Boolean)json.getValue("reusePort"));
+    }
     if (json.getValue("sendBufferSize") instanceof Number) {
       obj.setSendBufferSize(((Number)json.getValue("sendBufferSize")).intValue());
     }
@@ -129,11 +132,20 @@ public class EventBusOptionsConverter {
     if (json.getValue("ssl") instanceof Boolean) {
       obj.setSsl((Boolean)json.getValue("ssl"));
     }
+    if (json.getValue("tcpCork") instanceof Boolean) {
+      obj.setTcpCork((Boolean)json.getValue("tcpCork"));
+    }
+    if (json.getValue("tcpFastOpen") instanceof Boolean) {
+      obj.setTcpFastOpen((Boolean)json.getValue("tcpFastOpen"));
+    }
     if (json.getValue("tcpKeepAlive") instanceof Boolean) {
       obj.setTcpKeepAlive((Boolean)json.getValue("tcpKeepAlive"));
     }
     if (json.getValue("tcpNoDelay") instanceof Boolean) {
       obj.setTcpNoDelay((Boolean)json.getValue("tcpNoDelay"));
+    }
+    if (json.getValue("tcpQuickAck") instanceof Boolean) {
+      obj.setTcpQuickAck((Boolean)json.getValue("tcpQuickAck"));
     }
     if (json.getValue("trafficClass") instanceof Number) {
       obj.setTrafficClass(((Number)json.getValue("trafficClass")).intValue());
@@ -152,7 +164,7 @@ public class EventBusOptionsConverter {
     }
   }
 
-  public static void toJson(EventBusOptions obj, JsonObject json) {
+   static void toJson(EventBusOptions obj, JsonObject json) {
     json.put("acceptBacklog", obj.getAcceptBacklog());
     if (obj.getClientAuth() != null) {
       json.put("clientAuth", obj.getClientAuth().name());
@@ -216,11 +228,15 @@ public class EventBusOptionsConverter {
     json.put("reconnectAttempts", obj.getReconnectAttempts());
     json.put("reconnectInterval", obj.getReconnectInterval());
     json.put("reuseAddress", obj.isReuseAddress());
+    json.put("reusePort", obj.isReusePort());
     json.put("sendBufferSize", obj.getSendBufferSize());
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
+    json.put("tcpCork", obj.isTcpCork());
+    json.put("tcpFastOpen", obj.isTcpFastOpen());
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
+    json.put("tcpQuickAck", obj.isTcpQuickAck());
     json.put("trafficClass", obj.getTrafficClass());
     json.put("trustAll", obj.isTrustAll());
     if (obj.getTrustStoreOptions() != null) {

@@ -124,6 +124,38 @@ public interface NetServer extends Measured {
   NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler);
 
   /**
+   * Start listening on the specified local address, ignoring port and host configured in the {@link io.vertx.core.net.NetServerOptions} used when
+   * creating the server.
+   * <p>
+   * The server may not be listening until some time after the call to listen has returned.
+   *
+   * @param localAddress the local address to listen on
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetServer listen(SocketAddress localAddress);
+
+  /**
+   * Like {@link #listen(SocketAddress)} but providing a handler that will be notified when the server is listening, or fails.
+   *
+   * @param localAddress the local address to listen on
+   * @param listenHandler handler that will be notified when listening or failed
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler);
+
+  /**
+   * Set an exception handler called for socket errors happening before the connection
+   * is passed to the {@link #connectHandler}, e.g during the TLS handshake.
+   *
+   * @param handler the handler to set
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetServer exceptionHandler(Handler<Throwable> handler);
+
+  /**
    * Close the server. This will close any currently open connections. The close may not complete until after this
    * method has returned.
    */

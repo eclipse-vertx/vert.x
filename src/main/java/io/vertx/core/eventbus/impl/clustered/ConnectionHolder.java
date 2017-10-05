@@ -1,7 +1,6 @@
 package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
@@ -57,6 +56,7 @@ class ConnectionHolder {
       if (res.succeeded()) {
         connected(res.result());
       } else {
+        log.warn("Connecting to server " + serverID + " failed", res.cause());
         close();
       }
     });
@@ -72,6 +72,9 @@ class ConnectionHolder {
       socket.write(data);
     } else {
       if (pending == null) {
+        if (log.isDebugEnabled()) {
+          log.debug("Not connected to server " + serverID + " - starting queuing");
+        }
         pending = new ArrayDeque<>();
       }
       pending.add(message);
@@ -92,7 +95,9 @@ class ConnectionHolder {
     // The holder can be null or different if the target server is restarted with same serverid
     // before the cleanup for the previous one has been processed
     if (eventBus.connections().remove(serverID, this)) {
-      log.debug("Cluster connection closed: " + serverID + " holder " + this);
+      if (log.isDebugEnabled()) {
+        log.debug("Cluster connection closed for server " + serverID);
+      }
     }
   }
 
@@ -124,14 +129,19 @@ class ConnectionHolder {
     });
     // Start a pinger
     schedulePing();
-    for (ClusteredMessage message : pending) {
-      Buffer data = message.encodeToWire();
-      if (metrics != null) {
-        metrics.messageWritten(message.address(), data.length());
+    if (pending != null) {
+      if (log.isDebugEnabled()) {
+        log.debug("Draining the queue for server " + serverID);
       }
-      socket.write(data);
+      for (ClusteredMessage message : pending) {
+        Buffer data = message.encodeToWire();
+        if (metrics != null) {
+          metrics.messageWritten(message.address(), data.length());
+        }
+        socket.write(data);
+      }
     }
-    pending.clear();
+    pending = null;
   }
 
 }

@@ -25,6 +25,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
 /**
@@ -103,20 +104,47 @@ public interface ServerWebSocket extends WebSocketBase {
   MultiMap headers();
 
   /**
+   * Accept the WebSocket and terminate the WebSocket handshake.
+   * <p/>
+   * This method should be called from the websocket handler to explicitely accept the websocker and
+   * terminate the WebSocket handshake.
+   */
+  void accept();
+
+  /**
    * Reject the WebSocket.
    * <p>
    * Calling this method from the websocket handler when it is first passed to you gives you the opportunity to reject
    * the websocket, which will cause the websocket handshake to fail by returning
-   * a 404 response code.
+   * a {@literal 502} response code.
    * <p>
    * You might use this method, if for example you only want to accept WebSockets with a particular path.
    */
   void reject();
 
   /**
-   * @return an array of the peer certificates. Returns null if connection is
+   * Like {@link #reject()} but with a {@code status}.
+   */
+  void reject(int status);
+
+  /**
+   * @return SSLSession associated with the underlying socket. Returns null if connection is
+   *         not SSL.
+   * @see javax.net.ssl.SSLSession
+   */
+  @GenIgnore
+  SSLSession sslSession();
+
+  /**
+   * Note: Java SE 5+ recommends to use javax.net.ssl.SSLSession#getPeerCertificates() instead of
+   * of javax.net.ssl.SSLSession#getPeerCertificateChain() which this method is based on. Use {@link #sslSession()} to
+   * access that method.
+   *
+   * @return an ordered array of the peer certificates. Returns null if connection is
    *         not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
+   * @see #sslSession()
    */
   @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;

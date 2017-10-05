@@ -36,7 +36,11 @@ keytool -importkeystore -srckeystore client-truststore.jks -destkeystore client-
 
 openssl pkcs12 -in server-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out server-key.pem -nocrypt
 
-2) Extract the X.509 certificate from the PCS12 store
+2) Convert PKCS#8 format to PKCS#1 format
+
+openssl rsa -inform PEM -outform PEM -in server-key.pem -out server-key-pkcs1.pem
+
+3) Extract the X.509 certificate from the PCS12 store
 
 openssl pkcs12 -in server-keystore.p12 -nokeys -out server-cert.pem
 

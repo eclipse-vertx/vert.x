@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PfxOptions} original class using Vert.x codegen.
  */
-public class PfxOptionsConverter {
+ class PfxOptionsConverter {
 
-  public static void fromJson(JsonObject json, PfxOptions obj) {
+   static void fromJson(JsonObject json, PfxOptions obj) {
     if (json.getValue("password") instanceof String) {
       obj.setPassword((String)json.getValue("password"));
     }
@@ -38,7 +38,7 @@ public class PfxOptionsConverter {
     }
   }
 
-  public static void toJson(PfxOptions obj, JsonObject json) {
+   static void toJson(PfxOptions obj, JsonObject json) {
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }

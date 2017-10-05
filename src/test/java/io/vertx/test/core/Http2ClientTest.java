@@ -178,6 +178,25 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testInvalidSettings() throws Exception {
+    io.vertx.core.http.Http2Settings settings = new io.vertx.core.http.Http2Settings();
+
+    try {
+      settings.set(Integer.MAX_VALUE, 0);
+      fail("max id should be 0-0xFFFF");
+    } catch (RuntimeException e) {
+      // expected
+    }
+
+    try {
+      settings.set(7, -1);
+      fail("max value should be 0-0xFFFFFFFF");
+    } catch (RuntimeException e) {
+      // expected
+    }
+  }
+
+  @Test
   public void testServerSettings() throws Exception {
     waitFor(2);
     io.vertx.core.http.Http2Settings expectedSettings = TestUtils.randomHttp2Settings();
@@ -717,11 +736,16 @@ public class Http2ClientTest extends Http2TestBase {
         bufReceived.complete();
       });
       req.exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
+        assertEquals(err.getClass(), StreamResetException.class);
       });
+      AtomicLong reset = new AtomicLong();
       req.response().exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
-        assertEquals(10L, ((StreamResetException) err).getCode());
+        if (err instanceof StreamResetException) {
+          reset.set(((StreamResetException) err).getCode());
+        }
+      });
+      req.response().closeHandler(v -> {
+        assertEquals(10L, reset.get());
         testComplete();
       });
     });
@@ -739,11 +763,16 @@ public class Http2ClientTest extends Http2TestBase {
   public void testClientResetServerStreamDuringResponse() throws Exception {
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
+        assertEquals(err.getClass(), StreamResetException.class);
       });
+      AtomicLong reset = new AtomicLong();
       req.response().exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
-        assertEquals(10L, ((StreamResetException) err).getCode());
+        if (err instanceof StreamResetException) {
+          reset.set(((StreamResetException) err).getCode());
+        }
+      });
+      req.response().closeHandler(v -> {
+        assertEquals(10L, reset.get());
         testComplete();
       });
       req.response().setChunked(true).write(Buffer.buffer("some-data"));

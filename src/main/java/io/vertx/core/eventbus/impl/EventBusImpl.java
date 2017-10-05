@@ -516,7 +516,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     // Unregister all handlers explicitly - don't rely on context hooks
     for (Handlers handlers: handlerMap.values()) {
       for (HandlerHolder holder: handlers.list) {
-        holder.getHandler().unregister(true);
+        holder.getHandler().unregister();
       }
     }
   }

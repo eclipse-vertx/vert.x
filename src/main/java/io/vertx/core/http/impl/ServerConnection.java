@@ -43,6 +43,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
@@ -204,16 +205,16 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
   }
 
   @Override
-  public void writeToChannel(Object obj, ChannelPromise promise) {
+  public void writeToChannel(Object msg, ChannelPromise promise) {
     if (METRICS_ENABLED && metrics != null) {
-      long bytes = getBytes(obj);
+      long bytes = getBytes(msg);
       if (bytes == -1) {
-        log.warn("Metrics could not be updated to include bytes written because of unknown object " + obj.getClass() + " being written.");
+        log.warn("Metrics could not be updated to include bytes written because of unknown object " + msg.getClass() + " being written.");
       } else {
         bytesWritten += bytes;
       }
     }
-    super.writeToChannel(obj, promise);
+    super.writeToChannel(msg, promise);
   }
 
   ServerWebSocket upgrade(HttpServerRequest request, HttpRequest nettyReq) {
@@ -268,7 +269,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
       pipeline.remove("chunkedWriter");
     }
 
-    chctx.pipeline().replace("handler", "handler", new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket) {
+    chctx.pipeline().replace("handler", "handler", new VertxNetHandler(socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
@@ -281,7 +282,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
       @Override
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        connection.handleDataReceived(Buffer.buffer(buf));
+        connection.handleMessageReceived(buf);
       }
     }.removeHandler(sock -> connectionMap.remove(chctx.channel())));
 
@@ -344,6 +345,9 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     super.handleClosed();
     if (ws != null) {
       ws.handleClosed();
+    }
+    if (currentRequest != null) {
+      currentRequest.handleException(new VertxException("Connection was closed"));
     }
     if (pendingResponse != null) {
       if (METRICS_ENABLED && metrics != null) {

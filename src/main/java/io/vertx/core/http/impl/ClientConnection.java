@@ -208,13 +208,14 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       if (handshaker != null && handshaking) {
         if (msg instanceof HttpResponse) {
           HttpResponse resp = (HttpResponse) msg;
-          if (resp.getStatus().code() != 101) {
+          HttpResponseStatus status = resp.status();
+          if (status.code() != 101) {
             handshaker = null;
             close();
-            handleException(new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code()));
+            handleException(new WebsocketRejectedException(status.code()));
             return;
           }
-          response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
+          response = new DefaultFullHttpResponse(resp.protocolVersion(), status);
           response.headers().add(resp.headers());
         }
 
@@ -245,7 +246,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       }
     }
 
-    private void handleException(WebSocketHandshakeException e) {
+    private void handleException(Exception e) {
       handshaking = false;
       buffered.clear();
       Handler<Throwable> handler = exceptionHandler();
@@ -272,6 +273,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
                                                   client.getOptions().getMaxWebsocketMessageSize());
       ws = webSocket;
       handshaker.finishHandshake(chctx.channel(), response);
+      ws.subProtocol(handshaker.actualSubprotocol());
       context.executeFromIO(() -> {
         log.debug("WebSocket handshake complete");
         if (metrics != null ) {
@@ -445,7 +447,9 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
 
     // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
     for (HttpClientRequestImpl req: requests) {
-      req.handleException(e);
+      if (req != currentRequest) {
+        req.handleException(e);
+      }
     }
     if (currentRequest != null) {
       currentRequest.handleException(e);
@@ -611,7 +615,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(chctx.channel(), socket) {
+    pipeline.replace("handler", "handler",  new VertxNetHandler(socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
@@ -626,7 +630,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       @Override
       protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        connection.handleDataReceived(Buffer.buffer(buf));
+        connection.handleMessageReceived(buf);
       }
     }.removeHandler(sock -> {
       pool.removeChannel(chctx.channel());

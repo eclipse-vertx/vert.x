@@ -21,10 +21,10 @@ import io.vertx.core.json.JsonObject;
 
 /**
  * Describes how an {@link io.vertx.core.file.AsyncFile} should be opened.
- * 
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class OpenOptions {
 
   public static final String DEFAULT_PERMS = null;
@@ -38,6 +38,11 @@ public class OpenOptions {
   public static final boolean DEFAULT_TRUNCATEEXISTING = false;
   public static final boolean DEFAULT_SPARSE = false;
 
+  /**
+   * Whether the file should be opened in append mode by default = false.
+   */
+  public static final boolean DEFAULT_APPEND = false;
+
   private String perms = DEFAULT_PERMS;
   private boolean read = DEFAULT_READ;
   private boolean write = DEFAULT_WRITE;
@@ -48,6 +53,7 @@ public class OpenOptions {
   private boolean deleteOnClose = DEFAULT_DELETEONCLOSE;
   private boolean truncateExisting = DEFAULT_TRUNCATEEXISTING;
   private boolean sparse = DEFAULT_SPARSE;
+  private boolean append = DEFAULT_APPEND;
 
   /**
    * Default constructor
@@ -72,6 +78,7 @@ public class OpenOptions {
     this.deleteOnClose = other.deleteOnClose;
     this.truncateExisting = other.truncateExisting;
     this.sparse = other.sparse;
+    this.append = other.append;
   }
 
   /**
@@ -278,6 +285,24 @@ public class OpenOptions {
    */
   public OpenOptions setDsync(boolean dsync) {
     this.dsync = dsync;
+    return this;
+  }
+
+  /**
+   * @return true if the file should be opened in append mode, false otherwise
+   */
+  public boolean isAppend() {
+    return append;
+  }
+
+  /**
+   * Whether the file should be opened in append mode. Defaults to {@code false}.
+   *
+   * @param append true to open file in append mode, false otherwise
+   * @return a reference to this, so the API can be used fluently
+   */
+  public OpenOptions setAppend(boolean append) {
+    this.append = append;
     return this;
   }
 }

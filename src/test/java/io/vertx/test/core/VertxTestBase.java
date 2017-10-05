@@ -46,6 +46,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class VertxTestBase extends AsyncTestBase {
 
+  public static final boolean USE_NATIVE_TRANSPORT = Boolean.getBoolean("vertx.useNativeTransport");
+  public static final boolean USE_DOMAIN_SOCKETS = Boolean.getBoolean("vertx.useDomainSockets");
   private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
 
   @Rule
@@ -66,20 +68,23 @@ public class VertxTestBase extends AsyncTestBase {
   public void setUp() throws Exception {
     super.setUp();
     vinit();
-    vertx = Vertx.vertx(getOptions());
+    VertxOptions options = getOptions();
+    boolean nativeTransport = options.getPreferNativeTransport();
+    vertx = Vertx.vertx(options);
+    if (nativeTransport) {
+      assertTrue(vertx.isNativeTransportEnabled());
+    }
   }
 
   protected VertxOptions getOptions() {
-    return new VertxOptions();
+    VertxOptions options = new VertxOptions();
+    options.setPreferNativeTransport(USE_NATIVE_TRANSPORT);
+    return options;
   }
 
   protected void tearDown() throws Exception {
     if (vertx != null) {
-      CountDownLatch latch = new CountDownLatch(1);
-      vertx.close(ar -> {
-        latch.countDown();
-      });
-      awaitLatch(latch);
+      close(vertx);
     }
     if (created != null) {
       CountDownLatch latch = new CountDownLatch(created.size());

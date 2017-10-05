@@ -101,6 +101,7 @@ public class AsyncFileImpl implements AsyncFile {
       } else {
         ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool());
       }
+      if (options.isAppend()) writePos = ch.size();
     } catch (IOException e) {
       throw new FileSystemException(e);
     }

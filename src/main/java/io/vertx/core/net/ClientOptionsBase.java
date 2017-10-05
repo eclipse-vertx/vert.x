@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
@@ -26,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public abstract class ClientOptionsBase extends TCPSSLOptions {
 
   /**
@@ -311,8 +312,48 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setReusePort(boolean reusePort) {
+    return (ClientOptionsBase) super.setReusePort(reusePort);
+  }
+
+  @Override
   public ClientOptionsBase setTrafficClass(int trafficClass) {
     return (ClientOptionsBase) super.setTrafficClass(trafficClass);
+  }
+
+  @Override
+  public ClientOptionsBase addEnabledCipherSuite(String suite) {
+    return (ClientOptionsBase) super.addEnabledCipherSuite(suite);
+  }
+
+  @Override
+  public ClientOptionsBase addCrlPath(String crlPath) throws NullPointerException {
+    return (ClientOptionsBase) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public ClientOptionsBase addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (ClientOptionsBase) super.addCrlValue(crlValue);
+  }
+
+  @Override
+  public ClientOptionsBase addEnabledSecureTransportProtocol(String protocol) {
+    return (ClientOptionsBase) super.addEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpFastOpen(boolean tcpFastOpen) {
+    return (ClientOptionsBase) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpCork(boolean tcpCork) {
+    return (ClientOptionsBase) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpQuickAck(boolean tcpQuickAck) {
+    return (ClientOptionsBase) super.setTcpQuickAck(tcpQuickAck);
   }
 
   @Override

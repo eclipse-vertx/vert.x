@@ -31,7 +31,7 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class HttpClientOptions extends ClientOptionsBase {
 
   /**
@@ -336,6 +336,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;
@@ -431,6 +437,21 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions addEnabledSecureTransportProtocol(final String protocol) {
     super.addEnabledSecureTransportProtocol(protocol);
     return this;
+  }
+
+  @Override
+  public HttpClientOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (HttpClientOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public HttpClientOptions setTcpCork(boolean tcpCork) {
+    return (HttpClientOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public HttpClientOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (HttpClientOptions) super.setTcpQuickAck(tcpQuickAck);
   }
 
   @Override

@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.TCPSSLOptions} original class using Vert.x codegen.
  */
-public class TCPSSLOptionsConverter {
+ class TCPSSLOptionsConverter {
 
-  public static void fromJson(JsonObject json, TCPSSLOptions obj) {
+   static void fromJson(JsonObject json, TCPSSLOptions obj) {
     if (json.getValue("crlPaths") instanceof JsonArray) {
       json.getJsonArray("crlPaths").forEach(item -> {
         if (item instanceof String)
@@ -81,11 +81,20 @@ public class TCPSSLOptionsConverter {
     if (json.getValue("ssl") instanceof Boolean) {
       obj.setSsl((Boolean)json.getValue("ssl"));
     }
+    if (json.getValue("tcpCork") instanceof Boolean) {
+      obj.setTcpCork((Boolean)json.getValue("tcpCork"));
+    }
+    if (json.getValue("tcpFastOpen") instanceof Boolean) {
+      obj.setTcpFastOpen((Boolean)json.getValue("tcpFastOpen"));
+    }
     if (json.getValue("tcpKeepAlive") instanceof Boolean) {
       obj.setTcpKeepAlive((Boolean)json.getValue("tcpKeepAlive"));
     }
     if (json.getValue("tcpNoDelay") instanceof Boolean) {
       obj.setTcpNoDelay((Boolean)json.getValue("tcpNoDelay"));
+    }
+    if (json.getValue("tcpQuickAck") instanceof Boolean) {
+      obj.setTcpQuickAck((Boolean)json.getValue("tcpQuickAck"));
     }
     if (json.getValue("trustStoreOptions") instanceof JsonObject) {
       obj.setTrustStoreOptions(new io.vertx.core.net.JksOptions((JsonObject)json.getValue("trustStoreOptions")));
@@ -98,7 +107,7 @@ public class TCPSSLOptionsConverter {
     }
   }
 
-  public static void toJson(TCPSSLOptions obj, JsonObject json) {
+   static void toJson(TCPSSLOptions obj, JsonObject json) {
     if (obj.getCrlPaths() != null) {
       JsonArray array = new JsonArray();
       obj.getCrlPaths().forEach(item -> array.add(item));
@@ -143,8 +152,11 @@ public class TCPSSLOptionsConverter {
     }
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
+    json.put("tcpCork", obj.isTcpCork());
+    json.put("tcpFastOpen", obj.isTcpFastOpen());
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
+    json.put("tcpQuickAck", obj.isTcpQuickAck());
     if (obj.getTrustStoreOptions() != null) {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }

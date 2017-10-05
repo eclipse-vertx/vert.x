@@ -84,6 +84,24 @@ public class DeliveryOptions {
   }
 
   /**
+   * Convert to JSON.
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    json.put("timeout", timeout);
+    if (codecName != null) json.put("codecName", codecName);
+    if (headers != null) {
+      JsonObject hJson = new JsonObject();
+      headers.entries().forEach(entry -> hJson.put(entry.getKey(), entry.getValue()));
+      json.put("headers", hJson);
+    }
+    return json;
+  }
+
+
+  /**
    * Get the send timeout.
    * <p>
    * When sending a message with a response handler a send timeout can be provided. If no response is received

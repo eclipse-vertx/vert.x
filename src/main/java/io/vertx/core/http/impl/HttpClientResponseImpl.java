@@ -24,6 +24,8 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 
 import java.util.ArrayList;
@@ -39,6 +41,8 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientResponseImpl implements HttpClientResponse  {
+
+  private static final Logger log = LoggerFactory.getLogger(HttpClientResponseImpl.class);
 
   private final HttpVersion version;
   private final int statusCode;
@@ -268,6 +272,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     synchronized (conn) {
       if (exceptionHandler != null) {
         exceptionHandler.handle(e);
+      } else {
+        log.error(e);
       }
     }
   }

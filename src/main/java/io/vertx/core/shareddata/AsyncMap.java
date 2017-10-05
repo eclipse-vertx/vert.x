@@ -16,9 +16,14 @@
 
 package io.vertx.core.shareddata;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -134,4 +139,39 @@ public interface AsyncMap<K, V> {
    */
   void size(Handler<AsyncResult<Integer>> resultHandler);
 
+  /**
+   * Get the keys of the map, asynchronously.
+   * <p>
+   * Use this method with care as the map may contain a large number of keys,
+   * which may not fit entirely in memory of a single node.
+   * In this case, the invocation will result in an {@link OutOfMemoryError}.
+   *
+   * @param resultHandler invoked when the operation completes
+   */
+  @GenIgnore
+  void keys(Handler<AsyncResult<Set<K>>> resultHandler);
+
+  /**
+   * Get the values of the map, asynchronously.
+   * <p>
+   * Use this method with care as the map may contain a large number of values,
+   * which may not fit entirely in memory of a single node.
+   * In this case, the invocation will result in an {@link OutOfMemoryError}.
+   *
+   * @param resultHandler invoked when the operation completes
+   */
+  @GenIgnore
+  void values(Handler<AsyncResult<List<V>>> resultHandler);
+
+  /**
+   * Get the entries of the map, asynchronously.
+   * <p>
+   * Use this method with care as the map may contain a large number of entries,
+   * which may not fit entirely in memory of a single node.
+   * In this case, the invocation will result in an {@link OutOfMemoryError}.
+   *
+   * @param resultHandler invoked when the operation completes
+   */
+  @GenIgnore
+  void entries(Handler<AsyncResult<Map<K, V>>> resultHandler);
 }

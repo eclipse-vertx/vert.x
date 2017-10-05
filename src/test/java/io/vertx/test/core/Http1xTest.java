@@ -68,16 +68,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -1486,7 +1477,6 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-
   @Test
   public void testClientWebsocketIdleTimeout() {
     client.close();
@@ -1905,28 +1895,27 @@ public class Http1xTest extends HttpTest {
 
   private void testClientContext() throws Exception {
     CountDownLatch serverLatch = new CountDownLatch(1);
+    CountDownLatch req1Latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.response().end();
+      req1Latch.countDown();
     } ).listen(ar -> {
       assertTrue(ar.succeeded());
-      serverLatch.countDown();;
+      serverLatch.countDown();
     });
     awaitLatch(serverLatch);
-    CountDownLatch req1Latch = new CountDownLatch(1);
     AtomicReference<Context> c = new AtomicReference<>();
     HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1");
     AtomicReference<HttpConnection> conn = new AtomicReference<>();
     req1.handler(res -> {
       c.set(Vertx.currentContext());
       conn.set(req1.connection());
-      res.endHandler(v -> req1Latch.countDown());
     });
     req1.end();
     Consumer<HttpClientRequest> checker = req -> {
       assertSame(Vertx.currentContext(), c.get());
       assertSame(conn.get(), req.connection());
     };
-    awaitLatch(req1Latch);
     CountDownLatch req2Latch = new CountDownLatch(2);
     HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2");
     req2.handler(res -> {
@@ -1935,6 +1924,7 @@ public class Http1xTest extends HttpTest {
     }).exceptionHandler(err -> {
       fail(err);
     }).sendHead();
+    awaitLatch(req1Latch);
     HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3");
     req3.handler(res -> {
       checker.accept(req3);
@@ -3397,7 +3387,7 @@ public class Http1xTest extends HttpTest {
         so.write("01234567");
       }
     }, errors -> {
-      assertEquals(1, errors.size());
+      assertEquals(2, errors.size());
       assertEquals(TooLongFrameException.class, errors.get(0).getClass());
     });
   }
@@ -3407,7 +3397,7 @@ public class Http1xTest extends HttpTest {
     testHttpServerRequestDecodeError(so -> {
       so.write("invalid\r\n"); // Empty chunk
     }, errors -> {
-      assertEquals(1, errors.size());
+      assertEquals(2, errors.size());
       assertEquals(NumberFormatException.class, errors.get(0).getClass());
     });
   }
@@ -3708,6 +3698,26 @@ public class Http1xTest extends HttpTest {
       so.write(fullRequest.slice(0, 1));
       vertx.setTimer(1000, id -> {
         so.write(fullRequest.slice(1, fullRequest.length()));
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testIdleTimeoutWithPartialH2CRequest() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setIdleTimeout(1));
+    server.requestHandler(req -> {
+      testComplete();
+    });
+    startServer();
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+      so.closeHandler(v -> {
+        testComplete();
       });
     }));
     await();

@@ -21,16 +21,17 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
+import io.vertx.core.net.SocketAddress;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by tim on 08/01/15.
@@ -351,4 +352,48 @@ public class CoreExamples {
     vertx.deployVerticle("the-verticle", new DeploymentOptions().setWorkerPoolName("the-specific-pool"));
   }
 
+  public void configureNative() {
+    Vertx vertx = Vertx.vertx(new VertxOptions().
+      setPreferNativeTransport(true)
+    );
+
+    // True when native is available
+    boolean usingNative = vertx.isNativeTransportEnabled();
+    System.out.println("Running with native: " + usingNative);
+  }
+
+  public void configureLinuxOptions(Vertx vertx, boolean fastOpen, boolean cork, boolean quickAck, boolean reusePort) {
+    // Available on Linux
+    vertx.createHttpServer(new HttpServerOptions()
+      .setTcpFastOpen(fastOpen)
+      .setTcpCork(cork)
+      .setTcpQuickAck(quickAck)
+      .setReusePort(reusePort)
+    );
+  }
+
+  public void configureBSDOptions(Vertx vertx, boolean reusePort) {
+    // Available on BSD
+    vertx.createHttpServer(new HttpServerOptions().setReusePort(reusePort));
+  }
+
+  public void serverWithDomainSockets(Vertx vertx) {
+    // Only available on BSD and Linux
+    vertx.createNetServer().connectHandler(so -> {
+      // Handle application
+    }).listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"));
+  }
+
+  public void clientWithDomainSockets(Vertx vertx) {
+    NetClient netClient = vertx.createNetClient();
+
+    // Only available on BSD and Linux
+    netClient.connect(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), ar -> {
+      if (ar.succeeded()) {
+        // Connected
+      } else {
+        ar.cause().printStackTrace();
+      }
+    });
+  }
 }

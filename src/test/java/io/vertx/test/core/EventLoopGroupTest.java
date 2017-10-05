@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -31,6 +32,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import org.junit.Test;
@@ -64,7 +66,7 @@ public class EventLoopGroupTest extends VertxTestBase {
     awaitLatch(latch);
     ServerBootstrap bs = new ServerBootstrap();
     bs.group(context.nettyEventLoop());
-    bs.channel(NioServerSocketChannel.class);
+    bs.channel(((VertxInternal)vertx).transport().serverChannelType(false)) ;
     bs.option(ChannelOption.SO_BACKLOG, 100);
     bs.childHandler(new ChannelInitializer<SocketChannel>() {
       @Override
@@ -118,12 +120,17 @@ public class EventLoopGroupTest extends VertxTestBase {
         });
       }
     });
-    bs.bind("localhost", 1234).sync();
-    vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", ar -> {
-      assertTrue(ar.succeeded());
-      NetSocket so = ar.result();
-      so.write(Buffer.buffer("hello"));
-    });
-    await();
+    ChannelFuture fut = bs.bind("localhost", 1234);
+    try {
+      fut.sync();
+      vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", ar -> {
+        assertTrue(ar.succeeded());
+        NetSocket so = ar.result();
+        so.write(Buffer.buffer("hello"));
+      });
+      await();
+    } finally {
+      fut.channel().close().sync();
+    }
   }
 }

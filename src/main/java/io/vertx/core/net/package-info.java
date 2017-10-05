@@ -135,6 +135,10 @@
  * You can set an {@link io.vertx.core.net.NetSocket#exceptionHandler(io.vertx.core.Handler)} to receive any
  * exceptions that happen on the socket.
  *
+ * You can set an {@link io.vertx.core.net.NetServer#exceptionHandler(io.vertx.core.Handler)} to receive any
+ * exceptions that happens before the connection is passed to the {@link io.vertx.core.net.NetServer#connectHandler(io.vertx.core.Handler)}
+ * , e.g during the TLS handshake.
+ *
  * === Event bus write handler
  *
  * Every socket automatically registers a handler on the event bus, and when any buffers are received in this handler,
@@ -156,8 +160,8 @@
  *
  * Files and classpath resources can be written to the socket directly using {@link io.vertx.core.net.NetSocket#sendFile}. This can be a very
  * efficient way to send files, as it can be handled by the OS kernel directly where supported by the operating system.
- * 
- * Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the 
+ *
+ * Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the
  * classpath resolution or disabling it.
  *
  * [source,$lang]
@@ -385,7 +389,9 @@
  * {@link examples.NetExamples#example22}
  * ----
  *
- * Keep in mind that pem configuration, the private key is not crypted.
+ * PKCS8, PKCS1 and X.509 certificates wrapped in a PEM block formats are supported.
+ *
+ * WARNING: keep in mind that pem configuration, the private key is not crypted.
  *
  * ==== Specifying trust for the server
  *
@@ -706,6 +712,8 @@
  * Application-Layer Protocol Negotiation (ALPN) is a TLS extension for application layer protocol negotiation. It is used by
  * HTTP/2: during the TLS handshake the client gives the list of application protocols it accepts and the server responds
  * with a protocol it supports.
+ *
+ * If you are using Java 9, you are fine and you can use HTTP/2 out of the box without extra steps.
  *
  * Java 8 does not supports ALPN out of the box, so ALPN should be enabled by other means:
  *

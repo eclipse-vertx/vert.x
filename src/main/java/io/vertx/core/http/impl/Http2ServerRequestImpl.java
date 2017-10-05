@@ -47,6 +47,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
@@ -207,7 +208,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   public HttpServerRequest handler(Handler<Buffer> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       dataHandler = handler;
     }
     return this;
@@ -232,7 +235,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       endHandler = handler;
     }
     return this;
@@ -371,6 +376,11 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   @Override
+  public SSLSession sslSession() {
+    return conn.sslSession();
+  }
+
+  @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     return conn.peerCertificateChain();
   }
@@ -446,7 +456,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       uploadHandler = handler;
       return this;
     }

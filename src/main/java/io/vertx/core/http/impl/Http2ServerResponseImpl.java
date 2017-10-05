@@ -18,6 +18,8 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -29,6 +31,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -144,7 +147,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       exceptionHandler = handler;
       return this;
     }
@@ -299,7 +304,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse closeHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       closeHandler = handler;
       return this;
     }
@@ -308,7 +315,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       endHandler = handler;
       return this;
     }
@@ -451,6 +460,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
           conn.metrics().responseEnd(metric, this);
         }
       }
+      if (exceptionHandler != null) {
+        conn.getContext().runOnContext(v -> exceptionHandler.handle(new VertxException("Connection was closed")));
+      }
       if (endHandler != null) {
         conn.getContext().runOnContext(endHandler);
       }
@@ -486,7 +498,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse drainHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       drainHandler = handler;
       return this;
     }
@@ -538,7 +552,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       checkSendHeaders(false);
 
-      FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
+      Future<Long> result = Future.future();
+      result.setHandler(ar -> {
         if (ar.succeeded()) {
           bytesWritten += ar.result();
           end();
@@ -548,10 +563,20 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
             resultHandler.handle(Future.succeededFuture());
           });
         }
-      }, stream, offset, contentLength);
+      });
+
+      FileStreamChannel fileChannel = new FileStreamChannel(result, stream, offset, contentLength);
       drainHandler(fileChannel.drainHandler);
-      ctx.channel().eventLoop().register(fileChannel);
-      fileChannel.pipeline().fireUserEventTriggered(raf);
+      ctx.channel()
+        .eventLoop()
+        .register(fileChannel)
+        .addListener((ChannelFutureListener) future -> {
+        if (future.isSuccess()) {
+          fileChannel.pipeline().fireUserEventTriggered(raf);
+        } else {
+          result.tryFail(future.cause());
+        }
+      });
     }
     return this;
   }

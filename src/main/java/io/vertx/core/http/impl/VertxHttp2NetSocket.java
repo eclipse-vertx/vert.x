@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
@@ -31,6 +32,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -217,16 +219,27 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
       long contentLength = Math.min(length, file.length() - offset);
 
-      FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
+      Future<Long> result = Future.future();
+      result.setHandler(ar -> {
         if (resultHandler != null) {
           resultCtx.runOnContext(v -> {
             resultHandler.handle(Future.succeededFuture());
           });
         }
-      }, this, offset, contentLength);
+      });
+
+      FileStreamChannel fileChannel = new FileStreamChannel(result, this, offset, contentLength);
       drainHandler(fileChannel.drainHandler);
-      handlerContext.channel().eventLoop().register(fileChannel);
-      fileChannel.pipeline().fireUserEventTriggered(raf);
+      handlerContext.channel()
+        .eventLoop()
+        .register(fileChannel)
+        .addListener((ChannelFutureListener) future -> {
+          if (future.isSuccess()) {
+            fileChannel.pipeline().fireUserEventTriggered(raf);
+          } else {
+            result.tryFail(future.cause());
+          }
+        });
     }
     return this;
   }
@@ -281,6 +294,11 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   @Override
   public boolean isSsl() {
     return conn.isSsl();
+  }
+
+  @Override
+  public SSLSession sslSession() {
+    return conn.sslSession();
   }
 
   @Override

@@ -150,18 +150,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   @Override
-  public void onPriorityTreeParentChanged(Http2Stream stream, Http2Stream oldParent) {
-  }
-
-  @Override
-  public void onPriorityTreeParentChanging(Http2Stream stream, Http2Stream newParent) {
-  }
-
-  @Override
-  public void onWeightChanged(Http2Stream stream, short oldWeight) {
-  }
-
-  @Override
   public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
     connection.onGoAwaySent(lastStreamId, errorCode, debugData);
   }

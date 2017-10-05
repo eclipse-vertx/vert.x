@@ -29,7 +29,7 @@ import io.vertx.core.net.*;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-@DataObject(generateConverter = true, inheritConverter = true)
+@DataObject(generateConverter = true, inheritConverter = true, publicConverter = false)
 public class EventBusOptions extends TCPSSLOptions {
 
   private boolean clustered = VertxOptions.DEFAULT_CLUSTERED;
@@ -394,25 +394,31 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetworkOptions setReceiveBufferSize(int receiveBufferSize) {
+  public EventBusOptions setReceiveBufferSize(int receiveBufferSize) {
     super.setReceiveBufferSize(receiveBufferSize);
     return this;
   }
 
   @Override
-  public NetworkOptions setReuseAddress(boolean reuseAddress) {
+  public EventBusOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
     return this;
   }
 
   @Override
-  public NetworkOptions setSendBufferSize(int sendBufferSize) {
+  public EventBusOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
+    return this;
+  }
+
+  @Override
+  public EventBusOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);
     return this;
   }
 
   @Override
-  public NetworkOptions setTrafficClass(int trafficClass) {
+  public EventBusOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;
   }

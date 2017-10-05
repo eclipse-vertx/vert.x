@@ -34,10 +34,13 @@ import java.util.function.Function;
  * <p>
  * This ensures there is no shared access to mutable state from different threads (e.g. different event loops) in the
  * Vert.x instance, and means you don't have to protect access to that state using synchronization or locks.
+ * <p>
+ * Your own objects can be marked as immutable by implementing the {@link Shareable} interface.
  *
  * Since the version 3.4, this class extends the {@link Map} interface. However some methods are only accessible in Java.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @see Shareable
  */
 @VertxGen
 public interface LocalMap<K, V> extends Map<K, V> {

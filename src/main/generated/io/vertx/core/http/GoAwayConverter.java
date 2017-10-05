@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.GoAway} original class using Vert.x codegen.
  */
-public class GoAwayConverter {
+ class GoAwayConverter {
 
-  public static void fromJson(JsonObject json, GoAway obj) {
+   static void fromJson(JsonObject json, GoAway obj) {
     if (json.getValue("debugData") instanceof String) {
       obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)json.getValue("debugData"))));
     }
@@ -38,7 +38,7 @@ public class GoAwayConverter {
     }
   }
 
-  public static void toJson(GoAway obj, JsonObject json) {
+   static void toJson(GoAway obj, JsonObject json) {
     if (obj.getDebugData() != null) {
       json.put("debugData", obj.getDebugData().getBytes());
     }

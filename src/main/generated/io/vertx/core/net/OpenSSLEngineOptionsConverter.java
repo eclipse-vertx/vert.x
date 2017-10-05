@@ -24,15 +24,15 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.OpenSSLEngineOptions} original class using Vert.x codegen.
  */
-public class OpenSSLEngineOptionsConverter {
+ class OpenSSLEngineOptionsConverter {
 
-  public static void fromJson(JsonObject json, OpenSSLEngineOptions obj) {
+   static void fromJson(JsonObject json, OpenSSLEngineOptions obj) {
     if (json.getValue("sessionCacheEnabled") instanceof Boolean) {
       obj.setSessionCacheEnabled((Boolean)json.getValue("sessionCacheEnabled"));
     }
   }
 
-  public static void toJson(OpenSSLEngineOptions obj, JsonObject json) {
+   static void toJson(OpenSSLEngineOptions obj, JsonObject json) {
     json.put("alpnAvailable", obj.isAlpnAvailable());
     json.put("available", obj.isAvailable());
     json.put("sessionCacheEnabled", obj.isSessionCacheEnabled());

@@ -214,6 +214,12 @@ Set the TCP receive buffer size
 +++
 Set the value of reuse address
 +++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
++++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
@@ -226,6 +232,14 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[tcpCork]]`tcpCork`|`Boolean`|
++++
+Enable the <code>TCP_CORK</code> option - only with linux native transport.
++++
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|
++++
+Enable the <code>TCP_FASTOPEN</code> option - only with linux native transport.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -233,6 +247,10 @@ Set whether TCP keep alive is enabled
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
 Set whether TCP no delay is enabled
++++
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|
++++
+Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
@@ -253,6 +271,36 @@ Set the ALPN usage.
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled
++++
+|===
+
+[[CopyOptions]]
+== CopyOptions
+
+++++
+ Describes the copy (and move) options.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[atomicMove]]`atomicMove`|`Boolean`|
++++
+Whether move should be performed as an atomic filesystem operation. Defaults to <code>false</code>.
++++
+|[[copyAttributes]]`copyAttributes`|`Boolean`|
++++
+Whether the file attributes should be copied. Defaults to <code>false</code>.
++++
+|[[nofollowLinks]]`nofollowLinks`|`Boolean`|
++++
+Whether symbolic links should not be followed during copy or move operations. Defaults to <code>false</code>.
++++
+|[[replaceExisting]]`replaceExisting`|`Boolean`|
++++
+Whether an existing file, empty directory, or link should be replaced. Defaults to <code>false</code>.
 +++
 |===
 
@@ -299,6 +347,12 @@ Set the TCP receive buffer size
 |[[reuseAddress]]`reuseAddress`|`Boolean`|
 +++
 Set the value of reuse address
++++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
 +++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
@@ -525,6 +579,12 @@ Set the reconnect interval.
 +++
 Set the value of reuse address
 +++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
++++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
@@ -537,6 +597,14 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[tcpCork]]`tcpCork`|`Boolean`|
++++
+Enable the <code>TCP_CORK</code> option - only with linux native transport.
++++
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|
++++
+Enable the <code>TCP_FASTOPEN</code> option - only with linux native transport.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -544,6 +612,10 @@ Set whether TCP keep alive is enabled
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
 Set whether TCP no delay is enabled
++++
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|
++++
+Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
@@ -825,6 +897,12 @@ Set the TCP receive buffer size
 +++
 Set the value of reuse address
 +++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
++++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
@@ -843,6 +921,14 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[tcpCork]]`tcpCork`|`Boolean`|
++++
+Enable the <code>TCP_CORK</code> option - only with linux native transport.
++++
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|
++++
+Enable the <code>TCP_FASTOPEN</code> option - only with linux native transport.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -850,6 +936,10 @@ Set whether TCP keep alive is enabled
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
 Set whether TCP no delay is enabled
++++
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|
++++
+Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
@@ -941,31 +1031,31 @@ Set whether client auth is required
 +++
 |[[compressionLevel]]`compressionLevel`|`Number (int)`|
 +++
-This method allows to set the compression level to be used in http1.x/2 response bodies 
+This method allows to set the compression level to be used in http1.x/2 response bodies
  when compression support is turned on (@see setCompressionSupported) and the client advertises
  to support <code>deflate/gzip</code> compression in the <code>Accept-Encoding</code> header
- 
+
  default value is : 6 (Netty legacy)
- 
+
  The compression level determines how much the data is compressed on a scale from 1 to 9,
  where '9' is trying to achieve the maximum compression ratio while '1' instead is giving
- priority to speed instead of compression ratio using some algorithm optimizations and skipping 
+ priority to speed instead of compression ratio using some algorithm optimizations and skipping
  pedantic loops that usually gives just little improvements
- 
- While one can think that best value is always the maximum compression ratio, 
+
+ While one can think that best value is always the maximum compression ratio,
  there's a trade-off to consider: the most compressed level requires the most
  computational work to compress/decompress data, e.g. more dictionary lookups and loops.
- 
- E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
+
+ E.g. you have it set fairly high on a high-volume website, you may experience performance degradation
  and latency on resource serving due to CPU overload, and, however - as the computational work is required also client side
  while decompressing - setting an higher compression level can result in an overall higher page load time
  especially nowadays when many clients are handled mobile devices with a low CPU profile.
- 
+
  see also: http://www.gzip.org/algorithm.txt
 +++
 |[[compressionSupported]]`compressionSupported`|`Boolean`|
 +++
-Set whether the server should support gzip/deflate compression 
+Set whether the server should support gzip/deflate compression
  (serving compressed responses to clients advertising support for them with Accept-Encoding header)
 +++
 |[[crlPaths]]`crlPaths`|`Array of String`|
@@ -1075,6 +1165,12 @@ Set the TCP receive buffer size
 +++
 Set the value of reuse address
 +++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
++++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
@@ -1091,6 +1187,14 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[tcpCork]]`tcpCork`|`Boolean`|
++++
+Enable the <code>TCP_CORK</code> option - only with linux native transport.
++++
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|
++++
+Enable the <code>TCP_FASTOPEN</code> option - only with linux native transport.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -1098,6 +1202,10 @@ Set whether TCP keep alive is enabled
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
 Set whether TCP no delay is enabled
++++
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|
++++
+Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
@@ -1324,6 +1432,12 @@ Set the reconnect interval
 +++
 Set the value of reuse address
 +++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
++++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
@@ -1336,6 +1450,14 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[tcpCork]]`tcpCork`|`Boolean`|
++++
+Enable the <code>TCP_CORK</code> option - only with linux native transport.
++++
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|
++++
+Enable the <code>TCP_FASTOPEN</code> option - only with linux native transport.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -1343,6 +1465,10 @@ Set whether TCP keep alive is enabled
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
 Set whether TCP no delay is enabled
++++
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|
++++
+Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
@@ -1453,6 +1579,12 @@ Set the TCP receive buffer size
 +++
 Set the value of reuse address
 +++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
++++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
@@ -1469,6 +1601,14 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[tcpCork]]`tcpCork`|`Boolean`|
++++
+Enable the <code>TCP_CORK</code> option - only with linux native transport.
++++
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|
++++
+Enable the <code>TCP_FASTOPEN</code> option - only with linux native transport.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -1476,6 +1616,10 @@ Set whether TCP keep alive is enabled
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
 Set whether TCP no delay is enabled
++++
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|
++++
+Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
@@ -1518,6 +1662,12 @@ Set the TCP receive buffer size
 +++
 Set the value of reuse address
 +++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
++++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
@@ -1540,6 +1690,10 @@ Set the value of traffic class
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[append]]`append`|`Boolean`|
++++
+Whether the file should be opened in append mode. Defaults to <code>false</code>.
++++
 |[[create]]`create`|`Boolean`|
 +++
 Set whether the file should be created if it does not already exist.
@@ -1700,6 +1854,18 @@ Sets whether or not this option can receive a value.
  ...
  K5xBhtm1AhdnZjx5KfW3BecE
  -----END PRIVATE KEY-----
+ </pre><p>
+
+ Or contain a <b>non encrypted</b> private key in <b>PKCS1</b> format wrapped in a PEM
+ block, for example:
+ <p>
+
+ <pre>
+ -----BEGIN RSA PRIVATE KEY-----
+ MIIEowIBAAKCAQEAlO4gbHeFb/fmbUF/tOJfNPJumJUEqgzAzx8MBXv9Acyw9IRa
+ ...
+ zJ14Yd+t2fsLYVs2H0gxaA4DW6neCzgY3eKpSU0EBHUCFSXp/1+/
+ -----END RSA PRIVATE KEY-----
  </pre><p>
 
  A certificate file must contain an X.509 certificate wrapped in a PEM block, for example:
@@ -2004,6 +2170,12 @@ Set the TCP receive buffer size
 +++
 Set the value of reuse address
 +++
+|[[reusePort]]`reusePort`|`Boolean`|
++++
+Set the value of reuse port.
+ <p/>
+ This is only supported by native transports.
++++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
 Set the TCP send buffer size
@@ -2016,6 +2188,14 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[tcpCork]]`tcpCork`|`Boolean`|
++++
+Enable the <code>TCP_CORK</code> option - only with linux native transport.
++++
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|
++++
+Enable the <code>TCP_FASTOPEN</code> option - only with linux native transport.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -2023,6 +2203,10 @@ Set whether TCP keep alive is enabled
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
 Set whether TCP no delay is enabled
++++
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|
++++
+Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
@@ -2129,6 +2313,10 @@ Sets the value of max worker execute time, in ns.
 |[[metricsOptions]]`metricsOptions`|`link:dataobjects.html#MetricsOptions[MetricsOptions]`|
 +++
 Set the metrics options
++++
+|[[preferNativeTransport]]`preferNativeTransport`|`Boolean`|
++++
+Set wether to prefer the native transport to the JDK transport.
 +++
 |[[quorumSize]]`quorumSize`|`Number (int)`|
 +++

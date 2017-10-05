@@ -744,7 +744,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     awaitLatch(latch);
     assertEquals(2, contexts.size());
   }
-  
+
   @Test
   public void testContextsPublish() throws Exception {
     Set<ContextImpl> contexts = new ConcurrentHashSet<>();
@@ -1121,13 +1121,8 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   private void testUnregisterationOfRegisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
     consumer.handler(msg -> {});
-    consumer.endHandler(v -> {
-      fail();
-    });
+    consumer.endHandler(v -> testComplete());
     consumer.unregister();
-    vertx.runOnContext(d -> {
-      testComplete();
-    });
     await();
   }
 

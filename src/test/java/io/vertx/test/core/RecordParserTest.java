@@ -19,14 +19,21 @@ package io.vertx.test.core;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.parsetools.RecordParser;
+import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -274,5 +281,62 @@ public class RecordParserTest {
       new Integer[] { 18 }, Buffer.buffer("start-"), Buffer.buffer("-ddd"));
     doTestDelimited(Buffer.buffer("start-ab-c-dddabc"), Buffer.buffer("abc"),
       new Integer[] { 18 }, Buffer.buffer("start-ab-c-ddd"));
+  }
+
+  @Test
+  public void testWrapReadStream() {
+    AtomicBoolean paused = new AtomicBoolean();
+    AtomicReference<Handler<Buffer>> eventHandler = new AtomicReference<>();
+    AtomicReference<Handler<Void>> endHandler = new AtomicReference<>();
+    AtomicReference<Handler<Throwable>> exceptionHandler = new AtomicReference<>();
+    ReadStream<Buffer> original = new ReadStream<Buffer>() {
+      @Override
+      public ReadStream<Buffer> exceptionHandler(Handler<Throwable> handler) {
+        exceptionHandler.set(handler);
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> handler(Handler<Buffer> handler) {
+        eventHandler.set(handler);
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> pause() {
+        paused.set(true);
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> resume() {
+        paused.set(false);
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> endHandler(Handler<Void> handler) {
+        endHandler.set(handler);
+        return this;
+      }
+    };
+    RecordParser parser = RecordParser.newDelimited("\r\n", original);
+    AtomicInteger ends = new AtomicInteger();
+    parser.endHandler(v -> ends.incrementAndGet());
+    List<String> records = new ArrayList<>();
+    parser.handler(record -> records.add(record.toString()));
+    assertFalse(paused.get());
+    parser.pause();
+    assertTrue(paused.get());
+    parser.resume();
+    assertFalse(paused.get());
+    eventHandler.get().handle(Buffer.buffer("first\r\nsecond\r\nthird"));
+    assertEquals(Arrays.asList("first", "second"), records);
+    assertEquals(0, ends.get());
+    Throwable cause = new Throwable();
+    exceptionHandler.get().handle(cause);
+    List<Throwable> failures = new ArrayList<>();
+    parser.exceptionHandler(failures::add);
+    exceptionHandler.get().handle(cause);
+    assertEquals(Collections.singletonList(cause), failures);
+    endHandler.get().handle(null);
+    assertEquals(Arrays.asList("first", "second"), records);
+    assertEquals(1, ends.get());
   }
 }
