@@ -92,6 +92,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
