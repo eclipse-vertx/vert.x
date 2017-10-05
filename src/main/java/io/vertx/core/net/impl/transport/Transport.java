@@ -25,6 +25,7 @@ import io.netty.channel.ServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -152,25 +153,25 @@ public class Transport {
   }
 
   /**
-   * @return a new socket channel
-   * @param domain wether to create a domain socket or a regular socket
+   * @return the type for channel
+   * @param domain wether to create a unix domain channel or a socket channel
    */
-  public Channel socketChannel(boolean domain) {
+  public Class<? extends Channel> channelType(boolean domain) {
     if (domain) {
       throw new IllegalArgumentException();
     }
-    return new NioSocketChannel();
+    return NioSocketChannel.class;
   }
 
   /**
-   * @return a new server socket channel
-   * @param domain wether to create a domain socket or a regular socket
+   * @return the type for server channel
+   * @param domain wether to create a server unix domain channel or a regular server socket channel
    */
-  public ServerChannel serverChannel(boolean domain) {
+  public Class<? extends ServerChannel> serverChannelType(boolean domain) {
     if (domain) {
       throw new IllegalArgumentException();
     }
-    return new NioServerSocketChannel();
+    return NioServerSocketChannel.class;
   }
 
   private void setOption(String name, Object value, BiConsumer<ChannelOption<Object>, Object> consumer) {

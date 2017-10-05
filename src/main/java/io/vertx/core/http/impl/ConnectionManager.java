@@ -292,7 +292,7 @@ public class ConnectionManager {
       sslHelper.validate(vertx);
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
-      bootstrap.channelFactory(() -> vertx.transport().socketChannel(false));
+      bootstrap.channel(vertx.transport().channelType(false));
       connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, waiter);
     }
 

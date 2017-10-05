@@ -84,21 +84,19 @@ class EpollTransport extends Transport {
   }
 
   @Override
-  public Channel socketChannel(boolean domain) {
+  public Class<? extends Channel> channelType(boolean domain) {
     if (domain) {
-      return new EpollDomainSocketChannel();
+      return EpollDomainSocketChannel.class;
     } else {
-      return new EpollSocketChannel();
+      return EpollSocketChannel.class;
     }
   }
 
-  @Override
-  public ServerChannel serverChannel(boolean domain) {
+  public Class<? extends ServerChannel> serverChannelType(boolean domain) {
     if (domain) {
-      return new EpollServerDomainSocketChannel();
-    } else {
-      return new EpollServerSocketChannel();
+      return EpollServerDomainSocketChannel.class;
     }
+    return EpollServerSocketChannel.class;
   }
 
   @Override

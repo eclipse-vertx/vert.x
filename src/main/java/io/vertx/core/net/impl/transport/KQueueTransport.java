@@ -29,6 +29,7 @@ import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 
 import java.net.InetSocketAddress;
@@ -84,20 +85,20 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public Channel socketChannel(boolean domain) {
+  public Class<? extends Channel> channelType(boolean domain) {
     if (domain) {
-      return new KQueueDomainSocketChannel();
+      return KQueueDomainSocketChannel.class;
     } else {
-      return new KQueueSocketChannel();
+      return KQueueSocketChannel.class;
     }
   }
 
   @Override
-  public ServerChannel serverChannel(boolean domain) {
+  public Class<? extends ServerChannel> serverChannelType(boolean domain) {
     if (domain) {
-      return new KQueueServerDomainSocketChannel();
+      return KQueueServerDomainSocketChannel.class;
     } else {
-      return new KQueueServerSocketChannel();
+      return KQueueServerSocketChannel.class;
     }
   }
 
