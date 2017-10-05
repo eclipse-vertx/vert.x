@@ -89,7 +89,7 @@ public class ServerHandler extends VertxHttpHandler<ServerConnection> {
       WebSocketServerHandshakerFactory factory =
         new WebSocketServerHandshakerFactory(HttpServerImpl.getWebSocketLocation(ch.pipeline(), request), 
           conn.options.getWebsocketSubProtocols(), 
-          conn.options.getWebsocketPermessageDeflateCompressionIsSupported() || conn.options.getWebsocketFrameDeflateCompressionSupported(),
+          conn.options.perMessageWebsocketCompressionSupported () || conn.options.perFrameWebsocketCompressionSupported (),
           conn.options.getMaxWebsocketFrameSize(), conn.options.isAcceptUnmaskedFrames());
       WebSocketServerHandshaker shake = factory.newHandshaker(request);
 

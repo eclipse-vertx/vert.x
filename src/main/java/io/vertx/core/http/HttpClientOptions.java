@@ -180,10 +180,6 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_REQUEST_SERVER_NO_CONTEXT = false;
   
-  /** 
-   * Default WebSocket Compression use webkit name setting = false
-   */
-  public static final boolean DEFAULT_WEBSOCKET_DEFLATE_FRAME_USE_WEBKIT_NAME = false;
 
   private boolean verifyHost = true;
   private int maxPoolSize;
@@ -217,7 +213,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int websocketCompressionLevel;
   private boolean websocketAllowClientNoContext;
   private boolean websocketRequestServerNoContext;
-  private boolean websocketDeflateCompressionUseWebkitName;
   
 
   /**
@@ -265,7 +260,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.websocketAllowClientNoContext = other.websocketAllowClientNoContext;
     this.websocketCompressionLevel = other.websocketCompressionLevel;
     this.websocketRequestServerNoContext = other.websocketRequestServerNoContext;
-    this.websocketDeflateCompressionUseWebkitName = other.websocketDeflateCompressionUseWebkitName;
   }
 
   /**
@@ -321,7 +315,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     websocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
     websocketAllowClientNoContext = DEFAULT_WEBSOCKET_COMPRESSION_ALLOW_CLIENT_NO_CONTEXT;
     websocketRequestServerNoContext = DEFAULT_WEBSOCKET_COMPRESSION_REQUEST_SERVER_NO_CONTEXT;
-    websocketDeflateCompressionUseWebkitName = DEFAULT_WEBSOCKET_DEFLATE_FRAME_USE_WEBKIT_NAME;
   }
 
   @Override
@@ -997,9 +990,9 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @param tryDeflateFrame
    * @return  a reference to this, so the API can be used fluently
    */
- public HttpClientOptions setTryWebsocketDeflateFrameCompression(boolean tryWebsocketDeflateFrameCompression)
+ public HttpClientOptions setTryUsePerFrameWebsocketCompression (boolean tryUsePerFrameWebsocketCompression )
  {
-	 this.websocketTryUseDeflateFrame = tryWebsocketDeflateFrameCompression;
+	 this.websocketTryUseDeflateFrame = tryUsePerFrameWebsocketCompression;
 	 return this;
  }
  
@@ -1017,9 +1010,9 @@ public class HttpClientOptions extends ClientOptionsBase {
  * @param tryPermessageDeflate
  * @return  a reference to this, so the API can be used fluently
  */
- public HttpClientOptions setTryWebsocketTryPermessageDefalteCompression(boolean tryWebsocketPerMessageDeflateCompression)
+ public HttpClientOptions setTryUsePerMessageWebsocketCompression (boolean tryUsePerMessageWebsocketCompression )
  {
-	 this.websocketTryUsePermessageDeflate = tryWebsocketPerMessageDeflateCompression;
+	 this.websocketTryUsePermessageDeflate = tryUsePerMessageWebsocketCompression;
 	 return this;
  }
  
@@ -1027,7 +1020,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   * 
   * @return whether Permessage Deflate websocket compression will be offered
   */
- public boolean tryWebsocketPermessageDeflateCompressionEnabled()
+ public boolean tryUsePerMessageWebsocketCompression ()
  {
 	 return this.websocketTryUsePermessageDeflate;
  }
@@ -1037,9 +1030,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   * @param compressionLevel
   * @return a reference to this, so the API can be used fluently
   */
- public HttpClientOptions setWebsocketCompressionLevel(int compressionLevel)
+ public HttpClientOptions setWebsocketCompressionLevel (int websocketCompressionLevel)
  {
-	 this.websocketCompressionLevel = compressionLevel;
+	 this.websocketCompressionLevel = websocketCompressionLevel;
 	 return this;
  }
  
@@ -1047,7 +1040,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   * 
   * @return websocket compression level
   */
- public int getWebsocketCompressionLevel()
+ public int websocketCompressionLevel()
  {
 	 return this.websocketCompressionLevel;
  }
@@ -1091,25 +1084,7 @@ public class HttpClientOptions extends ClientOptionsBase {
  {
 	 return this.websocketRequestServerNoContext;
  }
- 
- /**
-  * Sets the option to use the webkit name with the deflate frame compression
-  * @param useWebkitName
-  * @return a reference to this, so the API can be used fluently
-  */
- public HttpClientOptions setWebsocketCompressionDeflateUseWebkitName(boolean useWebkitName) {
-	 this.websocketDeflateCompressionUseWebkitName = useWebkitName;
-	 return this;
- }
- 
- /**
-  * 
-  * @return the current option to use the webkit name for deflate frame compression
-  */
- public boolean getWebsocketCompressionDeflateUseWebkitName() {
-	 return this.websocketDeflateCompressionUseWebkitName;
- }
-  
+   
   /**
    * @return the initial buffer size for the HTTP decoder
    */
@@ -1161,7 +1136,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (websocketCompressionLevel != that.websocketCompressionLevel) return false;
     if (websocketAllowClientNoContext != that.websocketAllowClientNoContext) return false;
     if (websocketRequestServerNoContext != that.websocketRequestServerNoContext) return false;
-    if (websocketDeflateCompressionUseWebkitName != that.websocketDeflateCompressionUseWebkitName) return false;
 
     return true;
   }
@@ -1195,7 +1169,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + websocketCompressionLevel;
     result = 31 * result + (websocketAllowClientNoContext ? 1 : 0);
     result = 31 * result + (websocketRequestServerNoContext ? 1: 0);
-    result = 31 * result + (websocketDeflateCompressionUseWebkitName ? 1 : 0);
     return result;
   }
 

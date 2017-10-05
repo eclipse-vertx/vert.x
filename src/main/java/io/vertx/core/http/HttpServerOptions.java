@@ -726,8 +726,8 @@ public class HttpServerOptions extends NetServerOptions {
    * @param deflateCompressionSupported
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setWebsocketFrameDeflateCompressionSupported (boolean deflateCompressionSupported) {
-	  this.websocketDeflateFrameCompressionSupported = deflateCompressionSupported;
+  public HttpServerOptions setPerFrameWebsocketCompressionSupported  (boolean perFrameWebsocketCompressionSupported ) {
+	  this.websocketDeflateFrameCompressionSupported = perFrameWebsocketCompressionSupported;
 	  return this;
   }
   
@@ -735,7 +735,7 @@ public class HttpServerOptions extends NetServerOptions {
    * Get whether WebSocket Deflate Frame compression is supported
    * @return true if the http server will accept Deflate Frame compression 
    */
-  public boolean getWebsocketFrameDeflateCompressionSupported () {
+  public boolean perFrameWebsocketCompressionSupported  () {
 	  return this.websocketDeflateFrameCompressionSupported;
   }
   
@@ -744,8 +744,8 @@ public class HttpServerOptions extends NetServerOptions {
    * @param permessageDeflateSupported
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setWebsocketPermessageDeflateCompressionSupported (boolean permessageDeflateSupported) {
-	  this.websocketPermessageDeflateCompressionSupported = permessageDeflateSupported;
+  public HttpServerOptions setPerMessageWebsocketCompressionSupported  (boolean perMessageWebsocketCompressionSupported ) {
+	  this.websocketPermessageDeflateCompressionSupported = perMessageWebsocketCompressionSupported;
 	  return this;
   }
   
@@ -753,7 +753,7 @@ public class HttpServerOptions extends NetServerOptions {
    * Get whether WebSocket Permessage Deflate compression is supported
    * @return true if the http server will accept Permessage Deflate compression
    */
-  public boolean getWebsocketPermessageDeflateCompressionIsSupported () {
+  public boolean perMessageWebsocketCompressionSupported  () {
 	  return this.websocketPermessageDeflateCompressionSupported;
   }
   
@@ -762,7 +762,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @param compressionLevel
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setWebsocketCompressionLevel (int compressionLevel) {
+  public HttpServerOptions setWebsocketCompressionLevel (int websocketCompressionLevel) {
 	  this.websocketCompressionLevel = compressionLevel;
 	  return this;
   }
@@ -771,7 +771,7 @@ public class HttpServerOptions extends NetServerOptions {
    * Get the WebSocket compression level
    * @return the current WebSocket compression level
    */
-  public int getWebsocketCompressionLevel () {
+  public int websocketCompressionLevel () {
 	  return this.websocketCompressionLevel;
   }
   
