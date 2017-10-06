@@ -15,10 +15,10 @@
  */
 package io.vertx.core.dns.impl;
 
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoop;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
@@ -30,9 +30,13 @@ import io.netty.handler.codec.dns.DnsRecord;
 import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.handler.codec.dns.DnsResponse;
 import io.netty.handler.codec.dns.DnsSection;
+import io.netty.util.collection.IntObjectHashMap;
+import io.netty.util.collection.IntObjectMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsException;
 import io.vertx.core.dns.DnsResponseCode;
@@ -61,11 +65,17 @@ public final class DnsClientImpl implements DnsClient {
 
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
 
+  private final Vertx vertx;
+  private final IntObjectMap<Query> inProgressMap = new IntObjectHashMap<>();
   private final InetSocketAddress dnsServer;
   private final ContextImpl actualCtx;
   private final DatagramChannel channel;
+  private final long timeoutMillis;
 
-  public DnsClientImpl(VertxInternal vertx, int port, String host) {
+  public DnsClientImpl(VertxInternal vertx, int port, String host, long timeoutMillis) {
+    if (timeoutMillis < 0) {
+      throw new IllegalArgumentException("DNS client timeout " + timeoutMillis + " must be > 0");
+    }
 
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
@@ -73,6 +83,8 @@ public final class DnsClientImpl implements DnsClient {
     }
 
     this.dnsServer = new InetSocketAddress(host, port);
+    this.vertx = vertx;
+    this.timeoutMillis = timeoutMillis;
 
     Transport transport = vertx.transport();
     actualCtx = vertx.getOrCreateContext();
@@ -83,6 +95,16 @@ public final class DnsClientImpl implements DnsClient {
     actualCtx.nettyEventLoop().register(channel);
     channel.pipeline().addLast(new DatagramDnsQueryEncoder());
     channel.pipeline().addLast(new DatagramDnsResponseDecoder());
+    channel.pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
+      @Override
+      protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
+        int id = msg.id();
+        Query query = inProgressMap.get(id);
+        if (query != null) {
+          query.handle(msg);
+        }
+      }
+    });
   }
 
   @Override
@@ -210,112 +232,97 @@ public final class DnsClientImpl implements DnsClient {
 
   @SuppressWarnings("unchecked")
   private <T> void lookupList(String name, Handler<AsyncResult<List<T>>> handler, DnsRecordType... types) {
-    Future<List<T>> result = Future.future();
-    result.setHandler(handler);
-    lookup(name, result, types);
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T> void lookup(String name, Future<List<T>> result, DnsRecordType... types) {
     Objects.requireNonNull(name, "no null name accepted");
-    DatagramDnsQuery query = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt());
-    for (DnsRecordType type: types) {
-      query.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
+    EventLoop el = actualCtx.nettyEventLoop();
+    if (el.inEventLoop()) {
+      new Query(name, types, handler).run();
+    } else {
+      el.execute(() -> {
+        new Query(name, types, handler).run();
+      });
     }
-    channel.writeAndFlush(query).addListener(new RetryChannelFutureListener(result) {
-      @Override
-      public void onSuccess(ChannelFuture future) throws Exception {
-        future.channel().pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
-          @Override
-          protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
-            DnsResponseCode code = DnsResponseCode.valueOf(msg.code().intValue());
+  }
 
-            if (code == DnsResponseCode.NOERROR) {
+  // Testing purposes
+  public void inProgressQueries(Handler<Integer> handler) {
+    actualCtx.runOnContext(v -> {
+      handler.handle(inProgressMap.size());
+    });
+  }
 
-              int count = msg.count(DnsSection.ANSWER);
+  private class Query<T> {
 
-              List<T> records = new ArrayList<>(count);
-              for (int idx = 0;idx < count;idx++) {
-                DnsRecord a = msg.recordAt(DnsSection.ANSWER, idx);
-                T record = RecordDecoder.decode(a);
-                if (isRequestedType(a.type(), types)) {
-                  records.add(record);
-                }
-              }
+    final DatagramDnsQuery msg;
+    final Future<List<T>> fut;
+    final String name;
+    final DnsRecordType[] types;
+    long timerID;
 
-              if (records.size() > 0 && (records.get(0) instanceof MxRecordImpl || records.get(0) instanceof SrvRecordImpl)) {
-                Collections.sort((List) records);
-              }
-
-              setResult(result, records);
-            } else {
-              setFailure(result, new DnsException(code));
-            }
-            ctx.close();
-          }
-
-          private boolean isRequestedType(DnsRecordType dnsRecordType, DnsRecordType[] types) {
-            for (DnsRecordType t : types) {
-              if (t.equals(dnsRecordType)) {
-                return true;
-              }
-            }
-            return false;
-          }
-
-          @Override
-          public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            setFailure(result, cause);
-            ctx.close();
-          }
-        });
+    public Query(String name, DnsRecordType[] types, Handler<AsyncResult<List<T>>> handler) {
+      this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt());
+      for (DnsRecordType type: types) {
+        msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
       }
-    });
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T> void setResult(Future<List<T>> r, List<T> result) {
-    if (r.isComplete()) {
-      return;
+      this.fut = Future.<List<T>>future().setHandler(handler);
+      this.types = types;
+      this.name = name;
     }
-    actualCtx.executeFromIO(() -> {
-      if (result instanceof Throwable) {
-        r.fail((Throwable) result);
-      } else {
-        r.complete(result);
+
+    void fail(Throwable cause) {
+      inProgressMap.remove(msg.id());
+      if (timerID >= 0) {
+        vertx.cancelTimer(timerID);
       }
-    });
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T> void setFailure(Future<List<T>> r, Throwable err) {
-    if (r.isComplete()) {
-      return;
-    }
-    actualCtx.executeFromIO(() -> {
-      r.fail(err);
-    });
-  }
-
-  private abstract class RetryChannelFutureListener implements ChannelFutureListener {
-    private final Future result;
-
-    RetryChannelFutureListener(final Future result) {
-      this.result = result;
+      actualCtx.executeFromIO(() -> fut.tryFail(cause));
     }
 
-    @Override
-    public final void operationComplete(ChannelFuture future) throws Exception {
-      if (!future.isSuccess()) {
-        if (!result.isComplete()) {
-          result.fail(future.cause());
+    void handle(DnsResponse msg) {
+      DnsResponseCode code = DnsResponseCode.valueOf(msg.code().intValue());
+      if (code == DnsResponseCode.NOERROR) {
+        inProgressMap.remove(msg.id());
+        if (timerID >= 0) {
+          vertx.cancelTimer(timerID);
         }
+        int count = msg.count(DnsSection.ANSWER);
+        List<T> records = new ArrayList<>(count);
+        for (int idx = 0;idx < count;idx++) {
+          DnsRecord a = msg.recordAt(DnsSection.ANSWER, idx);
+          T record = RecordDecoder.decode(a);
+          if (isRequestedType(a.type(), types)) {
+            records.add(record);
+          }
+        }
+        if (records.size() > 0 && (records.get(0) instanceof MxRecordImpl || records.get(0) instanceof SrvRecordImpl)) {
+          Collections.sort((List) records);
+        }
+        actualCtx.executeFromIO(() -> {
+          fut.tryComplete(records);
+        });
       } else {
-        onSuccess(future);
+        fail(new DnsException(code));
       }
     }
 
-    protected abstract void onSuccess(ChannelFuture future) throws Exception;
-  }
+    void run() {
+      inProgressMap.put(msg.id(), this);
+      timerID = vertx.setTimer(timeoutMillis, id -> {
+        timerID = -1;
+        fail(new VertxException("DNS query timeout for " + name));
+      });
+      channel.writeAndFlush(msg).addListener((ChannelFutureListener) future -> {
+        if (!future.isSuccess()) {
+          fail(future.cause());
+        }
+      });
+    }
 
+    private boolean isRequestedType(DnsRecordType dnsRecordType, DnsRecordType[] types) {
+      for (DnsRecordType t : types) {
+        if (t.equals(dnsRecordType)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
 }

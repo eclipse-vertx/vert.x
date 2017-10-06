@@ -36,6 +36,7 @@ import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
 import io.vertx.core.dns.DnsClient;
+import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
@@ -402,7 +403,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public DnsClient createDnsClient(int port, String host) {
-    return new DnsClientImpl(this, port, host);
+    return new DnsClientImpl(this, port, host, DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
+  }
+
+  @Override
+  public DnsClient createDnsClient(DnsClientOptions options) {
+    return new DnsClientImpl(this, options.getPort(), options.getHost(), options.getQueryTimeout());
   }
 
   private VertxMetrics initialiseMetrics(VertxOptions options) {

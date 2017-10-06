@@ -18,11 +18,14 @@ package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.VertxException;
 import io.vertx.core.dns.DnsClient;
+import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.DnsException;
 import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
+import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
 
@@ -68,7 +71,10 @@ public class DNSTest extends VertxTestBase {
       assertFalse(result.isEmpty());
       assertEquals(1, result.size());
       assertEquals(ip, result.get(0));
-      testComplete();
+      ((DnsClientImpl) dns).inProgressQueries(num -> {
+        assertEquals(0, (int)num);
+        testComplete();
+      });
     }));
     await();
     dnsServer.stop();
@@ -110,7 +116,6 @@ public class DNSTest extends VertxTestBase {
   public void testResolveTXT() throws Exception {
     final String txt = "vertx is awesome";
     DnsClient dns = prepareDns(FakeDNSServer.testResolveTXT(txt));
-
     dns.resolveTXT("vertx.io", onSuccess(result -> {
       assertFalse(result.isEmpty());
       assertEquals(1, result.size());
@@ -233,6 +238,21 @@ public class DNSTest extends VertxTestBase {
   }
 
   @Test
+  public void testTimeout() throws Exception {
+    DnsClient dns = vertx.createDnsClient(new DnsClientOptions().setPort(10000).setQueryTimeout(5000));
+
+    dns.lookup("vertx.io", onFailure(result -> {
+      assertEquals(VertxException.class, result.getClass());
+      assertEquals("DNS query timeout for vertx.io", result.getMessage());
+      ((DnsClientImpl) dns).inProgressQueries(num -> {
+        assertEquals(0, (int)num);
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
   public void testLookupNonExisting() throws Exception {
     DnsClient dns = prepareDns(FakeDNSServer.testLookupNonExisting());
     dns.lookup("gfegjegjf.sg1", ar -> {
@@ -301,9 +321,13 @@ public class DNSTest extends VertxTestBase {
   }
 
   private DnsClient prepareDns(FakeDNSServer server) throws Exception {
+    return prepareDns(server, 15000);
+  }
+
+  private DnsClient prepareDns(FakeDNSServer server, long queryTimeout) throws Exception {
     dnsServer = server;
     dnsServer.start();
     InetSocketAddress addr = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
-    return vertx.createDnsClient(addr.getPort(), addr.getAddress().getHostAddress());
+    return vertx.createDnsClient(new DnsClientOptions().setPort(addr.getPort()).setHost(addr.getAddress().getHostAddress()).setQueryTimeout(queryTimeout));
   }
 }

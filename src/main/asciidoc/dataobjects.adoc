@@ -458,6 +458,32 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 +++
 |===
 
+[[DnsClientOptions]]
+== DnsClientOptions
+
+++++
+ Configuration options for Vert.x DNS client.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[host]]`host`|`String`|
++++
+Set the host name to be used by this client in requests.
++++
+|[[port]]`port`|`Number (int)`|
++++
+Set the port to be used by this client in requests.
++++
+|[[queryTimeout]]`queryTimeout`|`Number (long)`|
++++
+Set the query timeout in milliseconds, i.e the amount of time after a query is considered to be failed.
++++
+|===
+
 [[EventBusOptions]]
 == EventBusOptions
 

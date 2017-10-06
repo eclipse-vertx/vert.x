@@ -25,6 +25,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
+import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpClient;
@@ -218,6 +219,14 @@ public interface Vertx extends Measured {
    * @return the DNS client
    */
   DnsClient createDnsClient(int port, String host);
+
+  /**
+   * Create a DNS client to connect to a DNS server
+   *
+   * @param options the client options
+   * @return the DNS client
+   */
+  DnsClient createDnsClient(DnsClientOptions options);
 
   /**
    * Get the shared data object. There is a single instance of SharedData per Vertx instance.
