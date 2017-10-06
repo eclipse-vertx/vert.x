@@ -53,7 +53,7 @@ public interface TrustOptions {
    *
    * The mapper is only used when the server has SNI enabled and the client indicated a server name.
    * <p/>
-   * The returned function may return null in which case {@link #getTrustManagerFactory(Vertx)} is used as fallback.
+   * The returned function may return {@code null} in which case {@link #getTrustManagerFactory(Vertx)} is used as fallback.
    *
    * @param vertx the vertx instance
    * @return the trustManager
