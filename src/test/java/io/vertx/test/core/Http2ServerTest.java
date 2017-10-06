@@ -1014,19 +1014,21 @@ public class Http2ServerTest extends Http2TestBase {
         bufReceived.complete();
       });
       req.exceptionHandler(err -> {
-        assertOnIOContext(ctx);
-        assertTrue(err instanceof StreamResetException);
-        assertEquals(10L, ((StreamResetException) err).getCode());
-        assertEquals(0, resetCount.getAndIncrement());
+        assertEquals(ctx, Vertx.currentContext());
+        if (err instanceof StreamResetException) {
+          assertEquals(10L, ((StreamResetException) err).getCode());
+          assertEquals(0, resetCount.getAndIncrement());
+        }
       });
       req.response().exceptionHandler(err -> {
-        assertOnIOContext(ctx);
-        assertTrue(err instanceof StreamResetException);
-        assertEquals(10L, ((StreamResetException) err).getCode());
-        assertEquals(1, resetCount.getAndIncrement());
+        assertEquals(ctx, Vertx.currentContext());
+        if (err instanceof StreamResetException) {
+          assertEquals(10L, ((StreamResetException) err).getCode());
+          assertEquals(1, resetCount.getAndIncrement());
+        }
       });
       req.endHandler(v -> {
-        assertOnIOContext(ctx);
+        assertEquals(ctx, Vertx.currentContext());
         assertEquals(2, resetCount.get());
         testComplete();
       });
@@ -1200,8 +1202,16 @@ public class Http2ServerTest extends Http2TestBase {
         assertTrue(ar.succeeded());
         assertOnIOContext(ctx);
         HttpServerResponse response = ar.result();
+        AtomicInteger resets = new AtomicInteger();
         response.exceptionHandler(err -> {
+          if (err instanceof StreamResetException) {
+            assertEquals(8, ((StreamResetException)err).getCode());
+            resets.incrementAndGet();
+          }
+        });
+        response.closeHandler(v -> {
           testComplete();
+          assertEquals(1, resets.get());
         });
         response.setChunked(true).write("some_content");
       });
@@ -1505,21 +1515,25 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testStreamError() throws Exception {
-    waitFor(5);
+    waitFor(2);
     Future<Void> when = Future.future();
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
+      AtomicInteger reqErrors = new AtomicInteger();
       req.exceptionHandler(err -> {
         // Called twice : reset + close
         assertEquals(ctx, Vertx.currentContext());
-        complete();
+        reqErrors.incrementAndGet();
       });
+      AtomicInteger respErrors = new AtomicInteger();
       req.response().exceptionHandler(err -> {
         assertEquals(ctx, Vertx.currentContext());
-        complete();
+        respErrors.incrementAndGet();
       });
       req.response().closeHandler(v -> {
         assertEquals(ctx, Vertx.currentContext());
+        assertTrue("Was expecting reqErrors to be > 0", reqErrors.get() > 0);
+        assertTrue("Was expecting respErrors to be > 0", respErrors.get() > 0);
         complete();
       });
       req.response().endHandler(v -> {
@@ -1555,7 +1569,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testPromiseStreamError() throws Exception {
     Context ctx = vertx.getOrCreateContext();
-    waitFor(3);
+    waitFor(2);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/wibble", ar -> {
@@ -1563,12 +1577,14 @@ public class Http2ServerTest extends Http2TestBase {
         assertOnIOContext(ctx);
         when.complete();
         HttpServerResponse resp = ar.result();
+        AtomicInteger erros = new AtomicInteger();
         resp.exceptionHandler(err -> {
           assertSame(ctx, Vertx.currentContext());
-          complete();
+          erros.incrementAndGet();
         });
         resp.closeHandler(v -> {
           assertSame(ctx, Vertx.currentContext());
+          assertTrue("Was expecting errors to be > 0", erros.get() > 0);
           complete();
         });
         resp.endHandler(v -> {
