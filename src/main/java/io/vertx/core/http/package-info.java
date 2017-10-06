@@ -682,6 +682,13 @@
  * If such a header is found the server will automatically compress the body of the response with one of the supported
  * compressions and send it back to the client.
  *
+ * Whenever the response needs to be sent without compression you can set the header `content-encoding` to `identity`:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#setIdentityContentEncodingHeader}
+ * ----
+ *
  * Be aware that compression may be able to reduce network traffic but is more CPU-intensive.
  *
  * To address this latter issue Vert.x allows you to tune the 'compression level' parameter that is native of the gzip/deflate compression algorithms.

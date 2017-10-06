@@ -801,4 +801,11 @@ public class HTTPExamples {
       System.out.println("Received response with status code " + response.statusCode());
     });
   }
+
+  public static void setIdentityContentEncodingHeader(HttpServerRequest request) {
+    // Disable compression and send an image
+    request.response()
+      .putHeader(HttpHeaders.CONTENT_ENCODING, HttpHeaders.IDENTITY)
+      .sendFile("/path/to/image.jpg");
+  }
 }
