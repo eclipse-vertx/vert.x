@@ -135,7 +135,7 @@ public class KeyStoreHelper {
   private final KeyStore store;
   private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
   private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
-  private final Map<String, KeyStore> trustMgrMap = new HashMap<>();
+  private final Map<String, TrustManagerFactory> trustMgrMap = new HashMap<>();
 
   public KeyStoreHelper(KeyStore ks, String password) throws Exception {
     Enumeration<String> en = ks.aliases();
@@ -146,7 +146,9 @@ public class KeyStoreHelper {
         KeyStore keyStore = KeyStore.getInstance("jks");
         keyStore.load(null, null);
         keyStore.setCertificateEntry("cert-1", cert);
-        trustMgrMap.put(alias, keyStore);
+        TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        fact.init(keyStore);
+        trustMgrMap.put(alias, fact);
       }
       if (ks.isKeyEntry(alias) && cert instanceof X509Certificate) {
         X509Certificate x509Cert = (X509Certificate) cert;
@@ -241,18 +243,8 @@ public class KeyStoreHelper {
     return getKeyMgrFactory().getKeyManagers();
   }
 
-  public TrustManagerFactory getTrustMgr(String serverName)  {
-    try {
-      KeyStore trustStore = trustMgrMap.get(serverName);
-      if (trustStore != null) {
-        TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        fact.init(trustStore);
-        return fact;
-      }
-      return null;
-    } catch (NoSuchAlgorithmException | KeyStoreException e) {
-      throw new RuntimeException(e);
-    }
+  public TrustManagerFactory getTrustMgr(String serverName) {
+    return trustMgrMap.get(serverName);
   }
 
   public TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
