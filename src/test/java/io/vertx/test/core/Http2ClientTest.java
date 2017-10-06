@@ -894,9 +894,14 @@ public class Http2ClientTest extends Http2TestBase {
         assertTrue(ar.succeeded());
         HttpServerResponse resp = ar.result();
         resp.setChunked(true).write("content");
+        AtomicLong reset = new AtomicLong();
         resp.exceptionHandler(err -> {
-          assertTrue(err instanceof StreamResetException);
-          assertEquals(Http2Error.CANCEL.code(), ((StreamResetException) err).getCode());
+          if (err instanceof StreamResetException) {
+            reset.set(((StreamResetException)err).getCode());
+          }
+        });
+        resp.closeHandler(v -> {
+          assertEquals(Http2Error.CANCEL.code(), reset.get());
           testComplete();
         });
       });
