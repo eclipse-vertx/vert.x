@@ -148,8 +148,7 @@ public class KeyStoreHelper {
         keyStore.setCertificateEntry("cert-1", cert);
         trustMgrMap.put(alias, keyStore);
       }
-      // TODO this should only be done if: ks.isKeyEntry(alias)
-      if (cert instanceof X509Certificate) {
+      if (ks.isKeyEntry(alias) && cert instanceof X509Certificate) {
         X509Certificate x509Cert = (X509Certificate) cert;
         Collection<List<?>> ans = x509Cert.getSubjectAlternativeNames();
         List<String> domains = new ArrayList<>();
