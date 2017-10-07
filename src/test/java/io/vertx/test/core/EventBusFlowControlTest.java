@@ -86,6 +86,21 @@ public class EventBusFlowControlTest extends VertxTestBase {
   }
 
   @Test
+  public void testDrainHandlerCalledWhenQueueAlreadyDrained() throws Exception {
+    MessageConsumer<String> consumer = eb.consumer("some-address");
+    consumer.handler(msg -> {});
+    MessageProducer<String> prod = eb.sender("some-address");
+    prod.setWriteQueueMaxSize(1);
+    prod.write("msg");
+    assertTrue(prod.writeQueueFull());
+    waitUntil(() -> !prod.writeQueueFull());
+    prod.drainHandler(v -> {
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testFlowControlPauseConsumer() {
 
     MessageProducer<String> prod = eb.sender("some-address");

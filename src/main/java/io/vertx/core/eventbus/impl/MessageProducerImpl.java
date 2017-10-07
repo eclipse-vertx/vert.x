@@ -113,7 +113,18 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   @Override
   public synchronized MessageProducer<T> drainHandler(Handler<Void> handler) {
     this.drainHandler = handler;
+    if (handler != null) {
+      checkDrained();
+    }
     return this;
+  }
+
+  private void checkDrained() {
+    Handler<Void> handler = drainHandler;
+    if (handler != null && credits >= maxSize / 2) {
+      this.drainHandler = null;
+      vertx.runOnContext(v -> handler.handle(null));
+    }
   }
 
   @Override
@@ -164,10 +175,6 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
         bus.send(address, data, options);
       }
     }
-    final Handler<Void> theDrainHandler = drainHandler;
-    if (theDrainHandler != null && credits >= maxSize / 2) {
-      this.drainHandler = null;
-      vertx.runOnContext(v -> theDrainHandler.handle(null));
-    }
+    checkDrained();
   }
 }
