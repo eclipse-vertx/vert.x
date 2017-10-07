@@ -346,7 +346,7 @@ public class ConnectionManager {
     }
 
     private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-      ((Http1xPool)(Pool)pool).createConn(version, context, port, host, ch, waiter);
+      ((Http1xPool)(Pool)pool).createConn(context, ch, waiter);
     }
 
     private void http2Connected(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {

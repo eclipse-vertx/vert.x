@@ -139,7 +139,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     }
   }
 
-  void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
+  void createConn(ContextImpl context, Channel ch, Waiter waiter) {
     ClientHandler handler = new ClientHandler(
       context,
       this,
