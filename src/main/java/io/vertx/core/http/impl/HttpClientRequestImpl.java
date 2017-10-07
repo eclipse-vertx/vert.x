@@ -392,16 +392,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         reset = code;
         if (!completed) {
           completed = true;
-          if (stream != null) {
-            stream.resetRequest(code);
-          }
           if (completionHandler != null) {
             completionHandler.handle(null);
           }
-        } else {
-          if (response != null) {
-            stream.resetResponse(code);
-          }
+        }
+        if (stream != null) {
+          stream.reset(code);
         }
         return true;
       }
@@ -510,9 +506,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
-    if (reset != null) {
-      stream.resetResponse(reset);
-    } else {
+    if (reset == null) {
       response = resp;
       int statusCode = resp.statusCode();
       if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {

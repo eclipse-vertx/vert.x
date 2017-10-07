@@ -373,7 +373,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void resetRequest(long code) {
+    public void reset(long code) {
       if (!(requestEnded && responseEnded)) {
         requestEnded = true;
         responseEnded = true;
@@ -382,11 +382,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           conn.metrics.requestReset(request.metric());
         }
       }
-    }
-
-    @Override
-    public void resetResponse(long code) {
-      resetRequest(code);
     }
 
     @Override

@@ -3299,13 +3299,13 @@ public class Http1xTest extends HttpTest {
           case 0:
             so.handler(buff -> {
               total.appendBuffer(buff);
-              if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
+              if (total.toString().equals("GET /1 HTTP/1.1\r\n" +
                   "Host: localhost:8080\r\n" +
                   "\r\n")) {
                 requestReceived.complete(null);
                 so.write(Buffer.buffer(
                     "HTTP/1.1 200 OK\r\n" +
-                        "Content-Length: 200\r\n" +
+                        "Content-Length: 11\r\n" +
                         "\r\n" +
                         "Some-Buffer"
                 ));
@@ -3318,7 +3318,7 @@ public class Http1xTest extends HttpTest {
           case 1:
             so.handler(buff -> {
               total.appendBuffer(buff);
-              if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
+              if (total.toString().equals("GET /2 HTTP/1.1\r\n" +
                   "Host: localhost:8080\r\n" +
                   "\r\n")) {
                 so.write(
@@ -3344,11 +3344,11 @@ public class Http1xTest extends HttpTest {
       awaitLatch(listenLatch);
       client.close();
       client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(pipelined).setKeepAlive(true));
-      HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+      HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1");
       if (pipelined) {
         requestReceived.thenAccept(v -> {
           req1.reset();
-          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", resp -> {
             assertEquals(200, resp.statusCode());
             resp.bodyHandler(body -> {
               assertEquals("Hello world", body.toString());
@@ -3364,7 +3364,7 @@ public class Http1xTest extends HttpTest {
         });
         req1.handler(resp -> fail());
         req1.end();
-        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", resp -> {
           assertEquals(200, resp.statusCode());
           resp.bodyHandler(body -> {
             assertEquals("Hello world", body.toString());
