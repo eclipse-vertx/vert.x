@@ -951,6 +951,9 @@ public class MetricsTest extends VertxTestBase {
             system.readFile("afile.html", buffer -> {
               fut.complete(null);
             });
+            if (metrics.numberOfRunningTasks() > 0) {
+              hadRunning.set(true);
+            }
           },
           ar -> {
             if (metrics.numberOfWaitingTasks() > 0) {
@@ -958,9 +961,6 @@ public class MetricsTest extends VertxTestBase {
             }
             if (metrics.numberOfIdleThreads() > 0) {
               hadIdle.set(true);
-            }
-            if (metrics.numberOfRunningTasks() > 0) {
-              hadRunning.set(true);
             }
             if (counter.incrementAndGet() == 100) {
               testComplete();
