@@ -249,6 +249,17 @@ keytool -import -trustcacerts -alias test-host3 -file host3.crt -keystore sni-tr
 keytool -import -trustcacerts -alias test-host4 -file host4.crt -keystore sni-truststore-host4.jks -keypass wibble -storepass wibble
 keytool -import -trustcacerts -alias test-host5 -file host5.crt -keystore sni-truststore-host5.jks -keypass wibble -storepass wibble
 
+5) Create trust stores for the SNI server trust tests
+
+keytool -noprompt -import -trustcacerts -alias host2.com -file root-ca/ca-cert.pem -keystore server-truststore-root-ca-host2.jks -storepass wibble
+keytool -noprompt -import -trustcacerts -alias host3.com -file other-ca/ca-cert.pem -keystore server-truststore-root-ca-host2.jks -storepass wibble
+
+keytool -noprompt -import -trustcacerts -alias host3.com -file root-ca/ca-cert.pem -keystore server-truststore-root-ca-host3.jks -storepass wibble
+keytool -noprompt -import -trustcacerts -alias host2.com -file other-ca/ca-cert.pem -keystore server-truststore-root-ca-host3.jks -storepass wibble
+
+keytool -noprompt -import -trustcacerts -alias xxx.com -file root-ca/ca-cert.pem -keystore server-truststore-root-ca-fallback.jks -storepass wibble
+
+keytool -noprompt -import -trustcacerts -alias xxx.com -file other-ca/ca-cert.pem -keystore server-truststore-other-ca-fallback.jks -storepass wibble
 
 ## Self signed PKCS12
 
