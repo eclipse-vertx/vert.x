@@ -3,16 +3,21 @@ package io.vertx.core.shareddata.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.LocalMap;
+
+import java.util.*;
 
 /**
  * @author <a href="http://nlq.su">Anton Potsyus</a>
  */
 final class LocalAsAsyncMap<K, V> implements AsyncMap<K, V> {
+  private final Vertx vertx;
   private final LocalMap<K, V> map;
 
-  public LocalAsAsyncMap(LocalMap<K, V> map) {
+  public LocalAsAsyncMap(Vertx vertx, LocalMap<K, V> map) {
+    this.vertx = vertx;
     this.map = map;
   }
 
@@ -29,7 +34,7 @@ final class LocalAsAsyncMap<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void put(K key, V value, long ttl, Handler<AsyncResult<Void>> completionHandler) {
-    throw new UnsupportedOperationException("TTL is not supported");
+    put(key, value, handlerWithTTL(key, value, ttl, completionHandler));
   }
 
   @Override
@@ -39,7 +44,7 @@ final class LocalAsAsyncMap<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void putIfAbsent(K key, V value, long ttl, Handler<AsyncResult<V>> completionHandler) {
-    throw new UnsupportedOperationException("TTL is not supported");
+    putIfAbsent(key, value, handlerWithTTL(key, value, ttl, completionHandler));
   }
 
   @Override
@@ -71,5 +76,29 @@ final class LocalAsAsyncMap<K, V> implements AsyncMap<K, V> {
   @Override
   public void size(Handler<AsyncResult<Integer>> resultHandler) {
     resultHandler.handle(Future.succeededFuture(map.size()));
+  }
+
+  @Override
+  public void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
+    resultHandler.handle(Future.succeededFuture(new HashSet<>(map.keySet())));
+  }
+
+  @Override
+  public void values(Handler<AsyncResult<List<V>>> resultHandler) {
+    resultHandler.handle(Future.succeededFuture(new ArrayList<>(map.values())));
+  }
+
+  @Override
+  public void entries(Handler<AsyncResult<Map<K, V>>> resultHandler) {
+    resultHandler.handle(Future.succeededFuture(new HashMap<>(map)));
+  }
+
+  private <T> Handler<AsyncResult<T>> handlerWithTTL(K key, V value, long ttl, Handler<AsyncResult<T>> completionHandler) {
+    return event -> {
+      if (event.succeeded()) {
+        vertx.setTimer(ttl, timer -> map.remove(key, value));
+      }
+      completionHandler.handle(event);
+    };
   }
 }

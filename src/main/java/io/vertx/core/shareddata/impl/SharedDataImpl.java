@@ -117,9 +117,9 @@ public class SharedDataImpl implements SharedData {
   @Override
   public <K, V> void getMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
     if (vertx.isClustered()) {
-      vertx.sharedData().getClusterWideMap(name, resultHandler);
+      getClusterWideMap(name, resultHandler);
     } else {
-      resultHandler.handle(Future.succeededFuture(new LocalAsAsyncMap<>(vertx.sharedData().getLocalMap(name))));
+      resultHandler.handle(Future.succeededFuture(new LocalAsAsyncMap<>(vertx, getLocalMap(name))));
     }
   }
 
