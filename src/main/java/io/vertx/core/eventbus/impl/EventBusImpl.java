@@ -18,15 +18,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.MessageProducer;
-import io.vertx.core.eventbus.ReplyException;
-import io.vertx.core.eventbus.ReplyFailure;
-import io.vertx.core.eventbus.SendContext;
+import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.logging.Logger;
@@ -52,7 +44,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
-  private final List<Interceptor> interceptors = new CopyOnWriteArrayList<>();
+  private final List<Handler<DeliveryContext>> sendInterceptors = new CopyOnWriteArrayList<>();
+  private final List<Handler<DeliveryContext>> receiveInterceptors = new CopyOnWriteArrayList<>();
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
@@ -67,24 +60,26 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   @Override
-  public EventBus addInterceptor(Handler<SendContext> interceptor) {
-    return addInterceptor(new LegacyInterceptorWrapper(interceptor));
-  }
-
-  @Override
-  public EventBus addInterceptor(Interceptor interceptor) {
-    interceptors.add(interceptor);
+  public <T> EventBus addOutboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
+    sendInterceptors.add((Handler) interceptor);
     return this;
   }
 
   @Override
-  public EventBus removeInterceptor(Handler<SendContext> interceptor) {
-    return removeInterceptor(new LegacyInterceptorWrapper(interceptor));
+  public <T> EventBus addInboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
+    receiveInterceptors.add((Handler)interceptor);
+    return this;
   }
 
   @Override
-  public EventBus removeInterceptor(Interceptor interceptor) {
-    interceptors.remove(interceptor);
+  public <T> EventBus removeOutboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
+    sendInterceptors.remove(interceptor);
+    return this;
+  }
+
+  @Override
+  public <T> EventBus removeInboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
+    receiveInterceptors.remove(interceptor);
     return this;
   }
 
@@ -321,15 +316,15 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       throw new IllegalStateException("address not specified");
     } else {
       HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(replyMessage, options, replyHandler);
-      new ReplySendContextImpl<>(replyMessage, options, replyHandlerRegistration, replierMessage).next();
+      new OutboundDeliveryContext<>(replyMessage, options, replyHandlerRegistration, replierMessage).next();
     }
   }
 
-  protected <T> void sendReply(SendContextImpl<T> sendContext, MessageImpl replierMessage) {
+  protected <T> void sendReply(OutboundDeliveryContext<T> sendContext, MessageImpl replierMessage) {
     sendOrPub(sendContext);
   }
 
-  protected <T> void sendOrPub(SendContextImpl<T> sendContext) {
+  protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
     MessageImpl message = sendContext.message;
     if (metrics != null) {
       metrics.messageSent(message.address(), !message.isSend(), true, false);
@@ -362,7 +357,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
   }
 
-  protected <T> void deliverMessageLocally(SendContextImpl<T> sendContext) {
+  protected <T> void deliverMessageLocally(OutboundDeliveryContext<T> sendContext) {
     if (!deliverMessageLocally(sendContext.message)) {
       // no handlers
       if (metrics != null) {
@@ -441,22 +436,28 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                                      Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
     HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(message, options, replyHandler);
-    SendContextImpl<T> sendContext = new SendContextImpl<>(message, options, replyHandlerRegistration);
+    OutboundDeliveryContext<T> sendContext = new OutboundDeliveryContext<>(message, options, replyHandlerRegistration);
     sendContext.next();
   }
 
-  protected class SendContextImpl<T> implements SendContext<T> {
+  protected class OutboundDeliveryContext<T> implements DeliveryContext<T> {
 
     public final MessageImpl message;
     public final DeliveryOptions options;
-    public final HandlerRegistration<T> handlerRegistration;
-    public final Iterator<Interceptor> iter;
+    public final Iterator<Handler<DeliveryContext>> iter;
+    private final HandlerRegistration<T> handlerRegistration;
+    private final MessageImpl replierMessage;
 
-    public SendContextImpl(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration) {
+    private OutboundDeliveryContext(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration) {
+      this(message, options, handlerRegistration, null);
+    }
+
+    private OutboundDeliveryContext(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration, MessageImpl replierMessage) {
       this.message = message;
       this.options = options;
       this.handlerRegistration = handlerRegistration;
-      this.iter = interceptors.iterator();
+      this.iter = sendInterceptors.iterator();
+      this.replierMessage = replierMessage;
     }
 
     @Override
@@ -467,14 +468,22 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     @Override
     public void next() {
       if (iter.hasNext()) {
-        Handler<SendContext> handler = iter.next();
+        Handler<DeliveryContext> handler = iter.next();
         try {
-          handler.handle(this);
+          if (handler != null) {
+            handler.handle(this);
+          } else {
+            next();
+          }
         } catch (Throwable t) {
           log.error("Failure in interceptor", t);
         }
       } else {
-        sendOrPub(this);
+        if (replierMessage == null) {
+          sendOrPub(this);
+        } else {
+          sendReply(this, replierMessage);
+        }
       }
     }
 
@@ -484,32 +493,10 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
 
     @Override
-    public Object sentBody() {
+    public Object body() {
       return message.sentBody;
     }
   }
-
-  protected class ReplySendContextImpl<T> extends SendContextImpl<T> {
-
-    private final MessageImpl replierMessage;
-
-    public ReplySendContextImpl(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration,
-                                MessageImpl replierMessage) {
-      super(message, options, handlerRegistration);
-      this.replierMessage = replierMessage;
-    }
-
-    @Override
-    public void next() {
-      if (iter.hasNext()) {
-        Handler<SendContext> handler = iter.next();
-        handler.handle(this);
-      } else {
-        sendReply(this, replierMessage);
-      }
-    }
-  }
-
 
   private void unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
@@ -523,7 +510,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private <T> void deliverToHandler(MessageImpl msg, HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
     MessageImpl copied = msg.copyBeforeReceive();
-    DeliveryContext<T> deliveryContext = new DeliveryContextImpl<>(copied, holder);
+    DeliveryContext<T> receiveContext = new InboundDeliveryContext<>(copied, holder);
 
     if (metrics != null) {
       metrics.scheduleMessage(holder.getHandler().getMetric(), msg.isLocal());
@@ -534,7 +521,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // before it was received
       try {
         if (!holder.isRemoved()) {
-          deliveryContext.next();
+          receiveContext.next();
         }
       } finally {
         if (holder.isReplyHandler()) {
@@ -544,16 +531,16 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     });
   }
 
-  // NOTE: Consider merging the delivery & send context into a general `TransmissionContext`
-  protected class DeliveryContextImpl<T> implements DeliveryContext<T> {
+  protected class InboundDeliveryContext<T> implements DeliveryContext<T> {
+
     private final MessageImpl message;
-    private final Iterator<Interceptor> iter;
+    private final Iterator<Handler<DeliveryContext>> iter;
     private final HandlerHolder<T> holder;
 
-    public DeliveryContextImpl(MessageImpl message, HandlerHolder<T> holder) {
+    private InboundDeliveryContext(MessageImpl message, HandlerHolder<T> holder) {
       this.message = message;
       this.holder = holder;
-      this.iter = interceptors.iterator();
+      this.iter = receiveInterceptors.iterator();
     }
 
     @Override
@@ -564,9 +551,13 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     @Override
     public void next() {
       if (iter.hasNext()) {
-        Interceptor interceptor = iter.next();
         try {
-          interceptor.handleDelivery(this);
+          Handler<DeliveryContext> handler = iter.next();
+          if (handler != null) {
+            handler.handle(this);
+          } else {
+            next();
+          }
         } catch (Throwable t) {
           log.error("Failure in interceptor", t);
         }
@@ -579,23 +570,10 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     public boolean send() {
       return message.isSend();
     }
-  }
-
-  protected static class LegacyInterceptorWrapper implements Interceptor {
-    private final Handler<SendContext> delegate;
-
-    LegacyInterceptorWrapper(final Handler<SendContext> delegate) {
-      this.delegate = delegate;
-    }
 
     @Override
-    public void handle(SendContext event) {
-      delegate.handle(event);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      return (obj instanceof LegacyInterceptorWrapper) && delegate.equals(((LegacyInterceptorWrapper) obj).delegate);
+    public Object body() {
+      return message.receivedBody;
     }
   }
 
