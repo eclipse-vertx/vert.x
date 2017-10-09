@@ -66,10 +66,7 @@ public interface AsyncResult<T> {
    *
    * The {@code mapper} is called with the completed value and this mapper returns a value. This value will complete the result returned by this method call.<p>
    *
-   * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
-   *
-   * When this async result is failed, the failure will be propagated to the returned future and the {@code mapper}
-   * will not be called.
+   * When this async result is failed, the failure will be propagated to the returned async result and the {@code mapper} will not be called.
    *
    * @param mapper the mapper function
    * @return the mapped async result
@@ -139,10 +136,7 @@ public interface AsyncResult<T> {
    *
    * The {@code mapper} is called with the failure and this mapper returns a value. This value will complete the result returned by this method call.<p>
    *
-   * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
-   *
-   * When this async result is succeeded, the value will be propagated to the returned future and the {@code mapper}
-   * will not be called.
+   * When this async result is succeeded, the value will be propagated to the returned async result and the {@code mapper} will not be called.
    *
    * @param mapper the mapper function
    * @return the mapped async result

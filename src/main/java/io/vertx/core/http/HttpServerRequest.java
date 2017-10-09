@@ -29,6 +29,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
 /**
@@ -76,7 +77,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the HTTP method as sent by the client
    */
   String rawMethod();
-  
+
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS
    */
@@ -171,10 +172,24 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   SocketAddress localAddress();
 
   /**
-   * @return an array of the peer certificates. Returns null if connection is
+   * @return SSLSession associated with the underlying socket. Returns null if connection is
+   *         not SSL.
+   * @see javax.net.ssl.SSLSession
+   */
+  @GenIgnore
+  SSLSession sslSession();
+
+  /**
+   * Note: Java SE 5+ recommends to use javax.net.ssl.SSLSession#getPeerCertificates() instead of
+   * of javax.net.ssl.SSLSession#getPeerCertificateChain() which this method is based on. Use {@link #sslSession()} to
+   * access that method.
+   *
+   * @return an ordered array of the peer certificates. Returns null if connection is
    *         not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
-  */
+   * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
+   * @see #sslSession()
+   */
   @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
@@ -193,9 +208,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @Fluent
   default HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
-    Buffer body = Buffer.buffer();
-    handler(body::appendBuffer);
-    endHandler(v -> bodyHandler.handle(body));
+    if (bodyHandler != null) {
+      Buffer body = Buffer.buffer();
+      handler(body::appendBuffer);
+      endHandler(v -> bodyHandler.handle(body));
+    }
     return this;
   }
 

@@ -33,6 +33,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
 
@@ -470,6 +471,18 @@ public class SSLHelper {
   public SSLEngine createEngine(SslContext sslContext) {
     SSLEngine engine = sslContext.newEngine(ByteBufAllocator.DEFAULT);
     configureEngine(engine, false, null);
+    return engine;
+  }
+
+  public SSLEngine createEngine(VertxInternal vertx, SocketAddress socketAddress, String serverName) {
+    SslContext context = getContext(vertx, null);
+    SSLEngine engine;
+    if (socketAddress.path() != null) {
+      engine = context.newEngine(ByteBufAllocator.DEFAULT);
+    } else {
+      engine = context.newEngine(ByteBufAllocator.DEFAULT, socketAddress.host(), socketAddress.port());
+    }
+    configureEngine(engine, client, serverName);
     return engine;
   }
 

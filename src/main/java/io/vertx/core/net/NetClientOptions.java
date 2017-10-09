@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class NetClientOptions extends ClientOptionsBase {
 
   /**
@@ -102,6 +102,12 @@ public class NetClientOptions extends ClientOptionsBase {
   @Override
   public NetClientOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
+    return this;
+  }
+
+  @Override
+  public NetClientOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
     return this;
   }
 
@@ -201,6 +207,41 @@ public class NetClientOptions extends ClientOptionsBase {
   public NetClientOptions addEnabledSecureTransportProtocol(final String protocol) {
     super.addEnabledSecureTransportProtocol(protocol);
     return this;
+  }
+
+  @Override
+  public NetClientOptions setUseAlpn(boolean useAlpn) {
+    return (NetClientOptions) super.setUseAlpn(useAlpn);
+  }
+
+  @Override
+  public NetClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    return (NetClientOptions) super.setSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public NetClientOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
+    return (NetClientOptions) super.setJdkSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public NetClientOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (NetClientOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public NetClientOptions setTcpCork(boolean tcpCork) {
+    return (NetClientOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public NetClientOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (NetClientOptions) super.setTcpQuickAck(tcpQuickAck);
+  }
+
+  @Override
+  public ClientOptionsBase setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
+    return super.setOpenSslEngineOptions(sslEngineOptions);
   }
 
   @Override

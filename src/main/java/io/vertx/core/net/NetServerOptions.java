@@ -26,7 +26,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class NetServerOptions extends TCPSSLOptions {
 
   // Server specific HTTP stuff
@@ -121,6 +121,12 @@ public class NetServerOptions extends TCPSSLOptions {
   @Override
   public NetServerOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
+    return this;
+  }
+
+  @Override
+  public NetServerOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
     return this;
   }
 
@@ -242,6 +248,21 @@ public class NetServerOptions extends TCPSSLOptions {
   public NetServerOptions addEnabledSecureTransportProtocol(final String protocol) {
     super.addEnabledSecureTransportProtocol(protocol);
     return this;
+  }
+
+  @Override
+  public NetServerOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (NetServerOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public NetServerOptions setTcpCork(boolean tcpCork) {
+    return (NetServerOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public NetServerOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (NetServerOptions) super.setTcpQuickAck(tcpQuickAck);
   }
 
   @Override

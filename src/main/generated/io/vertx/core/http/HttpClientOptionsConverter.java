@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.HttpClientOptions} original class using Vert.x codegen.
  */
-public class HttpClientOptionsConverter {
+ class HttpClientOptionsConverter {
 
-  public static void fromJson(JsonObject json, HttpClientOptions obj) {
+   static void fromJson(JsonObject json, HttpClientOptions obj) {
     if (json.getValue("alpnVersions") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
       json.getJsonArray("alpnVersions").forEach( item -> {
@@ -104,12 +104,30 @@ public class HttpClientOptionsConverter {
     if (json.getValue("tryUseCompression") instanceof Boolean) {
       obj.setTryUseCompression((Boolean)json.getValue("tryUseCompression"));
     }
+    if (json.getValue("tryWebsocketDeflateFrameCompression") instanceof Boolean) {
+      obj.setTryWebsocketDeflateFrameCompression((Boolean)json.getValue("tryWebsocketDeflateFrameCompression"));
+    }
+    if (json.getValue("tryWebsocketTryPermessageDefalteCompression") instanceof Boolean) {
+      obj.setTryWebsocketTryPermessageDefalteCompression((Boolean)json.getValue("tryWebsocketTryPermessageDefalteCompression"));
+    }
     if (json.getValue("verifyHost") instanceof Boolean) {
       obj.setVerifyHost((Boolean)json.getValue("verifyHost"));
     }
+    if (json.getValue("websocketCompressionAllowClientNoContext") instanceof Boolean) {
+      obj.setWebsocketCompressionAllowClientNoContext((Boolean)json.getValue("websocketCompressionAllowClientNoContext"));
+    }
+    if (json.getValue("websocketCompressionDeflateUseWebkitName") instanceof Boolean) {
+      obj.setWebsocketCompressionDeflateUseWebkitName((Boolean)json.getValue("websocketCompressionDeflateUseWebkitName"));
+    }
+    if (json.getValue("websocketCompressionLevel") instanceof Number) {
+      obj.setWebsocketCompressionLevel(((Number)json.getValue("websocketCompressionLevel")).intValue());
+    }
+    if (json.getValue("websocketCompressionRequestServerNoContext") instanceof Boolean) {
+      obj.setWebsocketCompressionRequestServerNoContext((Boolean)json.getValue("websocketCompressionRequestServerNoContext"));
+    }
   }
 
-  public static void toJson(HttpClientOptions obj, JsonObject json) {
+   static void toJson(HttpClientOptions obj, JsonObject json) {
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
@@ -145,5 +163,9 @@ public class HttpClientOptionsConverter {
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
+    json.put("websocketCompressionAllowClientNoContext", obj.getWebsocketCompressionAllowClientNoContext());
+    json.put("websocketCompressionDeflateUseWebkitName", obj.getWebsocketCompressionDeflateUseWebkitName());
+    json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
+    json.put("websocketCompressionRequestServerNoContext", obj.getWebsocketCompressionRequestServerNoContext());
   }
 }

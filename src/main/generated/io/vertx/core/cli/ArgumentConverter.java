@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.cli.Argument} original class using Vert.x codegen.
  */
-public class ArgumentConverter {
+ class ArgumentConverter {
 
-  public static void fromJson(JsonObject json, Argument obj) {
+   static void fromJson(JsonObject json, Argument obj) {
     if (json.getValue("argName") instanceof String) {
       obj.setArgName((String)json.getValue("argName"));
     }
@@ -50,7 +50,7 @@ public class ArgumentConverter {
     }
   }
 
-  public static void toJson(Argument obj, JsonObject json) {
+   static void toJson(Argument obj, JsonObject json) {
     if (obj.getArgName() != null) {
       json.put("argName", obj.getArgName());
     }

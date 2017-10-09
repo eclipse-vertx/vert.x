@@ -737,18 +737,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       return this;
     }
     for (Map.Entry<String, Object> e: other.map.entrySet()) {
-      map.merge(e.getKey(), e.getValue(), (oldVal, newVal) -> {
-        if (oldVal instanceof Map) {
-          oldVal = new JsonObject((Map)oldVal);
-        }
-        if (newVal instanceof Map) {
-          newVal = new JsonObject((Map)newVal);
-        }
-        if (oldVal instanceof JsonObject && newVal instanceof JsonObject) {
-          return ((JsonObject) oldVal).mergeIn((JsonObject)newVal, depth - 1);
-        }
-        return newVal;
-      });
+      if (e.getValue() == null){
+        map.put(e.getKey(), null);
+      } else {
+        map.merge(e.getKey(), e.getValue(), (oldVal, newVal) -> {
+          if (oldVal instanceof Map) {
+            oldVal = new JsonObject((Map)oldVal);
+          }
+          if (newVal instanceof Map) {
+            newVal = new JsonObject((Map)newVal);
+          }
+          if (oldVal instanceof JsonObject && newVal instanceof JsonObject) {
+            return ((JsonObject) oldVal).mergeIn((JsonObject)newVal, depth - 1);
+          }
+          return newVal;
+        });
+      }
     }
     return this;
   }

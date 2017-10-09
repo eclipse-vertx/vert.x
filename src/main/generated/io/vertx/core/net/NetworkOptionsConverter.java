@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.NetworkOptions} original class using Vert.x codegen.
  */
-public class NetworkOptionsConverter {
+ class NetworkOptionsConverter {
 
-  public static void fromJson(JsonObject json, NetworkOptions obj) {
+   static void fromJson(JsonObject json, NetworkOptions obj) {
     if (json.getValue("logActivity") instanceof Boolean) {
       obj.setLogActivity((Boolean)json.getValue("logActivity"));
     }
@@ -36,6 +36,9 @@ public class NetworkOptionsConverter {
     if (json.getValue("reuseAddress") instanceof Boolean) {
       obj.setReuseAddress((Boolean)json.getValue("reuseAddress"));
     }
+    if (json.getValue("reusePort") instanceof Boolean) {
+      obj.setReusePort((Boolean)json.getValue("reusePort"));
+    }
     if (json.getValue("sendBufferSize") instanceof Number) {
       obj.setSendBufferSize(((Number)json.getValue("sendBufferSize")).intValue());
     }
@@ -44,10 +47,11 @@ public class NetworkOptionsConverter {
     }
   }
 
-  public static void toJson(NetworkOptions obj, JsonObject json) {
+   static void toJson(NetworkOptions obj, JsonObject json) {
     json.put("logActivity", obj.getLogActivity());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reuseAddress", obj.isReuseAddress());
+    json.put("reusePort", obj.isReusePort());
     json.put("sendBufferSize", obj.getSendBufferSize());
     json.put("trafficClass", obj.getTrafficClass());
   }

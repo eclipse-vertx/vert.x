@@ -26,7 +26,7 @@ import io.vertx.core.net.impl.VertxHandler;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
+final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connection> {
 
   private final DatagramSocketImpl socket;
 
@@ -35,24 +35,17 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
   }
 
   @Override
-  protected DatagramSocketImpl getConnection() {
-    return socket;
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    setConnection(socket.createConnection(ctx));
   }
 
   @Override
-  protected DatagramSocketImpl removeConnection() {
-    return socket;
-  }
-
-
-  @SuppressWarnings("unchecked")
-  @Override
-  protected void channelRead(final DatagramSocketImpl server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
-    context.executeFromIO(() -> server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg));
+  protected void handleMessage(final DatagramSocketImpl.Connection server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
+    server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg);
   }
 
   @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+  protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof DatagramPacket) {
       DatagramPacket packet = (DatagramPacket) msg;
       ByteBuf content = packet.content();

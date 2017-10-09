@@ -82,6 +82,28 @@ public class MetricsTest extends VertxTestBase {
 
   private static final String ADDRESS1 = "some-address1";
 
+  private HttpServer server;
+  private HttpClient client;
+
+  protected void tearDown() throws Exception {
+    if (client != null) {
+      try {
+        client.close();
+      } catch (IllegalStateException ignore) {
+        // Client was already closed by the test
+      }
+    }
+    if (server != null) {
+      CountDownLatch latch = new CountDownLatch(1);
+      server.close((asyncResult) -> {
+        assertTrue(asyncResult.succeeded());
+        latch.countDown();
+      });
+      awaitLatch(latch);
+    }
+    super.tearDown();
+  }
+
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
@@ -513,7 +535,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testServerWebSocket() throws Exception {
-    HttpServer server = vertx.createHttpServer();
+    server = vertx.createHttpServer();
     server.websocketHandler(ws -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       WebSocketMetric metric = metrics.getMetric(ws);
@@ -529,7 +551,7 @@ public class MetricsTest extends VertxTestBase {
     });
     server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
       assertTrue(ar.succeeded());
-      HttpClient client = vertx.createHttpClient();
+      client = vertx.createHttpClient();
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         ws.write(Buffer.buffer("wibble"));
       });
@@ -539,7 +561,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testServerWebSocketUpgrade() throws Exception {
-    HttpServer server = vertx.createHttpServer();
+    server = vertx.createHttpServer();
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       assertNotNull(metrics.getMetric(req));
@@ -558,7 +580,7 @@ public class MetricsTest extends VertxTestBase {
     });
     server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
       assertTrue(ar.succeeded());
-      HttpClient client = vertx.createHttpClient();
+      client = vertx.createHttpClient();
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         ws.write(Buffer.buffer("wibble"));
       });
@@ -568,13 +590,13 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testWebSocket() throws Exception {
-    HttpServer server = vertx.createHttpServer();
+    server = vertx.createHttpServer();
     server.websocketHandler(ws -> {
       ws.write(Buffer.buffer("wibble"));
     });
     server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
       assertTrue(ar.succeeded());
-      HttpClient client = vertx.createHttpClient();
+      client = vertx.createHttpClient();
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
         WebSocketMetric metric = metrics.getMetric(ws);
@@ -595,17 +617,25 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testHttpClientName() throws Exception {
     HttpClient client1 = vertx.createHttpClient();
-    FakeHttpClientMetrics metrics1 = FakeMetricsBase.getMetrics(client1);
-    assertEquals("", metrics1.getName());
-    String name = TestUtils.randomAlphaString(10);
-    HttpClient client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
-    FakeHttpClientMetrics metrics2 = FakeMetricsBase.getMetrics(client2);
-    assertEquals(name, metrics2.getName());
+    try {
+      FakeHttpClientMetrics metrics1 = FakeMetricsBase.getMetrics(client1);
+      assertEquals("", metrics1.getName());
+      String name = TestUtils.randomAlphaString(10);
+      HttpClient client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
+      try {
+        FakeHttpClientMetrics metrics2 = FakeMetricsBase.getMetrics(client2);
+        assertEquals(name, metrics2.getName());
+      } finally {
+        client2.close();
+      }
+    } finally {
+      client1.close();
+    }
   }
 
   @Test
   public void testHttpClientMetricsQueueLength() throws Exception {
-    HttpServer server = vertx.createHttpServer();
+    server = vertx.createHttpServer();
     List<Runnable> requests = Collections.synchronizedList(new ArrayList<>());
     server.requestHandler(req -> {
       requests.add(() -> {
@@ -617,7 +647,7 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
-    HttpClient client = vertx.createHttpClient();
+    client = vertx.createHttpClient();
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     CountDownLatch responsesLatch = new CountDownLatch(5);
     for (int i = 0;i < 5;i++) {
@@ -655,7 +685,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testHttpClientMetricsQueueClose() throws Exception {
-    HttpServer server = vertx.createHttpServer();
+    server = vertx.createHttpServer();
     List<Runnable> requests = Collections.synchronizedList(new ArrayList<>());
     server.requestHandler(req -> {
       requests.add(() -> {
@@ -667,7 +697,7 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
-    HttpClient client = vertx.createHttpClient();
+    client = vertx.createHttpClient();
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     for (int i = 0;i < 5;i++) {
       client.getNow(8080, "localhost", "/somepath", resp -> {
@@ -686,9 +716,9 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testHttpClientConnectionCloseAfterRequestEnd() throws Exception {
     CountDownLatch started = new CountDownLatch(1);
-    HttpClient client = vertx.createHttpClient();
+    client = vertx.createHttpClient();
     AtomicReference<EndpointMetric> endpointMetrics = new AtomicReference<>();
-    vertx.createHttpServer().requestHandler(req -> {
+    server = vertx.createHttpServer().requestHandler(req -> {
       endpointMetrics.set(((FakeHttpClientMetrics)FakeHttpClientMetrics.getMetrics(client)).endpoint("localhost:8080"));
       req.response().end();
     }).listen(8080, "localhost", ar -> {
@@ -718,24 +748,29 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testMulti() {
     HttpServer s1 = vertx.createHttpServer();
-    s1.requestHandler(req -> {
-    });
-    s1.listen(8080, ar1 -> {
-      assertTrue(ar1.succeeded());
-      HttpServer s2 = vertx.createHttpServer();
-      s2.requestHandler(req -> {
-        req.response().end();
+    HttpServer s2 = vertx.createHttpServer();
+    try {
+      s1.requestHandler(req -> {
       });
-      s2.listen(8080, ar2 -> {
-        assertTrue(ar2.succeeded());
-        FakeHttpServerMetrics metrics1 = FakeMetricsBase.getMetrics(ar1.result());
-        assertSame(ar1.result(), metrics1.server);
-        FakeHttpServerMetrics metrics2 = FakeMetricsBase.getMetrics(ar2.result());
-        assertSame(ar2.result(), metrics2.server);
-        testComplete();
+      s1.listen(8080, ar1 -> {
+        assertTrue(ar1.succeeded());
+        s2.requestHandler(req -> {
+          req.response().end();
+        });
+        s2.listen(8080, ar2 -> {
+          assertTrue(ar2.succeeded());
+          FakeHttpServerMetrics metrics1 = FakeMetricsBase.getMetrics(ar1.result());
+          assertSame(ar1.result(), metrics1.server);
+          FakeHttpServerMetrics metrics2 = FakeMetricsBase.getMetrics(ar2.result());
+          assertSame(ar2.result(), metrics2.server);
+          testComplete();
+        });
       });
-    });
-    await();
+      await();
+    } finally {
+      s1.close();
+      s2.close();
+    }
   }
 
   @Test
@@ -749,8 +784,8 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testHttpConnect(String host, Consumer<SocketMetric> checker) {
+    server = vertx.createHttpServer();
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
-    HttpServer server = vertx.createHttpServer();
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       HttpServerMetric serverMetric = metrics.getMetric(req);
@@ -774,7 +809,7 @@ public class MetricsTest extends VertxTestBase {
       });
     }).listen(8080, ar1 -> {
       assertTrue(ar1.succeeded());
-      HttpClient client = vertx.createHttpClient();
+      client = vertx.createHttpClient();
       HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, host, "/");
       FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
       request.handler(resp -> {
@@ -791,7 +826,6 @@ public class MetricsTest extends VertxTestBase {
       }).end();
     });
     await();
-
   }
 
   @Test
@@ -815,31 +849,36 @@ public class MetricsTest extends VertxTestBase {
   private void testDatagram(String host, Consumer<PacketMetric> checker) throws Exception {
     DatagramSocket peer1 = vertx.createDatagramSocket();
     DatagramSocket peer2 = vertx.createDatagramSocket();
-    CountDownLatch latch = new CountDownLatch(1);
-    peer1.handler(packet -> {
-      FakeDatagramSocketMetrics peer1Metrics = FakeMetricsBase.getMetrics(peer1);
-      FakeDatagramSocketMetrics peer2Metrics = FakeMetricsBase.getMetrics(peer2);
-      assertEquals(host, peer1Metrics.getLocalName());
-      assertEquals("127.0.0.1", peer1Metrics.getLocalAddress().host());
-      assertNull(peer2Metrics.getLocalAddress());
-      assertEquals(1, peer1Metrics.getReads().size());
-      PacketMetric read = peer1Metrics.getReads().get(0);
-      assertEquals(5, read.numberOfBytes);
-      assertEquals(0, peer1Metrics.getWrites().size());
-      assertEquals(0, peer2Metrics.getReads().size());
-      assertEquals(1, peer2Metrics.getWrites().size());
-      checker.accept(peer2Metrics.getWrites().get(0));
-      testComplete();
-    });
-    peer1.listen(1234, host, ar -> {
-      assertTrue(ar.succeeded());
-      latch.countDown();
-    });
-    awaitLatch(latch);
-    peer2.send("hello", 1234, host, ar -> {
-      assertTrue(ar.succeeded());
-    });
-    await();
+    try {
+      CountDownLatch latch = new CountDownLatch(1);
+      peer1.handler(packet -> {
+        FakeDatagramSocketMetrics peer1Metrics = FakeMetricsBase.getMetrics(peer1);
+        FakeDatagramSocketMetrics peer2Metrics = FakeMetricsBase.getMetrics(peer2);
+        assertEquals(host, peer1Metrics.getLocalName());
+        assertEquals("127.0.0.1", peer1Metrics.getLocalAddress().host());
+        assertNull(peer2Metrics.getLocalAddress());
+        assertEquals(1, peer1Metrics.getReads().size());
+        PacketMetric read = peer1Metrics.getReads().get(0);
+        assertEquals(5, read.numberOfBytes);
+        assertEquals(0, peer1Metrics.getWrites().size());
+        assertEquals(0, peer2Metrics.getReads().size());
+        assertEquals(1, peer2Metrics.getWrites().size());
+        checker.accept(peer2Metrics.getWrites().get(0));
+        testComplete();
+      });
+      peer1.listen(1234, host, ar -> {
+        assertTrue(ar.succeeded());
+        latch.countDown();
+      });
+      awaitLatch(latch);
+      peer2.send("hello", 1234, host, ar -> {
+        assertTrue(ar.succeeded());
+      });
+      await();
+    } finally {
+      peer1.close();
+      peer2.close();
+    }
   }
 
   @Test

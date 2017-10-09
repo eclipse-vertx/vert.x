@@ -24,15 +24,15 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.metrics.MetricsOptions} original class using Vert.x codegen.
  */
-public class MetricsOptionsConverter {
+ class MetricsOptionsConverter {
 
-  public static void fromJson(JsonObject json, MetricsOptions obj) {
+   static void fromJson(JsonObject json, MetricsOptions obj) {
     if (json.getValue("enabled") instanceof Boolean) {
       obj.setEnabled((Boolean)json.getValue("enabled"));
     }
   }
 
-  public static void toJson(MetricsOptions obj, JsonObject json) {
+   static void toJson(MetricsOptions obj, JsonObject json) {
     json.put("enabled", obj.isEnabled());
   }
 }

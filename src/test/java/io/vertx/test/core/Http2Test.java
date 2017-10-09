@@ -16,17 +16,14 @@
 
 package io.vertx.test.core;
 
-import io.netty.channel.Channel;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.socket.SocketChannel;
 import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
@@ -38,7 +35,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -298,7 +294,7 @@ public class Http2Test extends HttpTest {
     server.requestHandler(req -> {
       if (count.getAndIncrement() == 0) {
         Http2ServerConnection a = (Http2ServerConnection) req.connection();
-        NioSocketChannel channel = (NioSocketChannel) a.channel();
+        SocketChannel channel = (SocketChannel) a.channel();
         channel.shutdown();
       } else {
         req.response().end();

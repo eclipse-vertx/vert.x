@@ -16,45 +16,65 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
-
-import java.util.Map;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class ClientHandler extends VertxHttpHandler<ClientConnection> {
-
   private boolean closeFrameSent;
   private ContextImpl context;
+  private ChannelHandlerContext chctx;
+  private Http1xPool pool;
+  private HttpClientImpl client;
+  private Object endpointMetric;
+  private HttpClientMetrics metrics;
 
-  public ClientHandler(Channel ch, ContextImpl context, Map<Channel, ClientConnection> connectionMap) {
-    super(connectionMap, ch);
+  public ClientHandler(ContextImpl context,
+                       Http1xPool pool,
+                       HttpClientImpl client,
+                       Object endpointMetric,
+                       HttpClientMetrics metrics) {
     this.context = context;
+    this.pool = pool;
+    this.client = client;
+    this.endpointMetric = endpointMetric;
+    this.metrics = metrics;
   }
 
   @Override
-  protected ContextImpl getContext(ClientConnection connection) {
-    return context;
-  }
-
-  @Override
-  protected void doMessageReceived(ClientConnection conn, ChannelHandlerContext ctx, Object msg) {
-    if (conn == null) {
-      return;
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    chctx = ctx;
+    ClientConnection conn = new ClientConnection(pool.version(), client, endpointMetric, ctx,
+      pool.ssl(), pool.host(), pool.port(), context, pool, metrics);
+    setConnection(conn);
+    if (metrics != null) {
+      context.executeFromIO(() -> {
+        Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+        conn.metric(metric);
+        metrics.endpointConnected(endpointMetric, metric);
+      });
     }
+  }
+
+  public ChannelHandlerContext context() {
+    return chctx;
+  }
+
+  @Override
+  protected void handleMessage(ClientConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
       DecoderResult result = obj.decoderResult();
@@ -87,20 +107,18 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
         case BINARY:
         case CONTINUATION:
         case TEXT:
+        case PONG:
           conn.handleWsFrame(frame);
           break;
         case PING:
           // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-          ctx.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, frame.getBinaryData()));
-          break;
-        case PONG:
-          // Just ignore it
+          chctx.writeAndFlush(new PongWebSocketFrame(frame.getBinaryData().copy()));
           break;
         case CLOSE:
           if (!closeFrameSent) {
             // Echo back close frame and close the connection once it was written.
             // This is specified in the WebSockets RFC 6455 Section  5.4.1
-            ctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
+            chctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
             closeFrameSent = true;
           }
           break;

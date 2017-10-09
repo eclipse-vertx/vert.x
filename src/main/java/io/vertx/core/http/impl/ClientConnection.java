@@ -22,8 +22,6 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
@@ -36,13 +34,19 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
 
 import java.net.URI;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,7 +69,7 @@ import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ClientConnection extends ConnectionBase implements HttpClientConnection, HttpClientStream {
+class ClientConnection extends Http1xConnectionBase implements HttpClientConnection, HttpClientStream {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
@@ -90,7 +94,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, Channel channel, boolean ssl, String host,
+  ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, ChannelHandlerContext channel, boolean ssl, String host,
                    int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context);
     this.client = client;
@@ -110,7 +114,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   synchronized HttpClientRequestImpl getCurrentRequest() {
     return currentRequest;
   }
-
+  
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
                    int maxWebSocketFrameSize, Handler<WebSocket> wsConnect) {
     if (ws != null) {
@@ -135,11 +139,19 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       } else {
         nettyHeaders = null;
       }
-      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
-                                                                  nettyHeaders, maxWebSocketFrameSize,!client.getOptions().isSendUnmaskedFrames(),false);
-      ChannelPipeline p = channel.pipeline();
+            
+      ChannelPipeline p = chctx.channel().pipeline(); 
+      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebsocketExtensionHandshakers(client.getOptions());
+      if (!extensionHandshakers.isEmpty()) {
+    	  p.addBefore("handler", "websocketsExtensionsHandler", new WebSocketClientExtensionHandler(
+    			  extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[extensionHandshakers.size()])));
+      }
+      
+      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, !extensionHandshakers.isEmpty(),
+              nettyHeaders, maxWebSocketFrameSize,!client.getOptions().isSendUnmaskedFrames(),false);
+      
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
-      handshaker.handshake(channel).addListener(future -> {
+      handshaker.handshake(chctx.channel()).addListener(future -> {
         Handler<Throwable> handler = exceptionHandler();
         if (!future.isSuccess() && handler != null) {
           handler.handle(future.cause());
@@ -150,6 +162,22 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
   }
 
+  ArrayList<WebSocketClientExtensionHandshaker> initializeWebsocketExtensionHandshakers (HttpClientOptions options) {
+	  ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<WebSocketClientExtensionHandshaker>();
+	  if (options.tryWebsocketDeflateFrameCompression()) {
+		  extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.websocketCompressionLevel(),
+				  false));
+	  }
+	  
+	  if (options.tryUsePerMessageWebsocketCompression ()) {
+		  extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.websocketCompressionLevel(), 
+				  ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE, 
+				  options.getWebsocketCompressionAllowClientNoContext(), options.getWebsocketCompressionRequestServerNoContext()));
+	  }
+	  
+	  return extensionHandshakers;
+  }
+  
   private final class HandshakeInboundHandler extends ChannelInboundHandlerAdapter {
 
     private final boolean supportsContinuation;
@@ -180,13 +208,14 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       if (handshaker != null && handshaking) {
         if (msg instanceof HttpResponse) {
           HttpResponse resp = (HttpResponse) msg;
-          if (resp.getStatus().code() != 101) {
+          HttpResponseStatus status = resp.status();
+          if (status.code() != 101) {
             handshaker = null;
             close();
-            handleException(new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code()));
+            handleException(new WebsocketRejectedException(status.code()));
             return;
           }
-          response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
+          response = new DefaultFullHttpResponse(resp.protocolVersion(), status);
           response.headers().add(resp.headers());
         }
 
@@ -197,7 +226,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
               response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
               try {
                 handshakeComplete(ctx, response);
-                channel.pipeline().remove(HandshakeInboundHandler.this);
+                chctx.pipeline().remove(HandshakeInboundHandler.this);
                 for (; ; ) {
                   Object m = buffered.poll();
                   if (m == null) {
@@ -217,7 +246,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       }
     }
 
-    private void handleException(WebSocketHandshakeException e) {
+    private void handleException(Exception e) {
       handshaking = false;
       buffered.clear();
       Handler<Throwable> handler = exceptionHandler();
@@ -243,21 +272,20 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
                                                   client.getOptions().getMaxWebsocketFrameSize(),
                                                   client.getOptions().getMaxWebsocketMessageSize());
       ws = webSocket;
-      handshaker.finishHandshake(channel, response);
+      handshaker.finishHandshake(chctx.channel(), response);
+      ws.subProtocol(handshaker.actualSubprotocol());
       context.executeFromIO(() -> {
         log.debug("WebSocket handshake complete");
-        webSocket.setMetric(metrics().connected(endpointMetric, metric(), webSocket));
+        if (metrics != null ) {
+          webSocket.setMetric(metrics.connected(endpointMetric, metric(), webSocket));
+        }
         wsConnect.handle(webSocket);
       });
     }
   }
 
-  public ClientConnection closeHandler(Handler<Void> handler) {
-    return (ClientConnection) super.closeHandler(handler);
-  }
-
   public boolean isValid() {
-    return channel.isOpen();
+    return chctx.channel().isOpen();
   }
 
   int getOutstandingRequestCount() {
@@ -301,7 +329,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.responseBegin(requestForResponse.metric(), nResp);
     }
     if (vertxVersion != null) {
@@ -347,7 +375,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       HttpClientRequestBase req = currentResponse.request();
       Object reqMetric = req.metric();
       if (req.exceptionOccurred != null) {
@@ -408,7 +436,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     Exception e = new VertxException("Connection was closed");
 
     // Signal requests failed
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       for (HttpClientRequestImpl req: requests) {
         metrics.requestReset(req.metric());
       }
@@ -419,18 +447,15 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
     // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
     for (HttpClientRequestImpl req: requests) {
-      req.handleException(e);
+      if (req != currentRequest) {
+        req.handleException(e);
+      }
     }
     if (currentRequest != null) {
       currentRequest.handleException(e);
     } else if (currentResponse != null) {
       currentResponse.handleException(e);
     }
-
-    // The connection has been closed - tell the pool about it, this allows the pool to create more
-    // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
-    // gets the closed on, they will check if it's closed and if so get another one.
-    pool.connectionClosed(this);
   }
 
   public ContextImpl getContext() {
@@ -542,8 +567,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
     }
-    if (metrics.isEnabled()) {
-      Object reqMetric = client.httpClientMetrics().requestBegin(endpointMetric, metric(), localAddress(), remoteAddress(), req);
+    if (metrics != null) {
+      Object reqMetric = metrics.requestBegin(endpointMetric, metric(), localAddress(), remoteAddress(), req);
       req.metric(reqMetric);
     }
     this.currentRequest = req;
@@ -554,7 +579,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     if (currentRequest == null) {
       throw new IllegalStateException("No write in progress");
     }
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.requestEnd(currentRequest.metric());
     }
     currentRequest = null;
@@ -569,42 +594,28 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       // make sure everything is flushed out on close
       endReadAndFlush();
       // close the websocket connection by sending a close frame.
-      handshaker.close(channel, new CloseWebSocketFrame(1000, null));
+      handshaker.close(chctx.channel(), new CloseWebSocketFrame(1000, null));
     }
   }
 
   public NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), metrics);
+    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics);
     socket.metric(metric());
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
-    connectionMap.put(channel, socket);
+    connectionMap.put(chctx.channel(), socket);
 
     // Flush out all pending data
     endReadAndFlush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
-    ChannelPipeline pipeline = channel.pipeline();
+    ChannelPipeline pipeline = chctx.pipeline();
     ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
     if (inflater != null) {
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler<NetSocketImpl>(channel, socket, connectionMap) {
-      @Override
-      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
-        // remove from the real mapping
-        pool.removeChannel(channel);
-        super.exceptionCaught(chctx, t);
-      }
-
-      @Override
-      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-        // remove from the real mapping
-        pool.removeChannel(channel);
-        super.channelInactive(chctx);
-      }
-
+    pipeline.replace("handler", "handler",  new VertxNetHandler(socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
@@ -616,13 +627,14 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         }
         super.channelRead(chctx, msg);
       }
-
       @Override
-      protected void handleMsgReceived(NetSocketImpl conn, Object msg) {
+      protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        conn.handleDataReceived(Buffer.buffer(buf));
+        connection.handleMessageReceived(buf);
       }
-    });
+    }.removeHandler(sock -> {
+      pool.removeChannel(chctx.channel());
+    }));
     return socket;
   }
 
@@ -641,72 +653,5 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   @Override
   public int id() {
     return -1;
-  }
-
-  //
-
-  @Override
-  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
-
-  @Override
-  public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
-
-  @Override
-  public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
-
-  @Override
-  public HttpConnection shutdown() {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
-
-  @Override
-  public HttpConnection shutdown(long timeoutMs) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
-
-  @Override
-  public Http2Settings settings() {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
-
-  @Override
-  public HttpConnection updateSettings(Http2Settings settings) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
-
-  @Override
-  public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
-
-  @Override
-  public Http2Settings remoteSettings() {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
-
-  @Override
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
-
-  @Override
-  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
-  }
-
-  @Override
-  public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
-  }
-
-  @Override
-  public ClientConnection exceptionHandler(Handler<Throwable> handler) {
-    return (ClientConnection) super.exceptionHandler(handler);
   }
 }

@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class DeploymentOptions {
 
   public static final boolean DEFAULT_WORKER = false;

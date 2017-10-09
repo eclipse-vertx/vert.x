@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PemKeyCertOptions} original class using Vert.x codegen.
  */
-public class PemKeyCertOptionsConverter {
+ class PemKeyCertOptionsConverter {
 
-  public static void fromJson(JsonObject json, PemKeyCertOptions obj) {
+   static void fromJson(JsonObject json, PemKeyCertOptions obj) {
     if (json.getValue("certPath") instanceof String) {
       obj.setCertPath((String)json.getValue("certPath"));
     }
@@ -73,7 +73,7 @@ public class PemKeyCertOptionsConverter {
     }
   }
 
-  public static void toJson(PemKeyCertOptions obj, JsonObject json) {
+   static void toJson(PemKeyCertOptions obj, JsonObject json) {
     if (obj.getCertPaths() != null) {
       JsonArray array = new JsonArray();
       obj.getCertPaths().forEach(item -> array.add(item));

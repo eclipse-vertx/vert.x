@@ -29,6 +29,7 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -49,67 +50,86 @@ public abstract class ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
   protected final VertxInternal vertx;
-  protected final Channel channel;
+  protected final ChannelHandlerContext chctx;
   protected final ContextImpl context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private boolean read;
   private boolean needsFlush;
-  private Thread ctxThread;
-  private boolean needsAsyncFlush;
+  private int writeInProgress;
   private Object metric;
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context) {
+  protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context) {
     this.vertx = vertx;
-    this.channel = channel;
+    this.chctx = chctx;
     this.context = context;
   }
 
-  protected synchronized final void startRead() {
+  /**
+   * Encode to message before writing to the channel
+   *
+   * @param obj the object to encode
+   * @return the encoded message
+   */
+  protected Object encode(Object obj) {
+    return obj;
+  }
+
+  public synchronized final void startRead() {
     checkContext();
     read = true;
-    if (ctxThread == null) {
-      ctxThread = Thread.currentThread();
-    }
   }
 
   protected synchronized final void endReadAndFlush() {
-    read = false;
-    if (needsFlush) {
-      needsFlush = false;
-      if (needsAsyncFlush) {
-        // If the connection has been written to from outside the event loop thread e.g. from a worker thread
-        // Then Netty might end up executing the flush *before* the write as Netty checks for event loop and if not
-        // it executes using the executor.
-        // To avoid this ordering issue we must runOnContext in this situation
-        context.runOnContext(v -> channel.flush());
-      } else {
-        // flush now
-        channel.flush();
+    if (read) {
+      read = false;
+      if (needsFlush && writeInProgress == 0) {
+        needsFlush = false;
+        chctx.flush();
       }
     }
   }
 
-  public synchronized ChannelFuture queueForWrite(final Object obj) {
-    needsFlush = true;
-    needsAsyncFlush = Thread.currentThread() != ctxThread;
-    return channel.write(obj);
+  private void write(Object msg, ChannelPromise promise) {
+    msg = encode(msg);
+    if (read || writeInProgress > 0) {
+      needsFlush = true;
+      chctx.write(msg, promise);
+    } else {
+      needsFlush = false;
+      chctx.writeAndFlush(msg, promise);
+    }
   }
 
-  public synchronized ChannelFuture writeToChannel(Object obj) {
-    if (read) {
-      return queueForWrite(obj);
-    }
-    if (channel.isOpen()) {
-      return channel.writeAndFlush(obj);
+  public synchronized void writeToChannel(Object msg, ChannelPromise promise) {
+    // Make sure we serialize all the messages as this method can be called from various threads:
+    // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
+    // the message order independently of the thread. To achieve this we need to reschedule messages
+    // not on the event loop or if there are pending async message for the channel.
+    if (chctx.executor().inEventLoop() && writeInProgress == 0) {
+      write(msg, promise);
     } else {
-      return null;
+      queueForWrite(msg, promise);
     }
+  }
+
+  private void queueForWrite(Object msg, ChannelPromise promise) {
+    writeInProgress++;
+    context.runOnContext(v -> {
+      synchronized (ConnectionBase.this) {
+        writeInProgress--;
+        write(msg, promise);
+      }
+    });
+  }
+
+  public void writeToChannel(Object obj) {
+    writeToChannel(obj, chctx.voidPromise());
   }
 
   // This is a volatile read inside the Netty channel implementation
   public boolean isNotWritable() {
-    return !channel.isWritable();
+    return !chctx.channel().isWritable();
   }
 
   /**
@@ -118,7 +138,7 @@ public abstract class ConnectionBase {
   public void close() {
     // make sure everything is flushed out on close
     endReadAndFlush();
-    channel.close();
+    chctx.channel().close();
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
@@ -136,15 +156,15 @@ public abstract class ConnectionBase {
   }
 
   public void doPause() {
-    channel.config().setAutoRead(false);
+    chctx.channel().config().setAutoRead(false);
   }
 
   public void doResume() {
-    channel.config().setAutoRead(true);
+    chctx.channel().config().setAutoRead(true);
   }
 
   public void doSetWriteQueueMaxSize(int size) {
-    ChannelConfig config = channel.config();
+    ChannelConfig config = chctx.channel().config();
     int high = config.getWriteBufferHighWaterMark();
     int newLow = size / 2;
     int newHigh = size;
@@ -164,6 +184,12 @@ public abstract class ConnectionBase {
     }
   }
 
+  /**
+   * @return the Netty channel - for internal usage only
+   */
+  public Channel channel() {
+    return chctx.channel();
+  }
 
   public ContextImpl getContext() {
     return context;
@@ -180,7 +206,10 @@ public abstract class ConnectionBase {
   public abstract NetworkMetrics metrics();
 
   protected synchronized void handleException(Throwable t) {
-    metrics().exceptionOccurred(metric(), remoteAddress(), t);
+    NetworkMetrics metrics = metrics();
+    if (metrics != null) {
+      metrics.exceptionOccurred(metric, remoteAddress(), t);
+    }
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     } else {
@@ -190,7 +219,7 @@ public abstract class ConnectionBase {
 
   protected synchronized void handleClosed() {
     NetworkMetrics metrics = metrics();
-    if (metrics instanceof TCPMetrics) {
+    if (metrics != null && metrics instanceof TCPMetrics) {
       ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
     }
     if (closeHandler != null) {
@@ -222,32 +251,32 @@ public abstract class ConnectionBase {
 
   public void reportBytesRead(long numberOfBytes) {
     NetworkMetrics metrics = metrics();
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.bytesRead(metric(), remoteAddress(), numberOfBytes);
     }
   }
 
   public void reportBytesWritten(long numberOfBytes) {
     NetworkMetrics metrics = metrics();
-    if (metrics.isEnabled()) {
+    if (metrics != null) {
       metrics.bytesWritten(metric(), remoteAddress(), numberOfBytes);
     }
   }
 
-  private boolean isSSL() {
-    return channel.pipeline().get(SslHandler.class) != null;
+  public boolean isSSL() {
+    return chctx.pipeline().get(SslHandler.class) != null;
   }
 
   protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
     // Write the content.
-    ChannelFuture writeFuture;
+    ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
-      writeFuture = writeToChannel(new ChunkedFile(raf, offset, length, 8192));
+      writeToChannel(new ChunkedFile(raf, offset, length, 8192), writeFuture);
     } else {
       // No encryption - use zero-copy.
       FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
-      writeFuture = writeToChannel(region);
+      writeToChannel(region, writeFuture);
     }
     if (writeFuture != null) {
       writeFuture.addListener(fut -> raf.close());
@@ -258,12 +287,23 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return channel.pipeline().get(SslHandler.class) != null;
+    return chctx.pipeline().get(SslHandler.class) != null;
+  }
+
+  public SSLSession sslSession() {
+    if (isSSL()) {
+      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
+      assert sslHandlerContext != null;
+      SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
+      return sslHandler.engine().getSession();
+    } else {
+      return null;
+    }
   }
 
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = channel.pipeline().context("ssl");
+      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
       assert sslHandlerContext != null;
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession().getPeerCertificateChain();
@@ -273,28 +313,32 @@ public abstract class ConnectionBase {
   }
 
   public String indicatedServerName() {
-    if (channel.hasAttr(VertxSniHandler.SERVER_NAME_ATTR)) {
-      return channel.attr(VertxSniHandler.SERVER_NAME_ATTR).get();
+    if (chctx.channel().hasAttr(VertxSniHandler.SERVER_NAME_ATTR)) {
+      return chctx.channel().attr(VertxSniHandler.SERVER_NAME_ATTR).get();
     } else {
       return null;
     }
   }
 
+  public ChannelPromise channelFuture() {
+    return chctx.newPromise();
+  }
+
   public String remoteName() {
-    InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
+    InetSocketAddress addr = (InetSocketAddress) chctx.channel().remoteAddress();
     if (addr == null) return null;
     // Use hostString that does not trigger a DNS resolution
     return addr.getHostString();
   }
 
   public SocketAddress remoteAddress() {
-    InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
+    InetSocketAddress addr = (InetSocketAddress) chctx.channel().remoteAddress();
     if (addr == null) return null;
     return new SocketAddressImpl(addr);
   }
 
   public SocketAddress localAddress() {
-    InetSocketAddress addr = (InetSocketAddress) channel.localAddress();
+    InetSocketAddress addr = (InetSocketAddress) chctx.channel().localAddress();
     if (addr == null) return null;
     return new SocketAddressImpl(addr);
   }

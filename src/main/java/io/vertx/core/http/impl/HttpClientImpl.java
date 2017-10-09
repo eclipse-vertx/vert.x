@@ -16,6 +16,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -39,14 +40,16 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -146,14 +149,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    HttpClientMetrics metrics = vertx.metricsSPI().createMetrics(this, options);
-    connectionManager = new ConnectionManager(this, metrics);
+    VertxMetrics metrics = vertx.metricsSPI();
+    connectionManager = new ConnectionManager(this, metrics != null ? metrics.createMetrics(this, options) : null);
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
   }
 
   @Override
   public HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), wsConnect);
+    return websocket(options, null, wsConnect);
   }
 
   @Override
@@ -164,7 +167,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), wsConnect, failureHandler);
+    return websocket(options, null, wsConnect, failureHandler);
   }
 
   public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler){
@@ -184,7 +187,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, wsConnect);
+    return websocket(options, headers, null, wsConnect);
   }
 
   @Override
@@ -195,7 +198,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, wsConnect, failureHandler);
+    return websocket(options, headers, null, wsConnect, failureHandler);
   }
 
   @Override
@@ -216,7 +219,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, wsConnect);
+    return websocket(options, headers, version, null, wsConnect);
   }
 
   @Override
@@ -227,7 +230,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, wsConnect, failureHandler);
+    return websocket(options, headers, version, null, wsConnect, failureHandler);
   }
 
   @Override
@@ -250,7 +253,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, wsConnect);
+    websocketStream(options, headers, version, subProtocols).handler(wsConnect);
+    return this;
   }
 
   @Override
@@ -261,8 +265,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public HttpClient websocketAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
+    websocketStreamAbs(url, headers, version, subProtocols).exceptionHandler(failureHandler).handler(wsConnect);
+    return this;
+  }
+
+  @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, wsConnect, failureHandler);
+    websocketStream(options, headers, version, subProtocols).exceptionHandler(failureHandler).handler(wsConnect);
+    return this;
   }
 
   @Override
@@ -367,6 +378,35 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public WebSocketStream websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version) {
     return websocketStream(options.getDefaultPort(), host, requestURI, headers, version);
+  }
+
+  @Override
+  public WebSocketStream websocketStreamAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols) {
+    URI uri;
+    try {
+      uri = new URI(url);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(e);
+    }
+    String scheme = uri.getScheme();
+    if (!"ws".equals(scheme) && !"wss".equals(scheme)) {
+      throw new IllegalArgumentException("Scheme: " + scheme);
+    }
+    boolean ssl = scheme.length() == 3;
+    int port = uri.getPort();
+    if (port == -1) port = ssl ? 443 : 80;
+    StringBuilder relativeUri = new StringBuilder();
+    if (uri.getRawPath() != null) {
+      relativeUri.append(uri.getRawPath());
+    }
+    if (uri.getRawQuery() != null) {
+      relativeUri.append('?').append(uri.getRawQuery());
+    }
+    if (uri.getRawFragment() != null) {
+      relativeUri.append('#').append(uri.getRawFragment());
+    }
+    RequestOptions options = new RequestOptions().setHost(uri.getHost()).setPort(port).setSsl(ssl).setURI(relativeUri.toString());
+    return websocketStream(options, headers, version, subProtocols);
   }
 
   @Override
@@ -859,7 +899,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public boolean isMetricsEnabled() {
-    return getMetrics().isEnabled();
+    return getMetrics() != null;
   }
 
   @Override
@@ -924,10 +964,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   SSLHelper getSslHelper() {
     return sslHelper;
-  }
-
-  HttpClientMetrics httpClientMetrics() {
-    return connectionManager.metrics();
   }
 
   private URL parseUrl(String surl) {
@@ -999,7 +1035,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> endHandler;
     private Boolean ssl;
-
+    
     WebSocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Boolean ssl) {
       this.port = port;
       this.host = host;

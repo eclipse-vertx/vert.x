@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.ProxyOptions} original class using Vert.x codegen.
  */
-public class ProxyOptionsConverter {
+ class ProxyOptionsConverter {
 
-  public static void fromJson(JsonObject json, ProxyOptions obj) {
+   static void fromJson(JsonObject json, ProxyOptions obj) {
     if (json.getValue("host") instanceof String) {
       obj.setHost((String)json.getValue("host"));
     }
@@ -44,7 +44,7 @@ public class ProxyOptionsConverter {
     }
   }
 
-  public static void toJson(ProxyOptions obj, JsonObject json) {
+   static void toJson(ProxyOptions obj, JsonObject json) {
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }

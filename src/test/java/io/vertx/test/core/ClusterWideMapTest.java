@@ -16,14 +16,23 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -78,6 +87,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testMapPutGetFloat() {
     testMapPutGet(1.2f, 2.2f);
+  }
+
+  @Test
+  public void testMapPutGetBuffer() {
+    testMapPutGet(randomBuffer(4), randomBuffer(12));
   }
 
   @Test
@@ -155,6 +169,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testMapPutIfAbsentGetFloat() {
     testMapPutIfAbsentGet(1.2f, 2.2f);
+  }
+
+  @Test
+  public void testMapPutIfAbsentGetBuffer() {
+    testMapPutIfAbsentGet(randomBuffer(4), randomBuffer(12));
   }
 
   @Test
@@ -236,6 +255,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapRemoveBuffer() {
+    testMapRemove(randomBuffer(4), randomBuffer(12));
+  }
+
+  @Test
   public void testMapRemoveDouble() {
     testMapRemove(1.2d, 2.2d);
   }
@@ -293,6 +317,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testMapRemoveIfPresentFloat() {
     testMapRemoveIfPresent(1.2f, 2.2f, 3.3f);
+  }
+
+  @Test
+  public void testMapRemoveIfPresentBuffer() {
+    testMapRemoveIfPresent(randomBuffer(4), randomBuffer(12), randomBuffer(14));
   }
 
   @Test
@@ -358,6 +387,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapReplaceBuffer() {
+    testMapReplace(randomBuffer(4), randomBuffer(12), randomBuffer(14));
+  }
+
+  @Test
   public void testMapReplaceDouble() {
     testMapReplace(1.2d, 2.2d, 3.3d);
   }
@@ -417,6 +451,11 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testMapReplaceIfPresentFloat() {
     testMapReplaceIfPresent(1.2f, 2.2f, 3.3f);
+  }
+
+  @Test
+  public void testMapReplaceIfPresentBuffer() {
+    testMapReplaceIfPresent(randomBuffer(4), randomBuffer(12), randomBuffer(14));
   }
 
   @Test
@@ -566,6 +605,70 @@ public class ClusterWideMapTest extends VertxTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testKeys() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.keys(onSuccess(keys -> {
+        assertEquals(map.keySet(), keys);
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testValues() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.values(onSuccess(values -> {
+        assertEquals(map.values().size(), values.size());
+        assertTrue(map.values().containsAll(values));
+        assertTrue(values.containsAll(map.values()));
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testEntries() {
+    Map<JsonObject, Buffer> map = genJsonToBuffer(100);
+    loadData(map, (vertx, asyncMap) -> {
+      asyncMap.entries(onSuccess(res -> {
+        assertEquals(map.entrySet(), res.entrySet());
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  protected Map<JsonObject, Buffer> genJsonToBuffer(int size) {
+    Map<JsonObject, Buffer> map = new HashMap<>();
+    for (int i = 0; i < size; i++) {
+      JsonObject key = new JsonObject().put("key", i);
+      map.put(key, key.toBuffer());
+    }
+    return map;
+  }
+
+  protected void loadData(Map<JsonObject, Buffer> map, BiConsumer<Vertx, AsyncMap<JsonObject, Buffer>> test) {
+    List<Future> futures = new ArrayList<>(map.size());
+    map.forEach((key, value) -> {
+      Future future = Future.future();
+      getVertx().sharedData().getClusterWideMap("foo", onSuccess(asyncMap -> {
+        asyncMap.put(key, value, future);
+      }));
+      futures.add(future);
+    });
+    CompositeFuture.all(futures).setHandler(onSuccess(cf -> {
+      Vertx v = getVertx();
+      v.sharedData().<JsonObject, Buffer>getClusterWideMap("foo", onSuccess(asyncMap -> {
+        test.accept(v, asyncMap);
+      }));
+    }));
   }
 
   private <K, V> void testMapPutGet(K k, V v) {

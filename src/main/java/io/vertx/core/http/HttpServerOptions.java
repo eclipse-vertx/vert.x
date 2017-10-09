@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class HttpServerOptions extends NetServerOptions {
 
   /**
@@ -44,7 +44,7 @@ public class HttpServerOptions extends NetServerOptions {
    * Default value of whether compression is supported = false
    */
   public static final boolean DEFAULT_COMPRESSION_SUPPORTED = false;
-  
+
   /**
    * Default gzip/deflate compression level = 6 (Netty legacy)
    */
@@ -65,12 +65,12 @@ public class HttpServerOptions extends NetServerOptions {
    * Default max HTTP chunk size = 8192
    */
   public static final int DEFAULT_MAX_CHUNK_SIZE = 8192;
-  
+
   /**
    * Default max length of the initial line (e.g. {@code "GET / HTTP/1.0"}) = 4096
    */
   public static final int DEFAULT_MAX_INITIAL_LINE_LENGTH = 4096;
-  
+
   /**
    * Default max length of all headers = 8192
    */
@@ -110,6 +110,31 @@ public class HttpServerOptions extends NetServerOptions {
    * Default initial buffer size for HttpObjectDecoder = 128 bytes
    */
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
+  
+  /**
+   * Default support for WebSockets deflate frame compression
+   */
+  public static final boolean DEFAULT_WEBSOCKET_SUPPORT_DEFLATE_FRAME_COMPRESSION = true;
+  
+  /**
+   * Default support for WebSockets Permessage Deflate compression
+   */
+  public static final boolean DEFAULT_WEBSOCKET_SUPPORT_PERMESSAGE_DEFLATE_COMPRESSION = true;
+  
+  /**
+   * Default WebSocket compression level
+   */
+  public static final int DEFAULT_WEBSOCKET_COMPRESSION_LEVEL = 6;
+  
+  /**
+   * Default Websocket compression server no context
+   */
+  public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_ALLOW_SERVER_NO_CONTEXT = false;
+  
+  /**
+   * Default WebSocket compression client no context
+   */
+  public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_PREFERRED_CLIENT_NO_CONTEXT = false;
 
   private boolean compressionSupported;
   private int compressionLevel;
@@ -126,6 +151,11 @@ public class HttpServerOptions extends NetServerOptions {
   private boolean decompressionSupported;
   private boolean acceptUnmaskedFrames;
   private int decoderInitialBufferSize;
+  private boolean websocketDeflateFrameCompressionSupported;
+  private boolean websocketPermessageDeflateCompressionSupported;
+  private int websocketCompressionLevel;
+  private boolean websocketCompressionAllowServerNoContext;
+  private boolean websocketCompressionPreferredClientNoContext;
 
   /**
    * Default constructor
@@ -158,6 +188,11 @@ public class HttpServerOptions extends NetServerOptions {
     this.decompressionSupported = other.isDecompressionSupported();
     this.acceptUnmaskedFrames = other.isAcceptUnmaskedFrames();
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
+    this.websocketDeflateFrameCompressionSupported = other.websocketDeflateFrameCompressionSupported;
+    this.websocketPermessageDeflateCompressionSupported = other.websocketPermessageDeflateCompressionSupported;
+    this.websocketCompressionLevel = other.websocketCompressionLevel;
+    this.websocketCompressionPreferredClientNoContext = other.websocketCompressionPreferredClientNoContext;
+    this.websocketCompressionAllowServerNoContext = other.websocketCompressionAllowServerNoContext;
   }
 
   /**
@@ -198,6 +233,11 @@ public class HttpServerOptions extends NetServerOptions {
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     acceptUnmaskedFrames = DEFAULT_ACCEPT_UNMASKED_FRAMES;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
+    websocketDeflateFrameCompressionSupported = DEFAULT_WEBSOCKET_SUPPORT_DEFLATE_FRAME_COMPRESSION;
+    websocketPermessageDeflateCompressionSupported = DEFAULT_WEBSOCKET_SUPPORT_PERMESSAGE_DEFLATE_COMPRESSION;
+    websocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
+    websocketCompressionPreferredClientNoContext = DEFAULT_WEBSOCKET_COMPRESSION_PREFERRED_CLIENT_NO_CONTEXT;
+    websocketCompressionAllowServerNoContext = DEFAULT_WEBSOCKET_COMPRESSION_ALLOW_SERVER_NO_CONTEXT;
   }
 
   @Override
@@ -215,6 +255,12 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
     return this;
   }
 
@@ -323,6 +369,21 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (HttpServerOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public HttpServerOptions setTcpCork(boolean tcpCork) {
+    return (HttpServerOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public HttpServerOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (HttpServerOptions) super.setTcpQuickAck(tcpQuickAck);
+  }
+
+  @Override
   public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
     return (HttpServerOptions) super.addCrlPath(crlPath);
   }
@@ -386,7 +447,7 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * Set whether the server should support gzip/deflate compression 
+   * Set whether the server should support gzip/deflate compression
    * (serving compressed responses to clients advertising support for them with Accept-Encoding header)
    *
    * @param compressionSupported true to enable compression support
@@ -398,38 +459,38 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * 
+   *
    * @return the server gzip/deflate 'compression level' to be used in responses when client and server support is turned on
    */
   public int getCompressionLevel() {
     return this.compressionLevel;
   }
-  
 
-  /** 
-   * This method allows to set the compression level to be used in http1.x/2 response bodies 
+
+  /**
+   * This method allows to set the compression level to be used in http1.x/2 response bodies
    * when compression support is turned on (@see setCompressionSupported) and the client advertises
    * to support {@code deflate/gzip} compression in the {@code Accept-Encoding} header
-   * 
+   *
    * default value is : 6 (Netty legacy)
-   * 
+   *
    * The compression level determines how much the data is compressed on a scale from 1 to 9,
    * where '9' is trying to achieve the maximum compression ratio while '1' instead is giving
-   * priority to speed instead of compression ratio using some algorithm optimizations and skipping 
+   * priority to speed instead of compression ratio using some algorithm optimizations and skipping
    * pedantic loops that usually gives just little improvements
-   * 
-   * While one can think that best value is always the maximum compression ratio, 
+   *
+   * While one can think that best value is always the maximum compression ratio,
    * there's a trade-off to consider: the most compressed level requires the most
    * computational work to compress/decompress data, e.g. more dictionary lookups and loops.
-   * 
-   * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation 
+   *
+   * E.g. you have it set fairly high on a high-volume website, you may experience performance degradation
    * and latency on resource serving due to CPU overload, and, however - as the computational work is required also client side
    * while decompressing - setting an higher compression level can result in an overall higher page load time
    * especially nowadays when many clients are handled mobile devices with a low CPU profile.
-   * 
+   *
    * see also: http://www.gzip.org/algorithm.txt
-   * 
-   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9 slower algorithm but better compression ratio 
+   *
+   * @param compressionLevel integer 1-9, 1 means use fastest algorithm, 9 slower algorithm but better compression ratio
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setCompressionLevel(int compressionLevel) {
@@ -543,7 +604,7 @@ public class HttpServerOptions extends NetServerOptions {
     return maxChunkSize;
   }
 
-  
+
   /**
    * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    */
@@ -553,7 +614,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   /**
    * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
-   * 
+   *
    * @param maxInitialLineLength the new maximum initial length
    * @return a reference to this, so the API can be used fluently
    */
@@ -680,6 +741,96 @@ public class HttpServerOptions extends NetServerOptions {
     this.decoderInitialBufferSize = decoderInitialBufferSize;
     return this;
   }
+
+  /**
+   * Enable or disable support for WebSocket Defalte Frame compression
+   * @param deflateCompressionSupported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setPerFrameWebsocketCompressionSupported  (boolean perFrameWebsocketCompressionSupported ) {
+	  this.websocketDeflateFrameCompressionSupported = perFrameWebsocketCompressionSupported;
+	  return this;
+  }
+  
+  /** 
+   * Get whether WebSocket Deflate Frame compression is supported
+   * @return true if the http server will accept Deflate Frame compression 
+   */
+  public boolean perFrameWebsocketCompressionSupported  () {
+	  return this.websocketDeflateFrameCompressionSupported;
+  }
+  
+  /**
+   * Enable or disable support for WebSocket Permessage Deflate compression
+   * @param permessageDeflateSupported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setPerMessageWebsocketCompressionSupported  (boolean perMessageWebsocketCompressionSupported ) {
+	  this.websocketPermessageDeflateCompressionSupported = perMessageWebsocketCompressionSupported;
+	  return this;
+  }
+  
+  /**
+   * Get whether WebSocket Permessage Deflate compression is supported
+   * @return true if the http server will accept Permessage Deflate compression
+   */
+  public boolean perMessageWebsocketCompressionSupported  () {
+	  return this.websocketPermessageDeflateCompressionSupported;
+  }
+  
+  /**
+   * Set the WebSocket compression level 
+   * @param compressionLevel
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebsocketCompressionLevel (int websocketCompressionLevel) {
+	  this.websocketCompressionLevel = compressionLevel;
+	  return this;
+  }
+  
+  /**
+   * Get the WebSocket compression level
+   * @return the current WebSocket compression level
+   */
+  public int websocketCompressionLevel () {
+	  return this.websocketCompressionLevel;
+  }
+  
+  /**
+   * Set the WebSocket Allow Server No Context option
+   * @param allowServerNoContext 
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebsocketAllowServerNoContext (boolean allowServerNoContext) {
+	  this.websocketCompressionAllowServerNoContext = allowServerNoContext;
+	  return this;
+  }
+  
+  /**
+   * Get current setting to allow server no context for WebSocket compression
+   * @return
+   */
+  public boolean getWebsocketAllowServerNoContext () {
+	  return this.websocketCompressionAllowServerNoContext;
+  }
+  
+  /**
+   * Set the WebSocket Preferred Client No Context setting
+   * @param preferredClientNoContext
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebsocketPreferredClientNoContext (boolean preferredClientNoContext) {
+	  this.websocketCompressionPreferredClientNoContext = preferredClientNoContext;
+	  return this;
+  }
+  
+  /**
+   * Get the current setting of the WebSocket Compression Preferred Client no Context setting
+   * @return
+   */
+  public boolean getWebsocketPreferredClientNoContext () {
+	  return this.websocketCompressionPreferredClientNoContext;
+  }
   
   @Override
   public boolean equals(Object o) {
@@ -702,6 +853,11 @@ public class HttpServerOptions extends NetServerOptions {
     if (decompressionSupported != that.decompressionSupported) return false;
     if (acceptUnmaskedFrames != that.acceptUnmaskedFrames) return false;
     if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
+    if (websocketDeflateFrameCompressionSupported != that.websocketDeflateFrameCompressionSupported) return false;
+    if (websocketPermessageDeflateCompressionSupported != that.websocketPermessageDeflateCompressionSupported) return false;
+    if (websocketCompressionLevel != that.websocketCompressionLevel) return false;
+    if (websocketCompressionAllowServerNoContext != that.websocketCompressionAllowServerNoContext) return false;
+    if (websocketCompressionPreferredClientNoContext != that.websocketCompressionPreferredClientNoContext) return false;
 
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
 
@@ -724,6 +880,11 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + (decompressionSupported ? 1 : 0);
     result = 31 * result + (acceptUnmaskedFrames ? 1 : 0);
     result = 31 * result + decoderInitialBufferSize;
+    result = 31 * result + (websocketDeflateFrameCompressionSupported ? 1 : 0);
+    result = 31 * result + (websocketPermessageDeflateCompressionSupported ? 1 : 0);
+    result = 31 * result + websocketCompressionLevel;
+    result = 31 * result + (websocketCompressionAllowServerNoContext ? 1 : 0);
+    result = 31 * result + (websocketCompressionPreferredClientNoContext ? 1 : 0);
     return result;
   }
 }

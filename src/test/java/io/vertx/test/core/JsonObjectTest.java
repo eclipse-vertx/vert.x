@@ -1758,6 +1758,18 @@ public class JsonObjectTest {
     assertEquals(expectedKeys, keys);
   }
 
+  @Test
+  public void testMergeInNullValue() {
+    JsonObject obj = new JsonObject();
+    obj.put("key", "value");
+
+    JsonObject otherObj = new JsonObject();
+    otherObj.putNull("key");
+
+    obj.mergeIn(otherObj, true);
+    assertNull(obj.getString("key", "other"));
+  }
+
   private void testStreamCorrectTypes(JsonObject object) {
     object.stream().forEach(entry -> {
       String key = entry.getKey();

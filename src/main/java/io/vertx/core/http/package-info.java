@@ -535,7 +535,7 @@
  *
  * Or you could load it it one go using {@link io.vertx.core.file.FileSystem#readFile} and write it straight to the response.
  *
- * Alternatively, Vert.x provides a method which allows you to serve a file from disk or the filesystem to an HTTP response 
+ * Alternatively, Vert.x provides a method which allows you to serve a file from disk or the filesystem to an HTTP response
  * in one operation.
  * Where supported by the underlying operating system this may result in the OS directly transferring bytes from the
  * file to the socket without being copied through user-space at all.
@@ -560,7 +560,7 @@
  *
  * WARNING: If you're going to write web servers directly using Vert.x be careful that users cannot exploit the
  * path to access files outside the directory from which you want to serve them or the classpath It may be safer instead to use
- * Vert.x Web. 
+ * Vert.x Web.
  *
  * When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
  *
@@ -656,6 +656,12 @@
  * The {@link io.vertx.core.http.HttpServerResponse#push} method must be called before the initiating response ends, however
  * the pushed response can be written after.
  *
+ * ==== Handling exceptions
+ *
+ * You can set an {@link io.vertx.core.http.HttpServer#exceptionHandler(io.vertx.core.Handler)} to receive any
+ * exceptions that happens before the connection is passed to the {@link io.vertx.core.http.HttpServer#requestHandler(io.vertx.core.Handler)}
+ * or to the {@link io.vertx.core.http.HttpServer#websocketHandler(io.vertx.core.Handler)}, e.g during the TLS handshake.
+ *
  * === HTTP Compression
  *
  * Vert.x comes with support for HTTP Compression out of the box.
@@ -677,19 +683,19 @@
  * compressions and send it back to the client.
  *
  * Be aware that compression may be able to reduce network traffic but is more CPU-intensive.
- * 
- * To address this latter issue Vert.x allows you to tune the 'compression level' parameter that is native of the gzip/deflate compression algorithms. 
- * 
- * Compression level allows to configure gizp/deflate algorithms in terms of the compression ratio of the resulting data and the computational cost of the compress/decompress operation. 
- * 
- * The compression level is an integer value ranged from '1' to '9', where '1' means lower compression ratio but fastest algorithm and '9' means maximum compression ratio available but a slower algorithm. 
- * 
- * Using compression levels higher that 1-2 usually allows to save just some bytes in size - the gain is not linear, and depends on the specific data to be compressed 
- * - but it comports a non-trascurable cost in term of CPU cycles required to the server while generating the compressed response data 
- * ( Note that at moment Vert.x doesn't support any form caching of compressed response data, even for static files, so the compression is done on-the-fly 
- * at every request body generation ) and in the same way it affects client(s) while decoding (inflating) received responses, operation that becomes more CPU-intensive 
+ *
+ * To address this latter issue Vert.x allows you to tune the 'compression level' parameter that is native of the gzip/deflate compression algorithms.
+ *
+ * Compression level allows to configure gizp/deflate algorithms in terms of the compression ratio of the resulting data and the computational cost of the compress/decompress operation.
+ *
+ * The compression level is an integer value ranged from '1' to '9', where '1' means lower compression ratio but fastest algorithm and '9' means maximum compression ratio available but a slower algorithm.
+ *
+ * Using compression levels higher that 1-2 usually allows to save just some bytes in size - the gain is not linear, and depends on the specific data to be compressed
+ * - but it comports a non-trascurable cost in term of CPU cycles required to the server while generating the compressed response data
+ * ( Note that at moment Vert.x doesn't support any form caching of compressed response data, even for static files, so the compression is done on-the-fly
+ * at every request body generation ) and in the same way it affects client(s) while decoding (inflating) received responses, operation that becomes more CPU-intensive
  * the more the level increases.
- * 
+ *
  * By default - if compression is enabled via {@link io.vertx.core.http.HttpServerOptions#setCompressionSupported} - Vert.x will use '6' as compression level,
  * but the parameter can be configured to address any case with {@link io.vertx.core.http.HttpServerOptions#setCompressionLevel}.
  *
@@ -1288,7 +1294,7 @@
  * The number of pipe-lined requests over a single connection is limited by {@link io.vertx.core.http.HttpClientOptions#setPipeliningLimit}.
  * This option defines the maximum number of http requests sent to the server awaiting for a response. This limit ensures the
  * fairness of the distribution of the client requests over the connections to the same server.
- * 
+ *
  * === HTTP/2 multiplexing
  *
  * HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
@@ -1733,7 +1739,7 @@
  *
  * The HTTP proxy implementation supports getting ftp:// urls if the proxy supports
  * that, which isn't available in non-proxy getAbs requests.
- * 
+ *
  * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example60}

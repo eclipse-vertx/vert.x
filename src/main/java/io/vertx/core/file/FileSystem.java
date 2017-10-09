@@ -18,10 +18,10 @@ package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.VertxGen;
 
 import java.util.List;
 
@@ -57,6 +57,18 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Copy a file from the path {@code from} to path {@code to}, asynchronously.
+   *
+   * @param from    the path to copy from
+   * @param to      the path to copy to
+   * @param options options describing how the file should be copied
+   * @param handler the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  FileSystem copy(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler);
 
   /**
    * Blocking version of {@link #copy(String, String, Handler)}
@@ -99,6 +111,18 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Move a file from the path {@code from} to path {@code to}, asynchronously.
+   *
+   * @param from    the path to copy from
+   * @param to      the path to copy to
+   * @param options options describing how the file should be copied
+   * @param handler the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  FileSystem move(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler);
 
   /**
    * Blocking version of {@link #move(String, String, Handler)}

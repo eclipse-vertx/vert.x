@@ -38,7 +38,10 @@ final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
 
   @Override
   public void operationComplete(final ChannelFuture future) throws Exception {
-    context.executeFromIO(() -> notifyHandler(future));
+
+    context.executeFromIO(() ->
+        notifyHandler(future));
+
   }
 
   private void notifyHandler(ChannelFuture future) {

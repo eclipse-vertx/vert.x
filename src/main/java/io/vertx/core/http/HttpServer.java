@@ -73,6 +73,16 @@ public interface HttpServer extends Measured {
   HttpServer connectionHandler(Handler<HttpConnection> handler);
 
   /**
+   * Set an exception handler called for socket errors happening before the HTTP connection
+   * is established, e.g during the TLS handshake.
+   *
+   * @param handler the handler to set
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServer exceptionHandler(Handler<Throwable> handler);
+
+  /**
    * Return the websocket stream for the server. If a websocket connect handshake is successful a
    * new {@link ServerWebSocket} instance will be created and passed to the stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
    *

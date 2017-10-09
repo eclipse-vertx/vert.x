@@ -39,6 +39,7 @@ import java.util.Enumeration;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -356,6 +357,40 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
+  public void testTrustOptionsEquality() {
+    String certPath1 = TestUtils.randomAlphaString(100);
+    String certPath2 = TestUtils.randomAlphaString(100);
+    Buffer certValue1 = Buffer.buffer(TestUtils.randomAlphaString(100));
+    Buffer certValue2 = Buffer.buffer(TestUtils.randomAlphaString(100));
+
+    PemTrustOptions options = new PemTrustOptions();
+    PemTrustOptions otherOptions = new PemTrustOptions();
+    assertEquals(options, otherOptions);
+    assertEquals(options.hashCode(), otherOptions.hashCode());
+
+    options.addCertPath(certPath1);
+    options.addCertPath(certPath2);
+    options.addCertValue(certValue1);
+    options.addCertValue(certValue2);
+    otherOptions.addCertPath(certPath1);
+    otherOptions.addCertPath(certPath2);
+    otherOptions.addCertValue(certValue1);
+    otherOptions.addCertValue(certValue2);
+    assertEquals(options, otherOptions);
+    assertEquals(options.hashCode(), otherOptions.hashCode());
+
+    otherOptions.addCertPath(TestUtils.randomAlphaString(100));
+    assertNotEquals(options, otherOptions);
+
+    PemTrustOptions reverseOrderOptions = new PemTrustOptions();
+    reverseOrderOptions.addCertPath(certPath2);
+    reverseOrderOptions.addCertPath(certPath1);
+    reverseOrderOptions.addCertValue(certValue2);
+    reverseOrderOptions.addCertValue(certValue1);
+    assertNotEquals(options, reverseOrderOptions);
+  }
+
+  @Test
   public void testJKSPath() throws Exception {
     testKeyStore(Cert.SERVER_JKS.get());
   }
@@ -386,6 +421,15 @@ public class KeyStoreTest extends VertxTestBase {
     testKeyStore(Cert.SERVER_PEM.get());
   }
 
+  /**
+   * Test RSA PKCS#1 PEM key
+   * #1851 
+   */
+  @Test
+  public void testRsaKeyCertPath() throws Exception {
+    testKeyStore(Cert.SERVER_PEM_RSA.get());
+  }
+  
   @Test
   public void testKeyCertValue() throws Exception {
     PemKeyCertOptions options = Cert.SERVER_PEM.get();

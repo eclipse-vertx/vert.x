@@ -61,7 +61,7 @@ import java.util.Objects;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class PemTrustOptions implements TrustOptions, Cloneable {
 
   private ArrayList<String> certPaths;
@@ -155,4 +155,21 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
     return new PemTrustOptions(this);
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    PemTrustOptions that = (PemTrustOptions) o;
+
+    if (!certPaths.equals(that.certPaths)) return false;
+    return certValues.equals(that.certValues);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = certPaths.hashCode();
+    result = 31 * result + certValues.hashCode();
+    return result;
+  }
 }

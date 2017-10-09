@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
@@ -39,10 +40,6 @@ class AssembledHttpResponse implements HttpResponse, HttpContent {
   AssembledHttpResponse(HttpResponse response, HttpContent content) {
     this.response = response;
     this.content = content;
-  }
-
-  AssembledHttpResponse(HttpResponse response, ByteBuf buf) {
-    this(response, new DefaultHttpContent(buf));
   }
 
   @Override

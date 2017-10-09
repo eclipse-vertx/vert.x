@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.HttpServerOptions} original class using Vert.x codegen.
  */
-public class HttpServerOptionsConverter {
+ class HttpServerOptionsConverter {
 
-  public static void fromJson(JsonObject json, HttpServerOptions obj) {
+   static void fromJson(JsonObject json, HttpServerOptions obj) {
     if (json.getValue("acceptUnmaskedFrames") instanceof Boolean) {
       obj.setAcceptUnmaskedFrames((Boolean)json.getValue("acceptUnmaskedFrames"));
     }
@@ -74,12 +74,27 @@ public class HttpServerOptionsConverter {
     if (json.getValue("maxWebsocketMessageSize") instanceof Number) {
       obj.setMaxWebsocketMessageSize(((Number)json.getValue("maxWebsocketMessageSize")).intValue());
     }
+    if (json.getValue("websocketAllowServerNoContext") instanceof Boolean) {
+      obj.setWebsocketAllowServerNoContext((Boolean)json.getValue("websocketAllowServerNoContext"));
+    }
+    if (json.getValue("websocketCompressionLevel") instanceof Number) {
+      obj.setWebsocketCompressionLevel(((Number)json.getValue("websocketCompressionLevel")).intValue());
+    }
+    if (json.getValue("websocketFrameDeflateCompressionSupported") instanceof Boolean) {
+      obj.setWebsocketFrameDeflateCompressionSupported((Boolean)json.getValue("websocketFrameDeflateCompressionSupported"));
+    }
+    if (json.getValue("websocketPermessageDeflateCompressionSupported") instanceof Boolean) {
+      obj.setWebsocketPermessageDeflateCompressionSupported((Boolean)json.getValue("websocketPermessageDeflateCompressionSupported"));
+    }
+    if (json.getValue("websocketPreferredClientNoContext") instanceof Boolean) {
+      obj.setWebsocketPreferredClientNoContext((Boolean)json.getValue("websocketPreferredClientNoContext"));
+    }
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
     }
   }
 
-  public static void toJson(HttpServerOptions obj, JsonObject json) {
+   static void toJson(HttpServerOptions obj, JsonObject json) {
     json.put("acceptUnmaskedFrames", obj.isAcceptUnmaskedFrames());
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
@@ -100,6 +115,11 @@ public class HttpServerOptionsConverter {
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
+    json.put("websocketAllowServerNoContext", obj.getWebsocketAllowServerNoContext());
+    json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
+    json.put("websocketFrameDeflateCompressionSupported", obj.getWebsocketFrameDeflateCompressionSupported());
+    json.put("websocketPermessageDeflateCompressionIsSupported", obj.getWebsocketPermessageDeflateCompressionIsSupported());
+    json.put("websocketPreferredClientNoContext", obj.getWebsocketPreferredClientNoContext());
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());
     }

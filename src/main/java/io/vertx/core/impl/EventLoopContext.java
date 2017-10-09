@@ -16,6 +16,7 @@
 
 package io.vertx.core.impl;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -31,6 +32,11 @@ public class EventLoopContext extends ContextImpl {
   public EventLoopContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
                           ClassLoader tccl) {
     super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
+  }
+
+  public EventLoopContext(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
+                          ClassLoader tccl) {
+    super(vertx, eventLoop, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
   public void executeAsync(Handler<Void> task) {

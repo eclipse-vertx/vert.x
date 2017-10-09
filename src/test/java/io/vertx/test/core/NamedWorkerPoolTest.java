@@ -21,6 +21,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
+import io.vertx.core.impl.WorkerExecutorInternal;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -130,6 +131,34 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     });
     awaitLatch(latch1);
     latch2.countDown();
+    await();
+  }
+
+  @Test
+  public void testUseDifferentExecutorWithSameTaskQueue() throws Exception {
+    int count = 10;
+    waitFor(count);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-the-executor");
+        Thread startThread = Thread.currentThread();
+        AtomicReference<Thread> currentThread = new AtomicReference<>();
+        for (int i = 0;i < count;i++) {
+          int val = i;
+          exec.executeBlocking(fut -> {
+            Thread current = Thread.currentThread();
+            assertNotSame(startThread, current);
+            if (val == 0) {
+              assertNull(currentThread.getAndSet(current));
+            } else {
+              assertSame(current, currentThread.get());
+            }
+            fut.complete();
+          }, true, onSuccess(v -> complete()));
+        }
+      }
+    }, new DeploymentOptions().setWorker(true), onSuccess(id -> {}));
     await();
   }
 
