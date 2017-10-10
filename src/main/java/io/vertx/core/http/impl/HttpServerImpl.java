@@ -280,7 +280,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                     if (options.isUseAlpn()) {
                       SslHandler sslHandler = pipeline.get(SslHandler.class);
                       String protocol = sslHandler.applicationProtocol();
-                      if (protocol.equals("h2")) {
+                      if ("h2".equals(protocol)) {
                         handleHttp2(pipeline.channel());
                       } else {
                         configureHttp1(pipeline);
