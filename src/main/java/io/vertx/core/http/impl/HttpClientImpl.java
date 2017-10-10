@@ -16,6 +16,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -48,6 +49,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -1033,7 +1035,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> endHandler;
     private Boolean ssl;
-
+    
     WebSocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Boolean ssl) {
       this.port = port;
       this.host = host;
