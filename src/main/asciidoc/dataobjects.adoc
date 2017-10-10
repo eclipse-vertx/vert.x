@@ -1001,6 +1001,14 @@ Set the trust options in jks format, aka Java truststore
 +++
 Set whether compression is enabled
 +++
+|[[tryWebsocketDeflateFrameCompression]]`tryWebsocketDeflateFrameCompression`|`Boolean`|
++++
+Set option to offer Deflate Frame websocket compression
++++
+|[[tryWebsocketTryPermessageDefalteCompression]]`tryWebsocketTryPermessageDefalteCompression`|`Boolean`|
++++
+Set option to offer Permessage Deflate websocket compression
++++
 |[[useAlpn]]`useAlpn`|`Boolean`|
 +++
 Set the ALPN usage.
@@ -1012,6 +1020,22 @@ Set whether Netty pooled buffers are enabled
 |[[verifyHost]]`verifyHost`|`Boolean`|
 +++
 Set whether hostname verification is enabled
++++
+|[[websocketCompressionAllowClientNoContext]]`websocketCompressionAllowClientNoContext`|`Boolean`|
++++
+Set the websocket compression allow client no context option
++++
+|[[websocketCompressionDeflateUseWebkitName]]`websocketCompressionDeflateUseWebkitName`|`Boolean`|
++++
+Sets the option to use the webkit name with the deflate frame compression
++++
+|[[websocketCompressionLevel]]`websocketCompressionLevel`|`Number (int)`|
++++
+Set websocket compression level
++++
+|[[websocketCompressionRequestServerNoContext]]`websocketCompressionRequestServerNoContext`|`Boolean`|
++++
+Set the websocket compression server no context option
 +++
 |===
 
@@ -1242,6 +1266,30 @@ Set the ALPN usage.
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled
++++
+|[[websocketAllowServerNoContext]]`websocketAllowServerNoContext`|`Boolean`|
++++
+Set the WebSocket Allow Server No Context option
++++
+|[[websocketCompressionLevel]]`websocketCompressionLevel`|`Number (int)`|
++++
+Set the WebSocket compression level
++++
+|[[websocketFrameDeflateCompressionSupported]]`websocketFrameDeflateCompressionSupported`|`Boolean`|
++++
+Enable or disable support for WebSocket Defalte Frame compression
++++
+|[[websocketPermessageDeflateCompressionIsSupported]]`websocketPermessageDeflateCompressionIsSupported`|`Boolean`|
++++
+Get whether WebSocket Permessage Deflate compression is supported
++++
+|[[websocketPermessageDeflateCompressionSupported]]`websocketPermessageDeflateCompressionSupported`|`Boolean`|
++++
+Enable or disable support for WebSocket Permessage Deflate compression
++++
+|[[websocketPreferredClientNoContext]]`websocketPreferredClientNoContext`|`Boolean`|
++++
+Set the WebSocket Preferred Client No Context setting
 +++
 |[[websocketSubProtocols]]`websocketSubProtocols`|`String`|
 +++
