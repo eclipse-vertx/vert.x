@@ -15,6 +15,7 @@ package io.vertx.test.core;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -962,6 +963,121 @@ public class WebsocketTest extends VertxTestBase {
       });
     }));
     await();
+  }
+
+  @Test
+  // Test normal negotiation of websocket compression
+  public void testNormalWSDeflateFrameCompressionNegotiation() throws Exception {
+    String path = "/some/path";
+    Buffer buff = Buffer.buffer("AAA");
+
+    // Server should have basic compression enabled by default,
+    // client needs to ask for it
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+        .websocketHandler(ws -> {
+          assertEquals("upgrade", ws.headers().get("Connection"));
+          assertEquals("deflate-frame", ws.headers().get("sec-websocket-extensions"));
+          ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
+        });
+
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+
+      HttpClientOptions options = new HttpClientOptions();
+      options.setTryUsePerFrameWebsocketCompression(true);
+      client = vertx.createHttpClient(options);
+      client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, ws -> {
+        final Buffer received = Buffer.buffer();
+        ws.handler(data -> {
+          received.appendBuffer(data);
+          if (received.length() == buff.length()) {
+            assertEquals(buff, received);
+            ws.close();
+            testComplete();
+          }
+        });
+      });
+    });
+    await();
+  }
+
+  @Test
+  // Test normal negotiation of websocket compression
+  public void testNormalWSPermessageDeflateCompressionNegotiation() throws Exception {
+	  String path = "/some/path";
+	  Buffer buff = Buffer.buffer("AAA");
+
+	  // Server should have basic compression enabled by default,
+	  // client needs to ask for it
+	  server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+		  assertEquals("upgrade", ws.headers().get("Connection"));
+		  assertEquals("permessage-deflate;client_max_window_bits", ws.headers().get("sec-websocket-extensions"));
+		  ws.writeFrame(WebSocketFrame.binaryFrame(buff,  true));
+	  });
+
+	  server.listen(ar -> {
+		  assertTrue(ar.succeeded());
+
+		  HttpClientOptions options = new HttpClientOptions();
+	      options.setTryUsePerMessageWebsocketCompression(true);
+	      client = vertx.createHttpClient(options);
+		  client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, ws -> {
+			  final Buffer received = Buffer.buffer();
+			  ws.handler(data -> {
+				  received.appendBuffer(data);
+		          if (received.length() == buff.length()) {
+		            assertEquals(buff, received);
+		            ws.close();
+		            testComplete();
+		          }
+			  });
+		  });
+	  });
+	  await();
+  }
+
+  @Test
+  // Test server accepting no compression
+  public void testConnectWithWebsocketComressionDisabled() throws Exception {
+	  String path = "/some/path";
+	  Buffer buff = Buffer.buffer("AAA");
+
+	  // Server should have basic compression enabled by default,
+	  // client needs to ask for it
+	  server = vertx.createHttpServer(new HttpServerOptions()
+			  .setPort(DEFAULT_HTTP_PORT)
+			  .setPerFrameWebsocketCompressionSupported(false)
+			  .setPerMessageWebsocketCompressionSupported(false)
+			  ).websocketHandler(ws -> {
+
+		  assertEquals("upgrade", ws.headers().get("Connection"));
+		  assertNull(ws.headers().get("sec-websocket-extensions"));
+
+		  ws.writeFrame(WebSocketFrame.binaryFrame(buff,  true));
+	  });
+
+
+	  server.listen(ar -> {
+		  assertTrue(ar.succeeded());
+
+		  HttpClientOptions options = new HttpClientOptions();
+
+	      client = vertx.createHttpClient(options);
+
+		  client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, ws -> {
+
+			  final Buffer received = Buffer.buffer();
+			  ws.handler(data -> {
+				  received.appendBuffer(data);
+		          if (received.length() == buff.length()) {
+		            assertEquals(buff, received);
+		            ws.close();
+		            testComplete();
+		          }
+			  });
+		  });
+	  });
+	  await();
   }
 
   private void testValidSubProtocol(WebsocketVersion version) throws Exception {

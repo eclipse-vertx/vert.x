@@ -104,6 +104,31 @@ public class HttpServerOptions extends NetServerOptions {
    * Default initial buffer size for HttpObjectDecoder = 128 bytes
    */
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
+  
+  /**
+   * Default support for WebSockets deflate frame compression
+   */
+  public static final boolean DEFAULT_WEBSOCKET_SUPPORT_DEFLATE_FRAME_COMPRESSION = true;
+  
+  /**
+   * Default support for WebSockets Permessage Deflate compression
+   */
+  public static final boolean DEFAULT_WEBSOCKET_SUPPORT_PERMESSAGE_DEFLATE_COMPRESSION = true;
+  
+  /**
+   * Default WebSocket compression level
+   */
+  public static final int DEFAULT_WEBSOCKET_COMPRESSION_LEVEL = 6;
+  
+  /**
+   * Default Websocket compression server no context
+   */
+  public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_ALLOW_SERVER_NO_CONTEXT = false;
+  
+  /**
+   * Default WebSocket compression client no context
+   */
+  public static final boolean DEFAULT_WEBSOCKET_COMPRESSION_PREFERRED_CLIENT_NO_CONTEXT = false;
 
   private boolean compressionSupported;
   private int compressionLevel;
@@ -120,6 +145,11 @@ public class HttpServerOptions extends NetServerOptions {
   private boolean decompressionSupported;
   private boolean acceptUnmaskedFrames;
   private int decoderInitialBufferSize;
+  private boolean websocketDeflateFrameCompressionSupported;
+  private boolean websocketPermessageDeflateCompressionSupported;
+  private int websocketCompressionLevel;
+  private boolean websocketCompressionAllowServerNoContext;
+  private boolean websocketCompressionPreferredClientNoContext;
 
   /**
    * Default constructor
@@ -152,6 +182,11 @@ public class HttpServerOptions extends NetServerOptions {
     this.decompressionSupported = other.isDecompressionSupported();
     this.acceptUnmaskedFrames = other.isAcceptUnmaskedFrames();
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
+    this.websocketDeflateFrameCompressionSupported = other.websocketDeflateFrameCompressionSupported;
+    this.websocketPermessageDeflateCompressionSupported = other.websocketPermessageDeflateCompressionSupported;
+    this.websocketCompressionLevel = other.websocketCompressionLevel;
+    this.websocketCompressionPreferredClientNoContext = other.websocketCompressionPreferredClientNoContext;
+    this.websocketCompressionAllowServerNoContext = other.websocketCompressionAllowServerNoContext;
   }
 
   /**
@@ -192,6 +227,11 @@ public class HttpServerOptions extends NetServerOptions {
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     acceptUnmaskedFrames = DEFAULT_ACCEPT_UNMASKED_FRAMES;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
+    websocketDeflateFrameCompressionSupported = DEFAULT_WEBSOCKET_SUPPORT_DEFLATE_FRAME_COMPRESSION;
+    websocketPermessageDeflateCompressionSupported = DEFAULT_WEBSOCKET_SUPPORT_PERMESSAGE_DEFLATE_COMPRESSION;
+    websocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
+    websocketCompressionPreferredClientNoContext = DEFAULT_WEBSOCKET_COMPRESSION_PREFERRED_CLIENT_NO_CONTEXT;
+    websocketCompressionAllowServerNoContext = DEFAULT_WEBSOCKET_COMPRESSION_ALLOW_SERVER_NO_CONTEXT;
   }
 
   @Override
@@ -712,6 +752,96 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * Enable or disable support for WebSocket Defalte Frame compression
+   * @param deflateCompressionSupported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setPerFrameWebsocketCompressionSupported  (boolean perFrameWebsocketCompressionSupported ) {
+	  this.websocketDeflateFrameCompressionSupported = perFrameWebsocketCompressionSupported;
+	  return this;
+  }
+  
+  /** 
+   * Get whether WebSocket Deflate Frame compression is supported
+   * @return true if the http server will accept Deflate Frame compression 
+   */
+  public boolean perFrameWebsocketCompressionSupported  () {
+	  return this.websocketDeflateFrameCompressionSupported;
+  }
+  
+  /**
+   * Enable or disable support for WebSocket Permessage Deflate compression
+   * @param permessageDeflateSupported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setPerMessageWebsocketCompressionSupported  (boolean perMessageWebsocketCompressionSupported ) {
+	  this.websocketPermessageDeflateCompressionSupported = perMessageWebsocketCompressionSupported;
+	  return this;
+  }
+  
+  /**
+   * Get whether WebSocket Permessage Deflate compression is supported
+   * @return true if the http server will accept Permessage Deflate compression
+   */
+  public boolean perMessageWebsocketCompressionSupported  () {
+	  return this.websocketPermessageDeflateCompressionSupported;
+  }
+  
+  /**
+   * Set the WebSocket compression level 
+   * @param compressionLevel
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebsocketCompressionLevel (int websocketCompressionLevel) {
+	  this.websocketCompressionLevel = compressionLevel;
+	  return this;
+  }
+  
+  /**
+   * Get the WebSocket compression level
+   * @return the current WebSocket compression level
+   */
+  public int websocketCompressionLevel () {
+	  return this.websocketCompressionLevel;
+  }
+  
+  /**
+   * Set the WebSocket Allow Server No Context option
+   * @param allowServerNoContext 
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebsocketAllowServerNoContext (boolean allowServerNoContext) {
+	  this.websocketCompressionAllowServerNoContext = allowServerNoContext;
+	  return this;
+  }
+  
+  /**
+   * Get current setting to allow server no context for WebSocket compression
+   * @return
+   */
+  public boolean getWebsocketAllowServerNoContext () {
+	  return this.websocketCompressionAllowServerNoContext;
+  }
+  
+  /**
+   * Set the WebSocket Preferred Client No Context setting
+   * @param preferredClientNoContext
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebsocketPreferredClientNoContext (boolean preferredClientNoContext) {
+	  this.websocketCompressionPreferredClientNoContext = preferredClientNoContext;
+	  return this;
+  }
+  
+  /**
+   * Get the current setting of the WebSocket Compression Preferred Client no Context setting
+   * @return
+   */
+  public boolean getWebsocketPreferredClientNoContext () {
+	  return this.websocketCompressionPreferredClientNoContext;
+  }
+  
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -733,6 +863,11 @@ public class HttpServerOptions extends NetServerOptions {
     if (decompressionSupported != that.decompressionSupported) return false;
     if (acceptUnmaskedFrames != that.acceptUnmaskedFrames) return false;
     if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
+    if (websocketDeflateFrameCompressionSupported != that.websocketDeflateFrameCompressionSupported) return false;
+    if (websocketPermessageDeflateCompressionSupported != that.websocketPermessageDeflateCompressionSupported) return false;
+    if (websocketCompressionLevel != that.websocketCompressionLevel) return false;
+    if (websocketCompressionAllowServerNoContext != that.websocketCompressionAllowServerNoContext) return false;
+    if (websocketCompressionPreferredClientNoContext != that.websocketCompressionPreferredClientNoContext) return false;
 
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
 
@@ -755,6 +890,11 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + (decompressionSupported ? 1 : 0);
     result = 31 * result + (acceptUnmaskedFrames ? 1 : 0);
     result = 31 * result + decoderInitialBufferSize;
+    result = 31 * result + (websocketDeflateFrameCompressionSupported ? 1 : 0);
+    result = 31 * result + (websocketPermessageDeflateCompressionSupported ? 1 : 0);
+    result = 31 * result + websocketCompressionLevel;
+    result = 31 * result + (websocketCompressionAllowServerNoContext ? 1 : 0);
+    result = 31 * result + (websocketCompressionPreferredClientNoContext ? 1 : 0);
     return result;
   }
 }
