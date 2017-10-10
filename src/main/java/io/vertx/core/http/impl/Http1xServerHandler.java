@@ -92,8 +92,11 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
     try {
 
       WebSocketServerHandshakerFactory factory =
-        new WebSocketServerHandshakerFactory(HttpServerImpl.getWebSocketLocation(ch.pipeline(), request), conn.options.getWebsocketSubProtocols(), false,
+        new WebSocketServerHandshakerFactory(HttpServerImpl.getWebSocketLocation(ch.pipeline(), request),
+          conn.options.getWebsocketSubProtocols(),
+          conn.options.perMessageWebsocketCompressionSupported () || conn.options.perFrameWebsocketCompressionSupported (),
           conn.options.getMaxWebsocketFrameSize(), conn.options.isAcceptUnmaskedFrames());
+
       WebSocketServerHandshaker shake = factory.newHandshaker(request);
 
       if (shake == null) {

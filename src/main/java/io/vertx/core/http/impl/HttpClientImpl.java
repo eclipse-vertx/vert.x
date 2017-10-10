@@ -11,6 +11,14 @@
 
 package io.vertx.core.http.impl;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
+import io.vertx.core.Closeable;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -38,6 +46,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -1091,7 +1100,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       if (this.handler == null && handler != null) {
         this.handler = handler;
         checkClosed();
-        ContextInternal context = vertx.getOrCreateContext();
         Handler<Throwable> connectionExceptionHandler;
         if (exceptionHandler == null) {
           connectionExceptionHandler = log::error;
