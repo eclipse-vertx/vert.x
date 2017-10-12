@@ -791,15 +791,20 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testRotationalServerSelection() throws Exception {
-    testServerSelection(true);
+    testServerSelection(true, false);
+  }
+
+  @Test
+  public void testRotationalServerSelectionWithCache() throws Exception {
+    testServerSelection(true, true);
   }
 
   @Test
   public void testFirstServerSelection() throws Exception {
-    testServerSelection(false);
+    testServerSelection(false, false);
   }
 
-  private void testServerSelection(boolean rotateServers) throws Exception {
+  private void testServerSelection(boolean rotateServers, boolean cache) throws Exception {
     int num = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE + 4;
     List<FakeDNSServer> dnsServers = new ArrayList<>();
     try {
@@ -812,11 +817,14 @@ public class HostnameResolutionTest extends VertxTestBase {
       AddressResolverOptions options = new AddressResolverOptions();
       options.setRotateServers(rotateServers);
       options.setOptResourceEnabled(false);
+      if (!cache) {
+        options.setCacheMaxTimeToLive(0);
+      }
       for (int i = 0; i < num; i++) {
         InetSocketAddress dnsServerAddress = dnsServers.get(i).localAddress();
         options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
       }
-      AddressResolver resolver = new AddressResolver((VertxImpl) vertx, options);
+      AddressResolver resolver = new AddressResolver(vertx, options);
       for (int i = 0; i < num; i++) {
         CompletableFuture<InetAddress> result = new CompletableFuture<>();
         resolver.resolveHostname("vertx.io", ar -> {
@@ -828,10 +836,8 @@ public class HostnameResolutionTest extends VertxTestBase {
         });
         String resolved = result.get(10, TimeUnit.SECONDS).getHostAddress();
         int expected;
-        if (rotateServers) {
-          // Expect from [1,...,DEFAULT_EVENT_LOOP_POOL_SIZE[ as we round robin but then we cache the result
-          // so it checks that round robin cross event loops
-          expected = 1 + i % VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE;
+        if (rotateServers && !cache) {
+          expected = 1 + i;
         } else {
           expected = 1;
         }
