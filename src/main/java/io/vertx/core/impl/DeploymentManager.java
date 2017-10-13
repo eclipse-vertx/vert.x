@@ -493,12 +493,13 @@ public class DeploymentManager {
               if (deployCount.incrementAndGet() == verticles.length) {
                 reportSuccess(deploymentID, callingContext, completionHandler);
               }
-            } else if (!failureReported.get()) {
+            } else if (!failureReported.getAndSet(true)) {
               context.runCloseHooks(closeHookAsyncResult -> reportFailure(ar.cause(), callingContext, completionHandler));
             }
           });
         } catch (Throwable t) {
-          context.runCloseHooks(closeHookAsyncResult -> reportFailure(t, callingContext, completionHandler));
+          if (!failureReported.getAndSet(true))
+            context.runCloseHooks(closeHookAsyncResult -> reportFailure(t, callingContext, completionHandler));
         }
       });
     }
