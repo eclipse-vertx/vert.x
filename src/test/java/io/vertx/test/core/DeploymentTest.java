@@ -1392,21 +1392,19 @@ public class DeploymentTest extends VertxTestBase {
     });
     await();
   }
-  
+
   @Test
   public void testMultipleFailedDeploys() throws InterruptedException {
     int instances = 10;
     DeploymentOptions options = new DeploymentOptions();
     options.setInstances(instances);
 
-    CountDownLatch latch = new CountDownLatch(instances);
     AtomicBoolean called = new AtomicBoolean(false);
 
     vertx.deployVerticle(() -> {
       Verticle v = new AbstractVerticle() {
         @Override
         public void start(final Future<Void> startFuture) throws Exception {
-          latch.countDown();
           startFuture.fail("Fail to deploy.");
         }
       };
@@ -1414,12 +1412,15 @@ public class DeploymentTest extends VertxTestBase {
     }, options, asyncResult -> {
       assertTrue(asyncResult.failed());
       assertNull(asyncResult.result());
-      if (!called.compareAndSet(false, true))
+      if (!called.compareAndSet(false, true)) {
         fail("Completion handler called more than once");
-    });
+      }
+      vertx.setTimer(30, id -> {
+        testComplete();
+      });
 
-    awaitLatch(latch);
-    assertTrue(called.get());
+    });
+    await();
   }
 
   // TODO
