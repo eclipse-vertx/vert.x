@@ -447,7 +447,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         } else {
           mgr = ServiceHelper.loadFactoryOrNull(ClusterManager.class);
           if (mgr == null) {
-            throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
+            throw new IllegalStateException("No ClusterManager instances found on classpath");
           }
         }
         return mgr;
