@@ -154,7 +154,7 @@ public class Transport {
 
   /**
    * @return the type for channel
-   * @param domain wether to create a unix domain channel or a socket channel
+   * @param domain whether to create a unix domain channel or a socket channel
    */
   public Class<? extends Channel> channelType(boolean domain) {
     if (domain) {
@@ -165,7 +165,7 @@ public class Transport {
 
   /**
    * @return the type for server channel
-   * @param domain wether to create a server unix domain channel or a regular server socket channel
+   * @param domain whether to create a server unix domain channel or a regular server socket channel
    */
   public Class<? extends ServerChannel> serverChannelType(boolean domain) {
     if (domain) {
