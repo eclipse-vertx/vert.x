@@ -31,8 +31,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.ApplicationProtocolNames;
-import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
@@ -431,32 +429,37 @@ public class ConnectionManager {
         channelProvider = ProxyChannelProvider.INSTANCE;
       }
 
+      boolean useAlpn = options.isUseAlpn();
       Handler<Channel> channelInitializer = ch -> {
 
         // Configure pipeline
         ChannelPipeline pipeline = ch.pipeline();
-        boolean useAlpn = options.isUseAlpn();
-        if (useAlpn) {
+        if (ssl) {
           SslHandler sslHandler = new SslHandler(sslHelper.createEngine(client.getVertx(), peerHost, port, options.isForceSni() ? peerHost : null));
           ch.pipeline().addLast("ssl", sslHandler);
-          ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
-            @Override
-            protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
-              if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-                applyHttp2ConnectionOptions(pipeline);
-                queue.http2Connected(context, ch, waiter, false);
+          // TCP connected, so now we must do the SSL handshake
+          sslHandler.handshakeFuture().addListener(fut -> {
+            if (fut.isSuccess()) {
+              String protocol = sslHandler.applicationProtocol();
+              if (useAlpn) {
+                if ("h2".equals(protocol)) {
+                  applyHttp2ConnectionOptions(ch.pipeline());
+                  queue.http2Connected(context, ch, waiter, false);
+                } else {
+                  applyHttp1xConnectionOptions(ch.pipeline(), context);
+                  HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
+                    HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+                  queue.fallbackToHttp1x(ch, context, fallbackProtocol, port, host, waiter);
+                }
               } else {
                 applyHttp1xConnectionOptions(ch.pipeline(), context);
-                HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
-                    HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-                queue.fallbackToHttp1x(ch, context, fallbackProtocol, port, host, waiter);
+                queue.http1xConnected(version, context, port, host, ch, waiter);
               }
+            } else {
+              queue.handshakeFailure(context, ch, fut.cause(), waiter);
             }
           });
         } else {
-          if (ssl) {
-            pipeline.addLast("ssl", new SslHandler(sslHelper.createEngine(vertx, peerHost, port, options.isForceSni() ? peerHost : null)));
-          }
           if (version == HttpVersion.HTTP_2) {
             if (options.isHttp2ClearTextUpgrade()) {
               HttpClientCodec httpCodec = new HttpClientCodec();
@@ -515,29 +518,14 @@ public class ConnectionManager {
 
         if (res.succeeded()) {
           Channel ch = res.result();
-          if (ssl) {
-            // TCP connected, so now we must do the SSL handshake
-            SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
-            io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-            fut.addListener(fut2 -> {
-              if (fut2.isSuccess()) {
-                if (!options.isUseAlpn()) {
-                  queue.http1xConnected(version, context, port, host, ch, waiter);
-                }
+          if (!ssl) {
+            if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
+              // Upgrade handler do nothing
+            } else {
+              if (version == HttpVersion.HTTP_2 && !options.isHttp2ClearTextUpgrade()) {
+                queue.http2Connected(context, ch, waiter, false);
               } else {
-                queue.handshakeFailure(context, ch, fut2.cause(), waiter);
-              }
-            });
-          } else {
-            if (!options.isUseAlpn()) {
-              if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
-                // Upgrade handler do nothing
-              } else {
-                if (version == HttpVersion.HTTP_2 && !options.isHttp2ClearTextUpgrade()) {
-                  queue.http2Connected(context, ch, waiter, false);
-                } else {
-                  queue.http1xConnected(version, context, port, host, ch, waiter);
-                }
+                queue.http1xConnected(version, context, port, host, ch, waiter);
               }
             }
           }

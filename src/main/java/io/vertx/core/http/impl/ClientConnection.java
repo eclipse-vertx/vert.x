@@ -388,6 +388,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
         }
       }
     }
+    requestForResponse = null;
     currentResponse = null;
   }
 

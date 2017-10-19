@@ -19,12 +19,7 @@ package io.vertx.test.core;
 import io.netty.channel.socket.SocketChannel;
 import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.tls.Cert;
@@ -312,5 +307,53 @@ public class Http2Test extends HttpTest {
       fail();
     }).end();
     await();
+  }
+
+  @Test
+  public void testClientDoesNotSupportAlpn() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(HttpVersion.HTTP_1_1, resp.version());
+      complete();
+    }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testServerDoesNotSupportAlpn() throws Exception {
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setUseAlpn(false));
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(HttpVersion.HTTP_1_1, resp.version());
+      complete();
+    }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testClientMakeRequestHttp2WithSSLWithoutAlpn() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setUseAlpn(false));
+    try {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
+      fail();
+    } catch (IllegalArgumentException ignore) {
+      // Expected
+    }
   }
 }

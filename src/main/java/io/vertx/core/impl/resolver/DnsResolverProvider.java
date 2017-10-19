@@ -24,11 +24,7 @@ import io.netty.resolver.HostsFileEntriesResolver;
 import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.NameResolver;
 import io.netty.resolver.ResolvedAddressTypes;
-import io.netty.resolver.dns.DnsAddressResolverGroup;
-import io.netty.resolver.dns.DnsNameResolverBuilder;
-import io.netty.resolver.dns.DnsServerAddressStream;
-import io.netty.resolver.dns.DnsServerAddressStreamProvider;
-import io.netty.resolver.dns.DnsServerAddresses;
+import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.Context;
@@ -55,6 +51,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.netty.util.internal.ObjectUtil.intValue;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -122,6 +120,12 @@ public class DnsResolverProvider implements ResolverProvider {
       entries = HostsFileParser.parseSilently();
     }
 
+    int minTtl = intValue(options.getCacheMinTimeToLive(), 0);
+    int maxTtl = intValue(options.getCacheMaxTimeToLive(), Integer.MAX_VALUE);
+    int negativeTtl = intValue(options.getCacheNegativeTimeToLive(), 0);
+    DnsCache resolveCache = new DefaultDnsCache(minTtl, maxTtl, negativeTtl);
+    DnsCache authoritativeDnsServerCache = new DefaultDnsCache(minTtl, maxTtl, negativeTtl);
+
     this.vertx = vertx;
     this.resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
       @Override
@@ -160,8 +164,8 @@ public class DnsResolverProvider implements ResolverProvider {
             builder.channelFactory(channelFactory);
             builder.nameServerProvider(nameServerAddressProvider);
             builder.optResourceEnabled(options.isOptResourceEnabled());
-            builder.ttl(options.getCacheMinTimeToLive(), options.getCacheMaxTimeToLive());
-            builder.negativeTtl(options.getCacheNegativeTimeToLive());
+            builder.resolveCache(resolveCache);
+            builder.authoritativeDnsServerCache(authoritativeDnsServerCache);
             builder.queryTimeoutMillis(options.getQueryTimeout());
             builder.maxQueriesPerResolve(options.getMaxQueries());
             builder.recursionDesired(options.getRdFlag());

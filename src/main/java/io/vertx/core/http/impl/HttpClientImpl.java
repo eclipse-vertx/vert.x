@@ -115,9 +115,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
-    if (options.isUseAlpn() && !options.isSsl()) {
-      throw new IllegalArgumentException("Must enable SSL when using ALPN");
-    }
     this.vertx = vertx;
     this.options = new HttpClientOptions(options);
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
@@ -987,9 +984,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(protocol, "no null protocol accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
+    boolean useAlpn = options.isUseAlpn();
+    boolean useSSL = ssl != null ? ssl : options.isSsl();
+    if (!useAlpn && useSSL && options.getProtocolVersion() == HttpVersion.HTTP_2) {
+      throw new IllegalArgumentException("Must enable ALPN when using H2");
+    }
     checkClosed();
     HttpClientRequest req;
-    boolean useSSL = ssl != null ? ssl : options.isSsl();
     boolean useProxy = !useSSL && proxyType == ProxyType.HTTP;
     if (useProxy) {
       final int defaultPort = protocol.equals("ftp") ? 21 : 80;
