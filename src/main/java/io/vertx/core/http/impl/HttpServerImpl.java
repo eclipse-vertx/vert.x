@@ -46,6 +46,11 @@ import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LoggingHandler;
@@ -87,10 +92,12 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -129,6 +136,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
+  private final String subProtocols;
   private String serverOrigin;
 
   private ChannelGroup serverChannelGroup;
@@ -153,6 +161,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       creatingContext.addCloseHook(this);
     }
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
+    this.subProtocols = options.getWebsocketSubProtocols();
     this.logEnabled = options.getLogActivity();
   }
 
@@ -440,6 +449,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (options.getIdleTimeout() > 0) {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
     }
+
     if (!DISABLE_HC2) {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
@@ -450,6 +460,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       // some casting and a header check
       handler = new ServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     } else {
+      initializeWebsocketExtensions (pipeline);
       handler = new ServerHandlerWithWebSockets(sslHelper, options, serverOrigin, holder, metrics);
     }
     handler.addHandler(conn -> {
@@ -459,6 +470,28 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       connectionMap.remove(pipeline.channel());
     });
     pipeline.addLast("handler", handler);
+
+  }
+  
+  void initializeWebsocketExtensions (ChannelPipeline pipeline) {
+	  ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<WebSocketServerExtensionHandshaker>();
+	  
+	  if (options.perFrameWebsocketCompressionSupported ()) {
+		  extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(options.websocketCompressionLevel()));
+	  }
+	  
+	  if (options.perMessageWebsocketCompressionSupported ()) {
+		  extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(options.websocketCompressionLevel(),
+				  ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE, 
+				  options.getWebsocketAllowServerNoContext(), options.getWebsocketPreferredClientNoContext()));
+	  }
+	  
+	  if (!extensionHandshakers.isEmpty()) {
+		  WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
+			  extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[extensionHandshakers.size()]));
+		  pipeline.addLast("websocketExtensionHandler", extensionHandler);
+	  }
+	  
   }
 
   public void handleHttp2(Channel ch) {
@@ -678,7 +711,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             if (!closeFrameSent) {
               // Echo back close frame and close the connection once it was written.
               // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
+              ch.writeAndFlush(new CloseWebSocketFrame().replace(wsFrame.getBinaryData())).addListener(ChannelFutureListener.CLOSE);
               closeFrameSent = true;
             }
             break;
