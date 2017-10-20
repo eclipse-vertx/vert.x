@@ -1,17 +1,14 @@
 /*
- * Copyright (c) 2011-2014 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 The original author or authors
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 and the Apache License, Version 2.0
+ * which accompanies this distribution. The Eclipse Public License 2.0 is
+ * available at http://www.eclipse.org/legal/epl-2.0.html, and the Apache
+ * License, Version 2.0 is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.core;
@@ -89,7 +86,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
       assertFalse(file.isDirectory());
-      assertEquals("<html><body>afile</body></html>", readFile(file));
+      assertTrue(readFile(file).contains("<html><body>afile</body></html>"));
     }
   }
 
@@ -102,7 +99,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
         assertTrue(file.exists());
         assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
         assertFalse(file.isDirectory());
-        assertEquals("<html><body>afile</body></html>", readFile(file));
+        assertTrue(readFile(file).contains("<html><body>afile</body></html>"));
       }
     } finally {
       vertx.close();
@@ -116,7 +113,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
       assertFalse(file.isDirectory());
-      assertEquals("<html><body>afile with spaces</body></html>", readFile(file));
+      assertTrue(readFile(file).contains("<html><body>afile with spaces</body></html>"));
     }
   }
 
@@ -137,7 +134,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
       assertFalse(file.isDirectory());
-      assertEquals("<html><body>blah</body></html>", readFile(file));
+      assertTrue(readFile(file).contains("<html><body>blah</body></html>"));
     }
   }
 
@@ -158,7 +155,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
       assertFalse(file.isDirectory());
-      assertEquals("<html><body>subfile</body></html>", readFile(file));
+      assertTrue(readFile(file).contains("<html><body>subfile</body></html>"));
     }
   }
 
@@ -168,7 +165,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(file.exists());
     File sub = new File(file, "subfile.html");
     assertTrue(sub.exists());
-    assertEquals("<html><body>subfile</body></html>", readFile(sub));
+    assertTrue(readFile(sub).contains("<html><body>subfile</body></html>"));
   }
 
   @Test
@@ -177,7 +174,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(file.exists());
     File sub = new File(new File(file, "subdir2"), "subfile2.html");
     assertTrue(sub.exists());
-    assertEquals("<html><body>subfile2</body></html>", readFile(sub));
+    assertTrue(readFile(sub).contains("<html><body>subfile2</body></html>"));
   }
 
   @Test
