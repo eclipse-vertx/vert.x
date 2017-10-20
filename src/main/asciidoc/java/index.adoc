@@ -888,7 +888,7 @@ when the verticle is undeployed.
 
 === Verticle worker pool
 
-Verticle uses the Vert.x worker pool for executing blocking actions, i.e `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` or
+Verticles use the Vert.x worker pool for executing blocking actions, i.e `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` or
 worker verticle.
 
 A different worker pool can be specified in deployment options:

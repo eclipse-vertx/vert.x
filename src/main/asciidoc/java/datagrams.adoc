@@ -130,7 +130,7 @@ calling `listen(...)` on it to join the Multicast group.
 This way you will receive DatagramPackets that were sent to the address and port on which the
 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` listens and also to those sent to the Multicast group.
 
-You will also want to set a Handler which will be called for each DatagramPacket that is recieved.
+You will also want to set a Handler which will be called for each DatagramPacket that is received.
 
 The `link:../../apidocs/io/vertx/core/datagram/DatagramPacket.html[DatagramPacket]` has the following methods:
 

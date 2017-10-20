@@ -791,7 +791,7 @@
  *
  * === Verticle worker pool
  *
- * Verticle uses the Vert.x worker pool for executing blocking actions, i.e {@link io.vertx.core.Context#executeBlocking} or
+ * Verticles use the Vert.x worker pool for executing blocking actions, i.e {@link io.vertx.core.Context#executeBlocking} or
  * worker verticle.
  *
  * A different worker pool can be specified in deployment options:
