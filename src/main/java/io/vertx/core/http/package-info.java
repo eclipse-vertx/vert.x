@@ -1021,7 +1021,7 @@
  * {@link examples.HTTP2Examples#example12}
  * ----
  *
- * === Handling http responses
+ * === Handling HTTP responses
  *
  * You receive an instance of {@link io.vertx.core.http.HttpClientResponse} into the handler that you specify in of
  * the request methods or by setting a handler directly on the {@link io.vertx.core.http.HttpClientRequest} object.
