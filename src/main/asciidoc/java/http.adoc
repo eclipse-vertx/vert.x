@@ -1280,7 +1280,7 @@ request.exceptionHandler(err -> {
 });
 ----
 
-=== Handling http responses
+=== Handling HTTP responses
 
 You receive an instance of `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` into the handler that you specify in of
 the request methods or by setting a handler directly on the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` object.
