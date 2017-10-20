@@ -463,15 +463,15 @@
  * This means we can guarantee that all the code in your verticle instance is always executed on the same event loop (as
  * long as you don't create your own threads and call it!).
  *
- * This means you can write all the code in your application as single threaded and let Vert.x worrying about the threading
+ * This means you can write all the code in your application as single threaded and let Vert.x worry about the threading
  * and scaling. No more worrying about +synchronized+ and +volatile+ any more, and you also avoid many other cases of race conditions
  * and deadlock so prevalent when doing hand-rolled 'traditional' multi-threaded application development.
  *
  * [[worker_verticles]]
  * === Worker verticles
  *
- * A worker verticle is just like a standard verticle but it's executed not using an event loop, but using a thread from
- * the Vert.x worker thread pool.
+ * A worker verticle is just like a standard verticle but it's executed using a thread from the Vert.x worker thread pool,
+ * rather than using an event loop.
  *
  * Worker verticles are designed for calling blocking code, as they won't block any event loops.
  *
@@ -589,14 +589,14 @@
  * ----
  *
  * This is useful for scaling easily across multiple cores. For example you might have a web-server verticle to deploy
- * and multiple cores on your machine, so you want to deploy multiple instances to take utilise all the cores.
+ * and multiple cores on your machine, so you want to deploy multiple instances to utilise all the cores.
  *
  * include::override/verticle-configuration.adoc[]
  *
  * === Verticle Isolation Groups
  *
  * By default, Vert.x has a _flat classpath_. I.e, when Vert.x deploys verticles it does so with the current classloader -
- * it doesn't create a new one. In the majority of cases this is the simplest, clearest and sanest thing to do.
+ * it doesn't create a new one. In the majority of cases this is the simplest, clearest, and sanest thing to do.
  *
  * However, in some cases you may want to deploy a verticle so the classes of that verticle are isolated from others in
  * your application.
@@ -791,7 +791,7 @@
  *
  * === Verticle worker pool
  *
- * Verticle use the Vert.x worker pool for executing blocking actions, i.e {@link io.vertx.core.Context#executeBlocking} or
+ * Verticle uses the Vert.x worker pool for executing blocking actions, i.e {@link io.vertx.core.Context#executeBlocking} or
  * worker verticle.
  *
  * A different worker pool can be specified in deployment options:
