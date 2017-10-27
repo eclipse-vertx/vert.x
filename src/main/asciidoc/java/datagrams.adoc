@@ -26,7 +26,7 @@ and NetClient (see above).
 
 === Creating a DatagramSocket
 
-To use UDP you first need to create a `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`. It does not matter here if you only want to send data or send
+To use UDP you first need t create a `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`. It does not matter here if you only want to send data or send
 and receive.
 
 [source,java]
@@ -105,7 +105,7 @@ to which you can then send packets.
 
 We will look at how you can join a Multicast Group and receive packets in the next section.
 
-Sending multicast packets is not different than sending normal Datagram Packets.  The difference is that you pass
+Sending multicast packets is not different than sending normal Datagram packets.  The difference is that you pass
 in a multicast group address to the send method.
 
 This is show here:
@@ -130,7 +130,7 @@ calling `listen(...)` on it to join the Multicast group.
 This way you will receive DatagramPackets that were sent to the address and port on which the
 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` listens and also to those sent to the Multicast group.
 
-You will also want to set a Handler which will be called for each DatagramPacket that is received.
+Beside this you also want to set a Handler which will be called for each received DatagramPacket.
 
 The `link:../../apidocs/io/vertx/core/datagram/DatagramPacket.html[DatagramPacket]` has the following methods:
 

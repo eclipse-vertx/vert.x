@@ -521,7 +521,7 @@ and deadlock so prevalent when doing hand-rolled 'traditional' multi-threaded ap
 === Worker verticles
 
 A worker verticle is just like a standard verticle but it's executed using a thread from the Vert.x worker thread pool,
-rather than an event loop.
+rather than using an event loop.
 
 Worker verticles are designed for calling blocking code, as they won't block any event loops.
 
