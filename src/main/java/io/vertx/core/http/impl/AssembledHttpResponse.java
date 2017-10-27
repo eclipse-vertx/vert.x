@@ -16,14 +16,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 
 
 /**
@@ -34,12 +29,27 @@ import io.netty.handler.codec.http.HttpVersion;
  */
 class AssembledHttpResponse implements HttpResponse, HttpContent {
 
-  private final HttpResponse response;
-  protected final HttpContent content;
+  private boolean head;
+  private HttpResponseStatus status;
+  private HttpVersion version;
+  private HttpHeaders headers;
+  private final ByteBuf content;
+  private DecoderResult result = DecoderResult.SUCCESS;
 
-  AssembledHttpResponse(HttpResponse response, HttpContent content) {
-    this.response = response;
+  AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
+    this(head, version, status, headers, Unpooled.EMPTY_BUFFER);
+  }
+
+  AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf content) {
+    this.head = head;
+    this.status = status;
+    this.version = version;
+    this.headers = headers;
     this.content = content;
+  }
+
+  boolean head() {
+    return head;
   }
 
   @Override
@@ -76,34 +86,34 @@ class AssembledHttpResponse implements HttpResponse, HttpContent {
 
   @Override
   public HttpResponseStatus getStatus() {
-    return response.getStatus();
+    return status;
   }
 
   @Override
   public AssembledHttpResponse setStatus(HttpResponseStatus status) {
-    response.setStatus(status);
+    this.status = status;
     return this;
   }
 
   @Override
   public AssembledHttpResponse setProtocolVersion(HttpVersion version) {
-    response.setProtocolVersion(version);
+    this.version = version;
     return this;
   }
 
   @Override
   public HttpVersion getProtocolVersion() {
-    return response.getProtocolVersion();
+    return version;
   }
 
   @Override
   public HttpVersion protocolVersion() {
-    return response.protocolVersion();
+    return version;
   }
 
   @Override
   public HttpResponseStatus status() {
-    return response.status();
+    return status;
   }
 
   @Override
@@ -120,27 +130,27 @@ class AssembledHttpResponse implements HttpResponse, HttpContent {
 
   @Override
   public DecoderResult decoderResult() {
-    return content.decoderResult();
+    return result;
   }
 
   @Override
   public HttpHeaders headers() {
-    return response.headers();
+    return headers;
   }
 
   @Override
   public DecoderResult getDecoderResult() {
-    return response.getDecoderResult();
+    return result;
   }
 
   @Override
   public void setDecoderResult(DecoderResult result) {
-    response.setDecoderResult(result);
+    this.result = result;
   }
 
   @Override
   public ByteBuf content() {
-    return content.content();
+    return content;
   }
 
   @Override

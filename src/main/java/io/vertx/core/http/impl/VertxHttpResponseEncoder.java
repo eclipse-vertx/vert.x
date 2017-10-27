@@ -17,6 +17,7 @@ package io.vertx.core.http.impl;
 
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
@@ -39,5 +40,12 @@ final class VertxHttpResponseEncoder extends HttpResponseEncoder {
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     this.context = PartialPooledByteBufAllocator.forceDirectAllocator(ctx);
     super.handlerAdded(ctx);
+  }
+
+  @Override
+  protected boolean isContentAlwaysEmpty(HttpResponse msg) {
+    // In HttpServerCodec this is tracked via a FIFO queue of HttpMethod
+    // here we track it in the assembled response as we don't use HttpServerCodec
+    return msg instanceof AssembledHttpResponse && ((AssembledHttpResponse) msg).head();
   }
 }

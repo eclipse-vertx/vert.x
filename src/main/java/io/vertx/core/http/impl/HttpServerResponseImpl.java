@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
@@ -77,8 +76,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private boolean chunked;
   private boolean closed;
   private final VertxHttpHeaders headers;
-  private LastHttpContent trailing;
   private MultiMap trailers;
+  private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
   private long bytesWritten;
 
@@ -101,10 +100,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public MultiMap trailers() {
     if (trailers == null) {
-      if (trailing == null) {
-        trailing = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, false);
-      }
-      trailers = new HeadersAdaptor(trailing.trailingHeaders());
+      VertxHttpHeaders v = new VertxHttpHeaders();
+      trailers = v;
+      trailingHeaders = v;
     }
     return trailers;
   }
@@ -410,33 +408,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       // if the head was not written yet we can write out everything in one go
       // which is cheaper.
       prepareHeaders(bytesWritten);
-      FullHttpResponse resp;
-      if (!head) {
-        if (trailing == null) {
-          resp = new DefaultFullHttpResponse(version, status, data, headers, EmptyHttpHeaders.INSTANCE);
-        } else {
-          resp = new AssembledFullHttpResponse(new DefaultHttpResponse(version, status, headers), data, trailing.trailingHeaders(), trailing.getDecoderResult());
-        }
-      } else {
-        resp = new AssembledFullHttpResponse(new DefaultHttpResponse(version, status, headers));
-      }
-      conn.writeToChannel(resp);
+      conn.writeToChannel(new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders));
     } else {
-      if (!data.isReadable()) {
-        if (trailing == null) {
-          conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
-        } else {
-          conn.writeToChannel(trailing);
-        }
-      } else {
-        LastHttpContent content;
-        if (trailing != null) {
-          content = new AssembledLastHttpContent(data, trailing.trailingHeaders(), trailing.getDecoderResult());
-        } else {
-          content = new DefaultLastHttpContent(data, false);
-        }
-        conn.writeToChannel(content);
-      }
+      conn.writeToChannel(new AssembledLastHttpContent(data, trailingHeaders));
     }
 
     if (!keepAlive) {
@@ -484,7 +458,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       RandomAccessFile raf = null;
       try {
         raf = new RandomAccessFile(file, "r");
-        conn.writeToChannel(new DefaultHttpResponse(version, status, headers));
+        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
         conn.sendFile(raf, Math.min(offset, file.length()), contentLength);
       } catch (IOException e) {
         try {
@@ -606,7 +580,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       bytesWritten += chunk.readableBytes();
       if (!headWritten) {
         prepareHeaders(-1);
-        conn.writeToChannel(new PartialHttpResponse(version, status, headers, chunk));
+        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers, chunk));
       } else {
         conn.writeToChannel(new DefaultHttpContent(chunk));
       }

@@ -64,7 +64,6 @@ import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -79,9 +78,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -3608,8 +3605,8 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testHeadMDontAutomaticallySetContentHeaders() throws Exception {
-    testHeadMustNoAutomaticallySetContentHeaders(MultiMap.caseInsensitiveMultiMap(), respHeaders -> {
+  public void testHeadMustNotAutomaticallySetContentHeaders() throws Exception {
+    testHeadAutomaticallySet(MultiMap.caseInsensitiveMultiMap(), respHeaders -> {
       assertFalse(respHeaders.contains("Content-Length"));
       assertFalse(respHeaders.contains("Transfer-Encoding"));
     });
@@ -3619,24 +3616,23 @@ public class Http1xTest extends HttpTest {
   public void testHeadMustNotSendBodyWhenContentLengthSet() throws Exception {
     MultiMap reqHeaders = MultiMap.caseInsensitiveMultiMap();
     reqHeaders.set("Content-Length", "10");
-    testHeadMustNoAutomaticallySetContentHeaders(reqHeaders, respHeaders -> {
-      assertEquals(respHeaders.get("Content-Length"), " 10");
-      assertFalse(respHeaders.contains("Transfer-Encoding"));
+    testHeadAutomaticallySet(reqHeaders, respHeaders -> {
+      assertEquals(" 10", respHeaders.get("Content-Length"));
+      assertNull(respHeaders.get("Transfer-Encoding"));
     });
   }
 
-  @Ignore("See https://github.com/netty/netty/issues/6761")
   @Test
   public void testHeadMustNotSendBodyWhenTransferEncodingSet() throws Exception {
     MultiMap reqHeaders = MultiMap.caseInsensitiveMultiMap();
     reqHeaders.set("Transfer-Encoding", "chunked");
-    testHeadMustNoAutomaticallySetContentHeaders(reqHeaders, respHeaders -> {
-      assertEquals(respHeaders.get("Content-Length"), "10");
-      assertFalse(respHeaders.contains("Transfer-Encoding"));
+    testHeadAutomaticallySet(reqHeaders, respHeaders -> {
+      assertNull(respHeaders.get("Content-Length"));
+      assertEquals(" chunked", respHeaders.get("Transfer-Encoding"));
     });
   }
 
-  private void testHeadMustNoAutomaticallySetContentHeaders(MultiMap reqHeaders, Consumer<MultiMap> headersChecker) throws Exception {
+  private void testHeadAutomaticallySet(MultiMap reqHeaders, Consumer<MultiMap> headersChecker) throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.headers().addAll(reqHeaders);

@@ -29,9 +29,16 @@ import io.netty.handler.codec.http.LastHttpContent;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 class AssembledLastHttpContent extends DefaultByteBufHolder implements LastHttpContent {
+
   private final HttpHeaders trailingHeaders;
   private DecoderResult result;
-  public AssembledLastHttpContent(ByteBuf buf, HttpHeaders trailingHeaders, DecoderResult result) {
+
+
+  AssembledLastHttpContent(ByteBuf buf, HttpHeaders trailingHeaders) {
+    this(buf, trailingHeaders, DecoderResult.SUCCESS);
+  }
+
+  AssembledLastHttpContent(ByteBuf buf, HttpHeaders trailingHeaders, DecoderResult result) {
     super(buf);
     this.trailingHeaders = trailingHeaders;
     this.result = result;
