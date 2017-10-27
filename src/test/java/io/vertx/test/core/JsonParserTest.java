@@ -640,4 +640,68 @@ public class JsonParserTest {
       return Objects.equals(f, that.f);
     }
   }
+
+  @Test
+  public void testParseConcatedJSONStream() {
+    JsonParser parser = JsonParser.newParser();
+    AtomicInteger startCount = new AtomicInteger();
+    AtomicInteger endCount = new AtomicInteger();
+
+    parser.handler(event -> {
+      switch (event.type()) {
+        case START_OBJECT:
+          startCount.incrementAndGet();
+          break;
+        case END_OBJECT:
+          endCount.incrementAndGet();
+          break;
+        default:
+          fail();
+          break;
+      }
+    });
+    parser.handle(Buffer.buffer("{}{}"));
+    assertEquals(2, startCount.get());
+    assertEquals(2, endCount.get());
+  }
+
+  @Test
+  public void testParseLineDelimitedJSONStream() {
+    JsonParser parser = JsonParser.newParser();
+    AtomicInteger startCount = new AtomicInteger();
+    AtomicInteger endCount = new AtomicInteger();
+    AtomicInteger numberCount = new AtomicInteger();
+    AtomicInteger nullCount = new AtomicInteger();
+    AtomicInteger stringCount = new AtomicInteger();
+    parser.handler(event -> {
+      switch (event.type()) {
+        case START_OBJECT:
+          startCount.incrementAndGet();
+          break;
+        case END_OBJECT:
+          endCount.incrementAndGet();
+          break;
+        case VALUE:
+          if (event.isNull()) {
+            nullCount.incrementAndGet();
+          } else if (event.isNumber()) {
+            numberCount.incrementAndGet();
+          } else if (event.isString()) {
+            stringCount.incrementAndGet();
+          } else {
+            fail("Unexpected " + event.type());
+          }
+          break;
+        default:
+          fail("Unexpected " + event.type());
+          break;
+      }
+    });
+    parser.handle(Buffer.buffer("{}\r\n1\r\nnull\r\n\"foo\""));
+    assertEquals(1, startCount.get());
+    assertEquals(1, endCount.get());
+    assertEquals(1, numberCount.get());
+    assertEquals(1, nullCount.get());
+    assertEquals(1, stringCount.get());
+  }
 }

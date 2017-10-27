@@ -112,6 +112,11 @@
  * {@link examples.ParseToolsExamples#jsonParserExample7}
  * ----
  *
+ * The parser also parses json streams:
+ *
+ * - concatenated json streams: `{"temperature":30}{"temperature":50}`
+ * - line delimited json streams: `{"an":"object"}\r\n3\r\n"a string"\r\nnull`
+ *
  * For more details, check out the {@link io.vertx.core.parsetools.JsonParser} class.
  */
 @Document(fileName = "parsetools.adoc")

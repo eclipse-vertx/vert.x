@@ -26,6 +26,8 @@ import io.vertx.core.streams.ReadStream;
  * A parser class which allows to incrementally parse json elements and emit json parse events instead of parsing a json
  * element fully. This parser is convenient for parsing large json structures.
  * <p/>
+ * The parser also parses concatenated json streams or line delimited json streams.
+ * <p/>
  * The parser can also parse entire object or array when it is convenient, for instance a very large array
  * of small objects can be parsed efficiently by handling array <i>start</i>/<i>end</i> and <i>object</i>
  * events.
