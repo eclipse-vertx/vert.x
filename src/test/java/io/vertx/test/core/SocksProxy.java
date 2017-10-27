@@ -30,7 +30,7 @@ public class SocksProxy extends TestProxyBase {
 
   private static final Buffer clientInit = Buffer.buffer(new byte[] { 5, 1, 0 });
   private static final Buffer serverReply = Buffer.buffer(new byte[] { 5, 0 });
-  private static final Buffer clientRequest = Buffer.buffer(new byte[] { 5, 1, 0, 3 });
+  private static final Buffer clientRequest = Buffer.buffer(new byte[] { 5, 1, 0 });
   private static final Buffer connectResponse = Buffer.buffer(new byte[] { 5, 0, 0, 1, 0x7f, 0, 0, 1, 0x27, 0x10 });
   private static final Buffer errorResponse = Buffer.buffer(new byte[] { 5, 4, 0, 1, 0, 0, 0, 0, 0, 0 });
 
@@ -73,13 +73,29 @@ public class SocksProxy extends TestProxyBase {
           if (!buffer2.getBuffer(0, clientRequest.length()).equals(clientRequest)) {
             throw new IllegalStateException("expected " + toHex(clientRequest) + ", got " + toHex(buffer2));
           }
-          int stringLen = buffer2.getUnsignedByte(4);
-          log.debug("string len " + stringLen);
-          if (buffer2.length() != 7 + stringLen) {
-            throw new IllegalStateException("format error in client request, got " + toHex(buffer2));
+          int addressType = buffer2.getUnsignedByte(3);
+          String host;
+          int port;
+          if(addressType == 1) {
+            if (buffer2.length() != 10) {
+              throw new IllegalStateException("format error in client request (attribute type ipv4), got " + toHex(buffer2));
+            }
+            host = buffer2.getUnsignedByte(4) + "." +
+              buffer2.getUnsignedByte(5) + "." + 
+              buffer2.getUnsignedByte(6) + "." + 
+              buffer2.getUnsignedByte(7);
+            port = buffer2.getUnsignedShort(8);  
+          } else if(addressType == 3) {
+            int stringLen = buffer2.getUnsignedByte(4);
+            log.debug("string len " + stringLen);
+            if (buffer2.length() != 7 + stringLen) {
+              throw new IllegalStateException("format error in client request (attribute type domain name), got " + toHex(buffer2));
+            }
+            host = buffer2.getString(5, 5 + stringLen);
+            port = buffer2.getUnsignedShort(5 + stringLen);  
+          } else {
+            throw new IllegalStateException("expected address type ip (v4) or name, got " + addressType);
           }
-          String host = buffer2.getString(5, 5 + stringLen);
-          int port = buffer2.getUnsignedShort(5 + stringLen);
           log.debug("got request: " + toHex(buffer2));
           log.debug("connect: " + host + ":" + port);
           socket.handler(null);
