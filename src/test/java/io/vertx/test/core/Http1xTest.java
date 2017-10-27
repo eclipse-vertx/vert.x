@@ -3722,4 +3722,27 @@ public class Http1xTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testCompressedResponseWithConnectionCloseAndNoCompressionHeader() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(2048));
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setCompressionSupported(true));
+    server.requestHandler(req -> {
+      req.response().end(expected);
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.bodyHandler(buff -> {
+        assertEquals(expected, buff);
+        complete();
+      });
+    }).putHeader("Connection", "close")
+      .exceptionHandler(this::fail)
+      .end();
+    await();
+  }
 }
