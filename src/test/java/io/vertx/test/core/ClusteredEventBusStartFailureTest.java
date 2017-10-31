@@ -35,7 +35,7 @@ public class ClusteredEventBusStartFailureTest extends AsyncTestBase {
   public void testCallbackInvokedOnFailure() throws Exception {
 
     // will trigger java.net.UnknownHostException
-    String hostName = getClass().getSimpleName();
+    String hostName = "zoom.zoom.zen.tld";
 
     VertxOptions options = new VertxOptions()
       .setClusterManager(new FakeClusterManager())
