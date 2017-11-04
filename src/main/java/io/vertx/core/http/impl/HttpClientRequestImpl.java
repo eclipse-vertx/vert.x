@@ -139,6 +139,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public HttpClientRequestImpl setChunked(boolean chunked) {
+
+    // If connecting -> write buffer in list
+    // If connected -> check if the buffer needs to be written
+
     synchronized (getLock()) {
       checkComplete();
       if (written > 0) {
