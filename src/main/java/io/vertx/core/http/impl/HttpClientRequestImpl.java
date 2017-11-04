@@ -222,36 +222,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public HttpClientRequestImpl write(Buffer chunk) {
-    synchronized (getLock()) {
-      checkComplete();
-      checkResponseHandler();
-      ByteBuf buf = chunk.getByteBuf();
-      write(buf, false);
-      return this;
-    }
-  }
-
-  @Override
-  public HttpClientRequestImpl write(String chunk) {
-    synchronized (getLock()) {
-      checkComplete();
-      checkResponseHandler();
-      return write(Buffer.buffer(chunk));
-    }
-  }
-
-  @Override
-  public HttpClientRequestImpl write(String chunk, String enc) {
-    synchronized (getLock()) {
-      Objects.requireNonNull(enc, "no null encoding accepted");
-      checkComplete();
-      checkResponseHandler();
-      return write(Buffer.buffer(chunk, enc));
-    }
-  }
-
-  @Override
   public HttpClientRequest setWriteQueueMaxSize(int maxSize) {
     synchronized (getLock()) {
       checkComplete();
@@ -327,39 +297,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         writeHead = true;
       }
       return this;
-    }
-  }
-
-  @Override
-  public void end(String chunk) {
-    synchronized (getLock()) {
-      end(Buffer.buffer(chunk));
-    }
-  }
-
-  @Override
-  public void end(String chunk, String enc) {
-    synchronized (getLock()) {
-      Objects.requireNonNull(enc, "no null encoding accepted");
-      end(Buffer.buffer(chunk, enc));
-    }
-  }
-
-  @Override
-  public void end(Buffer chunk) {
-    synchronized (getLock()) {
-      checkComplete();
-      checkResponseHandler();
-      write(chunk.getByteBuf(), true);
-    }
-  }
-
-  @Override
-  public void end() {
-    synchronized (getLock()) {
-      checkComplete();
-      checkResponseHandler();
-      write(null, true);
     }
   }
 
@@ -825,7 +762,55 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     headWritten = true;
   }
 
+
+  @Override
+  public void end(String chunk) {
+    end(Buffer.buffer(chunk));
+  }
+
+  @Override
+  public void end(String chunk, String enc) {
+    Objects.requireNonNull(enc, "no null encoding accepted");
+    end(Buffer.buffer(chunk, enc));
+  }
+
+  @Override
+  public void end(Buffer chunk) {
+    write(chunk.getByteBuf(), true);
+  }
+
+  @Override
+  public void end() {
+    write(null, true);
+  }
+
+  @Override
+  public HttpClientRequestImpl write(Buffer chunk) {
+    ByteBuf buf = chunk.getByteBuf();
+    write(buf, false);
+    return this;
+  }
+
+  @Override
+  public HttpClientRequestImpl write(String chunk) {
+    return write(Buffer.buffer(chunk));
+  }
+
+  @Override
+  public HttpClientRequestImpl write(String chunk, String enc) {
+    Objects.requireNonNull(enc, "no null encoding accepted");
+    return write(Buffer.buffer(chunk, enc));
+  }
+
   private void write(ByteBuf buff, boolean end) {
+    synchronized (getLock()) {
+      checkComplete();
+      checkResponseHandler();
+      _write(buff, end);
+    }
+  }
+
+  private void _write(ByteBuf buff, boolean end) {
     if (buff == null && !end) {
       // nothing to write to the connection just return
       return;
