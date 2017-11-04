@@ -72,6 +72,9 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private final int port;
   private final Http1xPool pool;
   private final Object endpointMetric;
+  private final boolean pipelining;
+  private final boolean keepAlive;
+  private final int pipeliningLimit;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Deque<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final HttpClientMetrics metrics;
@@ -98,14 +101,13 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     this.metrics = metrics;
     this.version = version;
     this.endpointMetric = endpointMetric;
+    this.pipelining = client.getOptions().isPipelining();
+    this.keepAlive = client.getOptions().isKeepAlive();
+    this.pipeliningLimit = client.getOptions().getPipeliningLimit();
   }
 
   public HttpClientMetrics metrics() {
     return metrics;
-  }
-
-  synchronized HttpClientRequestImpl getCurrentRequest() {
-    return currentRequest;
   }
 
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
@@ -257,10 +259,6 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     return !reset && chctx.channel().isOpen();
   }
 
-  int getOutstandingRequestCount() {
-    return requests.size();
-  }
-
   @Override
   public void checkDrained() {
     handleInterestedOpsChanged();
@@ -377,14 +375,14 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       }
 
       if (close) {
-        pool.responseEnded(this, true);
+        connection().close();
       } else {
         if (reset) {
           if (requests.isEmpty()) {
-            pool.responseEnded(this, true);
+            connection().close();
           }
         } else {
-          pool.responseEnded(this, false);
+          responseEnded(this);
         }
       }
     }
@@ -440,8 +438,28 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
         requests.removeLast();
       }
       if (requests.size() == 0) {
-        pool.responseEnded(this, true);
+        connection().close();
       }
+    }
+  }
+
+  private void requestEnded() {
+    context.runOnContext(v -> {
+      if (pipelining && requests.size() < pipeliningLimit) {
+        pool.recycle(this);
+      }
+    });
+  }
+
+  private void responseEnded(ClientConnection conn) {
+    if (!keepAlive) {
+      conn.close();
+    } else {
+      context.runOnContext(v -> {
+        if (conn.currentRequest == null) {
+          pool.recycle(conn);
+        }
+      });
     }
   }
 
@@ -549,7 +567,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       metrics.requestEnd(currentRequest.metric());
     }
     currentRequest = null;
-    pool.requestEnded(this);
+    requestEnded();
   }
 
   @Override

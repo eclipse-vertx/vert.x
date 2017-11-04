@@ -38,9 +38,6 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   private final HttpClientImpl client;
   private final HttpClientMetrics metrics;
   private final Map<Channel, HttpClientConnection> connectionMap;
-  private final boolean pipelining;
-  private final boolean keepAlive;
-  private final int pipeliningLimit;
   private final boolean ssl;
   private final String host;
   private final int port;
@@ -62,9 +59,6 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     this.version = version;
     this.client = client;
     this.metrics = metrics;
-    this.pipelining = options.isPipelining();
-    this.keepAlive = options.isKeepAlive();
-    this.pipeliningLimit = options.getPipeliningLimit();
     this.ssl = options.isSsl();
     this.connectionMap = connectionMap;
     this.maxSockets = maxSockets;
@@ -110,32 +104,10 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
       Waiter waiter = queue.getNextWaiter();
       if (waiter != null) {
         queue.deliverStream(conn, waiter);
-      } else if (conn.getOutstandingRequestCount() == 0) {
+      } else {
         // Return to set of available from here to not return it several times
         availableConnections.add(conn);
       }
-    }
-  }
-
-  void requestEnded(ClientConnection conn) {
-    ContextImpl context = conn.getContext();
-    context.runOnContext(v -> {
-      if (pipelining && conn.getOutstandingRequestCount() < pipeliningLimit) {
-        recycle(conn);
-      }
-    });
-  }
-
-  void responseEnded(ClientConnection conn, boolean close) {
-    if (!keepAlive || close) {
-      conn.close();
-    } else {
-      ContextImpl ctx = conn.getContext();
-      ctx.runOnContext(v -> {
-        if (conn.getCurrentRequest() == null) {
-          recycle(conn);
-        }
-      });
     }
   }
 
