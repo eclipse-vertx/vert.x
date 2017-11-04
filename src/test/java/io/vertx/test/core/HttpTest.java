@@ -3901,4 +3901,26 @@ public abstract class HttpTest extends HttpTestBase {
     }
     return headers;
   }
+/*
+  @Test
+  public void testReset() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      req.exceptionHandler(err -> {
+        System.out.println("GOT ERR");
+      });
+      req.endHandler(v -> {
+        System.out.println("GOT END");
+        latch.countDown();
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {});
+    req.end();
+    awaitLatch(latch);
+    req.reset();
+
+    await();
+  }
+*/
 }
