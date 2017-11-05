@@ -83,7 +83,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     return null;
   }
 
-  void createConn(ContextImpl context, Channel ch, Waiter waiter) throws Http2Exception {
+  public void createConn(ContextImpl context, Channel ch, Waiter waiter) throws Exception {
     synchronized (queue) {
       boolean upgrade;
       upgrade = ch.pipeline().get(SslHandler.class) == null && clearTextUpgrade;

@@ -29,7 +29,6 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -340,18 +339,22 @@ public class ConnectionManager {
       synchronized (this) {
         pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion, options.getMaxPoolSize(), host, port);
       }
-      http1xConnected(fallbackVersion, context, port, host, ch, waiter);
+      http1xConnected(context, ch, waiter);
     }
 
-    private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-      ((Http1xPool)(Pool)pool).createConn(context, ch, waiter);
+    private void http1xConnected(ContextImpl context, Channel ch, Waiter waiter) {
+      try {
+        pool.createConn(context, ch, waiter);
+      } catch (Exception e) {
+        connectionFailed(context, ch, waiter::handleFailure, e);
+      }
     }
 
     private void http2Connected(ContextImpl context, Channel ch, Waiter waiter) {
       context.executeFromIO(() -> {
         try {
-          ((Http2Pool)(Pool)pool).createConn(context, ch, waiter);
-        } catch (Http2Exception e) {
+          pool.createConn(context, ch, waiter);
+        } catch (Exception e) {
           connectionFailed(context, ch, waiter::handleFailure, e);
         }
       });
@@ -381,6 +384,8 @@ public class ConnectionManager {
   interface Pool<C extends HttpClientConnection> {
 
     HttpVersion version();
+
+    void createConn(ContextImpl context, Channel ch, Waiter waiter) throws Exception;
 
     C pollConnection();
 
@@ -453,7 +458,7 @@ public class ConnectionManager {
                 }
               } else {
                 applyHttp1xConnectionOptions(ch.pipeline(), context);
-                queue.http1xConnected(version, context, port, host, ch, waiter);
+                queue.http1xConnected(context, ch, waiter);
               }
             } else {
               queue.handshakeFailure(context, ch, fut.cause(), waiter);
@@ -525,7 +530,7 @@ public class ConnectionManager {
               if (version == HttpVersion.HTTP_2 && !options.isHttp2ClearTextUpgrade()) {
                 queue.http2Connected(context, ch, waiter);
               } else {
-                queue.http1xConnected(version, context, port, host, ch, waiter);
+                queue.http1xConnected(context, ch, waiter);
               }
             }
           }
