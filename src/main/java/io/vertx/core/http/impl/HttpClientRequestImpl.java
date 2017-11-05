@@ -66,7 +66,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean completed;
   private Handler<Void> completionHandler;
   private Long reset;
-  private HttpClientResponseImpl response;
   private ByteBuf pendingChunks;
   private CompositeByteBuf cachedChunks;
   private int pendingMaxSize = -1;
@@ -382,7 +381,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  private void handleNextRequest(HttpClientResponse resp, HttpClientRequestImpl next, long timeoutMs) {
+  private void handleNextRequest(HttpClientRequestImpl next, long timeoutMs) {
     next.handler(respHandler);
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
@@ -446,14 +445,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
     if (reset == null) {
-      response = resp;
       int statusCode = resp.statusCode();
       if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
         Future<HttpClientRequest> next = client.redirectHandler().apply(resp);
         if (next != null) {
           next.setHandler(ar -> {
             if (ar.succeeded()) {
-              handleNextRequest(resp, (HttpClientRequestImpl) ar.result(), timeoutMs);
+              handleNextRequest((HttpClientRequestImpl) ar.result(), timeoutMs);
             } else {
               handleException(ar.cause());
             }
@@ -869,12 +867,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (completionHandler != null) {
         completionHandler.handle(null);
       }
-    }
-  }
-
-  void handleResponseEnd() {
-    synchronized (getLock()) {
-      response = null;
     }
   }
 
