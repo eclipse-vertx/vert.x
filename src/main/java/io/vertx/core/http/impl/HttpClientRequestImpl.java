@@ -74,6 +74,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private long written;
   private CaseInsensitiveHeaders headers;
 
+  // completed => drainHandler = null
+
   HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port,
                         String relativeURI, VertxInternal vertx) {
     super(client, ssl, method, host, port, relativeURI);
@@ -328,8 +330,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (getLock()) {
       if (reset == null) {
         reset = code;
-        if (!completed) {
-          completed = true;
+        if (tryComplete()) {
           if (completionHandler != null) {
             completionHandler.handle(null);
           }
@@ -339,6 +340,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
         return true;
       }
+      return false;
+    }
+  }
+
+  private boolean tryComplete() {
+    if (!completed) {
+      completed = true;
+      drainHandler = null;
+      return true;
+    } else {
       return false;
     }
   }
@@ -371,7 +382,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   void handleDrained() {
     synchronized (getLock()) {
-      if (!completed && drainHandler != null) {
+      if (drainHandler != null) {
         try {
           drainHandler.handle(null);
         } catch (Throwable t) {
@@ -863,7 +874,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
 
     if (end) {
-      completed = true;
+      tryComplete();
       if (completionHandler != null) {
         completionHandler.handle(null);
       }
