@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -43,10 +44,11 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   final boolean logEnabled;
   final int maxSockets;
   final int windowSize;
+  final boolean clearTextUpgrade;
 
   public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, HttpClientMetrics metrics,
                    Map<Channel, ? super Http2ClientConnection> connectionMap,
-                   int maxConcurrency, boolean logEnabled, int maxSize, int windowSize) {
+                   int maxConcurrency, boolean logEnabled, int maxSize, int windowSize, boolean clearTextUpgrade) {
     this.queue = queue;
     this.client = client;
     this.metrics = metrics;
@@ -55,6 +57,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     this.logEnabled = logEnabled;
     this.maxSockets = maxSize;
     this.windowSize = windowSize;
+    this.clearTextUpgrade = clearTextUpgrade;
   }
 
   @Override
@@ -80,24 +83,26 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     return null;
   }
 
-  void createConn(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) throws Http2Exception {
+  void createConn(ContextImpl context, Channel ch, Waiter waiter) throws Http2Exception {
     synchronized (queue) {
+      boolean upgrade;
+      upgrade = ch.pipeline().get(SslHandler.class) == null && clearTextUpgrade;
       VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>(ch)
-          .connectionMap(connectionMap)
-          .server(false)
-          .clientUpgrade(upgrade)
-          .useCompression(client.getOptions().isTryUseCompression())
-          .initialSettings(client.getOptions().getInitialSettings())
-          .connectionFactory(connHandler -> {
-            Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, connHandler, metrics);
-            if (metrics != null) {
-              Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-              conn.metric(metric);
-            }
-            return conn;
-          })
-          .logEnabled(logEnabled)
-          .build();
+        .connectionMap(connectionMap)
+        .server(false)
+        .clientUpgrade(upgrade)
+        .useCompression(client.getOptions().isTryUseCompression())
+        .initialSettings(client.getOptions().getInitialSettings())
+        .connectionFactory(connHandler -> {
+          Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, connHandler, metrics);
+          if (metrics != null) {
+            Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+            conn.metric(metric);
+          }
+          return conn;
+        })
+        .logEnabled(logEnabled)
+        .build();
       Http2ClientConnection conn = handler.connection;
       if (metrics != null) {
         metrics.endpointConnected(queue.metric, conn.metric());

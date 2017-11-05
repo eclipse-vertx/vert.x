@@ -213,7 +213,7 @@ public class ConnectionManager {
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
         maxSize = options.getHttp2MaxPoolSize();
-        pool =  (Pool)new Http2Pool(this, client, metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize());
+        pool =  (Pool)new Http2Pool(this, client, metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize(), options.isHttp2ClearTextUpgrade());
       } else {
         maxSize = options.getMaxPoolSize();
         pool = (Pool)new Http1xPool(client, metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize(), host, port);
@@ -347,10 +347,10 @@ public class ConnectionManager {
       ((Http1xPool)(Pool)pool).createConn(context, ch, waiter);
     }
 
-    private void http2Connected(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {
+    private void http2Connected(ContextImpl context, Channel ch, Waiter waiter) {
       context.executeFromIO(() -> {
         try {
-          ((Http2Pool)(Pool)pool).createConn(context, ch, waiter, upgrade);
+          ((Http2Pool)(Pool)pool).createConn(context, ch, waiter);
         } catch (Http2Exception e) {
           connectionFailed(context, ch, waiter::handleFailure, e);
         }
@@ -444,7 +444,7 @@ public class ConnectionManager {
               if (useAlpn) {
                 if ("h2".equals(protocol)) {
                   applyHttp2ConnectionOptions(ch.pipeline());
-                  queue.http2Connected(context, ch, waiter, false);
+                  queue.http2Connected(context, ch, waiter);
                 } else {
                   applyHttp1xConnectionOptions(ch.pipeline(), context);
                   HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
@@ -500,7 +500,7 @@ public class ConnectionManager {
                 @Override
                 public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
                   applyHttp2ConnectionOptions(pipeline);
-                  queue.http2Connected(context, ch, waiter, true);
+                  queue.http2Connected(context, ch, waiter);
                 }
               };
               HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
@@ -523,7 +523,7 @@ public class ConnectionManager {
               // Upgrade handler do nothing
             } else {
               if (version == HttpVersion.HTTP_2 && !options.isHttp2ClearTextUpgrade()) {
-                queue.http2Connected(context, ch, waiter, false);
+                queue.http2Connected(context, ch, waiter);
               } else {
                 queue.http1xConnected(version, context, port, host, ch, waiter);
               }
