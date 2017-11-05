@@ -62,7 +62,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> drainHandler;
   private Handler<HttpClientRequest> pushHandler;
   private Handler<HttpConnection> connectionHandler;
-  private boolean headWritten;
   private boolean completed;
   private Handler<Void> completionHandler;
   private Long reset;
@@ -286,12 +285,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       checkComplete();
       checkResponseHandler();
       if (stream != null) {
-        if (!headWritten) {
-          writeHead();
-          if (completionHandler != null) {
-            completionHandler.handle(stream.version());
-          }
-        }
+        throw new IllegalStateException("Head already written");
       } else {
         connect(completionHandler);
       }
@@ -716,15 +710,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          writeHeadWithContent(pending, true);
-
+          stream.writeHeadWithContent(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true);
           conn.reportBytesWritten(written);
-
           if (respHandler != null) {
             this.stream.endRequest();
           }
         } else {
-          writeHeadWithContent(pending, false);
+          stream.writeHeadWithContent(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false);
           if (headersCompletionHandler != null) {
             headersCompletionHandler.handle(stream.version());
           }
@@ -732,15 +724,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          writeHeadWithContent(null, true);
-
+          stream.writeHeadWithContent(method, rawMethod, uri, headers, hostHeader(), chunked, null, true);
           conn.reportBytesWritten(written);
-
           if (respHandler != null) {
             this.stream.endRequest();
           }
         } else {
-          writeHead();
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked);
           if (headersCompletionHandler != null) {
             headersCompletionHandler.handle(stream.version());
           }
@@ -756,17 +746,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean contentLengthSet() {
     return headers != null && headers().contains(CONTENT_LENGTH);
   }
-
-  private void writeHead() {
-    stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked);
-    headWritten = true;
-  }
-
-  private void writeHeadWithContent(ByteBuf buf, boolean end) {
-    stream.writeHeadWithContent(method, rawMethod, uri, headers, hostHeader(), chunked, buf, end);
-    headWritten = true;
-  }
-
 
   @Override
   public void end(String chunk) {
@@ -860,11 +839,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
       connect(null);
     } else {
-      if (!headWritten) {
-        writeHeadWithContent(buff, end);
-      } else {
-        stream.writeBuffer(buff, end);
-      }
+      stream.writeBuffer(buff, end);
       if (end) {
         stream.connection().reportBytesWritten(written);
         if (respHandler != null) {
