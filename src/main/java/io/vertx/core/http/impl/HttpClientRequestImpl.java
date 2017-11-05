@@ -72,7 +72,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private int pendingMaxSize = -1;
   private int followRedirects;
   private boolean connecting;
-  private boolean writeHead;
   private long written;
   private CaseInsensitiveHeaders headers;
 
@@ -294,7 +293,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
       } else {
         connect(completionHandler);
-        writeHead = true;
       }
       return this;
     }
@@ -733,11 +731,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             this.stream.endRequest();
           }
         } else {
-          if (writeHead) {
-            writeHead();
-            if (headersCompletionHandler != null) {
-              headersCompletionHandler.handle(stream.version());
-            }
+          writeHead();
+          if (headersCompletionHandler != null) {
+            headersCompletionHandler.handle(stream.version());
           }
         }
       }
