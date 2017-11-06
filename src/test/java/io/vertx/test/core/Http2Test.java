@@ -25,6 +25,7 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.tls.Cert;
 import org.junit.Test;
 
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -355,5 +356,28 @@ public class Http2Test extends HttpTest {
     } catch (IllegalArgumentException ignore) {
       // Expected
     }
+  }
+
+  @Test
+  public void testServePendingRequests() throws Exception {
+    int n = 10;
+    waitFor(n);
+    LinkedList<HttpServerRequest> requests = new LinkedList<>();
+    Set<HttpConnection> connections = new HashSet<>();
+    server.requestHandler(req -> {
+      requests.add(req);
+      connections.add(req.connection());
+      assertEquals(1, connections.size());
+      if (requests.size() == n) {
+        while (requests.size() > 0) {
+          requests.removeFirst().response().end();
+        }
+      }
+    });
+    startServer();
+    for (int i = 0;i < n;i++) {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> complete()).end();
+    }
+    await();
   }
 }
