@@ -404,7 +404,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .compressionLevel(options.getCompressionLevel())
         .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> {
-          Http2ServerConnection conn = new Http2ServerConnection(holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
+          Http2ServerConnection conn = new Http2ServerConnection(holder.context, serverOrigin, connHandler, options, holder.handler, metrics);
           if (metrics != null) {
             conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
           }
@@ -464,12 +464,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public void handleHttp2(Channel ch) {
     HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(ch.eventLoop());
     configureHttp2(ch.pipeline());
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(holder, null, ch);
-    if (holder.handler.connectionHandler != null) {
-      holder.context.executeFromIO(() -> {
-        holder.handler.connectionHandler.handle(handler.connection);
-      });
-    }
+    setHandler(holder, null, ch);
   }
 
   public void configureHttp2(ChannelPipeline pipeline) {

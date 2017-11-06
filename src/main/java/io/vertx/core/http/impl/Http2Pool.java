@@ -19,6 +19,8 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.ssl.SslHandler;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -29,13 +31,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
   // Pools must locks on the queue object to keep a single lock
-  private final ConnectionManager.ConnQueue queue;
+  final ConnectionManager.ConnQueue queue;
   private final Set<Http2ClientConnection> allConnections = new HashSet<>();
   private final Map<Channel, ? super Http2ClientConnection> connectionMap;
   final HttpClientImpl client;
@@ -83,7 +87,8 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     return null;
   }
 
-  public void createConn(ContextImpl context, Channel ch, Waiter waiter) throws Exception {
+  @Override
+  public void createConn(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> resultHandler) throws Exception {
     synchronized (queue) {
       boolean upgrade;
       upgrade = ch.pipeline().get(SslHandler.class) == null && clearTextUpgrade;
@@ -94,7 +99,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
         .useCompression(client.getOptions().isTryUseCompression())
         .initialSettings(client.getOptions().getInitialSettings())
         .connectionFactory(connHandler -> {
-          Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, connHandler, metrics);
+          Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, connHandler, metrics, resultHandler);
           if (metrics != null) {
             Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
             conn.metric(metric);
@@ -111,11 +116,19 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
       if (windowSize > 0) {
         conn.setWindowSize(windowSize);
       }
-      conn.streamCount++;
-      waiter.handleConnection(conn); // Should make same tests than in deliverRequest
-      queue.deliverStream(conn, waiter);
-      checkPending(conn);
     }
+  }
+
+  @Override
+  public void init(Http2ClientConnection conn, Waiter waiter) {
+    conn.getContext().executeFromIO(() -> {
+      synchronized (queue) {
+        conn.streamCount++;
+        waiter.handleConnection(conn); // Should make same tests than in deliverRequest
+        queue.deliverStream(conn, waiter);
+        checkPending(conn);
+      }
+    });
   }
 
   private boolean canReserveStream(Http2ClientConnection handler) {

@@ -33,11 +33,14 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -278,7 +281,6 @@ public class ConnectionManager {
     }
 
     private void createNewConnection(Waiter waiter) {
-      connCount++;
       ContextImpl context;
       if (waiter.context == null) {
         // Embedded
@@ -286,11 +288,31 @@ public class ConnectionManager {
       } else {
         context = waiter.context;
       }
+      createNewConnection(context, ar -> {
+        if (ar.succeeded()) {
+          pool.init(ar.result(), waiter);
+        } else {
+
+          // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
+          // If that doesn't exist just log it
+          // Handler<Throwable> exHandler =
+          //  waiter == null ? log::error : waiter::handleFailure;
+
+          context.executeFromIO(() -> {
+            connectionClosed();
+            waiter.handleFailure(ar.cause());
+          });
+        }
+      });
+    }
+
+    private void createNewConnection(ContextImpl context, Handler<AsyncResult<HttpClientConnection>> handler) {
+      connCount++;
       sslHelper.validate(vertx);
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
       bootstrap.channel(vertx.transport().channelType(false));
-      connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, waiter);
+      connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, handler);
     }
 
     /**
@@ -326,55 +348,47 @@ public class ConnectionManager {
       }
     }
 
-    private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, Waiter waiter) {
+    private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, Handler<AsyncResult<HttpClientConnection>> handler) {
       SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
       if (cause != null) {
         sslException.initCause(cause);
       }
-      connectionFailed(context, ch, waiter::handleFailure, sslException);
+      connectionFailed(context, ch, handler, sslException);
     }
 
-    private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
+    private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Handler<AsyncResult<HttpClientConnection>> handler) {
       // change the pool to Http1xPool
       synchronized (this) {
         pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion, options.getMaxPoolSize(), host, port);
       }
-      http1xConnected(context, ch, waiter);
+      http1xConnected(context, ch, handler);
     }
 
-    private void http1xConnected(ContextImpl context, Channel ch, Waiter waiter) {
+    private void http1xConnected(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) {
       try {
-        pool.createConn(context, ch, waiter);
+        pool.createConn(context, ch, handler);
       } catch (Exception e) {
-        connectionFailed(context, ch, waiter::handleFailure, e);
+        handler.handle(Future.failedFuture(e));
       }
     }
 
-    private void http2Connected(ContextImpl context, Channel ch, Waiter waiter) {
-      context.executeFromIO(() -> {
-        try {
-          pool.createConn(context, ch, waiter);
-        } catch (Exception e) {
-          connectionFailed(context, ch, waiter::handleFailure, e);
-        }
-      });
+    private void http2Connected(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) {
+      try {
+        pool.createConn(context, ch, handler);
+      } catch (Exception e) {
+        connectionFailed(context, ch, handler, e);
+      }
     }
 
-    private void connectionFailed(ContextImpl context, Channel ch, Handler<Throwable> connectionExceptionHandler,
+    private void connectionFailed(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> connectionExceptionHandler,
         Throwable t) {
-      // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
-      // If that doesn't exist just log it
-      Handler<Throwable> exHandler =
-          connectionExceptionHandler == null ? log::error : connectionExceptionHandler;
 
-      context.executeFromIO(() -> {
-        connectionClosed();
-        try {
-          ch.close();
-        } catch (Exception ignore) {
-        }
-        exHandler.handle(t);
-      });
+      try {
+        ch.close();
+      } catch (Exception ignore) {
+      }
+
+      connectionExceptionHandler.handle(Future.failedFuture(t));
     }
   }
 
@@ -385,7 +399,7 @@ public class ConnectionManager {
 
     HttpVersion version();
 
-    void createConn(ContextImpl context, Channel ch, Waiter waiter) throws Exception;
+    void createConn(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception;
 
     C pollConnection();
 
@@ -396,6 +410,8 @@ public class ConnectionManager {
      * @return true whether or not a new connection can be created
      */
     boolean canCreateConnection(int connCount);
+
+    void init(C conn, Waiter waiter);
 
     void closeAllConnections();
 
@@ -422,7 +438,7 @@ public class ConnectionManager {
         HttpVersion version,
         String host,
         int port,
-        Waiter waiter) {
+        Handler<AsyncResult<HttpClientConnection>> handler) {
 
       applyConnectionOptions(options, bootstrap);
 
@@ -449,19 +465,19 @@ public class ConnectionManager {
               if (useAlpn) {
                 if ("h2".equals(protocol)) {
                   applyHttp2ConnectionOptions(ch.pipeline());
-                  queue.http2Connected(context, ch, waiter);
+                  queue.http2Connected(context, ch, handler);
                 } else {
                   applyHttp1xConnectionOptions(ch.pipeline(), context);
                   HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
                     HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-                  queue.fallbackToHttp1x(ch, context, fallbackProtocol, port, host, waiter);
+                  queue.fallbackToHttp1x(ch, context, fallbackProtocol, port, host, handler);
                 }
               } else {
                 applyHttp1xConnectionOptions(ch.pipeline(), context);
-                queue.http1xConnected(context, ch, waiter);
+                queue.http1xConnected(context, ch, handler);
               }
             } else {
-              queue.handshakeFailure(context, ch, fut.cause(), waiter);
+              queue.handshakeFailure(context, ch, fut.cause(), handler);
             }
           });
         } else {
@@ -489,7 +505,7 @@ public class ConnectionManager {
                     p.remove(this);
                     // Upgrade handler will remove itself
                     applyHttp1xConnectionOptions(ch.pipeline(), context);
-                    queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
+                    queue.fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, handler);
                   }
                 }
                 @Override
@@ -505,7 +521,7 @@ public class ConnectionManager {
                 @Override
                 public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
                   applyHttp2ConnectionOptions(pipeline);
-                  queue.http2Connected(context, ch, waiter);
+                  queue.http2Connected(context, ch, handler);
                 }
               };
               HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
@@ -528,14 +544,14 @@ public class ConnectionManager {
               // Upgrade handler do nothing
             } else {
               if (version == HttpVersion.HTTP_2 && !options.isHttp2ClearTextUpgrade()) {
-                queue.http2Connected(context, ch, waiter);
+                queue.http2Connected(context, ch, handler);
               } else {
-                queue.http1xConnected(context, ch, waiter);
+                queue.http1xConnected(context, ch, handler);
               }
             }
           }
         } else {
-          queue.connectionFailed(context, null, waiter::handleFailure, res.cause());
+          queue.connectionFailed(context, null, handler, res.cause());
         }
       };
 

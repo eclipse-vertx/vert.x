@@ -17,6 +17,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
@@ -99,6 +102,14 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     return conn;
   }
 
+  @Override
+  public void init(ClientConnection conn, Waiter waiter) {
+    conn.getContext().executeFromIO(() -> {
+      waiter.handleConnection(conn);
+      queue.deliverStream(conn, waiter);
+    });
+  }
+
   public void recycle(ClientConnection conn) {
     synchronized (queue) {
       Waiter waiter = queue.getNextWaiter();
@@ -111,26 +122,24 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     }
   }
 
-  public void createConn(ContextImpl context, Channel ch, Waiter waiter) {
-    ClientHandler handler = new ClientHandler(
+  @Override
+  public void createConn(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception {
+    ClientHandler clientHandler = new ClientHandler(
       context,
       this,
       client,
       queue.metric,
       metrics);
-    handler.addHandler(conn -> {
+    clientHandler.addHandler(conn -> {
       synchronized (queue) {
         allConnections.add(conn);
       }
       connectionMap.put(ch, conn);
     });
-    handler.removeHandler(this::connectionClosed);
-    ch.pipeline().addLast("handler", handler);
-    ClientConnection conn = handler.getConnection();
-    context.executeFromIO(() -> {
-      waiter.handleConnection(conn);
-      queue.deliverStream(conn, waiter);
-    });
+    clientHandler.removeHandler(this::connectionClosed);
+    ch.pipeline().addLast("handler", clientHandler);
+    ClientConnection conn = clientHandler.getConnection();
+    handler.handle(Future.succeededFuture(conn));
   }
 
   // Called if the connection is actually closed, OR the connection attempt failed - in the latter case

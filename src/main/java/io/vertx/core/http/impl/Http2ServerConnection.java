@@ -30,11 +30,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -49,7 +45,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
   private final HttpServerOptions options;
   private final String serverOrigin;
-  private final Handler<HttpServerRequest> requestHandler;
+  private final HttpHandlers handlers;
   private final HttpServerMetrics metrics;
 
   private Long maxConcurrentStreams;
@@ -61,14 +57,23 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       String serverOrigin,
       VertxHttp2ConnectionHandler connHandler,
       HttpServerOptions options,
-      Handler<HttpServerRequest> requestHandler,
+      HttpHandlers handlers,
       HttpServerMetrics metrics) {
     super(context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;
-    this.requestHandler = requestHandler;
+    this.handlers = handlers;
     this.metrics = metrics;
+  }
+
+  @Override
+  protected void handleConnection() {
+    if (handlers.connectionHandler != null) {
+      context.executeFromIO(() -> {
+        handlers.connectionHandler.handle(handler.connection);
+      });
+    }
   }
 
   public HttpServerMetrics metrics() {
@@ -127,7 +132,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       context.executeFromIO(() -> {
         Http2ServerResponseImpl resp = req.response();
         resp.beginRequest();
-        requestHandler.handle(req);
+        handlers.requesthHandler.handle(req);
         boolean hasPush = resp.endRequest();
         if (hasPush) {
           ctx.flush();

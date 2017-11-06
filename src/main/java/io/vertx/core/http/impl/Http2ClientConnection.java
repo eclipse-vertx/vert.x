@@ -27,10 +27,7 @@ import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClientRequest;
@@ -54,16 +51,24 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   final HttpClientMetrics metrics;
   final Object queueMetric;
   int streamCount;
+  final Handler<AsyncResult<HttpClientConnection>> resultHandler;
 
   public Http2ClientConnection(Http2Pool http2Pool,
                                Object queueMetric,
                                ContextImpl context,
                                VertxHttp2ConnectionHandler connHandler,
-                               HttpClientMetrics metrics) {
+                               HttpClientMetrics metrics,
+                               Handler<AsyncResult<HttpClientConnection>> resultHandler) {
     super(context, connHandler);
     this.http2Pool = http2Pool;
     this.metrics = metrics;
     this.queueMetric = queueMetric;
+    this.resultHandler = resultHandler;
+  }
+
+  @Override
+  protected void handleConnection() {
+    resultHandler.handle(Future.succeededFuture(this));
   }
 
   @Override
