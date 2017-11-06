@@ -88,6 +88,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     super.channelActive(ctx);
+
+    // super call writes the connection preface
+    // we need to flush to send it
+    // this is called only on the client
+    ctx.flush();
   }
 
   @Override
