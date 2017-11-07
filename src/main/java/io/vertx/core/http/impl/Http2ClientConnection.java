@@ -51,6 +51,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   final HttpClientMetrics metrics;
   final Object queueMetric;
   int streamCount;
+  private int count;
   final Handler<AsyncResult<HttpClientConnection>> resultHandler;
 
   public Http2ClientConnection(Http2Pool http2Pool,
@@ -64,6 +65,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.metrics = metrics;
     this.queueMetric = queueMetric;
     this.resultHandler = resultHandler;
+  }
+
+  @Override
+  public int use() {
+    return count++;
   }
 
   @Override

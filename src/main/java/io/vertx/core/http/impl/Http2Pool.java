@@ -79,6 +79,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   @Override
   public Http2ClientConnection pollConnection() {
     for (Http2ClientConnection conn : allConnections) {
+      // Julien : check conn is valid ?
       if (canReserveStream(conn)) {
         conn.streamCount++;
         return conn;
@@ -119,31 +120,9 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     }
   }
 
-  @Override
-  public void init(Http2ClientConnection conn, Waiter waiter) {
-    conn.getContext().executeFromIO(() -> {
-      synchronized (queue) {
-        conn.streamCount++;
-        waiter.handleConnection(conn); // Should make same tests than in deliverRequest
-        queue.deliverStream(conn, waiter);
-        checkPending(conn);
-      }
-    });
-  }
-
   private boolean canReserveStream(Http2ClientConnection handler) {
     int maxConcurrentStreams = Math.min(handler.handler.connection().local().maxActiveStreams(), maxConcurrency);
     return handler.streamCount < maxConcurrentStreams;
-  }
-
-  void checkPending(Http2ClientConnection conn) {
-    synchronized (queue) {
-      Waiter waiter;
-      while (canReserveStream(conn) && (waiter = queue.getNextWaiter()) != null) {
-        conn.streamCount++;
-        queue.deliverStream(conn, waiter);
-      }
-    }
   }
 
   void discard(Http2ClientConnection conn) {
@@ -159,9 +138,13 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
   @Override
   public void recycle(Http2ClientConnection conn) {
+    queue.recycle(conn);
+  }
+
+  @Override
+  public void doRecycle(Http2ClientConnection conn) {
     synchronized (queue) {
       conn.streamCount--;
-      checkPending(conn);
     }
   }
 

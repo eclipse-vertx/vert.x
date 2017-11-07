@@ -86,6 +86,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
+  private int count;
   private boolean reset;
   private boolean paused;
   private Buffer pausedChunk;
@@ -104,6 +105,11 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     this.pipelining = client.getOptions().isPipelining();
     this.keepAlive = client.getOptions().isKeepAlive();
     this.pipeliningLimit = client.getOptions().getPipeliningLimit();
+  }
+
+  @Override
+  public int use() {
+    return count++;
   }
 
   public HttpClientMetrics metrics() {

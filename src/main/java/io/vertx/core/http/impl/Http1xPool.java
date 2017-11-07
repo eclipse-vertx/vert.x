@@ -89,7 +89,10 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
   @Override
   public ClientConnection pollConnection() {
-    return availableConnections.poll();
+    ClientConnection conn;
+    while ((conn = availableConnections.poll()) != null && !conn.isValid()) {
+    }
+    return conn;
   }
 
   @Override
@@ -103,23 +106,15 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
-  public void init(ClientConnection conn, Waiter waiter) {
-    conn.getContext().executeFromIO(() -> {
-      waiter.handleConnection(conn);
-      queue.deliverStream(conn, waiter);
-    });
+  public void doRecycle(ClientConnection conn) {
+    synchronized (queue) {
+      // Return to set of available from here to not return it several times
+      availableConnections.add(conn);
+    }
   }
 
   public void recycle(ClientConnection conn) {
-    synchronized (queue) {
-      Waiter waiter = queue.getNextWaiter();
-      if (waiter != null) {
-        queue.deliverStream(conn, waiter);
-      } else {
-        // Return to set of available from here to not return it several times
-        availableConnections.add(conn);
-      }
-    }
+    queue.recycle(conn);
   }
 
   @Override

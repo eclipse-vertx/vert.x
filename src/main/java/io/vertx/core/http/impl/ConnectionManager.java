@@ -33,14 +33,12 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -192,7 +190,7 @@ public class ConnectionManager {
    * pool if the server does not support HTTP/2 or after negotiation. In this situation
    * all waiters on this queue will use HTTP/1.1 connections.
    */
-  public class ConnQueue {
+  class ConnQueue {
 
     private final QueueManager mgr;
     private final String peerHost;
@@ -223,16 +221,10 @@ public class ConnectionManager {
       this.metric = metrics != null ? metrics.createEndpoint(host, port, maxSize) : null;
     }
 
-    public synchronized void getConnection(Waiter waiter) {
+    synchronized void getConnection(Waiter waiter) {
       HttpClientConnection conn = pool.pollConnection();
-      if (conn != null && conn.isValid()) {
-        ContextImpl context = waiter.context;
-        if (context == null) {
-          context = conn.getContext();
-        } else if (context != conn.getContext()) {
-          ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
-        }
-        context.runOnContext(v -> deliverStream(conn, waiter));
+      if (conn != null) {
+        conn.getContext().runOnContext(v -> deliver(conn, waiter));
       } else {
         if (pool.canCreateConnection(connCount)) {
           // Create a new connection
@@ -251,11 +243,7 @@ public class ConnectionManager {
       }
     }
 
-    /**
-     * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
-     *
-     * @param conn the connection
-     */
+    /*
     void deliverStream(HttpClientConnection conn, Waiter waiter) {
       if (!conn.isValid()) {
         // The connection has been closed - closed connections can be in the pool
@@ -275,8 +263,9 @@ public class ConnectionManager {
         waiter.handleStream(stream);
       }
     }
+    */
 
-    void closeAllConnections() {
+    private void closeAllConnections() {
       pool.closeAllConnections();
     }
 
@@ -290,7 +279,7 @@ public class ConnectionManager {
       }
       createNewConnection(context, ar -> {
         if (ar.succeeded()) {
-          pool.init(ar.result(), waiter);
+          deliver(ar.result(), waiter);
         } else {
 
           // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
@@ -313,6 +302,60 @@ public class ConnectionManager {
       bootstrap.group(context.nettyEventLoop());
       bootstrap.channel(vertx.transport().channelType(false));
       connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, handler);
+    }
+
+    void recycle(HttpClientConnection conn) {
+      pool.doRecycle(conn);
+      checkPending();
+    }
+
+    private void deliver(HttpClientConnection conn, Waiter waiter) {
+      if (conn.isValid()) {
+        if (!waiter.isCancelled()) {
+          deliverInternal(conn, waiter);
+        } else {
+          // Should check connection is still VALID
+          recycle(conn);
+        }
+        checkPending();
+      } else {
+        getConnection(waiter);
+      }
+    }
+
+    private void deliverInternal(HttpClientConnection conn, Waiter waiter) {
+      conn.getContext().executeFromIO(() -> {
+        HttpClientStream stream;
+        try {
+          stream = pool.createStream(conn);
+        } catch (Exception e) {
+          getConnection(waiter);
+          return;
+        }
+        if (conn.use() == 0) {
+          waiter.handleConnection(conn);
+        }
+        waiter.handleStream(stream);
+      });
+    }
+
+    private void checkPending() {
+      while (true) {
+        Waiter waiter = waiters.peek();
+        if (waiter == null) {
+          break;
+        }
+        if (waiter.isCancelled()) {
+          waiters.poll();
+        } else {
+          HttpClientConnection conn = pool.pollConnection();
+          if (conn == null) {
+            break;
+          }
+          waiters.poll();
+          deliverInternal(conn, waiter);
+        }
+      }
     }
 
     /**
@@ -411,11 +454,11 @@ public class ConnectionManager {
      */
     boolean canCreateConnection(int connCount);
 
-    void init(C conn, Waiter waiter);
-
     void closeAllConnections();
 
     void recycle(C conn);
+
+    void doRecycle(C conn);
 
     HttpClientStream createStream(C conn) throws Exception;
 

@@ -944,6 +944,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testConnectionShutdownInConnectionHandler() throws Exception {
+    waitFor(2);
     AtomicInteger serverStatus = new AtomicInteger();
     server.connectionHandler(conn -> {
       if (serverStatus.getAndIncrement() == 0) {
@@ -971,20 +972,16 @@ public class Http2ClientTest extends Http2TestBase {
       conn.shutdownHandler(v -> {
         assertOnIOContext(ctx);
         clientStatus.compareAndSet(1, 2);
+        complete();
       });
       if (clientStatus.getAndIncrement() == 0) {
         conn.shutdown();
       }
     });
     req1.exceptionHandler(err -> {
-      fail();
+      complete();
     });
-    req1.handler(resp -> {
-      assertEquals(2, clientStatus.getAndIncrement());
-      resp.endHandler(v -> {
-        testComplete();
-      });
-    });
+    req1.handler(resp -> fail());
     req1.end();
     await();
   }
