@@ -837,6 +837,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           pending.addComponent(true, buff);
         }
       }
+      if (end) {
+        tryComplete();
+        if (completionHandler != null) {
+          completionHandler.handle(null);
+        }
+      }
       connect(null);
     } else {
       stream.writeBuffer(buff, end);
@@ -845,13 +851,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (respHandler != null) {
           stream.endRequest();
         }
-      }
-    }
-
-    if (end) {
-      tryComplete();
-      if (completionHandler != null) {
-        completionHandler.handle(null);
+        tryComplete();
+        if (completionHandler != null) {
+          completionHandler.handle(null);
+        }
       }
     }
   }
