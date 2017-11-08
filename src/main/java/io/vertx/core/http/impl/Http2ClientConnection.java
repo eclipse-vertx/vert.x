@@ -48,9 +48,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   final HttpClientMetrics metrics;
   final Object queueMetric;
   int streamCount;
-  final Handler<AsyncResult<HttpClientConnection>> resultHandler;
   private Handler<Void> concurrencyUpdateHandler;
-  private Handler<Void> evictionHandler;
 
   public Http2ClientConnection(Object queueMetric,
                                HttpClientImpl client,
@@ -61,7 +59,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     super(context, connHandler);
     this.metrics = metrics;
     this.queueMetric = queueMetric;
-    this.resultHandler = resultHandler;
     this.client = client;
   }
 
@@ -72,7 +69,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   protected void onConcurrencyChange() {
-    concurrencyUpdateHandler.handle(null);
+    Handler<Void> handler = concurrencyUpdateHandler;
+    if (handler != null) {
+      handler.handle(null);
+    }
   }
 
   @Override
@@ -83,13 +83,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public HttpClientConnection evictionHandler(Handler<Void> handler) {
-    evictionHandler = handler;
     return this;
-  }
-
-  @Override
-  protected void onConnect() {
-    resultHandler.handle(Future.succeededFuture(this));
   }
 
   @Override
@@ -98,20 +92,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    evictionHandler.handle(null);
-  }
-
-  @Override
-  void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    super.onGoAwayReceived(lastStreamId, errorCode, debugData);
-    evictionHandler.handle(null);
-  }
-
-  @Override
   void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
-    concurrencyUpdateHandler.handle(null);
+    Handler<Void> handler = concurrencyUpdateHandler;
+    if (handler != null) {
+      handler.handle(null);
+    }
   }
 
   synchronized HttpClientStream createStream() throws Http2Exception {
@@ -121,12 +107,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Http2ClientStream clientStream = new Http2ClientStream(this, stream, writable);
     streams.put(clientStream.stream.id(), clientStream);
     return clientStream;
-  }
-
-  @Override
-  public synchronized void handleClosed() {
-    evictionHandler.handle(null);
-    super.handleClosed();
   }
 
   @Override

@@ -70,7 +70,6 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private final boolean ssl;
   private final String host;
   private final int port;
-  // private final Http1xPool pool;
   private final Object endpointMetric;
   private final boolean pipelining;
   private final boolean keepAlive;

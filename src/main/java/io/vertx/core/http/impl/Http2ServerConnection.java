@@ -45,7 +45,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
   private final HttpServerOptions options;
   private final String serverOrigin;
-  private final HttpHandlers handlers;
+  private final Handler<HttpServerRequest> requestHandler;
   private final HttpServerMetrics metrics;
 
   private Long maxConcurrentStreams;
@@ -57,23 +57,14 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       String serverOrigin,
       VertxHttp2ConnectionHandler connHandler,
       HttpServerOptions options,
-      HttpHandlers handlers,
+      Handler<HttpServerRequest> requestHandler,
       HttpServerMetrics metrics) {
     super(context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;
-    this.handlers = handlers;
+    this.requestHandler = requestHandler;
     this.metrics = metrics;
-  }
-
-  @Override
-  protected void onConnect() {
-    if (handlers.connectionHandler != null) {
-      context.executeFromIO(() -> {
-        handlers.connectionHandler.handle(handler.connection);
-      });
-    }
   }
 
   public HttpServerMetrics metrics() {
@@ -132,7 +123,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       context.executeFromIO(() -> {
         Http2ServerResponseImpl resp = req.response();
         resp.beginRequest();
-        handlers.requesthHandler.handle(req);
+        requestHandler.handle(req);
         boolean hasPush = resp.endRequest();
         if (hasPush) {
           ctx.flush();

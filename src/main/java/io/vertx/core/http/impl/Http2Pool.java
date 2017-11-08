@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
@@ -101,7 +102,6 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
       boolean upgrade;
       upgrade = ch.pipeline().get(SslHandler.class) == null && clearTextUpgrade;
       VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>(ch)
-        .connectionMap(connectionMap)
         .server(false)
         .clientUpgrade(upgrade)
         .useCompression(client.getOptions().isTryUseCompression())
@@ -116,14 +116,21 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
         })
         .logEnabled(logEnabled)
         .build();
-      Http2ClientConnection conn = handler.connection;
-      if (metrics != null) {
-        metrics.endpointConnected(queue.metric, conn.metric());
-      }
-      allConnections.add(conn);
-      if (windowSize > 0) {
-        conn.setWindowSize(windowSize);
-      }
+      handler.addHandler(conn -> {
+        if (metrics != null) {
+          metrics.endpointConnected(queue.metric, conn.metric());
+        }
+        connectionMap.put(conn.channel(), conn);
+        allConnections.add(conn);
+        if (windowSize > 0) {
+          conn.setWindowSize(windowSize);
+        }
+        resultHandler.handle(Future.succeededFuture(conn));
+      });
+      handler.removeHandler(conn -> {
+        connectionMap.remove(conn.channel());
+        evictConnection(conn);
+      });
     }
   }
 

@@ -395,26 +395,37 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   private VertxHttp2ConnectionHandler<Http2ServerConnection> setHandler(HandlerHolder<HttpHandlers> holder, Http2Settings upgrade, Channel ch) {
-    return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>(ch)
-        .connectionMap(connectionMap2)
-        .server(true)
-        .serverUpgrade(upgrade)
-        .useCompression(options.isCompressionSupported())
-        .useDecompression(options.isDecompressionSupported())
-        .compressionLevel(options.getCompressionLevel())
-        .initialSettings(options.getInitialSettings())
-        .connectionFactory(connHandler -> {
-          Http2ServerConnection conn = new Http2ServerConnection(holder.context, serverOrigin, connHandler, options, holder.handler, metrics);
-          if (metrics != null) {
-            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-          }
-          if (options.getHttp2ConnectionWindowSize() > 0) {
-            conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-          }
-          return conn;
-        })
-        .logEnabled(logEnabled)
-        .build();
+    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>(ch)
+      .server(true)
+      .serverUpgrade(upgrade)
+      .useCompression(options.isCompressionSupported())
+      .useDecompression(options.isDecompressionSupported())
+      .compressionLevel(options.getCompressionLevel())
+      .initialSettings(options.getInitialSettings())
+      .connectionFactory(connHandler -> {
+        Http2ServerConnection conn = new Http2ServerConnection(holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
+        if (metrics != null) {
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        }
+        if (options.getHttp2ConnectionWindowSize() > 0) {
+          conn.setWindowSize(options.getHttp2ConnectionWindowSize());
+        }
+        return conn;
+      })
+      .logEnabled(logEnabled)
+      .build();
+    handler.addHandler(conn -> {
+      connectionMap2.put(conn.channel(), conn);
+      if (holder.handler.connectionHandler != null) {
+        holder.context.executeFromIO(() -> {
+          holder.handler.connectionHandler.handle(conn);
+        });
+      }
+    });
+    handler.removeHandler(conn -> {
+      connectionMap2.remove(conn.channel());
+    });
+    return handler;
   }
 
   private void configureHttp1(ChannelPipeline pipeline) {

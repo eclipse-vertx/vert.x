@@ -84,7 +84,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private final ArrayDeque<Runnable> updateSettingsHandlers = new ArrayDeque<>(4);
   private final ArrayDeque<Handler<AsyncResult<Buffer>>> pongHandlers = new ArrayDeque<>();
   private Http2Settings localSettings = new Http2Settings();
-  private Http2Settings remoteSettings;
+  private Http2Settings remoteSettings = new Http2Settings();
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
@@ -208,21 +208,18 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
-    if (remoteSettings == null) {
-      remoteSettings = settings;
-      onConnect();
-    } else {
-      synchronized (this) {
-        Handler<io.vertx.core.http.Http2Settings> handler = remoteSettingsHandler;
-        if (handler != null) {
-          context.executeFromIO(() -> {
-            handler.handle(HttpUtils.toVertxSettings(settings));
-          });
-        }
+    boolean update = !Objects.equals(remoteSettings.maxConcurrentStreams(), settings.maxConcurrentStreams());
+    remoteSettings = settings;
+    synchronized (this) {
+      Handler<io.vertx.core.http.Http2Settings> handler = remoteSettingsHandler;
+      if (handler != null) {
+        context.executeFromIO(() -> {
+          handler.handle(HttpUtils.toVertxSettings(settings));
+        });
       }
-      if (!Objects.equals(remoteSettings.maxConcurrentStreams(), settings.maxConcurrentStreams())) {
-        onConcurrencyChange();
-      }
+    }
+    if (update) {
+      onConcurrencyChange();
     }
   }
 
