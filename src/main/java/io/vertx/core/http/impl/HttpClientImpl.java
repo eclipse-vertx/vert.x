@@ -130,6 +130,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).
         setApplicationProtocols(alpnVersions);
+    sslHelper.validate(vertx);
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();

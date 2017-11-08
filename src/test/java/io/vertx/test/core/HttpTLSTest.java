@@ -1216,10 +1216,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
     clientOptions.setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
-    HttpClient client = vertx.createHttpClient(clientOptions);
-    HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", (handler) -> {});
     try {
-      req.end();
+      vertx.createHttpClient(clientOptions);
       fail("Was expecting a failure");
     } catch (VertxException e) {
       assertNotNull(e.getCause());

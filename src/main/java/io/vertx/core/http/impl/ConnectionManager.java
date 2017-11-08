@@ -264,7 +264,6 @@ public class ConnectionManager {
 
     private void createConnection(Waiter waiter) {
       connCount++;
-      sslHelper.validate(vertx);
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(waiter.context.nettyEventLoop());
       bootstrap.channel(vertx.transport().channelType(false));
