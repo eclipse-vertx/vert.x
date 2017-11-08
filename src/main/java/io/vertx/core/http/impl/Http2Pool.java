@@ -89,7 +89,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  public void createConn(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> resultHandler) throws Exception {
+  public void createConnection(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> resultHandler) throws Exception {
     synchronized (queue) {
       boolean upgrade;
       upgrade = ch.pipeline().get(SslHandler.class) == null && clearTextUpgrade;
@@ -126,7 +126,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  public void discard(Http2ClientConnection conn) {
+  public void discardConnection(Http2ClientConnection conn) {
     synchronized (queue) {
       if (allConnections.remove(conn)) {
         queue.connectionClosed();
@@ -138,7 +138,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  public void recycle(Http2ClientConnection conn) {
+  public void recycleConnection(Http2ClientConnection conn) {
     synchronized (queue) {
       conn.streamCount--;
     }

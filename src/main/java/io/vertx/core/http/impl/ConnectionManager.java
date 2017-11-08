@@ -251,7 +251,7 @@ public class ConnectionManager {
         // that is done asynchronously in the connection closeHandler()
         getConnection(waiter);
       } else if (waiter.isCancelled()) {
-        pool.recycle(conn);
+        pool.recycleConnection(conn);
       } else {
         HttpClientStream stream;
         try {
@@ -284,7 +284,7 @@ public class ConnectionManager {
             if (reuse) {
               recycle(conn);
             } else {
-              pool.discard(conn);
+              pool.discardConnection(conn);
             }
           });
           deliver(conn, waiter);
@@ -313,7 +313,7 @@ public class ConnectionManager {
     }
 
     void recycle(HttpClientConnection conn) {
-      pool.recycle(conn);
+      pool.recycleConnection(conn);
       checkPending();
     }
 
@@ -417,7 +417,7 @@ public class ConnectionManager {
 
     private void http1xConnected(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) {
       try {
-        pool.createConn(context, ch, handler);
+        pool.createConnection(context, ch, handler);
       } catch (Exception e) {
         handler.handle(Future.failedFuture(e));
       }
@@ -425,7 +425,7 @@ public class ConnectionManager {
 
     private void http2Connected(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) {
       try {
-        pool.createConn(context, ch, handler);
+        pool.createConnection(context, ch, handler);
       } catch (Exception e) {
         connectionFailed(context, ch, handler, e);
       }
@@ -450,7 +450,7 @@ public class ConnectionManager {
 
     HttpVersion version();
 
-    void createConn(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception;
+    void createConnection(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception;
 
     C pollConnection();
 
@@ -464,11 +464,11 @@ public class ConnectionManager {
 
     void closeAllConnections();
 
-    void recycle(C conn);
+    void recycleConnection(C conn);
 
     HttpClientStream createStream(C conn) throws Exception;
 
-    void discard(C conn);
+    void discardConnection(C conn);
 
   }
 

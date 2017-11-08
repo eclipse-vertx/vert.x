@@ -106,7 +106,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
-  public void recycle(ClientConnection conn) {
+  public void recycleConnection(ClientConnection conn) {
     synchronized (queue) {
       // Return to set of available from here to not return it several times
       availableConnections.add(conn);
@@ -114,7 +114,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
-  public void createConn(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception {
+  public void createConnection(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception {
     ClientHandler clientHandler = new ClientHandler(
       context,
       this,
@@ -167,7 +167,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
-  public void discard(ClientConnection conn) {
+  public void discardConnection(ClientConnection conn) {
     connectionMap.remove(conn.channel());
   }
 }
