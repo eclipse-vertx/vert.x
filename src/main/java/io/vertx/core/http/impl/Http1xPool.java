@@ -152,7 +152,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
   public void closeAllConnections() {
     Set<ClientConnection> copy;
-    synchronized (this) {
+    synchronized (queue) {
       copy = new HashSet<>(allConnections);
       allConnections.clear();
     }
