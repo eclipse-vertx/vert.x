@@ -2530,11 +2530,11 @@ public class Http1xTest extends HttpTest {
       AtomicBoolean firstRequest = new AtomicBoolean(true);
       socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
         if (firstRequest.getAndSet(false)) {
-          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 4\n"
-              + "\n" + "xxx\n");
+          socket.write("HTTP/1.1 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 4\r\n"
+              + "\r\n" + "xxx\n");
         } else {
-          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 1\n"
-              + "Connection: close\n" + "\n" + "\n");
+          socket.write("HTTP/1.1 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 1\r\n"
+              + "Connection: close\r\n" + "\r\n" + "\r\n");
         }
       }));
     });
@@ -2546,11 +2546,11 @@ public class Http1xTest extends HttpTest {
       AtomicBoolean firstRequest = new AtomicBoolean(true);
       socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
         if (firstRequest.getAndSet(false)) {
-          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 4\n"
-              + "\n" + "xxx\n");
+          socket.write("HTTP/1.1 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 3\r\n"
+              + "\r\n" + "xxx");
         } else {
-          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 1\n"
-              + "Connection: close\n" + "\n" + "\n");
+          socket.write("HTTP/1.1 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 0\r\n"
+              + "Connection: close\r\n" + "\r\n");
           socket.close();
         }
       }));

@@ -257,15 +257,7 @@ public class ConnectionManager {
       }
       createNewConnection(context, ar -> {
         if (ar.succeeded()) {
-          HttpClientConnection conn = ar.result();
-          conn.lifecycleHandler(reuse -> {
-            if (reuse) {
-              recycle(conn);
-            } else {
-              pool.discardConnection(conn);
-            }
-          });
-          deliver(conn, waiter);
+          newConnection(waiter, ar.result());
         } else {
 
           // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
@@ -279,6 +271,19 @@ public class ConnectionManager {
           });
         }
       });
+    }
+
+    private synchronized void newConnection(Waiter waiter, HttpClientConnection conn) {
+      conn.lifecycleHandler(reuse -> recycleConnection(conn, reuse));
+      deliver(conn, waiter);
+    }
+
+    private synchronized void recycleConnection(HttpClientConnection conn, boolean reuse) {
+      if (reuse) {
+        recycle(conn);
+      } else {
+        pool.discardConnection(conn);
+      }
     }
 
     private void createNewConnection(ContextImpl context, Handler<AsyncResult<HttpClientConnection>> handler) {

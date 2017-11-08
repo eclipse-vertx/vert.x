@@ -400,7 +400,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
             connection().close();
           }
         } else {
-          responseEnded(this);
+          responseEnded();
         }
       }
     }
@@ -469,12 +469,12 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     });
   }
 
-  private void responseEnded(ClientConnection conn) {
+  private void responseEnded() {
     if (!keepAlive) {
-      conn.close();
+      close();
     } else {
       context.runOnContext(v -> {
-        if (conn.currentRequest == null) {
+        if (currentRequest == null) {
           lifecycleHandler.handle(true);
         }
       });
