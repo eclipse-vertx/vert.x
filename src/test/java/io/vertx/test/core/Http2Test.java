@@ -31,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -378,6 +379,30 @@ public class Http2Test extends HttpTest {
     for (int i = 0;i < n;i++) {
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> complete()).end();
     }
+    await();
+  }
+
+  @Test
+  public void testInitialMaxConcurrentStreamZero() throws Exception {
+    AtomicLong concurrency = new AtomicLong();
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server.requestHandler(req -> {
+      assertEquals(10, concurrency.get());
+      req.response().end();
+    });
+    server.connectionHandler(conn -> {
+      vertx.setTimer(500, id -> {
+        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(10));
+      });
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      testComplete();
+    }).connectionHandler(conn -> {
+      assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
+      conn.remoteSettingsHandler(settings -> concurrency.set(settings.getMaxConcurrentStreams()));
+    }).setTimeout(10000).exceptionHandler(err -> fail(err)).end();
     await();
   }
 }

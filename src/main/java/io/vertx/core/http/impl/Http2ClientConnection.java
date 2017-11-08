@@ -49,7 +49,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   final Object queueMetric;
   int streamCount;
   final Handler<AsyncResult<HttpClientConnection>> resultHandler;
-  private Handler<Boolean> lifecycleHandler;
+  private Handler<Void> concurrencyUpdateHandler;
+  private Handler<Void> evictionHandler;
 
   public Http2ClientConnection(Object queueMetric,
                                HttpClientImpl client,
@@ -70,13 +71,24 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public HttpClientConnection lifecycleHandler(Handler<Boolean> handler) {
-    lifecycleHandler = handler;
+  protected void onConcurrencyChange() {
+    concurrencyUpdateHandler.handle(null);
+  }
+
+  @Override
+  public HttpClientConnection concurrencyUpdateHandler(Handler<Void> handler) {
+    concurrencyUpdateHandler = handler;
     return this;
   }
 
   @Override
-  protected void handleConnection() {
+  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+    evictionHandler = handler;
+    return this;
+  }
+
+  @Override
+  protected void onConnect() {
     resultHandler.handle(Future.succeededFuture(this));
   }
 
@@ -87,19 +99,19 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    lifecycleHandler.handle(false);
+    evictionHandler.handle(null);
   }
 
   @Override
   void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
     super.onGoAwayReceived(lastStreamId, errorCode, debugData);
-    lifecycleHandler.handle(false);
+    evictionHandler.handle(null);
   }
 
   @Override
   void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
-    lifecycleHandler.handle(true);
+    concurrencyUpdateHandler.handle(null);
   }
 
   synchronized HttpClientStream createStream() throws Http2Exception {
@@ -113,7 +125,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public synchronized void handleClosed() {
-    lifecycleHandler.handle(false);
+    evictionHandler.handle(null);
     super.handleClosed();
   }
 

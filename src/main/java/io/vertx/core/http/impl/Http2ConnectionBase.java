@@ -200,13 +200,17 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
   }
 
-  protected abstract void handleConnection();
+  protected void onConnect() {
+  }
+
+  protected void onConcurrencyChange() {
+  }
 
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     if (remoteSettings == null) {
       remoteSettings = settings;
-      handleConnection();
+      onConnect();
     } else {
       synchronized (this) {
         Handler<io.vertx.core.http.Http2Settings> handler = remoteSettingsHandler;
@@ -215,6 +219,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
             handler.handle(HttpUtils.toVertxSettings(settings));
           });
         }
+      }
+      if (!Objects.equals(remoteSettings.maxConcurrentStreams(), settings.maxConcurrentStreams())) {
+        onConcurrencyChange();
       }
     }
   }

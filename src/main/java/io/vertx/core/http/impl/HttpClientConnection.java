@@ -28,7 +28,21 @@ interface HttpClientConnection extends HttpConnection {
 
   Channel channel();
 
-  HttpClientConnection lifecycleHandler(Handler<Boolean> handler);
+  /**
+   * Set an handler to be notified when the concurrency of the connection changes.
+   *
+   * @param handler the handler to be notified
+   * @return a reference to this, so the API can be used fluently
+   */
+  HttpClientConnection concurrencyUpdateHandler(Handler<Void> handler);
+
+  /**
+   * Set an handler to be notified when connection won't be available
+   *
+   * @param handler the handler to be notified
+   * @return a reference to this, so the API can be used fluently
+   */
+  HttpClientConnection evictionHandler(Handler<Void> handler);
 
   ContextImpl getContext();
 

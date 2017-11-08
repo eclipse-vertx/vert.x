@@ -80,7 +80,8 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
 
-  private Handler<Boolean> lifecycleHandler;
+  private Handler<Void> concurrencyUpdateHandler;
+  private Handler<Void> evictionHandler;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
@@ -113,8 +114,14 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   }
 
   @Override
-  public HttpClientConnection lifecycleHandler(Handler<Boolean> handler) {
-    lifecycleHandler = handler;
+  public HttpClientConnection concurrencyUpdateHandler(Handler<Void> handler) {
+    concurrencyUpdateHandler = handler;
+    return this;
+  }
+
+  @Override
+  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+    evictionHandler = handler;
     return this;
   }
 
@@ -458,7 +465,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private void requestEnded() {
     context.runOnContext(v -> {
       if (pipelining && requests.size() < pipeliningLimit) {
-        lifecycleHandler.handle(true);
+        concurrencyUpdateHandler.handle(null);
       }
     });
   }
@@ -469,7 +476,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     } else {
       context.runOnContext(v -> {
         if (currentRequest == null) {
-          lifecycleHandler.handle(true);
+          concurrencyUpdateHandler.handle(null);
         }
       });
     }
@@ -628,9 +635,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
         ByteBuf buf = (ByteBuf) msg;
         connection.handleMessageReceived(buf);
       }
-    }.removeHandler(sock -> {
-      lifecycleHandler.handle(false);
-    }));
+    }.removeHandler(sock -> evictionHandler.handle(null)));
     return socket;
   }
 

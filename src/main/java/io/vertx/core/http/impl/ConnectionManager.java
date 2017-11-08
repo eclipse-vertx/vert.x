@@ -287,12 +287,12 @@ public class ConnectionManager {
     }
 
     private synchronized void initConnection(Waiter waiter, HttpClientConnection conn) {
-      conn.lifecycleHandler(reuse -> {
-        if (reuse) {
-          recycleConnection(conn);
-        } else {
-          evictConnection(conn);
-        }
+      conn.concurrencyUpdateHandler(v -> {
+        recycleConnection(conn);
+        checkPending();
+      });
+      conn.evictionHandler(v -> {
+        evictConnection(conn);
         checkPending();
       });
       conn.getContext().executeFromIO(() -> {

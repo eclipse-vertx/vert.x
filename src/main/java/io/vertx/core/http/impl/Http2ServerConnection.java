@@ -68,7 +68,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   }
 
   @Override
-  protected void handleConnection() {
+  protected void onConnect() {
     if (handlers.connectionHandler != null) {
       context.executeFromIO(() -> {
         handlers.connectionHandler.handle(handler.connection);
