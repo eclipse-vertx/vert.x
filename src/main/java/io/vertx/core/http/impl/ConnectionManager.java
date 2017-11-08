@@ -288,30 +288,22 @@ public class ConnectionManager {
 
     private synchronized void initConnection(Waiter waiter, HttpClientConnection conn) {
       conn.concurrencyUpdateHandler(v -> {
-        recycleConnection(conn);
+        pool.recycleConnection(conn);
         checkPending();
       });
       conn.evictionHandler(v -> {
-        evictConnection(conn);
+        pool.evictConnection(conn);
         checkPending();
       });
       conn.getContext().executeFromIO(() -> {
         waiter.handleConnection(conn);
       });
       if (waiter.isCancelled()) {
-        recycleConnection(conn);
+        pool.recycleConnection(conn);
       } else {
         deliverInternal(conn, waiter);
       }
       checkPending();
-    }
-
-    private synchronized void evictConnection(HttpClientConnection conn) {
-      pool.evictConnection(conn);
-    }
-
-    private synchronized void recycleConnection(HttpClientConnection conn) {
-      pool.recycleConnection(conn);
     }
 
     private void deliverInternal(HttpClientConnection conn, Waiter waiter) {

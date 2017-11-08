@@ -95,7 +95,9 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   @Override
   public ClientConnection pollConnection() {
     ClientConnection conn;
-    while ((conn = availableConnections.poll()) != null && !conn.isValid()) {
+    synchronized (queue) {
+      while ((conn = availableConnections.poll()) != null && !conn.isValid()) {
+      }
     }
     return conn;
   }
@@ -120,22 +122,24 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
   @Override
   public void createConnection(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception {
-    ClientHandler clientHandler = new ClientHandler(
-      context,
-      this,
-      client,
-      queue.metric,
-      metrics);
-    clientHandler.addHandler(conn -> {
-      synchronized (queue) {
-        allConnections.add(conn);
-      }
-      connectionMap.put(ch, conn);
-    });
-    clientHandler.removeHandler(this::connectionClosed);
-    ch.pipeline().addLast("handler", clientHandler);
-    ClientConnection conn = clientHandler.getConnection();
-    handler.handle(Future.succeededFuture(conn));
+    synchronized (queue) {
+      ClientHandler clientHandler = new ClientHandler(
+        context,
+        this,
+        client,
+        queue.metric,
+        metrics);
+      clientHandler.addHandler(conn -> {
+        synchronized (queue) {
+          allConnections.add(conn);
+        }
+        connectionMap.put(ch, conn);
+      });
+      clientHandler.removeHandler(this::connectionClosed);
+      ch.pipeline().addLast("handler", clientHandler);
+      ClientConnection conn = clientHandler.getConnection();
+      handler.handle(Future.succeededFuture(conn));
+    }
   }
 
   // Called if the connection is actually closed, OR the connection attempt failed - in the latter case
@@ -161,7 +165,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
       copy = new HashSet<>(allConnections);
       allConnections.clear();
     }
-    // Close outside sync block to avoid deadlock
+    // Close outside sync block to avoid potential deadlock
     for (ClientConnection conn : copy) {
       try {
         conn.close();
