@@ -362,7 +362,7 @@ public class ConnectionManager {
     }
 
     // Called if the connection is actually closed OR the connection attempt failed
-    public synchronized void connectionClosed() {
+    synchronized void connectionClosed() {
       connCount--;
       Waiter waiter = getNextWaiter();
       if (waiter != null) {
@@ -382,7 +382,7 @@ public class ConnectionManager {
       if (cause != null) {
         sslException.initCause(cause);
       }
-      connectionFailed(context, ch, handler, sslException);
+      connectFailed(ch, handler, sslException);
     }
 
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Handler<AsyncResult<HttpClientConnection>> handler) {
@@ -405,18 +405,17 @@ public class ConnectionManager {
       try {
         pool.createConnection(context, ch, handler);
       } catch (Exception e) {
-        connectionFailed(context, ch, handler, e);
+        connectFailed(ch, handler, e);
       }
     }
 
-    private void connectionFailed(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> connectionExceptionHandler,
-        Throwable t) {
-
-      try {
-        ch.close();
-      } catch (Exception ignore) {
+    private void connectFailed(Channel ch, Handler<AsyncResult<HttpClientConnection>> connectionExceptionHandler, Throwable t) {
+      if (ch != null) {
+        try {
+          ch.close();
+        } catch (Exception ignore) {
+        }
       }
-
       connectionExceptionHandler.handle(Future.failedFuture(t));
     }
   }
@@ -580,7 +579,7 @@ public class ConnectionManager {
             }
           }
         } else {
-          queue.connectionFailed(context, null, handler, res.cause());
+          queue.connectFailed(null, handler, res.cause());
         }
       };
 
