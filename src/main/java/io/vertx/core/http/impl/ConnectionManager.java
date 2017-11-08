@@ -243,28 +243,6 @@ public class ConnectionManager {
       }
     }
 
-    /*
-    void deliverStream(HttpClientConnection conn, Waiter waiter) {
-      if (!conn.isValid()) {
-        // The connection has been closed - closed connections can be in the pool
-        // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
-        // that is done asynchronously in the connection closeHandler()
-        getConnection(waiter);
-      } else if (waiter.isCancelled()) {
-        pool.recycleConnection(conn);
-      } else {
-        HttpClientStream stream;
-        try {
-          stream = pool.createStream(conn);
-        } catch (Exception e) {
-          getConnection(waiter);
-          return;
-        }
-        waiter.handleStream(stream);
-      }
-    }
-    */
-
     private void closeAllConnections() {
       pool.closeAllConnections();
     }
