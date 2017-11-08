@@ -58,7 +58,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
     ClientConnection conn = new ClientConnection(pool.version(), client, endpointMetric, ctx,
-      pool.ssl(), pool.host(), pool.port(), context, pool, metrics);
+      pool.ssl(), pool.host(), pool.port(), context, metrics);
     setConnection(conn);
     if (metrics != null) {
       context.executeFromIO(() -> {

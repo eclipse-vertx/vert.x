@@ -279,7 +279,15 @@ public class ConnectionManager {
       }
       createNewConnection(context, ar -> {
         if (ar.succeeded()) {
-          deliver(ar.result(), waiter);
+          HttpClientConnection conn = ar.result();
+          conn.lifecycleHandler(reuse -> {
+            if (reuse) {
+              recycle(conn);
+            } else {
+              pool.discard(conn);
+            }
+          });
+          deliver(conn, waiter);
         } else {
 
           // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
@@ -305,7 +313,7 @@ public class ConnectionManager {
     }
 
     void recycle(HttpClientConnection conn) {
-      pool.doRecycle(conn);
+      pool.recycle(conn);
       checkPending();
     }
 
@@ -458,9 +466,9 @@ public class ConnectionManager {
 
     void recycle(C conn);
 
-    void doRecycle(C conn);
-
     HttpClientStream createStream(C conn) throws Exception;
+
+    void discard(C conn);
 
   }
 

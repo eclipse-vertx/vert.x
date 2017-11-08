@@ -70,7 +70,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private final boolean ssl;
   private final String host;
   private final int port;
-  private final Http1xPool pool;
+  // private final Http1xPool pool;
   private final Object endpointMetric;
   private final boolean pipelining;
   private final boolean keepAlive;
@@ -79,6 +79,8 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private final Deque<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
+
+  private Handler<Boolean> lifecycleHandler;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
@@ -92,19 +94,29 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private Buffer pausedChunk;
 
   ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, ChannelHandlerContext channel, boolean ssl, String host,
-                   int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
+                   int port, ContextImpl context, HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context);
     this.client = client;
     this.ssl = ssl;
     this.host = host;
     this.port = port;
-    this.pool = pool;
     this.metrics = metrics;
     this.version = version;
     this.endpointMetric = endpointMetric;
     this.pipelining = client.getOptions().isPipelining();
     this.keepAlive = client.getOptions().isKeepAlive();
     this.pipeliningLimit = client.getOptions().getPipeliningLimit();
+  }
+
+  @Override
+  public Channel channel() {
+    return chctx.channel();
+  }
+
+  @Override
+  public HttpClientConnection lifecycleHandler(Handler<Boolean> handler) {
+    lifecycleHandler = handler;
+    return this;
   }
 
   @Override
@@ -452,7 +464,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private void requestEnded() {
     context.runOnContext(v -> {
       if (pipelining && requests.size() < pipeliningLimit) {
-        pool.recycle(this);
+        lifecycleHandler.handle(true);
       }
     });
   }
@@ -463,7 +475,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     } else {
       context.runOnContext(v -> {
         if (conn.currentRequest == null) {
-          pool.recycle(conn);
+          lifecycleHandler.handle(true);
         }
       });
     }
@@ -623,7 +635,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
         connection.handleMessageReceived(buf);
       }
     }.removeHandler(sock -> {
-      pool.removeChannel(chctx.channel());
+      lifecycleHandler.handle(false);
     }));
     return socket;
   }

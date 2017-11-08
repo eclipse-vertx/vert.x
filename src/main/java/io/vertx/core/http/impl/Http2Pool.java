@@ -100,7 +100,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
         .useCompression(client.getOptions().isTryUseCompression())
         .initialSettings(client.getOptions().getInitialSettings())
         .connectionFactory(connHandler -> {
-          Http2ClientConnection conn = new Http2ClientConnection(Http2Pool.this, queue.metric, context, connHandler, metrics, resultHandler);
+          Http2ClientConnection conn = new Http2ClientConnection(queue.metric, client, context, connHandler, metrics, resultHandler);
           if (metrics != null) {
             Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
             conn.metric(metric);
@@ -125,7 +125,8 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     return handler.streamCount < maxConcurrentStreams;
   }
 
-  void discard(Http2ClientConnection conn) {
+  @Override
+  public void discard(Http2ClientConnection conn) {
     synchronized (queue) {
       if (allConnections.remove(conn)) {
         queue.connectionClosed();
@@ -138,11 +139,6 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
   @Override
   public void recycle(Http2ClientConnection conn) {
-    queue.recycle(conn);
-  }
-
-  @Override
-  public void doRecycle(Http2ClientConnection conn) {
     synchronized (queue) {
       conn.streamCount--;
     }

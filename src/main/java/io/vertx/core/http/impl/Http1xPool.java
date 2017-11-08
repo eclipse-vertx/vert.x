@@ -106,15 +106,11 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
-  public void doRecycle(ClientConnection conn) {
+  public void recycle(ClientConnection conn) {
     synchronized (queue) {
       // Return to set of available from here to not return it several times
       availableConnections.add(conn);
     }
-  }
-
-  public void recycle(ClientConnection conn) {
-    queue.recycle(conn);
   }
 
   @Override
@@ -170,7 +166,8 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
     }
   }
 
-  void removeChannel(Channel channel) {
-    connectionMap.remove(channel);
+  @Override
+  public void discard(ClientConnection conn) {
+    connectionMap.remove(conn.channel());
   }
 }
