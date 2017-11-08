@@ -48,7 +48,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   final HttpClientMetrics metrics;
   final Object queueMetric;
   int streamCount;
-  private int count;
   final Handler<AsyncResult<HttpClientConnection>> resultHandler;
   private Handler<Boolean> lifecycleHandler;
 
@@ -74,11 +73,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public HttpClientConnection lifecycleHandler(Handler<Boolean> handler) {
     lifecycleHandler = handler;
     return this;
-  }
-
-  @Override
-  public int use() {
-    return count++;
   }
 
   @Override

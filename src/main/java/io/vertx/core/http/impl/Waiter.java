@@ -23,12 +23,10 @@ import io.vertx.core.impl.ContextImpl;
  */
 abstract class Waiter {
 
-  final HttpClientRequestImpl req;
   final ContextImpl context;
   Object metric;
 
-  public Waiter(HttpClientRequestImpl req, ContextImpl context) {
-    this.req = req;
+  public Waiter(ContextImpl context) {
     this.context = context;
   }
 
@@ -57,5 +55,5 @@ abstract class Waiter {
    * @return true if the waiter has been cancelled
    */
   abstract boolean isCancelled();
-  
+
 }

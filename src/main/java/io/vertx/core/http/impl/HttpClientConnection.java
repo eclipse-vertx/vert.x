@@ -36,8 +36,6 @@ interface HttpClientConnection extends HttpConnection {
 
   void reportBytesRead(long s);
 
-  int use();
-
   /**
    * Check if the connection is valid for creating streams. The connection might be closed or a {@literal GOAWAY}
    * frame could have been sent or received.

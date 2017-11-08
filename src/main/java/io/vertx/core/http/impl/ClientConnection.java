@@ -88,7 +88,6 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
-  private int count;
   private boolean reset;
   private boolean paused;
   private Buffer pausedChunk;
@@ -117,11 +116,6 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   public HttpClientConnection lifecycleHandler(Handler<Boolean> handler) {
     lifecycleHandler = handler;
     return this;
-  }
-
-  @Override
-  public int use() {
-    return count++;
   }
 
   public HttpClientMetrics metrics() {

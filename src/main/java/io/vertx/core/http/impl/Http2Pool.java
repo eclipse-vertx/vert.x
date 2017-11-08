@@ -17,7 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -30,8 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -74,6 +71,16 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     // We create at most one connection concurrently when all others when
     // all others are busy
     return connCount == allConnections.size() && connCount < maxSockets;
+  }
+
+  @Override
+  public boolean canCreateStream(int connCount) {
+    for (Http2ClientConnection conn : allConnections) {
+      if (canReserveStream(conn)) {
+        return true;
+      }
+    }
+    return canCreateConnection(connCount);
   }
 
   @Override
@@ -126,10 +133,10 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   }
 
   @Override
-  public void discardConnection(Http2ClientConnection conn) {
+  public void evictConnection(Http2ClientConnection conn) {
     synchronized (queue) {
       if (allConnections.remove(conn)) {
-        queue.connectionClosed();
+        queue.closeConnection();
       }
     }
     if (metrics != null) {

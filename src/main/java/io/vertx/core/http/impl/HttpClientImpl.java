@@ -926,7 +926,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                  Handler<ClientConnection> handler,
                                  Handler<Throwable> connectionExceptionHandler,
                                  ContextImpl context) {
-    connectionManager.getConnectionForWebsocket(ssl, port, host, new Waiter(null, context) {
+    connectionManager.getConnectionForWebsocket(ssl, port, host, new Waiter(context) {
       @Override
       void handleConnection(HttpClientConnection conn) {
       }

@@ -32,9 +32,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
@@ -221,43 +219,58 @@ public class ConnectionManager {
       this.metric = metrics != null ? metrics.createEndpoint(host, port, maxSize) : null;
     }
 
-    synchronized void getConnection(Waiter waiter) {
-      HttpClientConnection conn = pool.pollConnection();
-      if (conn != null) {
-        conn.getContext().runOnContext(v -> deliver(conn, waiter));
+    private void closeAllConnections() {
+      pool.closeAllConnections();
+    }
+
+    private synchronized void getConnection(Waiter waiter) {
+      // Enqueue
+      if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize || pool.canCreateStream(connCount)) {
+        if (metrics != null) {
+          waiter.metric = metrics.enqueueRequest(metric);
+        }
+        waiters.add(waiter);
+        checkPending();
       } else {
-        if (pool.canCreateConnection(connCount)) {
-          // Create a new connection
-          createNewConnection(waiter);
+        waiter.handleFailure(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
+      }
+    }
+
+    private synchronized void checkPending() {
+      while (true) {
+        Waiter waiter = waiters.peek();
+        if (waiter == null) {
+          break;
+        }
+        if (metric != null) {
+          metrics.dequeueRequest(metric, waiter.metric);
+        }
+        if (waiter.isCancelled()) {
+          waiters.poll();
         } else {
-          // Wait in queue
-          if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
-            if (metrics != null) {
-              waiter.metric = metrics.enqueueRequest(metric);
-            }
-            waiters.add(waiter);
+          HttpClientConnection conn = pool.pollConnection();
+          if (conn != null) {
+            waiters.poll();
+            deliverInternal(conn, waiter);
+          } else if (pool.canCreateConnection(connCount)) {
+            waiters.poll();
+            createConnection(waiter);
           } else {
-            waiter.handleFailure(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
+            break;
           }
         }
       }
     }
 
-    private void closeAllConnections() {
-      pool.closeAllConnections();
-    }
-
-    private void createNewConnection(Waiter waiter) {
-      ContextImpl context;
-      if (waiter.context == null) {
-        // Embedded
-        context = vertx.getOrCreateContext();
-      } else {
-        context = waiter.context;
-      }
-      createNewConnection(context, ar -> {
+    private void createConnection(Waiter waiter) {
+      connCount++;
+      sslHelper.validate(vertx);
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.group(waiter.context.nettyEventLoop());
+      bootstrap.channel(vertx.transport().channelType(false));
+      connector.connect(this, bootstrap, waiter.context, peerHost, ssl, pool.version(), host, port, ar -> {
         if (ar.succeeded()) {
-          newConnection(waiter, ar.result());
+          initConnection(waiter, ar.result());
         } else {
 
           // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
@@ -265,115 +278,70 @@ public class ConnectionManager {
           // Handler<Throwable> exHandler =
           //  waiter == null ? log::error : waiter::handleFailure;
 
-          context.executeFromIO(() -> {
-            connectionClosed();
+          waiter.context.executeFromIO(() -> {
+            closeConnection();
             waiter.handleFailure(ar.cause());
           });
         }
       });
     }
 
-    private synchronized void newConnection(Waiter waiter, HttpClientConnection conn) {
-      conn.lifecycleHandler(reuse -> recycleConnection(conn, reuse));
-      deliver(conn, waiter);
-    }
-
-    private synchronized void recycleConnection(HttpClientConnection conn, boolean reuse) {
-      if (reuse) {
-        recycle(conn);
+    private synchronized void initConnection(Waiter waiter, HttpClientConnection conn) {
+      conn.lifecycleHandler(reuse -> {
+        if (reuse) {
+          recycleConnection(conn);
+        } else {
+          evictConnection(conn);
+        }
+        checkPending();
+      });
+      conn.getContext().executeFromIO(() -> {
+        waiter.handleConnection(conn);
+      });
+      if (waiter.isCancelled()) {
+        recycleConnection(conn);
       } else {
-        pool.discardConnection(conn);
+        deliverInternal(conn, waiter);
       }
-    }
-
-    private void createNewConnection(ContextImpl context, Handler<AsyncResult<HttpClientConnection>> handler) {
-      connCount++;
-      sslHelper.validate(vertx);
-      Bootstrap bootstrap = new Bootstrap();
-      bootstrap.group(context.nettyEventLoop());
-      bootstrap.channel(vertx.transport().channelType(false));
-      connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, handler);
-    }
-
-    void recycle(HttpClientConnection conn) {
-      pool.recycleConnection(conn);
       checkPending();
     }
 
-    private void deliver(HttpClientConnection conn, Waiter waiter) {
-      if (conn.isValid()) {
-        if (!waiter.isCancelled()) {
-          deliverInternal(conn, waiter);
-        } else {
-          // Should check connection is still VALID
-          recycle(conn);
-        }
-        checkPending();
-      } else {
-        getConnection(waiter);
-      }
+    private synchronized void evictConnection(HttpClientConnection conn) {
+      pool.evictConnection(conn);
+    }
+
+    private synchronized void recycleConnection(HttpClientConnection conn) {
+      pool.recycleConnection(conn);
     }
 
     private void deliverInternal(HttpClientConnection conn, Waiter waiter) {
-      conn.getContext().executeFromIO(() -> {
-        HttpClientStream stream;
-        try {
-          stream = pool.createStream(conn);
-        } catch (Exception e) {
-          getConnection(waiter);
-          return;
-        }
-        if (conn.use() == 0) {
-          waiter.handleConnection(conn);
-        }
-        waiter.handleStream(stream);
-      });
-    }
-
-    private void checkPending() {
-      while (true) {
-        Waiter waiter = waiters.peek();
-        if (waiter == null) {
-          break;
-        }
-        if (waiter.isCancelled()) {
-          waiters.poll();
-        } else {
-          HttpClientConnection conn = pool.pollConnection();
-          if (conn == null) {
-            break;
+      if (conn.getContext().nettyEventLoop().inEventLoop()) {
+        conn.getContext().executeFromIO(() -> {
+          HttpClientStream stream;
+          try {
+            stream = pool.createStream(conn);
+          } catch (Exception e) {
+            getConnection(waiter);
+            return;
           }
-          waiters.poll();
-          deliverInternal(conn, waiter);
-        }
+          waiter.handleStream(stream);
+        });
+      } else {
+        conn.getContext().runOnContext(v -> {
+          if (conn.isValid()) {
+            deliverInternal(conn, waiter);
+          } else {
+            getConnection(waiter);
+          }
+        });
       }
-    }
-
-    /**
-     * @return the next non-canceled waiters in the queue
-     */
-    Waiter getNextWaiter() {
-      Waiter waiter = waiters.poll();
-      if (metrics != null && waiter != null) {
-        metrics.dequeueRequest(metric, waiter.metric);
-      }
-      while (waiter != null && waiter.isCancelled()) {
-        waiter = waiters.poll();
-        if (metrics != null && waiter != null) {
-          metrics.dequeueRequest(metric, waiter.metric);
-        }
-      }
-      return waiter;
     }
 
     // Called if the connection is actually closed OR the connection attempt failed
-    synchronized void connectionClosed() {
+    synchronized void closeConnection() {
       connCount--;
-      Waiter waiter = getNextWaiter();
-      if (waiter != null) {
-        // There's a waiter - so it can have a new connection
-        createNewConnection(waiter);
-      } else if (connCount == 0) {
+      checkPending();
+      if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         mgr.queueMap.remove(key);
         if (metrics != null) {
@@ -382,7 +350,7 @@ public class ConnectionManager {
       }
     }
 
-    private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, Handler<AsyncResult<HttpClientConnection>> handler) {
+    private void handshakeFailure(Channel ch, Throwable cause, Handler<AsyncResult<HttpClientConnection>> handler) {
       SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
       if (cause != null) {
         sslException.initCause(cause);
@@ -432,6 +400,8 @@ public class ConnectionManager {
 
     HttpVersion version();
 
+    boolean canCreateStream(int connCount);
+
     void createConnection(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception;
 
     C pollConnection();
@@ -450,7 +420,7 @@ public class ConnectionManager {
 
     HttpClientStream createStream(C conn) throws Exception;
 
-    void discardConnection(C conn);
+    void evictConnection(C conn);
 
   }
 
@@ -510,7 +480,7 @@ public class ConnectionManager {
                 queue.http1xConnected(context, ch, handler);
               }
             } else {
-              queue.handshakeFailure(context, ch, fut.cause(), handler);
+              queue.handshakeFailure(ch, fut.cause(), handler);
             }
           });
         } else {

@@ -64,6 +64,7 @@ import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -1403,7 +1404,7 @@ public class Http1xTest extends HttpTest {
           assertEquals("OK", body.toString());
         });
       });
-      req1.exceptionHandler(t -> fail("Should not be called."));
+      req1.exceptionHandler(t -> fail("Should not be called." + t.getMessage()));
 
       HttpClientRequest req2 = client.get(DEFAULT_TEST_URI, resp -> {
         resp.bodyHandler(body -> {

@@ -88,6 +88,11 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
+  public boolean canCreateStream(int connCount) {
+    return connCount < maxSockets;
+  }
+
+  @Override
   public ClientConnection pollConnection() {
     ClientConnection conn;
     while ((conn = availableConnections.poll()) != null && !conn.isValid()) {
@@ -143,7 +148,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
       connectionMap.remove(conn.channel());
       allConnections.remove(conn);
       availableConnections.remove(conn);
-      queue.connectionClosed();
+      queue.closeConnection();
     }
     if (metrics != null) {
       metrics.endpointDisconnected(queue.metric, conn.metric());
@@ -167,7 +172,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
-  public void discardConnection(ClientConnection conn) {
+  public void evictConnection(ClientConnection conn) {
     connectionMap.remove(conn.channel());
   }
 }
