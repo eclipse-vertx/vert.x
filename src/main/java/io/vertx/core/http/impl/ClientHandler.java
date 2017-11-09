@@ -25,7 +25,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -37,40 +37,57 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   private boolean closeFrameSent;
   private ContextImpl context;
   private ChannelHandlerContext chctx;
-  private Http1xPool pool;
-  private HttpClientImpl client;
-  private Object endpointMetric;
-  private HttpClientMetrics metrics;
+  private final HttpVersion version;
+  private final String host;
+  private final int port;
+  private final boolean ssl;
+  private final HttpClientImpl client;
+  private final HttpClientMetrics metrics;
+  private final ClientConnectionListener<HttpClientConnection> listener;
+  private final Object endpointMetric;
 
-  public ClientHandler(ContextImpl context,
-                       Http1xPool pool,
+  public ClientHandler(ClientConnectionListener<HttpClientConnection> listener,
+                       ContextImpl context,
+                       HttpVersion version,
+                       String host,
+                       int port,
+                       boolean ssl,
                        HttpClientImpl client,
                        Object endpointMetric,
                        HttpClientMetrics metrics) {
     this.context = context;
-    this.pool = pool;
+    this.version = version;
     this.client = client;
+    this.host = host;
+    this.port = port;
+    this.ssl = ssl;
     this.endpointMetric = endpointMetric;
     this.metrics = metrics;
+    this.listener = listener;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
-    ClientConnection conn = new ClientConnection(pool.version(), client, endpointMetric, ctx,
-      pool.ssl(), pool.host(), pool.port(), context, metrics);
+    ClientConnection conn = new ClientConnection(listener, version, client, endpointMetric, ctx, ssl, host, port, context, metrics);
     if (metrics != null) {
-      context.executeFromIO(() -> {
-        Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-        conn.metric(metric);
-        metrics.endpointConnected(endpointMetric, metric);
-      });
+      Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+      conn.metric(metric);
+      metrics.endpointConnected(endpointMetric, metric);
     }
     setConnection(conn);
   }
 
   public ChannelHandlerContext context() {
     return chctx;
+  }
+
+  @Override
+  public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+    if (metrics != null) {
+      metrics.endpointDisconnected(endpointMetric, getConnection().metric());
+    }
+    super.channelInactive(chctx);
   }
 
   @Override

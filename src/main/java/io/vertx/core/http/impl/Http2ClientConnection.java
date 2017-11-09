@@ -44,13 +44,14 @@ import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
  */
 class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
 
+  private final ClientConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
   final HttpClientMetrics metrics;
   final Object queueMetric;
   int streamCount;
-  private Handler<Void> concurrencyUpdateHandler;
 
-  public Http2ClientConnection(Object queueMetric,
+  public Http2ClientConnection(ClientConnectionListener<HttpClientConnection> listener,
+                               Object queueMetric,
                                HttpClientImpl client,
                                ContextImpl context,
                                VertxHttp2ConnectionHandler connHandler,
@@ -60,6 +61,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.metrics = metrics;
     this.queueMetric = queueMetric;
     this.client = client;
+    this.listener = listener;
   }
 
   @Override
@@ -69,21 +71,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   protected void onConcurrencyChange() {
-    Handler<Void> handler = concurrencyUpdateHandler;
-    if (handler != null) {
-      handler.handle(null);
-    }
-  }
-
-  @Override
-  public HttpClientConnection concurrencyUpdateHandler(Handler<Void> handler) {
-    concurrencyUpdateHandler = handler;
-    return this;
-  }
-
-  @Override
-  public HttpClientConnection evictionHandler(Handler<Void> handler) {
-    return this;
+    listener.onRecycle(this);
   }
 
   @Override
@@ -94,10 +82,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   @Override
   void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
-    Handler<Void> handler = concurrencyUpdateHandler;
-    if (handler != null) {
-      handler.handle(null);
-    }
+    listener.onRecycle(this);
   }
 
   synchronized HttpClientStream createStream() throws Http2Exception {

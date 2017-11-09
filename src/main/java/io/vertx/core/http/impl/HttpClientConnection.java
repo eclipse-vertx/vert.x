@@ -28,27 +28,11 @@ interface HttpClientConnection extends HttpConnection {
 
   Channel channel();
 
-  /**
-   * Set an handler to be notified when the concurrency of the connection changes.
-   *
-   * @param handler the handler to be notified
-   * @return a reference to this, so the API can be used fluently
-   */
-  HttpClientConnection concurrencyUpdateHandler(Handler<Void> handler);
-
-  /**
-   * Set an handler to be notified when connection won't be available
-   *
-   * @param handler the handler to be notified
-   * @return a reference to this, so the API can be used fluently
-   */
-  HttpClientConnection evictionHandler(Handler<Void> handler);
-
-  ContextImpl getContext();
-
   void reportBytesWritten(long numberOfBytes);
 
   void reportBytesRead(long s);
+
+  void close();
 
   /**
    * Check if the connection is valid for creating streams. The connection might be closed or a {@literal GOAWAY}
@@ -56,6 +40,6 @@ interface HttpClientConnection extends HttpConnection {
    */
   boolean isValid();
 
-  void close();
+  ContextImpl getContext();
 
 }

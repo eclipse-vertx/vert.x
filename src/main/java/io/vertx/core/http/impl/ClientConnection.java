@@ -66,6 +66,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
+  private final ClientConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
   private final boolean ssl;
   private final String host;
@@ -79,9 +80,6 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
 
-  private Handler<Void> concurrencyUpdateHandler;
-  private Handler<Void> evictionHandler;
-
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
   private HttpClientResponseImpl currentResponse;
@@ -92,9 +90,18 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(HttpVersion version, HttpClientImpl client, Object endpointMetric, ChannelHandlerContext channel, boolean ssl, String host,
-                   int port, ContextImpl context, HttpClientMetrics metrics) {
+  ClientConnection(ClientConnectionListener<HttpClientConnection> listener,
+                   HttpVersion version,
+                   HttpClientImpl client,
+                   Object endpointMetric,
+                   ChannelHandlerContext channel,
+                   boolean ssl,
+                   String host,
+                   int port,
+                   ContextImpl context,
+                   HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context);
+    this.listener = listener;
     this.client = client;
     this.ssl = ssl;
     this.host = host;
@@ -110,18 +117,6 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   @Override
   public Channel channel() {
     return chctx.channel();
-  }
-
-  @Override
-  public HttpClientConnection concurrencyUpdateHandler(Handler<Void> handler) {
-    concurrencyUpdateHandler = handler;
-    return this;
-  }
-
-  @Override
-  public HttpClientConnection evictionHandler(Handler<Void> handler) {
-    evictionHandler = handler;
-    return this;
   }
 
   public HttpClientMetrics metrics() {
@@ -464,7 +459,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private void requestEnded() {
     context.runOnContext(v -> {
       if (pipelining && requests.size() < pipeliningLimit) {
-        concurrencyUpdateHandler.handle(null);
+        listener.onRecycle(this);
       }
     });
   }
@@ -475,7 +470,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     } else {
       context.runOnContext(v -> {
         if (currentRequest == null) {
-          concurrencyUpdateHandler.handle(null);
+          listener.onRecycle(this);
         }
       });
     }
@@ -634,7 +629,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
         ByteBuf buf = (ByteBuf) msg;
         connection.handleMessageReceived(buf);
       }
-    }.removeHandler(sock -> evictionHandler.handle(null)));
+    }.removeHandler(sock -> listener.onClose(this, chctx.channel())));
     return socket;
   }
 
@@ -645,9 +640,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
 
   @Override
   public HttpVersion version() {
-    // Used to determine the http version in the HttpClientRequest#sendHead handler , for HTTP/1.1 it will
-    // not yet know but it will for HTTP/2
-    return null;
+    return version;
   }
 
   @Override
