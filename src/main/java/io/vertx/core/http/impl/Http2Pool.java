@@ -16,19 +16,11 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.Channel;
-import io.netty.handler.ssl.SslHandler;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,29 +29,15 @@ import java.util.Set;
 class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
   // Pools must locks on the queue object to keep a single lock
-  final ConnectionManager.ConnQueue queue;
+  private final Object lock;
   private final Set<Http2ClientConnection> allConnections = new HashSet<>();
-  private final Map<Channel, ? super Http2ClientConnection> connectionMap;
-  final HttpClientImpl client;
-  final HttpClientMetrics metrics;
-  final int maxConcurrency;
-  final boolean logEnabled;
-  final int maxSockets;
-  final int windowSize;
-  final boolean clearTextUpgrade;
+  private final int maxConcurrency;
+  private final int maxSockets;
 
-  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, HttpClientMetrics metrics,
-                   Map<Channel, ? super Http2ClientConnection> connectionMap,
-                   int maxConcurrency, boolean logEnabled, int maxSize, int windowSize, boolean clearTextUpgrade) {
-    this.queue = queue;
-    this.client = client;
-    this.metrics = metrics;
-    this.connectionMap = connectionMap;
+  public Http2Pool(Object lock, int maxConcurrency, int maxSize) {
+    this.lock = lock;
     this.maxConcurrency = maxConcurrency;
-    this.logEnabled = logEnabled;
     this.maxSockets = maxSize;
-    this.windowSize = windowSize;
-    this.clearTextUpgrade = clearTextUpgrade;
   }
 
   @Override
@@ -96,44 +74,6 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
     return null;
   }
 
-  @Override
-  public void createConnection(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> resultHandler) throws Exception {
-    synchronized (queue) {
-      boolean upgrade;
-      upgrade = ch.pipeline().get(SslHandler.class) == null && clearTextUpgrade;
-      VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>(ch)
-        .server(false)
-        .clientUpgrade(upgrade)
-        .useCompression(client.getOptions().isTryUseCompression())
-        .initialSettings(client.getOptions().getInitialSettings())
-        .connectionFactory(connHandler -> {
-          Http2ClientConnection conn = new Http2ClientConnection(queue.metric, client, context, connHandler, metrics, resultHandler);
-          if (metrics != null) {
-            Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-            conn.metric(metric);
-          }
-          return conn;
-        })
-        .logEnabled(logEnabled)
-        .build();
-      handler.addHandler(conn -> {
-        if (metrics != null) {
-          metrics.endpointConnected(queue.metric, conn.metric());
-        }
-        connectionMap.put(conn.channel(), conn);
-        allConnections.add(conn);
-        if (windowSize > 0) {
-          conn.setWindowSize(windowSize);
-        }
-        resultHandler.handle(Future.succeededFuture(conn));
-      });
-      handler.removeHandler(conn -> {
-        connectionMap.remove(conn.channel());
-        evictConnection(conn);
-      });
-    }
-  }
-
   private boolean canReserveStream(Http2ClientConnection handler) {
     int maxConcurrentStreams = Math.min(handler.handler.connection().local().maxActiveStreams(), maxConcurrency);
     return handler.streamCount < maxConcurrentStreams;
@@ -141,19 +81,21 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
 
   @Override
   public void evictConnection(Http2ClientConnection conn) {
-    synchronized (queue) {
-      if (allConnections.remove(conn)) {
-        queue.closeConnection();
-      }
+    synchronized (lock) {
+      allConnections.remove(conn);
     }
-    if (metrics != null) {
-      metrics.endpointDisconnected(queue.metric, conn.metric());
+  }
+
+  @Override
+  public void initConnection(Http2ClientConnection conn) {
+    synchronized (lock) {
+      allConnections.add(conn);
     }
   }
 
   @Override
   public void recycleConnection(Http2ClientConnection conn) {
-    synchronized (queue) {
+    synchronized (lock) {
       conn.streamCount--;
     }
   }
@@ -166,7 +108,7 @@ class Http2Pool implements ConnectionManager.Pool<Http2ClientConnection> {
   @Override
   public void closeAllConnections() {
     List<Http2ClientConnection> toClose;
-    synchronized (queue) {
+    synchronized (lock) {
       toClose = new ArrayList<>(allConnections);
     }
     // Close outside sync block to avoid deadlock

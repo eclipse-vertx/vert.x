@@ -16,18 +16,11 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.Channel;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
@@ -37,10 +30,7 @@ import java.util.Set;
 public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
   // Pools must locks on the queue object to keep a single lock
-  private final ConnectionManager.ConnQueue queue;
-  private final HttpClientImpl client;
-  private final HttpClientMetrics metrics;
-  private final Map<Channel, HttpClientConnection> connectionMap;
+  private final Object lock;
   private final boolean ssl;
   private final String host;
   private final int port;
@@ -49,21 +39,15 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
   private final int maxSockets;
 
-  public Http1xPool(HttpClientImpl client,
-                    HttpClientMetrics metrics,
-                    HttpClientOptions options,
-                    ConnectionManager.ConnQueue queue,
-                    Map<Channel, HttpClientConnection> connectionMap,
+  public Http1xPool(HttpClientOptions options,
+                    ConnectionManager.ConnQueue lock,
                     HttpVersion version,
                     int maxSockets,
                     String host,
                     int port) {
-    this.queue = queue;
+    this.lock = lock;
     this.version = version;
-    this.client = client;
-    this.metrics = metrics;
     this.ssl = options.isSsl();
-    this.connectionMap = connectionMap;
     this.maxSockets = maxSockets;
     this.host = host;
     this.port = port;
@@ -95,7 +79,7 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   @Override
   public ClientConnection pollConnection() {
     ClientConnection conn;
-    synchronized (queue) {
+    synchronized (lock) {
       while ((conn = availableConnections.poll()) != null && !conn.isValid()) {
       }
     }
@@ -113,55 +97,19 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
   }
 
   @Override
-  public void recycleConnection(ClientConnection conn) {
-    synchronized (queue) {
-      // Return to set of available from here to not return it several times
-      availableConnections.add(conn);
-    }
+  public void initConnection(ClientConnection conn) {
   }
 
   @Override
-  public void createConnection(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception {
-    synchronized (queue) {
-      ClientHandler clientHandler = new ClientHandler(
-        context,
-        this,
-        client,
-        queue.metric,
-        metrics);
-      clientHandler.addHandler(conn -> {
-        synchronized (queue) {
-          allConnections.add(conn);
-        }
-        connectionMap.put(ch, conn);
-      });
-      clientHandler.removeHandler(this::connectionClosed);
-      ch.pipeline().addLast("handler", clientHandler);
-      ClientConnection conn = clientHandler.getConnection();
-      handler.handle(Future.succeededFuture(conn));
-    }
-  }
-
-  // Called if the connection is actually closed, OR the connection attempt failed - in the latter case
-  // conn will be null
-  // The connection has been closed - tell the pool about it, this allows the pool to create more
-  // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
-  // gets the closed on, they will check if it's closed and if so get another one.
-  private synchronized void connectionClosed(ClientConnection conn) {
-    synchronized (queue) {
-      connectionMap.remove(conn.channel());
-      allConnections.remove(conn);
-      availableConnections.remove(conn);
-      queue.closeConnection();
-    }
-    if (metrics != null) {
-      metrics.endpointDisconnected(queue.metric, conn.metric());
+  public void recycleConnection(ClientConnection conn) {
+    synchronized (lock) {
+      availableConnections.add(conn);
     }
   }
 
   public void closeAllConnections() {
     Set<ClientConnection> copy;
-    synchronized (queue) {
+    synchronized (lock) {
       copy = new HashSet<>(allConnections);
       allConnections.clear();
     }
@@ -177,6 +125,9 @@ public class Http1xPool implements ConnectionManager.Pool<ClientConnection> {
 
   @Override
   public void evictConnection(ClientConnection conn) {
-    connectionMap.remove(conn.channel());
+    synchronized (lock) {
+      allConnections.remove(conn);
+      availableConnections.remove(conn);
+    }
   }
 }

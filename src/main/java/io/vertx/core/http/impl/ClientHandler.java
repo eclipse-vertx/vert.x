@@ -59,7 +59,6 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
     chctx = ctx;
     ClientConnection conn = new ClientConnection(pool.version(), client, endpointMetric, ctx,
       pool.ssl(), pool.host(), pool.port(), context, metrics);
-    setConnection(conn);
     if (metrics != null) {
       context.executeFromIO(() -> {
         Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
@@ -67,6 +66,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
         metrics.endpointConnected(endpointMetric, metric);
       });
     }
+    setConnection(conn);
   }
 
   public ChannelHandlerContext context() {

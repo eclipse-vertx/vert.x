@@ -211,10 +211,10 @@ public class ConnectionManager {
       this.mgr = mgr;
       if (version == HttpVersion.HTTP_2) {
         maxSize = options.getHttp2MaxPoolSize();
-        pool =  (Pool)new Http2Pool(this, client, metrics, mgr.connectionMap, http2MaxConcurrency, logEnabled, options.getHttp2MaxPoolSize(), options.getHttp2ConnectionWindowSize(), options.isHttp2ClearTextUpgrade());
+        pool =  (Pool)new Http2Pool(this, http2MaxConcurrency, options.getHttp2MaxPoolSize());
       } else {
         maxSize = options.getMaxPoolSize();
-        pool = (Pool)new Http1xPool(client, metrics, options, this, mgr.connectionMap, version, options.getMaxPoolSize(), host, port);
+        pool = (Pool)new Http1xPool(options, this, version, options.getMaxPoolSize(), host, port);
       }
       this.metric = metrics != null ? metrics.createEndpoint(host, port, maxSize) : null;
     }
@@ -291,8 +291,8 @@ public class ConnectionManager {
         checkPending();
       });
       conn.evictionHandler(v -> {
-        pool.evictConnection(conn);
-        checkPending();
+        // Not sure it's really useful
+        // checkPending();
       });
       conn.getContext().executeFromIO(() -> {
         waiter.handleConnection(conn);
@@ -352,24 +352,78 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Handler<AsyncResult<HttpClientConnection>> handler) {
       // change the pool to Http1xPool
       synchronized (this) {
-        pool = (Pool)new Http1xPool(client, ConnectionManager.this.metrics, options, this, mgr.connectionMap, fallbackVersion, options.getMaxPoolSize(), host, port);
+        pool = (Pool)new Http1xPool(options, this, fallbackVersion, options.getMaxPoolSize(), host, port);
       }
       http1xConnected(context, ch, handler);
     }
 
     private void http1xConnected(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) {
-      try {
-        pool.createConnection(context, ch, handler);
-      } catch (Exception e) {
-        handler.handle(Future.failedFuture(e));
+      synchronized (this) {
+        ClientHandler clientHandler = new ClientHandler(
+          context,
+          (Http1xPool) (Pool)pool,
+          client,
+          metric,
+          metrics);
+        clientHandler.addHandler(conn -> {
+          pool.initConnection(conn);
+          mgr.connectionMap.put(ch, conn);
+          handler.handle(Future.succeededFuture(conn));
+        });
+        clientHandler.removeHandler(conn -> {
+          mgr.connectionMap.remove(conn.channel());
+          pool.evictConnection(conn);
+          if (metrics != null) {
+            metrics.endpointDisconnected(metric, conn.metric());
+          }
+          closeConnection();
+        });
+        ch.pipeline().addLast("handler", clientHandler);
       }
     }
 
-    private void http2Connected(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) {
+    private void http2Connected(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> resultHandler) {
       try {
-        pool.createConnection(context, ch, handler);
+        synchronized (this) {
+          boolean upgrade;
+          upgrade = ch.pipeline().get(SslHandler.class) == null && options.isHttp2ClearTextUpgrade();
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>(ch)
+            .server(false)
+            .clientUpgrade(upgrade)
+            .useCompression(client.getOptions().isTryUseCompression())
+            .initialSettings(client.getOptions().getInitialSettings())
+            .connectionFactory(connHandler -> {
+              Http2ClientConnection conn = new Http2ClientConnection(metric, client, context, connHandler, metrics, resultHandler);
+              if (metrics != null) {
+                Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+                conn.metric(metric);
+              }
+              return conn;
+            })
+            .logEnabled(logEnabled)
+            .build();
+          handler.addHandler(conn -> {
+            if (metrics != null) {
+              metrics.endpointConnected(metric, conn.metric());
+            }
+            mgr.connectionMap.put(conn.channel(), conn);
+            pool.initConnection(conn);
+            if (options.getHttp2ConnectionWindowSize() > 0) {
+              conn.setWindowSize(options.getHttp2ConnectionWindowSize());
+            }
+            resultHandler.handle(Future.succeededFuture(conn));
+          });
+          handler.removeHandler(conn -> {
+            mgr.connectionMap.remove(conn.channel());
+            pool.evictConnection(conn);
+            if (metrics != null) {
+              metrics.endpointDisconnected(metric, conn.metric());
+            }
+            closeConnection();
+          });
+        }
       } catch (Exception e) {
-        connectFailed(ch, handler, e);
+        connectFailed(ch, resultHandler, e);
       }
     }
 
@@ -393,8 +447,6 @@ public class ConnectionManager {
 
     boolean canCreateStream(int connCount);
 
-    void createConnection(ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> handler) throws Exception;
-
     C pollConnection();
 
     /**
@@ -406,6 +458,8 @@ public class ConnectionManager {
     boolean canCreateConnection(int connCount);
 
     void closeAllConnections();
+
+    void initConnection(C conn);
 
     void recycleConnection(C conn);
 
