@@ -19,7 +19,6 @@ package io.vertx.core.http.impl.pool;
 import io.netty.channel.Channel;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
@@ -44,7 +43,7 @@ public class ConnectionManager<C> {
   private final ConnectionProvider<C> connector;
   private final Function<SocketAddress, ConnectionPool<C>> poolFactory;
   private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
-  private final Map<ConnectionKey, ConnQueue> queueMap = new ConcurrentHashMap<>();
+  private final Map<ConnectionKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
 
   public ConnectionManager(HttpClientMetrics metrics,
                            ConnectionProvider<C> connector,
@@ -91,52 +90,53 @@ public class ConnectionManager<C> {
     }
   }
 
-  private ConnQueue getConnQueue(String peerHost, boolean ssl, int port, String host) {
+  private Endpoint getConnQueue(String peerHost, boolean ssl, int port, String host) {
     ConnectionKey key = new ConnectionKey(ssl, port, peerHost);
-    return queueMap.computeIfAbsent(key, targetAddress -> {
+    return endpointMap.computeIfAbsent(key, targetAddress -> {
       ConnectionPool<C> pool =  poolFactory.apply(SocketAddress.inetSocketAddress(port, host));
-      return new ConnQueue( connector, peerHost, host, port, ssl, key, pool);
+      return new Endpoint( connector, peerHost, host, port, ssl, key, pool);
     });
   }
 
   public void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {
-    ConnQueue connQueue = getConnQueue(peerHost, ssl, port, host);
+    Endpoint connQueue = getConnQueue(peerHost, ssl, port, host);
     connQueue.getConnection(waiter);
   }
 
   public void close() {
-    for (ConnQueue queue: queueMap.values()) {
-      queue.closeAllConnections();
-    }
-    queueMap.clear();
+    endpointMap.clear();
     for (C conn : connectionMap.values()) {
       connector.close(conn);
     }
   }
 
   /**
-   * The connection queue delegates to the connection pool, the pooling strategy.
+   * The endpoint is a queue of waiters and it delegates to the connection pool, the pooling strategy.
+   *
+   * An endpoint is synchronized and should be executed only from the event loop, the underlying pool
+   * relies and the synchronization performed by the endpoint.
    */
-  class ConnQueue implements ConnectionListener<C> {
+  private class Endpoint implements ConnectionListener<C> {
 
     private final String peerHost;
     private final boolean ssl;
     private final int port;
     private final String host;
     private final ConnectionKey key;
-    private final Queue<Waiter<C>> waiters = new ArrayDeque<>();
     private final ConnectionPool<C> pool;
-    private int connCount;
     private final ConnectionProvider<C> connector;
-    final Object metric;
+    private final Object metric;
 
-    ConnQueue(ConnectionProvider<C> connector,
-              String peerHost,
-              String host,
-              int port,
-              boolean ssl,
-              ConnectionKey key,
-              ConnectionPool<C> pool) {
+    private final Queue<Waiter<C>> waiters = new ArrayDeque<>();
+    private int connCount;
+
+    private Endpoint(ConnectionProvider<C> connector,
+             String peerHost,
+             String host,
+             int port,
+             boolean ssl,
+             ConnectionKey key,
+             ConnectionPool<C> pool) {
       this.key = key;
       this.host = host;
       this.port = port;
@@ -145,10 +145,6 @@ public class ConnectionManager<C> {
       this.connector = connector;
       this.pool = pool;
       this.metric = metrics != null ? metrics.createEndpoint(host, port, pool.maxSize()) : null;
-    }
-
-    private void closeAllConnections() {
-      pool.closeAllConnections();
     }
 
     private synchronized void getConnection(Waiter<C> waiter) {
@@ -265,7 +261,7 @@ public class ConnectionManager<C> {
       checkPending();
       if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
-        queueMap.remove(key);
+        endpointMap.remove(key);
         if (metrics != null) {
           metrics.closeEndpoint(host, port, metric);
         }

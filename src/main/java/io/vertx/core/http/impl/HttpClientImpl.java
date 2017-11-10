@@ -112,7 +112,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final ContextImpl creatingContext;
-  private final ConnectionManager<HttpClientConnection> wsCM; // The queue manager for websockets
+  private final ConnectionManager<HttpClientConnection> websocketCM; // The queue manager for websockets
   private final ConnectionManager<HttpClientConnection> httpCM; // The queue manager for requests
   private final Closeable closeHook;
   private final ProxyType proxyType;
@@ -161,8 +161,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     ConnectionProvider<HttpClientConnection> connector = new HttpChannelConnector(this);
     Function<SocketAddress, ConnectionPool<HttpClientConnection>> poolFactory = sa -> new HttpConnectionPool(options.getProtocolVersion(), options);
 
-    wsCM = new ConnectionManager<>(vertx, metrics, connector, poolFactory, options.getMaxWaitQueueSize());
-    httpCM = new ConnectionManager<>(vertx, metrics, connector, poolFactory, options.getMaxWaitQueueSize());
+    websocketCM = new ConnectionManager<>(metrics, connector, poolFactory, options.getMaxWaitQueueSize());
+    httpCM = new ConnectionManager<>(metrics, connector, poolFactory, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
   }
 
@@ -910,7 +910,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     if (creatingContext != null) {
       creatingContext.removeCloseHook(closeHook);
     }
-    wsCM.close();
+    websocketCM.close();
     httpCM.close();
     if (metrics != null) {
       metrics.close();
@@ -951,7 +951,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                  Handler<ClientConnection> handler,
                                  Handler<Throwable> connectionExceptionHandler,
                                  ContextImpl context) {
-    wsCM.getConnection(host, ssl, port, host, new Waiter<HttpClientConnection>(context) {
+    websocketCM.getConnection(host, ssl, port, host, new Waiter<HttpClientConnection>(context) {
       @Override
       public void initConnection(HttpClientConnection conn) {
       }

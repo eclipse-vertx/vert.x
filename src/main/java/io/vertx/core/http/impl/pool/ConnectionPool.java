@@ -36,8 +36,6 @@ public interface ConnectionPool<C> {
    */
   boolean canCreateConnection(int connCount);
 
-  void closeAllConnections();
-
   void initConnection(C conn);
 
   void recycleConnection(C conn);

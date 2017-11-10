@@ -85,11 +85,6 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
   }
 
   @Override
-  public void closeAllConnections() {
-    current.closeAllConnections();
-  }
-
-  @Override
   public int maxSize() {
     return current.maxSize();
   }
@@ -176,13 +171,6 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     @Override
     public void recycleConnection(Http2ClientConnection conn) {
       conn.streamCount--;
-    }
-
-    @Override
-    public void closeAllConnections() {
-      List<Http2ClientConnection> toClose = toClose = new ArrayList<>(allConnections);
-      // Close outside sync block to avoid deadlock
-      toClose.forEach(Http2ConnectionBase::close);
     }
 
     @Override

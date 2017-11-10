@@ -269,7 +269,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     }
   }
 
-  public boolean isValid() {
+  public synchronized boolean isValid() {
     return !reset && chctx.channel().isOpen();
   }
 

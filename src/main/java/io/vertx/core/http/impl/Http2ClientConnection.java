@@ -49,7 +49,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private final HttpClientImpl client;
   final HttpClientMetrics metrics;
   final Object queueMetric;
-  int streamCount;
+  int streamCount; // Exclusively used by the HTTP/2 connection pool
 
   public Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
                                Object queueMetric,
@@ -96,8 +96,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public boolean isValid() {
-    Http2Connection conn = handler.connection();
-    return !isClosed() && !conn.goAwaySent() && !conn.goAwayReceived();
+    return !isClosed() && !isGoneAway();
   }
 
   @Override

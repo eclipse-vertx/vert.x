@@ -89,6 +89,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
   private boolean closed;
+  private boolean goneAway;
   private int windowSize;
 
   public Http2ConnectionBase(ContextImpl context, VertxHttp2ConnectionHandler handler) {
@@ -128,6 +129,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return closed;
   }
 
+  synchronized boolean isGoneAway() {
+    return goneAway;
+  }
+
   synchronized void onConnectionError(Throwable cause) {
     synchronized (this) {
       for (VertxHttp2Stream stream : streams.values()) {
@@ -165,10 +170,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
   }
 
-  void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+  synchronized void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+    goneAway = true;
   }
 
   synchronized void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+    goneAway = true;
     Handler<GoAway> handler = goAwayHandler;
     if (handler != null) {
       Buffer buffer = Buffer.buffer(debugData);
