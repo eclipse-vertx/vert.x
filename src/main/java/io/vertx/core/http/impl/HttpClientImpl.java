@@ -32,6 +32,10 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.impl.pool.ConnectionManager;
+import io.vertx.core.http.impl.pool.ConnectionPool;
+import io.vertx.core.http.impl.pool.ConnectionProvider;
+import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -949,18 +953,18 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                  ContextImpl context) {
     wsCM.getConnection(host, ssl, port, host, new Waiter<HttpClientConnection>(context) {
       @Override
-      void initConnection(HttpClientConnection conn) {
+      public void initConnection(HttpClientConnection conn) {
       }
       @Override
-      void handleConnection(HttpClientConnection conn) {
+      public void handleConnection(HttpClientConnection conn) {
         handler.handle((ClientConnection) conn);
       }
       @Override
-      void handleFailure(Throwable failure) {
+      public void handleFailure(Throwable failure) {
         connectionExceptionHandler.handle(failure);
       }
       @Override
-      boolean isCancelled() {
+      public boolean isCancelled() {
         return false;
       }
     });

@@ -14,19 +14,19 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.pool;
 
 import io.vertx.core.impl.ContextImpl;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Waiter<C> {
+public abstract class Waiter<C> {
 
   final ContextImpl context;
   Object metric;
 
-  public Waiter(ContextImpl context) {
+  protected Waiter(ContextImpl context) {
     this.context = context;
   }
 
@@ -35,23 +35,23 @@ abstract class Waiter<C> {
    *
    * @param failure the failure
    */
-  abstract void handleFailure(Throwable failure);
+  public abstract void handleFailure(Throwable failure);
 
   /**
    * Init connection.
    *
    * @param conn the connection
    */
-  abstract void initConnection(C conn);
+  public abstract void initConnection(C conn);
 
   /**
    * Handle connection success.
    */
-  abstract void handleConnection(C conn) throws Exception;
+  public abstract void handleConnection(C conn) throws Exception;
 
   /**
    * @return true if the waiter has been cancelled
    */
-  abstract boolean isCancelled();
+  public abstract boolean isCancelled();
 
 }

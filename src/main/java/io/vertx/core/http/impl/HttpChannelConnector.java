@@ -29,6 +29,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.pool.ConnectionListener;
+import io.vertx.core.http.impl.pool.ConnectionProvider;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;

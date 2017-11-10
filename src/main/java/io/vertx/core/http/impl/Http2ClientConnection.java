@@ -31,6 +31,7 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.HttpClientMetrics;

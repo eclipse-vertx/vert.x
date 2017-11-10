@@ -31,6 +31,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 
@@ -643,12 +644,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       Waiter<HttpClientConnection> waiter = new Waiter<HttpClientConnection>(vertx.getOrCreateContext()) {
 
         @Override
-        void handleFailure(Throwable failure) {
+        public void handleFailure(Throwable failure) {
           handleException(failure);
         }
 
         @Override
-        void initConnection(HttpClientConnection conn) {
+        public void initConnection(HttpClientConnection conn) {
           synchronized (HttpClientRequestImpl.this) {
             if (connectionHandler != null) {
               connectionHandler.handle(conn);
@@ -657,14 +658,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
 
         @Override
-        void handleConnection(HttpClientConnection conn) throws Exception {
+        public void handleConnection(HttpClientConnection conn) throws Exception {
           HttpClientStream stream;
           stream = conn.createStream();
           connected(stream, headersCompletionHandler);
         }
 
         @Override
-        boolean isCancelled() {
+        public boolean isCancelled() {
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
           return exceptionOccurred != null || reset != null;

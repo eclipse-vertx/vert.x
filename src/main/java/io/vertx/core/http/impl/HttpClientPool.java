@@ -17,6 +17,8 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.pool.ConnectionManager;
+import io.vertx.core.http.impl.pool.ConnectionPool;
 import io.vertx.core.impl.ContextImpl;
 
 import java.util.*;

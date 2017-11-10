@@ -13,14 +13,14 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.pool;
 
 import io.vertx.core.impl.ContextImpl;
 
 /**
  * The logic for the connection pool because HTTP/1 and HTTP/2 have different pooling logics.
  */
-interface ConnectionPool<C> {
+public interface ConnectionPool<C> {
 
   int maxSize();
 

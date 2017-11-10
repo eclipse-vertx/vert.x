@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.pool;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -39,7 +39,7 @@ import java.util.function.Function;
  */
 public class ConnectionManager<C> {
 
-  static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
+  public static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
   private final QueueManager queueManager = new QueueManager();
   private final VertxInternal vertx;
@@ -48,7 +48,7 @@ public class ConnectionManager<C> {
   private final ConnectionProvider<C> connector;
   private final Function<SocketAddress, ConnectionPool<C>> poolFactory;
 
-  ConnectionManager(VertxInternal vertx,
+  public ConnectionManager(VertxInternal vertx,
                     HttpClientMetrics metrics,
                     ConnectionProvider<C> connector,
                     Function<SocketAddress,
@@ -126,7 +126,7 @@ public class ConnectionManager<C> {
     }
   }
 
-  void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {
+  public void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {
     ConnQueue connQueue = queueManager.getConnQueue(peerHost, ssl, port, host);
     connQueue.getConnection(waiter);
   }

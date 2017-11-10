@@ -13,7 +13,7 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.pool;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -21,7 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 
-interface ConnectionProvider<C> {
+public interface ConnectionProvider<C> {
 
   void connect(
     ConnectionListener<C> listener,
