@@ -236,6 +236,7 @@ class HttpClientPool implements ConnectionPool<HttpClientConnection> {
 
     @Override
     public void initConnection(ClientConnection conn) {
+      allConnections.add(conn);
     }
 
     @Override
