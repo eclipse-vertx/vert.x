@@ -25,16 +25,14 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
 
   private ConnectionManager.Pool<? extends HttpClientConnection> current;
   private final HttpClientOptions options;
-  private final Object lock;
   private final String host;
   private final int port;
   private final boolean ssl;
   private HttpVersion version;
 
-  HttpClientPool(HttpVersion version, HttpClientOptions options, Object lock, String host, int port) {
+  HttpClientPool(HttpVersion version, HttpClientOptions options, String host, int port) {
     this.version = version;
     this.options = options;
-    this.lock = lock;
     this.host = host;
     this.port = port;
     this.ssl = options.isSsl();
@@ -167,23 +165,17 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
 
     @Override
     public void evictConnection(Http2ClientConnection conn) {
-      synchronized (lock) {
-        allConnections.remove(conn);
-      }
+      allConnections.remove(conn);
     }
 
     @Override
     public void initConnection(Http2ClientConnection conn) {
-      synchronized (lock) {
-        allConnections.add(conn);
-      }
+      allConnections.add(conn);
     }
 
     @Override
     public void recycleConnection(Http2ClientConnection conn) {
-      synchronized (lock) {
-        conn.streamCount--;
-      }
+      conn.streamCount--;
     }
 
     @Override
@@ -193,10 +185,7 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
 
     @Override
     public void closeAllConnections() {
-      List<Http2ClientConnection> toClose;
-      synchronized (lock) {
-        toClose = new ArrayList<>(allConnections);
-      }
+      List<Http2ClientConnection> toClose = toClose = new ArrayList<>(allConnections);
       // Close outside sync block to avoid deadlock
       toClose.forEach(Http2ConnectionBase::close);
     }
@@ -230,9 +219,7 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
     @Override
     public ClientConnection pollConnection() {
       ClientConnection conn;
-      synchronized (lock) {
-        while ((conn = availableConnections.poll()) != null && !conn.isValid()) {
-        }
+      while ((conn = availableConnections.poll()) != null && !conn.isValid()) {
       }
       return conn;
     }
@@ -253,17 +240,12 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
 
     @Override
     public void recycleConnection(ClientConnection conn) {
-      synchronized (lock) {
-        availableConnections.add(conn);
-      }
+      availableConnections.add(conn);
     }
 
     public void closeAllConnections() {
-      Set<ClientConnection> copy;
-      synchronized (lock) {
-        copy = new HashSet<>(allConnections);
-        allConnections.clear();
-      }
+      Set<ClientConnection> copy = new HashSet<>(allConnections);
+      allConnections.clear();
       // Close outside sync block to avoid potential deadlock
       for (ClientConnection conn : copy) {
         try {
@@ -276,10 +258,8 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
 
     @Override
     public void evictConnection(ClientConnection conn) {
-      synchronized (lock) {
-        allConnections.remove(conn);
-        availableConnections.remove(conn);
-      }
+      allConnections.remove(conn);
+      availableConnections.remove(conn);
     }
 
     @Override

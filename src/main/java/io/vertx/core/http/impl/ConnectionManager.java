@@ -207,7 +207,7 @@ public class ConnectionManager {
       } else {
         maxSize = options.getMaxPoolSize();
       }
-      pool =  (Pool)new HttpClientPool(version, options,  this, host, port);
+      pool =  (Pool)new HttpClientPool(version, options,  host, port);
       this.metric = metrics != null ? metrics.createEndpoint(host, port, maxSize) : null;
     }
 
