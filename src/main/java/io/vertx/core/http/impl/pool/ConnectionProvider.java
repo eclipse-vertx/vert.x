@@ -29,7 +29,6 @@ public interface ConnectionProvider<C> {
   void connect(
     ConnectionListener<C> listener,
     Object endpointMetric,
-    Bootstrap bootstrap,
     ContextImpl context,
     String peerHost,
     boolean ssl,

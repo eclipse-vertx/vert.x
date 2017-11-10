@@ -73,13 +73,16 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   public void connect(
     ConnectionListener<HttpClientConnection> listener,
     Object endpointMetric,
-    Bootstrap bootstrap,
     ContextImpl context,
     String peerHost,
     boolean ssl,
     String host,
     int port,
     Handler<AsyncResult<HttpClientConnection>> handler) {
+
+    Bootstrap bootstrap = new Bootstrap();
+    bootstrap.group(context.nettyEventLoop());
+    bootstrap.channel(client.getVertx().transport().channelType(false));
 
     applyConnectionOptions(bootstrap);
 

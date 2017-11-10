@@ -16,7 +16,6 @@
 
 package io.vertx.core.http.impl.pool;
 
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
@@ -40,7 +39,6 @@ public class ConnectionManager<C> {
 
   public static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
-  private final VertxInternal vertx;
   private final int maxWaitQueueSize;
   private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
   private final ConnectionProvider<C> connector;
@@ -48,20 +46,17 @@ public class ConnectionManager<C> {
   private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
   private final Map<ConnectionKey, ConnQueue> queueMap = new ConcurrentHashMap<>();
 
-  public ConnectionManager(VertxInternal vertx,
-                    HttpClientMetrics metrics,
-                    ConnectionProvider<C> connector,
-                    Function<SocketAddress,
-                      ConnectionPool<C>> poolFactory,
-                    int maxWaitQueueSize) {
-    this.vertx = vertx;
+  public ConnectionManager(HttpClientMetrics metrics,
+                           ConnectionProvider<C> connector,
+                           Function<SocketAddress, ConnectionPool<C>> poolFactory,
+                           int maxWaitQueueSize) {
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;
     this.connector = connector;
     this.poolFactory = poolFactory;
   }
 
-  static final class ConnectionKey {
+  private static final class ConnectionKey {
 
     private final boolean ssl;
     private final int port;
@@ -197,10 +192,7 @@ public class ConnectionManager<C> {
 
     private void createConnection(Waiter<C> waiter) {
       connCount++;
-      Bootstrap bootstrap = new Bootstrap();
-      bootstrap.group(waiter.context.nettyEventLoop());
-      bootstrap.channel(vertx.transport().channelType(false));
-      connector.connect(this, metric, bootstrap, waiter.context, peerHost, ssl, host, port, ar -> {
+      connector.connect(this, metric, waiter.context, peerHost, ssl, host, port, ar -> {
         if (ar.succeeded()) {
           initConnection(waiter, ar.result());
         } else {
