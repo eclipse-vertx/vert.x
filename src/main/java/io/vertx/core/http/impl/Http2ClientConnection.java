@@ -44,13 +44,13 @@ import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
  */
 class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
 
-  private final ClientConnectionListener<HttpClientConnection> listener;
+  private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
   final HttpClientMetrics metrics;
   final Object queueMetric;
   int streamCount;
 
-  public Http2ClientConnection(ClientConnectionListener<HttpClientConnection> listener,
+  public Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
                                Object queueMetric,
                                HttpClientImpl client,
                                ContextImpl context,

@@ -21,9 +21,9 @@ import io.vertx.core.impl.ContextImpl;
 
 import java.util.*;
 
-class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
+class HttpClientPool implements ConnectionPool<HttpClientConnection> {
 
-  private ConnectionManager.Pool<? extends HttpClientConnection> current;
+  private ConnectionPool<? extends HttpClientConnection> current;
   private final HttpClientOptions options;
   private final String host;
   private final int port;
@@ -104,25 +104,25 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
     if (conn instanceof ClientConnection && current instanceof Http2) {
       fallbackToHttp1x(((ClientConnection) conn).version());
     }
-    ((ConnectionManager.Pool<HttpClientConnection>) current).initConnection(conn);
+    ((ConnectionPool<HttpClientConnection>) current).initConnection(conn);
   }
 
   @Override
   public void recycleConnection(HttpClientConnection conn) {
-    ((ConnectionManager.Pool<HttpClientConnection>) current).recycleConnection(conn);
+    ((ConnectionPool<HttpClientConnection>) current).recycleConnection(conn);
   }
 
   @Override
   public HttpClientStream createStream(HttpClientConnection conn) throws Exception {
-    return ((ConnectionManager.Pool<HttpClientConnection>) current).createStream(conn);
+    return ((ConnectionPool<HttpClientConnection>) current).createStream(conn);
   }
 
   @Override
   public void evictConnection(HttpClientConnection conn) {
-    ((ConnectionManager.Pool<HttpClientConnection>) current).evictConnection(conn);
+    ((ConnectionPool<HttpClientConnection>) current).evictConnection(conn);
   }
 
-  class Http2 implements ConnectionManager.Pool<Http2ClientConnection> {
+  class Http2 implements ConnectionPool<Http2ClientConnection> {
 
     // Pools must locks on the queue object to keep a single lock
     private final Set<Http2ClientConnection> allConnections = new HashSet<>();
@@ -211,7 +211,7 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
     }
   }
 
-  private class Http1x implements ConnectionManager.Pool<ClientConnection> {
+  private class Http1x implements ConnectionPool<ClientConnection> {
 
     private final Set<ClientConnection> allConnections = new HashSet<>();
     private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();

@@ -17,7 +17,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 
-public interface ClientConnectionListener<C> {
+public interface ConnectionListener<C> {
 
   void onRecycle(C conn);
 

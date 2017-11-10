@@ -66,7 +66,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  private final ClientConnectionListener<HttpClientConnection> listener;
+  private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
   private final boolean ssl;
   private final String host;
@@ -90,7 +90,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(ClientConnectionListener<HttpClientConnection> listener,
+  ClientConnection(ConnectionListener<HttpClientConnection> listener,
                    HttpVersion version,
                    HttpClientImpl client,
                    Object endpointMetric,

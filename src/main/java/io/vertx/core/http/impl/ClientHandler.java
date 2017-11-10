@@ -43,10 +43,10 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   private final boolean ssl;
   private final HttpClientImpl client;
   private final HttpClientMetrics metrics;
-  private final ClientConnectionListener<HttpClientConnection> listener;
+  private final ConnectionListener<HttpClientConnection> listener;
   private final Object endpointMetric;
 
-  public ClientHandler(ClientConnectionListener<HttpClientConnection> listener,
+  public ClientHandler(ConnectionListener<HttpClientConnection> listener,
                        ContextImpl context,
                        HttpVersion version,
                        String host,
