@@ -39,9 +39,9 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.MalformedURLException;
@@ -111,11 +111,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final Closeable closeHook;
   private final ProxyType proxyType;
   private final SSLHelper sslHelper;
+  private final HttpClientMetrics metrics;
   private volatile boolean closed;
   private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
+    this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createMetrics(this, options) : null;
     this.options = new HttpClientOptions(options);
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
@@ -145,9 +147,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    VertxMetrics metrics = vertx.metricsSPI();
-    connectionManager = new ConnectionManager(this, metrics != null ? metrics.createMetrics(this, options) : null);
+    connectionManager = new ConnectionManager(this);
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
+  }
+
+  HttpClientMetrics metrics() {
+    return metrics;
   }
 
   @Override
@@ -900,7 +905,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public Metrics getMetrics() {
-    return connectionManager.metrics();
+    return metrics;
   }
 
   @Override
