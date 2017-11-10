@@ -137,13 +137,6 @@ public class ConnectionManager<C> {
 
   /**
    * The connection queue delegates to the connection pool, the pooling strategy.
-   *
-   * - HTTP/1.x pools several connections
-   * - HTTP/2 uses a single connection
-   *
-   * After a queue is initialized with an HTTP/2 pool, this pool changed to an HTTP/1/1
-   * pool if the server does not support HTTP/2 or after negotiation. In this situation
-   * all waiters on this queue will use HTTP/1.1 connections.
    */
   class ConnQueue implements ConnectionListener<C> {
 

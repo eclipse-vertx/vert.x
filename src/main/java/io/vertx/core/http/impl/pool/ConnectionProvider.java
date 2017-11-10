@@ -21,6 +21,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 
+/**
+ * Provides how the connection manager interacts its connections.
+ */
 public interface ConnectionProvider<C> {
 
   void connect(

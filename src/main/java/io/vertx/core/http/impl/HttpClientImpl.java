@@ -159,7 +159,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
 
     ConnectionProvider<HttpClientConnection> connector = new HttpChannelConnector(this);
-    Function<SocketAddress, ConnectionPool<HttpClientConnection>> poolFactory = sa -> new HttpClientPool(options.getProtocolVersion(), options, sa.host(), sa.port());
+    Function<SocketAddress, ConnectionPool<HttpClientConnection>> poolFactory = sa -> new HttpConnectionPool(options.getProtocolVersion(), options);
 
     wsCM = new ConnectionManager<>(vertx, metrics, connector, poolFactory, options.getMaxWaitQueueSize());
     httpCM = new ConnectionManager<>(vertx, metrics, connector, poolFactory, options.getMaxWaitQueueSize());

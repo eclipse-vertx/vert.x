@@ -23,38 +23,31 @@ import io.vertx.core.impl.ContextImpl;
 
 import java.util.*;
 
-class HttpClientPool implements ConnectionPool<HttpClientConnection> {
+/**
+ * The logic for the connection pool for HTTP:
+ *
+ * - HTTP/1.x pools several connections
+ * - HTTP/2 uses can multiplex on a single connections but can handle several connections
+ * <p/>
+ * When this pool is initialized with an HTTP/2 pool, this pool can be changed to an HTTP/1/1
+ * pool if the remote server does not support HTTP/2 or after ALPN negotiation.
+ * <p/>
+ * In this case further connections will be HTTP/1.1 connections, until the pool is closed.
+ */
+class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
 
   private ConnectionPool<? extends HttpClientConnection> current;
   private final HttpClientOptions options;
-  private final String host;
-  private final int port;
-  private final boolean ssl;
   private HttpVersion version;
 
-  HttpClientPool(HttpVersion version, HttpClientOptions options, String host, int port) {
+  HttpConnectionPool(HttpVersion version, HttpClientOptions options) {
     this.version = version;
     this.options = options;
-    this.host = host;
-    this.port = port;
-    this.ssl = options.isSsl();
     if (version == HttpVersion.HTTP_2) {
       current =  new Http2();
     } else {
       current = new Http1x();
     }
-  }
-
-  String host() {
-    return host;
-  }
-
-  int port() {
-    return port;
-  }
-
-  boolean ssl() {
-    return ssl;
   }
 
   private void fallbackToHttp1x(HttpVersion version) {

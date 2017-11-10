@@ -18,7 +18,7 @@ package io.vertx.core.http.impl.pool;
 import io.vertx.core.impl.ContextImpl;
 
 /**
- * The logic for the connection pool because HTTP/1 and HTTP/2 have different pooling logics.
+ * The logic for the connection pool.
  */
 public interface ConnectionPool<C> {
 

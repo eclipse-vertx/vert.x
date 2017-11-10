@@ -56,8 +56,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
                                HttpClientImpl client,
                                ContextImpl context,
                                VertxHttp2ConnectionHandler connHandler,
-                               HttpClientMetrics metrics,
-                               Handler<AsyncResult<HttpClientConnection>> resultHandler) {
+                               HttpClientMetrics metrics) {
     super(context, connHandler);
     this.metrics = metrics;
     this.queueMetric = queueMetric;

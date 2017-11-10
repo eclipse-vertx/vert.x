@@ -42,10 +42,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import javax.net.ssl.SSLHandshakeException;
 
 /**
- * The ChannelConnector performs the channel configuration and connection according to the
- * client options and the protocol version.
- * When the channel connects or fails to connect, it calls back the ConnQueue that initiated the
- * connection.
+ * Performs the channel configuration and connection according to the client options and the protocol version.
  */
 class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
@@ -239,7 +236,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     connectFailed(ch, handler, sslException);
   }
 
-  private void http1xConnected(ConnectionListener<HttpClientConnection> queue,
+  private void http1xConnected(ConnectionListener<HttpClientConnection> listener,
                                HttpVersion version,
                                String host,
                                int port,
@@ -248,60 +245,57 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                                ContextImpl context,
                                Channel ch,
                                Handler<AsyncResult<HttpClientConnection>> handler) {
-    synchronized (this) {
-      ClientHandler clientHandler = new ClientHandler(
-        queue,
-        context,
-        version,
-        host,
-        port,
-        ssl,
-        client,
-        endpointMetric,
-        client.metrics());
-      clientHandler.addHandler(conn -> {
-        handler.handle(Future.succeededFuture(conn));
-      });
-      clientHandler.removeHandler(conn -> {
-        queue.onClose(conn, ch);
-      });
-      ch.pipeline().addLast("handler", clientHandler);
-    }
+    ClientHandler clientHandler = new ClientHandler(
+      listener,
+      context,
+      version,
+      host,
+      port,
+      ssl,
+      client,
+      endpointMetric,
+      client.metrics());
+    clientHandler.addHandler(conn -> {
+      handler.handle(Future.succeededFuture(conn));
+    });
+    clientHandler.removeHandler(conn -> {
+      listener.onClose(conn, ch);
+    });
+    ch.pipeline().addLast("handler", clientHandler);
   }
 
-  private void http2Connected(ConnectionListener<HttpClientConnection> queue, Object endpointMetric, ContextImpl context, Channel ch, Handler<AsyncResult<HttpClientConnection>> resultHandler) {
+  private void http2Connected(ConnectionListener<HttpClientConnection> listener,
+                              Object endpointMetric,
+                              ContextImpl context,
+                              Channel ch,
+                              Handler<AsyncResult<HttpClientConnection>> resultHandler) {
     try {
-      synchronized (this) {
-        boolean upgrade;
-        upgrade = ch.pipeline().get(SslHandler.class) == null && options.isHttp2ClearTextUpgrade();
-        VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>(ch)
-          .server(false)
-          .clientUpgrade(upgrade)
-          .useCompression(client.getOptions().isTryUseCompression())
-          .initialSettings(client.getOptions().getInitialSettings())
-          .connectionFactory(connHandler -> {
-            Http2ClientConnection conn = new Http2ClientConnection(queue, endpointMetric, client, context, connHandler, metrics, resultHandler);
-            return conn;
-          })
-          .logEnabled(options.getLogActivity())
-          .build();
-        handler.addHandler(conn -> {
-          if (options.getHttp2ConnectionWindowSize() > 0) {
-            conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-          }
-          if (metrics != null) {
-            Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-            conn.metric(metric);
-          }
-          resultHandler.handle(Future.succeededFuture(conn));
-        });
-        handler.removeHandler(conn -> {
-          if (metrics != null) {
-            metrics.endpointDisconnected(endpointMetric, conn.metric());
-          }
-          queue.onClose(conn, ch);
-        });
-      }
+      boolean upgrade;
+      upgrade = ch.pipeline().get(SslHandler.class) == null && options.isHttp2ClearTextUpgrade();
+      VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>(ch)
+        .server(false)
+        .clientUpgrade(upgrade)
+        .useCompression(client.getOptions().isTryUseCompression())
+        .initialSettings(client.getOptions().getInitialSettings())
+        .connectionFactory(connHandler -> new Http2ClientConnection(listener, endpointMetric, client, context, connHandler, metrics))
+        .logEnabled(options.getLogActivity())
+        .build();
+      handler.addHandler(conn -> {
+        if (options.getHttp2ConnectionWindowSize() > 0) {
+          conn.setWindowSize(options.getHttp2ConnectionWindowSize());
+        }
+        if (metrics != null) {
+          Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+          conn.metric(metric);
+        }
+        resultHandler.handle(Future.succeededFuture(conn));
+      });
+      handler.removeHandler(conn -> {
+        if (metrics != null) {
+          metrics.endpointDisconnected(endpointMetric, conn.metric());
+        }
+        listener.onClose(conn, ch);
+      });
     } catch (Exception e) {
       connectFailed(ch, resultHandler, e);
     }
