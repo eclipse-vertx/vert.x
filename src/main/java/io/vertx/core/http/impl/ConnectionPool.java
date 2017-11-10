@@ -24,7 +24,7 @@ interface ConnectionPool<C> {
 
   int maxSize();
 
-  boolean canCreateStream(int connCount);
+  boolean canBorrow(int connCount);
 
   C pollConnection();
 

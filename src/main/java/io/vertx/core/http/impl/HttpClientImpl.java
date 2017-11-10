@@ -108,8 +108,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final ContextImpl creatingContext;
-  private final ConnectionManager wsCM; // The queue manager for websockets
-  private final ConnectionManager httpCM; // The queue manager for requests
+  private final ConnectionManager<HttpClientConnection> wsCM; // The queue manager for websockets
+  private final ConnectionManager<HttpClientConnection> httpCM; // The queue manager for requests
   private final Closeable closeHook;
   private final ProxyType proxyType;
   private final SSLHelper sslHelper;
@@ -947,7 +947,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                  Handler<ClientConnection> handler,
                                  Handler<Throwable> connectionExceptionHandler,
                                  ContextImpl context) {
-    wsCM.getConnection(host, ssl, port, host, new Waiter(context) {
+    wsCM.getConnection(host, ssl, port, host, new Waiter<HttpClientConnection>(context) {
       @Override
       void initConnection(HttpClientConnection conn) {
       }
@@ -966,7 +966,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     });
   }
 
-  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host, Waiter waiter) {
+  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host, Waiter<HttpClientConnection> waiter) {
     if (!keepAlive && pipelining) {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {

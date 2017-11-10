@@ -640,7 +640,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         throw new IllegalStateException("You must provide a rawMethod when using an HttpMethod.OTHER method");
       }
 
-      Waiter waiter = new Waiter(vertx.getOrCreateContext()) {
+      Waiter<HttpClientConnection> waiter = new Waiter<HttpClientConnection>(vertx.getOrCreateContext()) {
 
         @Override
         void handleFailure(Throwable failure) {

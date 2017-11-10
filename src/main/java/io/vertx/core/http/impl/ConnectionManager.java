@@ -126,7 +126,7 @@ public class ConnectionManager<C> {
     }
   }
 
-  void getConnection(String peerHost, boolean ssl, int port, String host, Waiter waiter) {
+  void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {
     ConnQueue connQueue = queueManager.getConnQueue(peerHost, ssl, port, host);
     connQueue.getConnection(waiter);
   }
@@ -153,7 +153,7 @@ public class ConnectionManager<C> {
     private final int port;
     private final String host;
     private final ConnectionKey key;
-    private final Queue<Waiter> waiters = new ArrayDeque<>();
+    private final Queue<Waiter<C>> waiters = new ArrayDeque<>();
     private final ConnectionPool<C> pool;
     private int connCount;
     private final ConnectionProvider<C> connector;
@@ -177,9 +177,9 @@ public class ConnectionManager<C> {
       pool.closeAllConnections();
     }
 
-    private synchronized void getConnection(Waiter waiter) {
+    private synchronized void getConnection(Waiter<C> waiter) {
       // Enqueue
-      if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize || pool.canCreateStream(connCount)) {
+      if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize || pool.canBorrow(connCount)) {
         if (metrics != null) {
           waiter.metric = metrics.enqueueRequest(metric);
         }
@@ -192,7 +192,7 @@ public class ConnectionManager<C> {
 
     private synchronized void checkPending() {
       while (true) {
-        Waiter waiter = waiters.peek();
+        Waiter<C> waiter = waiters.peek();
         if (waiter == null) {
           break;
         }
@@ -216,7 +216,7 @@ public class ConnectionManager<C> {
       }
     }
 
-    private void createConnection(Waiter waiter) {
+    private void createConnection(Waiter<C> waiter) {
       connCount++;
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(waiter.context.nettyEventLoop());
@@ -253,11 +253,11 @@ public class ConnectionManager<C> {
       closeConnection();
     }
 
-    private synchronized void initConnection(Waiter waiter, C conn) {
+    private synchronized void initConnection(Waiter<C> waiter, C conn) {
       mgr.connectionMap.put(connector.channel(conn), conn);
       pool.initConnection(conn);
       pool.getContext(conn).executeFromIO(() -> {
-        waiter.initConnection((HttpClientConnection) conn);
+        waiter.initConnection(conn);
       });
       if (waiter.isCancelled()) {
         pool.recycleConnection(conn);
@@ -267,12 +267,12 @@ public class ConnectionManager<C> {
       checkPending();
     }
 
-    private void deliverInternal(C conn, Waiter waiter) {
+    private void deliverInternal(C conn, Waiter<C> waiter) {
       ContextImpl ctx = pool.getContext(conn);
       if (ctx.nettyEventLoop().inEventLoop()) {
         ctx.executeFromIO(() -> {
           try {
-            waiter.handleConnection((HttpClientConnection) conn);
+            waiter.handleConnection(conn);
           } catch (Exception e) {
             getConnection(waiter);
           }

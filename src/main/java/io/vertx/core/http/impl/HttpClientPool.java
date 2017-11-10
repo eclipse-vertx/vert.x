@@ -75,8 +75,8 @@ class HttpClientPool implements ConnectionPool<HttpClientConnection> {
   }
 
   @Override
-  public boolean canCreateStream(int connCount) {
-    return current.canCreateStream(connCount);
+  public boolean canBorrow(int connCount) {
+    return current.canBorrow(connCount);
   }
 
   @Override
@@ -142,7 +142,7 @@ class HttpClientPool implements ConnectionPool<HttpClientConnection> {
     }
 
     @Override
-    public boolean canCreateStream(int connCount) {
+    public boolean canBorrow(int connCount) {
       for (Http2ClientConnection conn : allConnections) {
         if (canReserveStream(conn)) {
           return true;
@@ -217,7 +217,7 @@ class HttpClientPool implements ConnectionPool<HttpClientConnection> {
     }
 
     @Override
-    public boolean canCreateStream(int connCount) {
+    public boolean canBorrow(int connCount) {
       return connCount < maxSockets;
     }
 

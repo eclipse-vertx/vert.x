@@ -21,7 +21,7 @@ import io.vertx.core.impl.ContextImpl;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Waiter {
+abstract class Waiter<C> {
 
   final ContextImpl context;
   Object metric;
@@ -42,12 +42,12 @@ abstract class Waiter {
    *
    * @param conn the connection
    */
-  abstract void initConnection(HttpClientConnection conn);
+  abstract void initConnection(C conn);
 
   /**
    * Handle connection success.
    */
-  abstract void handleConnection(HttpClientConnection conn) throws Exception;
+  abstract void handleConnection(C conn) throws Exception;
 
   /**
    * @return true if the waiter has been cancelled
