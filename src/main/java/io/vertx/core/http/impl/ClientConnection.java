@@ -634,6 +634,11 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   }
 
   @Override
+  public HttpClientStream createStream() throws Exception {
+    return this;
+  }
+
+  @Override
   public HttpClientConnection connection() {
     return this;
   }

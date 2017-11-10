@@ -42,8 +42,6 @@ interface ConnectionPool<C> {
 
   void recycleConnection(C conn);
 
-  HttpClientStream createStream(C conn) throws Exception;
-
   void evictConnection(C conn);
 
   boolean isValid(C conn);

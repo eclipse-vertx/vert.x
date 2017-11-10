@@ -257,7 +257,7 @@ public class ConnectionManager<C> {
       mgr.connectionMap.put(connector.channel(conn), conn);
       pool.initConnection(conn);
       pool.getContext(conn).executeFromIO(() -> {
-        waiter.handleConnection((HttpClientConnection) conn);
+        waiter.initConnection((HttpClientConnection) conn);
       });
       if (waiter.isCancelled()) {
         pool.recycleConnection(conn);
@@ -271,14 +271,11 @@ public class ConnectionManager<C> {
       ContextImpl ctx = pool.getContext(conn);
       if (ctx.nettyEventLoop().inEventLoop()) {
         ctx.executeFromIO(() -> {
-          HttpClientStream stream;
           try {
-            stream = pool.createStream(conn);
+            waiter.handleConnection((HttpClientConnection) conn);
           } catch (Exception e) {
             getConnection(waiter);
-            return;
           }
-          waiter.handleStream(stream);
         });
       } else {
         ctx.runOnContext(v -> {

@@ -38,18 +38,16 @@ abstract class Waiter {
   abstract void handleFailure(Throwable failure);
 
   /**
-   * Handle connection success.
+   * Init connection.
    *
    * @param conn the connection
    */
-  abstract void handleConnection(HttpClientConnection conn);
+  abstract void initConnection(HttpClientConnection conn);
 
   /**
    * Handle connection success.
-   *
-   * @param stream the stream
    */
-  abstract void handleStream(HttpClientStream stream);
+  abstract void handleConnection(HttpClientConnection conn) throws Exception;
 
   /**
    * @return true if the waiter has been cancelled

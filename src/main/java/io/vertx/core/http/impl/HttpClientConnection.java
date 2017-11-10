@@ -40,6 +40,8 @@ interface HttpClientConnection extends HttpConnection {
    */
   boolean isValid();
 
+  HttpClientStream createStream() throws Exception;
+
   ContextImpl getContext();
 
 }

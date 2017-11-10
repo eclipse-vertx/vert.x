@@ -949,12 +949,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                  ContextImpl context) {
     wsCM.getConnection(host, ssl, port, host, new Waiter(context) {
       @Override
-      void handleConnection(HttpClientConnection conn) {
+      void initConnection(HttpClientConnection conn) {
       }
       @Override
-      void handleStream(HttpClientStream stream) {
-        // Use some variance for this
-        handler.handle((ClientConnection) stream);
+      void handleConnection(HttpClientConnection conn) {
+        handler.handle((ClientConnection) conn);
       }
       @Override
       void handleFailure(Throwable failure) {

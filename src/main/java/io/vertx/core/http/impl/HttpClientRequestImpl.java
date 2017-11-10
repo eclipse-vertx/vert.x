@@ -648,7 +648,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
 
         @Override
-        void handleConnection(HttpClientConnection conn) {
+        void initConnection(HttpClientConnection conn) {
           synchronized (HttpClientRequestImpl.this) {
             if (connectionHandler != null) {
               connectionHandler.handle(conn);
@@ -657,7 +657,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
 
         @Override
-        void handleStream(HttpClientStream stream) {
+        void handleConnection(HttpClientConnection conn) throws Exception {
+          HttpClientStream stream;
+          stream = conn.createStream();
           connected(stream, headersCompletionHandler);
         }
 

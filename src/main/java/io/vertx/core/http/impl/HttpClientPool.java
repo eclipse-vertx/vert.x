@@ -113,11 +113,6 @@ class HttpClientPool implements ConnectionPool<HttpClientConnection> {
   }
 
   @Override
-  public HttpClientStream createStream(HttpClientConnection conn) throws Exception {
-    return ((ConnectionPool<HttpClientConnection>) current).createStream(conn);
-  }
-
-  @Override
   public void evictConnection(HttpClientConnection conn) {
     ((ConnectionPool<HttpClientConnection>) current).evictConnection(conn);
   }
@@ -189,11 +184,6 @@ class HttpClientPool implements ConnectionPool<HttpClientConnection> {
     }
 
     @Override
-    public HttpClientStream createStream(Http2ClientConnection conn) throws Exception {
-      return conn.createStream();
-    }
-
-    @Override
     public void closeAllConnections() {
       List<Http2ClientConnection> toClose = toClose = new ArrayList<>(allConnections);
       // Close outside sync block to avoid deadlock
@@ -242,11 +232,6 @@ class HttpClientPool implements ConnectionPool<HttpClientConnection> {
     @Override
     public boolean canCreateConnection(int connCount) {
       return connCount < maxSockets;
-    }
-
-    @Override
-    public HttpClientStream createStream(ClientConnection conn) {
-      return conn;
     }
 
     @Override
