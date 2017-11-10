@@ -948,7 +948,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private void getConnectionForWebsocket(boolean ssl,
                                  int port,
                                  String host,
-                                 Handler<ClientConnection> handler,
+                                 Handler<Http1xClientConnection> handler,
                                  Handler<Throwable> connectionExceptionHandler,
                                  ContextImpl context) {
     websocketCM.getConnection(host, ssl, port, host, new Waiter<HttpClientConnection>(context) {
@@ -957,7 +957,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       @Override
       public void handleConnection(HttpClientConnection conn) {
-        handler.handle((ClientConnection) conn);
+        handler.handle((Http1xClientConnection) conn);
       }
       @Override
       public void handleFailure(Throwable failure) {

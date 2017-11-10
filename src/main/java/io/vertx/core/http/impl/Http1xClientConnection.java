@@ -63,9 +63,9 @@ import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ClientConnection extends Http1xConnectionBase implements HttpClientConnection, HttpClientStream {
+class Http1xClientConnection extends Http1xConnectionBase implements HttpClientConnection, HttpClientStream {
 
-  private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
+  private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
   private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
@@ -91,16 +91,16 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(ConnectionListener<HttpClientConnection> listener,
-                   HttpVersion version,
-                   HttpClientImpl client,
-                   Object endpointMetric,
-                   ChannelHandlerContext channel,
-                   boolean ssl,
-                   String host,
-                   int port,
-                   ContextImpl context,
-                   HttpClientMetrics metrics) {
+  Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
+                         HttpVersion version,
+                         HttpClientImpl client,
+                         Object endpointMetric,
+                         ChannelHandlerContext channel,
+                         boolean ssl,
+                         String host,
+                         int port,
+                         ContextImpl context,
+                         HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context);
     this.listener = listener;
     this.client = client;
@@ -253,7 +253,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       }
       // Need to set context before constructor is called as writehandler registration needs this
       ContextImpl.setContext(context);
-      WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation,
+      WebSocketImpl webSocket = new WebSocketImpl(vertx, Http1xClientConnection.this, supportsContinuation,
                                                   client.getOptions().getMaxWebsocketFrameSize(),
                                                   client.getOptions().getMaxWebsocketMessageSize());
       ws = webSocket;

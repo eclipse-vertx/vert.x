@@ -59,7 +59,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private static final Logger log = LoggerFactory.getLogger(HttpServerResponseImpl.class);
 
   private final VertxInternal vertx;
-  private final ServerConnection conn;
+  private final Http1xServerConnection conn;
   private HttpResponseStatus status;
   private final HttpVersion version;
   private final boolean keepAlive;
@@ -81,7 +81,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private String statusMessage;
   private long bytesWritten;
 
-  HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
+  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, HttpRequest request) {
     this.vertx = vertx;
     this.conn = conn;
     this.version = request.getProtocolVersion();

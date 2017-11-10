@@ -248,7 +248,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                                ContextImpl context,
                                Channel ch,
                                Handler<AsyncResult<HttpClientConnection>> handler) {
-    ClientHandler clientHandler = new ClientHandler(
+    Http1xClientHandler clientHandler = new Http1xClientHandler(
       listener,
       context,
       version,

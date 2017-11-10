@@ -91,8 +91,8 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
 
   @Override
   public void initConnection(HttpClientConnection conn) {
-    if (conn instanceof ClientConnection && current instanceof Http2) {
-      fallbackToHttp1x(((ClientConnection) conn).version());
+    if (conn instanceof Http1xClientConnection && current instanceof Http2) {
+      fallbackToHttp1x(((Http1xClientConnection) conn).version());
     }
     ((ConnectionPool<HttpClientConnection>) current).initConnection(conn);
   }
@@ -184,10 +184,10 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     }
   }
 
-  private class Http1x implements ConnectionPool<ClientConnection> {
+  private class Http1x implements ConnectionPool<Http1xClientConnection> {
 
-    private final Set<ClientConnection> allConnections = new HashSet<>();
-    private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
+    private final Set<Http1xClientConnection> allConnections = new HashSet<>();
+    private final Queue<Http1xClientConnection> availableConnections = new ArrayDeque<>();
     private final int maxSockets;
 
     Http1x() {
@@ -205,8 +205,8 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     }
 
     @Override
-    public ClientConnection pollConnection() {
-      ClientConnection conn;
+    public Http1xClientConnection pollConnection() {
+      Http1xClientConnection conn;
       while ((conn = availableConnections.poll()) != null && !conn.isValid()) {
       }
       return conn;
@@ -218,20 +218,20 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     }
 
     @Override
-    public void initConnection(ClientConnection conn) {
+    public void initConnection(Http1xClientConnection conn) {
       allConnections.add(conn);
     }
 
     @Override
-    public void recycleConnection(ClientConnection conn) {
+    public void recycleConnection(Http1xClientConnection conn) {
       availableConnections.add(conn);
     }
 
     public void closeAllConnections() {
-      Set<ClientConnection> copy = new HashSet<>(allConnections);
+      Set<Http1xClientConnection> copy = new HashSet<>(allConnections);
       allConnections.clear();
       // Close outside sync block to avoid potential deadlock
-      for (ClientConnection conn : copy) {
+      for (Http1xClientConnection conn : copy) {
         try {
           conn.close();
         } catch (Throwable t) {
@@ -241,18 +241,18 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     }
 
     @Override
-    public void evictConnection(ClientConnection conn) {
+    public void evictConnection(Http1xClientConnection conn) {
       allConnections.remove(conn);
       availableConnections.remove(conn);
     }
 
     @Override
-    public boolean isValid(ClientConnection conn) {
+    public boolean isValid(Http1xClientConnection conn) {
       return conn.isValid();
     }
 
     @Override
-    public ContextImpl getContext(ClientConnection conn) {
+    public ContextImpl getContext(Http1xClientConnection conn) {
       return conn.getContext();
     }
   }

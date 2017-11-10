@@ -34,7 +34,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class ClientHandler extends VertxHttpHandler<ClientConnection> {
+class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   private boolean closeFrameSent;
   private ContextImpl context;
   private ChannelHandlerContext chctx;
@@ -47,15 +47,15 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   private final ConnectionListener<HttpClientConnection> listener;
   private final Object endpointMetric;
 
-  public ClientHandler(ConnectionListener<HttpClientConnection> listener,
-                       ContextImpl context,
-                       HttpVersion version,
-                       String host,
-                       int port,
-                       boolean ssl,
-                       HttpClientImpl client,
-                       Object endpointMetric,
-                       HttpClientMetrics metrics) {
+  public Http1xClientHandler(ConnectionListener<HttpClientConnection> listener,
+                             ContextImpl context,
+                             HttpVersion version,
+                             String host,
+                             int port,
+                             boolean ssl,
+                             HttpClientImpl client,
+                             Object endpointMetric,
+                             HttpClientMetrics metrics) {
     this.context = context;
     this.version = version;
     this.client = client;
@@ -70,7 +70,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
-    ClientConnection conn = new ClientConnection(listener, version, client, endpointMetric, ctx, ssl, host, port, context, metrics);
+    Http1xClientConnection conn = new Http1xClientConnection(listener, version, client, endpointMetric, ctx, ssl, host, port, context, metrics);
     if (metrics != null) {
       Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
       conn.metric(metric);
@@ -92,7 +92,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   }
 
   @Override
-  protected void handleMessage(ClientConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void handleMessage(Http1xClientConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
       DecoderResult result = obj.decoderResult();

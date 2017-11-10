@@ -81,9 +81,9 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerConnection extends Http1xConnectionBase implements HttpConnection {
+public class Http1xServerConnection extends Http1xConnectionBase implements HttpConnection {
 
-  private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
+  private static final Logger log = LoggerFactory.getLogger(Http1xServerConnection.class);
 
   private static final Handler<HttpServerRequest> NULL_REQUEST_HANDLER = req -> {};
 
@@ -111,13 +111,13 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
   // queuing == true <=> (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty())
   private boolean queueing;
 
-  public ServerConnection(VertxInternal vertx,
-                   SSLHelper sslHelper,
-                   HttpServerOptions options,
-                   ChannelHandlerContext channel,
-                   ContextImpl context,
-                   String serverOrigin,
-                   HttpServerMetrics metrics) {
+  public Http1xServerConnection(VertxInternal vertx,
+                                SSLHelper sslHelper,
+                                HttpServerOptions options,
+                                ChannelHandlerContext channel,
+                                ContextImpl context,
+                                String serverOrigin,
+                                HttpServerMetrics metrics) {
     super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.options = options;
@@ -221,7 +221,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     if (ws != null) {
       return ws;
     }
-    ServerHandler serverHandler = (ServerHandler) chctx.pipeline().get("handler");
+    Http1xServerHandler serverHandler = (Http1xServerHandler) chctx.pipeline().get("handler");
     handshaker = serverHandler.createHandshaker(this, chctx.channel(), nettyReq);
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
@@ -507,7 +507,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
           }
           if (channelPaused && pending.isEmpty()) {
             //Resume the actual channel
-            ServerConnection.super.doResume();
+            Http1xServerConnection.super.doResume();
             channelPaused = false;
           }
         }

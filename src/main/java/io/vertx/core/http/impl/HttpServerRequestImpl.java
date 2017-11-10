@@ -64,7 +64,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
-  private final ServerConnection conn;
+  private final Http1xServerConnection conn;
   private final HttpRequest request;
   private final HttpServerResponse response;
 
@@ -91,7 +91,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private boolean ended;
 
 
-  HttpServerRequestImpl(ServerConnection conn,
+  HttpServerRequestImpl(Http1xServerConnection conn,
                         HttpRequest request,
                         HttpServerResponse response) {
     this.conn = conn;
