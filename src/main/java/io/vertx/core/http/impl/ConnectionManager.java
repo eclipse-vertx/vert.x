@@ -44,7 +44,7 @@ public class ConnectionManager<C> {
   private final QueueManager queueManager = new QueueManager();
   private final VertxInternal vertx;
   private final int maxWaitQueueSize;
-  private final HttpClientMetrics metrics;
+  private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
   private final ConnectionProvider<C> connector;
   private final Function<SocketAddress, ConnectionPool<C>> poolFactory;
 
