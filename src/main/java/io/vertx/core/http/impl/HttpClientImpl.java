@@ -38,6 +38,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -107,11 +108,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final ContextImpl creatingContext;
-  private final ConnectionManager connectionManager;
+  private final ConnectionManager wsCM; // The queue manager for websockets
+  private final ConnectionManager httpCM; // The queue manager for requests
   private final Closeable closeHook;
   private final ProxyType proxyType;
   private final SSLHelper sslHelper;
   private final HttpClientMetrics metrics;
+  private final boolean keepAlive;
+  private final boolean pipelining;
   private volatile boolean closed;
   private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
@@ -130,6 +134,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           break;
       }
     }
+    this.keepAlive = options.isKeepAlive();
+    this.pipelining = options.isPipelining();
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).
         setApplicationProtocols(alpnVersions);
     sslHelper.validate(vertx);
@@ -147,7 +153,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    connectionManager = new ConnectionManager(this);
+
+    ConnectionManager.ChannelConnector<HttpClientConnection> connector = new ConnectionManager.HttpChannelConnector(this);
+    Function<SocketAddress, ConnectionManager.Pool<HttpClientConnection>> poolFactory = sa -> new HttpClientPool(options.getProtocolVersion(), options, sa.host(), sa.port());
+
+    wsCM = new ConnectionManager<>(vertx, metrics, connector, poolFactory, options.getMaxWaitQueueSize());
+    httpCM = new ConnectionManager<>(vertx, metrics, connector, poolFactory, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
   }
 
@@ -895,7 +906,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     if (creatingContext != null) {
       creatingContext.removeCloseHook(closeHook);
     }
-    connectionManager.close();
+    wsCM.close();
+    httpCM.close();
+    if (metrics != null) {
+      metrics.close();
+    }
   }
 
   @Override
@@ -926,13 +941,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return options;
   }
 
-  void getConnectionForWebsocket(boolean ssl,
+  private void getConnectionForWebsocket(boolean ssl,
                                  int port,
                                  String host,
                                  Handler<ClientConnection> handler,
                                  Handler<Throwable> connectionExceptionHandler,
                                  ContextImpl context) {
-    connectionManager.getConnectionForWebsocket(ssl, port, host, new Waiter(context) {
+    wsCM.getConnection(host, ssl, port, host, new Waiter(context) {
       @Override
       void handleConnection(HttpClientConnection conn) {
       }
@@ -953,7 +968,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   void getConnectionForRequest(String peerHost, boolean ssl, int port, String host, Waiter waiter) {
-    connectionManager.getConnectionForRequest(options.getProtocolVersion(), peerHost, ssl, port, host, waiter);
+    if (!keepAlive && pipelining) {
+      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
+    } else {
+      httpCM.getConnection(peerHost, ssl, port, host, waiter);
+    }
   }
 
   /**

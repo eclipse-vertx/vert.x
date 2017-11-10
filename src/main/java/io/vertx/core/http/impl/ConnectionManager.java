@@ -53,33 +53,34 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ConnectionManager {
+public class ConnectionManager<C> {
 
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
-  private final QueueManager wsQM = new QueueManager(); // The queue manager for websockets
-  private final QueueManager requestQM = new QueueManager(); // The queue manager for requests
+  private final QueueManager queueManager = new QueueManager();
   private final VertxInternal vertx;
-  private final HttpClientOptions options;
-  private final HttpClientMetrics metrics;
-  private final boolean keepAlive;
-  private final boolean pipelining;
   private final int maxWaitQueueSize;
-  private final ChannelConnector<HttpClientConnection> connector;
+  private final HttpClientMetrics metrics;
+  private final ChannelConnector<C> connector;
+  private final Function<SocketAddress, Pool<C>> poolFactory;
 
-  ConnectionManager(HttpClientImpl client) {
-    this.options = client.getOptions();
-    this.vertx = client.getVertx();
-    this.keepAlive = client.getOptions().isKeepAlive();
-    this.pipelining = client.getOptions().isPipelining();
-    this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
-    this.metrics = client.metrics();
-    this.connector = new HttpChannelConnector(client);
+  ConnectionManager(VertxInternal vertx,
+                    HttpClientMetrics metrics,
+                    ChannelConnector<C> connector,
+                    Function<SocketAddress,
+                    Pool<C>> poolFactory,
+                    int maxWaitQueueSize) {
+    this.vertx = vertx;
+    this.maxWaitQueueSize = maxWaitQueueSize;
+    this.metrics = metrics;
+    this.connector = connector;
+    this.poolFactory = poolFactory;
   }
 
   static final class ConnectionKey {
@@ -88,7 +89,7 @@ public class ConnectionManager {
     private final int port;
     private final String host;
 
-    public ConnectionKey(boolean ssl, int port, String host) {
+    ConnectionKey(boolean ssl, int port, String host) {
       this.ssl = ssl;
       this.host = host;
       this.port = port;
@@ -125,12 +126,15 @@ public class ConnectionManager {
    */
   private class QueueManager {
 
-    private final Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<>();
+    private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
     private final Map<ConnectionKey, ConnQueue> queueMap = new ConcurrentHashMap<>();
 
-    ConnQueue getConnQueue(String peerHost, boolean ssl, int port, String host, HttpVersion version) {
+    ConnQueue getConnQueue(String peerHost, boolean ssl, int port, String host) {
       ConnectionKey key = new ConnectionKey(ssl, port, peerHost);
-      return queueMap.computeIfAbsent(key, targetAddress -> new ConnQueue(version, this, connector, peerHost, host, port, ssl, key));
+      return queueMap.computeIfAbsent(key, targetAddress -> {
+        Pool<C> pool =  poolFactory.apply(SocketAddress.inetSocketAddress(port, host));
+        return new ConnQueue( this, connector, peerHost, host, port, ssl, key, pool);
+      });
     }
 
     public void close() {
@@ -138,32 +142,19 @@ public class ConnectionManager {
         queue.closeAllConnections();
       }
       queueMap.clear();
-      for (HttpClientConnection conn : connectionMap.values()) {
-        conn.close();
+      for (C conn : connectionMap.values()) {
+        connector.close(conn);
       }
     }
   }
 
-  public void getConnectionForWebsocket(boolean ssl, int port, String host, Waiter waiter) {
-    ConnQueue connQueue = wsQM.getConnQueue(host, ssl, port, host, HttpVersion.HTTP_1_1);
+  void getConnection(String peerHost, boolean ssl, int port, String host, Waiter waiter) {
+    ConnQueue connQueue = queueManager.getConnQueue(peerHost, ssl, port, host);
     connQueue.getConnection(waiter);
   }
 
-  public void getConnectionForRequest(HttpVersion version, String peerHost, boolean ssl, int port, String host, Waiter waiter) {
-    if (!keepAlive && pipelining) {
-      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
-    } else {
-      ConnQueue connQueue = requestQM.getConnQueue(peerHost, ssl, port, host, version);
-      connQueue.getConnection(waiter);
-    }
-  }
-
   public void close() {
-    wsQM.close();
-    requestQM.close();
-    if (metrics != null) {
-      metrics.close();
-    }
+    queueManager.close();
   }
 
   /**
@@ -176,7 +167,7 @@ public class ConnectionManager {
    * pool if the server does not support HTTP/2 or after negotiation. In this situation
    * all waiters on this queue will use HTTP/1.1 connections.
    */
-  class ConnQueue<C> implements ClientConnectionListener<C> {
+  class ConnQueue implements ClientConnectionListener<C> {
 
     private final QueueManager mgr;
     private final String peerHost;
@@ -187,14 +178,12 @@ public class ConnectionManager {
     private final Queue<Waiter> waiters = new ArrayDeque<>();
     private final Pool<C> pool;
     private int connCount;
-    private final int maxSize;
     private final ChannelConnector<C> connector;
     final Object metric;
 
-    ConnQueue(HttpVersion version,
-              QueueManager mgr,
+    ConnQueue(QueueManager mgr,
               ChannelConnector<C> connector,
-              String peerHost, String host, int port, boolean ssl, ConnectionKey key) {
+              String peerHost, String host, int port, boolean ssl, ConnectionKey key, Pool<C> pool) {
       this.key = key;
       this.host = host;
       this.port = port;
@@ -202,13 +191,8 @@ public class ConnectionManager {
       this.peerHost = peerHost;
       this.connector = connector;
       this.mgr = mgr;
-      if (version == HttpVersion.HTTP_2) {
-        maxSize = options.getHttp2MaxPoolSize();
-      } else {
-        maxSize = options.getMaxPoolSize();
-      }
-      pool =  (Pool)new HttpClientPool(version, options,  host, port);
-      this.metric = metrics != null ? metrics.createEndpoint(host, port, maxSize) : null;
+      this.pool = pool;
+      this.metric = metrics != null ? metrics.createEndpoint(host, port, pool.maxSize()) : null;
     }
 
     private void closeAllConnections() {
@@ -292,7 +276,7 @@ public class ConnectionManager {
     }
 
     private synchronized void initConnection(Waiter waiter, C conn) {
-      mgr.connectionMap.put(connector.channel(conn), (HttpClientConnection) conn);
+      mgr.connectionMap.put(connector.channel(conn), conn);
       pool.initConnection(conn);
       pool.getContext(conn).executeFromIO(() -> {
         waiter.handleConnection((HttpClientConnection) conn);
@@ -348,6 +332,8 @@ public class ConnectionManager {
    */
   interface Pool<C> {
 
+    int maxSize();
+
     boolean canCreateStream(int connCount);
 
     C pollConnection();
@@ -391,6 +377,8 @@ public class ConnectionManager {
 
     Channel channel(C conn);
 
+    void close(C conn);
+
   }
 
   /**
@@ -399,7 +387,7 @@ public class ConnectionManager {
    * When the channel connects or fails to connect, it calls back the ConnQueue that initiated the
    * connection.
    */
-  private static class HttpChannelConnector implements ChannelConnector<HttpClientConnection> {
+  static class HttpChannelConnector implements ChannelConnector<HttpClientConnection> {
 
     private final HttpClientImpl client;
     private final HttpClientOptions options;
@@ -418,6 +406,11 @@ public class ConnectionManager {
     @Override
     public Channel channel(HttpClientConnection conn) {
       return conn.channel();
+    }
+
+    @Override
+    public void close(HttpClientConnection conn) {
+      conn.close();
     }
 
     public void connect(

@@ -95,6 +95,11 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
   }
 
   @Override
+  public int maxSize() {
+    return current.maxSize();
+  }
+
+  @Override
   public void initConnection(HttpClientConnection conn) {
     if (conn instanceof ClientConnection && current instanceof Http2) {
       fallbackToHttp1x(((ClientConnection) conn).version());
@@ -127,6 +132,11 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
     Http2() {
       this.maxConcurrency = options.getHttp2MultiplexingLimit() < 1 ? Integer.MAX_VALUE : options.getHttp2MultiplexingLimit();
       this.maxSockets = options.getHttp2MaxPoolSize();
+    }
+
+    @Override
+    public int maxSize() {
+      return maxSockets;
     }
 
     @Override
@@ -209,6 +219,11 @@ class HttpClientPool implements ConnectionManager.Pool<HttpClientConnection> {
 
     Http1x() {
       this.maxSockets = options.getMaxPoolSize();
+    }
+
+    @Override
+    public int maxSize() {
+      return maxSockets;
     }
 
     @Override
