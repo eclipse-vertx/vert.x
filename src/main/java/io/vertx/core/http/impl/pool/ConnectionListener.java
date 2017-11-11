@@ -20,8 +20,25 @@ package io.vertx.core.http.impl.pool;
  */
 public interface ConnectionListener<C> {
 
-  void onRecycle(C conn);
+  /**
+   * The connection concurrency changed.
+   *
+   * @param conn the connection
+   */
+  void concurrencyChanged(C conn);
 
-  void onClose(C conn);
+  /**
+   * The connection can be recycled.
+   *
+   * @param conn the connection
+   */
+  void recycle(C conn);
+
+  /**
+   * The connection is closed.
+   *
+   * @param conn the connection
+   */
+  void closed(C conn);
 
 }

@@ -70,8 +70,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  protected void onConcurrencyChange() {
-    listener.onRecycle(this);
+  protected void concurrencyChanged() {
+    listener.concurrencyChanged(this);
   }
 
   @Override
@@ -82,7 +82,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   @Override
   void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
-    listener.onRecycle(this);
+    listener.recycle(this);
   }
 
   public synchronized HttpClientStream createStream() throws Http2Exception {

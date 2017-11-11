@@ -90,11 +90,11 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
   }
 
   @Override
-  public void initConnection(HttpClientConnection conn) {
+  public boolean initConnection(HttpClientConnection conn) {
     if (conn instanceof Http1xClientConnection && current instanceof Http2) {
       fallbackToHttp1x(((Http1xClientConnection) conn).version());
     }
-    ((ConnectionPool<HttpClientConnection>) current).initConnection(conn);
+    return ((ConnectionPool<HttpClientConnection>) current).initConnection(conn);
   }
 
   @Override
@@ -105,6 +105,10 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
   @Override
   public void evictConnection(HttpClientConnection conn) {
     ((ConnectionPool<HttpClientConnection>) current).evictConnection(conn);
+  }
+
+  @Override
+  public void close() {
   }
 
   class Http2 implements ConnectionPool<Http2ClientConnection> {
@@ -164,8 +168,14 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     }
 
     @Override
-    public void initConnection(Http2ClientConnection conn) {
+    public boolean initConnection(Http2ClientConnection conn) {
       allConnections.add(conn);
+      if (canReserveStream(conn)) {
+        conn.streamCount++;
+        return true;
+      } else {
+        return false;
+      }
     }
 
     @Override
@@ -181,6 +191,10 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     @Override
     public ContextImpl getContext(Http2ClientConnection conn) {
       return conn.getContext();
+    }
+
+    @Override
+    public void close() {
     }
   }
 
@@ -218,8 +232,9 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     }
 
     @Override
-    public void initConnection(Http1xClientConnection conn) {
+    public boolean initConnection(Http1xClientConnection conn) {
       allConnections.add(conn);
+      return true;
     }
 
     @Override
@@ -254,6 +269,10 @@ class HttpConnectionPool implements ConnectionPool<HttpClientConnection> {
     @Override
     public ContextImpl getContext(Http1xClientConnection conn) {
       return conn.getContext();
+    }
+
+    @Override
+    public void close() {
     }
   }
 }

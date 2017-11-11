@@ -667,20 +667,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
 
         @Override
-        public void handleConnection(HttpClientConnection conn) throws Exception {
+        public boolean handleConnection(HttpClientConnection conn) throws Exception {
+          // No need to synchronize as the thread is the same that set exceptionOccurred to true
+          // exceptionOccurred=true getting the connection => it's a TimeoutException
+          if (exceptionOccurred != null || reset != null) {
+            return false;
+          }
           HttpClientStream stream;
           stream = conn.createStream();
           ContextImpl context = conn.getContext();
           context.executeFromIO(() -> {
             connected(stream, headersCompletionHandler);
           });
-        }
-
-        @Override
-        public boolean isCancelled() {
-          // No need to synchronize as the thread is the same that set exceptionOccurred to true
-          // exceptionOccurred=true getting the connection => it's a TimeoutException
-          return exceptionOccurred != null || reset != null;
+          return true;
         }
       };
 

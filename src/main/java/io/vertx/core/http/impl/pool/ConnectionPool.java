@@ -36,7 +36,7 @@ public interface ConnectionPool<C> {
    */
   boolean canCreateConnection(int connCount);
 
-  void initConnection(C conn);
+  boolean initConnection(C conn);
 
   void recycleConnection(C conn);
 
@@ -45,5 +45,7 @@ public interface ConnectionPool<C> {
   boolean isValid(C conn);
 
   ContextImpl getContext(C conn);
+
+  void close();
 
 }

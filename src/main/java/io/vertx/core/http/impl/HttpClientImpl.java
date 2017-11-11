@@ -957,10 +957,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       public void initConnection(HttpClientConnection conn) {
       }
       @Override
-      public void handleConnection(HttpClientConnection conn) {
+      public boolean handleConnection(HttpClientConnection conn) {
         conn.getContext().executeFromIO(() -> {
           handler.handle((Http1xClientConnection) conn);
         });
+        return true;
       }
       @Override
       public void handleFailure(ContextInternal ctx, Throwable failure) {
@@ -971,10 +972,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         } else {
           connectionExceptionHandler.handle(failure);
         }
-      }
-      @Override
-      public boolean isCancelled() {
-        return false;
       }
     });
   }

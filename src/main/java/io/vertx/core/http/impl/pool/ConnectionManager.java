@@ -17,10 +17,8 @@
 package io.vertx.core.http.impl.pool;
 
 import io.netty.channel.Channel;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
@@ -171,27 +169,27 @@ public class ConnectionManager<C> {
         if (metric != null) {
           metrics.dequeueRequest(metric, waiter.metric);
         }
-        if (waiter.isCancelled()) {
+        C conn = pool.pollConnection();
+        if (conn != null) {
           waiters.poll();
-        } else {
-          C conn = pool.pollConnection();
-          if (conn != null) {
-            waiters.poll();
-            ContextImpl ctx = pool.getContext(conn);
-            ctx.nettyEventLoop().execute(() -> {
-              if (pool.isValid(conn)) {
-                deliverInternal(conn, waiter);
-              } else {
-                onClose(conn);
-                getConnection(waiter);
+          ContextImpl ctx = pool.getContext(conn);
+          ctx.nettyEventLoop().execute(() -> {
+            if (pool.isValid(conn)) {
+              boolean handled = deliverInternal(conn, waiter);
+              if (!handled) {
+                pool.recycleConnection(conn);
+                checkPending();
               }
-            });
-          } else if (pool.canCreateConnection(connCount)) {
-            waiters.poll();
-            createConnection(waiter);
-          } else {
-            break;
-          }
+            } else {
+              closed(conn);
+              getConnection(waiter);
+            }
+          });
+        } else if (pool.canCreateConnection(connCount)) {
+          waiters.poll();
+          createConnection(waiter);
+        } else {
+          break;
         }
       }
     }
@@ -216,13 +214,18 @@ public class ConnectionManager<C> {
     }
 
     @Override
-    public synchronized void onRecycle(C conn) {
+    public void concurrencyChanged(C conn) {
+      checkPending();
+    }
+
+    @Override
+    public void recycle(C conn) {
       pool.recycleConnection(conn);
       checkPending();
     }
 
     @Override
-    public synchronized void onClose(C conn) {
+    public synchronized void closed(C conn) {
       Channel channel = connector.channel(conn);
       connectionMap.remove(channel);
       pool.evictConnection(conn);
@@ -231,21 +234,25 @@ public class ConnectionManager<C> {
 
     private synchronized void initConnection(Waiter<C> waiter, C conn) {
       connectionMap.put(connector.channel(conn), conn);
-      pool.initConnection(conn);
+      boolean ok = pool.initConnection(conn);
       waiter.initConnection(conn);
-      if (waiter.isCancelled()) {
-        pool.recycleConnection(conn);
+      if (ok) {
+        boolean handled = deliverInternal(conn, waiter);
+        if (!handled) {
+          pool.recycleConnection(conn);
+        }
+        checkPending();
       } else {
-        deliverInternal(conn, waiter);
+        getConnection(waiter);
       }
-      checkPending();
     }
 
-    private void deliverInternal(C conn, Waiter<C> waiter) {
+    private boolean deliverInternal(C conn, Waiter<C> waiter) {
       try {
-        waiter.handleConnection(conn);
+        return waiter.handleConnection(conn);
       } catch (Exception e) {
-        getConnection(waiter);
+        e.printStackTrace();
+        return true;
       }
     }
 
@@ -253,12 +260,16 @@ public class ConnectionManager<C> {
     synchronized void connectionClosed() {
       connCount--;
       checkPending();
+
+      // CHECK WAITERS
+
       if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         endpointMap.remove(key);
         if (metrics != null) {
           metrics.closeEndpoint(host, port, metric);
         }
+        pool.close();
       }
     }
   }

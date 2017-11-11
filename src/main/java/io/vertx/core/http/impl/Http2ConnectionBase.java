@@ -91,12 +91,14 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private boolean closed;
   private boolean goneAway;
   private int windowSize;
+  private long maxConcurrentStreams;
 
   public Http2ConnectionBase(ContextImpl context, VertxHttp2ConnectionHandler handler) {
     super(context.owner(), handler.context(), context);
     this.handler = handler;
     this.handlerContext = chctx;
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
+    this.maxConcurrentStreams = io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
   }
 
   VertxInternal vertx() {
@@ -210,12 +212,17 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected void onConnect() {
   }
 
-  protected void onConcurrencyChange() {
+  protected void concurrencyChanged() {
   }
 
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
-    boolean update = !Objects.equals(remoteSettings.maxConcurrentStreams(), settings.maxConcurrentStreams());
+    boolean changed = false;
+    if (settings.maxConcurrentStreams() != null) {
+      long val = settings.maxConcurrentStreams();
+      changed = val != maxConcurrentStreams;
+      maxConcurrentStreams = val;
+    }
     remoteSettings = settings;
     synchronized (this) {
       Handler<io.vertx.core.http.Http2Settings> handler = remoteSettingsHandler;
@@ -225,8 +232,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         });
       }
     }
-    if (update) {
-      onConcurrencyChange();
+    if (changed) {
+      concurrencyChanged();
     }
   }
 

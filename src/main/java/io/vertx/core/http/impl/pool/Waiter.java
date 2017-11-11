@@ -49,11 +49,6 @@ public abstract class Waiter<C> {
   /**
    * Handle connection success.
    */
-  public abstract void handleConnection(C conn) throws Exception;
-
-  /**
-   * @return true if the waiter has been cancelled
-   */
-  public abstract boolean isCancelled();
+  public abstract boolean handleConnection(C conn) throws Exception;
 
 }
