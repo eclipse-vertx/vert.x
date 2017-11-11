@@ -175,7 +175,15 @@ public class ConnectionManager<C> {
           C conn = pool.pollConnection();
           if (conn != null) {
             waiters.poll();
-            deliverInternal(conn, waiter);
+            ContextImpl ctx = pool.getContext(conn);
+            ctx.nettyEventLoop().execute(() -> {
+              if (pool.isValid(conn)) {
+                deliverInternal(conn, waiter);
+              } else {
+                onClose(conn);
+                getConnection(waiter);
+              }
+            });
           } else if (pool.canCreateConnection(connCount)) {
             waiters.poll();
             createConnection(waiter);
@@ -198,7 +206,7 @@ public class ConnectionManager<C> {
           // Handler<Throwable> exHandler =
           //  waiter == null ? log::error : waiter::handleFailure;
 
-          closeConnection();
+          connectionClosed();
 
           waiter.context.executeFromIO(() -> {
             waiter.handleFailure(ar.cause());
@@ -214,10 +222,11 @@ public class ConnectionManager<C> {
     }
 
     @Override
-    public synchronized void onClose(C conn, Channel channel) {
+    public synchronized void onClose(C conn) {
+      Channel channel = connector.channel(conn);
       connectionMap.remove(channel);
       pool.evictConnection(conn);
-      closeConnection();
+      connectionClosed();
     }
 
     private synchronized void initConnection(Waiter<C> waiter, C conn) {
@@ -236,27 +245,17 @@ public class ConnectionManager<C> {
 
     private void deliverInternal(C conn, Waiter<C> waiter) {
       ContextImpl ctx = pool.getContext(conn);
-      if (ctx.nettyEventLoop().inEventLoop()) {
-        ctx.executeFromIO(() -> {
-          try {
-            waiter.handleConnection(conn);
-          } catch (Exception e) {
-            getConnection(waiter);
-          }
-        });
-      } else {
-        ctx.runOnContext(v -> {
-          if (pool.isValid(conn)) {
-            deliverInternal(conn, waiter);
-          } else {
-            getConnection(waiter);
-          }
-        });
-      }
+      ctx.executeFromIO(() -> {
+        try {
+          waiter.handleConnection(conn);
+        } catch (Exception e) {
+          getConnection(waiter);
+        }
+      });
     }
 
     // Called if the connection is actually closed OR the connection attempt failed
-    synchronized void closeConnection() {
+    synchronized void connectionClosed() {
       connCount--;
       checkPending();
       if (connCount == 0) {

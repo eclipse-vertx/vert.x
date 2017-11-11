@@ -1016,7 +1016,9 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testReceivingGoAwayDiscardsTheConnection() throws Exception {
     AtomicInteger reqCount = new AtomicInteger();
+    Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
     server.requestHandler(req -> {
+      connections.add(req.connection());
       switch (reqCount.getAndIncrement()) {
         case 0:
           req.connection().goAway(0);
@@ -1035,6 +1037,7 @@ public class Http2ClientTest extends Http2TestBase {
       conn.goAwayHandler(ga -> {
         if (gaCount.getAndIncrement() == 0) {
           client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp2 -> {
+            assertEquals(2, connections.size());
             testComplete();
           }).setTimeout(5000).exceptionHandler(this::fail).end();
         }

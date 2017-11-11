@@ -15,8 +15,6 @@
  */
 package io.vertx.core.http.impl.pool;
 
-import io.netty.channel.Channel;
-
 /**
  * The listener is used by the {@link ConnectionProvider} to interact with the connection manager.
  */
@@ -24,6 +22,6 @@ public interface ConnectionListener<C> {
 
   void onRecycle(C conn);
 
-  void onClose(C conn, Channel channel);
+  void onClose(C conn);
 
 }

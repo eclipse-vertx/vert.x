@@ -630,7 +630,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         ByteBuf buf = (ByteBuf) msg;
         connection.handleMessageReceived(buf);
       }
-    }.removeHandler(sock -> listener.onClose(this, chctx.channel())));
+    }.removeHandler(sock -> listener.onClose(this)));
     return socket;
   }
 

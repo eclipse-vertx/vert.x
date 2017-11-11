@@ -262,7 +262,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       handler.handle(Future.succeededFuture(conn));
     });
     clientHandler.removeHandler(conn -> {
-      listener.onClose(conn, ch);
+      listener.onClose(conn);
     });
     ch.pipeline().addLast("handler", clientHandler);
   }
@@ -297,7 +297,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
         if (metrics != null) {
           metrics.endpointDisconnected(endpointMetric, conn.metric());
         }
-        listener.onClose(conn, ch);
+        listener.onClose(conn);
       });
     } catch (Exception e) {
       connectFailed(ch, resultHandler, e);
