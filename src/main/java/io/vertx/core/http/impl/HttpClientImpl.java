@@ -37,6 +37,7 @@ import io.vertx.core.http.impl.pool.ConnectionPool;
 import io.vertx.core.http.impl.pool.ConnectionProvider;
 import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -957,11 +958,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       @Override
       public void handleConnection(HttpClientConnection conn) {
-        handler.handle((Http1xClientConnection) conn);
+        conn.getContext().executeFromIO(() -> {
+          handler.handle((Http1xClientConnection) conn);
+        });
       }
       @Override
-      public void handleFailure(Throwable failure) {
-        connectionExceptionHandler.handle(failure);
+      public void handleFailure(ContextInternal ctx, Throwable failure) {
+        if (ctx != null) {
+          ctx.executeFromIO(() -> {
+            connectionExceptionHandler.handle(failure);
+          });
+        } else {
+          connectionExceptionHandler.handle(failure);
+        }
       }
       @Override
       public boolean isCancelled() {
@@ -972,7 +981,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   void getConnectionForRequest(String peerHost, boolean ssl, int port, String host, Waiter<HttpClientConnection> waiter) {
     if (!keepAlive && pipelining) {
-      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
+      waiter.handleFailure(null, new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
       httpCM.getConnection(peerHost, ssl, port, host, waiter);
     }

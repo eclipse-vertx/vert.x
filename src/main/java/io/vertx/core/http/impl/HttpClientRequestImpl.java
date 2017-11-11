@@ -20,9 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClientRequest;
@@ -32,6 +30,8 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Waiter;
+import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 
@@ -644,15 +644,24 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       Waiter<HttpClientConnection> waiter = new Waiter<HttpClientConnection>(vertx.getOrCreateContext()) {
 
         @Override
-        public void handleFailure(Throwable failure) {
-          handleException(failure);
+        public void handleFailure(ContextInternal ctx, Throwable failure) {
+          if (ctx != null) {
+            ctx.executeFromIO(() -> {
+              handleException(failure);
+            });
+          } else {
+            handleException(failure);
+          }
         }
 
         @Override
         public void initConnection(HttpClientConnection conn) {
           synchronized (HttpClientRequestImpl.this) {
             if (connectionHandler != null) {
-              connectionHandler.handle(conn);
+              ContextImpl context = conn.getContext();
+              context.executeFromIO(() -> {
+                connectionHandler.handle(conn);
+              });
             }
           }
         }
@@ -661,7 +670,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         public void handleConnection(HttpClientConnection conn) throws Exception {
           HttpClientStream stream;
           stream = conn.createStream();
-          connected(stream, headersCompletionHandler);
+          ContextImpl context = conn.getContext();
+          context.executeFromIO(() -> {
+            connected(stream, headersCompletionHandler);
+          });
         }
 
         @Override

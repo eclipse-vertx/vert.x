@@ -17,8 +17,10 @@
 package io.vertx.core.http.impl.pool;
 
 import io.netty.channel.Channel;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
@@ -156,7 +158,7 @@ public class ConnectionManager<C> {
         waiters.add(waiter);
         checkPending();
       } else {
-        waiter.handleFailure(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
+        waiter.handleFailure(null, new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
       }
     }
 
@@ -208,9 +210,7 @@ public class ConnectionManager<C> {
 
           connectionClosed();
 
-          waiter.context.executeFromIO(() -> {
-            waiter.handleFailure(ar.cause());
-          });
+          waiter.handleFailure(waiter.context, ar.cause());
         }
       });
     }
@@ -232,9 +232,7 @@ public class ConnectionManager<C> {
     private synchronized void initConnection(Waiter<C> waiter, C conn) {
       connectionMap.put(connector.channel(conn), conn);
       pool.initConnection(conn);
-      pool.getContext(conn).executeFromIO(() -> {
-        waiter.initConnection(conn);
-      });
+      waiter.initConnection(conn);
       if (waiter.isCancelled()) {
         pool.recycleConnection(conn);
       } else {
@@ -244,14 +242,11 @@ public class ConnectionManager<C> {
     }
 
     private void deliverInternal(C conn, Waiter<C> waiter) {
-      ContextImpl ctx = pool.getContext(conn);
-      ctx.executeFromIO(() -> {
-        try {
-          waiter.handleConnection(conn);
-        } catch (Exception e) {
-          getConnection(waiter);
-        }
-      });
+      try {
+        waiter.handleConnection(conn);
+      } catch (Exception e) {
+        getConnection(waiter);
+      }
     }
 
     // Called if the connection is actually closed OR the connection attempt failed

@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl.pool;
 
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -33,9 +34,10 @@ public abstract class Waiter<C> {
   /**
    * Handle connection failure.
    *
+   * @param ctx
    * @param failure the failure
    */
-  public abstract void handleFailure(Throwable failure);
+  public abstract void handleFailure(ContextInternal ctx, Throwable failure);
 
   /**
    * Init connection.
