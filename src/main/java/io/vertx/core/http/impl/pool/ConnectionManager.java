@@ -99,8 +99,12 @@ public class ConnectionManager<C> {
   }
 
   public void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {
-    Endpoint connQueue = getConnQueue(peerHost, ssl, port, host);
-    connQueue.getConnection(waiter);
+    while (true) {
+      Endpoint connQueue = getConnQueue(peerHost, ssl, port, host);
+      if (connQueue.getConnection(waiter)) {
+        break;
+      }
+    }
   }
 
   public void close() {
@@ -127,8 +131,10 @@ public class ConnectionManager<C> {
     private final ConnectionProvider<C> connector;
     private final Object metric;
 
-    private final Queue<Waiter<C>> waiters = new ArrayDeque<>();
     private int connCount;
+    private final Queue<Waiter<C>> waiters = new ArrayDeque<>();
+    private boolean closed;
+
 
     private Endpoint(ConnectionProvider<C> connector,
              String peerHost,
@@ -147,7 +153,10 @@ public class ConnectionManager<C> {
       this.metric = metrics != null ? metrics.createEndpoint(host, port, pool.maxSize()) : null;
     }
 
-    private synchronized void getConnection(Waiter<C> waiter) {
+    private synchronized boolean getConnection(Waiter<C> waiter) {
+      if (closed) {
+        return false;
+      }
       // Enqueue
       if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize || pool.canBorrow(connCount)) {
         if (metrics != null) {
@@ -158,6 +167,7 @@ public class ConnectionManager<C> {
       } else {
         waiter.handleFailure(null, new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
       }
+      return true;
     }
 
     private synchronized void checkPending() {
@@ -181,8 +191,8 @@ public class ConnectionManager<C> {
                 checkPending();
               }
             } else {
+              waiters.add(waiter);
               closed(conn);
-              getConnection(waiter);
             }
           });
         } else if (pool.canCreateConnection(connCount)) {
@@ -199,16 +209,14 @@ public class ConnectionManager<C> {
       connector.connect(this, metric, waiter.context, peerHost, ssl, host, port, ar -> {
         if (ar.succeeded()) {
           initConnection(waiter, ar.result());
+          checkPending();
         } else {
-
-          // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
-          // If that doesn't exist just log it
-          // Handler<Throwable> exHandler =
-          //  waiter == null ? log::error : waiter::handleFailure;
-
-          connectionClosed();
-
-          waiter.handleFailure(waiter.context, ar.cause());
+          synchronized (Endpoint.this) {
+            waiter.handleFailure(waiter.context, ar.cause());
+            connCount--;
+          }
+          checkPending();
+          checkClose();
         }
       });
     }
@@ -226,10 +234,16 @@ public class ConnectionManager<C> {
 
     @Override
     public synchronized void closed(C conn) {
+      closeConnection(conn);
+      checkPending();
+      checkClose();
+    }
+
+    private synchronized void closeConnection(C conn) {
       Channel channel = connector.channel(conn);
       connectionMap.remove(channel);
       pool.evictConnection(conn);
-      connectionClosed();
+      connCount--;
     }
 
     private synchronized void initConnection(Waiter<C> waiter, C conn) {
@@ -241,9 +255,8 @@ public class ConnectionManager<C> {
         if (!handled) {
           pool.recycleConnection(conn);
         }
-        checkPending();
       } else {
-        getConnection(waiter);
+        waiters.add(waiter);
       }
     }
 
@@ -251,18 +264,12 @@ public class ConnectionManager<C> {
       try {
         return waiter.handleConnection(conn);
       } catch (Exception e) {
-        e.printStackTrace();
+        // e.printStackTrace();
         return true;
       }
     }
 
-    // Called if the connection is actually closed OR the connection attempt failed
-    synchronized void connectionClosed() {
-      connCount--;
-      checkPending();
-
-      // CHECK WAITERS
-
+    synchronized void checkClose() {
       if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         endpointMap.remove(key);
@@ -270,6 +277,7 @@ public class ConnectionManager<C> {
           metrics.closeEndpoint(host, port, metric);
         }
         pool.close();
+        closed = true;
       }
     }
   }
