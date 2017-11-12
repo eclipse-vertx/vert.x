@@ -25,7 +25,6 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
@@ -51,6 +50,10 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   private final HttpClientMetrics metrics;
   private final SSLHelper sslHelper;
   private final HttpVersion version;
+  private final long weight;
+  private final long http1Weight;
+  private final long http2Weight;
+  private final long http2MaxConcurrency;
 
   HttpChannelConnector(HttpClientImpl client) {
     this.client = client;
@@ -58,11 +61,15 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     this.metrics = client.metrics();
     this.sslHelper = client.getSslHelper();
     this.version = options.getProtocolVersion();
+    this.http1Weight = client.getOptions().getHttp2MaxPoolSize();
+    this.http2Weight = client.getOptions().getMaxPoolSize();
+    this.weight = version == HttpVersion.HTTP_2 ? http2Weight : http1Weight;
+    this.http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();
   }
 
   @Override
-  public Channel channel(HttpClientConnection conn) {
-    return conn.channel();
+  public boolean isValid(HttpClientConnection conn) {
+    return conn.isValid();
   }
 
   @Override
@@ -70,15 +77,14 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     conn.close();
   }
 
-  public void connect(
+  public long connect(
     ConnectionListener<HttpClientConnection> listener,
     Object endpointMetric,
     ContextImpl context,
     String peerHost,
     boolean ssl,
     String host,
-    int port,
-    Handler<AsyncResult<HttpClientConnection>> handler) {
+    int port) {
 
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
@@ -109,19 +115,19 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
             if (useAlpn) {
               if ("h2".equals(protocol)) {
                 applyHttp2ConnectionOptions(ch.pipeline());
-                http2Connected(listener, endpointMetric, context, ch, handler);
+                http2Connected(listener, endpointMetric, context, ch);
               } else {
                 applyHttp1xConnectionOptions(ch.pipeline());
                 HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
                   HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-                http1xConnected(listener, fallbackProtocol, host, port, true, endpointMetric, context, ch, handler);
+                http1xConnected(listener, fallbackProtocol, host, port, true, endpointMetric, context, ch);
               }
             } else {
               applyHttp1xConnectionOptions(ch.pipeline());
-              http1xConnected(listener, version, host, port, true, endpointMetric, context, ch, handler);
+              http1xConnected(listener, version, host, port, true, endpointMetric, context, ch);
             }
           } else {
-            handshakeFailure(ch, fut.cause(), handler);
+            handshakeFailure(ch, fut.cause(), listener);
           }
         });
       } else {
@@ -149,7 +155,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                   p.remove(this);
                   // Upgrade handler will remove itself
                   applyHttp1xConnectionOptions(ch.pipeline());
-                  http1xConnected(listener, HttpVersion.HTTP_1_1, host, port, false, endpointMetric, context, ch, handler);
+                  http1xConnected(listener, HttpVersion.HTTP_1_1, host, port, false, endpointMetric, context, ch);
                 }
               }
               @Override
@@ -165,7 +171,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
               @Override
               public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
                 applyHttp2ConnectionOptions(pipeline);
-                http2Connected(listener, endpointMetric, context, ch, handler);
+                http2Connected(listener, endpointMetric, context, ch);
               }
             };
             HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
@@ -188,18 +194,20 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
             // Upgrade handler do nothing
           } else {
             if (version == HttpVersion.HTTP_2 && !client.getOptions().isHttp2ClearTextUpgrade()) {
-              http2Connected(listener, endpointMetric, context, ch, handler);
+              http2Connected(listener, endpointMetric, context, ch);
             } else {
-              http1xConnected(listener, version, host, port, false, endpointMetric, context, ch, handler);
+              http1xConnected(listener, version, host, port, false, endpointMetric, context, ch);
             }
           }
         }
       } else {
-        connectFailed(null, handler, res.cause());
+        connectFailed(null, listener, res.cause());
       }
     };
 
     channelProvider.connect(client.getVertx(), bootstrap, client.getOptions().getProxyOptions(), SocketAddress.inetSocketAddress(port, host), channelInitializer, channelHandler);
+
+    return weight;
   }
 
   private void applyConnectionOptions(Bootstrap bootstrap) {
@@ -231,12 +239,12 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     }
   }
 
-  private void handshakeFailure(Channel ch, Throwable cause, Handler<AsyncResult<HttpClientConnection>> handler) {
+  private void handshakeFailure(Channel ch, Throwable cause, ConnectionListener<HttpClientConnection> listener) {
     SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
     if (cause != null) {
       sslException.initCause(cause);
     }
-    connectFailed(ch, handler, sslException);
+    connectFailed(ch, listener, sslException);
   }
 
   private void http1xConnected(ConnectionListener<HttpClientConnection> listener,
@@ -246,8 +254,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                                boolean ssl,
                                Object endpointMetric,
                                ContextImpl context,
-                               Channel ch,
-                               Handler<AsyncResult<HttpClientConnection>> handler) {
+                               Channel ch) {
     Http1xClientHandler clientHandler = new Http1xClientHandler(
       listener,
       context,
@@ -259,10 +266,10 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       endpointMetric,
       client.metrics());
     clientHandler.addHandler(conn -> {
-      handler.handle(Future.succeededFuture(conn));
+      listener.onConnectSuccess(conn, 1, ch, context, weight, http1Weight, Long.MAX_VALUE);
     });
     clientHandler.removeHandler(conn -> {
-      listener.closed(conn);
+      listener.onClose(conn);
     });
     ch.pipeline().addLast("handler", clientHandler);
   }
@@ -270,8 +277,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   private void http2Connected(ConnectionListener<HttpClientConnection> listener,
                               Object endpointMetric,
                               ContextImpl context,
-                              Channel ch,
-                              Handler<AsyncResult<HttpClientConnection>> resultHandler) {
+                              Channel ch) {
     try {
       boolean upgrade;
       upgrade = ch.pipeline().get(SslHandler.class) == null && options.isHttp2ClearTextUpgrade();
@@ -291,26 +297,27 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
           Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
           conn.metric(metric);
         }
-        resultHandler.handle(Future.succeededFuture(conn));
+        long concurrency = conn.remoteSettings().getMaxConcurrentStreams();
+        listener.onConnectSuccess(conn, concurrency, ch, context, weight, http2Weight, http2MaxConcurrency);
       });
       handler.removeHandler(conn -> {
         if (metrics != null) {
           metrics.endpointDisconnected(endpointMetric, conn.metric());
         }
-        listener.closed(conn);
+        listener.onClose(conn);
       });
     } catch (Exception e) {
-      connectFailed(ch, resultHandler, e);
+      connectFailed(ch, listener, e);
     }
   }
 
-  private void connectFailed(Channel ch, Handler<AsyncResult<HttpClientConnection>> connectionExceptionHandler, Throwable t) {
+  private void connectFailed(Channel ch, ConnectionListener<HttpClientConnection> listener, Throwable t) {
     if (ch != null) {
       try {
         ch.close();
       } catch (Exception ignore) {
       }
     }
-    connectionExceptionHandler.handle(Future.failedFuture(t));
+    listener.onConnectFailure(t, weight);
   }
 }

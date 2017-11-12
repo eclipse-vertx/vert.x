@@ -1746,14 +1746,13 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testMaxConcurrencyMultipleConnections() throws Exception {
-    testMaxConcurrency(3, 5);
+    testMaxConcurrency(2, 1);
   }
 
   private void testMaxConcurrency(int poolSize, int maxConcurrency) throws Exception {
     int rounds = 1 + poolSize;
     int maxRequests = poolSize * maxConcurrency;
     int totalRequests = maxRequests + maxConcurrency;
-
     Set<HttpConnection> serverConns = new HashSet<>();
     server.connectionHandler(conn -> {
       serverConns.add(conn);
@@ -1779,7 +1778,6 @@ public class Http2ClientTest extends Http2TestBase {
         setHttp2MaxPoolSize(poolSize).
         setHttp2MultiplexingLimit(maxConcurrency));
     AtomicInteger respCount = new AtomicInteger();
-
     Set<HttpConnection> clientConnections = Collections.synchronizedSet(new HashSet<>());
     for (int j = 0;j < rounds;j++) {
       for (int i = 0;i < maxConcurrency;i++) {

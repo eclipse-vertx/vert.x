@@ -33,8 +33,8 @@ import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.pool.ConnectionManager;
-import io.vertx.core.http.impl.pool.ConnectionPool;
 import io.vertx.core.http.impl.pool.ConnectionProvider;
+import io.vertx.core.http.impl.pool.PoolOptions;
 import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
@@ -160,7 +160,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
 
     ConnectionProvider<HttpClientConnection> connector = new HttpChannelConnector(this);
-    Function<SocketAddress, ConnectionPool<HttpClientConnection>> poolFactory = sa -> new HttpConnectionPool(options.getProtocolVersion(), options);
+    Function<SocketAddress, PoolOptions> poolFactory = sa -> {
+      long ms = options.getMaxPoolSize() * options.getHttp2MaxPoolSize();
+      return new PoolOptions().setMaxSize(ms);
+    };
 
     websocketCM = new ConnectionManager<>(metrics, connector, poolFactory, options.getMaxWaitQueueSize());
     httpCM = new ConnectionManager<>(metrics, connector, poolFactory, options.getMaxWaitQueueSize());

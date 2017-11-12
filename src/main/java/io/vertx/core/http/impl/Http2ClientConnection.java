@@ -49,7 +49,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private final HttpClientImpl client;
   final HttpClientMetrics metrics;
   final Object queueMetric;
-  int streamCount; // Exclusively used by the HTTP/2 connection pool
 
   public Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
                                Object queueMetric,
@@ -70,8 +69,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  protected void concurrencyChanged() {
-    listener.concurrencyChanged(this);
+  protected void concurrencyChanged(long concurrency) {
+    listener.onConcurrencyChange(this, concurrency);
   }
 
   @Override
@@ -82,7 +81,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   @Override
   void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
-    listener.recycle(this);
+    listener.onRecycle(this);
   }
 
   public synchronized HttpClientStream createStream() throws Http2Exception {

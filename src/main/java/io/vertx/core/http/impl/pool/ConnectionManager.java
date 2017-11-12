@@ -17,17 +17,12 @@
 package io.vertx.core.http.impl.pool;
 
 import io.netty.channel.Channel;
-import io.vertx.core.http.ConnectionPoolTooBusyException;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-import java.util.ArrayDeque;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -41,27 +36,27 @@ public class ConnectionManager<C> {
   private final int maxWaitQueueSize;
   private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
   private final ConnectionProvider<C> connector;
-  private final Function<SocketAddress, ConnectionPool<C>> poolFactory;
+  private final Function<SocketAddress, PoolOptions> optionsProvider;
   private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
-  private final Map<ConnectionKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
+  private final Map<EndpointKey, Pool<C>> endpointMap = new ConcurrentHashMap<>();
 
   public ConnectionManager(HttpClientMetrics metrics,
                            ConnectionProvider<C> connector,
-                           Function<SocketAddress, ConnectionPool<C>> poolFactory,
+                           Function<SocketAddress, PoolOptions> optionsProvider,
                            int maxWaitQueueSize) {
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;
     this.connector = connector;
-    this.poolFactory = poolFactory;
+    this.optionsProvider = optionsProvider;
   }
 
-  private static final class ConnectionKey {
+  private static final class EndpointKey {
 
     private final boolean ssl;
     private final int port;
     private final String host;
 
-    ConnectionKey(boolean ssl, int port, String host) {
+    EndpointKey(boolean ssl, int port, String host) {
       this.ssl = ssl;
       this.host = host;
       this.port = port;
@@ -72,7 +67,7 @@ public class ConnectionManager<C> {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
 
-      ConnectionKey that = (ConnectionKey) o;
+      EndpointKey that = (EndpointKey) o;
 
       if (ssl != that.ssl) return false;
       if (port != that.port) return false;
@@ -90,17 +85,25 @@ public class ConnectionManager<C> {
     }
   }
 
-  private Endpoint getConnQueue(String peerHost, boolean ssl, int port, String host) {
-    ConnectionKey key = new ConnectionKey(ssl, port, peerHost);
-    return endpointMap.computeIfAbsent(key, targetAddress -> {
-      ConnectionPool<C> pool =  poolFactory.apply(SocketAddress.inetSocketAddress(port, host));
-      return new Endpoint( connector, peerHost, host, port, ssl, key, pool);
-    });
+  private Pool<C> getConnQueue(String peerHost, boolean ssl, int port, String host) {
+    EndpointKey key = new EndpointKey(ssl, port, peerHost);
+    PoolOptions options = optionsProvider.apply(SocketAddress.inetSocketAddress(port, host));
+    return endpointMap.computeIfAbsent(key, targetAddress -> new Pool<>(
+      connector,
+      metrics,
+      maxWaitQueueSize,
+      peerHost,
+      host,
+      port,
+      ssl,
+      options.getMaxSize(), v -> endpointMap.remove(key),
+      holder -> connectionMap.put(holder.channel, holder.connection),
+      holder -> connectionMap.remove(holder.channel)));
   }
 
   public void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {
     while (true) {
-      Endpoint connQueue = getConnQueue(peerHost, ssl, port, host);
+      Pool<C> connQueue = getConnQueue(peerHost, ssl, port, host);
       if (connQueue.getConnection(waiter)) {
         break;
       }
@@ -111,174 +114,6 @@ public class ConnectionManager<C> {
     endpointMap.clear();
     for (C conn : connectionMap.values()) {
       connector.close(conn);
-    }
-  }
-
-  /**
-   * The endpoint is a queue of waiters and it delegates to the connection pool, the pooling strategy.
-   *
-   * An endpoint is synchronized and should be executed only from the event loop, the underlying pool
-   * relies and the synchronization performed by the endpoint.
-   */
-  private class Endpoint implements ConnectionListener<C> {
-
-    private final String peerHost;
-    private final boolean ssl;
-    private final int port;
-    private final String host;
-    private final ConnectionKey key;
-    private final ConnectionPool<C> pool;
-    private final ConnectionProvider<C> connector;
-    private final Object metric;
-
-    private int connCount;
-    private final Queue<Waiter<C>> waiters = new ArrayDeque<>();
-    private boolean closed;
-
-
-    private Endpoint(ConnectionProvider<C> connector,
-             String peerHost,
-             String host,
-             int port,
-             boolean ssl,
-             ConnectionKey key,
-             ConnectionPool<C> pool) {
-      this.key = key;
-      this.host = host;
-      this.port = port;
-      this.ssl = ssl;
-      this.peerHost = peerHost;
-      this.connector = connector;
-      this.pool = pool;
-      this.metric = metrics != null ? metrics.createEndpoint(host, port, pool.maxSize()) : null;
-    }
-
-    private synchronized boolean getConnection(Waiter<C> waiter) {
-      if (closed) {
-        return false;
-      }
-      // Enqueue
-      if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize || pool.canBorrow(connCount)) {
-        if (metrics != null) {
-          waiter.metric = metrics.enqueueRequest(metric);
-        }
-        waiters.add(waiter);
-        checkPending();
-      } else {
-        waiter.handleFailure(null, new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
-      }
-      return true;
-    }
-
-    private synchronized void checkPending() {
-      while (true) {
-        Waiter<C> waiter = waiters.peek();
-        if (waiter == null) {
-          break;
-        }
-        if (metric != null) {
-          metrics.dequeueRequest(metric, waiter.metric);
-        }
-        C conn = pool.pollConnection();
-        if (conn != null) {
-          waiters.poll();
-          ContextImpl ctx = pool.getContext(conn);
-          ctx.nettyEventLoop().execute(() -> {
-            if (pool.isValid(conn)) {
-              boolean handled = deliverInternal(conn, waiter);
-              if (!handled) {
-                pool.recycleConnection(conn);
-                checkPending();
-              }
-            } else {
-              waiters.add(waiter);
-              closed(conn);
-            }
-          });
-        } else if (pool.canCreateConnection(connCount)) {
-          waiters.poll();
-          createConnection(waiter);
-        } else {
-          break;
-        }
-      }
-    }
-
-    private void createConnection(Waiter<C> waiter) {
-      connCount++;
-      connector.connect(this, metric, waiter.context, peerHost, ssl, host, port, ar -> {
-        if (ar.succeeded()) {
-          initConnection(waiter, ar.result());
-          checkPending();
-        } else {
-          synchronized (Endpoint.this) {
-            waiter.handleFailure(waiter.context, ar.cause());
-            connCount--;
-          }
-          checkPending();
-          checkClose();
-        }
-      });
-    }
-
-    @Override
-    public void concurrencyChanged(C conn) {
-      checkPending();
-    }
-
-    @Override
-    public void recycle(C conn) {
-      pool.recycleConnection(conn);
-      checkPending();
-    }
-
-    @Override
-    public synchronized void closed(C conn) {
-      closeConnection(conn);
-      checkPending();
-      checkClose();
-    }
-
-    private synchronized void closeConnection(C conn) {
-      Channel channel = connector.channel(conn);
-      connectionMap.remove(channel);
-      pool.evictConnection(conn);
-      connCount--;
-    }
-
-    private synchronized void initConnection(Waiter<C> waiter, C conn) {
-      connectionMap.put(connector.channel(conn), conn);
-      boolean ok = pool.initConnection(conn);
-      waiter.initConnection(conn);
-      if (ok) {
-        boolean handled = deliverInternal(conn, waiter);
-        if (!handled) {
-          pool.recycleConnection(conn);
-        }
-      } else {
-        waiters.add(waiter);
-      }
-    }
-
-    private boolean deliverInternal(C conn, Waiter<C> waiter) {
-      try {
-        return waiter.handleConnection(conn);
-      } catch (Exception e) {
-        // e.printStackTrace();
-        return true;
-      }
-    }
-
-    synchronized void checkClose() {
-      if (connCount == 0) {
-        // No waiters and no connections - remove the ConnQueue
-        endpointMap.remove(key);
-        if (metrics != null) {
-          metrics.closeEndpoint(host, port, metric);
-        }
-        pool.close();
-        closed = true;
-      }
     }
   }
 }

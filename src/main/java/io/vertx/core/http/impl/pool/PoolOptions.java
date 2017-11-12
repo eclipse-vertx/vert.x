@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
+ * Copyright (c) 2011-2014 The original author or authors
  * ------------------------------------------------------
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -15,24 +15,16 @@
  */
 package io.vertx.core.http.impl.pool;
 
-import io.vertx.core.impl.ContextImpl;
+public class PoolOptions {
 
-/**
- * Provides how the connection manager interacts its connections.
- */
-public interface ConnectionProvider<C> {
+  private long maxSize;
 
-  long connect(
-    ConnectionListener<C> listener,
-    Object endpointMetric,
-    ContextImpl context,
-    String peerHost,
-    boolean ssl,
-    String host,
-    int port);
+  public long getMaxSize() {
+    return maxSize;
+  }
 
-  boolean isValid(C conn);
-
-  void close(C conn);
-
+  public PoolOptions setMaxSize(long maxSize) {
+    this.maxSize = maxSize;
+    return this;
+  }
 }

@@ -460,7 +460,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   private void requestEnded() {
     context.runOnContext(v -> {
       if (pipelining && requests.size() < pipeliningLimit) {
-        listener.recycle(this);
+        listener.onRecycle(this);
       }
     });
   }
@@ -471,7 +471,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     } else {
       context.runOnContext(v -> {
         if (currentRequest == null) {
-          listener.recycle(this);
+          listener.onRecycle(this);
         }
       });
     }
@@ -630,7 +630,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         ByteBuf buf = (ByteBuf) msg;
         connection.handleMessageReceived(buf);
       }
-    }.removeHandler(sock -> listener.closed(this)));
+    }.removeHandler(sock -> listener.onClose(this)));
     return socket;
   }
 

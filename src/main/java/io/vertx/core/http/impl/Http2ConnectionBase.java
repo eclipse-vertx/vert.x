@@ -84,7 +84,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private final ArrayDeque<Runnable> updateSettingsHandlers = new ArrayDeque<>(4);
   private final ArrayDeque<Handler<AsyncResult<Buffer>>> pongHandlers = new ArrayDeque<>();
   private Http2Settings localSettings = new Http2Settings();
-  private Http2Settings remoteSettings = new Http2Settings();
+  private Http2Settings remoteSettings;
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
@@ -212,16 +212,22 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected void onConnect() {
   }
 
-  protected void concurrencyChanged() {
+  protected void concurrencyChanged(long concurrency) {
   }
 
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
-    boolean changed = false;
-    if (settings.maxConcurrentStreams() != null) {
-      long val = settings.maxConcurrentStreams();
-      changed = val != maxConcurrentStreams;
+    boolean changed;
+    Long val = settings.maxConcurrentStreams();
+    if (val != null) {
+      if (remoteSettings != null) {
+        changed = val != maxConcurrentStreams;
+      } else {
+        changed = false;
+      }
       maxConcurrentStreams = val;
+    } else {
+      changed = false;
     }
     remoteSettings = settings;
     synchronized (this) {
@@ -233,7 +239,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       }
     }
     if (changed) {
-      concurrencyChanged();
+      concurrencyChanged(maxConcurrentStreams);
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
+ * Copyright (c) 2011-2014 The original author or authors
  * ------------------------------------------------------
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -18,25 +18,18 @@ package io.vertx.core.http.impl.pool;
 import io.netty.channel.Channel;
 import io.vertx.core.impl.ContextImpl;
 
-/**
- * The listener is used by the {@link ConnectionProvider} to interact with the connection pool.
- */
-public interface ConnectionListener<C> {
+public class ConnectionHolder<C> {
 
-  void onConnectSuccess(C conn,
-                        long concurrency,
-                        Channel channel,
-                        ContextImpl context,
-                        long oldWeight,
-                        long newWeight,
-                        long maxConcurrency);
+  volatile C connection;
+  long concurrency;
+  int inflight;
+  Channel channel;
+  ContextImpl context;
+  long weight;
+  long maxConcurrency;
 
-  void onConnectFailure(Throwable err, long weight);
-
-  void onConcurrencyChange(C conn, long concurrency);
-
-  void onRecycle(C conn);
-
-  void onClose(C conn);
+  public C connection() {
+    return connection;
+  }
 
 }
