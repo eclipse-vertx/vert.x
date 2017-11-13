@@ -81,7 +81,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   @Override
   void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
-    listener.onRecycle(this);
   }
 
   public synchronized HttpClientStream createStream() throws Http2Exception {
@@ -197,6 +196,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleClose() {
+      if (request instanceof HttpClientRequestImpl) {
+        conn.listener.onRecycle(conn);
+      }
       if (!responseEnded) {
         responseEnded = true;
         if (conn.metrics != null) {

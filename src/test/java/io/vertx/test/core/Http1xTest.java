@@ -3017,7 +3017,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testResetPipelinedClientRequest() throws Exception {
     waitFor(2);
-    CompletableFuture<Void> reset = new CompletableFuture<>();
+    CompletableFuture<Void> doReset = new CompletableFuture<>();
     server.close();
     NetServer server = vertx.createNetServer();
     AtomicInteger count = new AtomicInteger();
@@ -3032,7 +3032,7 @@ public class Http1xTest extends HttpTest {
             "POST /somepath HTTP/1.1\r\n" +
             "Host: localhost:8080\r\n" +
             "\r\n")) {
-          reset.complete(null);
+          doReset.complete(null);
           so.write(
               "HTTP/1.1 200 OK\r\n" +
               "Content-Type: text/plain\r\n" +
@@ -3053,13 +3053,11 @@ public class Http1xTest extends HttpTest {
       awaitLatch(listenLatch);
       client.close();
       client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
-      AtomicInteger status = new AtomicInteger();
       HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        assertEquals(0, status.getAndIncrement());
+        fail();
       });
       req1.connectionHandler(conn -> {
         conn.closeHandler(v -> {
-          assertEquals(1, status.getAndIncrement());
           complete();
         });
       });
@@ -3068,7 +3066,7 @@ public class Http1xTest extends HttpTest {
         fail();
       });
       req2.sendHead();
-      reset.thenAccept(v -> {
+      doReset.thenAccept(v -> {
         assertTrue(req2.reset());
       });
       await();

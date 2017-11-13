@@ -19,6 +19,8 @@ import io.netty.channel.Channel;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
@@ -30,6 +32,8 @@ import java.util.*;
  * relies and the synchronization performed by the endpoint.
  */
 public class Pool<C> {
+
+  private static final Logger log = LoggerFactory.getLogger(Pool.class);
 
   private final HttpClientMetrics metrics;
   private final String peerHost;
@@ -200,9 +204,10 @@ public class Pool<C> {
   }
 
   private void recycleConnection(ConnectionHolder<C> conn) {
-    // if (conn.inflight == 0) {
-    //  throw new IllegalStateException("Attempt to recycle a connection more than permitted");
-    //}
+    if (conn.inflight == 0) {
+      log.debug("Attempt to recycle a connection more than permitted");
+      return;
+    }
     capacity++;
     if (conn.inflight == conn.concurrency) {
       available.add(conn);
