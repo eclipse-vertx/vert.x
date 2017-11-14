@@ -22,7 +22,7 @@ public class ConnectionHolder<C> {
 
   volatile C connection;
   long concurrency;
-  int inflight;
+  long capacity;
   Channel channel;
   ContextImpl context;
   long weight;

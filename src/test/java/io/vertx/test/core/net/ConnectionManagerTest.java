@@ -27,6 +27,8 @@ import org.junit.Test;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ConnectionManagerTest extends VertxTestBase {
 
@@ -37,7 +39,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     private final FakeConnectionProvider connector;
     private final int queueMaxSize;
     private final int maxPoolSize;
-    private Pool<FakeConnection> delegate;
+    private Pool<FakeConnection> pool;
     private int size;
     private Set<FakeConnection> active = new HashSet<>();
     private boolean closed = true;
@@ -65,12 +67,16 @@ public class ConnectionManagerTest extends VertxTestBase {
       return size;
     }
 
+    synchronized Pool<FakeConnection> pool() {
+      return pool;
+    }
+
     void getConnection(Waiter<FakeConnection> waiter) {
       synchronized (this) {
         if (closed) {
           seq++;
           closed = false;
-          delegate = new Pool<>(
+          pool = new Pool<>(
             connector,
             null,
             queueMaxSize,
@@ -97,7 +103,7 @@ public class ConnectionManagerTest extends VertxTestBase {
           );
         }
       }
-      delegate.getConnection(waiter);
+      pool.getConnection(waiter);
     }
   }
 
@@ -105,11 +111,20 @@ public class ConnectionManagerTest extends VertxTestBase {
   public void testConnectPoolEmpty() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
     FakeConnectionManager mgr = new FakeConnectionManager(3, 4, connector);
-    FakeWaiter waiter = new FakeWaiter();
+    AtomicReference<Boolean> holdsLock = new AtomicReference<>();
+    FakeWaiter waiter = new FakeWaiter() {
+      @Override
+      public synchronized boolean handleConnection(FakeConnection conn) throws Exception {
+        Pool<FakeConnection> pool = mgr.pool();
+        holdsLock.set(Thread.holdsLock(pool));
+        return super.handleConnection(conn);
+      }
+    };
     mgr.getConnection(waiter);
     FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
     conn.connect();
     assertWaitUntil(waiter::isComplete);
+    assertEquals(Boolean.FALSE, holdsLock.get());
     waiter.assertInitialized(conn);
     waiter.assertSuccess(conn);
   }

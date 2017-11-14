@@ -30,6 +30,14 @@ import java.util.*;
  *
  * An endpoint is synchronized and should be executed only from the event loop, the underlying pool
  * relies and the synchronization performed by the endpoint.
+ *
+ * - the connection concurrency is how many times this connection can be borrowed the pool concurrently
+ * -
+ *
+ * The pools invariant:
+ * - the capacity is the sum of the concurrency value of all tracked connections
+ * -
+ *
  */
 public class Pool<C> {
 
@@ -111,14 +119,14 @@ public class Pool<C> {
       if (capacity > 0) {
         capacity--;
         ConnectionHolder<C> conn = available.peek();
-        if (++conn.inflight == conn.concurrency) {
+        if (--conn.capacity == 0) {
           available.poll();
         }
         waiters.poll();
         ContextImpl ctx = conn.context;
         ctx.nettyEventLoop().execute(() -> {
           if (connector.isValid(conn.connection)) {
-            boolean handled = deliverInternal(conn, waiter);
+            boolean handled = deliverToWaiter(conn, waiter);
             if (!handled) {
               synchronized (Pool.this) {
                 recycleConnection(conn);
@@ -146,16 +154,24 @@ public class Pool<C> {
     ConnectionListener<C> listener = new ConnectionListener<C>() {
       @Override
       public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextImpl context, long oldWeight, long newWeight, long maxConcurrency) {
+        boolean usable;
         synchronized (Pool.this) {
-          weight += newWeight - oldWeight;
-          holder.context = context;
-          holder.concurrency = Math.min(concurrency, maxConcurrency);
-          holder.connection = conn;
-          holder.channel = channel;
-          holder.weight = newWeight;
-          holder.maxConcurrency = maxConcurrency;
-          initConnection(waiter, holder);
-          checkPending();
+          usable = initConnection(waiter, holder, context, concurrency, maxConcurrency, conn, channel, oldWeight, newWeight);
+        }
+        if (usable) {
+          boolean consumed = deliverToWaiter(holder, waiter);
+          synchronized (Pool.this) {
+            if (!consumed) {
+              synchronized (this) {
+                recycleConnection(holder);
+              }
+            }
+            checkPending();
+          }
+        } else {
+          synchronized (Pool.this) {
+            checkPending();
+          }
         }
       }
       @Override
@@ -175,12 +191,13 @@ public class Pool<C> {
           if (holder.concurrency < concurrency) {
             long diff = concurrency - holder.concurrency;
             capacity += diff;
-            if (holder.inflight == holder.concurrency) {
+            if (holder.capacity == 0) {
               available.add(holder);
             }
+            holder.capacity += diff;
             holder.concurrency = concurrency;
             checkPending();
-          } else {
+          } else if (holder.concurrency > concurrency) {
             throw new UnsupportedOperationException("Not yet implemented");
           }
         }
@@ -203,56 +220,16 @@ public class Pool<C> {
     checkPending();
   }
 
-  private void recycleConnection(ConnectionHolder<C> conn) {
-    if (conn.inflight == 0) {
-      log.debug("Attempt to recycle a connection more than permitted");
-      return;
-    }
-    capacity++;
-    if (conn.inflight == conn.concurrency) {
-      available.add(conn);
-    }
-    conn.inflight--;
-  }
-
   private synchronized void closed(ConnectionHolder<C> conn) {
     closeConnection(conn);
     checkPending();
     checkClose();
   }
 
-  private void closeConnection(ConnectionHolder<C> conn) {
-    connectionRemoved.handle(conn);
-    all.remove(conn);
-    long remaining = conn.concurrency - conn.inflight;
-    if (remaining > 0) {
-      available.remove(conn);
-      capacity -= remaining;
-    }
-    weight -= conn.weight;
-    // Remove if capacity > 0
-  }
-
-  private synchronized void initConnection(Waiter<C> waiter, ConnectionHolder<C> holder) {
-    connectionAdded.handle(holder);
-    all.add(holder);
-    waiter.initConnection(holder.connection);
-    if (holder.concurrency > 0) {
-      holder.inflight++;
-      if (holder.inflight < holder.concurrency) {
-        capacity += holder.concurrency - holder.inflight;
-        available.add(holder);
-      }
-      boolean consumed = deliverInternal(holder, waiter);
-      if (!consumed) {
-        recycleConnection(holder);
-      }
-    } else {
-      waiters.add(waiter);
-    }
-  }
-
-  private boolean deliverInternal(ConnectionHolder<C> conn, Waiter<C> waiter) {
+  /**
+   * Should not be called under the pool lock.
+   */
+  private boolean deliverToWaiter(ConnectionHolder<C> conn, Waiter<C> waiter) {
     try {
       return waiter.handleConnection(conn.connection);
     } catch (Exception e) {
@@ -260,6 +237,55 @@ public class Pool<C> {
       e.printStackTrace();
       return true;
     }
+  }
+
+  // These methods assume to be called under synchronization
+
+  private void recycleConnection(ConnectionHolder<C> conn) {
+    if (conn.capacity == conn.concurrency) {
+      log.debug("Attempt to recycle a connection more than permitted");
+      return;
+    }
+    capacity++;
+    if (conn.capacity == 0) {
+      available.add(conn);
+    }
+    conn.capacity++;
+  }
+
+  private void closeConnection(ConnectionHolder<C> conn) {
+    connectionRemoved.handle(conn);
+    all.remove(conn);
+    if (conn.capacity > 0) {
+      available.remove(conn);
+      capacity -= conn.capacity;
+    }
+    weight -= conn.weight;
+  }
+
+  private boolean initConnection(Waiter<C> waiter, ConnectionHolder<C> holder, ContextImpl context, long concurrency, long maxConcurrency, C conn, Channel channel, long oldWeight, long newWeight) {
+    concurrency = Math.min(concurrency, maxConcurrency);
+    weight += newWeight - oldWeight;
+    holder.context = context;
+    holder.concurrency = concurrency;
+    holder.connection = conn;
+    holder.channel = channel;
+    holder.weight = newWeight;
+    holder.maxConcurrency = maxConcurrency;
+    holder.capacity = concurrency;
+    connectionAdded.handle(holder);
+    all.add(holder);
+    waiter.initConnection(holder.connection);
+    if (holder.capacity == 0) {
+      waiters.add(waiter);
+      return false;
+    }
+    holder.capacity--;
+    if (holder.capacity > 0) {
+      capacity += holder.capacity;
+      available.add(holder);
+    }
+    return true;
   }
 
   private void checkClose() {
