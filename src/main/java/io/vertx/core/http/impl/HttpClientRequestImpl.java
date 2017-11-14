@@ -29,10 +29,13 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.pool.ConnectionManager;
 import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 
 import java.util.List;
@@ -50,6 +53,8 @@ import static io.vertx.core.http.HttpHeaders.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
+
+  static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
   private final VertxInternal vertx;
   private Handler<HttpClientResponse> respHandler;
@@ -641,10 +646,15 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         throw new IllegalStateException("You must provide a rawMethod when using an HttpMethod.OTHER method");
       }
 
-      Waiter<HttpClientConnection> waiter = new Waiter<HttpClientConnection>(vertx.getOrCreateContext()) {
+      ContextImpl ctx = vertx.getOrCreateContext();
+      Waiter<HttpClientConnection> waiter = new Waiter<HttpClientConnection>(ctx) {
+
+        private void checkContext(ContextInternal current) {
+        }
 
         @Override
         public void handleFailure(ContextInternal ctx, Throwable failure) {
+          checkContext(ctx);
           ctx.executeFromIO(() -> {
             handleException(failure);
           });
@@ -652,6 +662,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
         @Override
         public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
+          checkContext(ctx);
           synchronized (HttpClientRequestImpl.this) {
             if (connectionHandler != null) {
               ctx.executeFromIO(() -> {
@@ -668,10 +679,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           if (exceptionOccurred != null || reset != null) {
             return false;
           }
-          HttpClientStream stream;
-          stream = conn.createStream();
-          ctx.executeFromIO(() -> {
-            connected(stream, headersCompletionHandler);
+          checkContext(ctx);
+          conn.createStream(ar -> {
+            if (ar.succeeded()) {
+              HttpClientStream stream = ar.result();
+              ctx.executeFromIO(() -> {
+                connected(stream, headersCompletionHandler);
+              });
+            } else {
+              throw new RuntimeException(ar.cause());
+            }
           });
           return true;
         }

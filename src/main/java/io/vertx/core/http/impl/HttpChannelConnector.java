@@ -56,6 +56,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   private final long http1Weight;
   private final long http2Weight;
   private final long http2MaxConcurrency;
+  private final long http1MaxConcurrency;
 
   HttpChannelConnector(HttpClientImpl client) {
     this.client = client;
@@ -67,6 +68,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     this.http2Weight = client.getOptions().getMaxPoolSize();
     this.weight = version == HttpVersion.HTTP_2 ? http2Weight : http1Weight;
     this.http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();
+    this.http1MaxConcurrency = client.getOptions().isPipelining() ? client.getOptions().getPipeliningLimit() : 1;
   }
 
   @Override
@@ -267,7 +269,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       endpointMetric,
       client.metrics());
     clientHandler.addHandler(conn -> {
-      listener.onConnectSuccess(conn, 1, ch, context, weight, http1Weight);
+      listener.onConnectSuccess(conn, http1MaxConcurrency, ch, context, weight, http1Weight);
     });
     clientHandler.removeHandler(conn -> {
       listener.onClose();

@@ -31,8 +31,6 @@ import java.util.function.Function;
  */
 public class ConnectionManager<C> {
 
-  public static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
-
   private final int maxWaitQueueSize;
   private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
   private final ConnectionProvider<C> connector;

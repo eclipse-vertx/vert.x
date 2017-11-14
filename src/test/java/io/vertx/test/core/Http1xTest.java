@@ -25,20 +25,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ConnectionPoolTooBusyException;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
@@ -64,7 +51,6 @@ import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -1888,60 +1874,40 @@ public class Http1xTest extends HttpTest {
   }
 
   private void testClientContext() throws Exception {
-    CountDownLatch serverLatch = new CountDownLatch(1);
-    CountDownLatch req1Latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.response().end();
-      req1Latch.countDown();
-    } ).listen(ar -> {
-      assertTrue(ar.succeeded());
-      serverLatch.countDown();
     });
-    awaitLatch(serverLatch);
-    AtomicReference<Context> c = new AtomicReference<>();
-    HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1");
-    AtomicReference<HttpConnection> conn = new AtomicReference<>();
-    req1.handler(res -> {
-      c.set(Vertx.currentContext());
-      conn.set(req1.connection());
-    });
-    req1.end();
-    Consumer<HttpClientRequest> checker = req -> {
-      assertSame(Vertx.currentContext(), c.get());
-      assertSame(conn.get(), req.connection());
+    startServer();
+    Set<Context> contexts = Collections.synchronizedSet(new HashSet<>());
+    Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
+    Handler<HttpClientResponse> checker = response -> {
+      contexts.add(Vertx.currentContext());
+      connections.add(response.request().connection());
     };
-    CountDownLatch req2Latch = new CountDownLatch(2);
-    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2");
-    req2.handler(res -> {
-      checker.accept(req2);
-      req2Latch.countDown();
-    }).exceptionHandler(err -> {
-      fail(err);
-    }).sendHead();
-    awaitLatch(req1Latch);
-    HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3");
-    req3.handler(res -> {
-      checker.accept(req3);
-      req2Latch.countDown();
-    }).exceptionHandler(err -> {
-      fail(err);
-    });
-    req2.end();
-    req3.end();
-    awaitLatch(req2Latch);
-    vertx.getOrCreateContext().runOnContext(v -> {
-      HttpClientRequest req4 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4");
-      req4.handler(res -> {
+    HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2");
+    req1.handler(checker).exceptionHandler(this::fail);
+    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3");
+    req2.handler(checker).exceptionHandler(this::fail);
+    CompletableFuture<HttpClientRequest> fut = new CompletableFuture<>();
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4");
+      req3.handler(resp -> {
         // This should warn in the log (console) as we are called back on the connection context
         // and not on the context doing the request
-        checker.accept(req4);
+        // checker.accept(req4);
+        assertEquals(1, contexts.size());
+        assertEquals(1, connections.size());
+        assertNotSame(Vertx.currentContext(), ctx);
         testComplete();
       });
-      req4.exceptionHandler(err -> {
-        fail(err);
-      });
-      req4.end();
+      req3.exceptionHandler(this::fail);
+      fut.complete(req3);
     });
+    HttpClientRequest req3 = fut.get(10, TimeUnit.SECONDS);
+    req1.end();
+    req2.end();
+    req3.end();
     await();
   }
 

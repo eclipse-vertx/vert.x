@@ -250,6 +250,7 @@ public class Pool<C> {
   private synchronized void recycle(Holder<C> conn) {
     recycleConnection(conn);
     checkPending();
+    checkClose();
   }
 
   private synchronized void closed(Holder<C> conn) {
@@ -318,6 +319,27 @@ public class Pool<C> {
   }
 
   private void checkClose() {
+    if (waiters.isEmpty()) {
+      if (available.size() > 0) {
+        List<Holder<C>> toClose = Collections.emptyList();
+        for (Holder<C> conn : available) {
+          if (conn.capacity == conn.concurrency) {
+            if (toClose.isEmpty()) {
+              toClose = new ArrayList<>();
+            }
+            toClose.add(conn);
+          }
+        }
+        if (toClose.size() > 0) {
+          for (Holder<C> conn : toClose) {
+            available.remove(conn);
+            capacity -= conn.concurrency;
+            conn.capacity = 0;
+            connector.close(conn.connection);
+          }
+        }
+      }
+    }
     if (all.isEmpty()) {
       // No waiters and no connections - remove the ConnQueue
       if (metrics != null) {

@@ -87,13 +87,22 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     super.onStreamClosed(nettyStream);
   }
 
-  public synchronized HttpClientStream createStream() throws Http2Exception {
-    Http2Connection conn = handler.connection();
-    Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
-    boolean writable = handler.encoder().flowController().isWritable(stream);
-    Http2ClientStream clientStream = new Http2ClientStream(this, stream, writable);
-    streams.put(clientStream.stream.id(), clientStream);
-    return clientStream;
+  @Override
+  public void createStream(Handler<AsyncResult<HttpClientStream>> completionHandler) {
+    Future<HttpClientStream> fut;
+    synchronized (this) {
+      try {
+        Http2Connection conn = handler.connection();
+        Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
+        boolean writable = handler.encoder().flowController().isWritable(stream);
+        Http2ClientStream clientStream = new Http2ClientStream(this, stream, writable);
+        streams.put(clientStream.stream.id(), clientStream);
+        fut = Future.succeededFuture(clientStream);
+      } catch (Http2Exception e) {
+        fut = Future.failedFuture(e);
+      }
+    }
+    completionHandler.handle(fut);
   }
 
   @Override

@@ -22,10 +22,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
@@ -43,7 +40,6 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
@@ -66,8 +62,6 @@ import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
  */
 class Http1xClientConnection extends Http1xConnectionBase implements HttpClientConnection {
 
-  private static final int ST_NOOP = 0, ST_CLOSE = 1, ST_RECYCLE = 2;
-
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
   private final ConnectionListener<HttpClientConnection> listener;
@@ -76,10 +70,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   private final String host;
   private final int port;
   private final Object endpointMetric;
-  private final boolean pipelining;
-  private final boolean keepAlive;
-  private final int pipeliningLimit;
-  // Requests can be pipelined so we need a queue to keep track of requests
+  private final Deque<StreamImpl> pending = new ArrayDeque<>();
   private final Deque<StreamImpl> inflight = new ArrayDeque<>();
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
@@ -111,19 +102,24 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     this.metrics = metrics;
     this.version = version;
     this.endpointMetric = endpointMetric;
-    this.pipelining = client.getOptions().isPipelining();
-    this.keepAlive = client.getOptions().isKeepAlive();
-    this.pipeliningLimit = client.getOptions().getPipeliningLimit();
   }
 
-  private class StreamImpl implements HttpClientStream {
+  private static class StreamImpl implements HttpClientStream {
 
+    private final Http1xClientConnection conn;
+    private final Handler<AsyncResult<HttpClientStream>> handler;
     private HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
-    private boolean reset;
-    private int status = ST_NOOP;
     private boolean requestEnded;
     private boolean responseEnded;
+    private boolean reset;
+    private boolean close;
+    private boolean upgraded;
+
+    StreamImpl(Http1xClientConnection conn, Handler<AsyncResult<HttpClientStream>> handler) {
+      this.conn = conn;
+      this.handler = handler;
+    }
 
     @Override
     public int id() {
@@ -132,17 +128,17 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public HttpVersion version() {
-      return version;
+      return conn.version;
     }
 
     @Override
     public HttpClientConnection connection() {
-      return Http1xClientConnection.this;
+      return conn;
     }
 
     @Override
     public Context getContext() {
-      return context;
+      return conn.context;
     }
 
     private HttpRequest createRequest(HttpVersion version, HttpMethod method, String rawMethod, String uri, MultiMap headers) {
@@ -163,36 +159,36 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         request.headers().set(HOST, hostHeader);
       }
       if (chunked) {
-        HttpHeaders.setTransferEncodingChunked(request);
+        HttpUtil.setTransferEncodingChunked(request, true);
       }
-      if (client.getOptions().isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
+      if (conn.client.getOptions().isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
         // if compression should be used but nothing is specified by the user support deflate and gzip.
         request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
       }
-      if (!client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
+      if (!conn.client.getOptions().isKeepAlive() && conn.client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
         request.headers().set(CONNECTION, CLOSE);
-      } else if (client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      } else if (conn.client.getOptions().isKeepAlive() && conn.client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
         request.headers().set(CONNECTION, KEEP_ALIVE);
       }
     }
 
     public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked) {
-      HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
+      HttpRequest request = createRequest(conn.version, method, rawMethod, uri, headers);
       prepareHeaders(request, hostHeader, chunked);
-      writeToChannel(request);
+      conn.writeToChannel(request);
     }
 
     public void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
-      HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
+      HttpRequest request = createRequest(conn.version, method, rawMethod, uri, headers);
       prepareHeaders(request, hostHeader, chunked);
       if (end) {
         if (buf != null) {
-          writeToChannel(new AssembledFullHttpRequest(request, buf));
+          conn.writeToChannel(new AssembledFullHttpRequest(request, buf));
         } else {
-          writeToChannel(new AssembledFullHttpRequest(request));
+          conn.writeToChannel(new AssembledFullHttpRequest(request));
         }
       } else {
-        writeToChannel(new AssembledHttpRequest(request, buf));
+        conn.writeToChannel(new AssembledHttpRequest(request, buf));
       }
     }
 
@@ -200,12 +196,12 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     public void writeBuffer(ByteBuf buff, boolean end) {
       if (end) {
         if (buff != null && buff.isReadable()) {
-          writeToChannel(new DefaultLastHttpContent(buff, false));
+          conn.writeToChannel(new DefaultLastHttpContent(buff, false));
         } else {
-          writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+          conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
         }
       } else if (buff != null) {
-        writeToChannel(new DefaultHttpContent(buff));
+        conn.writeToChannel(new DefaultHttpContent(buff));
       }
     }
 
@@ -216,189 +212,221 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public void doSetWriteQueueMaxSize(int size) {
-      Http1xClientConnection.this.doSetWriteQueueMaxSize(size);
+      conn.doSetWriteQueueMaxSize(size);
     }
 
     @Override
     public boolean isNotWritable() {
-      return Http1xClientConnection.this.isNotWritable();
+      return conn.isNotWritable();
     }
 
     @Override
     public void checkDrained() {
-      handleInterestedOpsChanged();
+      conn.handleInterestedOpsChanged();
     }
 
     @Override
     public void doPause() {
-      Http1xClientConnection.this.doPause();
+      conn.doPause();
     }
 
     @Override
     public void doResume() {
-      Http1xClientConnection.this.doResume();
+      conn.doResume();
     }
 
     @Override
     public void reset(long code) {
-      if (request == null) {
-        throw new IllegalStateException("Sanity check");
-      }
-      if (!reset) {
-        reset = true;
-        if (!requestEnded || !responseEnded) {
-          close();
+      synchronized (conn) {
+        if (request == null) {
+          throw new IllegalStateException("Sanity check");
+        }
+        if (!reset) {
+          reset = true;
+          if (!requestEnded || !responseEnded) {
+            conn.close();
+          }
         }
       }
     }
 
-    public synchronized void beginRequest(HttpClientRequestImpl req) {
-      if (request != null) {
-        throw new IllegalStateException("Request already in progress");
+    public void beginRequest(HttpClientRequestImpl req) {
+      synchronized (conn) {
+        if (request != null) {
+          throw new IllegalStateException("Request already in progress");
+        }
+        request = req;
+        if (conn.currentRequest != this) {
+          throw new IllegalStateException("Connection is already writing another request");
+        }
+        if (conn.metrics != null) {
+          Object reqMetric = conn.metrics.requestBegin(conn.endpointMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), req);
+          req.metric(reqMetric);
+        }
+        conn.inflight.add(conn.currentRequest);
       }
-      if (currentRequest != this) {
-        throw new IllegalStateException("Connection is already writing another request");
-      }
-      if (metrics != null) {
-        Object reqMetric = metrics.requestBegin(endpointMetric, metric(), localAddress(), remoteAddress(), req);
-        req.metric(reqMetric);
-      }
-      request = req;
-      currentRequest = this;
-      inflight.add(currentRequest);
     }
 
-    public synchronized void endRequest() {
-      if (currentRequest != this) {
-        throw new IllegalStateException("No write in progress");
-      }
-      if (metrics != null) {
-        metrics.requestEnd(currentRequest.request.metric());
-      }
-      currentRequest = null;
-      requestEnded = true;
-      int st;
-      if (responseEnded) {
-        st = status;
-      } else {
-        if (pipelining && inflight.size() < pipeliningLimit) {
-          st = ST_RECYCLE;
-        }  else {
-          st = ST_NOOP;
+    public void endRequest() {
+      StreamImpl next;
+      synchronized (conn) {
+        if (conn.currentRequest != this) {
+          throw new IllegalStateException("No write in progress");
         }
-        status = st;
+        if (conn.metrics != null) {
+          conn.metrics.requestEnd(conn.currentRequest.request.metric());
+        }
+        requestEnded = true;
+        // Should take care of pending list ????
+        checkLifecycle();
+        conn.currentRequest = next = conn.pending.poll();
+        if (conn.currentRequest == null) {
+          return;
+        }
       }
-      switch (st) {
-        case ST_CLOSE:
-          close();
-          break;
-        case ST_RECYCLE:
-          listener.onRecycle();
-          break;
-      }
+      // Should trampoline ?
+      next.handler.handle(Future.succeededFuture(next));
     }
 
     @Override
     public NetSocket createNetSocket() {
-      return Http1xClientConnection.this.createNetSocket();
+      synchronized (conn) {
+        if (responseEnded) {
+          throw new IllegalStateException("Request already ended");
+        }
+        if (upgraded) {
+          throw new IllegalStateException("Request already upgraded to NetSocket");
+        }
+        upgraded = true;
+
+
+        // connection was upgraded to raw TCP socket
+        NetSocketImpl socket = new NetSocketImpl(conn.vertx, conn.chctx, conn.context, conn.client.getSslHelper(), conn.metrics);
+        socket.metric(conn.metric());
+
+        // Flush out all pending data
+        conn.endReadAndFlush();
+
+        // remove old http handlers and replace the old handler with one that handle plain sockets
+        ChannelPipeline pipeline = conn.chctx.pipeline();
+        ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
+        if (inflater != null) {
+          pipeline.remove(inflater);
+        }
+        pipeline.remove("codec");
+        pipeline.replace("handler", "handler",  new VertxNetHandler(socket) {
+          @Override
+          public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+            if (msg instanceof HttpContent) {
+              if (msg instanceof LastHttpContent) {
+                endResponse((LastHttpContent) msg);
+              }
+              ReferenceCountUtil.release(msg);
+              return;
+            }
+            super.channelRead(chctx, msg);
+          }
+          @Override
+          protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+            ByteBuf buf = (ByteBuf) msg;
+            connection.handleMessageReceived(buf);
+          }
+        }.removeHandler(sock -> conn.listener.onClose()));
+
+        return socket;
+      }
     }
 
-    void handleResponse(HttpResponse resp) {
-      io.netty.handler.codec.http.HttpVersion nettyVersion = resp.protocolVersion();
-      HttpVersion vertxVersion;
-      if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
-        vertxVersion = HttpVersion.HTTP_1_0;
-      } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
-        vertxVersion = HttpVersion.HTTP_1_1;
-      } else {
-        vertxVersion = null;
+    HttpClientResponseImpl beginResponse(HttpResponse resp) {
+      if (conn.metrics != null) {
+        conn.metrics.responseBegin(request.metric(), response);
       }
-      response = new HttpClientResponseImpl(request, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
-      if (metrics != null) {
-        metrics.responseBegin(request.metric(), response);
-      }
-      if (vertxVersion != null) {
-        request.handleResponse(response);
+      HttpVersion version = HttpUtils.toVertxHttpVersion(resp.protocolVersion());
+      if (version != null) {
+        return response = new HttpClientResponseImpl(request, version, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
       } else {
-        request.handleException(new IllegalStateException("Unsupported HTTP version: " + nettyVersion));
+        return null;
       }
     }
 
-    void handleResponseEnd(LastHttpContent trailer) {
-      if (metrics != null) {
-        HttpClientRequestBase req = request;
-        Object reqMetric = req.metric();
-        if (req.exceptionOccurred != null) {
-          metrics.requestReset(reqMetric);
+    void endResponse(LastHttpContent trailer) {
+      synchronized (conn) {
+        if (conn.metrics != null) {
+          HttpClientRequestBase req = request;
+          Object reqMetric = req.metric();
+          if (req.exceptionOccurred != null) {
+            conn.metrics.requestReset(reqMetric);
+          } else {
+            conn.metrics.responseEnd(reqMetric, response);
+          }
+        }
+        Buffer last = conn.pausedChunk;
+        conn.pausedChunk = null;
+        response.handleEnd(last, new HeadersAdaptor(trailer.trailingHeaders()));
+
+        // We don't signal response end for a 100-continue response as a real response will follow
+        // Also we keep the connection open for an HTTP CONNECT
+        responseEnded = true;
+        if (response.statusCode() != 100 && request.method() != io.vertx.core.http.HttpMethod.CONNECT) {
+
+          // See https://tools.ietf.org/html/rfc7230#section-6.3
+          String responseConnectionHeader = response.getHeader(HttpHeaders.Names.CONNECTION);
+          io.vertx.core.http.HttpVersion protocolVersion = conn.client.getOptions().getProtocolVersion();
+          String requestConnectionHeader = request.headers().get(HttpHeaders.Names.CONNECTION);
+          // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
+          if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
+            // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
+            close = true;
+          } else if (protocolVersion == io.vertx.core.http.HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
+            // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
+            // currently Vertx forces the Connection header if keepalive is enabled for 1.0
+            close = true;
+          }
+        }
+        if (!conn.client.getOptions().isKeepAlive()) {
+          close = true;
+        }
+
+        checkLifecycle();
+      }
+    }
+
+    void checkLifecycle() {
+      if (requestEnded && responseEnded) {
+        if (upgraded) {
+          // Do nothing
+        } else if (close) {
+          conn.close();
         } else {
-          metrics.responseEnd(reqMetric, response);
+          conn.listener.onRecycle();
         }
-      }
-      Buffer last = pausedChunk;
-      pausedChunk = null;
-      response.handleEnd(last, new HeadersAdaptor(trailer.trailingHeaders()));
-
-      int st;
-      /* if (reset && inflight.isEmpty()) {
-        st = ST_CLOSE;
-      } else */ if (keepAlive) {
-        if (status == ST_RECYCLE) {
-          st = ST_NOOP;
-        } else {
-          st = ST_RECYCLE;
-        }
-      } else {
-        st = ST_CLOSE;
-      }
-
-      // We don't signal response end for a 100-continue response as a real response will follow
-      // Also we keep the connection open for an HTTP CONNECT
-      if (response.statusCode() != 100 && request.method() != io.vertx.core.http.HttpMethod.CONNECT) {
-
-        // See https://tools.ietf.org/html/rfc7230#section-6.3
-        String responseConnectionHeader = response.getHeader(HttpHeaders.Names.CONNECTION);
-        io.vertx.core.http.HttpVersion protocolVersion = client.getOptions().getProtocolVersion();
-        String requestConnectionHeader = request.headers().get(HttpHeaders.Names.CONNECTION);
-        // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
-        if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
-          // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
-          st = ST_CLOSE;
-        } else if (protocolVersion == io.vertx.core.http.HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
-          // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
-          // currently Vertx forces the Connection header if keepalive is enabled for 1.0
-          st = ST_CLOSE;
-        }
-      }
-
-      responseEnded = true;
-      if (requestEnded) {
-        switch (st) {
-          case ST_CLOSE:
-            close();
-            break;
-          case ST_RECYCLE:
-            listener.onRecycle();
-            break;
-        }
-      } else {
-        status = st;
       }
     }
   }
 
   void handleResponse(HttpResponse resp) {
-    StreamImpl requestForResponse;
-    if (resp.status().code() == 100) {
-      //If we get a 100 continue it will be followed by the real response later, so we don't remove it yet
-      requestForResponse = inflight.peek();
+    HttpClientResponseImpl response;
+    HttpClientRequestImpl request;
+    synchronized (this) {
+      StreamImpl requestForResponse;
+      if (resp.status().code() == 100) {
+        //If we get a 100 continue it will be followed by the real response later, so we don't remove it yet
+        requestForResponse = inflight.peek();
+      } else {
+        requestForResponse = inflight.poll();
+      }
+      if (requestForResponse == null) {
+        throw new IllegalStateException("No response handler");
+      }
+      currentResponse = requestForResponse;
+      response = currentResponse.beginResponse(resp);
+      request = currentResponse.request;
+    }
+    if (response != null) {
+      request.handleResponse(response);
     } else {
-      requestForResponse = inflight.poll();
+      request.handleException(new IllegalStateException("Unsupported HTTP version: " + resp.protocolVersion()));
     }
-    if (requestForResponse == null) {
-      throw new IllegalStateException("No response handler");
-    }
-    currentResponse = requestForResponse;
-    currentResponse.handleResponse(resp);
   }
 
   void handleResponseChunk(Buffer buff) {
@@ -421,13 +449,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     StreamImpl resp = currentResponse;
     if (resp.response.statusCode() != 100) {
       currentResponse = null;
-      resp.handleResponseEnd(trailer);
+      resp.endResponse(trailer);
     }
-  }
-
-  @Override
-  public Channel channel() {
-    return chctx.channel();
   }
 
   public HttpClientMetrics metrics() {
@@ -579,8 +602,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
-  public synchronized boolean isValid() {
-    return /*!reset &&*/ chctx.channel().isOpen();
+  public boolean isValid() {
+    return chctx.channel().isOpen();
   }
 
   @Override
@@ -680,47 +703,16 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
-  public NetSocket createNetSocket() {
-    // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics);
-    socket.metric(metric());
-    Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
-    connectionMap.put(chctx.channel(), socket);
-
-    // Flush out all pending data
-    endReadAndFlush();
-
-    // remove old http handlers and replace the old handler with one that handle plain sockets
-    ChannelPipeline pipeline = chctx.pipeline();
-    ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
-    if (inflater != null) {
-      pipeline.remove(inflater);
-    }
-    pipeline.remove("codec");
-    pipeline.replace("handler", "handler",  new VertxNetHandler(socket) {
-      @Override
-      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-        if (msg instanceof HttpContent) {
-          if (msg instanceof LastHttpContent) {
-            handleResponseEnd((LastHttpContent) msg);
-          }
-          ReferenceCountUtil.release(msg);
-          return;
-        }
-        super.channelRead(chctx, msg);
-      }
-      @Override
-      protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
-        ByteBuf buf = (ByteBuf) msg;
-        connection.handleMessageReceived(buf);
-      }
-    }.removeHandler(sock -> listener.onClose()));
-    return socket;
-  }
-
   @Override
-  public HttpClientStream createStream() throws Exception {
-    currentRequest = new StreamImpl();
-    return currentRequest;
+  public void createStream(Handler<AsyncResult<HttpClientStream>> handler) {
+    StreamImpl stream = new StreamImpl(this, handler);
+    synchronized (this) {
+      if (currentRequest != null) {
+        pending.add(stream);
+        return;
+      }
+      this.currentRequest = stream;
+    }
+    handler.handle(Future.succeededFuture(currentRequest));
   }
 }
