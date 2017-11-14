@@ -112,9 +112,6 @@ public class ConnectionManagerTest extends VertxTestBase {
     assertWaitUntil(waiter::isComplete);
     waiter.assertInitialized(conn);
     waiter.assertSuccess(conn);
-    waiter.release();
-    assertEquals(0, mgr.size());
-    assertTrue(mgr.closed());
   }
 
   @Test
@@ -160,7 +157,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
     connector.assertRequests(TEST_ADDRESS, 0);
-    waiter1.release();
+    waiter1.recycle();
     assertWaitUntil(waiter2::isComplete);
     waiter2.assertSuccess(conn);
   }
@@ -197,7 +194,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
     conn.invalidate();
-    waiter1.release();
+    waiter1.recycle();
     waitUntil(() -> connector.requests(TEST_ADDRESS) == 1);
     assertFalse(mgr.closed());
     FakeConnection conn2 = connector.assertRequest(TEST_ADDRESS);
@@ -270,7 +267,10 @@ public class ConnectionManagerTest extends VertxTestBase {
     waiters.forEach(waiter -> {
       waitUntil(waiter::isSuccess);
     });
-    waiters.forEach(FakeWaiter::release);
+    waiters.forEach(FakeWaiter::recycle);
+    FakeWaiter waiter = new FakeWaiter();
+    mgr.getConnection(waiter);
+    waitUntil(waiter::isComplete);
   }
 
   @Test
@@ -288,7 +288,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     conn.concurrency(0).connect().awaitConnected();
     conn.concurrency(n - 1);
     waitUntil(() -> waiters.stream().filter(FakeWaiter::isSuccess).count() == n - 1);
-    waiters.stream().filter(FakeWaiter::isSuccess).findFirst().get().release();
+    waiters.stream().filter(FakeWaiter::isSuccess).findFirst().get().recycle();
     waiters.forEach(waiter -> {
       waitUntil(waiter::isSuccess);
     });
@@ -357,6 +357,7 @@ public class ConnectionManagerTest extends VertxTestBase {
         } catch (InterruptedException e) {
           e.printStackTrace();
         }
+        System.out.println("DONE");
       });
       actors[i].start();
     }
@@ -442,7 +443,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       }
     }
 
-    long release() {
+    long recycle() {
       FakeConnection conn = (FakeConnection) result;
       return conn.recycle();
     }
@@ -700,7 +701,7 @@ public class ConnectionManagerTest extends VertxTestBase {
 
     @Override
     public void close(FakeConnection conn) {
-      conn.listener.onClose(conn);
+
     }
   }
 }
