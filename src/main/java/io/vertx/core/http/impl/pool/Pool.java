@@ -24,6 +24,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * The endpoint is a queue of waiters and it delegates to the connection pool, the pooling strategy.
@@ -201,6 +202,7 @@ public class Pool<C> {
   private synchronized void recycle(ConnectionHolder<C> conn) {
     recycleConnection(conn);
     checkPending();
+    checkClose();
   }
 
   private void recycleConnection(ConnectionHolder<C> conn) {
@@ -263,6 +265,27 @@ public class Pool<C> {
   }
 
   private void checkClose() {
+    if (waiters.isEmpty()) {
+      if (available.size() > 0) {
+        List<ConnectionHolder<C>> toClose = Collections.emptyList();
+        for (ConnectionHolder<C> conn : available) {
+          if (conn.inflight == 0) {
+            if (toClose.isEmpty()) {
+              toClose = new ArrayList<>();
+            }
+            toClose.add(conn);
+          }
+        }
+        if (toClose.size() > 0) {
+          for (ConnectionHolder<C> conn : toClose) {
+            available.remove(conn);
+            capacity -= conn.concurrency;
+            conn.inflight = (int) conn.concurrency;
+            connector.close(conn.connection);
+          }
+        }
+      }
+    }
     if (all.isEmpty()) {
       // No waiters and no connections - remove the ConnQueue
       if (metrics != null) {
