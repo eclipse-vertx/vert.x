@@ -17,6 +17,7 @@ package io.vertx.test.core.net;
 
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.pool.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
@@ -27,9 +28,11 @@ import org.junit.Test;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
 public class ConnectionManagerTest extends VertxTestBase {
 
   private static final SocketAddress TEST_ADDRESS = SocketAddress.inetSocketAddress(8080, "localhost");
@@ -89,15 +92,15 @@ public class ConnectionManagerTest extends VertxTestBase {
               synchronized (FakeConnectionManager.this) {
                 closed = true;
               }
-            }, conn -> {
+            }, (channel, conn) -> {
             synchronized (FakeConnectionManager.this) {
-              active.add(conn.connection());
+              active.add(conn);
               size++;
             }
-          }, conn -> {
+          }, (channel, conn) -> {
             synchronized (FakeConnectionManager.this) {
               size--;
-              active.remove(conn.connection());
+              active.remove(conn);
             }
           }
           );
@@ -108,25 +111,62 @@ public class ConnectionManagerTest extends VertxTestBase {
   }
 
   @Test
-  public void testConnectPoolEmpty() {
+  public void testConnectSuccess() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
     FakeConnectionManager mgr = new FakeConnectionManager(3, 4, connector);
-    AtomicReference<Boolean> holdsLock = new AtomicReference<>();
+    AtomicReference<Boolean> initLock = new AtomicReference<>();
+    AtomicReference<Boolean> handleLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
-      public synchronized boolean handleConnection(FakeConnection conn) throws Exception {
+      public synchronized void initConnection(ContextInternal ctx, FakeConnection conn) {
+        assertNull(Vertx.currentContext());
+        assertSame(ctx, context);
         Pool<FakeConnection> pool = mgr.pool();
-        holdsLock.set(Thread.holdsLock(pool));
-        return super.handleConnection(conn);
+        initLock.set(Thread.holdsLock(pool));
+        super.initConnection(ctx, conn);
+      }
+      @Override
+      public synchronized boolean handleConnection(ContextInternal ctx, FakeConnection conn) throws Exception {
+        assertNull(Vertx.currentContext());
+        assertSame(ctx, context);
+        Pool<FakeConnection> pool = mgr.pool();
+        handleLock.set(Thread.holdsLock(pool));
+        return super.handleConnection(ctx, conn);
       }
     };
     mgr.getConnection(waiter);
     FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
     conn.connect();
     assertWaitUntil(waiter::isComplete);
-    assertEquals(Boolean.FALSE, holdsLock.get());
+    assertEquals(Boolean.FALSE, handleLock.get());
+    assertEquals(Boolean.FALSE, initLock.get());
     waiter.assertInitialized(conn);
     waiter.assertSuccess(conn);
+  }
+
+  @Test
+  public void testConnectFailure() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 4, connector);
+    AtomicReference<Boolean> holdsLock = new AtomicReference<>();
+    FakeWaiter waiter = new FakeWaiter() {
+      @Override
+      public synchronized void handleFailure(ContextInternal ctx, Throwable failure) {
+        assertNull(Vertx.currentContext());
+        assertSame(ctx, context);
+        Pool<FakeConnection> pool = mgr.pool();
+        holdsLock.set(Thread.holdsLock(pool));
+        super.handleFailure(ctx, failure);
+      }
+    };
+    mgr.getConnection(waiter);
+    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    Throwable failure = new Throwable();
+    conn.fail(failure);
+    assertWaitUntil(waiter::isComplete);
+    assertEquals(Boolean.FALSE, holdsLock.get());
+    waiter.assertNotInitialized();
+    waiter.assertFailure(failure);
   }
 
   @Test
@@ -224,7 +264,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     Exception failure = new Exception();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
-      public synchronized boolean handleConnection(FakeConnection conn) throws Exception {
+      public synchronized boolean handleConnection(ContextInternal ctx, FakeConnection conn) throws Exception {
         throw failure;
       }
     };
@@ -316,7 +356,7 @@ public class ConnectionManagerTest extends VertxTestBase {
 
     FakeConnectionProvider connector = new FakeConnectionProvider() {
       @Override
-      public long connect(ConnectionListener<FakeConnection> listener, Object endpointMetric, ContextImpl context, String peerHost, boolean ssl, String host, int port) {
+      public long connect(ConnectionListener<FakeConnection> listener, Object endpointMetric, ContextImpl context, boolean ssl, String peerHost, String host, int port) {
         int i = ThreadLocalRandom.current().nextInt(100);
         FakeConnection conn = new FakeConnection(context, listener);
         if (i < 10) {
@@ -341,11 +381,11 @@ public class ConnectionManagerTest extends VertxTestBase {
             }
 
             @Override
-            public void initConnection(FakeConnection conn) {
+            public void initConnection(ContextInternal ctx, FakeConnection conn) {
             }
 
             @Override
-            public boolean handleConnection(FakeConnection conn) throws Exception {
+            public boolean handleConnection(ContextInternal ctx, FakeConnection conn) throws Exception {
               int action = ThreadLocalRandom.current().nextInt(100);
               if (action < -1) {
                 latch.countDown();
@@ -410,6 +450,9 @@ public class ConnectionManagerTest extends VertxTestBase {
       assertSame(conn, init);
     }
 
+    synchronized void assertNotInitialized() {
+      assertSame(null, init);
+    }
     synchronized void assertSuccess(FakeConnection conn) {
       assertSame(conn, result);
     }
@@ -438,13 +481,14 @@ public class ConnectionManagerTest extends VertxTestBase {
     }
 
     @Override
-    public synchronized void initConnection(FakeConnection conn) {
+    public synchronized void initConnection(ContextInternal ctx, FakeConnection conn) {
       assertNull(init);
+      assertNotNull(conn);
       init = conn;
     }
 
     @Override
-    public synchronized boolean handleConnection(FakeConnection conn) throws Exception {
+    public synchronized boolean handleConnection(ContextInternal ctx, FakeConnection conn) throws Exception {
       assertFalse(completed);
       completed = true;
       if (cancelled) {
@@ -612,12 +656,12 @@ public class ConnectionManagerTest extends VertxTestBase {
         throw new IllegalStateException();
       }
       status = CLOSED;
-      listener.onClose(this);
+      listener.onClose();
     }
 
     synchronized long recycle() {
       long i = inflight--;
-      listener.onRecycle(this);
+      listener.onRecycle();
       return i;
     }
 
@@ -628,7 +672,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       if (status == CONNECTED) {
         if (concurrency != value) {
           concurrency = value;
-          listener.onConcurrencyChange(this, value);
+          listener.onConcurrencyChange(value);
         }
       } else {
         concurrency = value;
@@ -652,7 +696,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       status = CONNECTING;
       context.nettyEventLoop().execute(() -> {
         synchronized (FakeConnection.this) {
-          listener.onConnectSuccess(this, concurrency, channel, context, 1, 1, Long.MAX_VALUE);
+          listener.onConnectSuccess(this, concurrency, channel, context, 1, 1);
           status = CONNECTED;
         }
       });
@@ -660,7 +704,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     }
 
     void fail(Throwable err) {
-      context.nettyEventLoop().execute(() -> listener.onConnectFailure(err, 1));
+      context.nettyEventLoop().execute(() -> listener.onConnectFailure(context, err, 1));
     }
 
     synchronized boolean isValid() {
@@ -705,8 +749,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     public long connect(ConnectionListener<FakeConnection> listener,
                         Object endpointMetric,
                         ContextImpl context,
-                        String peerHost,
-                        boolean ssl,
+                        boolean ssl, String peerHost,
                         String host,
                         int port) {
       ArrayDeque<FakeConnection> list = requestMap.computeIfAbsent(SocketAddress.inetSocketAddress(port, host), address -> new ArrayDeque<>());

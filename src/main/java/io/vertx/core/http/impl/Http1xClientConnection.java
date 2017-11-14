@@ -293,7 +293,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           close();
           break;
         case ST_RECYCLE:
-          listener.onRecycle(Http1xClientConnection.this);
+          listener.onRecycle();
           break;
       }
     }
@@ -377,7 +377,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
             close();
             break;
           case ST_RECYCLE:
-            listener.onRecycle(Http1xClientConnection.this);
+            listener.onRecycle();
             break;
         }
       } else {
@@ -714,7 +714,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         ByteBuf buf = (ByteBuf) msg;
         connection.handleMessageReceived(buf);
       }
-    }.removeHandler(sock -> listener.onClose(this)));
+    }.removeHandler(sock -> listener.onClose()));
     return socket;
   }
 

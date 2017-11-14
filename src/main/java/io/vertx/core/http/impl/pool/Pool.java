@@ -24,26 +24,58 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
- * The endpoint is a queue of waiters and it delegates to the connection pool, the pooling strategy.
- *
- * An endpoint is synchronized and should be executed only from the event loop, the underlying pool
- * relies and the synchronization performed by the endpoint.
- *
- * - the connection concurrency is how many times this connection can be borrowed the pool concurrently
- * -
+ * The pool is a queue of waiters and a list of connections.
  *
  * The pools invariant:
- * - the capacity is the sum of the concurrency value of all tracked connections
- * -
+ * - the pool {@link #capacity} is the sum of the {@link Holder#capacity} of the {@link #available} list
+ * - a connection in the {@link #available} list has its {@code Holder#capacity > 0}
+ * - the {@link #weight} is the sum of all {@link Holder#weight}, i.e the connections in the {@link #all} set
  *
+ * A connection is delivered to a {@link Waiter} on the connection's event loop thread, the waiter must take care of
+ * calling {@link io.vertx.core.impl.ContextInternal#executeFromIO} if necessary.
+ *
+ * Calls to the pool are synchronized on the pool to avoid race conditions and maintain its invariants. This pool can
+ * be called from different threads safely (although it is not encouraged for performance reasons), since it synchronizes
+ * on the pool and callbacks are asynchronous on the event loop thread of the connection without holding the pool
+ * lock to avoid deadlocks. We benefit from biased locking which makes the overhead of synchronized near zero.
+ *
+ * To constrain the number of connections the pool maintains a {@link #weight} value that must remain below the the
+ * {@link #maxWeight} value to create a connection. Weight is used instead of counting connection because this pool
+ * can mix connections with different concurrency (HTTP/1 and HTTP/2) and this flexibility is necessary.
+ *
+ * When a connection is created an initial weight is returned by the {@link ConnectionProvider#connect} method and is
+ * added to the current weight. When the channel is connected the {@link ConnectionListener#onConnectSuccess} callback
+ * provides the initial weight returned by the connect method and the actual connection weight so it can be used to
+ * correct the current weight. When the channel fails to connect the {@link ConnectionListener#onConnectFailure} failure
+ * provides the initial weight so it can be used to correct the current weight.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Pool<C> {
 
+  /**
+   * Pool state associated with a connection.
+   *
+   * @param <C> the connection type
+   */
+  public static class Holder<C> {
+
+    C connection;        // The connection instance
+    long concurrency;    // How many times we can borrow from the connection
+    long capacity;       // How many times the connection is currently borrowed (0 <= capacity <= concurrency)
+    Channel channel;     // Transport channel
+    ContextImpl context; // Context associated with the connection
+    long weight;         // The weight that participates in the pool weight
+
+  }
   private static final Logger log = LoggerFactory.getLogger(Pool.class);
 
-  private final HttpClientMetrics metrics;
+  private final HttpClientMetrics metrics; // todo: later switch to PoolMetrics
   private final String peerHost;
   private final boolean ssl;
   private final int port;
@@ -54,14 +86,14 @@ public class Pool<C> {
   private final int queueMaxSize;
 
   private final Queue<Waiter<C>> waiters = new ArrayDeque<>();
-  private final Set<ConnectionHolder<C>> all;
-  private final Deque<ConnectionHolder<C>> available;
+  private final Set<Holder<C>> all;
+  private final Deque<Holder<C>> available;
   private boolean closed;
   private long capacity;
   private long weight;
   private final Handler<Void> poolClosed;
-  private final Handler<ConnectionHolder<C>> connectionAdded;
-  private final Handler<ConnectionHolder<C>> connectionRemoved;
+  private final BiConsumer<Channel, C> connectionAdded;
+  private final BiConsumer<Channel, C> connectionRemoved;
 
   public Pool(ConnectionProvider<C> connector,
               HttpClientMetrics metrics,
@@ -72,8 +104,8 @@ public class Pool<C> {
               boolean ssl,
               long maxWeight,
               Handler<Void> poolClosed,
-              Handler<ConnectionHolder<C>> connectionAdded,
-              Handler<ConnectionHolder<C>> connectionRemoved) {
+              BiConsumer<Channel, C> connectionAdded,
+              BiConsumer<Channel, C> connectionRemoved) {
     this.maxWeight = maxWeight;
     this.host = host;
     this.port = port;
@@ -82,7 +114,7 @@ public class Pool<C> {
     this.connector = connector;
     this.queueMaxSize = queueMaxSize;
     this.metrics = metrics;
-    this.metric = metrics != null ? metrics.createEndpoint(host, port, 10 /* fixme */) : null;
+    this.metric = metrics != null ? metrics.createEndpoint(host, port, 10 /* todo: fix when reworking pool metrics */) : null;
     this.poolClosed = poolClosed;
     this.all = new HashSet<>();
     this.available = new ArrayDeque<>();
@@ -102,7 +134,7 @@ public class Pool<C> {
       waiters.add(waiter);
       checkPending();
     } else {
-      waiter.handleFailure(null, new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize));
+      waiter.handleFailure(waiter.context, new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize));
     }
     return true;
   }
@@ -118,7 +150,7 @@ public class Pool<C> {
       }
       if (capacity > 0) {
         capacity--;
-        ConnectionHolder<C> conn = available.peek();
+        Holder<C> conn = available.peek();
         if (--conn.capacity == 0) {
           available.poll();
         }
@@ -150,13 +182,14 @@ public class Pool<C> {
   }
 
   private long createConnection(Waiter<C> waiter) {
-    ConnectionHolder<C> holder  = new ConnectionHolder<>();
+    Holder<C> holder  = new Holder<>();
     ConnectionListener<C> listener = new ConnectionListener<C>() {
       @Override
-      public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextImpl context, long oldWeight, long newWeight, long maxConcurrency) {
+      public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextImpl context, long initialWeight, long actualWeight) {
+        waiter.initConnection(context, conn);
         boolean usable;
         synchronized (Pool.this) {
-          usable = initConnection(waiter, holder, context, concurrency, maxConcurrency, conn, channel, oldWeight, newWeight);
+          usable = initConnection(waiter, holder, context, concurrency, conn, channel, initialWeight, actualWeight);
         }
         if (usable) {
           boolean consumed = deliverToWaiter(holder, waiter);
@@ -175,8 +208,8 @@ public class Pool<C> {
         }
       }
       @Override
-      public void onConnectFailure(Throwable err, long weight) {
-        waiter.handleFailure(waiter.context, err);
+      public void onConnectFailure(ContextImpl context, Throwable err, long weight) {
+        waiter.handleFailure(context, err);
         synchronized (Pool.this) {
           Pool.this.weight -= weight;
           all.remove(holder);
@@ -185,9 +218,8 @@ public class Pool<C> {
         }
       }
       @Override
-      public void onConcurrencyChange(C conn, long concurrency) {
+      public void onConcurrencyChange(long concurrency) {
         synchronized (Pool.this) {
-          concurrency = Math.min(concurrency, holder.maxConcurrency);
           if (holder.concurrency < concurrency) {
             long diff = concurrency - holder.concurrency;
             capacity += diff;
@@ -203,24 +235,24 @@ public class Pool<C> {
         }
       }
       @Override
-      public void onRecycle(C conn) {
+      public void onRecycle() {
         Pool.this.recycle(holder);
       }
       @Override
-      public void onClose(C conn) {
+      public void onClose() {
         Pool.this.closed(holder);
       }
     };
     all.add(holder);
-    return connector.connect(listener, metric, waiter.context, peerHost, ssl, host, port);
+    return connector.connect(listener, metric, waiter.context, ssl, peerHost, host, port);
   }
 
-  private synchronized void recycle(ConnectionHolder<C> conn) {
+  private synchronized void recycle(Holder<C> conn) {
     recycleConnection(conn);
     checkPending();
   }
 
-  private synchronized void closed(ConnectionHolder<C> conn) {
+  private synchronized void closed(Holder<C> conn) {
     closeConnection(conn);
     checkPending();
     checkClose();
@@ -229,9 +261,9 @@ public class Pool<C> {
   /**
    * Should not be called under the pool lock.
    */
-  private boolean deliverToWaiter(ConnectionHolder<C> conn, Waiter<C> waiter) {
+  private boolean deliverToWaiter(Holder<C> conn, Waiter<C> waiter) {
     try {
-      return waiter.handleConnection(conn.connection);
+      return waiter.handleConnection(conn.context, conn.connection);
     } catch (Exception e) {
       // Handle this case gracefully
       e.printStackTrace();
@@ -241,7 +273,7 @@ public class Pool<C> {
 
   // These methods assume to be called under synchronization
 
-  private void recycleConnection(ConnectionHolder<C> conn) {
+  private void recycleConnection(Holder<C> conn) {
     if (conn.capacity == conn.concurrency) {
       log.debug("Attempt to recycle a connection more than permitted");
       return;
@@ -253,29 +285,26 @@ public class Pool<C> {
     conn.capacity++;
   }
 
-  private void closeConnection(ConnectionHolder<C> conn) {
-    connectionRemoved.handle(conn);
-    all.remove(conn);
-    if (conn.capacity > 0) {
-      available.remove(conn);
-      capacity -= conn.capacity;
+  private void closeConnection(Holder<C> holder) {
+    connectionRemoved.accept(holder.channel, holder.connection);
+    all.remove(holder);
+    if (holder.capacity > 0) {
+      available.remove(holder);
+      capacity -= holder.capacity;
     }
-    weight -= conn.weight;
+    weight -= holder.weight;
   }
 
-  private boolean initConnection(Waiter<C> waiter, ConnectionHolder<C> holder, ContextImpl context, long concurrency, long maxConcurrency, C conn, Channel channel, long oldWeight, long newWeight) {
-    concurrency = Math.min(concurrency, maxConcurrency);
+  private boolean initConnection(Waiter<C> waiter, Holder<C> holder, ContextImpl context, long concurrency, C conn, Channel channel, long oldWeight, long newWeight) {
     weight += newWeight - oldWeight;
     holder.context = context;
     holder.concurrency = concurrency;
     holder.connection = conn;
     holder.channel = channel;
     holder.weight = newWeight;
-    holder.maxConcurrency = maxConcurrency;
     holder.capacity = concurrency;
-    connectionAdded.handle(holder);
+    connectionAdded.accept(holder.channel, holder.connection);
     all.add(holder);
-    waiter.initConnection(holder.connection);
     if (holder.capacity == 0) {
       waiters.add(waiter);
       return false;

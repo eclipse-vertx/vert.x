@@ -16,12 +16,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -158,7 +153,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-
+    if (!keepAlive && pipelining) {
+      throw new IllegalStateException("Cannot have pipelining with no keep alive");
+    }
     ConnectionProvider<HttpClientConnection> connector = new HttpChannelConnector(this);
     Function<SocketAddress, PoolOptions> poolFactory = sa -> {
       long ms = options.getMaxPoolSize() * options.getHttp2MaxPoolSize();
@@ -957,34 +954,26 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                  ContextImpl context) {
     websocketCM.getConnection(host, ssl, port, host, new Waiter<HttpClientConnection>(context) {
       @Override
-      public void initConnection(HttpClientConnection conn) {
+      public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
       }
       @Override
-      public boolean handleConnection(HttpClientConnection conn) {
-        conn.getContext().executeFromIO(() -> {
+      public boolean handleConnection(ContextInternal ctx, HttpClientConnection conn) {
+        ctx.executeFromIO(() -> {
           handler.handle((Http1xClientConnection) conn);
         });
         return true;
       }
       @Override
       public void handleFailure(ContextInternal ctx, Throwable failure) {
-        if (ctx != null) {
-          ctx.executeFromIO(() -> {
-            connectionExceptionHandler.handle(failure);
-          });
-        } else {
+        ctx.executeFromIO(() -> {
           connectionExceptionHandler.handle(failure);
-        }
+        });
       }
     });
   }
 
   void getConnectionForRequest(String peerHost, boolean ssl, int port, String host, Waiter<HttpClientConnection> waiter) {
-    if (!keepAlive && pipelining) {
-      waiter.handleFailure(null, new IllegalStateException("Cannot have pipelining with no keep alive"));
-    } else {
-      httpCM.getConnection(peerHost, ssl, port, host, waiter);
-    }
+    httpCM.getConnection(peerHost, ssl, port, host, waiter);
   }
 
   /**

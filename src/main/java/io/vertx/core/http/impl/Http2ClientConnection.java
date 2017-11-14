@@ -70,7 +70,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   protected void concurrencyChanged(long concurrency) {
-    listener.onConcurrencyChange(this, concurrency);
+    int limit = client.getOptions().getHttp2MultiplexingLimit();
+    if (limit > 0) {
+      concurrency = Math.min(concurrency, limit);
+    }
+    listener.onConcurrencyChange(concurrency);
   }
 
   @Override
@@ -197,7 +201,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     void handleClose() {
       if (request instanceof HttpClientRequestImpl) {
-        conn.listener.onRecycle(conn);
+        conn.listener.onRecycle();
       }
       if (!responseEnded) {
         responseEnded = true;

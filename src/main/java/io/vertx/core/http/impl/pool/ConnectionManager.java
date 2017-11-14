@@ -97,8 +97,8 @@ public class ConnectionManager<C> {
       port,
       ssl,
       options.getMaxSize(), v -> endpointMap.remove(key),
-      holder -> connectionMap.put(holder.channel, holder.connection),
-      holder -> connectionMap.remove(holder.channel)));
+      connectionMap::put,
+      connectionMap::remove));
   }
 
   public void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {

@@ -645,21 +645,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
         @Override
         public void handleFailure(ContextInternal ctx, Throwable failure) {
-          if (ctx != null) {
-            ctx.executeFromIO(() -> {
-              handleException(failure);
-            });
-          } else {
+          ctx.executeFromIO(() -> {
             handleException(failure);
-          }
+          });
         }
 
         @Override
-        public void initConnection(HttpClientConnection conn) {
+        public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
           synchronized (HttpClientRequestImpl.this) {
             if (connectionHandler != null) {
-              ContextImpl context = conn.getContext();
-              context.executeFromIO(() -> {
+              ctx.executeFromIO(() -> {
                 connectionHandler.handle(conn);
               });
             }
@@ -667,7 +662,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
 
         @Override
-        public boolean handleConnection(HttpClientConnection conn) throws Exception {
+        public boolean handleConnection(ContextInternal ctx, HttpClientConnection conn) throws Exception {
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
           if (exceptionOccurred != null || reset != null) {
@@ -675,8 +670,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
           HttpClientStream stream;
           stream = conn.createStream();
-          ContextImpl context = conn.getContext();
-          context.executeFromIO(() -> {
+          ctx.executeFromIO(() -> {
             connected(stream, headersCompletionHandler);
           });
           return true;

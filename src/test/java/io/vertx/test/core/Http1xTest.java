@@ -1335,11 +1335,6 @@ public class Http1xTest extends HttpTest {
     testPooling(false, false);
   }
 
-  @Test
-  public void testPoolingNoKeepAliveAndPipelining() {
-    testPooling(false, true);
-  }
-
   private void testPooling(boolean keepAlive, boolean pipelining) {
     String path = "foo.txt";
     int numGets = 100;
@@ -1368,15 +1363,7 @@ public class Http1xTest extends HttpTest {
           }
         });
         req.exceptionHandler(t -> {
-          if (pipelining && !keepAlive) {
-            // Illegal combination - should get exception
-            assertTrue(t instanceof IllegalStateException);
-            if (completeAlready.compareAndSet(false, true)) {
-              testComplete();
-            }
-          } else {
-            fail("Should not throw exception: " + t.getMessage());
-          }
+          fail("Should not throw exception: " + t.getMessage());
         });
         req.headers().set("count", String.valueOf(i));
         req.end();
@@ -1384,6 +1371,15 @@ public class Http1xTest extends HttpTest {
     }));
 
     await();
+  }
+
+  @Test
+  public void testPoolingNoKeepAliveAndPipelining() {
+    try {
+      vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setPipelining(true));
+      fail();
+    } catch (IllegalStateException ignore) {
+    }
   }
 
   @Test

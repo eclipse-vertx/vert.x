@@ -24,7 +24,7 @@ import io.vertx.core.impl.ContextInternal;
  */
 public abstract class Waiter<C> {
 
-  final ContextImpl context;
+  protected final ContextImpl context;
   Object metric;
 
   protected Waiter(ContextImpl context) {
@@ -34,7 +34,7 @@ public abstract class Waiter<C> {
   /**
    * Handle connection failure.
    *
-   * @param ctx
+   * @param ctx the context used to create the connection
    * @param failure the failure
    */
   public abstract void handleFailure(ContextInternal ctx, Throwable failure);
@@ -42,13 +42,18 @@ public abstract class Waiter<C> {
   /**
    * Init connection.
    *
+   * @param ctx the context used to create the connection
    * @param conn the connection
    */
-  public abstract void initConnection(C conn);
+  public abstract void initConnection(ContextInternal ctx, C conn);
 
   /**
    * Handle connection success.
+   *
+   * @param ctx the context used to create the connection
+   * @param conn the connection
+   * @return wether the waiter uses the connection
    */
-  public abstract boolean handleConnection(C conn) throws Exception;
+  public abstract boolean handleConnection(ContextInternal ctx, C conn) throws Exception;
 
 }

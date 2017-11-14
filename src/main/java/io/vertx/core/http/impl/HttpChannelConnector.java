@@ -42,6 +42,8 @@ import javax.net.ssl.SSLHandshakeException;
 
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
@@ -81,8 +83,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     ConnectionListener<HttpClientConnection> listener,
     Object endpointMetric,
     ContextImpl context,
-    String peerHost,
-    boolean ssl,
+    boolean ssl, String peerHost,
     String host,
     int port) {
 
@@ -127,7 +128,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
               http1xConnected(listener, version, host, port, true, endpointMetric, context, ch);
             }
           } else {
-            handshakeFailure(ch, fut.cause(), listener);
+            handshakeFailure(context, ch, fut.cause(), listener);
           }
         });
       } else {
@@ -201,7 +202,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
           }
         }
       } else {
-        connectFailed(null, listener, res.cause());
+        connectFailed(context, null, listener, res.cause());
       }
     };
 
@@ -239,12 +240,12 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     }
   }
 
-  private void handshakeFailure(Channel ch, Throwable cause, ConnectionListener<HttpClientConnection> listener) {
+  private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, ConnectionListener<HttpClientConnection> listener) {
     SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
     if (cause != null) {
       sslException.initCause(cause);
     }
-    connectFailed(ch, listener, sslException);
+    connectFailed(context, ch, listener, sslException);
   }
 
   private void http1xConnected(ConnectionListener<HttpClientConnection> listener,
@@ -266,10 +267,10 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       endpointMetric,
       client.metrics());
     clientHandler.addHandler(conn -> {
-      listener.onConnectSuccess(conn, 1, ch, context, weight, http1Weight, Long.MAX_VALUE);
+      listener.onConnectSuccess(conn, 1, ch, context, weight, http1Weight);
     });
     clientHandler.removeHandler(conn -> {
-      listener.onClose(conn);
+      listener.onClose();
     });
     ch.pipeline().addLast("handler", clientHandler);
   }
@@ -298,26 +299,29 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
           conn.metric(metric);
         }
         long concurrency = conn.remoteSettings().getMaxConcurrentStreams();
-        listener.onConnectSuccess(conn, concurrency, ch, context, weight, http2Weight, http2MaxConcurrency);
+        if (http2MaxConcurrency > 0) {
+          concurrency = Math.min(concurrency, http2MaxConcurrency);
+        }
+        listener.onConnectSuccess(conn, concurrency, ch, context, weight, http2Weight);
       });
       handler.removeHandler(conn -> {
         if (metrics != null) {
           metrics.endpointDisconnected(endpointMetric, conn.metric());
         }
-        listener.onClose(conn);
+        listener.onClose();
       });
     } catch (Exception e) {
-      connectFailed(ch, listener, e);
+      connectFailed(context, ch, listener, e);
     }
   }
 
-  private void connectFailed(Channel ch, ConnectionListener<HttpClientConnection> listener, Throwable t) {
+  private void connectFailed(ContextImpl context, Channel ch, ConnectionListener<HttpClientConnection> listener, Throwable t) {
     if (ch != null) {
       try {
         ch.close();
       } catch (Exception ignore) {
       }
     }
-    listener.onConnectFailure(t, weight);
+    listener.onConnectFailure(context, t, weight);
   }
 }

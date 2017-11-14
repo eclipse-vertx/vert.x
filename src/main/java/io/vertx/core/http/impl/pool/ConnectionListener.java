@@ -19,24 +19,52 @@ import io.netty.channel.Channel;
 import io.vertx.core.impl.ContextImpl;
 
 /**
- * The listener is used by the {@link ConnectionProvider} to interact with the connection pool.
+ * The listener definest the contract used by the {@link ConnectionProvider} to interact with the
+ * connection pool. Its purpose is also to use a connection implementation without a pool.
  */
 public interface ConnectionListener<C> {
 
+  /**
+   * Callback to signal the connection succeeded and provide all the info requires to manage the connection
+   *
+   * @param conn the connection
+   * @param concurrency the connection concurrency
+   * @param channel the channel
+   * @param context the context
+   * @param initialWeight the initial weight
+   * @param actualWeight the actual weight
+   */
   void onConnectSuccess(C conn,
                         long concurrency,
                         Channel channel,
                         ContextImpl context,
-                        long oldWeight,
-                        long newWeight,
-                        long maxConcurrency);
+                        long initialWeight,
+                        long actualWeight);
 
-  void onConnectFailure(Throwable err, long weight);
+  /**
+   * Callback to signal the connection failed.
+   *
+   * @param context the context
+   * @param err the error
+   * @param weight the weight
+   */
+  void onConnectFailure(ContextImpl context, Throwable err, long weight);
 
-  void onConcurrencyChange(C conn, long concurrency);
+  /**
+   * Signals the connrection changed to the {@code concurrency} value.
+   *
+   * @param concurrency the concurrency
+   */
+  void onConcurrencyChange(long concurrency);
 
-  void onRecycle(C conn);
+  /**
+   * Signals the connection is recycled, this should not be called more than the connection has been borrowed.
+   */
+  void onRecycle();
 
-  void onClose(C conn);
+  /**
+   * Signals the connection is closed.
+   */
+  void onClose();
 
 }
