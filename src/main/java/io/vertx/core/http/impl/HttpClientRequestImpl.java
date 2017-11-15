@@ -68,6 +68,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> drainHandler;
   private Handler<HttpClientRequest> pushHandler;
   private Handler<HttpConnection> connectionHandler;
+  private Handler<HttpVersion> headersCompletionHandler;
   private boolean completed;
   private Handler<Void> completionHandler;
   private Long reset;
@@ -293,7 +294,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (stream != null) {
         throw new IllegalStateException("Head already written");
       } else {
-        connect(completionHandler);
+        headersCompletionHandler = completionHandler;
+        connect();
       }
       return this;
     }
@@ -639,7 +641,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     };
   }
 
-  private synchronized void connect(Handler<HttpVersion> headersCompletionHandler) {
+  private synchronized void connect() {
     if (!connecting) {
 
       if (method == HttpMethod.OTHER && rawMethod == null) {
@@ -680,11 +682,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             return false;
           }
           checkContext(ctx);
-          conn.createStream(ar -> {
+          conn.createStream(HttpClientRequestImpl.this, ar -> {
             if (ar.succeeded()) {
               HttpClientStream stream = ar.result();
               ctx.executeFromIO(() -> {
-                connected(stream, headersCompletionHandler);
+                connected(stream, HttpClientRequestImpl.this.headersCompletionHandler);
               });
             } else {
               throw new RuntimeException(ar.cause());
@@ -714,13 +716,18 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
+  synchronized void retry() {
+    connecting = false;
+    connect();
+  }
+
   private void connected(HttpClientStream stream, Handler<HttpVersion> headersCompletionHandler) {
 
     HttpClientConnection conn = stream.connection();
 
     synchronized (this) {
       this.stream = stream;
-      stream.beginRequest(this);
+      stream.beginRequest();
 
       // If anything was written or the request ended before we got the connection, then
       // we need to write it now
@@ -868,7 +875,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           completionHandler.handle(null);
         }
       }
-      connect(null);
+      connect();
     } else {
       stream.writeBuffer(buff, end);
       if (end) {

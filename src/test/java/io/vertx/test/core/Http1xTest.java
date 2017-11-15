@@ -1238,6 +1238,48 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPipeliningFailure() throws Exception {
+    int n = 5;
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setPipeliningLimit(n).setMaxPoolSize(1));
+    CompletableFuture<Void> closeFuture = new CompletableFuture<>();
+    AtomicBoolean first = new AtomicBoolean(true);
+    server.requestHandler(req -> {
+      System.out.println("GOT REQ " + req.path());
+      if (first.compareAndSet(true, false)) {
+        closeFuture.thenAccept(v -> {
+          req.response().close();
+        });
+      } else {
+        req.response().end();
+      }
+    });
+    startServer();
+    AtomicInteger succeeded = new AtomicInteger();
+    List<HttpClientRequest> requests = new ArrayList<>();
+    for (int i = 0;i < n * 2;i++) {
+      HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/" + i);
+      req.handler(resp -> {
+        succeeded.incrementAndGet();
+        requests.remove(req);
+        if (requests.isEmpty()) {
+          assertEquals(n * 2 - 1, succeeded.get());
+          testComplete();
+        }
+      });
+      req.exceptionHandler(err -> {
+        requests.remove(req);
+        for (HttpClientRequest r : requests) {
+          r.end();
+        }
+      }).sendHead();
+      requests.add(req);
+    }
+    closeFuture.complete(null);
+    await();
+  }
+
+  @Test
   public void testKeepAlive() throws Exception {
     testKeepAlive(true, 5, 10, 5);
   }

@@ -108,7 +108,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     private final Http1xClientConnection conn;
     private final Handler<AsyncResult<HttpClientStream>> handler;
-    private HttpClientRequestImpl request;
+    private final HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
@@ -116,7 +116,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     private boolean close;
     private boolean upgraded;
 
-    StreamImpl(Http1xClientConnection conn, Handler<AsyncResult<HttpClientStream>> handler) {
+    StreamImpl(Http1xClientConnection conn, HttpClientRequestImpl request, Handler<AsyncResult<HttpClientStream>> handler) {
+      this.request = request;
       this.conn = conn;
       this.handler = handler;
     }
@@ -250,18 +251,14 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       }
     }
 
-    public void beginRequest(HttpClientRequestImpl req) {
+    public void beginRequest() {
       synchronized (conn) {
-        if (request != null) {
-          throw new IllegalStateException("Request already in progress");
-        }
-        request = req;
         if (conn.currentRequest != this) {
           throw new IllegalStateException("Connection is already writing another request");
         }
         if (conn.metrics != null) {
-          Object reqMetric = conn.metrics.requestBegin(conn.endpointMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), req);
-          req.metric(reqMetric);
+          Object reqMetric = conn.metrics.requestBegin(conn.endpointMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
+          request.metric(reqMetric);
         }
         conn.inflight.add(conn.currentRequest);
       }
@@ -644,11 +641,20 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
+  private void retryPending() {
+    StreamImpl stream;
+    while ((stream = pending.poll()) != null) {
+      stream.request.retry();
+    }
+  }
+
   protected synchronized void handleClosed() {
     super.handleClosed();
     if (ws != null) {
       ws.handleClosed();
     }
+    retryPending();
+
     Exception e = new VertxException("Connection was closed");
 
     // Signal requests failed
@@ -681,6 +687,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   @Override
   protected synchronized void handleException(Throwable e) {
     super.handleException(e);
+    retryPending();
     if (currentRequest != null) {
       currentRequest.request.handleException(e);
     } else {
@@ -706,8 +713,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   }
 
   @Override
-  public void createStream(Handler<AsyncResult<HttpClientStream>> handler) {
-    StreamImpl stream = new StreamImpl(this, handler);
+  public void createStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler) {
+    StreamImpl stream = new StreamImpl(this, req, handler);
     synchronized (this) {
       if (currentRequest != null) {
         pending.add(stream);

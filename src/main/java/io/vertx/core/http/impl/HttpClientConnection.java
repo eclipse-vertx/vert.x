@@ -41,7 +41,7 @@ interface HttpClientConnection extends HttpConnection {
    */
   boolean isValid();
 
-  void createStream(Handler<AsyncResult<HttpClientStream>> handler);
+  void createStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler);
 
   ContextImpl getContext();
 
