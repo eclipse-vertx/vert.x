@@ -58,9 +58,9 @@ public interface ConnectionListener<C> {
   void onConcurrencyChange(long concurrency);
 
   /**
-   * Signals the connection can recycled, it must not redeem more than it borrowed.
+   * Signals the connection can recycled, it must not give back more than it borrowed.
    *
-   * @param capacity the to redeem
+   * @param capacity the capacity to recycle
    * @param disposable wether the connection can be disposed
    */
   void onRecycle(int capacity, boolean disposable);
