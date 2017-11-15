@@ -430,18 +430,20 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   }
 
   void handleResponseChunk(Buffer buff) {
-    if (paused) {
-      if (pausedChunk == null) {
-        pausedChunk = buff.copy();
+    synchronized (this) {
+      if (paused) {
+        if (pausedChunk == null) {
+          pausedChunk = buff.copy();
+        } else {
+          pausedChunk.appendBuffer(buff);
+        }
       } else {
-        pausedChunk.appendBuffer(buff);
+        if (pausedChunk != null) {
+          buff = pausedChunk.appendBuffer(buff);
+          pausedChunk = null;
+        }
+        currentResponse.response.handleChunk(buff);
       }
-    } else {
-      if (pausedChunk != null) {
-        buff = pausedChunk.appendBuffer(buff);
-        pausedChunk = null;
-      }
-      currentResponse.response.handleChunk(buff);
     }
   }
 
