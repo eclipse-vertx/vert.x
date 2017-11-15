@@ -823,6 +823,64 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testSimpleChildUndeploymentOnParentAsyncFailure() throws Exception {
+    AtomicInteger childDeployed = new AtomicInteger();
+    AtomicInteger childUndeployed = new AtomicInteger();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        vertx.deployVerticle(new AbstractVerticle() {
+          @Override
+          public void start() throws Exception {
+            childDeployed.incrementAndGet();
+          }
+          @Override
+          public void stop() throws Exception {
+            childUndeployed.incrementAndGet();
+          }
+        }, onSuccess(child -> {
+          startFuture.fail("Undeployed");
+        }));
+      }
+    }, onFailure(expected -> {
+      assertEquals(1, childDeployed.get());
+      assertEquals(1, childUndeployed.get());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testSimpleChildUndeploymentOnParentSyncFailure() throws Exception {
+    AtomicInteger childDeployed = new AtomicInteger();
+    AtomicInteger childUndeployed = new AtomicInteger();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        vertx.deployVerticle(new AbstractVerticle() {
+          @Override
+          public void start() throws Exception {
+            childDeployed.incrementAndGet();
+            latch.countDown();
+          }
+          @Override
+          public void stop() throws Exception {
+            childUndeployed.incrementAndGet();
+          }
+        });
+        awaitLatch(latch);
+        throw new RuntimeException();
+      }
+    }, onFailure(expected -> {
+      assertEquals(1, childDeployed.get());
+      assertEquals(1, childUndeployed.get());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
   public void testAsyncDeployCalledSynchronously() throws Exception {
     MyAsyncVerticle verticle = new MyAsyncVerticle(f -> f.complete(null), f -> f.complete(null));
     vertx.deployVerticle(verticle, ar -> {

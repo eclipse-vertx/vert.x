@@ -494,15 +494,25 @@ public class DeploymentManager {
                 reportSuccess(deploymentID, callingContext, completionHandler);
               }
             } else if (failureReported.compareAndSet(false, true)) {
-              context.runCloseHooks(closeHookAsyncResult -> reportFailure(ar.cause(), callingContext, completionHandler));
+              rollbackDeployment(callingContext, completionHandler, deployment, context, ar.cause());
             }
           });
         } catch (Throwable t) {
           if (failureReported.compareAndSet(false, true))
-            context.runCloseHooks(closeHookAsyncResult -> reportFailure(t, callingContext, completionHandler));
+            rollbackDeployment(callingContext, completionHandler, deployment, context, t);
         }
       });
     }
+  }
+
+  private void rollbackDeployment(ContextImpl callingContext, Handler<AsyncResult<String>> completionHandler, DeploymentImpl deployment, ContextImpl context, Throwable cause) {
+    deployment.doUndeployChildren(callingContext, childrenResult -> {
+      if (childrenResult.failed()) {
+        reportFailure(cause, callingContext, completionHandler);
+      } else {
+        context.runCloseHooks(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
+      }
+    });
   }
 
   static class VerticleHolder {
@@ -543,11 +553,7 @@ public class DeploymentManager {
       doUndeploy(currentContext, completionHandler);
     }
 
-    public synchronized void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
-      if (undeployed) {
-        reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, completionHandler);
-        return;
-      }
+    private synchronized void doUndeployChildren(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
       if (!children.isEmpty()) {
         final int size = children.size();
         AtomicInteger childCount = new AtomicInteger();
@@ -560,14 +566,32 @@ public class DeploymentManager {
               reportFailure(ar.cause(), undeployingContext, completionHandler);
             } else if (childCount.incrementAndGet() == size) {
               // All children undeployed
-              doUndeploy(undeployingContext, completionHandler);
+              completionHandler.handle(Future.succeededFuture());
             }
           });
         }
         if (!undeployedSome) {
           // It's possible that children became empty before iterating
-          doUndeploy(undeployingContext, completionHandler);
+          completionHandler.handle(Future.succeededFuture());
         }
+      } else {
+        completionHandler.handle(Future.succeededFuture());
+      }
+    }
+
+    public synchronized void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
+      if (undeployed) {
+        reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, completionHandler);
+        return;
+      }
+      if (!children.isEmpty()) {
+        doUndeployChildren(undeployingContext, ar -> {
+          if (ar.failed()) {
+            reportFailure(ar.cause(), undeployingContext, completionHandler);
+          } else {
+            doUndeploy(undeployingContext, completionHandler);
+          }
+        });
       } else {
         undeployed = true;
         AtomicInteger undeployCount = new AtomicInteger();
