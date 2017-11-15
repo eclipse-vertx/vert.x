@@ -27,6 +27,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
+ * The connection manager associates remote hosts with pools, it also tracks all connections so they can be closed
+ * when the manager is closed.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ConnectionManager<C> {
@@ -34,18 +37,19 @@ public class ConnectionManager<C> {
   private final int maxWaitQueueSize;
   private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
   private final ConnectionProvider<C> connector;
-  private final Function<SocketAddress, PoolOptions> optionsProvider;
   private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
   private final Map<EndpointKey, Pool<C>> endpointMap = new ConcurrentHashMap<>();
+  private final long maxSize;
 
   public ConnectionManager(HttpClientMetrics metrics,
                            ConnectionProvider<C> connector,
-                           Function<SocketAddress, PoolOptions> optionsProvider,
+                           long maxSize,
                            int maxWaitQueueSize) {
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;
     this.connector = connector;
-    this.optionsProvider = optionsProvider;
+    this.maxSize = maxSize;
+
   }
 
   private static final class EndpointKey {
@@ -83,26 +87,23 @@ public class ConnectionManager<C> {
     }
   }
 
-  private Pool<C> getConnQueue(String peerHost, boolean ssl, int port, String host) {
-    EndpointKey key = new EndpointKey(ssl, port, peerHost);
-    PoolOptions options = optionsProvider.apply(SocketAddress.inetSocketAddress(port, host));
-    return endpointMap.computeIfAbsent(key, targetAddress -> new Pool<>(
-      connector,
-      metrics,
-      maxWaitQueueSize,
-      peerHost,
-      host,
-      port,
-      ssl,
-      options.getMaxSize(), v -> endpointMap.remove(key),
-      connectionMap::put,
-      connectionMap::remove));
-  }
-
   public void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {
     while (true) {
-      Pool<C> connQueue = getConnQueue(peerHost, ssl, port, host);
-      if (connQueue.getConnection(waiter)) {
+      EndpointKey key = new EndpointKey(ssl, port, peerHost);
+      Pool<C> pool = endpointMap.computeIfAbsent(key, targetAddress -> new Pool<>(
+        connector,
+        metrics,
+        maxWaitQueueSize,
+        peerHost,
+        host,
+        port,
+        ssl,
+        maxSize,
+        v -> endpointMap.remove(key),
+        connectionMap::put,
+        connectionMap::remove)
+      );
+      if (pool.getConnection(waiter)) {
         break;
       }
     }
