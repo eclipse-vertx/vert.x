@@ -25,7 +25,6 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * The pool is a queue of waiters and a list of connections.
@@ -161,7 +160,7 @@ public class Pool<C> {
             boolean handled = deliverToWaiter(conn, waiter);
             if (!handled) {
               synchronized (Pool.this) {
-                recycleConnection(conn);
+                recycleConnection(conn, 1,false);
                 checkPending();
               }
             }
@@ -196,7 +195,7 @@ public class Pool<C> {
           synchronized (Pool.this) {
             if (!consumed) {
               synchronized (this) {
-                recycleConnection(holder);
+                recycleConnection(holder, 1,false);
               }
             }
             checkPending();
@@ -235,8 +234,11 @@ public class Pool<C> {
         }
       }
       @Override
-      public void onRecycle() {
-        Pool.this.recycle(holder);
+      public void onRecycle(int capacity, boolean disposable) {
+        if (capacity < 0) {
+          throw new IllegalArgumentException("Illegal capacity");
+        }
+        Pool.this.recycle(holder, capacity, disposable);
       }
       @Override
       public void onClose() {
@@ -247,8 +249,8 @@ public class Pool<C> {
     return connector.connect(listener, metric, waiter.context, ssl, peerHost, host, port);
   }
 
-  private synchronized void recycle(Holder<C> conn) {
-    recycleConnection(conn);
+  private synchronized void recycle(Holder<C> conn, int capacity, boolean closeable) {
+    recycleConnection(conn, capacity, closeable);
     checkPending();
     checkClose();
   }
@@ -274,16 +276,24 @@ public class Pool<C> {
 
   // These methods assume to be called under synchronization
 
-  private void recycleConnection(Holder<C> conn) {
-    if (conn.capacity == conn.concurrency) {
+  private void recycleConnection(Holder<C> conn, int c, boolean closeable) {
+    long nc = conn.capacity + c;
+    if (nc > conn.concurrency) {
       log.debug("Attempt to recycle a connection more than permitted");
       return;
     }
-    capacity++;
-    if (conn.capacity == 0) {
-      available.add(conn);
+    if (closeable && nc == conn.concurrency && waiters.isEmpty()) {
+      available.remove(conn);
+      capacity -= conn.concurrency;
+      conn.capacity = 0;
+      connector.close(conn.connection);
+    } else {
+      capacity += c;
+      if (conn.capacity == 0) {
+        available.add(conn);
+      }
+      conn.capacity = nc;
     }
-    conn.capacity++;
   }
 
   private void closeConnection(Holder<C> holder) {
@@ -319,27 +329,6 @@ public class Pool<C> {
   }
 
   private void checkClose() {
-    if (waiters.isEmpty()) {
-      if (available.size() > 0) {
-        List<Holder<C>> toClose = Collections.emptyList();
-        for (Holder<C> conn : available) {
-          if (conn.capacity == conn.concurrency) {
-            if (toClose.isEmpty()) {
-              toClose = new ArrayList<>();
-            }
-            toClose.add(conn);
-          }
-        }
-        if (toClose.size() > 0) {
-          for (Holder<C> conn : toClose) {
-            available.remove(conn);
-            capacity -= conn.concurrency;
-            conn.capacity = 0;
-            connector.close(conn.connection);
-          }
-        }
-      }
-    }
     if (all.isEmpty()) {
       // No waiters and no connections - remove the ConnQueue
       if (metrics != null) {

@@ -350,6 +350,24 @@ public class ConnectionManagerTest extends VertxTestBase {
   }
 
   @Test
+  public void testRecycleWithoutDispose() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 1, connector);
+    FakeWaiter waiter1 = new FakeWaiter();
+    mgr.getConnection(waiter1);
+    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    conn.connect();
+    waitUntil(waiter1::isSuccess);
+    conn.recycle(false);
+    FakeWaiter waiter2 = new FakeWaiter();
+    mgr.getConnection(waiter2);
+    waitUntil(waiter1::isSuccess);
+    waiter2.assertSuccess(conn);
+    conn.recycle(true);
+    assertEquals(0, mgr.size());
+  }
+
+  @Test
   public void testStress() {
     int numActors = 16;
     int numConnections = 1000;
@@ -658,10 +676,18 @@ public class ConnectionManagerTest extends VertxTestBase {
       listener.onClose();
     }
 
+    synchronized long recycle(boolean dispose) {
+      return recycle(1, dispose);
+    }
+
     synchronized long recycle() {
-      long i = inflight--;
-      listener.onRecycle();
-      return i;
+      return recycle(true);
+    }
+
+    synchronized long recycle(int capacity, boolean dispose) {
+      inflight -= capacity;
+      listener.onRecycle(capacity, dispose);
+      return inflight;
     }
 
     synchronized FakeConnection concurrency(long value) {

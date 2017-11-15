@@ -201,7 +201,6 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testServerSettings() throws Exception {
-    waitFor(2);
     io.vertx.core.http.Http2Settings expectedSettings = TestUtils.randomHttp2Settings();
     expectedSettings.setHeaderTableSize((int)io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
     server.close();
@@ -213,13 +212,10 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     server.requestHandler(req -> {
-      req.response().end();
     });
     startServer();
     AtomicInteger count = new AtomicInteger();
-    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
-      complete();
-    }).connectionHandler(conn -> {
+    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> fail()).connectionHandler(conn -> {
       conn.remoteSettingsHandler(settings -> {
         switch (count.getAndIncrement()) {
           case 0:
@@ -229,7 +225,7 @@ public class Http2ClientTest extends Http2TestBase {
             assertEquals(expectedSettings.getMaxConcurrentStreams(), settings.getMaxConcurrentStreams());
             assertEquals(expectedSettings.getHeaderTableSize(), settings.getHeaderTableSize());
             assertEquals(expectedSettings.get('\u0007'), settings.get(7));
-            complete();
+            testComplete();
             break;
         }
       });

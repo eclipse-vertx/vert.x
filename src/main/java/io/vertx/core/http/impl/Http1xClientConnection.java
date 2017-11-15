@@ -398,7 +398,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         } else if (close) {
           conn.close();
         } else {
-          conn.listener.onRecycle();
+          conn.listener.onRecycle(1, true);
         }
       }
     }
