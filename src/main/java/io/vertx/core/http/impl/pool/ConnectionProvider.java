@@ -29,21 +29,10 @@ public interface ConnectionProvider<C> {
    * or the failure with {@link ConnectionListener#onConnectFailure}.
    *
    * @param listener the listener
-   * @param metric the metric
    * @param context the context to use for the connection
-   * @param ssl wether to use SSL/TLS
-   * @param peerHost the peer host
-   * @param host the server host
-   * @param port the server port
    * @return the initial weight of the connection, which will eventually be corrected when calling the listener
    */
-  long connect(
-    ConnectionListener<C> listener,
-    Object metric,
-    ContextImpl context,
-    boolean ssl, String peerHost,
-    String host,
-    int port);
+  long connect(ConnectionListener<C> listener, ContextImpl context);
 
   /**
    * Check wether a connection is valid.

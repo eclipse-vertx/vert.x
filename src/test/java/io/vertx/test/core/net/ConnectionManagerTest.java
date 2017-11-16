@@ -82,11 +82,8 @@ public class ConnectionManagerTest extends VertxTestBase {
           pool = new Pool<>(
             connector,
             null,
+            null,
             queueMaxSize,
-            "localhost",
-            "localhost",
-            8080,
-            false,
             maxPoolSize,
             v -> {
               synchronized (FakeConnectionManager.this) {
@@ -135,7 +132,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       }
     };
     mgr.getConnection(waiter);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.connect();
     assertWaitUntil(waiter::isComplete);
     assertEquals(Boolean.FALSE, handleLock.get());
@@ -163,7 +160,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       }
     };
     mgr.getConnection(waiter);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     Throwable failure = new Throwable();
     conn.fail(failure);
     assertWaitUntil(waiter::isComplete);
@@ -178,7 +175,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector);
     FakeWaiter waiter = new FakeWaiter();
     mgr.getConnection(waiter);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     waiter.cancel();
     conn.connect();
     waitUntil(() -> mgr.size() == 1);
@@ -195,7 +192,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector);
     FakeWaiter waiter = new FakeWaiter();
     mgr.getConnection(waiter);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     Exception expected = new Exception();
     conn.fail(expected);
     assertWaitUntil(waiter::isComplete);
@@ -209,12 +206,12 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.connect();
     assertWaitUntil(waiter1::isComplete);
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
-    connector.assertRequests(TEST_ADDRESS, 0);
+    connector.assertRequests(0);
     waiter1.recycle();
     assertWaitUntil(waiter2::isComplete);
     waiter2.assertSuccess(conn);
@@ -246,7 +243,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.connect();
     waitUntil(waiter1::isComplete);
     FakeWaiter waiter2 = new FakeWaiter();
@@ -255,7 +252,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     waiter1.recycle();
     waitUntil(() -> connector.requests(TEST_ADDRESS) == 1);
     assertFalse(mgr.closed());
-    FakeConnection conn2 = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn2 = connector.assertRequest();
     conn2.connect();
     waitUntil(waiter2::isSuccess);
   }
@@ -272,7 +269,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       }
     };
     mgr.getConnection(waiter);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.connect();
     assertEquals(0, mgr.size());
   }
@@ -283,7 +280,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.connect();
     waitUntil(waiter1::isSuccess);
     conn.close();
@@ -299,7 +296,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeConnectionManager mgr = new FakeConnectionManager(3, 2, connector);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.connect();
     waitUntil(waiter1::isComplete);
     FakeWaiter waiter2 = new FakeWaiter();
@@ -320,7 +317,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       mgr.getConnection(waiter);
       waiters.add(waiter);
     }
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.concurrency(n).connect();
     waiters.forEach(waiter -> {
       waitUntil(waiter::isSuccess);
@@ -339,7 +336,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       mgr.getConnection(waiter);
       waiters.add(waiter);
     }
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.concurrency(0).connect().awaitConnected();
     conn.concurrency(n - 1);
     waitUntil(() -> waiters.stream().filter(FakeWaiter::isSuccess).count() == n - 1);
@@ -355,7 +352,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     FakeConnectionManager mgr = new FakeConnectionManager(-1, 1, connector);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
-    FakeConnection conn = connector.assertRequest(TEST_ADDRESS);
+    FakeConnection conn = connector.assertRequest();
     conn.connect();
     waitUntil(waiter1::isSuccess);
     conn.recycle(false);
@@ -374,7 +371,7 @@ public class ConnectionManagerTest extends VertxTestBase {
 
     FakeConnectionProvider connector = new FakeConnectionProvider() {
       @Override
-      public long connect(ConnectionListener<FakeConnection> listener, Object endpointMetric, ContextImpl context, boolean ssl, String peerHost, String host, int port) {
+      public long connect(ConnectionListener<FakeConnection> listener, ContextImpl context) {
         int i = ThreadLocalRandom.current().nextInt(100);
         FakeConnection conn = new FakeConnection(context, listener);
         if (i < 10) {
@@ -739,16 +736,10 @@ public class ConnectionManagerTest extends VertxTestBase {
 
   class FakeConnectionProvider implements ConnectionProvider<FakeConnection> {
 
-    private final Map<SocketAddress, ArrayDeque<FakeConnection>> requestMap = new HashMap<>();
+    private final ArrayDeque<FakeConnection> pendingRequests = new ArrayDeque<>();
 
-    void assertRequests(SocketAddress address, int expectedSize) {
-      ArrayDeque<FakeConnection> requests = requestMap.get(address);
-      if (expectedSize == 0) {
-        assertTrue(requests == null || requests.size() == 0);
-      } else {
-        assertNotNull(requests);
-        assertEquals(expectedSize, requests.size());
-      }
+    void assertRequests(int expectedSize) {
+      assertEquals(expectedSize, pendingRequests.size());
     }
 
     @Override
@@ -757,28 +748,20 @@ public class ConnectionManagerTest extends VertxTestBase {
     }
 
     int requests(SocketAddress address) {
-      ArrayDeque<FakeConnection> requests = requestMap.get(address);
-      return requests == null ? 0 : requests.size();
+      return pendingRequests.size();
     }
 
-    FakeConnection assertRequest(SocketAddress address) {
-      ArrayDeque<FakeConnection> requests = requestMap.get(address);
-      assertNotNull(requests);
-      assertTrue(requests.size() > 0);
-      FakeConnection request = requests.poll();
+    FakeConnection assertRequest() {
+      assertNotNull(pendingRequests);
+      assertTrue(pendingRequests.size() > 0);
+      FakeConnection request = pendingRequests.poll();
       assertNotNull(request);
       return request;
     }
 
     @Override
-    public long connect(ConnectionListener<FakeConnection> listener,
-                        Object endpointMetric,
-                        ContextImpl context,
-                        boolean ssl, String peerHost,
-                        String host,
-                        int port) {
-      ArrayDeque<FakeConnection> list = requestMap.computeIfAbsent(SocketAddress.inetSocketAddress(port, host), address -> new ArrayDeque<>());
-      list.add(new FakeConnection(context, listener));
+    public long connect(ConnectionListener<FakeConnection> listener, ContextImpl context) {
+      pendingRequests.add(new FakeConnection(context, listener));
       return 1;
     }
 

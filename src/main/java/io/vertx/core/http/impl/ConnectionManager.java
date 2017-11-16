@@ -14,17 +14,15 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.http.impl.pool;
+package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.http.impl.pool.Pool;
+import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 /**
  * The connection manager associates remote hosts with pools, it also tracks all connections so they can be closed
@@ -32,22 +30,22 @@ import java.util.function.Function;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ConnectionManager<C> {
+class ConnectionManager {
 
   private final int maxWaitQueueSize;
   private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
-  private final ConnectionProvider<C> connector;
-  private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
-  private final Map<EndpointKey, Pool<C>> endpointMap = new ConcurrentHashMap<>();
+  private final HttpClientImpl client;
+  private final Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<>();
+  private final Map<EndpointKey, Pool<HttpClientConnection>> endpointMap = new ConcurrentHashMap<>();
   private final long maxSize;
 
-  public ConnectionManager(HttpClientMetrics metrics,
-                           ConnectionProvider<C> connector,
+  ConnectionManager(HttpClientImpl client,
+                           HttpClientMetrics metrics,
                            long maxSize,
                            int maxWaitQueueSize) {
+    this.client = client;
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;
-    this.connector = connector;
     this.maxSize = maxSize;
 
   }
@@ -87,19 +85,23 @@ public class ConnectionManager<C> {
     }
   }
 
-  public void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<C> waiter) {
+  void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<HttpClientConnection> waiter) {
     while (true) {
       EndpointKey key = new EndpointKey(ssl, port, peerHost);
-      Pool<C> pool = endpointMap.computeIfAbsent(key, targetAddress -> new Pool<>(
+      Object metric = metrics != null ? metrics.createEndpoint(host, port, 10 /* todo: fix when reworking pool metrics */) : null;
+      HttpChannelConnector connector = new HttpChannelConnector(client, metric, ssl, peerHost, host, port);
+      Pool<HttpClientConnection> pool = endpointMap.computeIfAbsent(key, targetAddress -> new Pool<>(
         connector,
         metrics,
+        metric,
         maxWaitQueueSize,
-        peerHost,
-        host,
-        port,
-        ssl,
         maxSize,
-        v -> endpointMap.remove(key),
+        v -> {
+          if (metrics != null) {
+            metrics.closeEndpoint(host, port, metric);
+          }
+          endpointMap.remove(key);
+        },
         connectionMap::put,
         connectionMap::remove)
       );
@@ -111,8 +113,8 @@ public class ConnectionManager<C> {
 
   public void close() {
     endpointMap.clear();
-    for (C conn : connectionMap.values()) {
-      connector.close(conn);
+    for (HttpClientConnection conn : connectionMap.values()) {
+      conn.close();
     }
   }
 }

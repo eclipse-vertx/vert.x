@@ -75,12 +75,8 @@ public class Pool<C> {
   private static final Logger log = LoggerFactory.getLogger(Pool.class);
 
   private final HttpClientMetrics metrics; // todo: later switch to PoolMetrics
-  private final String peerHost;
-  private final boolean ssl;
-  private final int port;
-  private final String host;
-  private final ConnectionProvider<C> connector;
   private final Object metric;
+  private final ConnectionProvider<C> connector;
   private final long maxWeight;
   private final int queueMaxSize;
 
@@ -96,24 +92,17 @@ public class Pool<C> {
 
   public Pool(ConnectionProvider<C> connector,
               HttpClientMetrics metrics,
+              Object metric,
               int queueMaxSize,
-              String peerHost,
-              String host,
-              int port,
-              boolean ssl,
               long maxWeight,
               Handler<Void> poolClosed,
               BiConsumer<Channel, C> connectionAdded,
               BiConsumer<Channel, C> connectionRemoved) {
     this.maxWeight = maxWeight;
-    this.host = host;
-    this.port = port;
-    this.ssl = ssl;
-    this.peerHost = peerHost;
     this.connector = connector;
+    this.metric = metric;
     this.queueMaxSize = queueMaxSize;
     this.metrics = metrics;
-    this.metric = metrics != null ? metrics.createEndpoint(host, port, 10 /* todo: fix when reworking pool metrics */) : null;
     this.poolClosed = poolClosed;
     this.all = new HashSet<>();
     this.available = new ArrayDeque<>();
@@ -246,7 +235,7 @@ public class Pool<C> {
       }
     };
     all.add(holder);
-    return connector.connect(listener, metric, waiter.context, ssl, peerHost, host, port);
+    return connector.connect(listener, waiter.context);
   }
 
   private synchronized void recycle(Holder<C> conn, int capacity, boolean closeable) {
@@ -331,9 +320,6 @@ public class Pool<C> {
   private void checkClose() {
     if (all.isEmpty()) {
       // No waiters and no connections - remove the ConnQueue
-      if (metrics != null) {
-        metrics.closeEndpoint(host, port, metric);
-      }
       closed = true;
       poolClosed.handle(null);
     }

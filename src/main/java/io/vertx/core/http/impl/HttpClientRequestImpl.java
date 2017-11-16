@@ -29,7 +29,6 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.pool.ConnectionManager;
 import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;

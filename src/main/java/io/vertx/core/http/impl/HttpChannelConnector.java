@@ -57,9 +57,20 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   private final long http2Weight;
   private final long http2MaxConcurrency;
   private final long http1MaxConcurrency;
+  private final boolean ssl;
+  private final String peerHost;
+  private final String host;
+  private final int port;
+  private final Object endpointMetric;
 
-  HttpChannelConnector(HttpClientImpl client) {
+  HttpChannelConnector(HttpClientImpl client,
+                       Object endpointMetric,
+                       boolean ssl,
+                       String peerHost,
+                       String host,
+                       int port) {
     this.client = client;
+    this.endpointMetric = endpointMetric;
     this.options = client.getOptions();
     this.metrics = client.metrics();
     this.sslHelper = client.getSslHelper();
@@ -69,6 +80,10 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     this.weight = version == HttpVersion.HTTP_2 ? http2Weight : http1Weight;
     this.http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();
     this.http1MaxConcurrency = client.getOptions().isPipelining() ? client.getOptions().getPipeliningLimit() : 1;
+    this.ssl = ssl;
+    this.peerHost = peerHost;
+    this.host = host;
+    this.port = port;
   }
 
   @Override
@@ -83,11 +98,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
   public long connect(
     ConnectionListener<HttpClientConnection> listener,
-    Object endpointMetric,
-    ContextImpl context,
-    boolean ssl, String peerHost,
-    String host,
-    int port) {
+    ContextImpl context) {
 
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
@@ -118,16 +129,16 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
             if (useAlpn) {
               if ("h2".equals(protocol)) {
                 applyHttp2ConnectionOptions(ch.pipeline());
-                http2Connected(listener, endpointMetric, context, ch);
+                http2Connected(listener, context, ch);
               } else {
                 applyHttp1xConnectionOptions(ch.pipeline());
                 HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
                   HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-                http1xConnected(listener, fallbackProtocol, host, port, true, endpointMetric, context, ch);
+                http1xConnected(listener, fallbackProtocol, host, port, true, context, ch);
               }
             } else {
               applyHttp1xConnectionOptions(ch.pipeline());
-              http1xConnected(listener, version, host, port, true, endpointMetric, context, ch);
+              http1xConnected(listener, version, host, port, true, context, ch);
             }
           } else {
             handshakeFailure(context, ch, fut.cause(), listener);
@@ -158,7 +169,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                   p.remove(this);
                   // Upgrade handler will remove itself
                   applyHttp1xConnectionOptions(ch.pipeline());
-                  http1xConnected(listener, HttpVersion.HTTP_1_1, host, port, false, endpointMetric, context, ch);
+                  http1xConnected(listener, HttpVersion.HTTP_1_1, host, port, false, context, ch);
                 }
               }
               @Override
@@ -174,7 +185,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
               @Override
               public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
                 applyHttp2ConnectionOptions(pipeline);
-                http2Connected(listener, endpointMetric, context, ch);
+                http2Connected(listener, context, ch);
               }
             };
             HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
@@ -197,9 +208,9 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
             // Upgrade handler do nothing
           } else {
             if (version == HttpVersion.HTTP_2 && !client.getOptions().isHttp2ClearTextUpgrade()) {
-              http2Connected(listener, endpointMetric, context, ch);
+              http2Connected(listener, context, ch);
             } else {
-              http1xConnected(listener, version, host, port, false, endpointMetric, context, ch);
+              http1xConnected(listener, version, host, port, false, context, ch);
             }
           }
         }
@@ -255,7 +266,6 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                                String host,
                                int port,
                                boolean ssl,
-                               Object endpointMetric,
                                ContextImpl context,
                                Channel ch) {
     Http1xClientHandler clientHandler = new Http1xClientHandler(
@@ -278,7 +288,6 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   }
 
   private void http2Connected(ConnectionListener<HttpClientConnection> listener,
-                              Object endpointMetric,
                               ContextImpl context,
                               Channel ch) {
     try {

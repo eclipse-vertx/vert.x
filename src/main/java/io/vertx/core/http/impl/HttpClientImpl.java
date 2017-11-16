@@ -27,7 +27,6 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebsocketVersion;
-import io.vertx.core.http.impl.pool.ConnectionManager;
 import io.vertx.core.http.impl.pool.ConnectionProvider;
 import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
@@ -106,8 +105,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final ContextImpl creatingContext;
-  private final ConnectionManager<HttpClientConnection> websocketCM; // The queue manager for websockets
-  private final ConnectionManager<HttpClientConnection> httpCM; // The queue manager for requests
+  private final ConnectionManager websocketCM; // The queue manager for websockets
+  private final ConnectionManager httpCM; // The queue manager for requests
   private final Closeable closeHook;
   private final ProxyType proxyType;
   private final SSLHelper sslHelper;
@@ -154,10 +153,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     if (!keepAlive && pipelining) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
-    ConnectionProvider<HttpClientConnection> connector = new HttpChannelConnector(this);
     long maxWeight = options.getMaxPoolSize() * options.getHttp2MaxPoolSize();
-    websocketCM = new ConnectionManager<>(metrics, connector, maxWeight, options.getMaxWaitQueueSize());
-    httpCM = new ConnectionManager<>(metrics, connector, maxWeight, options.getMaxWaitQueueSize());
+    websocketCM = new ConnectionManager(this, metrics, maxWeight, options.getMaxWaitQueueSize());
+    httpCM = new ConnectionManager(this, metrics, maxWeight, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
   }
 
