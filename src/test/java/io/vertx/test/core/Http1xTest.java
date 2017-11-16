@@ -1639,7 +1639,7 @@ public class Http1xTest extends HttpTest {
   public void testIncorrectHttpVersion() throws Exception {
     server.requestHandler(req -> {
       NetSocket so = req.netSocket();
-      so.write(Buffer.buffer("HTTP/1.2 200 OK\r\n\r\n"));
+      so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
       so.close();
     });
     startServer();

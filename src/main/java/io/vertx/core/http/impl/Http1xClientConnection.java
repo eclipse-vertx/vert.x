@@ -276,8 +276,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         requestEnded = true;
         // Should take care of pending list ????
         checkLifecycle();
-        conn.currentRequest = next = conn.pending.poll();
-        if (conn.currentRequest == null) {
+        // Check pipelined pending request
+        next = conn.currentRequest = conn.pending.poll();
+        if (next == null) {
           return;
         }
       }
@@ -338,6 +339,21 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       if (conn.metrics != null) {
         conn.metrics.responseBegin(request.metric(), response);
       }
+      if (resp.status().code() != 100 && request.method() != io.vertx.core.http.HttpMethod.CONNECT) {
+        // See https://tools.ietf.org/html/rfc7230#section-6.3
+        String responseConnectionHeader = resp.headers().get(HttpHeaders.Names.CONNECTION);
+        io.vertx.core.http.HttpVersion protocolVersion = conn.client.getOptions().getProtocolVersion();
+        String requestConnectionHeader = request.headers().get(HttpHeaders.Names.CONNECTION);
+        // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
+        if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
+          // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
+          close = true;
+        } else if (protocolVersion == io.vertx.core.http.HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
+          // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
+          // currently Vertx forces the Connection header if keepalive is enabled for 1.0
+          close = true;
+        }
+      }
       HttpVersion version = HttpUtils.toVertxHttpVersion(resp.protocolVersion());
       if (version != null) {
         return response = new HttpClientResponseImpl(request, version, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
@@ -357,33 +373,18 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
             conn.metrics.responseEnd(reqMetric, response);
           }
         }
+
         Buffer last = conn.pausedChunk;
         conn.pausedChunk = null;
-        response.handleEnd(last, new HeadersAdaptor(trailer.trailingHeaders()));
+        if (response != null) {
+          response.handleEnd(last, new HeadersAdaptor(trailer.trailingHeaders()));
+        }
 
-        // We don't signal response end for a 100-continue response as a real response will follow
         // Also we keep the connection open for an HTTP CONNECT
         responseEnded = true;
-        if (response.statusCode() != 100 && request.method() != io.vertx.core.http.HttpMethod.CONNECT) {
-
-          // See https://tools.ietf.org/html/rfc7230#section-6.3
-          String responseConnectionHeader = response.getHeader(HttpHeaders.Names.CONNECTION);
-          io.vertx.core.http.HttpVersion protocolVersion = conn.client.getOptions().getProtocolVersion();
-          String requestConnectionHeader = request.headers().get(HttpHeaders.Names.CONNECTION);
-          // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
-          if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
-            // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
-            close = true;
-          } else if (protocolVersion == io.vertx.core.http.HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
-            // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
-            // currently Vertx forces the Connection header if keepalive is enabled for 1.0
-            close = true;
-          }
-        }
         if (!conn.client.getOptions().isKeepAlive()) {
           close = true;
         }
-
         checkLifecycle();
       }
     }
@@ -427,6 +428,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   }
 
   void handleResponseChunk(Buffer buff) {
+    HttpClientResponseImpl resp;
     synchronized (this) {
       if (paused) {
         if (pausedChunk == null) {
@@ -434,21 +436,29 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         } else {
           pausedChunk.appendBuffer(buff);
         }
+        return;
       } else {
         if (pausedChunk != null) {
           buff = pausedChunk.appendBuffer(buff);
           pausedChunk = null;
         }
-        currentResponse.response.handleChunk(buff);
+        resp = currentResponse.response;
+        if (resp == null) {
+          return;
+        }
       }
     }
+    resp.handleChunk(buff);
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
-    StreamImpl resp = currentResponse;
-    if (resp.response.statusCode() != 100) {
+    synchronized (this) {
+      StreamImpl resp = currentResponse;
       currentResponse = null;
-      resp.endResponse(trailer);
+      // We don't signal response end for a 100-continue response as a real response will follow
+      if (resp.response == null || resp.response.statusCode() != 100) {
+        resp.endResponse(trailer);
+      }
     }
   }
 
@@ -675,7 +685,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
     if (currentRequest != null) {
       currentRequest.request.handleException(e);
-    } else if (currentResponse != null) {
+    } else if (currentResponse != null && currentResponse.response != null) {
       currentResponse.response.handleException(e);
     }
   }
@@ -694,7 +704,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       StreamImpl req = inflight.poll();
       if (req != null) {
         req.request.handleException(e);
-      } else if (currentResponse != null) {
+      } else if (currentResponse != null && currentResponse.response != null) {
         currentResponse.response.handleException(e);
       }
     }
