@@ -16,8 +16,10 @@
 
 package io.vertx.test.core;
 
+import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
@@ -47,26 +49,16 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -3856,6 +3848,37 @@ public abstract class HttpTest extends HttpTestBase {
       InternalLoggerFactory.setDefaultFactory(prev);
     }
     return factory;
+  }
+
+  @Test
+  public void testClientDecompressionError() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response()
+        .putHeader("Content-Encoding", "gzip")
+        .end("long response with mismatched encoding causes connection leaks");
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setTryUseCompression(true));
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.exceptionHandler(err -> {
+        if (err instanceof Http2Exception) {
+          complete();
+          // Connection is not closed for HTTP/2 only the streams so we need to force it
+          resp.request().connection().close();
+        } else if (err instanceof DecompressionException) {
+          complete();
+        }
+      });
+    }).connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        complete();
+      });
+    }).end();
+
+    await();
+
   }
 
   protected File setupFile(String fileName, String content) throws Exception {
