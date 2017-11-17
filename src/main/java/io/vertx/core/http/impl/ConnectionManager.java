@@ -40,9 +40,9 @@ class ConnectionManager {
   private final long maxSize;
 
   ConnectionManager(HttpClientImpl client,
-                           HttpClientMetrics metrics,
-                           long maxSize,
-                           int maxWaitQueueSize) {
+                    HttpClientMetrics metrics,
+                    long maxSize,
+                    int maxWaitQueueSize) {
     this.client = client;
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;
@@ -88,23 +88,24 @@ class ConnectionManager {
   void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<HttpClientConnection> waiter) {
     while (true) {
       EndpointKey key = new EndpointKey(ssl, port, peerHost);
-      Object metric = metrics != null ? metrics.createEndpoint(host, port, 10 /* todo: fix when reworking pool metrics */) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(client, metric, ssl, peerHost, host, port);
-      Pool<HttpClientConnection> pool = endpointMap.computeIfAbsent(key, targetAddress -> new Pool<>(
-        connector,
-        metrics,
-        metric,
-        maxWaitQueueSize,
-        maxSize,
-        v -> {
-          if (metrics != null) {
-            metrics.closeEndpoint(host, port, metric);
-          }
-          endpointMap.remove(key);
-        },
-        connectionMap::put,
-        connectionMap::remove)
-      );
+      Pool<HttpClientConnection> pool = endpointMap.computeIfAbsent(key, targetAddress -> {
+        Object metric = metrics != null ? metrics.createEndpoint(host, port, 10 /* todo: fix when reworking pool metrics */) : null;
+        HttpChannelConnector connector = new HttpChannelConnector(client, metric, ssl, peerHost, host, port);
+        return new Pool<>(
+          connector,
+          metrics,
+          metric,
+          maxWaitQueueSize,
+          maxSize,
+          v -> {
+            if (metrics != null) {
+              metrics.closeEndpoint(host, port, metric);
+            }
+            endpointMap.remove(key);
+          },
+          connectionMap::put,
+          connectionMap::remove);
+      });
       if (pool.getConnection(waiter)) {
         break;
       }
