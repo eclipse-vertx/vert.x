@@ -29,9 +29,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -647,54 +645,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         throw new IllegalStateException("You must provide a rawMethod when using an HttpMethod.OTHER method");
       }
 
-      ContextImpl ctx = vertx.getOrCreateContext();
-      Waiter<HttpClientConnection> waiter = new Waiter<HttpClientConnection>(ctx) {
-
-        private void checkContext(ContextInternal current) {
-        }
-
-        @Override
-        public void handleFailure(ContextInternal ctx, Throwable failure) {
-          checkContext(ctx);
-          ctx.executeFromIO(() -> {
-            handleException(failure);
-          });
-        }
-
-        @Override
-        public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
-          checkContext(ctx);
-          synchronized (HttpClientRequestImpl.this) {
-            if (connectionHandler != null) {
-              ctx.executeFromIO(() -> {
-                connectionHandler.handle(conn);
-              });
-            }
-          }
-        }
-
-        @Override
-        public boolean handleConnection(ContextInternal ctx, HttpClientConnection conn) throws Exception {
-          // No need to synchronize as the thread is the same that set exceptionOccurred to true
-          // exceptionOccurred=true getting the connection => it's a TimeoutException
-          if (exceptionOccurred != null || reset != null) {
-            return false;
-          }
-          checkContext(ctx);
-          conn.createStream(HttpClientRequestImpl.this, ar -> {
-            if (ar.succeeded()) {
-              HttpClientStream stream = ar.result();
-              ctx.executeFromIO(() -> {
-                connected(stream, HttpClientRequestImpl.this.headersCompletionHandler);
-              });
-            } else {
-              throw new RuntimeException(ar.cause());
-            }
-          });
-          return true;
-        }
-      };
-
       String peerHost;
       if (hostHeader != null) {
         int idx = hostHeader.lastIndexOf(':');
@@ -710,7 +660,30 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnectionForRequest(peerHost, ssl, port, host, waiter);
+      client.getConnectionForRequest(peerHost, ssl, port, host, connectionHandler, (ctx, conn) -> {
+        // No need to synchronize as the thread is the same that set exceptionOccurred to true
+        // exceptionOccurred=true getting the connection => it's a TimeoutException
+        if (exceptionOccurred != null || reset != null) {
+          return false;
+        }
+        // checkContext(ctx);
+        conn.createStream(HttpClientRequestImpl.this, ar -> {
+          if (ar.succeeded()) {
+            HttpClientStream stream = ar.result();
+            ctx.executeFromIO(() -> {
+              connected(stream, HttpClientRequestImpl.this.headersCompletionHandler);
+            });
+          } else {
+            throw new RuntimeException(ar.cause());
+          }
+        });
+        return true;
+      }, (ctx, failure) -> {
+        ctx.executeFromIO(() -> {
+          handleException(failure);
+        });
+
+      });
       connecting = true;
     }
   }

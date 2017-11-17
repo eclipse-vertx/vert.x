@@ -17,12 +17,18 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.http.impl.pool.Waiter;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * The connection manager associates remote hosts with pools, it also tracks all connections so they can be closed
@@ -36,7 +42,7 @@ class ConnectionManager {
   private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
   private final HttpClientImpl client;
   private final Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<>();
-  private final Map<EndpointKey, Pool<HttpClientConnection>> endpointMap = new ConcurrentHashMap<>();
+  private final Map<EndpointKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private final long maxSize;
 
   ConnectionManager(HttpClientImpl client,
@@ -85,18 +91,28 @@ class ConnectionManager {
     }
   }
 
-  void getConnection(String peerHost, boolean ssl, int port, String host, Waiter<HttpClientConnection> waiter) {
+  class Endpoint {
+
+    private final Pool<HttpClientConnection> pool;
+    private final Object metric;
+
+    public Endpoint(Pool<HttpClientConnection> pool, Object metric) {
+      this.pool = pool;
+      this.metric = metric;
+    }
+  }
+
+  void getConnection(String peerHost, boolean ssl, int port, String host,
+                     Handler<HttpConnection> connectionHandler,
+                     BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
+                     BiConsumer<ContextInternal, Throwable> onFailure) {
+    EndpointKey key = new EndpointKey(ssl, port, peerHost);
     while (true) {
-      EndpointKey key = new EndpointKey(ssl, port, peerHost);
-      Pool<HttpClientConnection> pool = endpointMap.computeIfAbsent(key, targetAddress -> {
-        Object metric = metrics != null ? metrics.createEndpoint(host, port, 10 /* todo: fix when reworking pool metrics */) : null;
+      Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
+        int maxPoolSize = Math.max(client.getOptions().getMaxPoolSize(), client.getOptions().getHttp2MaxPoolSize());
+        Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
         HttpChannelConnector connector = new HttpChannelConnector(client, metric, ssl, peerHost, host, port);
-        return new Pool<>(
-          connector,
-          metrics,
-          metric,
-          maxWaitQueueSize,
-          maxSize,
+        Pool<HttpClientConnection> pool = new Pool<>(connector, maxWaitQueueSize, maxSize,
           v -> {
             if (metrics != null) {
               metrics.closeEndpoint(host, port, metric);
@@ -105,8 +121,38 @@ class ConnectionManager {
           },
           connectionMap::put,
           connectionMap::remove);
+        return new Endpoint(pool, metric);
       });
-      if (pool.getConnection(waiter)) {
+      Object metric;
+      if (metrics != null) {
+        metric = metrics.enqueueRequest(endpoint.metric);
+      } else {
+        metric = null;
+      }
+      if (endpoint.pool.getConnection(new Waiter<HttpClientConnection>(client.getVertx().getOrCreateContext()) {
+        @Override
+        public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
+          if (connectionHandler != null) {
+            ctx.executeFromIO(() -> {
+              connectionHandler.handle(conn);
+            });
+          }
+        }
+        @Override
+        public void handleFailure(ContextInternal ctx, Throwable failure) {
+          if (metrics != null) {
+            metrics.dequeueRequest(endpoint.metric, metric);
+          }
+          onFailure.accept(ctx, failure);
+        }
+        @Override
+        public boolean handleConnection(ContextInternal ctx, HttpClientConnection conn) throws Exception {
+          if (metrics != null) {
+            metrics.dequeueRequest(endpoint.metric, metric);
+          }
+          return onSuccess.apply(ctx, conn);
+        }
+      })) {
         break;
       }
     }

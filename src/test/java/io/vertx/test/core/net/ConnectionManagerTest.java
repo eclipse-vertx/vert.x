@@ -81,8 +81,6 @@ public class ConnectionManagerTest extends VertxTestBase {
           closed = false;
           pool = new Pool<>(
             connector,
-            null,
-            null,
             queueMaxSize,
             maxPoolSize,
             v -> {

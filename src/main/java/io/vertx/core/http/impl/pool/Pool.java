@@ -74,8 +74,6 @@ public class Pool<C> {
   }
   private static final Logger log = LoggerFactory.getLogger(Pool.class);
 
-  private final HttpClientMetrics metrics; // todo: later switch to PoolMetrics
-  private final Object metric;
   private final ConnectionProvider<C> connector;
   private final long maxWeight;
   private final int queueMaxSize;
@@ -91,8 +89,6 @@ public class Pool<C> {
   private final BiConsumer<Channel, C> connectionRemoved;
 
   public Pool(ConnectionProvider<C> connector,
-              HttpClientMetrics metrics,
-              Object metric,
               int queueMaxSize,
               long maxWeight,
               Handler<Void> poolClosed,
@@ -100,9 +96,7 @@ public class Pool<C> {
               BiConsumer<Channel, C> connectionRemoved) {
     this.maxWeight = maxWeight;
     this.connector = connector;
-    this.metric = metric;
     this.queueMaxSize = queueMaxSize;
-    this.metrics = metrics;
     this.poolClosed = poolClosed;
     this.all = new HashSet<>();
     this.available = new ArrayDeque<>();
@@ -116,9 +110,6 @@ public class Pool<C> {
     }
     // Enqueue
     if (capacity > 0 || weight < maxWeight || (queueMaxSize < 0 || waiters.size() < queueMaxSize)) {
-      if (metrics != null) {
-        waiter.metric = metrics.enqueueRequest(metric);
-      }
       waiters.add(waiter);
       checkPending();
     } else {
@@ -132,9 +123,6 @@ public class Pool<C> {
       Waiter<C> waiter = waiters.peek();
       if (waiter == null) {
         break;
-      }
-      if (metric != null) {
-        metrics.dequeueRequest(metric, waiter.metric);
       }
       if (capacity > 0) {
         capacity--;

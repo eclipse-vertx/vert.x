@@ -61,16 +61,16 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   private final String peerHost;
   private final String host;
   private final int port;
-  private final Object endpointMetric;
+  private final Object metric;
 
   HttpChannelConnector(HttpClientImpl client,
-                       Object endpointMetric,
+                       Object metric,
                        boolean ssl,
                        String peerHost,
                        String host,
                        int port) {
     this.client = client;
-    this.endpointMetric = endpointMetric;
+    this.metric = metric;
     this.options = client.getOptions();
     this.metrics = client.metrics();
     this.sslHelper = client.getSslHelper();
@@ -276,7 +276,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       port,
       ssl,
       client,
-      endpointMetric,
+      metric,
       client.metrics());
     clientHandler.addHandler(conn -> {
       listener.onConnectSuccess(conn, http1MaxConcurrency, ch, context, weight, http1Weight);
@@ -298,7 +298,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
         .clientUpgrade(upgrade)
         .useCompression(client.getOptions().isTryUseCompression())
         .initialSettings(client.getOptions().getInitialSettings())
-        .connectionFactory(connHandler -> new Http2ClientConnection(listener, endpointMetric, client, context, connHandler, metrics))
+        .connectionFactory(connHandler -> new Http2ClientConnection(listener, metric, client, context, connHandler, metrics))
         .logEnabled(options.getLogActivity())
         .build();
       handler.addHandler(conn -> {
@@ -317,7 +317,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       });
       handler.removeHandler(conn -> {
         if (metrics != null) {
-          metrics.endpointDisconnected(endpointMetric, conn.metric());
+          metrics.endpointDisconnected(metric, conn.metric());
         }
         listener.onClose();
       });

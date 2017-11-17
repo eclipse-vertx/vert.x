@@ -24,8 +24,7 @@ import io.vertx.core.impl.ContextInternal;
  */
 public abstract class Waiter<C> {
 
-  protected final ContextImpl context;
-  Object metric;
+  public final ContextImpl context;
 
   protected Waiter(ContextImpl context) {
     this.context = context;

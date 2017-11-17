@@ -17,16 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.pool.ConnectionProvider;
 import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
@@ -51,6 +42,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -944,28 +937,23 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                  Handler<Http1xClientConnection> handler,
                                  Handler<Throwable> connectionExceptionHandler,
                                  ContextImpl context) {
-    websocketCM.getConnection(host, ssl, port, host, new Waiter<HttpClientConnection>(context) {
-      @Override
-      public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
-      }
-      @Override
-      public boolean handleConnection(ContextInternal ctx, HttpClientConnection conn) {
-        ctx.executeFromIO(() -> {
-          handler.handle((Http1xClientConnection) conn);
-        });
-        return true;
-      }
-      @Override
-      public void handleFailure(ContextInternal ctx, Throwable failure) {
-        ctx.executeFromIO(() -> {
-          connectionExceptionHandler.handle(failure);
-        });
-      }
+    websocketCM.getConnection(host, ssl, port, host, null, (ctx, conn) -> {
+      ctx.executeFromIO(() -> {
+        handler.handle((Http1xClientConnection) conn);
+      });
+      return true;
+    }, (ctx, failure) -> {
+      ctx.executeFromIO(() -> {
+        connectionExceptionHandler.handle(failure);
+      });
     });
   }
 
-  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host, Waiter<HttpClientConnection> waiter) {
-    httpCM.getConnection(peerHost, ssl, port, host, waiter);
+  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host,
+                               Handler<HttpConnection> connectionHandler,
+                               BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
+                               BiConsumer<ContextInternal, Throwable> onFailure) {
+    httpCM.getConnection(peerHost, ssl, port, host, connectionHandler, onSuccess, onFailure);
   }
 
   /**
