@@ -17,9 +17,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextInternal;
@@ -43,17 +43,19 @@ class ConnectionManager {
   private final HttpClientImpl client;
   private final Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<>();
   private final Map<EndpointKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
+  private final HttpVersion version;
   private final long maxSize;
 
   ConnectionManager(HttpClientImpl client,
                     HttpClientMetrics metrics,
+                    HttpVersion version,
                     long maxSize,
                     int maxWaitQueueSize) {
     this.client = client;
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;
     this.maxSize = maxSize;
-
+    this.version = version;
   }
 
   private static final class EndpointKey {
@@ -111,7 +113,7 @@ class ConnectionManager {
       Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
         int maxPoolSize = Math.max(client.getOptions().getMaxPoolSize(), client.getOptions().getHttp2MaxPoolSize());
         Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(client, metric, ssl, peerHost, host, port);
+        HttpChannelConnector connector = new HttpChannelConnector(client, metric, version, ssl, peerHost, host, port);
         Pool<HttpClientConnection> pool = new Pool<>(connector, maxWaitQueueSize, maxSize,
           v -> {
             if (metrics != null) {

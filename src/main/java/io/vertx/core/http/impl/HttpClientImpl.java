@@ -18,8 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.pool.ConnectionProvider;
-import io.vertx.core.http.impl.pool.Waiter;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -147,8 +145,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     long maxWeight = options.getMaxPoolSize() * options.getHttp2MaxPoolSize();
-    websocketCM = new ConnectionManager(this, metrics, maxWeight, options.getMaxWaitQueueSize());
-    httpCM = new ConnectionManager(this, metrics, maxWeight, options.getMaxWaitQueueSize());
+    websocketCM = new ConnectionManager(this, metrics, HttpVersion.HTTP_1_1, maxWeight, options.getMaxWaitQueueSize());
+    httpCM = new ConnectionManager(this, metrics, options.getProtocolVersion(), maxWeight, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
   }
 

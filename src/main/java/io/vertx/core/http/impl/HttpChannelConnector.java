@@ -65,6 +65,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
   HttpChannelConnector(HttpClientImpl client,
                        Object metric,
+                       HttpVersion version,
                        boolean ssl,
                        String peerHost,
                        String host,
@@ -74,7 +75,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     this.options = client.getOptions();
     this.metrics = client.metrics();
     this.sslHelper = client.getSslHelper();
-    this.version = options.getProtocolVersion();
+    this.version = version;
     this.http1Weight = client.getOptions().getHttp2MaxPoolSize();
     this.http2Weight = client.getOptions().getMaxPoolSize();
     this.weight = version == HttpVersion.HTTP_2 ? http2Weight : http1Weight;
