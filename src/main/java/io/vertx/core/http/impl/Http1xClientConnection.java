@@ -635,7 +635,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     super.doResume();
     paused = false;
     if (pausedChunk != null) {
-      vertx.runOnContext(v -> {
+      context.runOnContext(v -> {
         if (pausedChunk != null) {
           Buffer chunk = pausedChunk;
           pausedChunk = null;
