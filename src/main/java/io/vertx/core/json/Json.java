@@ -42,8 +42,8 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class Json {
 
-  public static ObjectMapper mapper = new ObjectMapper();
-  public static ObjectMapper prettyMapper = new ObjectMapper();
+  public static ObjectMapper mapper = new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+  public static ObjectMapper prettyMapper = new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
