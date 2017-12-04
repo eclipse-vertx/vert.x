@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ConnectionManagerTest extends VertxTestBase {
+public class ConnectionPoolTest extends VertxTestBase {
 
   private static final SocketAddress TEST_ADDRESS = SocketAddress.inetSocketAddress(8080, "localhost");
 
