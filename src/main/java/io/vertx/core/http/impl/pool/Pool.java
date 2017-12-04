@@ -182,12 +182,12 @@ public class Pool<C> {
     ConnectionListener<C> listener = new ConnectionListener<C>() {
       @Override
       public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextImpl context, long initialWeight, long actualWeight) {
-        waiter.initConnection(context, conn);
-        boolean usable;
+        boolean available;
         synchronized (Pool.this) {
-          usable = initConnection(waiter, holder, context, concurrency, conn, channel, initialWeight, actualWeight);
+          available = initConnection(waiter, holder, context, concurrency, conn, channel, initialWeight, actualWeight);
         }
-        if (usable) {
+        waiter.initConnection(context, conn);
+        if (available) {
           boolean consumed = deliverToWaiter(holder, waiter);
           synchronized (Pool.this) {
             if (!consumed) {
