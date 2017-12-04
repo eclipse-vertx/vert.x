@@ -30,16 +30,18 @@ import java.util.function.BiConsumer;
  *
  * Pool invariants:
  * - the pool {@link #capacity} is the sum of the {@link Holder#capacity} of the {@link #available} list
- * - a connection in the {@link #available} list has its {@code Holder#capacity > 0}
+ * - a connection is in the {@link #available} list has its {@code Holder#capacity > 0}
  * - the {@link #weight} is the sum of all inflight connections {@link Holder#weight}
  *
  * A connection is delivered to a {@link Waiter} on the connection's event loop thread, the waiter must take care of
  * calling {@link io.vertx.core.impl.ContextInternal#executeFromIO} if necessary.
  *
  * Calls to the pool are synchronized on the pool to avoid race conditions and maintain its invariants. This pool can
- * be called from different threads safely (although it is not encouraged for performance reasons), since it synchronizes
- * on the pool and callbacks are asynchronous on the event loop thread of the connection without holding the pool
- * lock to avoid deadlocks. We benefit from biased locking which makes the overhead of synchronized near zero.
+ * be called from different threads safely (although it is not encouraged for performance reasons, we benefit from biased
+ * locking which makes the overhead of synchronized near zero), since it synchronizes on the pool.
+ *
+ * - acquisition success are on the event loop thread of the connection without holding the pool lock to avoid deadlocks.
+ * - acquisition failures are on an event loop too without holding the pool lock to avoid deadlocks.
  *
  * To constrain the number of connections the pool maintains a {@link #weight} value that must remain below the the
  * {@link #maxWeight} value to create a connection. Weight is used instead of counting connection because this pool
@@ -50,6 +52,11 @@ import java.util.function.BiConsumer;
  * provides the initial weight returned by the connect method and the actual connection weight so it can be used to
  * correct the current weight. When the channel fails to connect the {@link ConnectionListener#onConnectFailure} failure
  * provides the initial weight so it can be used to correct the current weight.
+ *
+ * When a connection is recycled and reaches its full capacity (i.e {@code Holder#concurrency == Holder#capacity},
+ * the behavior depends on the {@link ConnectionListener#onRecycle(int, boolean)} event that release this connection.
+ * When {@code disposable} is {@code true} the connection is closed, otherwise it is maintained in the pool, letting
+ * the borrower define the behavior. HTTP/1 will close the connection and HTTP/2 will maintain it.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
