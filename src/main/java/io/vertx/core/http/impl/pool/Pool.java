@@ -171,9 +171,7 @@ public class Pool<C> {
           boolean consumed = deliverToWaiter(holder, waiter);
           synchronized (Pool.this) {
             if (!consumed) {
-              synchronized (this) {
-                recycleConnection(holder, 1,false);
-              }
+              recycleConnection(holder, 1,false);
             }
             checkPending();
           }
