@@ -88,11 +88,6 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   }
 
   @Override
-  public boolean isValid(HttpClientConnection conn) {
-    return conn.isValid();
-  }
-
-  @Override
   public void close(HttpClientConnection conn) {
     conn.close();
   }
@@ -295,7 +290,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       listener.onConnectSuccess(conn, http1MaxConcurrency, ch, context, weight, http1Weight);
     });
     clientHandler.removeHandler(conn -> {
-      listener.onClose();
+      listener.onDiscard();
     });
     ch.pipeline().addLast("handler", clientHandler);
   }
@@ -332,7 +327,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
         if (metrics != null) {
           metrics.endpointDisconnected(metric, conn.metric());
         }
-        listener.onClose();
+        listener.onDiscard();
       });
     } catch (Exception e) {
       connectFailed(context, ch, listener, e);

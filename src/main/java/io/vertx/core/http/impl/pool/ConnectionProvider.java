@@ -35,13 +35,6 @@ public interface ConnectionProvider<C> {
   long connect(ConnectionListener<C> listener, ContextImpl context);
 
   /**
-   * Check wether a connection is valid.
-   *
-   * @param conn the connection to check
-   */
-  boolean isValid(C conn);
-
-  /**
    * Close a connection.
    *
    * @param conn the connection

@@ -64,6 +64,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
+  synchronized void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+    listener.onDiscard();
+    super.onGoAwaySent(lastStreamId, errorCode, debugData);
+  }
+
+  @Override
+  synchronized void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+    listener.onDiscard();
+    super.onGoAwayReceived(lastStreamId, errorCode, debugData);
+  }
+
+  @Override
   public Channel channel() {
     return chctx.channel();
   }
@@ -103,11 +115,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
     }
     completionHandler.handle(fut);
-  }
-
-  @Override
-  public boolean isValid() {
-    return !isClosed() && !isGoneAway();
   }
 
   @Override

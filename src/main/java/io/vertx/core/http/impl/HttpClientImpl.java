@@ -1079,11 +1079,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         }
         getConnectionForWebsocket(ssl != null ? ssl : options.isSsl(), port, host, conn -> {
           conn.exceptionHandler(connectionExceptionHandler);
-          if (conn.isValid()) {
-            conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
-          } else {
-            websocket(port, host, requestURI, headers, version, subProtocols, wsConnect);
-          }
+          conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
         }, connectionExceptionHandler, context);
       }
       return this;

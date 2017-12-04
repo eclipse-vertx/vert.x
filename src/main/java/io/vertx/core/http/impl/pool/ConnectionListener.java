@@ -66,8 +66,8 @@ public interface ConnectionListener<C> {
   void onRecycle(int capacity, boolean disposable);
 
   /**
-   * Signals the connection is closed.
+   * Signals the connection must not be used anymore by the pool.
    */
-  void onClose();
+  void onDiscard();
 
 }

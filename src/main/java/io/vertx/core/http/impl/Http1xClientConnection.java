@@ -70,15 +70,16 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   private final String host;
   private final int port;
   private final Object endpointMetric;
-  private final Deque<StreamImpl> pending = new ArrayDeque<>();
-  private final Deque<StreamImpl> inflight = new ArrayDeque<>();
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
 
   private WebSocketClientHandshaker handshaker;
+  private WebSocketImpl ws;
+
+  private final Deque<StreamImpl> pending = new ArrayDeque<>();
+  private final Deque<StreamImpl> inflight = new ArrayDeque<>();
   private StreamImpl currentRequest;
   private StreamImpl currentResponse;
-  private WebSocketImpl ws;
 
   private boolean paused;
   private Buffer pausedChunk;
@@ -329,7 +330,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
             ByteBuf buf = (ByteBuf) msg;
             connection.handleMessageReceived(buf);
           }
-        }.removeHandler(sock -> conn.listener.onClose()));
+        }.removeHandler(sock -> conn.listener.onDiscard()));
 
         return socket;
       }
@@ -611,10 +612,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
-  public boolean isValid() {
-    return chctx.channel().isOpen();
-  }
-
   @Override
   public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
@@ -712,6 +709,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   @Override
   public synchronized void close() {
+    listener.onDiscard();
     if (handshaker == null) {
       super.close();
     } else {

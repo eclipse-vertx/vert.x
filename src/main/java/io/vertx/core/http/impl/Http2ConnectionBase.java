@@ -131,10 +131,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return closed;
   }
 
-  synchronized boolean isGoneAway() {
-    return goneAway;
-  }
-
   synchronized void onConnectionError(Throwable cause) {
     synchronized (this) {
       for (VertxHttp2Stream stream : streams.values()) {
@@ -344,7 +340,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       throw new IllegalArgumentException();
     }
     if (lastStreamId < 0) {
-      throw new IllegalArgumentException();
+      lastStreamId = handler.connection().remote().lastStreamCreated();
     }
     handler.writeGoAway(errorCode, lastStreamId, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER);
     return this;

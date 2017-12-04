@@ -215,28 +215,8 @@ public class ConnectionManagerTest extends VertxTestBase {
     waiter2.assertSuccess(conn);
   }
 
-  /*
-    @Test
-    public void testRecycleClosedConnection() {
-      FakeConnnectionPool pool = new FakeConnnectionPool(1);
-      FakeConnectionProvider provider = new FakeConnectionProvider();
-      ConnectionManager<FakeConnection> mgr = new ConnectionManager<>(null, provider, pool, 3);
-      FakeWaiter waiter1 = new FakeWaiter();
-      mgr.getConnection("localhost", false, 8080, "localhost", waiter1);
-      FakeConnection conn = provider.assertRequest(TEST_ADDRESS);
-      conn.connect();
-      assertWaitUntil(waiter1::isComplete);
-      FakeWaiter waiter2 = new FakeWaiter();
-      mgr.getConnection("localhost", false, 8080, "localhost", waiter2);
-      provider.assertRequests(TEST_ADDRESS, 0);
-      conn.close();
-      conn.recycle();
-  //    assertWaitUntil(waiter2::isComplete);
-  //    waiter2.assertSuccess(conn);
-    }
-  */
   @Test
-  public void testRecycleInvalidConnection() {
+  public void testRecycleDiscardedConnection() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
     FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector);
     FakeWaiter waiter1 = new FakeWaiter();
@@ -246,7 +226,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     waitUntil(waiter1::isComplete);
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
-    conn.invalidate();
+    conn.close();
     waiter1.recycle();
     waitUntil(() -> connector.requests(TEST_ADDRESS) == 1);
     assertFalse(mgr.closed());
@@ -360,6 +340,22 @@ public class ConnectionManagerTest extends VertxTestBase {
     waiter2.assertSuccess(conn);
     conn.recycle(true);
     assertEquals(0, mgr.size());
+  }
+
+  @Test
+  public void testDiscardWaiterWhenFull() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(2, 1, connector);
+    FakeWaiter waiter1 = new FakeWaiter();
+    mgr.getConnection(waiter1);
+    FakeConnection conn = connector.assertRequest();
+    FakeWaiter waiter2 = new FakeWaiter();
+    mgr.getConnection(waiter2);
+    FakeWaiter waiter3 = new FakeWaiter();
+    mgr.getConnection(waiter3);
+    FakeWaiter waiter4 = new FakeWaiter();
+    mgr.getConnection(waiter4);
+    assertWaitUntil(waiter4::isFailure); // Full
   }
 
   @Test
@@ -651,16 +647,10 @@ public class ConnectionManagerTest extends VertxTestBase {
     private long inflight;
     private long concurrency = 1;
     private int status = DISCONNECTED;
-    private boolean valid = true;
 
     FakeConnection(ContextImpl context, ConnectionListener<FakeConnection> listener) {
       this.context = context;
       this.listener = listener;
-    }
-
-    synchronized FakeConnection invalidate() {
-      valid = false;
-      return this;
     }
 
     synchronized void close() {
@@ -668,7 +658,7 @@ public class ConnectionManagerTest extends VertxTestBase {
         throw new IllegalStateException();
       }
       status = CLOSED;
-      listener.onClose();
+      listener.onDiscard();
     }
 
     synchronized long recycle(boolean dispose) {
@@ -726,10 +716,6 @@ public class ConnectionManagerTest extends VertxTestBase {
     void fail(Throwable err) {
       context.nettyEventLoop().execute(() -> listener.onConnectFailure(context, err, 1));
     }
-
-    synchronized boolean isValid() {
-      return valid;
-    }
   }
 
   class FakeConnectionProvider implements ConnectionProvider<FakeConnection> {
@@ -738,11 +724,6 @@ public class ConnectionManagerTest extends VertxTestBase {
 
     void assertRequests(int expectedSize) {
       assertEquals(expectedSize, pendingRequests.size());
-    }
-
-    @Override
-    public boolean isValid(FakeConnection conn) {
-      return conn.isValid();
     }
 
     int requests(SocketAddress address) {
@@ -765,7 +746,7 @@ public class ConnectionManagerTest extends VertxTestBase {
 
     @Override
     public void close(FakeConnection conn) {
-      conn.listener.onClose();
+      conn.listener.onDiscard();
     }
   }
 }

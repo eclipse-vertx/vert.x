@@ -68,11 +68,11 @@ public interface HttpConnection {
   }
 
   /**
-   * Like {@link #goAway(long, int)} with a last stream id {@code 2^31-1}.
+   * Like {@link #goAway(long, int)} with a last stream id {@code -1} which means to disallow any new stream creation.
    */
   @Fluent
   default HttpConnection goAway(long errorCode) {
-    return goAway(errorCode, Integer.MAX_VALUE);
+    return goAway(errorCode, -1);
   }
 
   /**

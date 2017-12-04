@@ -35,12 +35,6 @@ interface HttpClientConnection extends HttpConnection {
 
   void close();
 
-  /**
-   * Check if the connection is valid for creating streams. The connection might be closed or a {@literal GOAWAY}
-   * frame could have been sent or received.
-   */
-  boolean isValid();
-
   void createStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler);
 
   ContextImpl getContext();

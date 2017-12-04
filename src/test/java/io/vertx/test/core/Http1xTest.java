@@ -1245,7 +1245,6 @@ public class Http1xTest extends HttpTest {
     CompletableFuture<Void> closeFuture = new CompletableFuture<>();
     AtomicBoolean first = new AtomicBoolean(true);
     server.requestHandler(req -> {
-      System.out.println("GOT REQ " + req.path());
       if (first.compareAndSet(true, false)) {
         closeFuture.thenAccept(v -> {
           req.response().close();
@@ -1417,38 +1416,35 @@ public class Http1xTest extends HttpTest {
     client = vertx.createHttpClient(new HttpClientOptions().setDefaultHost(DEFAULT_HTTP_HOST).setDefaultPort(DEFAULT_HTTP_PORT)
         .setPipelining(false).setMaxWaitQueueSize(0).setMaxPoolSize(2));
 
+    waitFor(3);
+
+    Set<String> expected = new HashSet<>(Arrays.asList("/1", "/2"));
     server.requestHandler(req -> {
-      req.response().setStatusCode(200);
-      req.response().end("OK");
+      assertTrue(expected.contains(req.path()));
+      complete();
     });
 
-    server.listen(onSuccess(s -> {
-      HttpClientRequest req1 = client.get(DEFAULT_TEST_URI, resp -> {
-        resp.bodyHandler(body -> {
-          assertEquals("OK", body.toString());
-        });
-      });
-      req1.exceptionHandler(t -> fail("Should not be called." + t.getMessage()));
+    startServer();
 
-      HttpClientRequest req2 = client.get(DEFAULT_TEST_URI, resp -> {
-        resp.bodyHandler(body -> {
-          assertEquals("OK", body.toString());
-          testComplete();
-        });
-      });
-      req2.exceptionHandler(t -> fail("Should not be called."));
+    HttpClientRequest req1 = client.get("/1", resp -> {
+      fail("Should not be called.");
+    });
 
-      HttpClientRequest req3 = client.get(DEFAULT_TEST_URI, resp -> {
-        fail("Should not be called.");
-      });
-      req3.exceptionHandler(t -> {
-        assertTrue("Incorrect exception time.", t instanceof ConnectionPoolTooBusyException);
-      });
+    HttpClientRequest req2 = client.get("/2", resp -> {
+      fail("Should not be called.");
+    });
 
-      req1.end();
-      req2.end();
-      req3.end();
-    }));
+    HttpClientRequest req3 = client.get("/3", resp -> {
+      fail("Should not be called.");
+    });
+    req3.exceptionHandler(t -> {
+      assertTrue("Incorrect exception: " + t.getClass().getName(), t instanceof ConnectionPoolTooBusyException);
+      complete();
+    });
+
+    req1.end();
+    req2.end();
+    req3.end();
 
     await();
   }

@@ -682,7 +682,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         ctx.executeFromIO(() -> {
           handleException(failure);
         });
-
       });
       connecting = true;
     }

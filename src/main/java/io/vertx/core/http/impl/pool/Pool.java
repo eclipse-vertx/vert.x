@@ -21,7 +21,6 @@ import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -29,10 +28,10 @@ import java.util.function.BiConsumer;
 /**
  * The pool is a queue of waiters and a list of connections.
  *
- * The pools invariant:
+ * Pool invariants:
  * - the pool {@link #capacity} is the sum of the {@link Holder#capacity} of the {@link #available} list
  * - a connection in the {@link #available} list has its {@code Holder#capacity > 0}
- * - the {@link #weight} is the sum of all {@link Holder#weight}, i.e the connections in the {@link #all} set
+ * - the {@link #weight} is the sum of all inflight connections {@link Holder#weight}
  *
  * A connection is delivered to a {@link Waiter} on the connection's event loop thread, the waiter must take care of
  * calling {@link io.vertx.core.impl.ContextInternal#executeFromIO} if necessary.
@@ -64,6 +63,7 @@ public class Pool<C> {
    */
   public static class Holder<C> {
 
+    boolean removed;     // Removed
     C connection;        // The connection instance
     long concurrency;    // How many times we can borrow from the connection
     long capacity;       // How many times the connection is currently borrowed (0 <= capacity <= concurrency)
@@ -79,7 +79,6 @@ public class Pool<C> {
   private final int queueMaxSize;
 
   private final Queue<Waiter<C>> waiters = new ArrayDeque<>();
-  private final Set<Holder<C>> all;
   private final Deque<Holder<C>> available;
   private boolean closed;
   private long capacity;
@@ -98,59 +97,73 @@ public class Pool<C> {
     this.connector = connector;
     this.queueMaxSize = queueMaxSize;
     this.poolClosed = poolClosed;
-    this.all = new HashSet<>();
     this.available = new ArrayDeque<>();
     this.connectionAdded = connectionAdded;
     this.connectionRemoved = connectionRemoved;
   }
 
+  /**
+   * Get a connection for a waiter asynchronously.
+   *
+   * @param waiter the waiter
+   * @return wether the pool can satisfy the request
+   */
   public synchronized boolean getConnection(Waiter<C> waiter) {
     if (closed) {
       return false;
     }
-    // Enqueue
-    if (capacity > 0 || weight < maxWeight || (queueMaxSize < 0 || waiters.size() < queueMaxSize)) {
+    int size = waiters.size();
+    if (size == 0 && acquireConnection(waiter)) {
+      return true;
+    }
+    if (queueMaxSize < 0  || size < queueMaxSize) {
       waiters.add(waiter);
-      checkPending();
     } else {
-      waiter.handleFailure(waiter.context, new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize));
+      waiter.context.nettyEventLoop().execute(() -> {
+        waiter.handleFailure(waiter.context, new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize));
+      });
     }
     return true;
   }
 
-  private void checkPending() {
-    while (true) {
-      Waiter<C> waiter = waiters.peek();
-      if (waiter == null) {
-        break;
+  /**
+   * Attempt to acquire a connection for the waiter, either borrowed from the pool or by creating a new connection.
+   *
+   * This method does not modify the waiters list.
+   *
+   * @return wether the waiter is assigned a connection (or a future connection)
+   */
+  private boolean acquireConnection(Waiter<C> waiter) {
+    if (capacity > 0) {
+      capacity--;
+      Holder<C> conn = available.peek();
+      if (--conn.capacity == 0) {
+        available.poll();
       }
-      if (capacity > 0) {
-        capacity--;
-        Holder<C> conn = available.peek();
-        if (--conn.capacity == 0) {
-          available.poll();
-        }
-        waiters.poll();
-        ContextImpl ctx = conn.context;
-        ctx.nettyEventLoop().execute(() -> {
-          if (connector.isValid(conn.connection)) {
-            boolean handled = deliverToWaiter(conn, waiter);
-            if (!handled) {
-              synchronized (Pool.this) {
-                recycleConnection(conn, 1,false);
-                checkPending();
-              }
-            }
-          } else {
-            synchronized (Pool.this) {
-              waiters.add(waiter);
-              closed(conn);
-            }
+      ContextImpl ctx = conn.context;
+      ctx.nettyEventLoop().execute(() -> {
+        boolean handled = deliverToWaiter(conn, waiter);
+        if (!handled) {
+          synchronized (Pool.this) {
+            recycleConnection(conn, 1,false);
+            checkPending();
           }
-        });
-      } else if (weight < maxWeight) {
+        }
+      });
+      return true;
+    } else if (weight < maxWeight) {
+      weight += createConnection(waiter);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private void checkPending() {
+    while (waiters.size() > 0) {
+      Waiter<C> waiter = waiters.peek();
+      if (acquireConnection(waiter)) {
         waiters.poll();
-        weight += createConnection(waiter);
       } else {
         break;
       }
@@ -186,7 +199,7 @@ public class Pool<C> {
         waiter.handleFailure(context, err);
         synchronized (Pool.this) {
           Pool.this.weight -= weight;
-          all.remove(holder);
+          holder.removed = true;
           checkPending();
           checkClose();
         }
@@ -194,6 +207,9 @@ public class Pool<C> {
       @Override
       public void onConcurrencyChange(long concurrency) {
         synchronized (Pool.this) {
+          if (holder.removed) {
+            return;
+          }
           if (holder.concurrency < concurrency) {
             long diff = concurrency - holder.concurrency;
             capacity += diff;
@@ -213,27 +229,46 @@ public class Pool<C> {
         if (capacity < 0) {
           throw new IllegalArgumentException("Illegal capacity");
         }
-        Pool.this.recycle(holder, capacity, disposable);
+        synchronized (Pool.this) {
+          if (holder.removed) {
+            return;
+          }
+          recycle(holder, capacity, disposable);
+        }
       }
       @Override
-      public void onClose() {
-        Pool.this.closed(holder);
+      public void onDiscard() {
+        synchronized (Pool.this) {
+          if (holder.removed) {
+            return;
+          }
+          closed(holder);
+        }
       }
     };
-    all.add(holder);
     return connector.connect(listener, waiter.context);
   }
 
-  private synchronized void recycle(Holder<C> conn, int capacity, boolean closeable) {
-    recycleConnection(conn, capacity, closeable);
+  private synchronized void recycle(Holder<C> holder, int capacity, boolean closeable) {
+    recycleConnection(holder, capacity, closeable);
     checkPending();
     checkClose();
   }
 
-  private synchronized void closed(Holder<C> conn) {
-    closeConnection(conn);
+  private synchronized void closed(Holder<C> holder) {
+    closeConnection(holder);
     checkPending();
     checkClose();
+  }
+
+  private void closeConnection(Holder<C> holder) {
+    holder.removed = true;
+    connectionRemoved.accept(holder.channel, holder.connection);
+    if (holder.capacity > 0) {
+      available.remove(holder);
+      capacity -= holder.capacity;
+    }
+    weight -= holder.weight;
   }
 
   /**
@@ -271,16 +306,6 @@ public class Pool<C> {
     }
   }
 
-  private void closeConnection(Holder<C> holder) {
-    connectionRemoved.accept(holder.channel, holder.connection);
-    all.remove(holder);
-    if (holder.capacity > 0) {
-      available.remove(holder);
-      capacity -= holder.capacity;
-    }
-    weight -= holder.weight;
-  }
-
   private boolean initConnection(Waiter<C> waiter, Holder<C> holder, ContextImpl context, long concurrency, C conn, Channel channel, long oldWeight, long newWeight) {
     weight += newWeight - oldWeight;
     holder.context = context;
@@ -290,7 +315,6 @@ public class Pool<C> {
     holder.weight = newWeight;
     holder.capacity = concurrency;
     connectionAdded.accept(holder.channel, holder.connection);
-    all.add(holder);
     if (holder.capacity == 0) {
       waiters.add(waiter);
       return false;
@@ -304,7 +328,7 @@ public class Pool<C> {
   }
 
   private void checkClose() {
-    if (all.isEmpty()) {
+    if (weight == 0) {
       // No waiters and no connections - remove the ConnQueue
       closed = true;
       poolClosed.handle(null);
