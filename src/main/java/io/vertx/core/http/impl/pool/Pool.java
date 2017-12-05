@@ -120,6 +120,22 @@ public class Pool<C> {
     this.connectionRemoved = connectionRemoved;
   }
 
+  public synchronized int waitersInQueue() {
+    return waitersQueue.size();
+  }
+
+  public synchronized int waitersCount() {
+    return waitersCount;
+  }
+
+  public synchronized long weight() {
+    return weight;
+  }
+
+  public synchronized long capacity() {
+    return capacity;
+  }
+
   /**
    * Get a connection for a waiter asynchronously.
    *
@@ -318,14 +334,14 @@ public class Pool<C> {
   // These methods assume to be called under synchronization
 
   private void recycleConnection(Holder<C> conn, int c, boolean closeable) {
-    long nc = conn.capacity + c;
-    if (nc > conn.concurrency) {
+    long newCapacity = conn.capacity + c;
+    if (newCapacity > conn.concurrency) {
       log.debug("Attempt to recycle a connection more than permitted");
       return;
     }
-    if (closeable && nc == conn.concurrency && waitersQueue.isEmpty()) {
+    if (closeable && newCapacity == conn.concurrency && waitersQueue.isEmpty()) {
       available.remove(conn);
-      capacity -= conn.concurrency;
+      capacity -= conn.capacity;
       conn.capacity = 0;
       connector.close(conn.connection);
     } else {
@@ -333,7 +349,7 @@ public class Pool<C> {
       if (conn.capacity == 0) {
         available.add(conn);
       }
-      conn.capacity = nc;
+      conn.capacity = newCapacity;
     }
   }
 

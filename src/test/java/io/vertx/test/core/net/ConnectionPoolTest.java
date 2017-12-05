@@ -41,7 +41,6 @@ public class ConnectionPoolTest extends VertxTestBase {
     private final int queueMaxSize;
     private final int maxPoolSize;
     private Pool<FakeConnection> pool;
-    private int size;
     private Set<FakeConnection> active = new HashSet<>();
     private boolean closed = true;
     private int seq;
@@ -65,7 +64,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
 
     synchronized int size() {
-      return size;
+      return active.size();
     }
 
     synchronized Pool<FakeConnection> pool() {
@@ -88,11 +87,9 @@ public class ConnectionPoolTest extends VertxTestBase {
             }, (channel, conn) -> {
             synchronized (FakeConnectionManager.this) {
               active.add(conn);
-              size++;
             }
           }, (channel, conn) -> {
             synchronized (FakeConnectionManager.this) {
-              size--;
               active.remove(conn);
             }
           }
@@ -421,12 +418,12 @@ public class ConnectionPoolTest extends VertxTestBase {
                 throw new Exception();
               } */ else {
                 vertx.setTimer(10, id -> {
-                  latch.countDown();
                   if (action < 15) {
                     conn.close();
                   } else {
                     conn.recycle();
                   }
+                  latch.countDown();
                 });
                 return true;
               }
@@ -449,6 +446,15 @@ public class ConnectionPoolTest extends VertxTestBase {
         e.printStackTrace();
       }
     }
+
+    assertWaitUntil(() -> mgr.closed());
+
+    // Check state at the end
+    assertEquals(0, mgr.size());
+    assertEquals(0, mgr.pool.waitersCount());
+    assertEquals(0, mgr.pool.waitersInQueue());
+    assertEquals(0, mgr.pool.weight());
+    assertEquals(0, mgr.pool.capacity());
   }
 
   class FakeWaiter extends Waiter<FakeConnection> {
