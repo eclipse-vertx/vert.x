@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -72,9 +73,14 @@ public final class FakeDNSServer extends DnsServer {
   private int port = PORT;
   private final RecordStore store;
   private DatagramAcceptor acceptor;
+  private final ThreadLocal<DnsMessage> currentMessage = new ThreadLocal<>();
 
   public FakeDNSServer(RecordStore store) {
     this.store = store;
+  }
+
+  public DnsMessage currentDnsMessage() {
+    return currentMessage.get();
   }
 
   public InetSocketAddress localAddress() {
@@ -340,6 +346,17 @@ public final class FakeDNSServer extends DnsServer {
         // Use our own codec to support AAAA testing
         session.getFilterChain().addFirst("codec",
           new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
+      }
+      @Override
+      public void messageReceived(IoSession session, Object message) {
+        if (message instanceof DnsMessage) {
+          DnsMessage dnsMessage = (DnsMessage) message;
+          currentMessage.set(dnsMessage);
+        }
+        super.messageReceived(session, message);
+        if (message instanceof DnsMessage) {
+          currentMessage.set(null);
+        }
       }
     });
 

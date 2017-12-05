@@ -202,7 +202,8 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testLookup4() throws Exception {
     final String ip = "10.0.0.1";
-    DnsClient dns = prepareDns(FakeDNSServer.testLookup4(ip));
+    FakeDNSServer server = FakeDNSServer.testLookup4(ip);
+    DnsClient dns = prepareDns(server);
 
     dns.lookup4("vertx.io", onSuccess(result -> {
       assertEquals(ip, result);
