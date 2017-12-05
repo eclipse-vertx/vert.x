@@ -27,6 +27,7 @@ import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.test.fakedns.FakeDNSServer;
+import org.apache.directory.server.dns.messages.DnsMessage;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -204,9 +205,10 @@ public class DNSTest extends VertxTestBase {
     final String ip = "10.0.0.1";
     FakeDNSServer server = FakeDNSServer.testLookup4(ip);
     DnsClient dns = prepareDns(server);
-
     dns.lookup4("vertx.io", onSuccess(result -> {
       assertEquals(ip, result);
+      DnsMessage msg = server.pollMessage();
+      assertTrue(msg.isRecursionDesired());
       testComplete();
     }));
     await();

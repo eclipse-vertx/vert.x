@@ -259,7 +259,7 @@ public final class DnsClientImpl implements DnsClient {
     long timerID;
 
     public Query(String name, DnsRecordType[] types, Handler<AsyncResult<List<T>>> handler) {
-      this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt());
+      this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt()).setRecursionDesired(true);
       for (DnsRecordType type: types) {
         msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
       }

@@ -43,12 +43,7 @@ import org.apache.mina.transport.socket.DatagramSessionConfig;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -73,14 +68,14 @@ public final class FakeDNSServer extends DnsServer {
   private int port = PORT;
   private final RecordStore store;
   private DatagramAcceptor acceptor;
-  private final ThreadLocal<DnsMessage> currentMessage = new ThreadLocal<>();
+  private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
 
   public FakeDNSServer(RecordStore store) {
     this.store = store;
   }
 
-  public DnsMessage currentDnsMessage() {
-    return currentMessage.get();
+  public synchronized DnsMessage pollMessage() {
+    return currentMessage.poll();
   }
 
   public InetSocketAddress localAddress() {
@@ -350,13 +345,11 @@ public final class FakeDNSServer extends DnsServer {
       @Override
       public void messageReceived(IoSession session, Object message) {
         if (message instanceof DnsMessage) {
-          DnsMessage dnsMessage = (DnsMessage) message;
-          currentMessage.set(dnsMessage);
+          synchronized (FakeDNSServer.this) {
+           currentMessage.add((DnsMessage) message);
+          }
         }
         super.messageReceived(session, message);
-        if (message instanceof DnsMessage) {
-          currentMessage.set(null);
-        }
       }
     });
 
