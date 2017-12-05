@@ -29,7 +29,6 @@ import java.util.function.BiConsumer;
  * The pool is a queue of waiters and a list of connections.
  *
  * Pool invariants:
- * - the pool {@link #capacity} is the sum of the {@link Holder#capacity} of the {@link #available} list
  * - a connection is in the {@link #available} list has its {@code Holder#capacity > 0}
  * - the {@link #weight} is the sum of all inflight connections {@link Holder#weight}
  *
@@ -97,7 +96,6 @@ public class Pool<C> {
   private int waitersCount;                                         // The number of waiters (including the inflight waiters not in the queue)
 
   private final Deque<Holder<C>> available;                         // Available connections
-  private long capacity;                                            // The actual pool capacity (sum of holder's capacity)
 
   private final long maxWeight;                                     // The max weight (equivalent to max pool size)
   private long weight;                                              // The actual pool weight (equivalent to connection count)
@@ -133,7 +131,7 @@ public class Pool<C> {
   }
 
   public synchronized long capacity() {
-    return capacity;
+    return available.stream().mapToLong(c -> c.capacity).sum();
   }
 
   /**
@@ -168,8 +166,7 @@ public class Pool<C> {
    * @return wether the waiter is assigned a connection (or a future connection)
    */
   private boolean acquireConnection(Waiter<C> waiter) {
-    if (capacity > 0) {
-      capacity--;
+    if (available.size() > 0) {
       Holder<C> conn = available.peek();
       if (--conn.capacity == 0) {
         available.poll();
@@ -227,7 +224,6 @@ public class Pool<C> {
           waitersCount--;
           holder.capacity--;
           if (holder.capacity > 0) {
-            capacity += holder.capacity;
             available.add(holder);
           }
         }
@@ -258,7 +254,6 @@ public class Pool<C> {
           }
           if (holder.concurrency < concurrency) {
             long diff = concurrency - holder.concurrency;
-            capacity += diff;
             if (holder.capacity == 0) {
               available.add(holder);
             }
@@ -312,7 +307,6 @@ public class Pool<C> {
     connectionRemoved.accept(holder.channel, holder.connection);
     if (holder.capacity > 0) {
       available.remove(holder);
-      capacity -= holder.capacity;
       holder.capacity = 0;
     }
     weight -= holder.weight;
@@ -341,11 +335,9 @@ public class Pool<C> {
     }
     if (closeable && newCapacity == conn.concurrency && waitersQueue.isEmpty()) {
       available.remove(conn);
-      capacity -= conn.capacity;
       conn.capacity = 0;
       connector.close(conn.connection);
     } else {
-      capacity += c;
       if (conn.capacity == 0) {
         available.add(conn);
       }
