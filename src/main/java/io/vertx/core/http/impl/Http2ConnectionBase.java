@@ -169,19 +169,24 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   synchronized void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    goneAway = true;
+    if (!goneAway) {
+      goneAway = true;
+      checkShutdownHandler();
+    }
   }
 
   synchronized void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    goneAway = true;
-    Handler<GoAway> handler = goAwayHandler;
-    if (handler != null) {
-      Buffer buffer = Buffer.buffer(debugData);
-      context.executeFromIO(() -> {
-        handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer));
-      });
+    if (!goneAway) {
+      goneAway = true;
+      Handler<GoAway> handler = goAwayHandler;
+      if (handler != null) {
+        Buffer buffer = Buffer.buffer(debugData);
+        context.executeFromIO(() -> {
+          handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer));
+        });
+      }
+      checkShutdownHandler();
     }
-    checkShutdownHandler();
   }
 
   // Http2FrameListener

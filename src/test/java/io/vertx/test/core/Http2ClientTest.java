@@ -958,26 +958,29 @@ public class Http2ClientTest extends Http2TestBase {
     });
     server.requestHandler(req -> {
       assertEquals(5, serverStatus.getAndIncrement());
-      req.response().end();
+      req.response().end("" + serverStatus.get());
     });
     startServer();
     AtomicInteger clientStatus = new AtomicInteger();
     HttpClientRequest req1 = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
     req1.connectionHandler(conn -> {
       Context ctx = Vertx.currentContext();
-      conn.shutdownHandler(v -> {
-        assertOnIOContext(ctx);
-        clientStatus.compareAndSet(1, 2);
-        complete();
-      });
       if (clientStatus.getAndIncrement() == 0) {
+        conn.shutdownHandler(v -> {
+          assertOnIOContext(ctx);
+          clientStatus.compareAndSet(1, 2);
+          complete();
+        });
         conn.shutdown();
       }
     });
-    req1.exceptionHandler(err -> {
-      complete();
+    req1.exceptionHandler(err -> fail());
+    req1.handler(resp -> {
+      resp.bodyHandler(body -> {
+        assertEquals("6", body.toString());
+        complete();
+      });
     });
-    req1.handler(resp -> fail());
     req1.end();
     await();
   }

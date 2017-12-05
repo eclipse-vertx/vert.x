@@ -35,8 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ConnectionPoolTest extends VertxTestBase {
 
-  private static final SocketAddress TEST_ADDRESS = SocketAddress.inetSocketAddress(8080, "localhost");
-
   class FakeConnectionManager {
 
     private final FakeConnectionProvider connector;
@@ -196,6 +194,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertWaitUntil(waiter::isComplete);
     waiter.assertFailure(expected);
     assertTrue(waiter.isFailure());
+    assertTrue(mgr.closed());
   }
 
   @Test
@@ -228,7 +227,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     mgr.getConnection(waiter2);
     conn.close();
     waiter1.recycle();
-    waitUntil(() -> connector.requests(TEST_ADDRESS) == 1);
+    waitUntil(() -> connector.requests() == 1);
     assertFalse(mgr.closed());
     FakeConnection conn2 = connector.assertRequest();
     conn2.connect();
@@ -356,6 +355,24 @@ public class ConnectionPoolTest extends VertxTestBase {
     FakeWaiter waiter4 = new FakeWaiter();
     mgr.getConnection(waiter4);
     assertWaitUntil(waiter4::isFailure); // Full
+  }
+
+  @Test
+  public void testDiscardConnectionDuringInit() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(2, 1, connector);
+    FakeWaiter waiter1 = new FakeWaiter() {
+      @Override
+      public synchronized void initConnection(ContextInternal ctx, FakeConnection conn) {
+        super.initConnection(ctx, conn);
+        conn.close(); // Close during init
+      }
+    };
+    mgr.getConnection(waiter1);
+    FakeConnection conn = connector.assertRequest();
+    conn.connect();
+    assertWaitUntil(() -> connector.requests() == 1); // Connection close during init - reattempt to connect
+    assertFalse(mgr.closed());
   }
 
   @Test
@@ -706,8 +723,8 @@ public class ConnectionPoolTest extends VertxTestBase {
       status = CONNECTING;
       context.nettyEventLoop().execute(() -> {
         synchronized (FakeConnection.this) {
-          listener.onConnectSuccess(this, concurrency, channel, context, 1, 1);
           status = CONNECTED;
+          listener.onConnectSuccess(this, concurrency, channel, context, 1, 1);
         }
       });
       return this;
@@ -726,7 +743,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       assertEquals(expectedSize, pendingRequests.size());
     }
 
-    int requests(SocketAddress address) {
+    int requests() {
       return pendingRequests.size();
     }
 
