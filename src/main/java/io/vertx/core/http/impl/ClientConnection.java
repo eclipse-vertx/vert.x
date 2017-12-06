@@ -31,6 +31,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -476,15 +477,25 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     }
   }
 
+  private void traceRequest(HttpRequest request) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("HTTP Request: ").append(Utils.LINE_SEPARATOR);
+    sb.append(request.method().name()).append(' ').append(request.uri()).append(' ').append(request.protocolVersion().text());
+    request.headers().entries().forEach(entry -> sb.append(Utils.LINE_SEPARATOR).append(entry.getKey()).append(": ").append(entry.getValue()));
+    log.trace(sb.toString());
+  }
+
   public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked) {
     HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
     prepareHeaders(request, hostHeader, chunked);
+    if (log.isTraceEnabled()) traceRequest(request);
     writeToChannel(request);
   }
 
   public void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
     HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
     prepareHeaders(request, hostHeader, chunked);
+    if (log.isTraceEnabled()) traceRequest(request);
     if (end) {
       if (buf != null) {
         writeToChannel(new AssembledFullHttpRequest(request, buf));
