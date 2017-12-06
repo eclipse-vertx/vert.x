@@ -382,9 +382,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private void end(ByteBuf chunk) {
     synchronized (conn) {
-      if (chunk != null && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
-        headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
-      }
       write(chunk, true);
     }
   }
@@ -411,13 +408,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       checkEnded();
       boolean hasBody = false;
       if (chunk != null) {
-        int len = chunk.readableBytes();
-        bytesWritten += len;
         hasBody = true;
+        bytesWritten += chunk.readableBytes();
       } else {
         chunk = Unpooled.EMPTY_BUFFER;
       }
       if (end) {
+        if (!headWritten && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
+          headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
+        }
         handleEnded(false);
       }
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null);

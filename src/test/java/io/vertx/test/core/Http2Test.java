@@ -405,4 +405,25 @@ public class Http2Test extends HttpTest {
     }).setTimeout(10000).exceptionHandler(err -> fail(err)).end();
     await();
   }
+
+  @Test
+  public void testFoo() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.write("Hello");
+      resp.end("World");
+      assertNull(resp.headers().get("content-length"));
+      complete();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertNull(resp.getHeader("content-length"));
+      resp.bodyHandler(body -> {
+        assertEquals("HelloWorld", body.toString());
+        complete();
+      });
+    });
+    await();
+  }
 }
