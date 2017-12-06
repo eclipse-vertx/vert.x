@@ -37,9 +37,16 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
 
 import java.net.URI;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,7 +114,7 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
   synchronized HttpClientRequestImpl getCurrentRequest() {
     return currentRequest;
   }
-
+  
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
                    int maxWebSocketFrameSize, Handler<WebSocket> wsConnect) {
     if (ws != null) {
@@ -132,9 +139,17 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
       } else {
         nettyHeaders = null;
       }
-      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
-                                                                  nettyHeaders, maxWebSocketFrameSize,!client.getOptions().isSendUnmaskedFrames(),false);
-      ChannelPipeline p = chctx.pipeline();
+            
+      ChannelPipeline p = chctx.channel().pipeline(); 
+      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebsocketExtensionHandshakers(client.getOptions());
+      if (!extensionHandshakers.isEmpty()) {
+    	  p.addBefore("handler", "websocketsExtensionsHandler", new WebSocketClientExtensionHandler(
+    			  extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[extensionHandshakers.size()])));
+      }
+      
+      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, !extensionHandshakers.isEmpty(),
+              nettyHeaders, maxWebSocketFrameSize,!client.getOptions().isSendUnmaskedFrames(),false);
+      
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(chctx.channel()).addListener(future -> {
         Handler<Throwable> handler = exceptionHandler();
@@ -147,6 +162,22 @@ class ClientConnection extends Http1xConnectionBase implements HttpClientConnect
     }
   }
 
+  ArrayList<WebSocketClientExtensionHandshaker> initializeWebsocketExtensionHandshakers (HttpClientOptions options) {
+	  ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<WebSocketClientExtensionHandshaker>();
+	  if (options.tryWebsocketDeflateFrameCompression()) {
+		  extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.websocketCompressionLevel(),
+				  false));
+	  }
+	  
+	  if (options.tryUsePerMessageWebsocketCompression ()) {
+		  extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.websocketCompressionLevel(), 
+				  ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE, 
+				  options.getWebsocketCompressionAllowClientNoContext(), options.getWebsocketCompressionRequestServerNoContext()));
+	  }
+	  
+	  return extensionHandshakers;
+  }
+  
   private final class HandshakeInboundHandler extends ChannelInboundHandlerAdapter {
 
     private final boolean supportsContinuation;

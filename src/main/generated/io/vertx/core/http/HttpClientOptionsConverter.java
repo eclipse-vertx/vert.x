@@ -104,8 +104,26 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("tryUseCompression") instanceof Boolean) {
       obj.setTryUseCompression((Boolean)json.getValue("tryUseCompression"));
     }
+    if (json.getValue("tryWebsocketDeflateFrameCompression") instanceof Boolean) {
+      obj.setTryWebsocketDeflateFrameCompression((Boolean)json.getValue("tryWebsocketDeflateFrameCompression"));
+    }
+    if (json.getValue("tryWebsocketTryPermessageDefalteCompression") instanceof Boolean) {
+      obj.setTryWebsocketTryPermessageDefalteCompression((Boolean)json.getValue("tryWebsocketTryPermessageDefalteCompression"));
+    }
     if (json.getValue("verifyHost") instanceof Boolean) {
       obj.setVerifyHost((Boolean)json.getValue("verifyHost"));
+    }
+    if (json.getValue("websocketCompressionAllowClientNoContext") instanceof Boolean) {
+      obj.setWebsocketCompressionAllowClientNoContext((Boolean)json.getValue("websocketCompressionAllowClientNoContext"));
+    }
+    if (json.getValue("websocketCompressionDeflateUseWebkitName") instanceof Boolean) {
+      obj.setWebsocketCompressionDeflateUseWebkitName((Boolean)json.getValue("websocketCompressionDeflateUseWebkitName"));
+    }
+    if (json.getValue("websocketCompressionLevel") instanceof Number) {
+      obj.setWebsocketCompressionLevel(((Number)json.getValue("websocketCompressionLevel")).intValue());
+    }
+    if (json.getValue("websocketCompressionRequestServerNoContext") instanceof Boolean) {
+      obj.setWebsocketCompressionRequestServerNoContext((Boolean)json.getValue("websocketCompressionRequestServerNoContext"));
     }
   }
 
@@ -145,5 +163,9 @@ import io.vertx.core.json.JsonArray;
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
+    json.put("websocketCompressionAllowClientNoContext", obj.getWebsocketCompressionAllowClientNoContext());
+    json.put("websocketCompressionDeflateUseWebkitName", obj.getWebsocketCompressionDeflateUseWebkitName());
+    json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
+    json.put("websocketCompressionRequestServerNoContext", obj.getWebsocketCompressionRequestServerNoContext());
   }
 }
