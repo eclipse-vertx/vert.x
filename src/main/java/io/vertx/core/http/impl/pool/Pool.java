@@ -29,7 +29,7 @@ import java.util.function.BiConsumer;
  * The pool is a queue of waiters and a list of connections.
  *
  * Pool invariants:
- * - a connection is in the {@link #available} list has its {@code Holder#capacity > 0}
+ * - a connection in the {@link #available} list has its {@code Holder#capacity > 0}
  * - the {@link #weight} is the sum of all inflight connections {@link Holder#weight}
  *
  * A connection is delivered to a {@link Waiter} on the connection's event loop thread, the waiter must take care of
@@ -39,8 +39,8 @@ import java.util.function.BiConsumer;
  * be called from different threads safely (although it is not encouraged for performance reasons, we benefit from biased
  * locking which makes the overhead of synchronized near zero), since it synchronizes on the pool.
  *
- * - acquisition success are on the event loop thread of the connection without holding the pool lock to avoid deadlocks.
- * - acquisition failures are on an event loop too without holding the pool lock to avoid deadlocks.
+ * In order to avoid deadlocks, acquisition events (success or failure) are dispatched on the event loop thread of the
+ * connection without holding the pool lock.
  *
  * To constrain the number of connections the pool maintains a {@link #weight} value that must remain below the the
  * {@link #maxWeight} value to create a connection. Weight is used instead of counting connection because this pool
@@ -138,7 +138,7 @@ public class Pool<C> {
    * Get a connection for a waiter asynchronously.
    *
    * @param waiter the waiter
-   * @return wether the pool can satisfy the request
+   * @return whether the pool can satisfy the request
    */
   public synchronized boolean getConnection(Waiter<C> waiter) {
     if (closed) {
