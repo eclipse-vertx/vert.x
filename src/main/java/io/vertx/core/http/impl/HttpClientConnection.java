@@ -16,6 +16,9 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.Channel;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextImpl;
 
@@ -24,18 +27,16 @@ import io.vertx.core.impl.ContextImpl;
  */
 interface HttpClientConnection extends HttpConnection {
 
-  ContextImpl getContext();
+  Channel channel();
 
   void reportBytesWritten(long numberOfBytes);
 
   void reportBytesRead(long s);
 
-  /**
-   * Check if the connection is valid for creating streams. The connection might be closed or a {@literal GOAWAY}
-   * frame could have been sent or received.
-   */
-  boolean isValid();
-
   void close();
+
+  void createStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler);
+
+  ContextImpl getContext();
 
 }

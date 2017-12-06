@@ -20,7 +20,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -81,21 +80,25 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected final ChannelHandlerContext handlerContext;
   protected final VertxHttp2ConnectionHandler handler;
   private boolean shutdown;
-  private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
+  private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
   private final ArrayDeque<Runnable> updateSettingsHandlers = new ArrayDeque<>(4);
   private final ArrayDeque<Handler<AsyncResult<Buffer>>> pongHandlers = new ArrayDeque<>();
-  private Http2Settings serverSettings = new Http2Settings();
+  private Http2Settings localSettings = new Http2Settings();
+  private Http2Settings remoteSettings;
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
   private boolean closed;
+  private boolean goneAway;
   private int windowSize;
+  private long maxConcurrentStreams;
 
   public Http2ConnectionBase(ContextImpl context, VertxHttp2ConnectionHandler handler) {
     super(context.owner(), handler.context(), context);
     this.handler = handler;
     this.handlerContext = chctx;
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
+    this.maxConcurrentStreams = io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
   }
 
   VertxInternal vertx() {
@@ -165,18 +168,25 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
   }
 
-  void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+  synchronized void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+    if (!goneAway) {
+      goneAway = true;
+      checkShutdownHandler();
+    }
   }
 
   synchronized void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    Handler<GoAway> handler = goAwayHandler;
-    if (handler != null) {
-      Buffer buffer = Buffer.buffer(debugData);
-      context.executeFromIO(() -> {
-        handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer));
-      });
+    if (!goneAway) {
+      goneAway = true;
+      Handler<GoAway> handler = goAwayHandler;
+      if (handler != null) {
+        Buffer buffer = Buffer.buffer(debugData);
+        context.executeFromIO(() -> {
+          handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer));
+        });
+      }
+      checkShutdownHandler();
     }
-    checkShutdownHandler();
   }
 
   // Http2FrameListener
@@ -200,13 +210,37 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
   }
 
+  protected void onConnect() {
+  }
+
+  protected void concurrencyChanged(long concurrency) {
+  }
+
   @Override
-  public synchronized void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
-    Handler<io.vertx.core.http.Http2Settings> handler = clientSettingsHandler;
-    if (handler != null) {
-      context.executeFromIO(() -> {
-        handler.handle(HttpUtils.toVertxSettings(settings));
-      });
+  public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
+    boolean changed;
+    Long val = settings.maxConcurrentStreams();
+    if (val != null) {
+      if (remoteSettings != null) {
+        changed = val != maxConcurrentStreams;
+      } else {
+        changed = false;
+      }
+      maxConcurrentStreams = val;
+    } else {
+      changed = false;
+    }
+    remoteSettings = settings;
+    synchronized (this) {
+      Handler<io.vertx.core.http.Http2Settings> handler = remoteSettingsHandler;
+      if (handler != null) {
+        context.executeFromIO(() -> {
+          handler.handle(HttpUtils.toVertxSettings(settings));
+        });
+      }
+    }
+    if (changed) {
+      concurrencyChanged(maxConcurrentStreams);
     }
   }
 
@@ -311,7 +345,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       throw new IllegalArgumentException();
     }
     if (lastStreamId < 0) {
-      throw new IllegalArgumentException();
+      lastStreamId = handler.connection().remote().lastStreamCreated();
     }
     handler.writeGoAway(errorCode, lastStreamId, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER);
     return this;
@@ -357,12 +391,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
-    clientSettingsHandler = handler;
+    remoteSettingsHandler = handler;
     return this;
   }
 
   @Override
   public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
+    /*
     io.vertx.core.http.Http2Settings a = new io.vertx.core.http.Http2Settings();
     a.setPushEnabled(handler.connection().remote().allowPushTo());
     a.setMaxConcurrentStreams((long) handler.connection().local().maxActiveStreams());
@@ -371,11 +406,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     a.setMaxFrameSize(handler.encoder().configuration().frameSizePolicy().maxFrameSize());
     a.setInitialWindowSize(handler.encoder().flowController().initialWindowSize());
     return a;
+    */
+    return HttpUtils.toVertxSettings(remoteSettings);
   }
 
   @Override
   public synchronized io.vertx.core.http.Http2Settings settings() {
-    return HttpUtils.toVertxSettings(serverSettings);
+    return HttpUtils.toVertxSettings(localSettings);
   }
 
   @Override
@@ -403,7 +440,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       if (fut.isSuccess()) {
         synchronized (Http2ConnectionBase.this) {
           updateSettingsHandlers.add(() -> {
-            serverSettings.putAll(settingsUpdate);
+            localSettings.putAll(settingsUpdate);
             if (completionHandler != null) {
               completionContext.runOnContext(v -> {
                 completionHandler.handle(Future.succeededFuture());

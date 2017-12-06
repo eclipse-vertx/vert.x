@@ -54,7 +54,7 @@ interface HttpClientStream {
 
   void reset(long code);
 
-  void beginRequest(HttpClientRequestImpl request);
+  void beginRequest();
   void endRequest();
 
   NetSocket createNetSocket();

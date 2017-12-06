@@ -19,7 +19,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -42,7 +41,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.HttpHandlers;
-import io.vertx.core.http.impl.ServerHandler;
+import io.vertx.core.http.impl.Http1xServerHandler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
@@ -232,7 +231,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       response.end(HELLO_WORLD_BUFFER);
     };
     HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null, null));
-    ServerHandler handler = new ServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
+    Http1xServerHandler handler = new Http1xServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
 
     nettyChannel = new EmbeddedChannel(new HttpRequestDecoder(

@@ -14,48 +14,45 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.pool;
 
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Waiter {
+public abstract class Waiter<C> {
 
-  final HttpClientRequestImpl req;
-  final ContextImpl context;
-  Object metric;
+  public final ContextImpl context;
 
-  public Waiter(HttpClientRequestImpl req, ContextImpl context) {
-    this.req = req;
+  protected Waiter(ContextImpl context) {
     this.context = context;
   }
 
   /**
-   * Handle connection failure.
+   * Handle connection failure, this callback is on a Netty even loop.
    *
+   * @param ctx the context used to create the connection
    * @param failure the failure
    */
-  abstract void handleFailure(Throwable failure);
+  public abstract void handleFailure(ContextInternal ctx, Throwable failure);
 
   /**
-   * Handle connection success.
+   * Init connection, this callback is on a Netty event loop.
    *
+   * @param ctx the context used to create the connection
    * @param conn the connection
    */
-  abstract void handleConnection(HttpClientConnection conn);
+  public abstract void initConnection(ContextInternal ctx, C conn);
 
   /**
-   * Handle connection success.
+   * Handle connection success, , this callback is on a Netty event loop.
    *
-   * @param stream the stream
+   * @param ctx the context used to create the connection
+   * @param conn the connection
+   * @return wether the waiter uses the connection
    */
-  abstract void handleStream(HttpClientStream stream);
+  public abstract boolean handleConnection(ContextInternal ctx, C conn) throws Exception;
 
-  /**
-   * @return true if the waiter has been cancelled
-   */
-  abstract boolean isCancelled();
-  
 }

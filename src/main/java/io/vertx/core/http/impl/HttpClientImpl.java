@@ -16,32 +16,19 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.*;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.MalformedURLException;
@@ -53,6 +40,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -107,15 +96,20 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final ContextImpl creatingContext;
-  private final ConnectionManager connectionManager;
+  private final ConnectionManager websocketCM; // The queue manager for websockets
+  private final ConnectionManager httpCM; // The queue manager for requests
   private final Closeable closeHook;
   private final ProxyType proxyType;
   private final SSLHelper sslHelper;
+  private final HttpClientMetrics metrics;
+  private final boolean keepAlive;
+  private final boolean pipelining;
   private volatile boolean closed;
   private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
+    this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createMetrics(this, options) : null;
     this.options = new HttpClientOptions(options);
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
@@ -128,8 +122,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           break;
       }
     }
+    this.keepAlive = options.isKeepAlive();
+    this.pipelining = options.isPipelining();
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).
         setApplicationProtocols(alpnVersions);
+    sslHelper.validate(vertx);
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();
@@ -144,9 +141,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    VertxMetrics metrics = vertx.metricsSPI();
-    connectionManager = new ConnectionManager(this, metrics != null ? metrics.createMetrics(this, options) : null);
+    if (!keepAlive && pipelining) {
+      throw new IllegalStateException("Cannot have pipelining with no keep alive");
+    }
+    long maxWeight = options.getMaxPoolSize() * options.getHttp2MaxPoolSize();
+    websocketCM = new ConnectionManager(this, metrics, HttpVersion.HTTP_1_1, maxWeight, options.getMaxWaitQueueSize());
+    httpCM = new ConnectionManager(this, metrics, options.getProtocolVersion(), maxWeight, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
+  }
+
+  HttpClientMetrics metrics() {
+    return metrics;
   }
 
   @Override
@@ -889,7 +894,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     if (creatingContext != null) {
       creatingContext.removeCloseHook(closeHook);
     }
-    connectionManager.close();
+    websocketCM.close();
+    httpCM.close();
+    if (metrics != null) {
+      metrics.close();
+    }
   }
 
   @Override
@@ -899,7 +908,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public Metrics getMetrics() {
-    return connectionManager.metrics();
+    return metrics;
   }
 
   @Override
@@ -920,34 +929,29 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return options;
   }
 
-  void getConnectionForWebsocket(boolean ssl,
+  private void getConnectionForWebsocket(boolean ssl,
                                  int port,
                                  String host,
-                                 Handler<ClientConnection> handler,
+                                 Handler<Http1xClientConnection> handler,
                                  Handler<Throwable> connectionExceptionHandler,
                                  ContextImpl context) {
-    connectionManager.getConnectionForWebsocket(ssl, port, host, new Waiter(null, context) {
-      @Override
-      void handleConnection(HttpClientConnection conn) {
-      }
-      @Override
-      void handleStream(HttpClientStream stream) {
-        // Use some variance for this
-        handler.handle((ClientConnection) stream);
-      }
-      @Override
-      void handleFailure(Throwable failure) {
+    websocketCM.getConnection(host, ssl, port, host, null, (ctx, conn) -> {
+      ctx.executeFromIO(() -> {
+        handler.handle((Http1xClientConnection) conn);
+      });
+      return true;
+    }, (ctx, failure) -> {
+      ctx.executeFromIO(() -> {
         connectionExceptionHandler.handle(failure);
-      }
-      @Override
-      boolean isCancelled() {
-        return false;
-      }
+      });
     });
   }
 
-  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host, Waiter waiter) {
-    connectionManager.getConnectionForRequest(options.getProtocolVersion(), peerHost, ssl, port, host, waiter);
+  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host,
+                               Handler<HttpConnection> connectionHandler,
+                               BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
+                               BiConsumer<ContextInternal, Throwable> onFailure) {
+    httpCM.getConnection(peerHost, ssl, port, host, connectionHandler, onSuccess, onFailure);
   }
 
   /**
@@ -1075,11 +1079,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         }
         getConnectionForWebsocket(ssl != null ? ssl : options.isSsl(), port, host, conn -> {
           conn.exceptionHandler(connectionExceptionHandler);
-          if (conn.isValid()) {
-            conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
-          } else {
-            websocket(port, host, requestURI, headers, version, subProtocols, wsConnect);
-          }
+          conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
         }, connectionExceptionHandler, context);
       }
       return this;

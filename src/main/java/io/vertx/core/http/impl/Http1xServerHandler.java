@@ -23,9 +23,9 @@ import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ServerHandler extends VertxHttpHandler<ServerConnection> {
+public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection> {
 
-  private static final Logger log = LoggerFactory.getLogger(ServerHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(Http1xServerHandler.class);
 
   private final SSLHelper sslHelper;
   private final HttpServerOptions options;
@@ -33,7 +33,7 @@ public class ServerHandler extends VertxHttpHandler<ServerConnection> {
   private final HttpServerMetrics metrics;
   private final HandlerHolder<HttpHandlers> holder;
 
-  public ServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
+  public Http1xServerHandler(SSLHelper sslHelper, HttpServerOptions options, String serverOrigin, HandlerHolder<HttpHandlers> holder, HttpServerMetrics metrics) {
     this.holder = holder;
     this.metrics = metrics;
     this.sslHelper = sslHelper;
@@ -44,7 +44,7 @@ public class ServerHandler extends VertxHttpHandler<ServerConnection> {
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
-    ServerConnection conn = new ServerConnection(holder.context.owner(),
+    Http1xServerConnection conn = new Http1xServerConnection(holder.context.owner(),
       sslHelper,
       options,
       ctx,
@@ -65,11 +65,11 @@ public class ServerHandler extends VertxHttpHandler<ServerConnection> {
   }
 
   @Override
-  protected void handleMessage(ServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void handleMessage(Http1xServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     conn.handleMessage(msg);
   }
 
-  WebSocketServerHandshaker createHandshaker(ServerConnection conn, Channel ch, HttpRequest request) {
+  WebSocketServerHandshaker createHandshaker(Http1xServerConnection conn, Channel ch, HttpRequest request) {
     // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
     // it doesn't send a normal 'Connection: Upgrade' header. Instead it
     // sends: 'Connection: keep-alive, Upgrade'. Brilliant.

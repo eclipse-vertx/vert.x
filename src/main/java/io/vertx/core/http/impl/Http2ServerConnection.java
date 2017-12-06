@@ -30,11 +30,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 

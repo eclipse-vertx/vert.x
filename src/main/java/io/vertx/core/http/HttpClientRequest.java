@@ -328,7 +328,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    * <p/>
    * <ul>
    *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the specified error {@code code}</li>
-   *   <li>for HTTP/1.x, this closes the connection after the current in-flight requests are ended</li>
+   *   <li>for HTTP/1.x, this closes the connection when the current request is inflight</li>
    * </ul>
    * <p/>
    * When the request has not yet been sent, the request will be aborted and false is returned as indicator.
