@@ -3536,35 +3536,27 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testNoNPEWhenClientBreaksConnection() throws Exception {
-
+  public void testSendFileFailsWhenClientClosesConnection() throws Exception {
     final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(1000000));
-
     server.requestHandler(req -> {
-      req.connection().closeHandler(v -> {
-        req.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/pdf");
-
-        try {
-          req.response().sendFile(f.getAbsolutePath(), event -> {
-            if (event.failed()) {
-              testComplete();
-            } else {
-              fail("It should not reach this point");
-            }
-          });
-        } catch (NullPointerException e) {
-          // this was the bug reported with issues/issue-80
-          fail("It should not throw NPE");
-        }
-      });
+      try {
+        req.response().sendFile(f.getAbsolutePath(), event -> {
+          if (event.failed()) {
+            // Broken pipe
+            testComplete();
+          } else {
+            fail("It should not reach this point");
+          }
+        });
+      } catch (Exception e) {
+        // this was the bug reported with issues/issue-80
+        fail(e);
+      }
     });
-
-    server.listen(onSuccess(server -> {
-      vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, socket -> {
-        socket.result().write("GET / HTTP/1.1\r\n\r\n").close();
-      });
-    }));
-
+    startServer();
+    vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, socket -> {
+      socket.result().write("GET / HTTP/1.1\r\n\r\n").close();
+    });
     await();
   }
 

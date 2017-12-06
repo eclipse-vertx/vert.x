@@ -1492,38 +1492,36 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testUseResponseAfterComplete() {
+  public void testUseResponseAfterComplete() throws Exception {
     server.requestHandler(req -> {
-      Buffer buff = Buffer.buffer();
       HttpServerResponse resp = req.response();
-
       assertFalse(resp.ended());
       resp.end();
       assertTrue(resp.ended());
-
-      assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
-      assertIllegalStateException(() -> resp.end());
-      assertIllegalStateException(() -> resp.end("foo"));
-      assertIllegalStateException(() -> resp.end(buff));
-      assertIllegalStateException(() -> resp.end("foo", "UTF-8"));
-      assertIllegalStateException(() -> resp.exceptionHandler(noOpHandler()));
-      assertIllegalStateException(() -> resp.setChunked(false));
-      assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
-      assertIllegalStateException(() -> resp.write(buff));
-      assertIllegalStateException(() -> resp.write("foo"));
-      assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
-      assertIllegalStateException(() -> resp.write(buff));
-      assertIllegalStateException(() -> resp.writeQueueFull());
-      assertIllegalStateException(() -> resp.sendFile("asokdasokd"));
-
+      checkHttpServerResponse(resp);
       testComplete();
     });
-
-    server.listen(onSuccess(s -> {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
-    }));
-
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
     await();
+  }
+
+  private void checkHttpServerResponse(HttpServerResponse resp) {
+    Buffer buff = Buffer.buffer();
+    assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
+    assertIllegalStateException(() -> resp.end());
+    assertIllegalStateException(() -> resp.end("foo"));
+    assertIllegalStateException(() -> resp.end(buff));
+    assertIllegalStateException(() -> resp.end("foo", "UTF-8"));
+    assertIllegalStateException(() -> resp.exceptionHandler(noOpHandler()));
+    assertIllegalStateException(() -> resp.setChunked(false));
+    assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
+    assertIllegalStateException(() -> resp.write(buff));
+    assertIllegalStateException(() -> resp.write("foo"));
+    assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
+    assertIllegalStateException(() -> resp.write(buff));
+    assertIllegalStateException(() -> resp.writeQueueFull());
+    assertIllegalStateException(() -> resp.sendFile("asokdasokd"));
   }
 
   @Test
@@ -3807,8 +3805,10 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testCloseHandlerWhenConnectionClose() throws Exception {
     server.requestHandler(req -> {
-      req.response().setChunked(true).write("some-data");
-      req.response().closeHandler(v -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true).write("some-data");
+      resp.closeHandler(v -> {
+        checkHttpServerResponse(resp);
         testComplete();
       });
     });

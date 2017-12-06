@@ -409,18 +409,20 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   void write(ByteBuf chunk, boolean end) {
     synchronized (conn) {
       checkEnded();
+      boolean hasBody = false;
+      if (chunk != null) {
+        int len = chunk.readableBytes();
+        bytesWritten += len;
+        hasBody = true;
+      } else {
+        chunk = Unpooled.EMPTY_BUFFER;
+      }
       if (end) {
         handleEnded(false);
       }
-      boolean hasBody = chunk != null;
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
       if (hasBody || (!sent && end)) {
-        if (chunk == null) {
-          chunk = Unpooled.EMPTY_BUFFER;
-        }
-        int len = chunk.readableBytes();
         stream.writeData(chunk, end && trailers == null);
-        bytesWritten += len;
       }
       if (end && trailers != null) {
         stream.writeHeaders(trailers, true);

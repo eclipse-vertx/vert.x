@@ -135,7 +135,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponseImpl setChunked(boolean chunked) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
       if (version != HttpVersion.HTTP_1_0) {
         this.chunked = chunked;
@@ -154,7 +154,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponseImpl putHeader(String key, String value) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       headers.set(key, value);
       return this;
     }
@@ -163,7 +163,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       headers.set(key, values);
       return this;
     }
@@ -172,7 +172,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponseImpl putTrailer(String key, String value) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       trailers().set(key, value);
       return this;
     }
@@ -181,7 +181,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponseImpl putTrailer(String key, Iterable<String> values) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       trailers().set(key, values);
       return this;
     }
@@ -190,7 +190,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       headers.set(name, value);
       return this;
     }
@@ -199,7 +199,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       headers.set(name, values);
       return this;
     }
@@ -208,7 +208,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       trailers().set(name, value);
       return this;
     }
@@ -217,7 +217,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       trailers().set(name, value);
       return this;
     }
@@ -226,7 +226,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse setWriteQueueMaxSize(int size) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       conn.doSetWriteQueueMaxSize(size);
       return this;
     }
@@ -235,7 +235,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public boolean writeQueueFull() {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       return conn.isNotWritable();
     }
   }
@@ -244,7 +244,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse drainHandler(Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
-        checkWritten();
+        checkValid();
       }
       drainHandler = handler;
       conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
@@ -256,7 +256,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
       if (handler != null) {
-        checkWritten();
+        checkValid();
       }
       exceptionHandler = handler;
       return this;
@@ -267,7 +267,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse closeHandler(Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
-        checkWritten();
+        checkValid();
       }
       closeHandler = handler;
       return this;
@@ -278,7 +278,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
-        checkWritten();
+        checkValid();
       }
       endHandler = handler;
       return this;
@@ -402,7 +402,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   private void end0(ByteBuf data) {
-    checkWritten();
+    checkValid();
     bytesWritten += data.readableBytes();
     if (!headWritten) {
       // if the head was not written yet we can write out everything in one go
@@ -432,7 +432,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (headWritten) {
         throw new IllegalStateException("Head already written");
       }
-      checkWritten();
+      checkValid();
       File file = vertx.resolveFile(filename);
 
       if (!file.exists()) {
@@ -529,21 +529,27 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   void handleClosed() {
     synchronized (conn) {
-      if (!written && exceptionHandler != null) {
-        conn.getContext().runOnContext(v -> exceptionHandler.handle(new VertxException("Connection was closed")));
-      }
-      if (endHandler != null) {
-        conn.getContext().runOnContext(endHandler);
-      }
-      if (closeHandler != null) {
-        conn.getContext().runOnContext(closeHandler);
+      if (!closed) {
+        closed = true;
+        if (!written && exceptionHandler != null) {
+          conn.getContext().runOnContext(v -> exceptionHandler.handle(new VertxException("Connection was closed")));
+        }
+        if (endHandler != null) {
+          conn.getContext().runOnContext(endHandler);
+        }
+        if (closeHandler != null) {
+          conn.getContext().runOnContext(closeHandler);
+        }
       }
     }
   }
 
-  private void checkWritten() {
+  private void checkValid() {
     if (written) {
       throw new IllegalStateException("Response has already been written");
+    }
+    if (closed) {
+      throw new IllegalStateException("Response is closed");
     }
   }
 
@@ -569,7 +575,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private HttpServerResponseImpl write(ByteBuf chunk) {
     synchronized (conn) {
-      checkWritten();
+      checkValid();
       if (!headWritten && !chunked && !headers.contentLengthSet()) {
         if (version != HttpVersion.HTTP_1_0) {
           throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
