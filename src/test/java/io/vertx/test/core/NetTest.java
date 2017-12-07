@@ -3257,6 +3257,26 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testCloseCompletionHandlerNotCalledWhenActualServerFailed() {
+    server.close();
+    server = vertx.createNetServer(
+      new NetServerOptions()
+        .setSsl(true)
+        .setPemKeyCertOptions(new PemKeyCertOptions().setKeyPath("invalid")))
+      .connectHandler(c -> {
+    });
+    try {
+      server.listen(10000, r -> fail());
+    } catch (Exception ignore) {
+      // Expected
+    }
+    server.close(onSuccess(v -> {
+      testComplete();
+    }));
+    await();
+  }
+
   protected void startServer(SocketAddress remoteAddress) throws Exception {
     startServer(remoteAddress, vertx.getOrCreateContext());
   }

@@ -347,19 +347,24 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   @Override
-  public synchronized void close(Handler<AsyncResult<Void>> done) {
+  public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
+    if (creatingContext != null) {
+      creatingContext.removeCloseHook(this);
+    }
+    Handler<AsyncResult<Void>> done;
     if (endHandler != null) {
       Handler<Void> handler = endHandler;
       endHandler = null;
-      Handler<AsyncResult<Void>> next = done;
       done = event -> {
         if (event.succeeded()) {
           handler.handle(event.result());
         }
-        if (next != null) {
-          next.handle(event);
+        if (completionHandler != null) {
+          completionHandler.handle(event);
         }
       };
+    } else {
+      done = completionHandler;
     }
     ContextImpl context = vertx.getOrCreateContext();
     if (!listening) {
@@ -385,10 +390,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
           // of the actual server
           actualServer.actualClose(context, done);
         }
+      } else {
+        context.runOnContext(v -> {
+          done.handle(Future.succeededFuture());
+        });
       }
-    }
-    if (creatingContext != null) {
-      creatingContext.removeCloseHook(this);
     }
   }
 
