@@ -19,25 +19,63 @@ package io.vertx.test.core;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
-import io.vertx.core.impl.WorkerExecutorInternal;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class NamedWorkerPoolTest extends VertxTestBase {
+
+  @Test
+  public void testMaxExecuteWorkerTime() throws Exception {
+    String poolName = TestUtils.randomAlphaString(10);
+    long maxWorkerExecuteTime = NANOSECONDS.convert(3, SECONDS);
+    DeploymentOptions deploymentOptions = new DeploymentOptions()
+      .setWorkerPoolName(poolName)
+      .setMaxWorkerExecuteTime(maxWorkerExecuteTime);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        vertx.executeBlocking(fut -> {
+          try {
+            SECONDS.sleep(5);
+            fut.complete();
+          } catch (InterruptedException e) {
+            fut.fail(e);
+          }
+        }, startFuture);
+      }
+    }, deploymentOptions, onSuccess(did -> {
+      testComplete();
+    }));
+    await();
+    String timeLimitMsg = "time limit is " + MILLISECONDS.convert(maxWorkerExecuteTime, NANOSECONDS);
+    assertTrue(Files.lines(Paths.get(System.getProperty("java.io.tmpdir"), "vertx.log"))
+      .anyMatch(line -> {
+        if (line.contains("has been blocked for")
+          && line.contains(timeLimitMsg)
+          && line.contains(poolName)) {
+          return true;
+        }
+        return false;
+      }));
+  }
 
   @Test
   public void testThread() {
@@ -214,7 +252,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       }
     }, onSuccess(deploymentIdRef::complete));
     assertWaitUntil(() -> thread.get() != null);
-    String deploymentId = deploymentIdRef.get(20, TimeUnit.SECONDS);
+    String deploymentId = deploymentIdRef.get(20, SECONDS);
     vertx.undeploy(deploymentId, onSuccess(v -> {}));
     assertWaitUntil(() -> thread.get().getState() == Thread.State.TERMINATED);
   }
