@@ -22,6 +22,7 @@ import io.vertx.core.http.impl.pool.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -332,7 +333,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     conn.recycle(false);
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
-    waitUntil(waiter1::isSuccess);
+    waitUntil(waiter2::isSuccess);
     waiter2.assertSuccess(conn);
     conn.recycle(true);
     assertEquals(0, mgr.size());
