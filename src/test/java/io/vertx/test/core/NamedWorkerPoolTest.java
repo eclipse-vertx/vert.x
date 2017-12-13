@@ -22,10 +22,9 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
+import org.junit.Rule;
 import org.junit.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -41,6 +40,9 @@ import static java.util.concurrent.TimeUnit.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class NamedWorkerPoolTest extends VertxTestBase {
+
+  @Rule
+  public BlockedThreadWarning blockedThreadWarning = new BlockedThreadWarning();
 
   @Test
   public void testMaxExecuteWorkerTime() throws Exception {
@@ -65,9 +67,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       testComplete();
     }));
     await();
-    String timeLimitMsg = "time limit is " + MILLISECONDS.convert(maxWorkerExecuteTime, NANOSECONDS);
-    assertTrue(Files.lines(Paths.get(System.getProperty("java.io.tmpdir"), "vertx.log"))
-      .anyMatch(line -> line.contains("has been blocked for") && line.contains(timeLimitMsg) && line.contains(poolName)));
+    blockedThreadWarning.expectMessage(poolName, maxWorkerExecuteTime);
   }
 
   @Test
