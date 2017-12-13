@@ -67,14 +67,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     await();
     String timeLimitMsg = "time limit is " + MILLISECONDS.convert(maxWorkerExecuteTime, NANOSECONDS);
     assertTrue(Files.lines(Paths.get(System.getProperty("java.io.tmpdir"), "vertx.log"))
-      .anyMatch(line -> {
-        if (line.contains("has been blocked for")
-          && line.contains(timeLimitMsg)
-          && line.contains(poolName)) {
-          return true;
-        }
-        return false;
-      }));
+      .anyMatch(line -> line.contains("has been blocked for") && line.contains(timeLimitMsg) && line.contains(poolName)));
   }
 
   @Test
