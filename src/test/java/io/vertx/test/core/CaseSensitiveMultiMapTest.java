@@ -1,20 +1,20 @@
 package io.vertx.test.core;
 
+import io.vertx.core.CaseSensitiveMultiMap;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class CaseInsensitiveHeadersTest extends MultiMapTest {
+public class CaseSensitiveMultiMapTest extends MultiMapTest {
 
   @Override
   protected MultiMap newMultiMap() {
-    return new CaseInsensitiveHeaders();
+    return new CaseSensitiveMultiMap();
   }
 
   @Test
-  public void testCaseInsensitiveHeaders()
+  public void testCaseSensitiveHeaders()
       throws Exception {
 
     MultiMap result = newMultiMap();
@@ -29,11 +29,13 @@ public class CaseInsensitiveHeadersTest extends MultiMapTest {
     result.add("testkey2", "testvalue3");
     
     assertEquals(2, result.size());
-    assertEquals(2, result.getAll("testkEy1").size());
+    assertEquals(0, result.getAll("testkEy1").size());
+    assertEquals(1, result.getAll("testkey1").size());
     assertEquals("testvalue1", result.getAll("testkey1").get(0));
-    assertEquals("testvalue2", result.getAll("testkey1").get(1));
+    assertEquals("testvalue2", result.getAll("TestKey1").get(0));
     
-    assertEquals(1, result.getAll("testkEy2").size());
+    assertEquals(1, result.getAll("testkey2").size());
     assertEquals("testvalue3", result.getAll("testkey2").get(0));
   }
+
 }
