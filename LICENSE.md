@@ -3,7 +3,7 @@ terms of the Eclipse Public License 2.0 which is available at
 http://www.eclipse.org/legal/epl-2.0, or the Apache Software License
 2.0 which is available at https://www.apache.org/licenses/LICENSE-2.0.
 
-# Eclipse Public License - Version 2.0
+## Eclipse Public License - Version 2.0
 
     Eclipse Public License - v 2.0
 
@@ -283,7 +283,7 @@ http://www.eclipse.org/legal/epl-2.0, or the Apache Software License
 
       You may add additional accurate notices of copyright ownership.
 
-# Apache License - Version 2.0
+## Apache License - Version 2.0
 
                                  Apache License
                            Version 2.0, January 2004
