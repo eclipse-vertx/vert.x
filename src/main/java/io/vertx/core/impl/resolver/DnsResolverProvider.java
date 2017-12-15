@@ -85,7 +85,7 @@ public class DnsResolverProvider implements ResolverProvider {
         }
       }
     } else {
-      DnsServerAddressStream stream = DnsServerAddresses.defaultAddresses().stream();
+      DnsServerAddressStream stream = DefaultDnsServerAddressStreamProvider.defaultAddresses().stream();
       Set<InetSocketAddress> all = new HashSet<>();
       while (true) {
         InetSocketAddress address = stream.next();

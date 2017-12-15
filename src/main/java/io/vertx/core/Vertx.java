@@ -221,6 +221,13 @@ public interface Vertx extends Measured {
   DnsClient createDnsClient(int port, String host);
 
   /**
+   * Create a DNS client to connect to automatically chosen DNS server
+   *
+   * @return the DNS client
+   */
+  DnsClient createDnsClient();
+
+  /**
    * Create a DNS client to connect to a DNS server
    *
    * @param options the client options

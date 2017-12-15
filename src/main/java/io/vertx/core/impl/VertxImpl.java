@@ -19,6 +19,9 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
+import io.netty.resolver.DefaultAddressResolverGroup;
+import io.netty.resolver.dns.DefaultDnsServerAddressStreamProvider;
+import io.netty.resolver.dns.DnsServerAddressStream;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
@@ -404,6 +407,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public DnsClient createDnsClient(int port, String host) {
     return new DnsClientImpl(this, port, host, DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
+  }
+
+  @Override
+  public DnsClient createDnsClient() {
+    InetSocketAddress address = DefaultDnsServerAddressStreamProvider.defaultAddresses()
+      .stream()
+      .next();
+
+    return new DnsClientImpl(this, address.getPort(), address.getAddress().getHostAddress(), DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
   }
 
   @Override
