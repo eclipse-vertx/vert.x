@@ -9,7 +9,6 @@ The goal of this document is to create a contribution process that:
 * Avoids unnecessary processes and bureaucracy whenever possible.
 * Creates a transparent decision-making process which makes it clear how contributors can be involved in decision-making.
 
-
 ## Vocabulary
 
 * A **Contributor** is any individual creating or commenting on an issue or pull request.
@@ -23,7 +22,6 @@ Log an issue for any problem you might have. When in doubt, log an issue, any ad
 Committers may direct you to another repository, ask for additional clarifications, and add appropriate info before the issue is addressed.
 
 For questions that are not an issue with the code, e.g.: questions related to usage of the project, it is recommended that they are sent to the [community group](https://groups.google.com/forum/#!forum/vertx). This exposes the question to the whole community, which increases the chance of getting faster responses than just from contributors and committers.
-
 
 # Contributions
 
@@ -49,6 +47,37 @@ In the case of an objection being raised in a pull request by another committer,
 
 If a contribution is controversial and committers cannot agree about how to get it to land or if it should land then it should be escalated to the [committers group](https://groups.google.com/forum/#!forum/vertx-committers). Members of the developers group should regularly discuss pending contributions in order to find a resolution. It is expected that only a small minority of issues be brought to the group for resolution and that discussion and compromise among committers be the default resolution mechanism.
 
+# Copyright notice headers
+
+It is important that all source code files have correct copyright notice headers.
+
+You can opt for the general-purpose form:
+
+   /*
+    * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+    *
+    * This program and the accompanying materials are made available under the
+    * terms of the Eclipse Public License 2.0 which is available at
+    * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+    * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+    *
+    * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+    */
+
+Or you may choose to explicitly mention all contributors in the declaration, like in:
+
+   /*
+    * Copyright (c) {date} {owner}[ and others]
+    *
+    * This program and the accompanying materials are made available under the
+    * terms of the Eclipse Public License 2.0 which is available at
+    * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+    * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+    *
+    * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+    */
+
+Check https://www.eclipse.org/projects/handbook/#legaldoc
 
 # Becoming a Contributor
 
@@ -62,7 +91,7 @@ These tags should be applied to issues that are relatively simple to fix but not
 
 # Becoming a Committer
 
-All contributors who land a non-trivial contribution should be on-boarded in a timely manner, and added as a committer, and be given write access to the repository. 
+All contributors who land a non-trivial contribution should be on-boarded in a timely manner, and added as a committer, and be given write access to the repository.
 
 Committers are expected to follow this policy and continue to send pull requests, go through proper review, and have other committers merge their pull requests.
 
