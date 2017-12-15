@@ -26,22 +26,16 @@ import java.util.concurrent.ExecutorService;
  */
 class WorkerPool {
 
-  private final OrderedExecutorFactory orderedFact;
   private final ExecutorService pool;
   private final PoolMetrics metrics;
 
   WorkerPool(ExecutorService pool, PoolMetrics metrics) {
-    this.orderedFact = new OrderedExecutorFactory(pool);
     this.pool = pool;
     this.metrics = metrics;
   }
 
   ExecutorService executor() {
     return pool;
-  }
-
-  Executor createOrderedExecutor() {
-    return orderedFact.getExecutor();
   }
 
   PoolMetrics metrics() {

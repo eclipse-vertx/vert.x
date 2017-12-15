@@ -16,18 +16,64 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.impl.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.*;
+import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetworkOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.SelfSignedCertificate;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.tls.Cert;
@@ -45,17 +91,23 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -64,17 +116,37 @@ public class NetTest extends VertxTestBase {
 
   private static final Logger log = LoggerFactory.getLogger(NetTest.class);
 
+  private SocketAddress testAddress;
   private NetServer server;
   private NetClient client;
   private TestProxyBase proxy;
+  private File tmp;
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
   public void setUp() throws Exception {
     super.setUp();
+    if (USE_DOMAIN_SOCKETS) {
+      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
+      tmp = TestUtils.tmpFile("vertx", ".sock");
+      testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
+    } else {
+      testAddress = SocketAddress.inetSocketAddress(1234, "localhost");
+    }
     client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
-    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost"));
+    server = vertx.createNetServer();
+  }
+
+  @Override
+  protected VertxOptions getOptions() {
+    VertxOptions options = super.getOptions();
+    options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
+        "127.0.0.1 localhost\n" +
+        "127.0.0.1 host1\n" +
+        "127.0.0.1 host2.com\n" +
+        "127.0.0.1 example.com"));
+    return options;
   }
 
   protected void awaitClose(NetServer server) throws InterruptedException {
@@ -86,6 +158,9 @@ public class NetTest extends VertxTestBase {
   }
 
   protected void tearDown() throws Exception {
+    if (tmp != null) {
+      tmp.delete();
+    }
     if (client != null) {
       client.close();
     }
@@ -298,12 +373,16 @@ public class NetTest extends VertxTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
     assertEquals(false, options.isUseAlpn());
-    assertEquals(options, options.setUseAlpn(false));
-    assertEquals(false, options.isUseAlpn());
+    assertEquals(options, options.setUseAlpn(true));
+    assertEquals(true, options.isUseAlpn());
 
     assertNull(options.getSslEngineOptions());
     assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
+
+    assertFalse(options.isSni());
+    assertEquals(options, options.setSni(true));
+    assertTrue(options.isSni());
 
     testComplete();
   }
@@ -557,6 +636,7 @@ public class NetTest extends VertxTestBase {
     boolean useAlpn = TestUtils.randomBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     SSLEngineOptions sslEngine = TestUtils.randomBoolean() ? new JdkSSLEngineOptions() : new OpenSSLEngineOptions();
+    boolean sni = TestUtils.randomBoolean();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -578,6 +658,7 @@ public class NetTest extends VertxTestBase {
     options.setAcceptBacklog(acceptBacklog);
     options.setUseAlpn(useAlpn);
     options.setSslEngineOptions(sslEngine);
+    options.setSni(sni);
 
     NetServerOptions copy = new NetServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
@@ -605,6 +686,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(acceptBacklog, copy.getAcceptBacklog());
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngineOptions());
+    assertEquals(sni, copy.isSni());
   }
 
   @Test
@@ -630,6 +712,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
+    assertEquals(def.isSni(), json.isSni());
   }
 
   @Test
@@ -663,6 +746,7 @@ public class NetTest extends VertxTestBase {
     boolean useAlpn = TestUtils.randomBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     String sslEngine = TestUtils.randomBoolean() ? "jdkSslEngineOptions" : "openSslEngineOptions";
+    boolean sni = TestUtils.randomBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -684,7 +768,8 @@ public class NetTest extends VertxTestBase {
       .put("acceptBacklog", acceptBacklog)
       .put("useAlpn", useAlpn)
       .put(sslEngine, new JsonObject())
-      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
+      .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
+      .put("sni", sni);
 
     NetServerOptions options = new NetServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -722,6 +807,7 @@ public class NetTest extends VertxTestBase {
         fail();
         break;
     }
+    assertEquals(sni, options.isSni());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -798,22 +884,22 @@ public class NetTest extends VertxTestBase {
         fail("failed to connect");
       }
     };
-    startEchoServer(s -> client.connect(1234, "localhost", clientHandler));
+    startEchoServer(testAddress, s -> client.connect(testAddress, clientHandler));
     await();
   }
 
-  void startEchoServer(Handler<AsyncResult<NetServer>> listenHandler) {
+  void startEchoServer(SocketAddress address, Handler<AsyncResult<NetServer>> listenHandler) {
     Handler<NetSocket> serverHandler = socket -> socket.handler(socket::write);
-    server.connectHandler(serverHandler).listen(listenHandler);
+    server.connectHandler(serverHandler).listen(address, listenHandler);
   }
 
   @Test
   public void testConnectLocalHost() {
-    connect(1234, "localhost");
+    connect(testAddress);
   }
 
-  void connect(int port, String host) {
-    startEchoServer(s -> {
+  void connect(SocketAddress address) {
+    startEchoServer(testAddress, s -> {
       final int numConnections = 100;
       final AtomicInteger connCount = new AtomicInteger(0);
       for (int i = 0; i < numConnections; i++) {
@@ -825,7 +911,7 @@ public class NetTest extends VertxTestBase {
             }
           }
         };
-        client.connect(port, host, handler);
+        client.connect(address, handler);
       }
     });
     await();
@@ -909,40 +995,39 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testClientCloseHandlersCloseFromClient() {
-    startEchoServer(s -> clientCloseHandlers(true));
+    startEchoServer(testAddress, s -> clientCloseHandlers(true));
     await();
   }
 
   @Test
   public void testClientCloseHandlersCloseFromServer() {
-    server.connectHandler((netSocket) -> netSocket.close()).listen((s) -> clientCloseHandlers(false));
+    server.connectHandler(NetSocket::close).listen(testAddress, (s) -> clientCloseHandlers(false));
     await();
   }
 
   void clientCloseHandlers(boolean closeFromClient) {
-    client.connect(1234, "localhost", ar -> {
+    client.connect(testAddress, onSuccess(so -> {
       AtomicInteger counter = new AtomicInteger(0);
-      ar.result().endHandler(v -> assertEquals(1, counter.incrementAndGet()));
-      ar.result().closeHandler(v -> {
+      so.endHandler(v -> assertEquals(1, counter.incrementAndGet()));
+      so.closeHandler(v -> {
         assertEquals(2, counter.incrementAndGet());
         testComplete();
       });
       if (closeFromClient) {
-        ar.result().close();
+        so.close();
       }
-    });
+    }));
   }
 
   @Test
   public void testServerCloseHandlersCloseFromClient() {
-    serverCloseHandlers(false, s -> client.connect(1234, "localhost", ar -> ar.result().close()));
+    serverCloseHandlers(false, s -> client.connect(testAddress, ar -> ar.result().close()));
     await();
   }
 
   @Test
   public void testServerCloseHandlersCloseFromServer() {
-    serverCloseHandlers(true, s -> client.connect(1234, "localhost", ar -> {
-    }));
+    serverCloseHandlers(true, s -> client.connect(testAddress, ar -> {}));
     await();
   }
 
@@ -957,14 +1042,13 @@ public class NetTest extends VertxTestBase {
       if (closeFromServer) {
         sock.close();
       }
-    }).listen(listenHandler);
+    }).listen(testAddress, listenHandler);
   }
 
   @Test
   public void testClientDrainHandler() {
     pausingServer((s) -> {
-      client.connect(1234, "localhost", ar -> {
-        NetSocket sock = ar.result();
+      client.connect(testAddress, onSuccess(sock -> {
         assertFalse(sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
         Buffer buff = TestUtils.randomBuffer(10000);
@@ -980,7 +1064,7 @@ public class NetTest extends VertxTestBase {
             vertx.eventBus().send("server_resume", "");
           }
         });
-      });
+      }));
     });
     await();
   }
@@ -991,19 +1075,17 @@ public class NetTest extends VertxTestBase {
       Handler<Message<Buffer>> resumeHandler = (m) -> sock.resume();
       MessageConsumer reg = vertx.eventBus().<Buffer>consumer("server_resume").handler(resumeHandler);
       sock.closeHandler(v -> reg.unregister());
-    }).listen(listenHandler);
+    }).listen(testAddress, listenHandler);
   }
 
   @Test
   public void testServerDrainHandler() {
     drainingServer(s -> {
-      client.connect(1234, "localhost", ar -> {
-        NetSocket sock = ar.result();
+      client.connect(testAddress, onSuccess(sock -> {
         sock.pause();
         setHandlers(sock);
-        sock.handler(buf -> {
-        });
-      });
+        sock.handler(buf -> {});
+      }));
     });
     await();
   }
@@ -1035,7 +1117,7 @@ public class NetTest extends VertxTestBase {
           vertx.eventBus().send("client_resume", "");
         }
       });
-    }).listen(listenHandler);
+    }).listen(testAddress, listenHandler);
   }
 
   @Test
@@ -1053,15 +1135,14 @@ public class NetTest extends VertxTestBase {
     client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(attempts).setReconnectInterval(10));
 
     //The server delays starting for a a few seconds, but it should still connect
-    client.connect(1234, "localhost", (res) -> {
+    client.connect(testAddress, (res) -> {
       assertTrue(res.succeeded());
       assertFalse(res.failed());
       testComplete();
     });
 
     // Start the server after a delay
-    vertx.setTimer(2000, id -> startEchoServer(s -> {
-    }));
+    vertx.setTimer(2000, id -> startEchoServer(testAddress, s -> {}));
 
     await();
   }
@@ -1071,7 +1152,7 @@ public class NetTest extends VertxTestBase {
     client.close();
     client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(100).setReconnectInterval(10));
 
-    client.connect(1234, "localhost", (res) -> {
+    client.connect(testAddress, (res) -> {
       assertFalse(res.succeeded());
       assertTrue(res.failed());
       testComplete();
@@ -1083,10 +1164,10 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testServerIdleTimeout() {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost").setIdleTimeout(1));
-    server.connectHandler(s -> {}).listen(ar -> {
+    server = vertx.createNetServer(new NetServerOptions().setIdleTimeout(1));
+    server.connectHandler(s -> {}).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
-      client.connect(1234, "localhost", res -> {
+      client.connect(testAddress, res -> {
         assertTrue(res.succeeded());
         NetSocket socket = res.result();
         socket.closeHandler(v -> testComplete());
@@ -1101,9 +1182,9 @@ public class NetTest extends VertxTestBase {
     client = vertx.createNetClient(new NetClientOptions().setIdleTimeout(1));
 
     server.connectHandler(s -> {
-    }).listen(ar -> {
+    }).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
-      client.connect(1234, "localhost", res -> {
+      client.connect(testAddress, res -> {
         assertTrue(res.succeeded());
         NetSocket socket = res.result();
         socket.closeHandler(v -> testComplete());
@@ -1117,81 +1198,192 @@ public class NetTest extends VertxTestBase {
   @Test
   // StartTLS
   public void testStartTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, true, true);
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, true);
   }
 
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false);
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, false);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(false, true, true, false, false, false, true, false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE, false, false, true, false);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(false, false, true, false, false, false, false, false);
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, false, false);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(true, true, true, true, false, false, true, false);
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, false, false, true, false);
   }
 
   @Test
   //Client specifies cert and it's not required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(true, true, true, true, true, false, true, false);
+    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, true, false, true, false);
   }
 
   @Test
   //Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(false, true, true, true, true, false, false, false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, true, false, false, false);
   }
 
   @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(true, true, true, false, true, false, false, false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE, true, false, false, false);
   }
 
   @Test
   // Specify some cipher suites
   public void testTLSCipherSuites() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false, ENABLED_CIPHER_SUITES);
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, false, ENABLED_CIPHER_SUITES);
   }
 
   @Test
   // Specify some bogus protocol
   public void testInvalidTlsProtocolVersion() throws Exception {
-    testTLS(false, false, true, false, false, true, false, false, new String[0],
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, false, false, new String[0],
     new String[]{"TLSv1.999"});
   }
 
   @Test
   // Specify a valid protocol
   public void testSpecificTlsProtocolVersion() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false, new String[0],
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, false, new String[0],
         new String[]{"TLSv1.2"});
   }
 
-  void testTLS(boolean clientCert, boolean clientTrust,
-    boolean serverCert, boolean serverTrust,
+  @Test
+  // SNI without server name should use the first keystore entry
+  public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry1() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SERVER_JKS)
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+    assertEquals("localhost", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  // SNI without server name should use the first keystore entry
+  public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry2() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(false);
+    await();
+  }
+
+  @Test
+  public void testSniImplicitServerName() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .address(SocketAddress.inetSocketAddress(4043, "host2.com"))
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+    assertEquals("host2.com", cnOf(test.clientPeerCert()));
+    assertEquals("host2.com", test.indicatedServerName);
+  }
+
+  @Test
+  public void testSniImplicitServerNameDisabledForShortname1() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .address(SocketAddress.inetSocketAddress(4043, "host1"))
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(false);
+    await();
+  }
+
+  @Test
+  public void testSniImplicitServerNameDisabledForShortname2() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SERVER_JKS)
+        .address(SocketAddress.inetSocketAddress(4043, "host1"))
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+    assertEquals("localhost", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  public void testSniForceShortname() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .address(SocketAddress.inetSocketAddress(4043, "host1"))
+        .serverName("host1")
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+    assertEquals("host1", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  public void testSniOverrideServerName() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .address(SocketAddress.inetSocketAddress(4043, "example.com"))
+        .serverName("host2.com")
+        .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+    assertEquals("host2.com", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  // SNI present an unknown server
+  public void testSniWithUnknownServer1() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SERVER_JKS)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("unknown");
+    test.run(true);
+    await();
+    assertEquals("localhost", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  // SNI present an unknown server
+  public void testSniWithUnknownServer2() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST2)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("unknown");
+    test.run(false);
+    await();
+  }
+
+  @Test
+  // SNI returns the certificate for the indicated server name
+  public void testSniWithServerNameStartTLS() throws Exception {
+    TLSTest test = new TLSTest()
+        .clientTrust(Trust.SNI_JKS_HOST1)
+        .startTLS(true)
+        .serverCert(Cert.SNI_JKS).sni(true).serverName("host1");
+    test.run(true);
+    await();
+    assertEquals("host1", cnOf(test.clientPeerCert()));
+  }
+
+  void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
+               Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,
     boolean shouldPass, boolean startTLS) throws Exception {
         testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
         shouldPass, startTLS, new String[0], new String[0]);
   }
 
-  void testTLS(boolean clientCert, boolean clientTrust,
-    boolean serverCert, boolean serverTrust,
+  void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
+               Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,
     boolean shouldPass, boolean startTLS,
     String[] enabledCipherSuites) throws Exception {
@@ -1199,152 +1391,262 @@ public class NetTest extends VertxTestBase {
         shouldPass, startTLS, enabledCipherSuites, new String[0]);
     }
 
-
-  void testTLS(boolean clientCert, boolean clientTrust,
-               boolean serverCert, boolean serverTrust,
+  void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
+               Cert<?> serverCert, Trust<?> serverTrust,
                boolean requireClientAuth, boolean clientTrustAll,
                boolean shouldPass, boolean startTLS,
                String[] enabledCipherSuites,
                String[] enabledSecureTransportProtocols) throws Exception {
-    server.close();
-    NetServerOptions options = new NetServerOptions();
-    if (!startTLS) {
-      options.setSsl(true);
-    }
-    if (serverTrust) {
-      options.setTrustStoreOptions(new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble"));
-    }
-    if (serverCert) {
-      options.setKeyStoreOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
-    }
-    if (requireClientAuth) {
-      options.setClientAuth(ClientAuth.REQUIRED);
-    }
-    for (String suite: enabledCipherSuites) {
-      options.addEnabledCipherSuite(suite);
-    }
-    for (String protocol : enabledSecureTransportProtocols) {
-      options.addEnabledSecureTransportProtocol(protocol);
+    TLSTest test = new TLSTest()
+        .clientCert(clientCert)
+        .clientTrust(clientTrust)
+        .serverCert(serverCert)
+        .serverTrust(serverTrust)
+        .requireClientAuth(requireClientAuth)
+        .clientTrustAll(clientTrustAll)
+        .startTLS(startTLS)
+        .enabledCipherSuites(enabledCipherSuites)
+        .enabledSecureTransportProtocols(enabledSecureTransportProtocols);
+    test.run(shouldPass);
+    await();
+  }
+
+  class TLSTest {
+
+    Cert<?> clientCert = Cert.NONE;
+    Trust<?> clientTrust = Trust.NONE;
+    Cert<?> serverCert = Cert.NONE;
+    Trust<?> serverTrust = Trust.NONE;
+    boolean requireClientAuth;
+    boolean clientTrustAll;
+    boolean startTLS;
+    String[] enabledCipherSuites = new String[0];
+    String[] enabledSecureTransportProtocols = new String[0];
+    boolean sni;
+    SocketAddress address = SocketAddress.inetSocketAddress(4043, "localhost");
+    String serverName;
+    X509Certificate clientPeerCert;
+    String indicatedServerName;
+
+    public TLSTest clientCert(Cert<?> clientCert) {
+      this.clientCert = clientCert;
+      return this;
     }
 
-    Consumer<NetSocket> certificateChainChecker = socket -> {
-      try {
-        X509Certificate[] certs = socket.peerCertificateChain();
-        if (clientCert) {
-          assertNotNull(certs);
-          assertEquals(1, certs.length);
-        } else {
-          assertNull(certs);
-        }
-      } catch (SSLPeerUnverifiedException e) {
-        assertTrue(clientTrust || clientTrustAll);
-      }
-    };
+    public TLSTest clientTrust(Trust<?> clientTrust) {
+      this.clientTrust = clientTrust;
+      return this;
+    }
 
-    options.setPort(4043);
-    server = vertx.createNetServer(options);
-    Handler<NetSocket> serverHandler = socket -> {
-      if (socket.isSsl()) {
-        certificateChainChecker.accept(socket);
-      }
-      AtomicBoolean upgradedServer = new AtomicBoolean();
-      AtomicInteger upgradedServerCount = new AtomicInteger();
-      socket.handler(buff -> {
-        socket.write(buff); // echo the data
-        if (startTLS) {
-          if (upgradedServer.compareAndSet(false, true)) {
-            assertFalse(socket.isSsl());
-            socket.upgradeToSsl(v -> {
-              certificateChainChecker.accept(socket);
-              upgradedServerCount.incrementAndGet();
-              assertTrue(socket.isSsl());
-            });
-          } else {
-            assertTrue(socket.isSsl());
-            assertEquals(1, upgradedServerCount.get());
-          }
-        } else {
-          assertTrue(socket.isSsl());
-        }
-      });
-    };
-    server.connectHandler(serverHandler).listen(ar -> {
-      client.close();
-      NetClientOptions clientOptions = new NetClientOptions();
+    public TLSTest serverCert(Cert<?> serverCert) {
+      this.serverCert = serverCert;
+      return this;
+    }
+
+    public TLSTest serverTrust(Trust<?> serverTrust) {
+      this.serverTrust = serverTrust;
+      return this;
+    }
+
+    public TLSTest requireClientAuth(boolean requireClientAuth) {
+      this.requireClientAuth = requireClientAuth;
+      return this;
+    }
+
+    public TLSTest clientTrustAll(boolean clientTrustAll) {
+      this.clientTrustAll = clientTrustAll;
+      return this;
+    }
+
+    public TLSTest startTLS(boolean startTLS) {
+      this.startTLS = startTLS;
+      return this;
+    }
+
+    public TLSTest enabledCipherSuites(String[] enabledCipherSuites) {
+      this.enabledCipherSuites = enabledCipherSuites;
+      return this;
+    }
+
+    public TLSTest enabledSecureTransportProtocols(String[] enabledSecureTransportProtocols) {
+      this.enabledSecureTransportProtocols = enabledSecureTransportProtocols;
+      return this;
+    }
+
+    public TLSTest address(SocketAddress address) {
+      this.address = address;
+      return this;
+    }
+
+    public TLSTest serverName(String serverName) {
+      this.serverName = serverName;
+      return this;
+    }
+
+    public TLSTest sni(boolean sni) {
+      this.sni = sni;
+      return this;
+    }
+
+    public X509Certificate clientPeerCert() {
+      return clientPeerCert;
+    }
+
+    void run(boolean shouldPass) {
+      server.close();
+      NetServerOptions options = new NetServerOptions();
       if (!startTLS) {
-        clientOptions.setSsl(true);
+        options.setSsl(true);
       }
-      if (clientTrustAll) {
-        clientOptions.setTrustAll(true);
-      }
-      if (clientTrust) {
-        clientOptions.setTrustStoreOptions(new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble"));
-      }
-      if (clientCert) {
-        clientOptions.setKeyStoreOptions(new JksOptions().setPath("tls/client-keystore.jks").setPassword("wibble"));
+      options.setTrustOptions(serverTrust.get());
+      options.setKeyCertOptions(serverCert.get());
+      if (requireClientAuth) {
+        options.setClientAuth(ClientAuth.REQUIRED);
       }
       for (String suite: enabledCipherSuites) {
-        clientOptions.addEnabledCipherSuite(suite);
+        options.addEnabledCipherSuite(suite);
       }
       for (String protocol : enabledSecureTransportProtocols) {
-        clientOptions.addEnabledSecureTransportProtocol(protocol);
+        options.addEnabledSecureTransportProtocol(protocol);
       }
-      client = vertx.createNetClient(clientOptions);
-      client.connect(4043, "localhost", ar2 -> {
-        if (ar2.succeeded()) {
-          if (!shouldPass) {
-            fail("Should not connect");
-            return;
-          }
-          final int numChunks = 100;
-          final int chunkSize = 100;
-          final List<Buffer> toSend = new ArrayList<>();
-          final Buffer expected = Buffer.buffer();
-          for (int i = 0; i< numChunks;i++) {
-            Buffer chunk = TestUtils.randomBuffer(chunkSize);
-            toSend.add(chunk);
-            expected.appendBuffer(chunk);
-          }
-          final Buffer received = Buffer.buffer();
-          final NetSocket socket = ar2.result();
+      options.setSni(sni);
 
-          final AtomicBoolean upgradedClient = new AtomicBoolean();
-          socket.handler(buffer -> {
-            received.appendBuffer(buffer);
-            if (received.length() == expected.length()) {
-              assertEquals(expected, received);
-              testComplete();
-            }
-            if (startTLS && !upgradedClient.get()) {
-              upgradedClient.set(true);
+      Consumer<NetSocket> certificateChainChecker = socket -> {
+        try {
+          X509Certificate[] certs = socket.peerCertificateChain();
+          if (clientCert != Cert.NONE) {
+            assertNotNull(certs);
+            assertEquals(1, certs.length);
+          } else {
+            assertNull(certs);
+          }
+        } catch (SSLPeerUnverifiedException e) {
+          assertTrue(clientTrust.get() != Trust.NONE || clientTrustAll);
+        }
+      };
+
+      server = vertx.createNetServer(options);
+      if (!shouldPass) {
+        waitForMore(1);
+      }
+      server.exceptionHandler(err -> complete());
+      Handler<NetSocket> serverHandler = socket -> {
+        indicatedServerName = socket.indicatedServerName();
+        if (socket.isSsl()) {
+          certificateChainChecker.accept(socket);
+        }
+        AtomicBoolean upgradedServer = new AtomicBoolean();
+        AtomicInteger upgradedServerCount = new AtomicInteger();
+        socket.handler(buff -> {
+          socket.write(buff); // echo the data
+          if (startTLS) {
+            if (upgradedServer.compareAndSet(false, true)) {
+              indicatedServerName = socket.indicatedServerName();
               assertFalse(socket.isSsl());
               socket.upgradeToSsl(v -> {
+                certificateChainChecker.accept(socket);
+                upgradedServerCount.incrementAndGet();
                 assertTrue(socket.isSsl());
-                // Now send the rest
-                for (int i = 1; i < numChunks; i++) {
-                  socket.write(toSend.get(i));
-                }
               });
             } else {
               assertTrue(socket.isSsl());
+              assertEquals(1, upgradedServerCount.get());
             }
-          });
-
-          //Now send some data
-          int numToSend = startTLS ? 1 : numChunks;
-          for (int i = 0; i < numToSend; i++) {
-            socket.write(toSend.get(i));
-          }
-        } else {
-          if (shouldPass) {
-            fail("Should not fail to connect");
           } else {
-            testComplete();
+            assertTrue(socket.isSsl());
           }
+        });
+      };
+      server.connectHandler(serverHandler).listen(address, ar -> {
+        assertTrue(ar.succeeded());
+        client.close();
+        NetClientOptions clientOptions = new NetClientOptions();
+        if (!startTLS) {
+          clientOptions.setSsl(true);
         }
+        if (clientTrustAll) {
+          clientOptions.setTrustAll(true);
+        }
+        clientOptions.setTrustOptions(clientTrust.get());
+        clientOptions.setKeyCertOptions(clientCert.get());
+        for (String suite: enabledCipherSuites) {
+          clientOptions.addEnabledCipherSuite(suite);
+        }
+        for (String protocol : enabledSecureTransportProtocols) {
+          clientOptions.addEnabledSecureTransportProtocol(protocol);
+        }
+        client = vertx.createNetClient(clientOptions);
+        client.connect(address, serverName, ar2 -> {
+          if (ar2.succeeded()) {
+            if (!shouldPass) {
+              fail("Should not connect");
+              return;
+            }
+            final int numChunks = 100;
+            final int chunkSize = 100;
+            final List<Buffer> toSend = new ArrayList<>();
+            final Buffer expected = Buffer.buffer();
+            for (int i = 0; i< numChunks;i++) {
+              Buffer chunk = TestUtils.randomBuffer(chunkSize);
+              toSend.add(chunk);
+              expected.appendBuffer(chunk);
+            }
+            final Buffer received = Buffer.buffer();
+            final NetSocket socket = ar2.result();
+
+            if (socket.isSsl()) {
+              try {
+                clientPeerCert = socket.peerCertificateChain()[0];
+              } catch (SSLPeerUnverifiedException ignore) {
+              }
+            }
+
+            final AtomicBoolean upgradedClient = new AtomicBoolean();
+            socket.handler(buffer -> {
+              received.appendBuffer(buffer);
+              if (received.length() == expected.length()) {
+                assertEquals(expected, received);
+                complete();
+              }
+              if (startTLS && !upgradedClient.get()) {
+                upgradedClient.set(true);
+                assertFalse(socket.isSsl());
+                Handler<Void> handler = v -> {
+                  assertTrue(socket.isSsl());
+                  try {
+                    clientPeerCert = socket.peerCertificateChain()[0];
+                  } catch (SSLPeerUnverifiedException ignore) {
+                  }
+                  // Now send the rest
+                  for (int i = 1; i < numChunks; i++) {
+                    socket.write(toSend.get(i));
+                  }
+                };
+                if (serverName != null) {
+                  socket.upgradeToSsl(serverName, handler);
+                } else {
+                  socket.upgradeToSsl(handler);
+                }
+              } else {
+                assertTrue(socket.isSsl());
+              }
+            });
+
+            //Now send some data
+            int numToSend = startTLS ? 1 : numChunks;
+            for (int i = 0; i < numToSend; i++) {
+              socket.write(toSend.get(i));
+            }
+          } else {
+            if (shouldPass) {
+              fail("Should not fail to connect");
+            } else {
+              complete();
+            }
+          }
+        });
       });
-    });
-    await();
+    }
   }
 
   @Test
@@ -1364,7 +1666,7 @@ public class NetTest extends VertxTestBase {
     CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numConnections);
     for (int i = 0; i < numServers; i++) {
-      NetServer theServer = vertx.createNetServer(new NetServerOptions().setHost("localhost").setPort(1234));
+      NetServer theServer = vertx.createNetServer();
       servers.add(theServer);
       theServer.connectHandler(sock -> {
         connectedServers.add(theServer);
@@ -1373,7 +1675,7 @@ public class NetTest extends VertxTestBase {
         icnt++;
         connectCount.put(theServer, icnt);
         latchConns.countDown();
-      }).listen(ar -> {
+      }).listen(testAddress, ar -> {
         if (ar.succeeded()) {
           latchListen.countDown();
         } else {
@@ -1388,7 +1690,7 @@ public class NetTest extends VertxTestBase {
     client = vertx.createNetClient(new NetClientOptions());
     CountDownLatch latchClient = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
-      client.connect(1234, "localhost", res -> {
+      client.connect(testAddress, res -> {
         if (res.succeeded()) {
           latchClient.countDown();
         } else {
@@ -1448,10 +1750,10 @@ public class NetTest extends VertxTestBase {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
     server.close();
     CountDownLatch latch = new CountDownLatch(1);
-    server = vertx.createNetServer(new NetServerOptions().setPort(1234));
+    server = vertx.createNetServer();
     server.connectHandler(sock -> {
       fail("Should not connect");
-    }).listen(ar -> {
+    }).listen(testAddress, ar -> {
       if (ar.succeeded()) {
         latch.countDown();
       } else {
@@ -1486,7 +1788,7 @@ public class NetTest extends VertxTestBase {
         connections.remove(socket.writeHandlerID());
       });
     });
-    server.listen(ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
@@ -1496,7 +1798,7 @@ public class NetTest extends VertxTestBase {
     CountDownLatch connectLatch = new CountDownLatch(numConnections);
     CountDownLatch receivedLatch = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
-      client.connect(1234, "localhost", res -> {
+      client.connect(testAddress, res -> {
         connectLatch.countDown();
         res.result().handler(data -> {
           receivedLatch.countDown();
@@ -1506,7 +1808,7 @@ public class NetTest extends VertxTestBase {
     assertTrue(connectLatch.await(10, TimeUnit.SECONDS));
 
     // Send some data
-    client.connect(1234, "localhost", res -> {
+    client.connect(testAddress, res -> {
       res.result().write("foo");
     });
     assertTrue(receivedLatch.await(10, TimeUnit.SECONDS));
@@ -1519,15 +1821,14 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(socket -> {
       SocketAddress addr = socket.remoteAddress();
       assertEquals("127.0.0.1", addr.host());
-    }).listen(ar -> {
+    }).listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
-      vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", result -> {
-        NetSocket socket = result.result();
+      vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", onSuccess(socket -> {
         SocketAddress addr = socket.remoteAddress();
         assertEquals("127.0.0.1", addr.host());
         assertEquals(addr.port(), 1234);
         testComplete();
-      });
+      }));
     });
     await();
   }
@@ -1542,9 +1843,9 @@ public class NetTest extends VertxTestBase {
           testComplete();
         }
       });
-    }).listen(ar -> {
+    }).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
-      client.connect(1234, "localhost", result -> {
+      client.connect(testAddress, result -> {
         NetSocket socket = result.result();
         Buffer buff = Buffer.buffer("foo");
         socket.write(buff);
@@ -1572,9 +1873,9 @@ public class NetTest extends VertxTestBase {
       // Send some data to the client to trigger the sendfile
       sock.write("foo");
     });
-    server.listen(ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
-      client.connect(1234, "localhost", ar2 -> {
+      client.connect(testAddress, ar2 -> {
         assertTrue(ar2.succeeded());
         NetSocket sock = ar2.result();
         sock.handler(buf -> {
@@ -1598,9 +1899,9 @@ public class NetTest extends VertxTestBase {
         sock.sendFile(file.getAbsolutePath());
       });
     });
-    server.listen(ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
-      client.connect(1234, "localhost", ar2 -> {
+      client.connect(testAddress, ar2 -> {
         assertTrue(ar2.succeeded());
         NetSocket sock = ar2.result();
         sock.handler(buff -> {
@@ -1621,11 +1922,12 @@ public class NetTest extends VertxTestBase {
   public void testSendFileDirectory() throws Exception {
     File fDir = testFolder.newFolder();
     server.connectHandler(socket -> {
-      SocketAddress addr = socket.remoteAddress();
-      assertEquals("127.0.0.1", addr.host());
-    }).listen(ar -> {
+      socket.handler(buff -> {
+        fail("Should not receive any data");
+      });
+    }).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
-      client.connect(1234, "localhost", result -> {
+      client.connect(testAddress, result -> {
         assertTrue(result.succeeded());
         NetSocket socket = result.result();
         try {
@@ -1644,7 +1946,7 @@ public class NetTest extends VertxTestBase {
   public void testServerOptionsCopiedBeforeUse() {
     server.close();
     NetServerOptions options = new NetServerOptions().setPort(1234);
-    NetServer server = vertx.createNetServer(options);
+    server = vertx.createNetServer(options);
     // Now change something - but server should still listen at previous port
     options.setPort(1235);
     server.connectHandler(sock -> {
@@ -1669,7 +1971,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
       testComplete();
     });
-    server.listen(ar -> {
+    server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "localhost", ar2 -> {
         assertTrue(ar2.succeeded());
@@ -1681,7 +1983,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListenWithNoHandler() {
     try {
-      server.listen();
+      server.listen(testAddress);
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // OK
@@ -1691,7 +1993,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListenWithNoHandler2() {
     try {
-      server.listen(ar -> {
+      server.listen(testAddress, ar -> {
         assertFalse(ar.succeeded());
       });
       fail("Should throw exception");
@@ -1704,7 +2006,7 @@ public class NetTest extends VertxTestBase {
   public void testSetHandlerAfterListen() {
     server.connectHandler(sock -> {
     });
-    server.listen();
+    server.listen(testAddress, onSuccess(v -> testComplete()));
     try {
       server.connectHandler(sock -> {
       });
@@ -1712,13 +2014,14 @@ public class NetTest extends VertxTestBase {
     } catch (IllegalStateException e) {
       // OK
     }
+    await();
   }
 
   @Test
   public void testSetHandlerAfterListen2() {
     server.connectHandler(sock -> {
     });
-    server.listen(ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       try {
         server.connectHandler(sock -> {
@@ -1736,9 +2039,9 @@ public class NetTest extends VertxTestBase {
   public void testListenTwice() {
     server.connectHandler(sock -> {
     });
-    server.listen(onSuccess(s -> {
+    server.listen(testAddress, onSuccess(s -> {
       try {
-        server.listen(res -> {});
+        server.listen(testAddress, res -> {});
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         // OK
@@ -1753,11 +2056,12 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListenOnPortNoHandler() {
     server.connectHandler(NetSocket::close);
-    server.listen(1234);
-    client.connect(1234, "localhost", onSuccess(so -> {
-      so.closeHandler(v -> {
-        testComplete();
-      });
+    server.listen(1234, onSuccess(ns -> {
+      client.connect(1234, "localhost", onSuccess(so -> {
+        so.closeHandler(v -> {
+          testComplete();
+        });
+      }));
     }));
     await();
   }
@@ -1765,11 +2069,12 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListen() {
     server.connectHandler(NetSocket::close);
-    server.listen();
-    client.connect(1234, "localhost", onSuccess(so -> {
-      so.closeHandler(v -> {
-        testComplete();
-      });
+    server.listen(testAddress, onSuccess(ns -> {
+      client.connect(testAddress, onSuccess(so -> {
+        so.closeHandler(v -> {
+          testComplete();
+        });
+      }));
     }));
     await();
   }
@@ -1778,10 +2083,10 @@ public class NetTest extends VertxTestBase {
   public void testListenTwice2() {
     server.connectHandler(sock -> {
     });
-    server.listen(ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       try {
-        server.listen(sock -> {
+        server.listen(testAddress, sock -> {
         });
         fail("Should throw exception");
       } catch (IllegalStateException e) {
@@ -1802,7 +2107,7 @@ public class NetTest extends VertxTestBase {
   public void testAttemptConnectAfterClose() {
     client.close();
     try {
-      client.connect(1234, "localhost", ar -> {
+      client.connect(testAddress, ar -> {
       });
       fail("Should throw exception");
     } catch (IllegalStateException e) {
@@ -1817,12 +2122,12 @@ public class NetTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(numThreads);
     server.connectHandler(socket -> {
       socket.handler(socket::write);
-    }).listen(ar -> {
+    }).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       for (int i = 0; i < numThreads; i++) {
         threads[i] = new Thread() {
           public void run() {
-            client.connect(1234, "localhost", result -> {
+            client.connect(testAddress, result -> {
               assertTrue(result.succeeded());
               Buffer buff = TestUtils.randomBuffer(100000);
               NetSocket sock = result.result();
@@ -1866,7 +2171,7 @@ public class NetTest extends VertxTestBase {
           assertTrue(ctx instanceof EventLoopContext);
         }
         Thread thr = Thread.currentThread();
-        server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost"));
+        server = vertx.createNetServer();
         server.connectHandler(sock -> {
           sock.handler(buff -> {
             sock.write(buff);
@@ -1876,14 +2181,14 @@ public class NetTest extends VertxTestBase {
             assertSame(thr, Thread.currentThread());
           }
         });
-        server.listen(ar -> {
+        server.listen(testAddress, ar -> {
           assertTrue(ar.succeeded());
           assertSame(ctx, context);
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
           client = vertx.createNetClient(new NetClientOptions());
-          client.connect(1234, "localhost", ar2 -> {
+          client.connect(testAddress, ar2 -> {
             assertSame(ctx, context);
             if (!worker) {
               assertSame(thr, Thread.currentThread());
@@ -1954,7 +2259,7 @@ public class NetTest extends VertxTestBase {
     });
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<ContextImpl> listenContext = new AtomicReference<>();
-    server.listen(ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       listenContext.set(((VertxInternal) vertx).getContext());
       latch.countDown();
@@ -1964,7 +2269,7 @@ public class NetTest extends VertxTestBase {
     int numConns = 10;
     // Each connect should be in its own context
     for (int i = 0; i < numConns; i++) {
-      client.connect(1234, "localhost", conn -> {
+      client.connect(testAddress, conn -> {
         contexts.add(((VertxInternal) vertx).getContext());
         if (cnt.incrementAndGet() == numConns) {
           assertEquals(numConns, contexts.size());
@@ -1991,7 +2296,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testReadStreamPauseResume() {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
+    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1));
     ReadStream<NetSocket> socketStream = server.connectStream();
     AtomicBoolean paused = new AtomicBoolean();
     socketStream.handler(so -> {
@@ -1999,11 +2304,11 @@ public class NetTest extends VertxTestBase {
       so.write("hello");
       so.close();
     });
-    server.listen(ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       paused.set(true);
       socketStream.pause();
-      client.connect(1234, "localhost", ar2 -> {
+      client.connect(testAddress, ar2 -> {
         assertTrue(ar2.succeeded());
         NetSocket so2 = ar2.result();
         so2.handler(buffer -> {
@@ -2012,7 +2317,7 @@ public class NetTest extends VertxTestBase {
         so2.closeHandler(v -> {
           paused.set(false);
           socketStream.resume();
-          client.connect(1234, "localhost", ar3 -> {
+          client.connect(testAddress, ar3 -> {
             assertTrue(ar3.succeeded());
             NetSocket so3 = ar3.result();
             Buffer buffer = Buffer.buffer();
@@ -2043,7 +2348,7 @@ public class NetTest extends VertxTestBase {
         testComplete();
       }
     });
-    server.listen(ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       ThreadLocal<Object> stack2 = new ThreadLocal<>();
@@ -2062,7 +2367,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testMultipleServerClose() {
-    this.server = vertx.createNetServer(new NetServerOptions());
+    this.server = vertx.createNetServer();
     AtomicInteger times = new AtomicInteger();
     // We assume the endHandler and the close completion handler are invoked in the same context task
     ThreadLocal stack = new ThreadLocal();
@@ -2093,7 +2398,7 @@ public class NetTest extends VertxTestBase {
         assertTrue(Vertx.currentContext().isWorkerContext());
         assertTrue(Context.isOnWorkerThread());
         final Context context = Vertx.currentContext();
-        NetServer server1 = vertx.createNetServer(new NetServerOptions().setHost("localhost").setPort(1234));
+        NetServer server1 = vertx.createNetServer();
         server1.connectHandler(conn -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
@@ -2102,12 +2407,12 @@ public class NetTest extends VertxTestBase {
           conn.closeHandler(v -> {
             testComplete();
           });
-        }).listen(onSuccess(s -> {
+        }).listen(testAddress, onSuccess(s -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           assertSame(context, Vertx.currentContext());
           NetClient client = vertx.createNetClient();
-          client.connect(1234, "localhost", onSuccess(res -> {
+          client.connect(testAddress, onSuccess(res -> {
             assertTrue(Vertx.currentContext().isWorkerContext());
             assertTrue(Context.isOnWorkerThread());
             assertSame(context, Vertx.currentContext());
@@ -2125,6 +2430,54 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testAsyncWriteIsFlushed() throws Exception {
+    // Test that if we do a concurrent write (by another thread) during a channel read operation
+    // the channel will be flished after the concurrent write
+    int num = 128;
+    Buffer expected = TestUtils.randomBuffer(1024);
+    ExecutorService exec = Executors.newFixedThreadPool(1);
+    try {
+      server.connectHandler(so -> {
+        so.handler(buff -> {
+          assertEquals(256, buff.length());
+          CountDownLatch latch = new CountDownLatch(1);
+          exec.execute(() -> {
+            latch.countDown();
+            so.write(expected);
+          });
+          try {
+            awaitLatch(latch);
+          } catch (InterruptedException e) {
+            fail(e);
+          }
+        });
+      });
+      startServer();
+      AtomicInteger done = new AtomicInteger();
+      for (int i = 0;i < num;i++) {
+        client.connect(testAddress, ar -> {
+          if (ar.succeeded()) {
+            NetSocket so = ar.result();
+            so.handler(buff -> {
+              assertEquals(expected, buff);
+              so.close();
+              int val = done.incrementAndGet();
+              if (val == num) {
+                testComplete();
+              }
+            });
+            so.write(TestUtils.randomBuffer(256));
+          } else {
+            ar.cause().printStackTrace();
+          }
+        });
+      }
+      await();
+    } finally {
+      exec.shutdown();
+    }
+  }
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
@@ -2150,7 +2503,7 @@ public class NetTest extends VertxTestBase {
           testComplete();
         });
       });
-      server.listen(1234, ar -> {
+      server.listen(testAddress, ar -> {
         assertTrue(ar.succeeded());
         // Create a one second worker starvation
         for (int i = 1; i < workers.size(); i++) {
@@ -2166,7 +2519,7 @@ public class NetTest extends VertxTestBase {
     });
     awaitLatch(latch1);
     NetClient client = vertx.createNetClient();
-    client.connect(1234, "localhost", ar -> {
+    client.connect(testAddress, ar -> {
       assertTrue(ar.succeeded());
       NetSocket so = ar.result();
       so.write(Buffer.buffer("hello"));
@@ -2190,14 +2543,14 @@ public class NetTest extends VertxTestBase {
       }
       so.write(Buffer.buffer("hello"));
     });
-    server.listen(1234, ar -> {
+    server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       latch1.countDown();
     });
     awaitLatch(latch1);
     workers.get(0).runOnContext(v -> {
       NetClient client = vertx.createNetClient();
-      client.connect(1234, "localhost", ar -> {
+      client.connect(testAddress, ar -> {
         assertTrue(ar.succeeded());
         NetSocket so = ar.result();
         so.handler(buf -> {
@@ -2310,8 +2663,8 @@ public class NetTest extends VertxTestBase {
       server.connectHandler(so -> {
         so.write("fizzbuzz").end();
       });
-      server.listen(1234, "localhost", onSuccess(v1 -> {
-        client.connect(1234, "localhost", onSuccess(so -> {
+      server.listen(testAddress, onSuccess(v1 -> {
+        client.connect(testAddress, onSuccess(so -> {
           so.closeHandler(v2 -> testComplete());
         }));
       }));
@@ -2335,7 +2688,7 @@ public class NetTest extends VertxTestBase {
     });
     proxy = new SocksProxy(null);
     proxy.start(vertx, v -> {
-      server.listen(ar -> {
+      server.listen(1234, "localhost", ar -> {
         assertTrue(ar.succeeded());
         client.connect(1234, "localhost", ar2 -> {
           if (ar2.failed()) {
@@ -2365,7 +2718,7 @@ public class NetTest extends VertxTestBase {
     });
     proxy = new SocksProxy("username");
     proxy.start(vertx, v -> {
-      server.listen(ar -> {
+      server.listen(1234, "localhost", ar -> {
         assertTrue(ar.succeeded());
         client.connect(1234, "localhost", ar2 -> {
           assertTrue(ar2.succeeded());
@@ -2468,7 +2821,7 @@ public class NetTest extends VertxTestBase {
     });
     proxy = new HttpProxy(null);
     proxy.start(vertx, v -> {
-      server.listen(ar -> {
+      server.listen(1234, "localhost", ar -> {
         assertTrue(ar.succeeded());
         client.connect(1234, "localhost", ar2 -> {
           if (ar2.failed()) {
@@ -2497,7 +2850,7 @@ public class NetTest extends VertxTestBase {
     });
     proxy = new Socks4Proxy(null);
     proxy.start(vertx, v -> {
-      server.listen(ar -> {
+      server.listen(1234, "localhost", ar -> {
         assertTrue(ar.succeeded());
         client.connect(1234, "localhost", ar2 -> {
           if (ar2.failed()) {
@@ -2527,7 +2880,7 @@ public class NetTest extends VertxTestBase {
     });
     proxy = new Socks4Proxy("username");
     proxy.start(vertx, v -> {
-      server.listen(ar -> {
+      server.listen(1234, "localhost", ar -> {
         assertTrue(ar.succeeded());
         client.connect(1234, "localhost", ar2 -> {
           if (ar2.failed()) {
@@ -2556,7 +2909,7 @@ public class NetTest extends VertxTestBase {
     });
     proxy = new Socks4Proxy(null);
     proxy.start(vertx, v -> {
-      server.listen(ar -> {
+      server.listen(1234, "localhost", ar -> {
         assertTrue(ar.succeeded());
         client.connect(1234, "127.0.0.1", ar2 -> {
           if (ar2.failed()) {
@@ -2678,10 +3031,10 @@ public class NetTest extends VertxTestBase {
       .connectHandler(socket -> {
         socket.write("123").end();
       })
-      .listen(1234, "localhost", onSuccess(s -> {
+      .listen(testAddress, onSuccess(s -> {
 
         client = vertx.createNetClient(clientOptions);
-        client.connect(1234, "localhost", onSuccess(socket -> {
+        client.connect(testAddress, onSuccess(socket -> {
           socket.handler(buffer -> {
             assertEquals("123", buffer.toString());
             latch.countDown();
@@ -2689,7 +3042,7 @@ public class NetTest extends VertxTestBase {
         }));
 
         client = vertx.createNetClient(clientTrustAllOptions);
-        client.connect(1234, "localhost", onSuccess(socket -> {
+        client.connect(testAddress, onSuccess(socket -> {
           socket.handler(buffer -> {
             assertEquals("123", buffer.toString());
             latch.countDown();
@@ -2699,5 +3052,264 @@ public class NetTest extends VertxTestBase {
       }));
 
     awaitLatch(latch);
+  }
+
+  @Test
+  public void testWorkerClient() throws Exception {
+    String expected = TestUtils.randomAlphaString(2000);
+    server.connectHandler(so -> {
+      so.write(expected).close();
+    });
+    startServer();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        NetClient client = vertx.createNetClient();
+        client.connect(testAddress, onSuccess(so ->{
+          Buffer received = Buffer.buffer();
+          so.handler(received::appendBuffer);
+          so.closeHandler(v -> {
+            assertEquals(expected, received.toString());
+            testComplete();
+          });
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }));
+
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testWorkerServer() throws Exception {
+    String expected = TestUtils.randomAlphaString(2000);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        NetServer server = vertx.createNetServer();
+        server.connectHandler(so -> {
+          Buffer received = Buffer.buffer();
+          so.handler(received::appendBuffer);
+          so.closeHandler(v -> {
+            assertEquals(expected, received.toString());
+            testComplete();
+          });
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        });
+        server.listen(testAddress, ar -> startFuture.handle(ar.mapEmpty()));
+      }
+    }, new DeploymentOptions().setWorker(true), onSuccess(v -> {
+      client.connect(testAddress, onSuccess(so -> {
+        so.write(expected).close();
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetServerInternal() throws Exception {
+    testNetServerInternal_(new HttpClientOptions(), false);
+  }
+
+  @Test
+  public void testNetServerInternalTLS() throws Exception {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions()
+      .setPort(1234)
+      .setHost("localhost")
+      .setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get()));
+    testNetServerInternal_(new HttpClientOptions()
+      .setSsl(true)
+      .setTrustStoreOptions(Trust.SERVER_JKS.get())
+    , true);
+  }
+
+  private void testNetServerInternal_(HttpClientOptions clientOptions, boolean expectSSL) throws Exception {
+    waitFor(2);
+    server.connectHandler(so -> {
+      NetSocketInternal internal = (NetSocketInternal) so;
+      assertEquals(expectSSL, internal.isSsl());
+      ChannelHandlerContext chctx = internal.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addBefore("handler", "http", new HttpServerCodec());
+      internal.handler(buff -> fail());
+      internal.messageHandler(obj -> {
+        if (obj instanceof LastHttpContent) {
+          DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+            HttpVersion.HTTP_1_1,
+            HttpResponseStatus.OK,
+            Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
+          response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
+          internal.writeMessage(response, onSuccess(v -> complete()));
+        }
+      });
+    });
+    startServer(SocketAddress.inetSocketAddress(1234, "localhost"));
+    HttpClient client = vertx.createHttpClient(clientOptions);
+    client.getNow(1234, "localhost", "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.bodyHandler(buff -> {
+        assertEquals("Hello World", buff.toString());
+        complete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testNetClientInternal() throws Exception {
+    testNetClientInternal_(new HttpServerOptions().setHost("localhost").setPort(1234), false);
+  }
+
+  @Test
+  public void testNetClientInternalTLS() throws Exception {
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustStoreOptions(Trust.SERVER_JKS.get()));
+    testNetClientInternal_(new HttpServerOptions()
+      .setHost("localhost")
+      .setPort(1234)
+      .setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get()), true);
+  }
+
+  private void testNetClientInternal_(HttpServerOptions options, boolean expectSSL) throws Exception {
+    waitFor(2);
+    HttpServer server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+      req.response().end("Hello World"); });
+    CountDownLatch latch = new CountDownLatch(1);
+    server.listen(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    client.connect(1234, "localhost", onSuccess(so -> {
+      NetSocketInternal soInt = (NetSocketInternal) so;
+      assertEquals(expectSSL, soInt.isSsl());
+      ChannelHandlerContext chctx = soInt.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addBefore("handler", "http", new HttpClientCodec());
+      AtomicInteger status = new AtomicInteger();
+      soInt.handler(buff -> fail());
+      soInt.messageHandler(obj -> {
+        switch (status.getAndIncrement()) {
+          case 0:
+            assertTrue(obj instanceof HttpResponse);
+            HttpResponse resp = (HttpResponse) obj;
+            assertEquals(200, resp.status().code());
+            break;
+          case 1:
+            assertTrue(obj instanceof LastHttpContent);
+            ByteBuf content = ((LastHttpContent) obj).content();
+            assertEquals(!expectSSL, content.isDirect());
+            assertEquals(1, content.refCnt());
+            String val = content.toString(StandardCharsets.UTF_8);
+            assertTrue(content.release());
+            assertEquals("Hello World", val);
+            complete();
+            break;
+          default:
+            fail();
+        }
+      });
+      soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"), onSuccess(v -> complete()));
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetSocketInternalBuffer() throws Exception {
+    server.connectHandler(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.messageHandler(msg -> fail("Unexpected"));
+      soi.handler(msg -> {
+        ByteBuf byteBuf = msg.getByteBuf();
+        assertFalse(byteBuf.isDirect());
+        assertEquals(1, byteBuf.refCnt());
+        assertFalse(byteBuf.release());
+        assertEquals(1, byteBuf.refCnt());
+        soi.write(msg);
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.write(Buffer.buffer("Hello World"));
+      soi.messageHandler(msg -> fail("Unexpected"));
+      soi.handler(msg -> {
+        ByteBuf byteBuf = msg.getByteBuf();
+        assertFalse(byteBuf.isDirect());
+        assertEquals(1, byteBuf.refCnt());
+        assertFalse(byteBuf.release());
+        assertEquals(1, byteBuf.refCnt());
+        assertEquals("Hello World", msg.toString());
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testCloseCompletionHandlerNotCalledWhenActualServerFailed() {
+    server.close();
+    server = vertx.createNetServer(
+      new NetServerOptions()
+        .setSsl(true)
+        .setPemKeyCertOptions(new PemKeyCertOptions().setKeyPath("invalid")))
+      .connectHandler(c -> {
+    });
+    try {
+      server.listen(10000, r -> fail());
+    } catch (Exception ignore) {
+      // Expected
+    }
+    server.close(onSuccess(v -> {
+      testComplete();
+    }));
+    await();
+  }
+
+  protected void startServer(SocketAddress remoteAddress) throws Exception {
+    startServer(remoteAddress, vertx.getOrCreateContext());
+  }
+
+  protected void startServer(SocketAddress remoteAddress, NetServer server) throws Exception {
+    startServer(remoteAddress, vertx.getOrCreateContext(), server);
+  }
+
+  protected void startServer(SocketAddress remoteAddress, Context context) throws Exception {
+    startServer(remoteAddress, context, server);
+  }
+
+  protected void startServer(SocketAddress remoteAddress, Context context, NetServer server) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    context.runOnContext(v -> {
+      server.listen(remoteAddress, onSuccess(s -> latch.countDown()));
+    });
+    awaitLatch(latch);
+  }
+
+  protected void startServer() throws Exception {
+    startServer(testAddress, vertx.getOrCreateContext());
+  }
+
+  protected void startServer(NetServer server) throws Exception {
+    startServer(testAddress, vertx.getOrCreateContext(), server);
+  }
+
+  protected void startServer(Context context) throws Exception {
+    startServer(testAddress, context, server);
+  }
+
+  protected void startServer(Context context, NetServer server) throws Exception {
+    startServer(testAddress, context, server);
   }
 }

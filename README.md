@@ -12,6 +12,33 @@ For more information on Vert.x and where Vert.x core fits into the big picture p
 > mvn package
 ```
 
+## Running tests
+
+Runs the tests
+
+```
+> mvn test
+```
+
+Vert.x supports native transport on BSD and Linux, to run the tests with native transport
+
+```
+> mvn test -PtestNativeTransport
+```
+
+Vert.x supports domain sockets on Linux exclusively, to run the tests with domain sockets
+
+```
+> mvn test -PtestDomainSockets
+```
+
+Vert.x has a few integrations tests that run a differently configured JVM (classpath, system properties, etc....)
+for ALPN, native and logging
+
+```
+> vertx verify -Dtest=FooTest # FooTest does not exists, its only purpose is to execute no tests during the test phase
+```
+
 ## Building documentation
 
 ```

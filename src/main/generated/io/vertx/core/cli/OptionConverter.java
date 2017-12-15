@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.cli.Option} original class using Vert.x codegen.
  */
-public class OptionConverter {
+ class OptionConverter {
 
-  public static void fromJson(JsonObject json, Option obj) {
+   static void fromJson(JsonObject json, Option obj) {
     if (json.getValue("argName") instanceof String) {
       obj.setArgName((String)json.getValue("argName"));
     }
@@ -68,7 +68,7 @@ public class OptionConverter {
     }
   }
 
-  public static void toJson(Option obj, JsonObject json) {
+   static void toJson(Option obj, JsonObject json) {
     if (obj.getArgName() != null) {
       json.put("argName", obj.getArgName());
     }

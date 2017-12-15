@@ -30,7 +30,10 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -146,7 +149,7 @@ public class SharedDataImpl implements SharedData {
     }
   }
 
-  private static class WrappedAsyncMap<K, V> implements AsyncMap<K, V> {
+  public static final class WrappedAsyncMap<K, V> implements AsyncMap<K, V> {
 
     private final AsyncMap<K, V> delegate;
 
@@ -216,7 +219,24 @@ public class SharedDataImpl implements SharedData {
     public void size(Handler<AsyncResult<Integer>> resultHandler) {
       delegate.size(resultHandler);
     }
+
+    @Override
+    public void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
+      delegate.keys(resultHandler);
+    }
+
+    @Override
+    public void values(Handler<AsyncResult<List<V>>> asyncResultHandler) {
+      delegate.values(asyncResultHandler);
+    }
+
+    @Override
+    public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
+      delegate.entries(asyncResultHandler);
+    }
+
+    public AsyncMap<K, V> getDelegate() {
+      return delegate;
+    }
   }
-
-
 }

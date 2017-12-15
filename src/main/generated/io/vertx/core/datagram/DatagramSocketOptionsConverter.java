@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.datagram.DatagramSocketOptions} original class using Vert.x codegen.
  */
-public class DatagramSocketOptionsConverter {
+ class DatagramSocketOptionsConverter {
 
-  public static void fromJson(JsonObject json, DatagramSocketOptions obj) {
+   static void fromJson(JsonObject json, DatagramSocketOptions obj) {
     if (json.getValue("broadcast") instanceof Boolean) {
       obj.setBroadcast((Boolean)json.getValue("broadcast"));
     }
@@ -44,7 +44,7 @@ public class DatagramSocketOptionsConverter {
     }
   }
 
-  public static void toJson(DatagramSocketOptions obj, JsonObject json) {
+   static void toJson(DatagramSocketOptions obj, JsonObject json) {
     json.put("broadcast", obj.isBroadcast());
     json.put("ipV6", obj.isIpV6());
     json.put("loopbackModeDisabled", obj.isLoopbackModeDisabled());

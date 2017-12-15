@@ -47,9 +47,12 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
+
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -96,7 +99,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       int idx = serverOrigin.indexOf("://");
       host = serverOrigin.substring(idx + 3);
     }
-    Object metric = metrics.isEnabled() ? metrics.requestBegin(conn.metric(), this) : null;
+    Object metric = (METRICS_ENABLED && metrics != null) ? metrics.requestBegin(conn.metric(), this) : null;
     this.response = new Http2ServerResponseImpl(conn, this, metric, false, contentEncoding, host);
   }
 
@@ -205,7 +208,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   public HttpServerRequest handler(Handler<Buffer> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       dataHandler = handler;
     }
     return this;
@@ -230,7 +235,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       endHandler = handler;
     }
     return this;
@@ -369,8 +376,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   @Override
+  public SSLSession sslSession() {
+    return conn.sslSession();
+  }
+
+  @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.getPeerCertificateChain();
+    return conn.peerCertificateChain();
   }
 
   @Override
@@ -444,7 +456,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> handler) {
     synchronized (conn) {
-      checkEnded();
+      if (handler != null) {
+        checkEnded();
+      }
       uploadHandler = handler;
       return this;
     }

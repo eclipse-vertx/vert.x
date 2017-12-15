@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.NetClientOptions} original class using Vert.x codegen.
  */
-public class NetClientOptionsConverter {
+ class NetClientOptionsConverter {
 
-  public static void fromJson(JsonObject json, NetClientOptions obj) {
+   static void fromJson(JsonObject json, NetClientOptions obj) {
     if (json.getValue("hostnameVerificationAlgorithm") instanceof String) {
       obj.setHostnameVerificationAlgorithm((String)json.getValue("hostnameVerificationAlgorithm"));
     }
@@ -38,7 +38,7 @@ public class NetClientOptionsConverter {
     }
   }
 
-  public static void toJson(NetClientOptions obj, JsonObject json) {
+   static void toJson(NetClientOptions obj, JsonObject json) {
     if (obj.getHostnameVerificationAlgorithm() != null) {
       json.put("hostnameVerificationAlgorithm", obj.getHostnameVerificationAlgorithm());
     }

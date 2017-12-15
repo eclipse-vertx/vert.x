@@ -182,7 +182,7 @@ public class ComplexHATest extends VertxTestBase {
     v.executeBlocking(fut -> {
       v.simulateKill();
       fut.complete();
-    }, ar -> {
+    }, false, ar -> {
       assertTrue(ar.succeeded());
     });
 

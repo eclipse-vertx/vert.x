@@ -9,6 +9,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * The logic for connecting to an host, this implementations performs a connection
@@ -25,7 +26,7 @@ public class ChannelProvider {
   protected ChannelProvider() {
   }
 
-  public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, String host, int port,
+  public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, SocketAddress remoteAddress,
       Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
@@ -34,7 +35,7 @@ public class ChannelProvider {
         channelInitializer.handle(channel);
       }
     });
-    ChannelFuture fut = bootstrap.connect(host, port);
+    ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress, false));
     fut.addListener(res -> {
       if (res.isSuccess()) {
         channelHandler.handle(Future.succeededFuture(fut.channel()));

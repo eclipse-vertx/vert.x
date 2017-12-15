@@ -85,7 +85,8 @@ public class Log4J2LogDelegateTest {
     result = recording.execute(() -> {
       logger.info("hello {}", "vert.x");
     });
-    assertTrue(result.contains("hello vert.x"));
+    String expected = "hello vert.x";
+    assertTrue("Was expected <" + result + "> to contain <" + expected + ">" , result.contains(expected));
 
     result = recording.execute(() -> {
       logger.info("hello {} - {}", "vert.x");
@@ -93,9 +94,9 @@ public class Log4J2LogDelegateTest {
     assertTrue(result.contains("hello vert.x - {}"));
 
     result = recording.execute(() -> {
-      logger.info("hello {}", "vert.x", "foo");
+      logger.info("hello {} {}", "vert.x", "foo");
     });
-    assertTrue(result.contains("hello [vert.x, foo]"));
+    assertTrue(result.contains("hello vert.x foo"));
 
     result = recording.execute(() -> {
       logger.info("{}, an exception has been thrown", new IllegalStateException(), "Luke");
@@ -139,9 +140,10 @@ public class Log4J2LogDelegateTest {
     assertTrue(result.contains("hello vert.x - {}"));
 
     result = recording.execute(() -> {
-      logger.error("hello {}", "vert.x", "foo");
+      logger.error("hello {} {}", "vert.x", "foo");
     });
-    assertTrue(result.contains("hello [vert.x, foo]"));
+    String expected = "hello vert.x foo";
+    assertTrue("Was expected <" + result + "> to contain <" + expected + ">" , result.contains(expected));
 
     result = recording.execute(() -> {
       logger.error("{}, an exception has been thrown", new IllegalStateException(), "Luke");
@@ -185,9 +187,10 @@ public class Log4J2LogDelegateTest {
     assertTrue(result.contains("hello vert.x - {}"));
 
     result = recording.execute(() -> {
-      logger.warn("hello {}", "vert.x", "foo");
+      logger.warn("hello {} {}", "vert.x", "foo");
     });
-    assertTrue(result.contains("hello [vert.x, foo]"));
+    String expected = "hello vert.x foo";
+    assertTrue("Was expected <" + result + "> to contain <" + expected + ">" , result.contains(expected));
 
     result = recording.execute(() -> {
       logger.warn("{}, an exception has been thrown", new IllegalStateException(), "Luke");
@@ -215,5 +218,5 @@ public class Log4J2LogDelegateTest {
     });
     assertTrue(result.contains(".run:"));
   }
-  
+
 }

@@ -26,7 +26,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class NetServerOptions extends TCPSSLOptions {
 
   // Server specific HTTP stuff
@@ -51,10 +51,16 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public static final ClientAuth DEFAULT_CLIENT_AUTH = ClientAuth.NONE;
 
+  /**
+   * Default value of whether the server supports SNI = false
+   */
+  public static final boolean DEFAULT_SNI = false;
+
   private int port;
   private String host;
   private int acceptBacklog;
-  private ClientAuth clientAuth = DEFAULT_CLIENT_AUTH;
+  private ClientAuth clientAuth;
+  private boolean sni;
 
   /**
    * Default constructor
@@ -75,6 +81,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.host = other.getHost();
     this.acceptBacklog = other.getAcceptBacklog();
     this.clientAuth = other.getClientAuth();
+    this.sni = other.isSni();
   }
 
   /**
@@ -114,6 +121,12 @@ public class NetServerOptions extends TCPSSLOptions {
   @Override
   public NetServerOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
+    return this;
+  }
+
+  @Override
+  public NetServerOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
     return this;
   }
 
@@ -238,6 +251,21 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (NetServerOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public NetServerOptions setTcpCork(boolean tcpCork) {
+    return (NetServerOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public NetServerOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (NetServerOptions) super.setTcpQuickAck(tcpQuickAck);
+  }
+
+  @Override
   public NetServerOptions addCrlPath(String crlPath) throws NullPointerException {
     return (NetServerOptions) super.addCrlPath(crlPath);
   }
@@ -348,6 +376,23 @@ public class NetServerOptions extends TCPSSLOptions {
     return (NetServerOptions) super.setLogActivity(logEnabled);
   }
 
+  /**
+   * @return whether the server supports Server Name Indication
+   */
+  public boolean isSni() {
+    return sni;
+  }
+
+  /**
+   * Set whether the server supports Server Name Indiciation
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetServerOptions setSni(boolean sni) {
+    this.sni = sni;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -360,6 +405,7 @@ public class NetServerOptions extends TCPSSLOptions {
     if (clientAuth != that.clientAuth) return false;
     if (port != that.port) return false;
     if (host != null ? !host.equals(that.host) : that.host != null) return false;
+    if (sni != that.sni) return false;
 
     return true;
   }
@@ -371,6 +417,7 @@ public class NetServerOptions extends TCPSSLOptions {
     result = 31 * result + (host != null ? host.hashCode() : 0);
     result = 31 * result + acceptBacklog;
     result = 31 * result + clientAuth.hashCode();
+    result = 31 * result + (sni ? 1 : 0);
     return result;
   }
 
@@ -379,6 +426,6 @@ public class NetServerOptions extends TCPSSLOptions {
     this.host = DEFAULT_HOST;
     this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
     this.clientAuth = DEFAULT_CLIENT_AUTH;
+    this.sni = DEFAULT_SNI;
   }
-
 }

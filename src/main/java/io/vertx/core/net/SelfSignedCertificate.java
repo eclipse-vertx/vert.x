@@ -19,43 +19,39 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.impl.SelfSignedCertificateImpl;
 
-import java.security.cert.CertificateException;
-
 /**
  * A self-signed certificate helper for testing and development purposes.
  * <p>
- * This helper is based on the {@link io.netty.handler.ssl.util.SelfSignedCertificate} Netty helper class.
  * While it helps for testing and development, it should never ever be used in production settings.
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
- * @see io.netty.handler.ssl.util.SelfSignedCertificate
  */
 @VertxGen
 public interface SelfSignedCertificate {
 
   /**
-   * {@link KeyCertOptions} provider.
+   * Provides the {@link KeyCertOptions} RSA private key file in PEM format corresponding to the {@link #privateKeyPath()}
    *
    * @return a {@link PemKeyCertOptions} based on the generated certificate.
    */
   PemKeyCertOptions keyCertOptions();
 
   /**
-   * {@link TrustOptions} provider.
+   * Provides the {@link TrustOptions} X.509 certificate file in PEM format corresponding to the {@link #certificatePath()}
    *
    * @return a {@link PemTrustOptions} based on the generated certificate.
    */
   PemTrustOptions trustOptions();
 
   /**
-   * Filesystem path to the private key.
+   * Filesystem path to the RSA private key file in PEM format
    *
    * @return the absolute path to the private key.
    */
   String privateKeyPath();
 
   /**
-   * Filesystem path to the certificate.
+   * Filesystem path to the X.509 certificate file in PEM format .
    *
    * @return the absolute path to the certificate.
    */
@@ -70,9 +66,18 @@ public interface SelfSignedCertificate {
    * Create a new {@code SelfSignedCertificate} instance.
    *
    * @return a new instance.
-   * @throws CertificateException in case a certificate could not be generated.
    */
-  static SelfSignedCertificate create() throws CertificateException {
+  static SelfSignedCertificate create() {
     return new SelfSignedCertificateImpl();
+  }
+
+  /**
+   * Create a new {@code SelfSignedCertificate} instance with a fully-qualified domain name,
+   *
+   * @param fqdn a fully qualified domain name.
+   * @return a new instance.
+   */
+  static SelfSignedCertificate create(String fqdn) {
+    return new SelfSignedCertificateImpl(fqdn);
   }
 }

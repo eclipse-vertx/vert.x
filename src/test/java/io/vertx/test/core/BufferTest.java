@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
@@ -25,6 +26,7 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Function;
 
 import static io.vertx.test.core.TestUtils.*;
 import static org.junit.Assert.*;
@@ -34,7 +36,14 @@ import static org.junit.Assert.*;
  */
 public class BufferTest {
 
+  private static ByteBuf paddedByteBuf(int padding, byte[] bytes) {
+    byte[] data = new byte[padding + bytes.length];
+    System.arraycopy(bytes, 0, data, padding, bytes.length);
+    return Unpooled.copiedBuffer(data).slice(padding, bytes.length);
+  }
+
   private static final int MEDIUM_MAX_VALUE = 2 << 23;
+  private static final Function<byte[], Buffer> PADDED_BUFFER_FACTORY = arr -> Buffer.buffer(paddedByteBuf(5, arr));
 
   @Test
   public void testConstructorArguments() throws Exception {
@@ -61,10 +70,19 @@ public class BufferTest {
 
   @Test
   public void testAppendBuff() throws Exception {
+    testAppendBuff(Buffer::buffer);
+  }
+
+  @Test
+  public void testAppendBuff2() throws Exception {
+    testAppendBuff(PADDED_BUFFER_FACTORY);
+  }
+
+  public void testAppendBuff(Function<byte[], Buffer> bufferFactory) throws Exception {
 
     int bytesLen = 100;
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
-    Buffer toAppend = Buffer.buffer(bytes);
+    Buffer toAppend = bufferFactory.apply(bytes);
 
     Buffer b = Buffer.buffer();
     b.appendBuffer(toAppend);
@@ -115,11 +133,20 @@ public class BufferTest {
 
   @Test
   public void testAppendBufferWithOffsetAndLen() throws Exception {
+    testAppendBufferWithOffsetAndLen(Buffer::buffer);
+  }
+
+  @Test
+  public void testAppendBufferWithOffsetAndLen2() throws Exception {
+    testAppendBufferWithOffsetAndLen(PADDED_BUFFER_FACTORY);
+  }
+
+  private void testAppendBufferWithOffsetAndLen(Function<byte[], Buffer> bufferFactory) throws Exception {
     int bytesLen = 100;
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
-    Buffer src = Buffer.buffer(bytes);
-    int len = bytesLen - 2;
+    Buffer src = bufferFactory.apply(bytes);
 
+    int len = bytes.length - 2;
     Buffer b = Buffer.buffer();
     b.appendBuffer(src, 1, len);
     assertEquals(b.length(), len);
@@ -840,21 +867,20 @@ public class BufferTest {
     }
   }
 
-
   @Test
   public void testSetBytesBuffer() throws Exception {
-    testSetBytesBuffer(Buffer.buffer(150));
+    testSetBytesBuffer(Buffer.buffer(150), Buffer::buffer);
     assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, (ByteBuffer) null));
   }
 
   @Test
-  public void testSetBytesBufferExpandBuffer() throws Exception {
-    testSetShort(Buffer.buffer());
+  public void testSetBytesBuffer2() throws Exception {
+    testSetBytesBuffer(Buffer.buffer(150), PADDED_BUFFER_FACTORY);
+    assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, (ByteBuffer) null));
   }
 
-  private void testSetBytesBuffer(Buffer buff) throws Exception {
-
-    Buffer b = TestUtils.randomBuffer(100);
+  private void testSetBytesBuffer(Buffer buff, Function<byte[], Buffer> bufferFactory) throws Exception {
+    Buffer b = bufferFactory.apply(TestUtils.randomByteArray(100));
     buff.setBuffer(50, b);
     byte[] b2 = buff.getBytes(50, 150);
     assertEquals(b, Buffer.buffer(b2));
@@ -863,6 +889,11 @@ public class BufferTest {
     buff.setBytes(50, b3);
     byte[] b4 = buff.getBytes(50, 150);
     assertEquals(Buffer.buffer(b3), Buffer.buffer(b4));
+  }
+
+  @Test
+  public void testSetBytesBufferExpandBuffer() throws Exception {
+    testSetShort(Buffer.buffer());
   }
 
   @Test
@@ -887,12 +918,20 @@ public class BufferTest {
     assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, null, 1, len));
   }
 
-
   @Test
   public void testSetBufferWithOffsetAndLen() throws Exception {
+    testSetBufferWithOffsetAndLen(Buffer::buffer);
+  }
+
+  @Test
+  public void testSetBufferWithOffsetAndLen2() throws Exception {
+    testSetBufferWithOffsetAndLen(PADDED_BUFFER_FACTORY);
+  }
+
+  private void testSetBufferWithOffsetAndLen(Function<byte[], Buffer> bufferFactory) throws Exception {
     int bytesLen = 100;
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
-    Buffer src = Buffer.buffer(bytes);
+    Buffer src = bufferFactory.apply(bytes);
     int len = bytesLen - 2;
 
     Buffer b = Buffer.buffer();
@@ -1036,5 +1075,31 @@ public class BufferTest {
       fail();
     } catch (DecodeException ignore) {
     }
+  }
+
+  @Test
+  public void testLength() throws Exception {
+    byte[] bytes = TestUtils.randomByteArray(100);
+    Buffer buffer = Buffer.buffer(bytes);
+    assertEquals(100, Buffer.buffer(buffer.getByteBuf()).length());
+  }
+
+  @Test
+  public void testLength2() throws Exception {
+    byte[] bytes = TestUtils.randomByteArray(100);
+    assertEquals(90, Buffer.buffer(Unpooled.copiedBuffer(bytes).slice(10, 90)).length());
+  }
+
+  @Test
+  public void testAppendDoesNotModifyByteBufIndex() throws Exception {
+    ByteBuf buf = Unpooled.copiedBuffer("foobar".getBytes());
+    assertEquals(0, buf.readerIndex());
+    assertEquals(6, buf.writerIndex());
+    Buffer buffer = Buffer.buffer(buf);
+    Buffer other = Buffer.buffer("prefix");
+    other.appendBuffer(buffer);
+    assertEquals(0, buf.readerIndex());
+    assertEquals(6, buf.writerIndex());
+    assertEquals(other.toString(), "prefixfoobar");
   }
 }

@@ -29,4 +29,8 @@ public interface WebSocketFrameFactory {
   WebSocketFrame textFrame(String str, boolean isFinal);
 
   WebSocketFrame continuationFrame(Buffer data, boolean isFinal);
+
+  WebSocketFrame pingFrame(Buffer data);
+
+  WebSocketFrame pongFrame(Buffer data);
 }

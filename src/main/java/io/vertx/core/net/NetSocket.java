@@ -28,6 +28,7 @@ import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
 /**
@@ -220,16 +221,47 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket upgradeToSsl(Handler<Void> handler);
 
   /**
+   * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
+   *
+   * @param serverName the server name
+   * @param handler  the handler will be notified when it's upgraded
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetSocket upgradeToSsl(String serverName, Handler<Void> handler);
+
+  /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS.
    */
   boolean isSsl();
 
   /**
-   * @return an array of the peer certificates. Returns null if connection is
+   * @return SSLSession associated with the underlying socket. Returns null if connection is
+   *         not SSL.
+   * @see javax.net.ssl.SSLSession
+   */
+  @GenIgnore
+  SSLSession sslSession();
+
+  /**
+   * Note: Java SE 5+ recommends to use javax.net.ssl.SSLSession#getPeerCertificates() instead of
+   * of javax.net.ssl.SSLSession#getPeerCertificateChain() which this method is based on. Use {@link #sslSession()} to
+   * access that method.
+   *
+   * @return an ordered array of the peer certificates. Returns null if connection is
    *         not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
+   * @see #sslSession()
    */
   @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
+
+  /**
+   * Returns the SNI server name presented during the SSL handshake by the client.
+   *
+   * @return the indicated server name
+   */
+  String indicatedServerName();
 }
 

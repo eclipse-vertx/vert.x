@@ -68,6 +68,26 @@ public class HttpCompressionTest extends HttpTestBase {
   }
 
   @Test
+  public void testSkipEncoding() throws Exception {
+    serverWithMaxCompressionLevel.requestHandler(req -> {
+      assertNotNull(req.headers().get("Accept-Encoding"));
+      req.response()
+        .putHeader(HttpHeaders.CONTENT_ENCODING, HttpHeaders.IDENTITY)
+        .end(Buffer.buffer(COMPRESS_TEST_STRING).toString(CharsetUtil.UTF_8));
+    });
+    startServer(serverWithMaxCompressionLevel);
+    clientraw.get(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
+      resp -> {
+        resp.bodyHandler(responseBuffer -> {
+          String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
+          assertEquals(COMPRESS_TEST_STRING, responseBody);
+          testComplete();
+        });
+      }).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+    await();
+  }
+
+  @Test
   public void testDefaultRequestHeaders() {
     Handler<HttpServerRequest> requestHandler = req -> {
       assertEquals(2, req.headers().size());

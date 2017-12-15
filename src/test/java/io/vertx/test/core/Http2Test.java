@@ -16,24 +16,22 @@
 
 package io.vertx.test.core;
 
+import io.netty.channel.socket.SocketChannel;
 import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.StreamResetException;
-import io.vertx.core.net.NetServer;
+import io.vertx.core.http.*;
+import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.test.core.tls.Cert;
 import org.junit.Test;
 
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -55,6 +53,11 @@ public class Http2Test extends HttpTest {
   @Override
   protected HttpClientOptions createBaseClientOptions() {
     return Http2TestBase.createHttp2ClientOptions();
+  }
+
+  @Override
+  public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
+    testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(1);
   }
 
   // Extra test
@@ -252,7 +255,7 @@ public class Http2Test extends HttpTest {
       resumeLatch.complete(null);
     });
     resumeLatch.get(20, TimeUnit.SECONDS);
-    waitUntil(() -> !req2.writeQueueFull());
+    assertWaitUntil(() -> !req2.writeQueueFull());
     req1.end();
     req2.end(buffer);
     await();
@@ -278,6 +281,148 @@ public class Http2Test extends HttpTest {
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(1, numReq.get());
       complete();
+    });
+    await();
+  }
+
+  @Test
+  public void testDiscardConnectionWhenChannelBecomesInactive() throws Exception {
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      if (count.getAndIncrement() == 0) {
+        Http2ServerConnection a = (Http2ServerConnection) req.connection();
+        SocketChannel channel = (SocketChannel) a.channel();
+        channel.shutdown();
+      } else {
+        req.response().end();
+      }
+    });
+    startServer();
+    AtomicBoolean closed = new AtomicBoolean();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      fail();
+    }).connectionHandler(conn -> conn.closeHandler(v -> closed.set(true))).end();
+    assertWaitUntil(closed::get);
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      testComplete();
+    }).exceptionHandler(err -> {
+      fail();
+    }).end();
+    await();
+  }
+
+  @Test
+  public void testClientDoesNotSupportAlpn() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(HttpVersion.HTTP_1_1, resp.version());
+      complete();
+    }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testServerDoesNotSupportAlpn() throws Exception {
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setUseAlpn(false));
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(HttpVersion.HTTP_1_1, resp.version());
+      complete();
+    }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testClientMakeRequestHttp2WithSSLWithoutAlpn() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setUseAlpn(false));
+    try {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
+      fail();
+    } catch (IllegalArgumentException ignore) {
+      // Expected
+    }
+  }
+
+  @Test
+  public void testServePendingRequests() throws Exception {
+    int n = 10;
+    waitFor(n);
+    LinkedList<HttpServerRequest> requests = new LinkedList<>();
+    Set<HttpConnection> connections = new HashSet<>();
+    server.requestHandler(req -> {
+      requests.add(req);
+      connections.add(req.connection());
+      assertEquals(1, connections.size());
+      if (requests.size() == n) {
+        while (requests.size() > 0) {
+          requests.removeFirst().response().end();
+        }
+      }
+    });
+    startServer();
+    for (int i = 0;i < n;i++) {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> complete()).end();
+    }
+    await();
+  }
+
+  @Test
+  public void testInitialMaxConcurrentStreamZero() throws Exception {
+    AtomicLong concurrency = new AtomicLong();
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server.requestHandler(req -> {
+      assertEquals(10, concurrency.get());
+      req.response().end();
+    });
+    server.connectionHandler(conn -> {
+      vertx.setTimer(500, id -> {
+        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(10));
+      });
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      testComplete();
+    }).connectionHandler(conn -> {
+      assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
+      conn.remoteSettingsHandler(settings -> concurrency.set(settings.getMaxConcurrentStreams()));
+    }).setTimeout(10000).exceptionHandler(err -> fail(err)).end();
+    await();
+  }
+
+  @Test
+  public void testFoo() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.write("Hello");
+      resp.end("World");
+      assertNull(resp.headers().get("content-length"));
+      complete();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertNull(resp.getHeader("content-length"));
+      resp.bodyHandler(body -> {
+        assertEquals("HelloWorld", body.toString());
+        complete();
+      });
     });
     await();
   }

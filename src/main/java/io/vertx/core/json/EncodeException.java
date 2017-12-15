@@ -25,6 +25,10 @@ public class EncodeException extends RuntimeException {
     super(message);
   }
 
+  public EncodeException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
   public EncodeException() {
   }
 }

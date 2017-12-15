@@ -64,9 +64,9 @@ public class HttpMetricsTest extends HttpTestBase {
   }
 
   private void testHttpMetricsLifecycle(HttpVersion protocol) throws Exception {
-    waitFor(2);
     int numBuffers = 10;
-    int contentLength = numBuffers * 1000;
+    int chunkSize = 1000;
+    int contentLength = numBuffers * chunkSize;
     AtomicReference<HttpServerMetric> serverMetric = new AtomicReference<>();
     server.requestHandler(req -> {
       assertEquals(protocol, req.version());
@@ -78,15 +78,16 @@ public class HttpMetricsTest extends HttpTestBase {
       assertTrue(serverMetric.get().socket.connected.get());
       req.bodyHandler(buff -> {
         assertEquals(contentLength, buff.length());
-        HttpServerResponse resp = req.response().putHeader("Content-Length", "" + contentLength);
+        HttpServerResponse resp = req.response().setChunked(true);
         AtomicInteger numBuffer = new AtomicInteger(numBuffers);
         vertx.setPeriodic(1, timerID -> {
-          if (numBuffer.getAndDecrement() == 0) {
-            resp.end();
+          Buffer chunk = TestUtils.randomBuffer(chunkSize);
+          if (numBuffer.decrementAndGet() == 0) {
+            resp.end(chunk);
             assertNull(serverMetrics.getMetric(req));
             vertx.cancelTimer(timerID);
           } else {
-            resp.write(TestUtils.randomBuffer(1000));
+            resp.write(chunk);
           }
         });
       });
@@ -112,16 +113,16 @@ public class HttpMetricsTest extends HttpTestBase {
         });
       });
       for (int i = 0;i < numBuffers;i++) {
-        req.write(TestUtils.randomBuffer(1000));
+        req.write(TestUtils.randomBuffer(chunkSize));
       }
       req.end();
     });
     awaitLatch(latch);
     client.close();
-    waitUntil(() -> !serverMetric.get().socket.connected.get());
-    assertEquals(contentLength, serverMetric.get().socket.bytesRead.get());
-    assertEquals(contentLength, serverMetric.get().socket.bytesWritten.get());
-    waitUntil(() -> !clientMetric.get().socket.connected.get());
+    assertWaitUntil(() -> !serverMetric.get().socket.connected.get());
+    assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
+    assertWaitUntil(() -> contentLength  == serverMetric.get().socket.bytesWritten.get());
+    assertWaitUntil(() -> !clientMetric.get().socket.connected.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesRead.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesWritten.get());
   }

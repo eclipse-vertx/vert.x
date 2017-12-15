@@ -32,7 +32,7 @@ interface HttpClientStream {
    * @return the stream id or -1 for HTTP/1.x
    */
   int id();
-  
+
   /**
    * @return the stream version or null if it's not yet determined
    */
@@ -52,10 +52,9 @@ interface HttpClientStream {
   void doPause();
   void doResume();
 
-  void resetRequest(long code);
-  void resetResponse(long code);
+  void reset(long code);
 
-  void beginRequest(HttpClientRequestImpl request);
+  void beginRequest();
   void endRequest();
 
   NetSocket createNetSocket();

@@ -101,6 +101,7 @@ public class AsyncFileImpl implements AsyncFile {
       } else {
         ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool());
       }
+      if (options.isAppend()) writePos = ch.size();
     } catch (IOException e) {
       throw new FileSystemException(e);
     }
@@ -148,11 +149,15 @@ public class AsyncFileImpl implements AsyncFile {
     Handler<AsyncResult<Void>> wrapped = ar -> {
       if (ar.succeeded()) {
         checkContext();
-        if (writesOutstanding == 0 && closedDeferred != null) {
-          closedDeferred.run();
-        } else {
-          checkDrained();
+        Runnable action;
+        synchronized (AsyncFileImpl.this) {
+          if (writesOutstanding == 0 && closedDeferred != null) {
+            action = closedDeferred;
+          } else {
+            action = this::checkDrained;
+          }
         }
+        action.run();
         if (handler != null) {
           handler.handle(ar);
         }
@@ -349,6 +354,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private synchronized void handleEnd() {
+    dataHandler = null;
     if (endHandler != null) {
       checkContext();
       endHandler.handle(null);
@@ -371,7 +377,9 @@ public class AsyncFileImpl implements AsyncFile {
     if (toWrite == 0) {
       throw new IllegalStateException("Cannot save zero bytes");
     }
-    writesOutstanding += toWrite;
+    synchronized (this) {
+      writesOutstanding += toWrite;
+    }
     writeInternal(buff, position, handler);
   }
 
@@ -391,7 +399,9 @@ public class AsyncFileImpl implements AsyncFile {
         } else {
           // It's been fully written
           context.runOnContext((v) -> {
-            writesOutstanding -= buff.limit();
+            synchronized (AsyncFileImpl.this) {
+              writesOutstanding -= buff.limit();
+            }
             handler.handle(Future.succeededFuture());
           });
         }
@@ -399,7 +409,7 @@ public class AsyncFileImpl implements AsyncFile {
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          context.runOnContext((v) -> handler.handle(Future.succeededFuture()));
+          context.runOnContext((v) -> handler.handle(Future.failedFuture(exc)));
         } else {
           log.error("Error occurred", exc);
         }

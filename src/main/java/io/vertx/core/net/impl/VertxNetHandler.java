@@ -20,60 +20,32 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.vertx.core.impl.ContextImpl;
 
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxNetHandler<C extends ConnectionBase> extends VertxHandler<C> {
+public abstract class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
-  private final Channel ch;
-  private final Map<Channel, C> connectionMap;
-  protected C conn;
+  private final Function<ChannelHandlerContext, NetSocketImpl> connectionFactory;
 
-  public VertxNetHandler(Channel ch, Map<Channel, C> connectionMap) {
-    this.ch = ch;
-    this.connectionMap = connectionMap;
+  public VertxNetHandler(Function<ChannelHandlerContext, NetSocketImpl> connectionFactory) {
+    this.connectionFactory = connectionFactory;
   }
 
-  public VertxNetHandler(Channel ch, C conn, Map<Channel, C> connectionMap) {
-    this.ch = ch;
-    this.connectionMap = connectionMap;
-    this.conn = conn;
+  public VertxNetHandler(NetSocketImpl conn) {
+    this(ctx -> conn);
   }
 
   @Override
-  protected C getConnection() {
-    return conn;
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    setConnection(connectionFactory.apply(ctx));
   }
 
   @Override
-  protected C removeConnection() {
-    connectionMap.remove(ch);
-    C conn = this.conn;
-    this.conn = null;
-    return conn;
-  }
-
-
-  @Override
-  protected void channelRead(C sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
-    if (sock != null) {
-      context.executeFromIO(() -> handleMsgReceived(msg));
-    } else {
-      // just discard
-    }
-  }
-
-  protected abstract void handleMsgReceived(Object msg);
-
-  @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (msg instanceof ByteBuf) {
-      return safeBuffer((ByteBuf) msg, allocator);
-    }
+  protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
     return msg;
   }
 }

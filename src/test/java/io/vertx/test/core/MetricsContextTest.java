@@ -16,18 +16,41 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocket;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
-import io.vertx.core.net.*;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.metrics.*;
+import io.vertx.core.spi.metrics.DatagramSocketMetrics;
+import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -613,7 +636,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
-      public TCPMetrics createMetrics(NetClient client, NetClientOptions options) {
+      public TCPMetrics createMetrics(NetClientOptions options) {
         return new DummyTCPMetrics() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -696,13 +719,13 @@ public class MetricsContextTest extends VertxTestBase {
     testDatagram(workerContextFactory, workerChecker);
   }
 
-  private void testDatagram(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) {
+  private void testDatagram(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean listening = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
-    AtomicBoolean closeCalled = new AtomicBoolean();
+    CountDownLatch closeCalled = new CountDownLatch(1);
     VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
@@ -724,7 +747,7 @@ public class MetricsContextTest extends VertxTestBase {
           }
           @Override
           public void close() {
-            closeCalled.set(true);
+            closeCalled.countDown();
           }
           @Override
           public boolean isEnabled() {
@@ -746,20 +769,14 @@ public class MetricsContextTest extends VertxTestBase {
           assertTrue(listening.get());
           assertTrue(bytesReadCalled.get());
           assertTrue(bytesWrittenCalled.get());
-          executeInVanillaThread(() -> {
-            socket.close(ar2 -> {
-              assertTrue(closeCalled.get());
-              assertTrue(ar2.succeeded());
-              testComplete();
-            });
-          });
+          executeInVanillaThread(socket::close);
         });
         socket.send(Buffer.buffer("msg"), 1234, "localhost", ar2 -> {
           assertTrue(ar2.succeeded());
         });
       });
     });
-    await();
+    awaitLatch(closeCalled);
   }
 
   @Test
@@ -851,7 +868,7 @@ public class MetricsContextTest extends VertxTestBase {
               assertTrue(registeredCalled.get());
               assertTrue(beginHandleCalled.get());
               assertTrue(endHandleCalled.get());
-              waitUntil(() -> unregisteredCalled.get());
+              assertWaitUntil(() -> unregisteredCalled.get());
               testComplete();
             }));
           });
@@ -934,7 +951,7 @@ public class MetricsContextTest extends VertxTestBase {
         super.start();
       }
     }, new DeploymentOptions().setWorker(true));
-    waitUntil(() -> ctx.get() != null);
+    assertWaitUntil(() -> ctx.get() != null);
     return ctx.get();
   };
 

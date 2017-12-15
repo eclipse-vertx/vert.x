@@ -70,9 +70,18 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Create an instance from a buffer.
+   *
+   * @param buf  the buffer to create the instance from.
+   */
+  public JsonObject(Buffer buf) {
+    fromBuffer(buf);
+  }
+
+  /**
    * Create a JsonObject from the fields of a Java object.
    * Faster than calling `new JsonObject(Json.encode(obj))`.
-   * 
+   *
    * @param obj
    *          The object to convert to a JsonObject.
    * @throws IllegalArgumentException
@@ -86,7 +95,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Instantiate a Java object from a JsonObject.
    * Faster than calling `Json.decodeValue(Json.encode(jsonObject), type)`.
-   * 
+   *
    * @param type
    *          The type to instantiate from the JsonObject.
    * @throws IllegalArgumentException
@@ -251,15 +260,16 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Get the instant value with the specified key.
    * <p>
-   * JSON itself has no notion of a date, this extension complies to the RFC-7493, so this method assumes there is a
-   * String value with the key and it contains a ISODATE encoded date, which it decodes if found and returns.
+   * JSON itself has no notion of a temporal types, this extension complies to the RFC-7493, so this method assumes
+   * there is a String value with the key and it contains an ISO 8601 encoded date and time format
+   * such as "2017-04-03T10:25:41Z", which it decodes if found and returns.
    * <p>
    * This method should be used in conjunction with {@link #put(String, java.time.Instant)}
    *
    * @param key  the key to return the value for
    * @return the value or null if no value for that key
    * @throws java.lang.ClassCastException if the value is not a String
-   * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
    */
   public Instant getInstant(String key) {
     Objects.requireNonNull(key);
@@ -648,7 +658,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Put a Instant into the JSON object with the specified key.
    * <p>
-   * JSON extension RFC7493, instant will first be encoded to ISODATE String.
+   * JSON extension RFC7493, instant will first be encoded to ISO 8601 date and time
+   * String such as "2017-04-03T10:25:41Z".
    *
    * @param key  the key
    * @param value  the value
@@ -726,18 +737,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       return this;
     }
     for (Map.Entry<String, Object> e: other.map.entrySet()) {
-      map.merge(e.getKey(), e.getValue(), (oldVal, newVal) -> {
-        if (oldVal instanceof Map) {
-          oldVal = new JsonObject((Map)oldVal);
-        }
-        if (newVal instanceof Map) {
-          newVal = new JsonObject((Map)newVal);
-        }
-        if (oldVal instanceof JsonObject && newVal instanceof JsonObject) {
-          return ((JsonObject) oldVal).mergeIn((JsonObject)newVal, depth - 1);
-        }
-        return newVal;
-      });
+      if (e.getValue() == null){
+        map.put(e.getKey(), null);
+      } else {
+        map.merge(e.getKey(), e.getValue(), (oldVal, newVal) -> {
+          if (oldVal instanceof Map) {
+            oldVal = new JsonObject((Map)oldVal);
+          }
+          if (newVal instanceof Map) {
+            newVal = new JsonObject((Map)newVal);
+          }
+          if (oldVal instanceof JsonObject && newVal instanceof JsonObject) {
+            return ((JsonObject) oldVal).mergeIn((JsonObject)newVal, depth - 1);
+          }
+          return newVal;
+        });
+      }
     }
     return this;
   }
@@ -759,6 +774,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public String encodePrettily() {
     return Json.encodePrettily(map);
+  }
+
+  /**
+   * Encode this JSON object as buffer.
+   *
+   * @return the buffer encoding.
+   */
+  public Buffer toBuffer() {
+    return Json.encodeToBuffer(map);
   }
 
   /**
@@ -928,6 +952,10 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   private void fromJson(String json) {
     map = Json.decodeValue(json, Map.class);
+  }
+
+  private void fromBuffer(Buffer buf) {
+    map = Json.decodeValue(buf, Map.class);
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {

@@ -18,15 +18,21 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Starter;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
-import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -34,6 +40,15 @@ import java.util.concurrent.RejectedExecutionException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class ContextImpl implements ContextInternal {
+
+  private static EventLoop getEventLoop(VertxInternal vertx) {
+    EventLoopGroup group = vertx.getEventLoopGroup();
+    if (group != null) {
+      return group.next();
+    } else {
+      return null;
+    }
+  }
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
@@ -52,32 +67,32 @@ public abstract class ContextImpl implements ContextInternal {
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
   protected VertxThread contextThread;
-  private Map<String, Object> contextData;
+  private ConcurrentMap<Object, Object> contextData;
   private volatile Handler<Throwable> exceptionHandler;
   protected final WorkerPool workerPool;
   protected final WorkerPool internalBlockingPool;
-  protected final Executor orderedInternalPoolExec;
-  protected final Executor workerExec;
+  final TaskQueue orderedTasks;
+  protected final TaskQueue internalOrderedTasks;
 
   protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
+                        ClassLoader tccl) {
+    this(vertx, getEventLoop(vertx), internalBlockingPool, workerPool, deploymentID, config, tccl);
+  }
+
+  protected ContextImpl(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
     if (DISABLE_TCCL && !tccl.getClass().getName().equals("sun.misc.Launcher$AppClassLoader")) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
     }
     this.deploymentID = deploymentID;
     this.config = config;
-    EventLoopGroup group = vertx.getEventLoopGroup();
-    if (group != null) {
-      this.eventLoop = group.next();
-    } else {
-      this.eventLoop = null;
-    }
+    this.eventLoop = eventLoop;
     this.tccl = tccl;
     this.owner = vertx;
     this.workerPool = workerPool;
     this.internalBlockingPool = internalBlockingPool;
-    this.orderedInternalPoolExec = internalBlockingPool.createOrderedExecutor();
-    this.workerExec = workerPool.createOrderedExecutor();
+    this.orderedTasks = new TaskQueue();
+    this.internalOrderedTasks = new TaskQueue();
     this.closeHooks = new CloseHooks(log);
   }
 
@@ -115,11 +130,6 @@ public abstract class ContextImpl implements ContextInternal {
 
   public void removeCloseHook(Closeable hook) {
     closeHooks.remove(hook);
-  }
-
-  @Override
-  public WorkerExecutor createWorkerExecutor() {
-    return new WorkerExecutorImpl(this, workerPool, false);
   }
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
@@ -223,18 +233,18 @@ public abstract class ContextImpl implements ContextInternal {
     return eventLoop;
   }
 
-  public Vertx owner() {
+  public VertxInternal owner() {
     return owner;
   }
 
   // Execute an internal task on the internal blocking ordered executor
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, null, resultHandler, orderedInternalPoolExec, internalBlockingPool.metrics());
+    executeBlocking(action, null, resultHandler, internalBlockingPool.executor(), internalOrderedTasks, internalBlockingPool.metrics());
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(null, blockingCodeHandler, resultHandler, ordered ? workerExec : workerPool.executor(), workerPool.metrics());
+    executeBlocking(null, blockingCodeHandler, resultHandler, workerPool.executor(), ordered ? orderedTasks : null, workerPool.metrics());
   }
 
   @Override
@@ -242,12 +252,17 @@ public abstract class ContextImpl implements ContextInternal {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 
+  @Override
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(null, blockingCodeHandler, resultHandler, workerPool.executor(), queue, workerPool.metrics());
+  }
+
   <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
-      Executor exec, PoolMetrics metrics) {
+      Executor exec, TaskQueue queue, PoolMetrics metrics) {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     try {
-      exec.execute(() -> {
+      Runnable command = () -> {
         VertxThread current = (VertxThread) Thread.currentThread();
         Object execMetric = null;
         if (metrics != null) {
@@ -278,7 +293,12 @@ public abstract class ContextImpl implements ContextInternal {
         if (resultHandler != null) {
           runOnContext(v -> res.setHandler(resultHandler));
         }
-      });
+      };
+      if (queue != null) {
+        queue.execute(command, exec);
+      } else {
+        exec.execute(command);
+      }
     } catch (RejectedExecutionException e) {
       // Pool is already shut down
       if (metrics != null) {
@@ -288,7 +308,7 @@ public abstract class ContextImpl implements ContextInternal {
     }
   }
 
-  protected synchronized Map<String, Object> contextData() {
+  public synchronized ConcurrentMap<Object, Object> contextData() {
     if (contextData == null) {
       contextData = new ConcurrentHashMap<>();
     }

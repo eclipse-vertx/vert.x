@@ -18,12 +18,17 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.security.cert.X509Certificate;
 
 /**
  * Represents an HTTP connection.
@@ -63,11 +68,11 @@ public interface HttpConnection {
   }
 
   /**
-   * Like {@link #goAway(long, int)} with a last stream id {@code 2^31-1}.
+   * Like {@link #goAway(long, int)} with a last stream id {@code -1} which means to disallow any new stream creation.
    */
   @Fluent
   default HttpConnection goAway(long errorCode) {
-    return goAway(errorCode, Integer.MAX_VALUE);
+    return goAway(errorCode, -1);
   }
 
   /**
@@ -248,4 +253,37 @@ public interface HttpConnection {
   @CacheReturn
   SocketAddress localAddress();
 
+  /**
+   * @return true if this {@link io.vertx.core.http.HttpConnection} is encrypted via SSL/TLS.
+   */
+  boolean isSsl();
+
+  /**
+   * @return SSLSession associated with the underlying socket. Returns null if connection is
+   *         not SSL.
+   * @see javax.net.ssl.SSLSession
+   */
+  @GenIgnore
+  SSLSession sslSession();
+
+  /**
+   * Note: Java SE 5+ recommends to use javax.net.ssl.SSLSession#getPeerCertificates() instead of
+   * of javax.net.ssl.SSLSession#getPeerCertificateChain() which this method is based on. Use {@link #sslSession()} to
+   * access that method.
+   *
+   * @return an ordered array of the peer certificates. Returns null if connection is
+   *         not SSL.
+   * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
+   * @see #sslSession()
+   */
+  @GenIgnore
+  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
+
+  /**
+   * Returns the SNI server name presented during the SSL handshake by the client.
+   *
+   * @return the indicated server name
+   */
+  String indicatedServerName();
 }

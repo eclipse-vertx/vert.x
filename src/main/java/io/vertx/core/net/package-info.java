@@ -135,6 +135,10 @@
  * You can set an {@link io.vertx.core.net.NetSocket#exceptionHandler(io.vertx.core.Handler)} to receive any
  * exceptions that happen on the socket.
  *
+ * You can set an {@link io.vertx.core.net.NetServer#exceptionHandler(io.vertx.core.Handler)} to receive any
+ * exceptions that happens before the connection is passed to the {@link io.vertx.core.net.NetServer#connectHandler(io.vertx.core.Handler)}
+ * , e.g during the TLS handshake.
+ *
  * === Event bus write handler
  *
  * Every socket automatically registers a handler on the event bus, and when any buffers are received in this handler,
@@ -156,8 +160,8 @@
  *
  * Files and classpath resources can be written to the socket directly using {@link io.vertx.core.net.NetSocket#sendFile}. This can be a very
  * efficient way to send files, as it can be handled by the OS kernel directly where supported by the operating system.
- * 
- * Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the 
+ *
+ * Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the
  * classpath resolution or disabling it.
  *
  * [source,$lang]
@@ -313,21 +317,7 @@
  * - logging is not performed by Vert.x logging but by Netty
  * - this is *not* a production feature
  *
- * Netty will try to locate the following logger implementations, in the following order:
- *
- * - Slf4j
- * - Log4j
- * - JDK
- *
- * The presense of the slf4j or log4j classes on the classpath is enough to pick up the logging implementation.
- *
- * The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly:
- *
- * [source,java]
- * ----
- * // Force logging to Log4j
- * InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
- * ----
+ * You should read the <<netty-logging>> section.
  *
  * [[ssl]]
  * === Configuring servers and clients to work with SSL/TLS
@@ -399,7 +389,9 @@
  * {@link examples.NetExamples#example22}
  * ----
  *
- * Keep in mind that pem configuration, the private key is not crypted.
+ * PKCS8, PKCS1 and X.509 certificates wrapped in a PEM block formats are supported.
+ *
+ * WARNING: keep in mind that pem configuration, the private key is not crypted.
  *
  * ==== Specifying trust for the server
  *
@@ -671,10 +663,57 @@
  * {@link examples.NetExamples#exampleSSLEngine}
  * ----
  *
- * ==== Application-Layer Protocol Negotiation
+ * ==== Server Name Indication (SNI)
  *
- * ALPN is a TLS extension for applicationl layer protocol negotitation. It is used by HTTP/2: during the TLS handshake
- * the client gives the list of application protocols it accepts and the server responds with a protocol it supports.
+ * Server Name Indication (SNI) is a TLS extension by which a client specifies an hostname attempting to connect: during
+ * the TLS handshake the clients gives a server name and the server can use it to respond with a specific certificate
+ * for this server name instead of the default deployed certificate.
+ *
+ * When SNI is active the server uses
+ *
+ * * the certificate CN or SAN DNS (Subject Alternative Name with DNS) to do an exact match, e.g `www.example.com`
+ * * the certificate CN or SAN DNS certificate to match a wildcard name, e.g `*.example.com`
+ * * otherwise the first certificate when the client does not present a server name or the presenter server name cannot be matched
+ *
+ * You can enable SNI on the server by setting {@link io.vertx.core.net.NetServerOptions#setSni(boolean)} to `true` and
+ * configured the server with multiple key/certificate pairs.
+ *
+ * Java KeyStore files or PKCS12 files can store multiple key/cert pairs out of the box.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#configureSNIServer}
+ * ----
+ *
+ * {@link io.vertx.core.net.PemKeyCertOptions} can be configured to hold multiple entries:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#configureSNIServerWithPems}
+ * ----
+ *
+ * The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
+ *
+ * You can provide an explicit server name when connecting a socket
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#useSNIInClient}
+ * ----
+ *
+ * It can be used for different purposes:
+ *
+ * * present a server name different than the server host
+ * * present a server name while connecting to an IP
+ * * force to present a server name when using shortname
+ *
+ * ==== Application-Layer Protocol Negotiation (ALPN)
+ *
+ * Application-Layer Protocol Negotiation (ALPN) is a TLS extension for application layer protocol negotiation. It is used by
+ * HTTP/2: during the TLS handshake the client gives the list of application protocols it accepts and the server responds
+ * with a protocol it supports.
+ *
+ * If you are using Java 9, you are fine and you can use HTTP/2 out of the box without extra steps.
  *
  * Java 8 does not supports ALPN out of the box, so ALPN should be enabled by other means:
  *

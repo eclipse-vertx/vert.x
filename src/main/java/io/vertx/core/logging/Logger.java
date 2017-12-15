@@ -31,6 +31,9 @@ import io.vertx.core.spi.logging.LogDelegate;
  * For Log4J the value is {@code io.vertx.core.logging.Log4jLogDelegateFactory}, for SLF4J the value
  * is {@code io.vertx.core.logging.SLF4JLogDelegateFactory}. You will need to ensure whatever jar files
  * required by your favourite log framework are on your classpath.
+ * <p>
+ * Keep in mind that logging backends use different formats to represent replaceable tokens in parameterized messages.
+ * As a consequence, if you rely on parameterized logging methods, you won't be able to switch backends without changing your code.
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  */
@@ -70,10 +73,16 @@ public class Logger {
     delegate.error(message, t);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void error(final Object message, final Object... objects) {
     delegate.error(message, objects);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void error(final Object message, final Throwable t, final Object... objects) {
     delegate.error(message, t, objects);
   }
@@ -86,10 +95,16 @@ public class Logger {
     delegate.warn(message, t);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void warn(final Object message, final Object... objects) {
     delegate.warn(message, objects);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void warn(final Object message, final Throwable t, final Object... objects) {
     delegate.warn(message, t, objects);
   }
@@ -102,10 +117,16 @@ public class Logger {
     delegate.info(message, t);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void info(final Object message, final Object... objects) {
     delegate.info(message, objects);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void info(final Object message, final Throwable t, final Object... objects) {
     delegate.info(message, t, objects);
   }
@@ -118,10 +139,16 @@ public class Logger {
     delegate.debug(message, t);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void debug(final Object message, final Object... objects) {
     delegate.debug(message, objects);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void debug(final Object message, final Throwable t, final Object... objects) {
     delegate.debug(message, t, objects);
   }
@@ -134,10 +161,16 @@ public class Logger {
     delegate.trace(message, t);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void trace(final Object message, final Object... objects) {
     delegate.trace(message, objects);
   }
 
+  /**
+   * @throws UnsupportedOperationException if the logging backend does not support parameterized messages
+   */
   public void trace(final Object message, final Throwable t, final Object... objects) {
     delegate.trace(message, t, objects);
   }

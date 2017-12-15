@@ -19,6 +19,11 @@ package io.vertx.core.shareddata.impl;
 import io.vertx.core.buffer.Buffer;
 
 /**
+ * Objects implementing this interface will be write to and read from a {@link Buffer} when respectively
+ * stored and read from an {@link io.vertx.core.shareddata.AsyncMap}.
+ * <p>
+ * Implementations must have a public no-argument constructor.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface ClusterSerializable {

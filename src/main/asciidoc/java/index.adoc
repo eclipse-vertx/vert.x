@@ -17,6 +17,7 @@ Vert.x core provides functionality for things like:
 * DNS client
 * File system access
 * High availability
+* Native transports
 * Clustering
 
 The functionality in core is fairly low level - you won't find stuff like database access, authorisation or high level
@@ -39,9 +40,11 @@ Let's discuss the different concepts and features in core.
 
 == In the beginning there was Vert.x
 
-NOTE: Much of this is Java specific - need someway of swapping in language specific parts
+////
+TODO Much of this is Java specific - need someway of swapping in language specific parts
+////
 
-You can't do much in Vert.x-land unless you can commune with a `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` object!
+You can't do much in Vert.x-land unless you can communicate with a `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` object!
 
 It's the control centre of Vert.x and is how you do pretty much everything, including creating clients and servers,
 getting a reference to the event bus, setting timers, as well as many other things.
@@ -54,8 +57,6 @@ If you're embedding Vert.x then you simply create an instance as follows:
 ----
 Vertx vertx = Vertx.vertx();
 ----
-
-If you're using Verticles
 
 NOTE: Most applications will only need a single Vert.x instance, but it's possible to create multiple Vert.x instances if you
 require, for example, isolation between the event bus or different groups of servers and clients.
@@ -291,7 +292,7 @@ An alternative way to run blocking code is to use a <<worker_verticles, worker v
 
 A worker verticle is always executed with a thread from the worker pool.
 
-By default blocking code is executed on the Vert.x blocking code pool, configured with `link:../../apidocs/io/vertx/core/VertxOptions.html#setWorkerPoolSize-int-[setWorkerPoolSize]`.
+By default blocking code is executed on the Vert.x worker pool, configured with `link:../../apidocs/io/vertx/core/VertxOptions.html#setWorkerPoolSize-int-[setWorkerPoolSize]`.
 
 Additional pools can be created for different purposes:
 
@@ -512,15 +513,15 @@ will guarantee that those handlers, when called, will be executed on the same ev
 This means we can guarantee that all the code in your verticle instance is always executed on the same event loop (as
 long as you don't create your own threads and call it!).
 
-This means you can write all the code in your application as single threaded and let Vert.x worrying about the threading
+This means you can write all the code in your application as single threaded and let Vert.x worry about the threading
 and scaling. No more worrying about +synchronized+ and +volatile+ any more, and you also avoid many other cases of race conditions
 and deadlock so prevalent when doing hand-rolled 'traditional' multi-threaded application development.
 
 [[worker_verticles]]
 === Worker verticles
 
-A worker verticle is just like a standard verticle but it's executed not using an event loop, but using a thread from
-the Vert.x worker thread pool.
+A worker verticle is just like a standard verticle but it's executed using a thread from the Vert.x worker thread pool,
+rather than using an event loop.
 
 Worker verticles are designed for calling blocking code, as they won't block any event loops.
 
@@ -659,14 +660,14 @@ vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
 ----
 
 This is useful for scaling easily across multiple cores. For example you might have a web-server verticle to deploy
-and multiple cores on your machine, so you want to deploy multiple instances to take utilise all the cores.
+and multiple cores on your machine, so you want to deploy multiple instances to utilise all the cores.
 
 include::override/verticle-configuration.adoc[]
 
 === Verticle Isolation Groups
 
 By default, Vert.x has a _flat classpath_. I.e, when Vert.x deploys verticles it does so with the current classloader -
-it doesn't create a new one. In the majority of cases this is the simplest, clearest and sanest thing to do.
+it doesn't create a new one. In the majority of cases this is the simplest, clearest, and sanest thing to do.
 
 However, in some cases you may want to deploy a verticle so the classes of that verticle are isolated from others in
 your application.
@@ -887,7 +888,7 @@ when the verticle is undeployed.
 
 === Verticle worker pool
 
-Verticle use the Vert.x worker pool for executing blocking actions, i.e `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` or
+Verticles use the Vert.x worker pool for executing blocking actions, i.e `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` or
 worker verticle.
 
 A different worker pool can be specified in deployment options:
@@ -1235,14 +1236,15 @@ java io.vertx.core.Launcher run org.acme.MyVerticle --redeploy="**/*.class"  --l
 
 The redeployment process is implemented as follows. First your application is launched as a background application
 (with the `start` command). On matching file changes, the process is stopped and the application is restarted.
-This way avoids leaks.
+This avoids leaks, as the process is restarted.
 
 To enable the live redeploy, pass the `--redeploy` option to the `run` command. The `--redeploy` indicates the
 set of file to _watch_. This set can use Ant-style patterns (with `\**`, `*` and `?`). You can specify
 several sets by separating them using a comma (`,`). Patterns are relative to the current working directory.
 
 Parameters passed to the `run` command are passed to the application. Java Virtual Machine options can be
-configured using `--java-opts`.
+configured using `--java-opts`. For instance, to pass the the `conf` parameter or a system property, you need to
+use: `--java-opts="-conf=my-conf.json -Dkey=value"`
 
 The `--launcher-class` option determine with with _main_ class the application is launcher. It's generally
 `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]`, but you have use you own _main_.
@@ -1272,7 +1274,14 @@ java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./
 
 The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
 restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
-or `grunt` to update your resources.
+or `grunt` to update your resources. Don't forget that passing parameters to your application requires the
+`--java-opts` param:
+
+[source]
+----
+java -jar target/my-fat-jar.jar --redeploy="**/*.java" --on-redeploy="mvn package" --java-opts="-Dkey=val"
+java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./gradlew shadowJar' --java-opts="-Dkey=val"
+----
 
 The redeploy feature also supports the following settings:
 
@@ -1359,6 +1368,59 @@ logger.info("something happened");
 logger.error("oops!", exception);
 ----
 
+CAUTION: Logging backends use different formats to represent replaceable tokens in parameterized messages.
+As a consequence, if you rely on Vert.x parameterized logging methods, you won't be able to switch backends without changing your code.
+
+[[netty-logging]]
+=== Netty logging
+
+When configuring logging, you should care about configuring Netty logging as well.
+
+Netty does not rely on external logging configuration (e.g system properties) and instead implements a logging
+configuration based on the logging libraries visible from the Netty classes:
+
+- use `SLF4J` library if it is visible
+- otherwise use `Log4j` if it is visible
+- otherwise fallback `java.util.logging`
+
+The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly
+on `io.netty.util.internal.logging.InternalLoggerFactory`:
+
+[source,java]
+----
+// Force logging to Log4j
+InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
+----
+
+=== Troubleshooting
+
+==== SLF4J warning at startup
+
+If, when you start your application, you see the following message:
+
+----
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+----
+
+It means that you have SLF4J-API in your classpath but no actual binding. Messages logged with SLF4J will be dropped.
+You should add a binding to your classpath. Check https://www.slf4j.org/manual.html#swapping to pick a binding and configure it.
+
+Be aware that Netty looks for the SLF4-API jar and uses it by default.
+
+==== Connection reset by peer
+
+If your logs show a bunch of:
+
+----
+io.vertx.core.net.impl.ConnectionBase
+SEVERE: java.io.IOException: Connection reset by peer
+----
+
+It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
+may have not consumed the complete payload (the connection was cut before you were able to).
+
 == Host name resolution
 
 Vert.x uses an an address resolver for resolving host name into IP addresses instead of
@@ -1387,7 +1449,32 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
 The default port of a DNS server is `53`, when a server uses a different port, this port can be set
 using a colon delimiter: `192.168.0.2:40000`.
 
-The resolver can be configured to use an alternative _hosts_ file:
+NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
+_-Dvertx.disableDnsResolver=true_ activates this behavior
+
+=== Failover
+
+When a server does not reply in a timely manner, the resolver will try the next one from the list, the search
+is limited by `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setMaxQueries-int-[setMaxQueries]` (the default value is `4` queries).
+
+A DNS query is considered as failed when the resolver has not received a correct answer within
+`link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#getQueryTimeout--[getQueryTimeout]` milliseconds (the default value is `5` seconds).
+
+=== Server list rotation
+
+By default the dns server selection uses the first one, the remaining servers are used for failover.
+
+You can configure `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setRotateServers-boolean-[setRotateServers]` to `true` to let
+the resolver perform a round-robin selection instead. It spreads the query load among the servers and avoids
+all lookup to hit the first server of the list.
+
+Failover still applies and will use the next server in the list.
+
+=== Hosts mapping
+
+The _hosts_ file of the operating system is used to perform an hostname lookup for an ipaddress.
+
+An alternative _hosts_ file can be used instead:
 
 [source,java]
 ----
@@ -1397,6 +1484,8 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
             setHostsPath("/path/to/hosts"))
 );
 ----
+
+=== Search domains
 
 By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
 list can be provided:
@@ -1411,9 +1500,6 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
 
 When a search domain list is used, the threshold for the number of dots is `1` or loaded from `/etc/resolv.conf`
 on Linux, it can be configured to a specific value with `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setNdots-int-[setNdots]`.
-
-NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
-_-Dvertx.disableDnsResolver=true_ activates this behavior
 
 == High Availability and Fail-Over
 
@@ -1555,6 +1641,109 @@ is no longer a quorum.
 
 Quora can also be used in conjunction with ha groups. In that case, quora are resolved for each particular
 group.
+
+== Native transports
+
+Vert.x can run with http://netty.io/wiki/native-transports.html[native transports] (when available) on BSD (OSX) and Linux:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+  setPreferNativeTransport(true)
+);
+
+// True when native is available
+boolean usingNative = vertx.isNativeTransportEnabled();
+System.out.println("Running with native: " + usingNative);
+----
+
+NOTE: preferring native transport will not prevent the application to execute, if your application requires native
+transport, you need to check `link:../../apidocs/io/vertx/core/Vertx.html#isNativeTransportEnabled--[isNativeTransportEnabled]`.
+
+=== Native Linux Transport
+
+You need to add the following dependency in your classpath:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-transport-native-epoll</artifactId>
+  <version>4.1.15.Final</version>
+  <classifier>linux-x86_64</classifier>
+</dependency>
+----
+
+Native on Linux gives you extra networking options:
+
+* SO_REUSEPORT
+* TCP_QUICKACK
+* TCP_CORK
+* TCP_FASTOPEN
+
+[source,java]
+----
+vertx.createHttpServer(new HttpServerOptions()
+  .setTcpFastOpen(fastOpen)
+  .setTcpCork(cork)
+  .setTcpQuickAck(quickAck)
+  .setReusePort(reusePort)
+);
+----
+
+=== Native BSD Transport
+
+You need to add the following dependency in your classpath:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-transport-native-epoll</artifactId>
+  <version>4.1.15.Final</version>
+  <classifier>osx-x86_64</classifier>
+</dependency>
+----
+
+MacOS Sierra and above are supported.
+
+Native on BSD gives you extra networking options:
+
+* SO_REUSEPORT
+
+[source,java]
+----
+vertx.createHttpServer(new HttpServerOptions().setReusePort(reusePort));
+----
+
+=== Domain sockets
+
+Natives provide support domain sockets for `NetServer`:
+
+[source,java]
+----
+vertx.createNetServer().connectHandler(so -> {
+  // Handle application
+}).listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"));
+----
+
+As well as `NetClient`:
+
+[source,java]
+----
+NetClient netClient = vertx.createNetClient();
+
+// Only available on BSD and Linux
+netClient.connect(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), ar -> {
+  if (ar.succeeded()) {
+    // Connected
+  } else {
+    ar.cause().printStackTrace();
+  }
+});
+----
+
+NOTE: support for `HttpServer` and `HttpClient` can be expected in later versions of Vert.x
 
 == Security notes
 

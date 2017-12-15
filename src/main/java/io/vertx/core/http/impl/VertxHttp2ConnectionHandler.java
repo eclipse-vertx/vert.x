@@ -17,20 +17,10 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2ConnectionHandler;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Flags;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2RemoteFlowController;
-import io.netty.handler.codec.http2.Http2Settings;
-import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.EventExecutor;
@@ -38,37 +28,67 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
-import java.util.Map;
 import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2ConnectionHandler implements Http2Connection.Listener {
+class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2ConnectionHandler implements Http2FrameListener, Http2Connection.Listener {
 
-  private final Map<Channel, ? super C> connectionMap;
-  C connection;
-  private ChannelHandlerContext ctx;
+  private final Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
+  private C connection;
+  private ChannelHandlerContext chctx;
+  private Handler<C> addHandler;
+  private Handler<C> removeHandler;
+  private final boolean useDecompressor;
 
   public VertxHttp2ConnectionHandler(
-      Map<Channel, ? super C> connectionMap,
+      Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory,
+      boolean useDecompressor,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
-      Http2Settings initialSettings,
-      Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
+      Http2Settings initialSettings) {
     super(decoder, encoder, initialSettings);
-    this.connectionMap = connectionMap;
-    this.connection = connectionFactory.apply(this);
-    encoder().flowController().listener(s -> connection.onStreamwritabilityChanged(s));
+    this.connectionFactory = connectionFactory;
+    this.useDecompressor = useDecompressor;
+    encoder().flowController().listener(s -> {
+      if (connection != null) {
+        connection.onStreamwritabilityChanged(s);
+      }
+    });
     connection().addListener(this);
+  }
+
+  public ChannelHandlerContext context() {
+    return chctx;
+  }
+
+  /**
+   * Set an handler to be called when the connection is set on this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHttp2ConnectionHandler<C> addHandler(Handler<C> handler) {
+    this.addHandler = handler;
+    return this;
+  }
+
+  /**
+   * Set an handler to be called when the connection is unset from this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHttp2ConnectionHandler<C> removeHandler(Handler<C> handler) {
+    this.removeHandler = handler;
+    return this;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
-    this.ctx = ctx;
-    connection.setHandlerContext(ctx);
-    connectionMap.put(ctx.channel(), connection);
+    chctx = ctx;
   }
 
   @Override
@@ -80,13 +100,20 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     super.channelActive(ctx);
+
+    // super call writes the connection preface
+    // we need to flush to send it
+    // this is called only on the client
+    ctx.flush();
   }
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
-    connectionMap.remove(ctx.channel());
     connection.getContext().executeFromIO(connection::handleClosed);
+    if (removeHandler != null) {
+      removeHandler.handle(connection);
+    }
   }
 
   @Override
@@ -142,18 +169,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   @Override
-  public void onPriorityTreeParentChanged(Http2Stream stream, Http2Stream oldParent) {
-  }
-
-  @Override
-  public void onPriorityTreeParentChanging(Http2Stream stream, Http2Stream newParent) {
-  }
-
-  @Override
-  public void onWeightChanged(Http2Stream stream, short oldWeight) {
-  }
-
-  @Override
   public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
     connection.onGoAwaySent(lastStreamId, errorCode, debugData);
   }
@@ -166,7 +181,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   //
 
   void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeHeaders(stream, headers, end);
     } else {
@@ -177,11 +192,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end) {
-    encoder().writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());;
+    encoder().writeHeaders(chctx, stream.id(), headers, 0, end, chctx.newPromise());;
   }
 
   void writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeData(stream, chunk, end);
     } else {
@@ -192,21 +207,21 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
-    encoder().writeData(ctx, stream.id(), chunk, 0, end, ctx.newPromise());
+    encoder().writeData(chctx, stream.id(), chunk, 0, end, chctx.newPromise());
     Http2RemoteFlowController controller = encoder().flowController();
     if (!controller.isWritable(stream) || end) {
       try {
         encoder().flowController().writePendingBytes();
       } catch (Http2Exception e) {
-        onError(ctx, e);
+        onError(chctx, e);
       }
     }
-    ctx.channel().flush();
+    chctx.channel().flush();
   }
 
   ChannelFuture writePing(ByteBuf data) {
-    ChannelPromise promise = ctx.newPromise();
-    EventExecutor executor = ctx.executor();
+    ChannelPromise promise = chctx.newPromise();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writePing(data, promise);
     } else {
@@ -218,8 +233,8 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writePing(ByteBuf data, ChannelPromise promise) {
-    encoder().writePing(ctx, false, data, promise);
-    ctx.channel().flush();
+    encoder().writePing(chctx, false, data, promise);
+    chctx.channel().flush();
   }
 
   /**
@@ -229,15 +244,15 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     try {
       boolean windowUpdateSent = decoder().flowController().consumeBytes(stream, numBytes);
       if (windowUpdateSent) {
-        ctx.channel().flush();
+        chctx.channel().flush();
       }
     } catch (Http2Exception e) {
-      onError(ctx, e);
+      onError(chctx, e);
     }
   }
 
   void writeFrame(Http2Stream stream, byte type, short flags, ByteBuf payload) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeFrame(stream, type, flags, payload);
     } else {
@@ -248,12 +263,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeFrame(Http2Stream stream, byte type, short flags, ByteBuf payload) {
-    encoder().writeFrame(ctx, type, stream.id(), new Http2Flags(flags), payload, ctx.newPromise());
-    ctx.flush();
+    encoder().writeFrame(chctx, type, stream.id(), new Http2Flags(flags), payload, chctx.newPromise());
+    chctx.flush();
   }
 
   void writeReset(int streamId, long code) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeReset(streamId, code);
     } else {
@@ -264,12 +279,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeReset(int streamId, long code) {
-    encoder().writeRstStream(ctx, streamId, code, ctx.newPromise());
-    ctx.flush();
+    encoder().writeRstStream(chctx, streamId, code, chctx.newPromise());
+    chctx.flush();
   }
 
   void writeGoAway(long errorCode, int lastStreamId, ByteBuf debugData) {
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeGoAway(errorCode, lastStreamId, debugData);
     } else {
@@ -280,13 +295,13 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeGoAway(long errorCode, int lastStreamId, ByteBuf debugData) {
-    encoder().writeGoAway(ctx, lastStreamId, errorCode, debugData, ctx.newPromise());
-    ctx.flush();
+    encoder().writeGoAway(chctx, lastStreamId, errorCode, debugData, chctx.newPromise());
+    chctx.flush();
   }
 
   ChannelFuture writeSettings(Http2Settings settingsUpdate) {
-    ChannelPromise promise = ctx.newPromise();
-    EventExecutor executor = ctx.executor();
+    ChannelPromise promise = chctx.newPromise();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writeSettings(settingsUpdate, promise);
     } else {
@@ -298,13 +313,13 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeSettings(Http2Settings settingsUpdate, ChannelPromise promise) {
-    encoder().writeSettings(ctx, settingsUpdate, promise);
-    ctx.flush();
+    encoder().writeSettings(chctx, settingsUpdate, promise);
+    chctx.flush();
   }
 
   void writePushPromise(int streamId, Http2Headers headers, Handler<AsyncResult<Integer>> completionHandler) {
     int promisedStreamId = connection().local().incrementAndGetNextStreamId();
-    ChannelPromise promise = ctx.newPromise();
+    ChannelPromise promise = chctx.newPromise();
     promise.addListener(fut -> {
       if (fut.isSuccess()) {
         completionHandler.handle(Future.succeededFuture(promisedStreamId));
@@ -312,7 +327,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         completionHandler.handle(Future.failedFuture(fut.cause()));
       }
     });
-    EventExecutor executor = ctx.executor();
+    EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writePushPromise(streamId, promisedStreamId, headers, promise);
     } else {
@@ -323,6 +338,83 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writePushPromise(int streamId, int promisedStreamId, Http2Headers headers, ChannelPromise promise) {
-    encoder().writePushPromise(ctx, streamId, promisedStreamId, headers, 0, promise);
+    encoder().writePushPromise(chctx, streamId, promisedStreamId, headers, 0, promise);
+  }
+
+  // Http2FrameListener
+
+  @Override
+  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+    assert connection != null;
+    connection.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endOfStream);
+  }
+
+  @Override
+  public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onSettingsAckRead(ChannelHandlerContext ctx) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
+    connection = connectionFactory.apply(this);
+    if (useDecompressor) {
+      decoder().frameListener(new DelegatingDecompressorFrameListener(decoder().connection(), connection));
+    } else {
+      decoder().frameListener(connection);
+    }
+    connection.onSettingsRead(ctx, settings);
+    if (addHandler != null) {
+      addHandler.handle(connection);
+    }
+  }
+
+  @Override
+  public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) throws Http2Exception {
+    throw new UnsupportedOperationException();
   }
 }

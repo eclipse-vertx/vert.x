@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
@@ -26,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public abstract class ClientOptionsBase extends TCPSSLOptions {
 
   /**
@@ -203,6 +204,156 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   @Override
   public ClientOptionsBase setLogActivity(boolean logEnabled) {
     return (ClientOptionsBase) super.setLogActivity(logEnabled);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpNoDelay(boolean tcpNoDelay) {
+    return (ClientOptionsBase) super.setTcpNoDelay(tcpNoDelay);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpKeepAlive(boolean tcpKeepAlive) {
+    return (ClientOptionsBase) super.setTcpKeepAlive(tcpKeepAlive);
+  }
+
+  @Override
+  public ClientOptionsBase setSoLinger(int soLinger) {
+    return (ClientOptionsBase) super.setSoLinger(soLinger);
+  }
+
+  @Override
+  public ClientOptionsBase setUsePooledBuffers(boolean usePooledBuffers) {
+    return (ClientOptionsBase) super.setUsePooledBuffers(usePooledBuffers);
+  }
+
+  @Override
+  public ClientOptionsBase setIdleTimeout(int idleTimeout) {
+    return (ClientOptionsBase) super.setIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public ClientOptionsBase setSsl(boolean ssl) {
+    return (ClientOptionsBase) super.setSsl(ssl);
+  }
+
+  @Override
+  public ClientOptionsBase setKeyCertOptions(KeyCertOptions options) {
+    return (ClientOptionsBase) super.setKeyCertOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setKeyStoreOptions(JksOptions options) {
+    return (ClientOptionsBase) super.setKeyStoreOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setPfxKeyCertOptions(PfxOptions options) {
+    return (ClientOptionsBase) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (ClientOptionsBase) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setTrustOptions(TrustOptions options) {
+    return (ClientOptionsBase) super.setTrustOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setTrustStoreOptions(JksOptions options) {
+    return (ClientOptionsBase) super.setTrustStoreOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setPfxTrustOptions(PfxOptions options) {
+    return (ClientOptionsBase) super.setPfxTrustOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setPemTrustOptions(PemTrustOptions options) {
+    return (ClientOptionsBase) super.setPemTrustOptions(options);
+  }
+
+  @Override
+  public ClientOptionsBase setUseAlpn(boolean useAlpn) {
+    return (ClientOptionsBase) super.setUseAlpn(useAlpn);
+  }
+
+  @Override
+  public ClientOptionsBase setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    return (ClientOptionsBase) super.setSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public ClientOptionsBase setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
+    return (ClientOptionsBase) super.setJdkSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public ClientOptionsBase setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
+    return (ClientOptionsBase) super.setOpenSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public ClientOptionsBase setSendBufferSize(int sendBufferSize) {
+    return (ClientOptionsBase) super.setSendBufferSize(sendBufferSize);
+  }
+
+  @Override
+  public ClientOptionsBase setReceiveBufferSize(int receiveBufferSize) {
+    return (ClientOptionsBase) super.setReceiveBufferSize(receiveBufferSize);
+  }
+
+  @Override
+  public ClientOptionsBase setReuseAddress(boolean reuseAddress) {
+    return (ClientOptionsBase) super.setReuseAddress(reuseAddress);
+  }
+
+  @Override
+  public ClientOptionsBase setReusePort(boolean reusePort) {
+    return (ClientOptionsBase) super.setReusePort(reusePort);
+  }
+
+  @Override
+  public ClientOptionsBase setTrafficClass(int trafficClass) {
+    return (ClientOptionsBase) super.setTrafficClass(trafficClass);
+  }
+
+  @Override
+  public ClientOptionsBase addEnabledCipherSuite(String suite) {
+    return (ClientOptionsBase) super.addEnabledCipherSuite(suite);
+  }
+
+  @Override
+  public ClientOptionsBase addCrlPath(String crlPath) throws NullPointerException {
+    return (ClientOptionsBase) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public ClientOptionsBase addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (ClientOptionsBase) super.addCrlValue(crlValue);
+  }
+
+  @Override
+  public ClientOptionsBase addEnabledSecureTransportProtocol(String protocol) {
+    return (ClientOptionsBase) super.addEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpFastOpen(boolean tcpFastOpen) {
+    return (ClientOptionsBase) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpCork(boolean tcpCork) {
+    return (ClientOptionsBase) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public ClientOptionsBase setTcpQuickAck(boolean tcpQuickAck) {
+    return (ClientOptionsBase) super.setTcpQuickAck(tcpQuickAck);
   }
 
   @Override

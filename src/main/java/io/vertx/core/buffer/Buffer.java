@@ -692,7 +692,8 @@ public interface Buffer extends ClusterSerializable {
   /**
    * Returns the Buffer as a Netty {@code ByteBuf}.<p>
    * The returned buffer is a duplicate.<p>
-   * This method is meant for internal use only.
+   * The returned {@code ByteBuf} might have its {@code readerIndex > 0}
+   * This method is meant for internal use only.<p>
    */
   @GenIgnore
   ByteBuf getByteBuf();

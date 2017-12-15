@@ -26,7 +26,7 @@ import io.vertx.core.net.NetworkOptions;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class DatagramSocketOptions extends NetworkOptions {
 
   /**
@@ -133,6 +133,11 @@ public class DatagramSocketOptions extends NetworkOptions {
   public DatagramSocketOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
     return this;
+  }
+
+  @Override
+  public DatagramSocketOptions setReusePort(boolean reusePort) {
+    return (DatagramSocketOptions) super.setReusePort(reusePort);
   }
 
   @Override

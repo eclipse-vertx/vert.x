@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.HttpServerOptions} original class using Vert.x codegen.
  */
-public class HttpServerOptionsConverter {
+ class HttpServerOptionsConverter {
 
-  public static void fromJson(JsonObject json, HttpServerOptions obj) {
+   static void fromJson(JsonObject json, HttpServerOptions obj) {
     if (json.getValue("acceptUnmaskedFrames") instanceof Boolean) {
       obj.setAcceptUnmaskedFrames((Boolean)json.getValue("acceptUnmaskedFrames"));
     }
@@ -43,6 +43,9 @@ public class HttpServerOptionsConverter {
     }
     if (json.getValue("compressionSupported") instanceof Boolean) {
       obj.setCompressionSupported((Boolean)json.getValue("compressionSupported"));
+    }
+    if (json.getValue("decoderInitialBufferSize") instanceof Number) {
+      obj.setDecoderInitialBufferSize(((Number)json.getValue("decoderInitialBufferSize")).intValue());
     }
     if (json.getValue("decompressionSupported") instanceof Boolean) {
       obj.setDecompressionSupported((Boolean)json.getValue("decompressionSupported"));
@@ -76,7 +79,7 @@ public class HttpServerOptionsConverter {
     }
   }
 
-  public static void toJson(HttpServerOptions obj, JsonObject json) {
+   static void toJson(HttpServerOptions obj, JsonObject json) {
     json.put("acceptUnmaskedFrames", obj.isAcceptUnmaskedFrames());
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
@@ -85,6 +88,7 @@ public class HttpServerOptionsConverter {
     }
     json.put("compressionLevel", obj.getCompressionLevel());
     json.put("compressionSupported", obj.isCompressionSupported());
+    json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     json.put("decompressionSupported", obj.isDecompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());

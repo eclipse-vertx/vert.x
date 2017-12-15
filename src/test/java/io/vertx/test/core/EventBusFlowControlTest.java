@@ -8,9 +8,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.MessageProducer;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -67,7 +65,7 @@ public class EventBusFlowControlTest extends VertxTestBase {
     vertx.runOnContext(v -> {
       sendBatch(prod, wqms, numBatches, 0);
     });
-    await(10, TimeUnit.SECONDS);
+    await();
   }
 
   private void sendBatch(MessageProducer<String> prod, int batchSize, int numBatches, int batchNumber) {
@@ -85,6 +83,21 @@ public class EventBusFlowControlTest extends VertxTestBase {
         batchNumber++;
       }
     }
+  }
+
+  @Test
+  public void testDrainHandlerCalledWhenQueueAlreadyDrained() throws Exception {
+    MessageConsumer<String> consumer = eb.consumer("some-address");
+    consumer.handler(msg -> {});
+    MessageProducer<String> prod = eb.sender("some-address");
+    prod.setWriteQueueMaxSize(1);
+    prod.write("msg");
+    assertTrue(prod.writeQueueFull());
+    waitUntil(() -> !prod.writeQueueFull());
+    prod.drainHandler(v -> {
+      testComplete();
+    });
+    await();
   }
 
   @Test
@@ -162,9 +175,9 @@ public class EventBusFlowControlTest extends VertxTestBase {
       prod.send(val);
     }
     consumer.resume();
-    waitUntil(() -> !prod.writeQueueFull());
+    assertWaitUntil(() -> !prod.writeQueueFull());
     int theCount = count;
-    waitUntil(() -> sequence.size() == theCount);
+    assertWaitUntil(() -> sequence.size() == theCount);
     while (expected.size() > 0) {
       assertEquals(expected.removeFirst(), sequence.poll());
     }

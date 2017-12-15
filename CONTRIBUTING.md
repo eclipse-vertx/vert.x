@@ -7,7 +7,7 @@ The goal of this document is to create a contribution process that:
 * Encourages new contributions.
 * Encourages contributors to remain involved.
 * Avoids unnecessary processes and bureaucracy whenever possible.
-* Creates a transparent decision making process which makes it clear how contributors can be involved in decision making.
+* Creates a transparent decision-making process which makes it clear how contributors can be involved in decision-making.
 
 
 ## Vocabulary
@@ -18,41 +18,41 @@ The goal of this document is to create a contribution process that:
 
 # Logging Issues
 
-Log an issue for any problem you might have. When in doubt, log an issue, any additional policies about what to include will be provided in the responses. The only exception is security dislosures which should be sent [privately](vertx-enquiries@googlegroups.com).
+Log an issue for any problem you might have. When in doubt, log an issue, any additional policies about what to include will be provided in the responses. The only exception is security disclosures which should be sent [privately](vertx-enquiries@googlegroups.com).
 
 Committers may direct you to another repository, ask for additional clarifications, and add appropriate info before the issue is addressed.
 
-For questions that are not an issue with the code, e.g.: questions related to usage of the project, it is recommended that they are sent to the [community group](https://groups.google.com/forum/#!forum/vertx). This exposes the question to the whole community, which increases the chance of getting faster responses than just from contributors and commiters.
+For questions that are not an issue with the code, e.g.: questions related to usage of the project, it is recommended that they are sent to the [community group](https://groups.google.com/forum/#!forum/vertx). This exposes the question to the whole community, which increases the chance of getting faster responses than just from contributors and committers.
 
 
 # Contributions
 
-Any change that would roughly be more than 10 lines (non trivial change) to resources in this repository must be through pull requests. This applies to all changes to documentation, code, binary files, etc. Even long term committers must use pull requests. Changes less than 10 lines or so (e.g.: correcting typos, small changes to configuration and such-like) can be make directly on a master branch. For a more detailed development process, please consult the article [Development Process](https://github.com/vert-x3/wiki/wiki/Development-Process) in the [wiki](https://github.com/vert-x3/wiki/wiki). 
+Any change that would roughly be more than 10 lines (non-trivial change) to resources in this repository must be through pull requests. This applies to all changes to documentation, code, binary files, etc. Even long term committers must use pull requests. Changes less than 10 lines or so (e.g.: correcting typos, small changes to configuration and such-like) can be make directly on a master branch. For a more detailed development process, please consult the article [Development Process](https://github.com/vert-x3/wiki/wiki/Development-Process) in the [wiki](https://github.com/vert-x3/wiki/wiki).
 
 No pull request can be merged without being reviewed.
 
 It is expected that all contributors to Eclipse Vert.x organization sign the [Eclipse Contributor Agreement](http://www.eclipse.org/legal/ECA.php). In order to sign the ECA a contributor is required to have an Eclipse Foundation user id and read and digitally sign the following [document](http://www.eclipse.org/contribute/cla). Digitally signing is as simple as read the document and submit the "I agree" button.
 
-There is an additional "sign off" process for contributions to land. All commits to code in the Eclipse Vert.x organization **MUST** be signed off. This is done when commiting from git passing the extra argument `-s` e.g.:
+There is an additional "sign off" process for contributions to land. All commits to code in the Eclipse Vert.x organization **MUST** be signed off. This is done when committing from git passing the extra argument `-s` e.g.:
 
 ```
 git commit -s -m "Shave the yak some more"
 ```
 
-For non-trivial contributions, pull requests should sit for at least 36 hours to ensure that contributors in other timezones have time to review. Consideration should also be given to  weekends and other holiday periods to ensure active committers all have reasonable time to become involved in the discussion and review process if they wish.
+For non-trivial contributions, pull requests should sit for at least 36 hours to ensure that contributors in other time zones have time to review. Consideration should also be given to weekends and other holiday periods to ensure active committers all have reasonable time to become involved in the discussion and review process if they wish.
 
-The default for each contribution is that it is accepted once no committer has an objection. During review committers may also request that a specific contributor who is most versed in a  particular area gives a "LGTM" before the PR can be merged.
+The default for each contribution is that it is accepted once no committer has an objection. During review committers may also request that a specific contributor who is most versed in a particular area gives a "LGTM" before the PR can be merged.
 
 For more info, see [here](http://wiki.eclipse.org/Development_Resources/Contributing_via_Git). Once all issues brought by committers are addressed it can be landed by any committer.
 
-In the case of an objection being raised in a pull request by another committer, all involved  committers should seek to arrive at a consensus by way of addressing concerns being expressed  by discussion, compromise on the proposed change, or withdrawal of the proposed change.
+In the case of an objection being raised in a pull request by another committer, all involved committers should seek to arrive at a consensus by way of addressing concerns being expressed by discussion, compromise on the proposed change, or withdrawal of the proposed change.
 
-If a contribution is controversial and committers cannot agree about how to get it to land or if it should land then it should be escalated to the [commiters group](https://groups.google.com/forum/#!forum/vertx-committers). Members of the developers group should regularly discuss pending contributions in order to find a resolution. It is expected that only a small minority of issues be brought to the group for resolution and that discussion and compromise among committers be the default resolution mechanism.
+If a contribution is controversial and committers cannot agree about how to get it to land or if it should land then it should be escalated to the [committers group](https://groups.google.com/forum/#!forum/vertx-committers). Members of the developers group should regularly discuss pending contributions in order to find a resolution. It is expected that only a small minority of issues be brought to the group for resolution and that discussion and compromise among committers be the default resolution mechanism.
 
 
-# Becomming a Contributor
+# Becoming a Contributor
 
-Becoming a contributor to the project should be a easy step. In order to reduce that barrier new contributors should look for issues tagged as:
+Becoming a contributor to the project should be an easy step. In order to reduce that barrier new contributors should look for issues tagged as:
 
 * `Quick Win`
 * `Help Wanted`
@@ -69,7 +69,7 @@ Committers are expected to follow this policy and continue to send pull requests
 
 # Mentoring / Onboarding
 
-Commiters should help mentor/on-board new contributors. The workflow should roughly follow this items:
+Committers should help mentor/on-board new contributors. The workflow should roughly follow this items:
 
 * suggest the new contributor to join the [development group](https://groups.google.com/forum/#!forum/vertx-dev)
 * ask for participation on github issue discussions
@@ -81,7 +81,7 @@ Commiters should help mentor/on-board new contributors. The workflow should roug
 
 # Technical Conflict Process
 
-The Vert.x project uses a "consensus seeking" process for issues that are escalated to the [commiters group](https://github.com/orgs/vert-x3/people). The group tries to find a resolution that has no open objections among the members. If a consensus cannot be reached that has no objections then the Project Lead should decide on which approach to take. It is also expected that the majority of decisions made by the group are via a consensus seeking process and that voting is only used as a last-resort.
+The Vert.x project uses a "consensus seeking" process for issues that are escalated to the [committers group](https://github.com/orgs/vert-x3/people). The group tries to find a resolution that has no open objections among the members. If a consensus cannot be reached that has no objections then the Project Lead should decide on which approach to take. It is also expected that the majority of decisions made by the group are via a consensus seeking process and that voting is only used as a last-resort.
 
 Resolution may involve returning the issue to committers with suggestions on how to move forward towards a consensus. It is not expected that a meeting of the group will resolve all issues on its agenda during that meeting and may prefer to continue the discussion happening among the committers.
 

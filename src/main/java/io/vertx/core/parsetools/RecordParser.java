@@ -16,14 +16,11 @@
 
 package io.vertx.core.parsetools;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.parsetools.impl.RecordParserImpl;
-
-import java.util.Objects;
+import io.vertx.core.streams.ReadStream;
 
 /**
  * A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
@@ -60,9 +57,33 @@ import java.util.Objects;
  * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
 @VertxGen
-public interface RecordParser extends Handler<Buffer> {
+public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
 
   void setOutput(Handler<Buffer> output);
+
+  /**
+   * Like {@link #newDelimited(String)} but set the {@code output} that will receive whole records
+   * which have been parsed.
+   *
+   * @param delim  the initial delimiter string
+   * @param output  handler that will receive the output
+   */
+  static RecordParser newDelimited(String delim, Handler<Buffer> output) {
+    return RecordParserImpl.newDelimited(delim, null, output);
+  }
+
+  /**
+   * Like {@link #newDelimited(String)} but wraps the {@code stream}. The {@code stream} handlers will be set/unset
+   * when the {@link #handler(Handler)} is set.
+   * <p/>
+   * The {@code pause()}/{@code resume()} operations are propagated to the {@code stream}.
+   *
+   * @param delim  the initial delimiter string
+   * @param stream  the wrapped stream
+   */
+  static RecordParser newDelimited(String delim, ReadStream<Buffer> stream) {
+    return RecordParserImpl.newDelimited(delim, stream, null);
+  }
 
   /**
    * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
@@ -71,24 +92,45 @@ public interface RecordParser extends Handler<Buffer> {
    * {@code output} Will receive whole records which have been parsed.
    *
    * @param delim  the initial delimiter string
-   * @param output  handler that will receive the output
    */
-  static RecordParser newDelimited(String delim, Handler<Buffer> output) {
-    return RecordParserImpl.newDelimited(delim, output);
+  static RecordParser newDelimited(String delim) {
+    return RecordParserImpl.newDelimited(delim, null, null);
   }
 
   /**
    * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
    * by the {@code Buffer} delim.
    * <p>
-   * {@code output} Will receive whole records which have been parsed.
+   *
+   * @param delim  the initial delimiter buffer
+   */
+  static RecordParser newDelimited(Buffer delim) {
+    return RecordParserImpl.newDelimited(delim,null,  null);
+  }
+
+  /**
+   * Like {@link #newDelimited(Buffer)} but set the {@code output} that will receive whole records
+   * which have been parsed.
    *
    * @param delim  the initial delimiter buffer
    * @param output  handler that will receive the output
    */
    static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
-     return RecordParserImpl.newDelimited(delim, output); 
+     return RecordParserImpl.newDelimited(delim, null, output);
    }
+
+  /**
+   * Like {@link #newDelimited(Buffer)} but wraps the {@code stream}. The {@code stream} handlers will be set/unset
+   * when the {@link #handler(Handler)} is set.
+   * <p/>
+   * The {@code pause()}/{@code resume()} operations are propagated to the {@code stream}.
+   *
+   * @param delim  the initial delimiter buffer
+   * @param stream  the wrapped stream
+   */
+  static RecordParser newDelimited(Buffer delim, ReadStream<Buffer> stream) {
+    return RecordParserImpl.newDelimited(delim, stream, null);
+  }
 
   /**
    * Create a new {@code RecordParser} instance, initially in fixed size mode, and where the record size is specified
@@ -97,10 +139,33 @@ public interface RecordParser extends Handler<Buffer> {
    * {@code output} Will receive whole records which have been parsed.
    *
    * @param size  the initial record size
+   */
+  static RecordParser newFixed(int size) {
+    return RecordParserImpl.newFixed(size, null, null);
+  }
+
+  /**
+   * Like {@link #newFixed(int)} but set the {@code output} that will receive whole records
+   * which have been parsed.
+   *
+   * @param size  the initial record size
    * @param output  handler that will receive the output
    */
   static RecordParser newFixed(int size, Handler<Buffer> output) {
-    return RecordParserImpl.newFixed(size, output);
+    return RecordParserImpl.newFixed(size, null, output);
+  }
+
+  /**
+   * Like {@link #newFixed(int)} but wraps the {@code stream}. The {@code stream} handlers will be set/unset
+   * when the {@link #handler(Handler)} is set.
+   * <p/>
+   * The {@code pause()}/{@code resume()} operations are propagated to the {@code stream}.
+   *
+   * @param size  the initial record size
+   * @param stream  the wrapped stream
+   */
+  static RecordParser newFixed(int size, ReadStream<Buffer> stream) {
+    return RecordParserImpl.newFixed(size, stream, null);
   }
 
   /**
@@ -138,4 +203,19 @@ public interface RecordParser extends Handler<Buffer> {
    * @param buffer  a chunk of data
    */
   void handle(Buffer buffer);
+
+  @Override
+  RecordParser exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  RecordParser handler(Handler<Buffer> handler);
+
+  @Override
+  RecordParser pause();
+
+  @Override
+  RecordParser resume();
+
+  @Override
+  RecordParser endHandler(Handler<Void> endHandler);
 }

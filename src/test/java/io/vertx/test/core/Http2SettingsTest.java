@@ -70,7 +70,8 @@ public class Http2SettingsTest extends HttpTestBase {
   public void toNettySettings() {
     Http2Settings settings = new Http2Settings();
     for (int i = 7;i <= 0xFFFF;i += 1) {
-      settings.set(0xFFFF, TestUtils.randomPositiveLong());
+      // we need to clamp the random value to pass validation
+      settings.set(0xFFFF, Math.min(0xFFFFFFFFL, TestUtils.randomPositiveLong()));
     }
     io.netty.handler.codec.http2.Http2Settings conv = HttpUtils.fromVertxSettings(settings);
     for (int i = 1;i <= 0xFFFF;i += 1) {

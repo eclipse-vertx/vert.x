@@ -19,6 +19,7 @@ package io.vertx.core.logging;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.message.FormattedMessage;
+import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 
 /**
@@ -150,7 +151,11 @@ public class Log4j2LogDelegate implements LogDelegate {
   }
 
   private void log(Level level, Object message, Throwable t) {
-    logger.logIfEnabled(FQCN, level, null, message, t);
+    if (message instanceof Message) {
+      logger.logIfEnabled(FQCN, level, null, (Message) message, t);
+    } else {
+      logger.logIfEnabled(FQCN, level, null, message, t);
+    }
   }
 
   private void log(Level level, String message, Object... params) {

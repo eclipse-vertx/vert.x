@@ -84,7 +84,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * This method should be called only once.
    *
    * @param eventBus the Vert.x event bus
-   * @return the event bus metrics SPI
+   * @return the event bus metrics SPI or {@code null} when metrics are disabled
    */
   EventBusMetrics createMetrics(EventBus eventBus);
 
@@ -101,7 +101,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param server       the Vert.x http server
    * @param localAddress localAddress the local address the net socket is listening on
    * @param options      the options used to create the {@link io.vertx.core.http.HttpServer}
-   * @return the http server metrics SPI
+   * @return the http server metrics SPI or {@code null} when metrics are disabled
    */
   HttpServerMetrics<?, ?, ?> createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options);
 
@@ -112,7 +112,7 @@ public interface VertxMetrics extends Metrics, Measured {
    *
    * @param client  the Vert.x http client
    * @param options the options used to create the {@link io.vertx.core.http.HttpClient}
-   * @return the http client metrics SPI
+   * @return the http client metrics SPI or {@code null} when metrics are disabled
    */
   HttpClientMetrics<?, ?, ?, ?, ?> createMetrics(HttpClient client, HttpClientOptions options);
 
@@ -128,7 +128,7 @@ public interface VertxMetrics extends Metrics, Measured {
    *
    * @param localAddress localAddress the local address the net socket is listening on
    * @param options      the options used to create the {@link NetServer}
-   * @return the net server metrics SPI
+   * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
   TCPMetrics<?> createMetrics(SocketAddress localAddress, NetServerOptions options);
 
@@ -137,11 +137,10 @@ public interface VertxMetrics extends Metrics, Measured {
    * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param client  the Vert.x net client
-   * @param options the options used to create the {@link io.vertx.core.net.NetClient}
-   * @return the net client metrics SPI
+   * @param options the options used to create the {@link NetClient}
+   * @return the net client metrics SPI or {@code null} when metrics are disabled
    */
-  TCPMetrics<?> createMetrics(NetClient client, NetClientOptions options);
+  TCPMetrics<?> createMetrics(NetClientOptions options);
 
   /**
    * Provides the datagram/udp metrics SPI when a datagram socket is created.<p/>
@@ -150,7 +149,7 @@ public interface VertxMetrics extends Metrics, Measured {
    *
    * @param socket  the Vert.x datagram socket
    * @param options the options used to create the {@link io.vertx.core.datagram.DatagramSocket}
-   * @return the datagram metrics SPI
+   * @return the datagram metrics SPI or {@code null} when metrics are disabled
    */
   DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options);
 
@@ -171,7 +170,8 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param pool the pool of resource, it can be used by the metrics implementation to gather extra statistics
    * @param poolType the type of the pool e.g worker, datasource, etc..
    * @param poolName the name of the pool
-   * @param maxPoolSize the pool max size, or -1 if the number cannot be determined   @return the thread pool metrics SPI
+   * @param maxPoolSize the pool max size, or -1 if the number cannot be determined
+   * @return the thread pool metrics SPI or {@code null} when metrics are disabled
    */
   <P> PoolMetrics<?> createMetrics(P pool, String poolType, String poolName, int maxPoolSize);
 }

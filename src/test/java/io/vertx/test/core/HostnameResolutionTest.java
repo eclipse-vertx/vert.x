@@ -43,6 +43,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -64,7 +65,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   public void setUp() throws Exception {
     dnsServer = FakeDNSServer.testResolveASameServer("127.0.0.1");
     dnsServer.start();
-    dnsServerAddress = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
+    dnsServerAddress = dnsServer.localAddress();
     super.setUp();
   }
 
@@ -86,7 +87,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testAsyncResolve() throws Exception {
-    ((VertxImpl)vertx).resolveAddress("vertx.io", onSuccess(resolved -> {
+    ((VertxImpl) vertx).resolveAddress("vertx.io", onSuccess(resolved -> {
       assertEquals("127.0.0.1", resolved.getHostAddress());
       testComplete();
     }));
@@ -95,7 +96,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testAsyncResolveFail() throws Exception {
-    ((VertxImpl)vertx).resolveAddress("vertx.com", onFailure(failure -> {
+    ((VertxImpl) vertx).resolveAddress("vertx.com", onFailure(failure -> {
       assertEquals(UnknownHostException.class, failure.getClass());
       testComplete();
     }));
@@ -188,7 +189,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     boolean rdFlag = TestUtils.randomBoolean();
     int ndots = TestUtils.randomPositiveInt() - 2;
     List<String> searchDomains = new ArrayList<>();
-    for (int i = 0;i < 2;i++) {
+    for (int i = 0; i < 2; i++) {
       searchDomains.add(TestUtils.randomAlphaString(15));
     }
 
@@ -309,30 +310,35 @@ public class HostnameResolutionTest extends VertxTestBase {
   @Test
   public void testAsyncResolveConnectIsNotifiedOnChannelEventLoop() throws Exception {
     CountDownLatch listenLatch = new CountDownLatch(1);
-    NetServer s = vertx.createNetServer().connectHandler(so -> {});
-    s.listen(1234, "localhost", onSuccess(v -> listenLatch.countDown()));
-    awaitLatch(listenLatch);
-    AtomicReference<Thread> channelThread = new AtomicReference<>();
-    CountDownLatch connectLatch = new CountDownLatch(1);
-    Bootstrap bootstrap = new Bootstrap();
-    bootstrap.channel(NioSocketChannel.class);
-    bootstrap.group(vertx.nettyEventLoopGroup());
-    bootstrap.resolver(((VertxInternal)vertx).nettyAddressResolverGroup());
-    bootstrap.handler(new ChannelInitializer<Channel>() {
-      @Override
-      protected void initChannel(Channel ch) throws Exception {
-        channelThread.set(Thread.currentThread());
-        connectLatch.countDown();
-      }
+    NetServer server = vertx.createNetServer().connectHandler(so -> {
     });
-    ChannelFuture channelFut = bootstrap.connect("localhost", 1234);
-    awaitLatch(connectLatch);
-    channelFut.addListener(v -> {
-      assertTrue(v.isSuccess());
-      assertEquals(channelThread.get(), Thread.currentThread());
-      testComplete();
-    });
-    await();
+    try {
+      server.listen(1234, "localhost", onSuccess(v -> listenLatch.countDown()));
+      awaitLatch(listenLatch);
+      AtomicReference<Thread> channelThread = new AtomicReference<>();
+      CountDownLatch connectLatch = new CountDownLatch(1);
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.channel(((VertxInternal)vertx).transport().channelType(false));
+      bootstrap.group(vertx.nettyEventLoopGroup());
+      bootstrap.resolver(((VertxInternal) vertx).nettyAddressResolverGroup());
+      bootstrap.handler(new ChannelInitializer<Channel>() {
+        @Override
+        protected void initChannel(Channel ch) throws Exception {
+          channelThread.set(Thread.currentThread());
+          connectLatch.countDown();
+        }
+      });
+      ChannelFuture channelFut = bootstrap.connect("localhost", 1234);
+      awaitLatch(connectLatch);
+      channelFut.addListener(v -> {
+        assertTrue(v.isSuccess());
+        assertEquals(channelThread.get(), Thread.currentThread());
+        testComplete();
+      });
+      await();
+    } finally {
+      server.close();
+    }
   }
 
   @Test
@@ -440,40 +446,57 @@ public class HostnameResolutionTest extends VertxTestBase {
     // Test using bootstrap
     CompletableFuture<Void> test3 = new CompletableFuture<>();
     NetServer server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost(localhost.getHostAddress()));
-    server.connectHandler(so -> {
-      so.write("hello").end();
-    });
-    server.listen(ar -> {
-      if (ar.succeeded()) {
-        test3.complete(null);
-      } else {
-        test3.completeExceptionally(ar.cause());
-      }
-    });
-    test3.get(10, TimeUnit.SECONDS);
+    try {
+      server.connectHandler(so -> {
+        so.write("hello").end();
+      });
+      server.listen(ar -> {
+        if (ar.succeeded()) {
+          test3.complete(null);
+        } else {
+          test3.completeExceptionally(ar.cause());
+        }
+      });
+      test3.get(10, TimeUnit.SECONDS);
 
-    CompletableFuture<Void> test4 = new CompletableFuture<>();
-    NetClient client = vertx.createNetClient();
-    client.connect(1234, "localhost", ar -> {
-      if (ar.succeeded()) {
-        test4.complete(null);
-      } else {
-        test4.completeExceptionally(ar.cause());
-      }
-    });
-    test4.get(10, TimeUnit.SECONDS);
+      CompletableFuture<Void> test4 = new CompletableFuture<>();
+      NetClient client = vertx.createNetClient();
+      client.connect(1234, "localhost", ar -> {
+        if (ar.succeeded()) {
+          test4.complete(null);
+        } else {
+          test4.completeExceptionally(ar.cause());
+        }
+      });
+      test4.get(10, TimeUnit.SECONDS);
+    } finally {
+      server.close();
+    }
   }
 
   @Test
   public void testSearchDomain() throws Exception {
 
+    String addr_host1_foo_com = "127.0.0.1";
+    String addr_host1 = "127.0.0.2";
+    String addr_host3 = "127.0.0.3";
+    String addr_host4_sub_foo_com = "127.0.0.4";
+    String addr_host5_sub_foo_com = "127.0.0.5";
+    String addr_host5_sub = "127.0.0.6";
+    String addr_host6_sub_sub_foo_com = "127.0.0.7";
+    String addr_host7_sub_sub_foo_com = "127.0.0.8";
+    String addr_host7_sub_sub = "127.0.0.9";
+
     Map<String, String> records = new HashMap<>();
-    records.put("host1.foo.com", "127.0.0.1");
-    records.put("host1", "127.0.0.2");
-    records.put("host3", "127.0.0.3");
-    records.put("host4.sub.foo.com", "127.0.0.4");
-    records.put("host5.sub.foo.com", "127.0.0.5");
-    records.put("host5.sub", "127.0.0.6");
+    records.put("host1.foo.com", addr_host1_foo_com);
+    records.put("host1", addr_host1);
+    records.put("host3", addr_host3);
+    records.put("host4.sub.foo.com", addr_host4_sub_foo_com);
+    records.put("host5.sub.foo.com", addr_host5_sub_foo_com);
+    records.put("host5.sub", addr_host5_sub);
+    records.put("host6.sub.sub.foo.com", addr_host6_sub_sub_foo_com);
+    records.put("host7.sub.sub.foo.com", addr_host7_sub_sub_foo_com);
+    records.put("host7.sub.sub", addr_host7_sub_sub);
 
     dnsServer.stop();
     dnsServer = FakeDNSServer.testResolveA(records);
@@ -482,13 +505,14 @@ public class HostnameResolutionTest extends VertxTestBase {
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
             setOptResourceEnabled(false).
+            setNdots(2).
             addSearchDomain("foo.com")
     ));
 
     // host1 resolves host1.foo.com with foo.com search domain
     CountDownLatch latch1 = new CountDownLatch(1);
     vertx.resolveAddress("host1", onSuccess(resolved -> {
-      assertEquals("127.0.0.1", resolved.getHostAddress());
+      assertEquals(addr_host1_foo_com, resolved.getHostAddress());
       latch1.countDown();
     }));
     awaitLatch(latch1);
@@ -496,7 +520,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     // "host1." absolute query
     CountDownLatch latch2 = new CountDownLatch(1);
     vertx.resolveAddress("host1.", onSuccess(resolved -> {
-      assertEquals("127.0.0.2", resolved.getHostAddress());
+      assertEquals(addr_host1, resolved.getHostAddress());
       latch2.countDown();
     }));
     awaitLatch(latch2);
@@ -520,7 +544,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     // "host3." does not contain a dot but is absolute
     CountDownLatch latch5 = new CountDownLatch(1);
     vertx.resolveAddress("host3.", onSuccess(resolved -> {
-      assertEquals("127.0.0.3", resolved.getHostAddress());
+      assertEquals(addr_host3, resolved.getHostAddress());
       latch5.countDown();
     }));
     awaitLatch(latch5);
@@ -528,18 +552,33 @@ public class HostnameResolutionTest extends VertxTestBase {
     // "host4.sub" contains a dot but not resolved then resolved to "host4.sub.foo.com" with "foo.com" search domain
     CountDownLatch latch6 = new CountDownLatch(1);
     vertx.resolveAddress("host4.sub", onSuccess(resolved -> {
-      assertEquals("127.0.0.4", resolved.getHostAddress());
+      assertEquals(addr_host4_sub_foo_com, resolved.getHostAddress());
       latch6.countDown();
     }));
     awaitLatch(latch6);
 
-    // "host5.sub" contains a dot and is resolved
+    // "host5.sub" contains one dots and is resolved via search domain to "host5.sub.foo.com" and not to "host5.sub"
     CountDownLatch latch7 = new CountDownLatch(1);
     vertx.resolveAddress("host5.sub", onSuccess(resolved -> {
-      assertEquals("127.0.0.6", resolved.getHostAddress());
+      assertEquals(addr_host5_sub_foo_com, resolved.getHostAddress());
       latch7.countDown();
     }));
     awaitLatch(latch7);
+
+    // "host7.sub.sub" contains two dots and is not resolved to "host6.sub.sub.foo.com"
+    CountDownLatch latch8 = new CountDownLatch(1);
+    vertx.resolveAddress("host6.sub.sub", onFailure(resolved -> {
+      latch8.countDown();
+    }));
+    awaitLatch(latch8);
+
+    // "host6.sub.sub" contains two dots and is resolved to "host6.sub.sub" and not to "host6.sub.sub.foo.com"
+    CountDownLatch latch9 = new CountDownLatch(1);
+    vertx.resolveAddress("host7.sub.sub", onSuccess(resolved -> {
+      assertEquals(addr_host7_sub_sub, resolved.getHostAddress());
+      latch9.countDown();
+    }));
+    awaitLatch(latch9);
   }
 
   @Test
@@ -684,6 +723,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testParseResolvConf() {
+    assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options"));
     assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots: 4"));
     assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("\noptions ndots: 4"));
     assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("boptions ndots: 4"));
@@ -710,6 +750,13 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(-1, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4_"));
 
     assertEquals(2, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4\noptions ndots:2"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options ndots:4 debug"));
+    assertEquals(4, AddressResolver.parseNdotsOptionFromResolvConf("options debug ndots:4"));
+
+    assertEquals(false, AddressResolver.parseRotateOptionFromResolvConf("options"));
+    assertEquals(true, AddressResolver.parseRotateOptionFromResolvConf("options rotate"));
+    assertEquals(true, AddressResolver.parseRotateOptionFromResolvConf("options rotate\n"));
+    assertEquals(false, AddressResolver.parseRotateOptionFromResolvConf("options\nrotate"));
   }
 
   @Test
@@ -740,5 +787,94 @@ public class HostnameResolutionTest extends VertxTestBase {
     });
 
     await();
+  }
+
+  @Test
+  public void testRotationalServerSelection() throws Exception {
+    testServerSelection(true, false);
+  }
+
+  @Test
+  public void testRotationalServerSelectionWithCache() throws Exception {
+    testServerSelection(true, true);
+  }
+
+  @Test
+  public void testFirstServerSelection() throws Exception {
+    testServerSelection(false, false);
+  }
+
+  private void testServerSelection(boolean rotateServers, boolean cache) throws Exception {
+    int num = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE + 4;
+    List<FakeDNSServer> dnsServers = new ArrayList<>();
+    try {
+      for (int index = 1; index <= num; index++) {
+        FakeDNSServer server = new FakeDNSServer(FakeDNSServer.A_store(Collections.singletonMap("vertx.io", "127.0.0." + index)));
+        server.port(FakeDNSServer.PORT + index);
+        server.start();
+        dnsServers.add(server);
+      }
+      AddressResolverOptions options = new AddressResolverOptions();
+      options.setRotateServers(rotateServers);
+      options.setOptResourceEnabled(false);
+      if (!cache) {
+        options.setCacheMaxTimeToLive(0);
+      }
+      for (int i = 0; i < num; i++) {
+        InetSocketAddress dnsServerAddress = dnsServers.get(i).localAddress();
+        options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
+      }
+      AddressResolver resolver = new AddressResolver(vertx, options);
+      for (int i = 0; i < num; i++) {
+        CompletableFuture<InetAddress> result = new CompletableFuture<>();
+        resolver.resolveHostname("vertx.io", ar -> {
+          if (ar.succeeded()) {
+            result.complete(ar.result());
+          } else {
+            result.completeExceptionally(ar.cause());
+          }
+        });
+        String resolved = result.get(10, TimeUnit.SECONDS).getHostAddress();
+        int expected;
+        if (rotateServers && !cache) {
+          expected = 1 + i;
+        } else {
+          expected = 1;
+        }
+        assertEquals("127.0.0." + expected, resolved);
+      }
+    } finally {
+      dnsServers.forEach(FakeDNSServer::stop);
+    }
+  }
+
+
+  @Test
+  public void testServerFailover() throws Exception {
+    FakeDNSServer server = new FakeDNSServer(FakeDNSServer.A_store(Collections.singletonMap("vertx.io", "127.0.0.1"))).port(FakeDNSServer.PORT + 2);
+    try {
+      AddressResolverOptions options = new AddressResolverOptions();
+      options.setOptResourceEnabled(false);
+      options.setMaxQueries(4); // 2 + 2
+      server.start();
+      InetSocketAddress dnsServerAddress = server.localAddress();
+      // First server is unreachable
+      options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + (FakeDNSServer.PORT + 1));
+      // Second server is the failed over server
+      options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
+      AddressResolver resolver = new AddressResolver((VertxImpl) vertx, options);
+      CompletableFuture<InetAddress> result = new CompletableFuture<>();
+      resolver.resolveHostname("vertx.io", ar -> {
+        if (ar.succeeded()) {
+          result.complete(ar.result());
+        } else {
+          result.completeExceptionally(ar.cause());
+        }
+      });
+      String resolved = result.get(10, TimeUnit.SECONDS).getHostAddress();
+      assertEquals("127.0.0.1", resolved);
+    } finally {
+      server.stop();
+    }
   }
 }

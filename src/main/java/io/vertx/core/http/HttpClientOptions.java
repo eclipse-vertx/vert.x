@@ -18,6 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
@@ -30,7 +31,7 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, publicConverter = false)
 public class HttpClientOptions extends ClientOptionsBase {
 
   /**
@@ -144,6 +145,16 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_REDIRECTS = 16;
 
+  /*
+   * Default force SNI = false
+   */
+  public static final boolean DEFAULT_FORCE_SNI = false;
+
+  /**
+   * Default initial buffer size for HttpObjectDecoder = 128 bytes
+   */
+  public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -168,6 +179,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean http2ClearTextUpgrade;
   private boolean sendUnmaskedFrames;
   private int maxRedirects;
+  private boolean forceSni;
+  private int decoderInitialBufferSize;
 
   /**
    * Default constructor
@@ -207,6 +220,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
     this.maxRedirects = other.maxRedirects;
+    this.forceSni = other.forceSni;
+    this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
   }
 
   /**
@@ -255,6 +270,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     sendUnmaskedFrames = DEFAULT_SEND_UNMASKED_FRAMES;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
+    forceSni = DEFAULT_FORCE_SNI;
+    decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
   }
 
   @Override
@@ -272,6 +289,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   @Override
   public HttpClientOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions setReusePort(boolean reusePort) {
+    super.setReusePort(reusePort);
     return this;
   }
 
@@ -371,6 +394,21 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions addEnabledSecureTransportProtocol(final String protocol) {
     super.addEnabledSecureTransportProtocol(protocol);
     return this;
+  }
+
+  @Override
+  public HttpClientOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (HttpClientOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public HttpClientOptions setTcpCork(boolean tcpCork) {
+    return (HttpClientOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public HttpClientOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (HttpClientOptions) super.setTcpQuickAck(tcpQuickAck);
   }
 
   @Override
@@ -888,6 +926,25 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * @return whether the client should always use SNI on TLS/SSL connections
+   */
+  public boolean isForceSni() {
+    return forceSni;
+  }
+
+  /**
+   * By default, the server name is only sent for Fully Qualified Domain Name (FQDN), setting
+   * this property to {@code true} forces the server name to be always sent.
+   *
+   * @param forceSni true when the client should always use SNI on TLS/SSL connections
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setForceSni(boolean forceSni) {
+    this.forceSni = forceSni;
+    return this;
+  }
+
   public HttpClientOptions setMetricsName(String metricsName) {
     return (HttpClientOptions) super.setMetricsName(metricsName);
   }
@@ -904,6 +961,22 @@ public class HttpClientOptions extends ClientOptionsBase {
   @Override
   public HttpClientOptions setLogActivity(boolean logEnabled) {
     return (HttpClientOptions) super.setLogActivity(logEnabled);
+  }
+
+  /**
+   * @return the initial buffer size for the HTTP decoder
+   */
+  public int getDecoderInitialBufferSize() { return decoderInitialBufferSize; }
+
+  /**
+   * set to {@code initialBufferSizeHttpDecoder} the initial buffer of the HttpDecoder.
+   * @param decoderInitialBufferSize the initial buffer size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setDecoderInitialBufferSize(int decoderInitialBufferSize) {
+    Arguments.require(decoderInitialBufferSize > 0, "initialBufferSizeHttpDecoder must be > 0");
+    this.decoderInitialBufferSize = decoderInitialBufferSize;
+    return this;
   }
 
   @Override
@@ -934,6 +1007,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
     if (sendUnmaskedFrames != that.sendUnmaskedFrames) return false;
     if (maxRedirects != that.maxRedirects) return false;
+    if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
 
     return true;
   }
@@ -961,6 +1035,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + http2ConnectionWindowSize;
     result = 31 * result + (sendUnmaskedFrames ? 1 : 0);
     result = 31 * result + maxRedirects;
+    result = 31 * result + decoderInitialBufferSize;
     return result;
   }
+
 }
