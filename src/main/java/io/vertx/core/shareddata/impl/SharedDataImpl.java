@@ -68,6 +68,23 @@ public class SharedDataImpl implements SharedData {
   }
 
   @Override
+  public <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    if (clusterManager == null) {
+      throw new IllegalStateException("Can't get cluster wide map if not clustered");
+    }
+    clusterManager.<K, V>getAsyncMap(name, ar -> {
+      if (ar.succeeded()) {
+        // Wrap it
+        resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<K, V>(ar.result())));
+      } else {
+        resultHandler.handle(Future.failedFuture(ar.cause()));
+      }
+    });
+  }
+
+  @Override
   public void getLock(String name, Handler<AsyncResult<Lock>> resultHandler) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(resultHandler, "resultHandler");
@@ -120,7 +137,7 @@ public class SharedDataImpl implements SharedData {
 
   private static void checkType(Object obj) {
     if (obj == null) {
-      throw new IllegalArgumentException("Cannot put null in key or value of cluster wide map");
+      throw new IllegalArgumentException("Cannot put null in key or value of async map");
     }
     Class<?> clazz = obj.getClass();
     if (clazz == Integer.class || clazz == int.class ||
@@ -140,7 +157,7 @@ public class SharedDataImpl implements SharedData {
       // OK
       return;
     } else {
-      throw new IllegalArgumentException("Invalid type: " + clazz + " to put in cluster wide map");
+      throw new IllegalArgumentException("Invalid type: " + clazz + " to put in async map");
     }
   }
 

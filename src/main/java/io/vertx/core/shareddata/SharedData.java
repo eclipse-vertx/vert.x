@@ -20,10 +20,10 @@ import io.vertx.core.Handler;
  * <p>
  * Shared data provides:
  * <ul>
- *   <li>Cluster wide maps which can be accessed from any node of the cluster</li>
- *   <li>Cluster wide locks which can be used to give exclusive access to resources across the cluster</li>
- *   <li>Cluster wide counters used to maintain counts consistently across the cluster</li>
- *   <li>Local maps for sharing data safely in the same Vert.x instance</li>
+ *   <li>synchronous shared maps (local)</li>
+ *   <li>asynchronous maps (local or cluster-wide)</li>
+ *   <li>asynchronous locks (local or cluster-wide)</li>
+ *   <li>asynchronous counters (local or cluster-wide)</li>
  * </ul>
  * <p>
  * Please see the documentation for more information.
@@ -39,11 +39,21 @@ public interface SharedData {
    *
    * @param name  the name of the map
    * @param resultHandler  the map will be returned asynchronously in this handler
+   * @throws IllegalStateException if the parent {@link io.vertx.core.Vertx} instance is not clustered
    */
   <K, V> void getClusterWideMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
   /**
-   * Get a cluster wide lock with the specified name. The lock will be passed to the handler when it is available.
+   * Get the {@link AsyncMap} with the specified name. When clustered, the map is accessible to all nodes in the cluster
+   * and data put into the map from any node is visible to to any other node.
+   *
+   * @param name the name of the map
+   * @param resultHandler the map will be returned asynchronously in this handler
+   */
+  <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
+
+  /**
+   * Get an asynchronous lock with the specified name. The lock will be passed to the handler when it is available.
    *
    * @param name  the name of the lock
    * @param resultHandler  the handler
@@ -60,7 +70,7 @@ public interface SharedData {
   void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
 
   /**
-   * Get a cluster wide counter. The counter will be passed to the handler.
+   * Get an asynchronous counter. The counter will be passed to the handler.
    *
    * @param name  the name of the counter.
    * @param resultHandler  the handler

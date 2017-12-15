@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClusterWideMapTestDifferentNodes extends ClusterWideMapTest {
+public class AsyncMapTestDifferentNodes extends AsyncMapTest {
 
 
   @Override
