@@ -22,11 +22,11 @@ The project maintains the following source code repositories:
 
 ## Copyright Holders
 
-_See the header in each individual file._
+> See the header in each individual file and https://github.com/eclipse/vert.x/graphs/contributors.
 
 ## Third-party Content
 
-_See the declared runtime dependencies in `pom.xml`._
+> See the declared runtime dependencies in `pom.xml`.
 
 ## Cryptography
 
