@@ -62,10 +62,10 @@ public class DnsResolverProvider implements ResolverProvider {
   private final Vertx vertx;
   private final List<ResolverRegistration> resolvers = Collections.synchronizedList(new ArrayList<>());
   private AddressResolverGroup<InetSocketAddress> resolverGroup;
+  public final List<InetSocketAddress> serverList = new ArrayList<>();
 
   public DnsResolverProvider(VertxImpl vertx, AddressResolverOptions options) {
     List<String> dnsServers = options.getServers();
-    List<InetSocketAddress> serverList = new ArrayList<>();
     if (dnsServers != null && dnsServers.size() > 0) {
       for (String dnsServer : dnsServers) {
         int sep = dnsServer.indexOf(':');
