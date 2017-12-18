@@ -18,8 +18,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -34,25 +32,9 @@ import static io.vertx.test.core.TestUtils.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AsyncMapTest extends VertxTestBase {
+public abstract class AsyncMapTest extends VertxTestBase {
 
-  protected int getNumNodes() {
-    return 1;
-  }
-
-  protected Vertx getVertx() {
-    return vertices[0];
-  }
-
-  public void setUp() throws Exception {
-    super.setUp();
-    startNodes(getNumNodes());
-  }
-
-  @Override
-  protected ClusterManager getClusterManager() {
-    return new FakeClusterManager();
-  }
+  protected abstract Vertx getVertx();
 
   @Test
   public void testMapPutGetByte() {
