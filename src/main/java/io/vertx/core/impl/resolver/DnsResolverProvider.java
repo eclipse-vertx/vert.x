@@ -64,6 +64,9 @@ public class DnsResolverProvider implements ResolverProvider {
   private AddressResolverGroup<InetSocketAddress> resolverGroup;
   private final List<InetSocketAddress> serverList = new ArrayList<>();
 
+  /**
+   * @return a list of DNS servers available to use
+   */
   public List<InetSocketAddress> nameServerAddresses() {
     return serverList;
   }
