@@ -147,16 +147,16 @@ public class DatagramSocketOptions extends NetworkOptions {
   }
 
   /**
-   * @return true if the socket receive broadcast packets?
+   * @return true if the socket can send or receive broadcast packets?
    */
   public boolean isBroadcast() {
     return broadcast;
   }
 
   /**
-   * Set if the socket can receive broadcast packets
+   * Set if the socket can send or receive broadcast packets
    *
-   * @param broadcast  true if the socket can receive broadcast packets
+   * @param broadcast  true if the socket can send or receive broadcast packets
    * @return a reference to this, so the API can be used fluently
    */
   public DatagramSocketOptions setBroadcast(boolean broadcast) {
