@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.DnsException;
@@ -26,6 +27,8 @@ import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.dns.impl.DnsClientImpl;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.apache.directory.server.dns.messages.DnsMessage;
 import org.junit.Test;
@@ -61,6 +64,28 @@ public class DNSTest extends VertxTestBase {
     assertNullPointerException(() -> dns.resolveSRV(null, ar -> {}));
 
     dnsServer.stop();
+  }
+
+  @Test
+  public void testDefaultDnsServer() throws Exception {
+
+    // start fake DNS server
+    FakeDNSServer fakeDNSServer = FakeDNSServer.testResolveA("1.2.3.4");
+    fakeDNSServer.start();
+
+    // configure
+    VertxOptions vertxOptions = new VertxOptions();
+    InetSocketAddress fakeServerAddress = fakeDNSServer.localAddress();
+    vertxOptions.getAddressResolverOptions().addServer( fakeServerAddress.getHostString() +":" + fakeServerAddress.getPort());
+    DnsResolverProvider provider = new DnsResolverProvider((VertxImpl) vertx, vertxOptions.getAddressResolverOptions());
+
+    // test that fake server chosen as default
+    assertTrue(provider.nameServerAddresses().size() == 1);
+    assertTrue(provider.nameServerAddresses().get(0).getAddress().getHostAddress().equals("127.0.0.1"));
+    assertTrue(provider.nameServerAddresses().get(0).getPort() == FakeDNSServer.PORT);
+
+    // tear down
+    fakeDNSServer.stop();
   }
 
   @Test
