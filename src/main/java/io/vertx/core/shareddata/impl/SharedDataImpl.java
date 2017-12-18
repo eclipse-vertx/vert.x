@@ -32,12 +32,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SharedDataImpl implements SharedData {
 
-  private static final long DEFAULT_LOCK_TIMEOUT = 10 * 1000;
+  private static final long DEFAULT_LOCK_TIMEOUT = SECONDS.toMillis(10);
 
   private final VertxInternal vertx;
   private final ClusterManager clusterManager;
@@ -101,11 +103,22 @@ public class SharedDataImpl implements SharedData {
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
    */
+  @Override
   @SuppressWarnings("unchecked")
   public <K, V> LocalMap<K, V> getLocalMap(String name) {
     return (LocalMap<K, V>) localMaps.computeIfAbsent(name, n -> new LocalMapImpl<>(n, localMaps));
   }
 
+  @Override
+  public <K, V> void getMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    if (vertx.isClustered()) {
+      getClusterWideMap(name, resultHandler);
+    } else {
+      resultHandler.handle(Future.succeededFuture(new LocalAsAsyncMap<>(vertx, getLocalMap(name))));
+    }
+  }
 
   private void getLocalLock(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
     AsynchronousLock lock = localLocks.computeIfAbsent(name, n -> new AsynchronousLock(vertx));

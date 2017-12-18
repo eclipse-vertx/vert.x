@@ -302,6 +302,42 @@ public class LocalSharedDataTest extends VertxTestBase {
     assertFalse(containsExact(values, json3));
   }
 
+  @Test
+  public void testLocalMapPutTTL() {
+    sharedData.<String, String>getMap("foo", onSuccess(map1 -> {
+      final int ttl = 10;
+      map1.put("pocket", "precious", ttl, onSuccess(event -> {
+        vertx.setTimer(ttl, timer -> {
+          sharedData.<String, String>getMap("foo", onSuccess(map2 -> {
+            map2.get("pocket", onSuccess(value -> {
+              assertNull(value);
+              testComplete();
+            }));
+          }));
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testLocalMapPutIfAbsentTTL() {
+    sharedData.<String, String>getMap("foo", onSuccess(map1 -> {
+      final int ttl = 10;
+      map1.putIfAbsent("pocket", "precious", ttl, onSuccess(value1 -> {
+        assertNull(value1);
+        vertx.setTimer(ttl, timer -> {
+          sharedData.<String, String>getMap("foo", onSuccess(map2 -> {
+            map2.get("pocket", onSuccess(value2 -> {
+              assertNull(value2);
+              testComplete();
+            }));
+          }));
+        });
+      }));
+    }));
+    await();
+  }
 
 
   class SomeOtherClass {
