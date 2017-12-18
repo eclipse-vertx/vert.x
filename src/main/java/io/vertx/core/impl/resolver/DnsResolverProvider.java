@@ -62,7 +62,11 @@ public class DnsResolverProvider implements ResolverProvider {
   private final Vertx vertx;
   private final List<ResolverRegistration> resolvers = Collections.synchronizedList(new ArrayList<>());
   private AddressResolverGroup<InetSocketAddress> resolverGroup;
-  public final List<InetSocketAddress> serverList = new ArrayList<>();
+  private final List<InetSocketAddress> serverList = new ArrayList<>();
+
+  public List<InetSocketAddress> nameServerAddresses() {
+    return serverList;
+  }
 
   public DnsResolverProvider(VertxImpl vertx, AddressResolverOptions options) {
     List<String> dnsServers = options.getServers();

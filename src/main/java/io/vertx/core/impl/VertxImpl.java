@@ -416,7 +416,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public DnsClient createDnsClient() {
     DnsResolverProvider provider = new DnsResolverProvider(this, addressResolverOptions);
-    InetSocketAddress address = provider.serverList.get(0);
+    InetSocketAddress address = provider.nameServerAddresses().get(0);
     return new DnsClientImpl(this, address.getPort(), address.getAddress().getHostAddress(), DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
   }
 
