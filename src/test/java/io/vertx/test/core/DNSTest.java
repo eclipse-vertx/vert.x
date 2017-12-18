@@ -80,7 +80,6 @@ public class DNSTest extends VertxTestBase {
     DnsResolverProvider provider = new DnsResolverProvider((VertxImpl) vertx, vertxOptions.getAddressResolverOptions());
 
     // test that fake server chosen as default
-    assertTrue(provider.nameServerAddresses().size() == 1);
     assertTrue(provider.nameServerAddresses().get(0).getAddress().getHostAddress().equals("127.0.0.1"));
     assertTrue(provider.nameServerAddresses().get(0).getPort() == FakeDNSServer.PORT);
 
