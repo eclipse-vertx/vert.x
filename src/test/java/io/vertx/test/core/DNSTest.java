@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.DnsClient;
@@ -27,8 +28,6 @@ import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.dns.impl.DnsClientImpl;
-import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.apache.directory.server.dns.messages.DnsMessage;
 import org.junit.Test;
@@ -67,24 +66,23 @@ public class DNSTest extends VertxTestBase {
   }
 
   @Test
-  public void testDefaultDnsServer() throws Exception {
-
-    // start fake DNS server
-    FakeDNSServer fakeDNSServer = FakeDNSServer.testResolveA("1.2.3.4");
+  public void testDefaultDnsClient() throws Exception {
+    final String ip = "10.0.0.1";
+    FakeDNSServer fakeDNSServer = FakeDNSServer.testLookup4(ip);
     fakeDNSServer.start();
-
-    // configure
     VertxOptions vertxOptions = new VertxOptions();
     InetSocketAddress fakeServerAddress = fakeDNSServer.localAddress();
-    vertxOptions.getAddressResolverOptions().addServer( fakeServerAddress.getHostString() +":" + fakeServerAddress.getPort());
-    DnsResolverProvider provider = new DnsResolverProvider((VertxImpl) vertx, vertxOptions.getAddressResolverOptions());
+    vertxOptions.getAddressResolverOptions().addServer(fakeServerAddress.getHostString() + ":" + fakeServerAddress.getPort());
+    Vertx vertxWithFakeDns = Vertx.vertx(vertxOptions);
+    DnsClient dnsClient = vertxWithFakeDns.createDnsClient();
 
-    // test that fake server chosen as default
-    assertTrue(provider.nameServerAddresses().get(0).getAddress().getHostAddress().equals("127.0.0.1"));
-    assertTrue(provider.nameServerAddresses().get(0).getPort() == FakeDNSServer.PORT);
-
-    // tear down
+    dnsClient.lookup4("vertx.io", onSuccess(result -> {
+      assertEquals(ip, result);
+      testComplete();
+    }));
+    await();
     fakeDNSServer.stop();
+    vertxWithFakeDns.close();
   }
 
   @Test
