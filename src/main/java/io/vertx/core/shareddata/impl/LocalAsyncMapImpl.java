@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.stream.Collectors.*;
 
@@ -48,60 +49,99 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void get(final K k, Handler<AsyncResult<V>> resultHandler) {
-    Holder<V> h = map.computeIfPresent(k, (key, holder) -> notExpiredOrNull(holder));
-    resultHandler.handle(Future.succeededFuture(valueOrNull(h)));
-  }
-
-  private Holder<V> notExpiredOrNull(Holder<V> holder) {
-    return holder.hasNotExpired() ? holder : null;
-  }
-
-  private V valueOrNull(Holder<V> h) {
-    return h != null ? h.value : null;
+    Holder<V> h = map.get(k);
+    if (h != null && h.hasNotExpired()) {
+      resultHandler.handle(Future.succeededFuture(h.value));
+    } else {
+      resultHandler.handle(Future.succeededFuture());
+    }
   }
 
   @Override
   public void put(final K k, final V v, Handler<AsyncResult<Void>> resultHandler) {
-    map.put(k, new Holder<>(v));
+    Holder<V> previous = map.put(k, new Holder<>(v));
+    if (previous != null && previous.expires()) {
+      vertx.cancelTimer(previous.timerId);
+    }
     resultHandler.handle(Future.succeededFuture());
   }
 
   @Override
   public void putIfAbsent(K k, V v, Handler<AsyncResult<V>> resultHandler) {
     Holder<V> h = map.putIfAbsent(k, new Holder<>(v));
-    resultHandler.handle(Future.succeededFuture(valueOrNull(h)));
+    resultHandler.handle(Future.succeededFuture(h == null ? null : h.value));
   }
 
   @Override
   public void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler) {
-    map.put(k, new Holder<>(v, timeout));
+    long timerId = vertx.setTimer(timeout, l -> removeIfExpired(k));
+    Holder<V> previous = map.put(k, new Holder<>(v, timerId, timeout));
+    if (previous != null && previous.expires()) {
+      vertx.cancelTimer(previous.timerId);
+    }
     completionHandler.handle(Future.succeededFuture());
-    vertx.setTimer(timeout, l -> map.computeIfPresent(k, (key, holder) -> notExpiredOrNull(holder)));
+  }
+
+  private void removeIfExpired(K k) {
+    map.computeIfPresent(k, (key, holder) -> holder.hasNotExpired() ? holder : null);
   }
 
   @Override
   public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
-    Holder<V> h = map.putIfAbsent(k, new Holder<>(v, timeout));
-    completionHandler.handle(Future.succeededFuture(valueOrNull(h)));
-    if (h == null) {
-      vertx.setTimer(timeout, l -> map.computeIfPresent(k, (key, holder) -> notExpiredOrNull(holder)));
+    long timerId = vertx.setTimer(timeout, l -> removeIfExpired(k));
+    Holder<V> existing = map.putIfAbsent(k, new Holder<>(v, timerId, timeout));
+    if (existing != null) {
+      if (existing.expires()) {
+        vertx.cancelTimer(timerId);
+      }
+      completionHandler.handle(Future.succeededFuture(existing.value));
+    } else {
+      completionHandler.handle(Future.succeededFuture());
     }
   }
 
   @Override
   public void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
-    resultHandler.handle(Future.succeededFuture(map.remove(k, new Holder<>(v))));
+    AtomicBoolean result = new AtomicBoolean();
+    map.computeIfPresent(k, (key, holder) -> {
+      if (holder.value.equals(v)) {
+        result.compareAndSet(false, true);
+        if (holder.expires()) {
+          vertx.cancelTimer(holder.timerId);
+        }
+        return null;
+      }
+      return holder;
+    });
+    resultHandler.handle(Future.succeededFuture(result.get()));
   }
 
   @Override
   public void replace(K k, V v, Handler<AsyncResult<V>> resultHandler) {
-    Holder<V> h = map.replace(k, new Holder<>(v));
-    resultHandler.handle(Future.succeededFuture(valueOrNull(h)));
+    Holder<V> previous = map.replace(k, new Holder<>(v));
+    if (previous != null) {
+      if (previous.expires()) {
+        vertx.cancelTimer(previous.timerId);
+      }
+      resultHandler.handle(Future.succeededFuture(previous.value));
+    } else {
+      resultHandler.handle(Future.succeededFuture());
+    }
   }
 
   @Override
   public void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
-    resultHandler.handle(Future.succeededFuture(map.replace(k, new Holder<>(oldValue), new Holder<>(newValue))));
+    Holder<V> h = new Holder<>(newValue);
+    Holder<V> result = map.computeIfPresent(k, (key, holder) -> {
+      if (holder.value.equals(oldValue)) {
+        if (holder.expires()) {
+          vertx.cancelTimer(holder.timerId);
+        }
+        return h;
+      }
+      return holder;
+    });
+    resultHandler.handle(Future.succeededFuture(h == result));
   }
 
   @Override
@@ -142,50 +182,52 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void remove(final K k, Handler<AsyncResult<V>> resultHandler) {
-    Holder<V> h = map.remove(k);
-    resultHandler.handle(Future.succeededFuture(valueOrNull(h)));
+    Holder<V> previous = map.remove(k);
+    if (previous != null) {
+      if (previous.expires()) {
+        vertx.cancelTimer(previous.timerId);
+      }
+      resultHandler.handle(Future.succeededFuture(previous.value));
+    } else {
+      resultHandler.handle(Future.succeededFuture());
+    }
   }
 
   private static class Holder<V> {
     final V value;
+    final long timerId;
     final long expiresOn;
 
     Holder(V value) {
       Objects.requireNonNull(value);
       this.value = value;
-      this.expiresOn = -1;
+      expiresOn = timerId = -1;
     }
 
-    Holder(V value, long ttl) {
+    Holder(V value, long timerId, long ttl) {
       Objects.requireNonNull(value);
+      if (ttl < 0) {
+        throw new IllegalArgumentException("ttl must be positive: " + ttl);
+      }
       this.value = value;
-      this.expiresOn = System.currentTimeMillis() + ttl;
+      this.timerId = timerId;
+      expiresOn = System.currentTimeMillis() + ttl;
+      if (!expires()) {
+        throw new IllegalArgumentException("ttl too big: " + ttl);
+      }
+    }
+
+    boolean expires() {
+      return expiresOn > 0;
     }
 
     boolean hasNotExpired() {
-      return expiresOn <= 0 || System.currentTimeMillis() <= expiresOn;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      Holder<?> holder = (Holder<?>) o;
-
-      if (!value.equals(holder.value)) return false;
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      return value.hashCode();
+      return !expires() || System.currentTimeMillis() <= expiresOn;
     }
 
     @Override
     public String toString() {
-      return "Holder{" + "value=" + value + ", expiresOn=" + expiresOn + '}';
+      return "Holder{" + "value=" + value + ", timerId=" + timerId + ", expiresOn=" + expiresOn + '}';
     }
   }
 }
