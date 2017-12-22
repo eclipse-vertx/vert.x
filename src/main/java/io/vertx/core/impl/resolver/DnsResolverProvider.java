@@ -58,10 +58,17 @@ public class DnsResolverProvider implements ResolverProvider {
   private final Vertx vertx;
   private final List<ResolverRegistration> resolvers = Collections.synchronizedList(new ArrayList<>());
   private AddressResolverGroup<InetSocketAddress> resolverGroup;
+  private final List<InetSocketAddress> serverList = new ArrayList<>();
+
+  /**
+   * @return a list of DNS servers available to use
+   */
+  public List<InetSocketAddress> nameServerAddresses() {
+    return serverList;
+  }
 
   public DnsResolverProvider(VertxImpl vertx, AddressResolverOptions options) {
     List<String> dnsServers = options.getServers();
-    List<InetSocketAddress> serverList = new ArrayList<>();
     if (dnsServers != null && dnsServers.size() > 0) {
       for (String dnsServer : dnsServers) {
         int sep = dnsServer.indexOf(':');
@@ -81,7 +88,7 @@ public class DnsResolverProvider implements ResolverProvider {
         }
       }
     } else {
-      DnsServerAddressStream stream = DnsServerAddresses.defaultAddresses().stream();
+      DnsServerAddressStream stream = DefaultDnsServerAddressStreamProvider.defaultAddresses().stream();
       Set<InetSocketAddress> all = new HashSet<>();
       while (true) {
         InetSocketAddress address = stream.next();

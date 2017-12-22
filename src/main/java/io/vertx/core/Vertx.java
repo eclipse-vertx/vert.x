@@ -27,6 +27,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -214,6 +215,15 @@ public interface Vertx extends Measured {
    * @return the DNS client
    */
   DnsClient createDnsClient(int port, String host);
+
+  /**
+   * Create a DNS client to connect to the DNS server configured by {@link VertxOptions#getAddressResolverOptions()}
+   * <p>
+   * DNS client takes the first configured resolver address provided by {@link DnsResolverProvider#nameServerAddresses()}}
+   *
+   * @return the DNS client
+   */
+  DnsClient createDnsClient();
 
   /**
    * Create a DNS client to connect to a DNS server

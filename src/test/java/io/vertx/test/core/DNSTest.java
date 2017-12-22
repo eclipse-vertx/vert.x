@@ -13,7 +13,9 @@ package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.DnsException;
@@ -56,6 +58,26 @@ public class DNSTest extends VertxTestBase {
     assertNullPointerException(() -> dns.resolveSRV(null, ar -> {}));
 
     dnsServer.stop();
+  }
+
+  @Test
+  public void testDefaultDnsClient() throws Exception {
+    final String ip = "10.0.0.1";
+    FakeDNSServer fakeDNSServer = FakeDNSServer.testLookup4(ip);
+    fakeDNSServer.start();
+    VertxOptions vertxOptions = new VertxOptions();
+    InetSocketAddress fakeServerAddress = fakeDNSServer.localAddress();
+    vertxOptions.getAddressResolverOptions().addServer(fakeServerAddress.getHostString() + ":" + fakeServerAddress.getPort());
+    Vertx vertxWithFakeDns = Vertx.vertx(vertxOptions);
+    DnsClient dnsClient = vertxWithFakeDns.createDnsClient();
+
+    dnsClient.lookup4("vertx.io", onSuccess(result -> {
+      assertEquals(ip, result);
+      testComplete();
+    }));
+    await();
+    fakeDNSServer.stop();
+    vertxWithFakeDns.close();
   }
 
   @Test
