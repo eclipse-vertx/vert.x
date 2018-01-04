@@ -212,6 +212,50 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
+  public boolean contains(String name, String value, boolean ignoreCase) {
+    int h = AsciiString.hashCode(name);
+    int i = index(h);
+    VertxHttpHeaders.MapEntry e = entries[i];
+    while (e != null) {
+      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+        if (ignoreCase) {
+          if (AsciiString.contentEqualsIgnoreCase(value, e.getValue())) {
+            return true;
+          }
+        } else {
+          if (AsciiString.contentEquals(value, e.getValue())) {
+            return true;
+          }
+        }
+      }
+      e = e.next;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean contains(CharSequence name, CharSequence value, boolean ignoreCase) {
+    int h = AsciiString.hashCode(name);
+    int i = index(h);
+    VertxHttpHeaders.MapEntry e = entries[i];
+    while (e != null) {
+      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+        if (ignoreCase) {
+          if (AsciiString.contentEqualsIgnoreCase(value, e.getValue())) {
+            return true;
+          }
+        } else {
+          if (AsciiString.contentEquals(value, e.getValue())) {
+            return true;
+          }
+        }
+      }
+      e = e.next;
+    }
+    return false;
+  }
+
+  @Override
   public String get(final String name) {
     return get((CharSequence) name);
   }
