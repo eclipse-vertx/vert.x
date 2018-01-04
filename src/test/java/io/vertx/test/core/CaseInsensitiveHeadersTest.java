@@ -13,6 +13,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.http.HttpHeaders;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -944,5 +945,51 @@ public class CaseInsensitiveHeadersTest {
     for (Map.Entry<String, String> me:mmap) {
       me.setValue(null);
     }
+  }
+
+  @Test
+  public void testContainsValueString() {
+    MultiMap mmap = newMultiMap();
+
+    mmap.add("headeR", "vAlue");
+
+    assertTrue(mmap.contains("heaDer", "vAlue", false));
+    assertFalse(mmap.contains("heaDer", "Value", false));
+  }
+
+  @Test
+  public void testContainsValueStringIgnoreCase() {
+    MultiMap mmap = newMultiMap();
+
+    mmap.add("headeR", "vAlue");
+
+    assertTrue(mmap.contains("heaDer", "vAlue", true));
+    assertTrue(mmap.contains("heaDer", "Value", true));
+  }
+
+  @Test
+  public void testContainsValueCharSequence() {
+    MultiMap mmap = newMultiMap();
+
+    mmap.add("headeR", "vAlue");
+
+    CharSequence name = HttpHeaders.createOptimized("heaDer");
+    CharSequence vAlue = HttpHeaders.createOptimized("vAlue");
+    CharSequence Value = HttpHeaders.createOptimized("Value");
+    assertTrue(mmap.contains(name, vAlue, false));
+    assertFalse(mmap.contains(name, Value, false));
+  }
+
+  @Test
+  public void testContainsValueCharSequenceIgnoreCase() {
+    MultiMap mmap = newMultiMap();
+
+    mmap.add("headeR", "vAlue");
+
+    CharSequence name = HttpHeaders.createOptimized("heaDer");
+    CharSequence vAlue = HttpHeaders.createOptimized("vAlue");
+    CharSequence Value = HttpHeaders.createOptimized("Value");
+    assertTrue(mmap.contains(name, vAlue, true));
+    assertTrue(mmap.contains(name, Value, true));
   }
 }

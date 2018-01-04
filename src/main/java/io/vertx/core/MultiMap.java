@@ -20,6 +20,7 @@ import io.vertx.core.http.CaseInsensitiveHeaders;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * This class represents a MultiMap of String keys to a List of String values.
@@ -91,6 +92,34 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    */
   @GenIgnore
   boolean contains(CharSequence name);
+
+  /**
+   * Check if there is a header with the specified {@code name} and {@code value}.
+   *
+   * If {@code caseInsensitive} is {@code true}, value is compared in a case-insensitive way.
+   *
+   * @param name The name to search for
+   * @return true if at least one entry is found
+   */
+  default boolean contains(String name, String value, boolean caseInsensitive) {
+    return getAll(name).stream()
+      .anyMatch(val -> caseInsensitive ? val.equalsIgnoreCase(value) : val.equals(value));
+  }
+
+  /**
+   * Like {@link #contains(String, String, boolean)} but accepting {@code CharSequence} parameters.
+   */
+  @GenIgnore
+  default boolean contains(CharSequence name, CharSequence value, boolean caseInsensitive) {
+    Predicate<String> predicate;
+    if (caseInsensitive) {
+      String valueAsString = value.toString();
+      predicate = val -> val.equalsIgnoreCase(valueAsString);
+    } else {
+      predicate = val -> val.contentEquals(value);
+    }
+    return getAll(name).stream().anyMatch(predicate);
+  }
 
   /**
    * Return true if empty
