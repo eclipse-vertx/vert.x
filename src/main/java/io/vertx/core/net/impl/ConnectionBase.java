@@ -160,16 +160,7 @@ public abstract class ConnectionBase {
 
   public void doSetWriteQueueMaxSize(int size) {
     ChannelConfig config = chctx.channel().config();
-    int high = config.getWriteBufferHighWaterMark();
-    int newLow = size / 2;
-    int newHigh = size;
-    if (newLow >= high) {
-      config.setWriteBufferHighWaterMark(newHigh);
-      config.setWriteBufferLowWaterMark(newLow);
-    } else {
-      config.setWriteBufferLowWaterMark(newLow);
-      config.setWriteBufferHighWaterMark(newHigh);
-    }
+    config.setWriteBufferWaterMark(new WriteBufferWaterMark(size / 2, size));
   }
 
   protected void checkContext() {
