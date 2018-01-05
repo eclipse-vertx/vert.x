@@ -96,10 +96,11 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   /**
    * Check if there is a header with the specified {@code name} and {@code value}.
    *
-   * If {@code caseInsensitive} is {@code true}, value is compared in a case-insensitive way.
+   * If {@code caseInsensitive} is {@code true}, {@code value} is compared in a case-insensitive way.
    *
-   * @param name The name to search for
-   * @return true if at least one entry is found
+   * @param name the name to search for
+   * @param value the value to search for
+   * @return {@code true} if at least one entry is found
    */
   default boolean contains(String name, String value, boolean caseInsensitive) {
     return getAll(name).stream()
