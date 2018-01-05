@@ -51,10 +51,13 @@ map2 = sd.getLocalMap("mymap2");
 Buffer buff = map2.get("eek");
 ----
 
-=== Asynchronous maps
+=== Asynchronous shared maps
 
-Asynchronous maps allow data to be put in the map and retrieved locally when Vert.x is not clustered.
+Asynchronous shared maps allow data to be put in the map and retrieved locally when Vert.x is not clustered.
 When clustered, data can be put from any node and retrieved from the same node or any other node.
+
+IMPORTANT: In clustered mode, asynchronous shared maps rely on distributed data structures provided by the cluster manager.
+Beware that the latency relative to asynchronous shared map operations can be much higher in clustered than in local mode.
 
 This makes them really useful for things like storing session state in a farm of servers hosting a Vert.x web
 application.
