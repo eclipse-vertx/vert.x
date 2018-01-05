@@ -13,6 +13,7 @@ package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
+import io.netty.util.HashingStrategy;
 import io.vertx.core.MultiMap;
 
 import java.util.AbstractMap;
@@ -25,6 +26,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+
+import static io.netty.util.AsciiString.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -216,16 +219,11 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     int h = AsciiString.hashCode(name);
     int i = index(h);
     VertxHttpHeaders.MapEntry e = entries[i];
+    HashingStrategy<CharSequence> strategy = ignoreCase ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER;
     while (e != null) {
       if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
-        if (ignoreCase) {
-          if (AsciiString.contentEqualsIgnoreCase(value, e.getValue())) {
-            return true;
-          }
-        } else {
-          if (AsciiString.contentEquals(value, e.getValue())) {
-            return true;
-          }
+        if (strategy.equals(value, e.getValue())) {
+          return true;
         }
       }
       e = e.next;
@@ -238,16 +236,11 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     int h = AsciiString.hashCode(name);
     int i = index(h);
     VertxHttpHeaders.MapEntry e = entries[i];
+    HashingStrategy<CharSequence> strategy = ignoreCase ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER;
     while (e != null) {
       if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
-        if (ignoreCase) {
-          if (AsciiString.contentEqualsIgnoreCase(value, e.getValue())) {
-            return true;
-          }
-        } else {
-          if (AsciiString.contentEquals(value, e.getValue())) {
-            return true;
-          }
+        if (strategy.equals(value, e.getValue())) {
+          return true;
         }
       }
       e = e.next;
