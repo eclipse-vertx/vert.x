@@ -105,7 +105,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   public void testMapPutTtl() {
     getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.put("pipo", "molo", 10, onSuccess(vd -> {
-        vertx.setTimer(10, l -> {
+        vertx.setTimer(15, l -> {
           getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
             map2.get("pipo", onSuccess(res -> {
               assertNull(res);
