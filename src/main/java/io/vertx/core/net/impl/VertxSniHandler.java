@@ -17,6 +17,8 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.ssl.SniCompletionEvent;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
@@ -54,6 +56,23 @@ public class VertxSniHandler extends SniHandler {
         if (ctx == null) {
           throw new IllegalStateException();
         }
+        ctx.pipeline().addFirst(new ChannelInboundHandlerAdapter() {
+          @Override
+          public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+            if (evt instanceof SniCompletionEvent) {
+              SniCompletionEvent sniCompletionEvent = (SniCompletionEvent) evt;
+              if (sniCompletionEvent.isSuccess()) {
+                Attribute<String> val = ctx.channel().attr(SERVER_NAME_ATTR);
+                val.set(sniCompletionEvent.hostname());
+                handshakeFuture.setSuccess(ctx.channel());
+              } else {
+                handshakeFuture.setFailure(sniCompletionEvent.cause());
+              }
+            } else {
+              ctx.fireUserEventTriggered(evt);
+            }
+          }
+        });
         return ctx.executor();
       }
     };
