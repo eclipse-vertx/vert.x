@@ -318,7 +318,7 @@ Whether an existing file, empty directory, or link should be replaced. Defaults 
 ^|Name | Type ^| Description
 |[[broadcast]]`broadcast`|`Boolean`|
 +++
-Set if the socket can receive broadcast packets
+Set if the socket can send or receive broadcast packets
 +++
 |[[ipV6]]`ipV6`|`Boolean`|
 +++
