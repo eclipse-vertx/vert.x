@@ -36,16 +36,22 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
   private final boolean useDecompressor;
+  private final Http2Settings serverUpgradeSettings;
+  private final boolean upgrade;
 
   public VertxHttp2ConnectionHandler(
       Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory,
       boolean useDecompressor,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
-      Http2Settings initialSettings) {
+      Http2Settings initialSettings,
+      Http2Settings serverUpgradeSettings,
+      boolean upgrade) {
     super(decoder, encoder, initialSettings);
     this.connectionFactory = connectionFactory;
     this.useDecompressor = useDecompressor;
+    this.serverUpgradeSettings = serverUpgradeSettings;
+    this.upgrade = upgrade;
     encoder().flowController().listener(s -> {
       if (connection != null) {
         connection.onStreamwritabilityChanged(s);
@@ -95,6 +101,14 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     super.channelActive(ctx);
+
+    if (upgrade) {
+      if (serverUpgradeSettings != null) {
+        onHttpServerUpgrade(serverUpgradeSettings);
+      } else {
+        onHttpClientUpgrade();
+      }
+    }
 
     // super call writes the connection preface
     // we need to flush to send it
