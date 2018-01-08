@@ -43,8 +43,8 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private boolean logEnabled;
-  private boolean clientUpgrade;
-  private Http2Settings serverUpgrade;
+  private boolean upgrade;
+  private Http2Settings serverUpgradeSettings;
 
   VertxHttp2ConnectionHandlerBuilder(Channel channel) {
     this.channel = channel;
@@ -65,12 +65,13 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   }
 
   public VertxHttp2ConnectionHandlerBuilder<C> clientUpgrade(boolean upgrade) {
-    this.clientUpgrade = upgrade;
+    this.upgrade = upgrade;
     return this;
   }
 
-  public VertxHttp2ConnectionHandlerBuilder<C> serverUpgrade(Http2Settings upgrade) {
-    this.serverUpgrade = upgrade;
+  public VertxHttp2ConnectionHandlerBuilder<C> serverUpgrade(Http2Settings upgradeSettings) {
+    this.serverUpgradeSettings = upgradeSettings;
+    this.upgrade = serverUpgradeSettings != null;
     return this;
   }
 
@@ -185,18 +186,12 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
       if (useCompression) {
         encoder = new CompressorHttp2ConnectionEncoder(encoder,compressionLevel,CompressorHttp2ConnectionEncoder.DEFAULT_WINDOW_BITS,CompressorHttp2ConnectionEncoder.DEFAULT_MEM_LEVEL);
       }
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, initialSettings);
-      if (serverUpgrade != null) {
-        handler.onHttpServerUpgrade(serverUpgrade);
-      }
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, initialSettings, serverUpgradeSettings, upgrade);
       channel.pipeline().addLast(handler);
       decoder.frameListener(handler);
       return handler;
     } else {
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useCompression, decoder, encoder, initialSettings);
-      if (clientUpgrade) {
-        handler.onHttpClientUpgrade();
-      }
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useCompression, decoder, encoder, initialSettings, null, upgrade);
       channel.pipeline().addLast(handler);
       decoder.frameListener(handler);
       return handler;

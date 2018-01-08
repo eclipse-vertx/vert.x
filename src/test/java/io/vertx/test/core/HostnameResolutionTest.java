@@ -528,10 +528,10 @@ public class HostnameResolutionTest extends VertxTestBase {
     }));
     awaitLatch(latch3);
 
-    // "host3" does not contain a dot or is not absolute
+    // "host3" resolves to addr_host3 as fallback
     CountDownLatch latch4 = new CountDownLatch(1);
-    vertx.resolveAddress("host3", onFailure(cause -> {
-      assertTrue(cause instanceof UnknownHostException);
+    vertx.resolveAddress("host3", onSuccess(cause -> {
+      assertEquals(addr_host3, cause.getHostAddress());
       latch4.countDown();
     }));
     awaitLatch(latch4);
@@ -560,9 +560,10 @@ public class HostnameResolutionTest extends VertxTestBase {
     }));
     awaitLatch(latch7);
 
-    // "host7.sub.sub" contains two dots and is not resolved to "host6.sub.sub.foo.com"
+    // "host6.sub.sub" contains two dots and is resolved to "host6.sub.sub.foo.com" as fallback
     CountDownLatch latch8 = new CountDownLatch(1);
-    vertx.resolveAddress("host6.sub.sub", onFailure(resolved -> {
+    vertx.resolveAddress("host6.sub.sub", onSuccess(resolved -> {
+      assertEquals(addr_host6_sub_sub_foo_com, resolved.getHostAddress());
       latch8.countDown();
     }));
     awaitLatch(latch8);
