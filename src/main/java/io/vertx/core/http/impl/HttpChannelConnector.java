@@ -238,19 +238,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       false,
       client.getOptions().getDecoderInitialBufferSize()));
     if (client.getOptions().isTryUseCompression()) {
-      pipeline.addLast("inflater", new HttpContentDecompressor(true) {
-        @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-          try {
-            super.channelInactive(ctx);
-          } catch (Exception e) {
-            // Workaround for https://github.com/eclipse/vert.x/issues/2212 until we can get
-            // the proper Netty fix https://github.com/netty/netty/pull/7415
-            // ctx.fireExceptionCaught(e);
-            ctx.fireChannelInactive();
-          }
-        }
-      });
+      pipeline.addLast("inflater", new HttpContentDecompressor(true));
     }
     if (client.getOptions().getIdleTimeout() > 0) {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, client.getOptions().getIdleTimeout()));
