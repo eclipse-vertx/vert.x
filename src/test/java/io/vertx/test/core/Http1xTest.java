@@ -1274,6 +1274,37 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testServerPipeliningConnectionConcurrency() throws Exception {
+    int n = 5;
+    boolean[] processing = {false};
+    int[] count = {0};
+    server.requestHandler(req -> {
+      count[0]++;
+      assertFalse(processing[0]);
+      processing[0] = true;
+      vertx.setTimer(20, id -> {
+        processing[0] = false;
+        HttpServerResponse resp = req.response();
+        resp.end();
+        if (count[0] == n) {
+          resp.close();
+        }
+      });
+    });
+    startServer();
+    Buffer requests = Buffer.buffer();
+    for (int i = 0;i < n;i++) {
+      requests.appendString("GET " + DEFAULT_TEST_URI + " HTTP/1.1\r\n\r\n");
+    }
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+      so.closeHandler(v -> testComplete());
+      so.write(requests);
+    }));
+    await();
+  }
+
+  @Test
   public void testKeepAlive() throws Exception {
     testKeepAlive(true, 5, 10, 5);
   }
@@ -2109,6 +2140,52 @@ public class Http1xTest extends HttpTest {
       });
       clientRequest.end();
     }));
+    await();
+  }
+
+  @Test
+  public void testEndServerResponseResumeTheConnection() throws Exception {
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        req.pause();
+        req.response().end();
+      });
+    });
+    startServer();
+    client.close();
+    waitFor(2);
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setMaxPoolSize(1));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    });
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    });
+    await();
+  }
+
+  @Test
+  public void testEndServerRequestResumeTheConnection() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+      req.endHandler(v -> {
+        req.pause();
+      });
+    });
+    startServer();
+    client.close();
+    waitFor(2);
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setMaxPoolSize(1));
+    client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    }).end("1");
+    client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    }).end("2");
     await();
   }
 

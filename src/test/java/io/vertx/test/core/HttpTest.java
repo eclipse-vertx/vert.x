@@ -2470,6 +2470,44 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testPausedHttpServerRequest() throws Exception {
+    CompletableFuture<Void> resumeCF = new CompletableFuture<>();
+    Buffer expected = Buffer.buffer();
+    server.requestHandler(req -> {
+      req.pause();
+      AtomicBoolean paused = new AtomicBoolean(true);
+      Buffer body = Buffer.buffer();
+      req.handler(buff -> {
+        assertFalse(paused.get());
+        body.appendBuffer(buff);
+      });
+      resumeCF.thenAccept(v -> {
+        paused.set(false);
+        req.resume();
+      });
+      req.endHandler(v -> {
+        assertEquals(expected, body);
+        req.response().end();
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.endHandler(v -> {
+        testComplete();
+      });
+    }).exceptionHandler(this::fail)
+      .setChunked(true);
+    while (!req.writeQueueFull()) {
+      Buffer buff = Buffer.buffer(TestUtils.randomAlphaString(1024));
+      expected.appendBuffer(buff);
+      req.write(buff);
+    }
+    resumeCF.complete(null);
+    req.end();
+    await();
+  }
+
+  @Test
   public void testFormUploadSmallFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(100), false);
   }
