@@ -92,7 +92,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   @Test
   public void testAsyncResolveFail() throws Exception {
     ((VertxImpl) vertx).resolveAddress("vertx.com", onFailure(failure -> {
-      assertEquals(UnknownHostException.class, failure.getClass());
+      assertTrue("Was expecting " + failure + " to be an instanceof UnknownHostException", failure instanceof UnknownHostException);
       testComplete();
     }));
     await();
