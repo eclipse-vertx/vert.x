@@ -258,7 +258,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       }
       switch(frame.type()) {
         case PONG:
-          pongHandler.handle(frame.binaryData().copy());
+          if (pongHandler != null) {
+            pongHandler.handle(frame.binaryData().copy());
+          }
           break;
         case TEXT:
         case BINARY:
