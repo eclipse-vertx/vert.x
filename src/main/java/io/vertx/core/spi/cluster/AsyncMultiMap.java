@@ -26,6 +26,11 @@ import java.util.function.Predicate;
  * The cluster implementation should ensure that any entries placed in the map from any node are available on any
  * node of the cluster.
  *
+ * <p>
+ *   <strong>Warning</strong>: always call {@link #close()} when you are done with an {@link AsyncMultiMap} instance.
+ *   Cluster managers may hold resources to maintain its state.
+ * </p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
@@ -71,4 +76,11 @@ public interface AsyncMultiMap<K, V> {
    * @param completionHandler This will be called when the remove is complete
    */
   void removeAllMatching(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler);
+
+  /**
+   * Call this method when you are done with the {@link AsyncMultiMap} instance.
+   * Cluster managers may hold resources to maintain its state.
+   */
+  default void close() {
+  }
 }
