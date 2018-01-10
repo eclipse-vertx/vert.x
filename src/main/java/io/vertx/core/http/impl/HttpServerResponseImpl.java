@@ -82,6 +82,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private String statusMessage;
   private long bytesWritten;
 
+  private boolean failed;
+
   HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
     this.vertx = vertx;
     this.conn = conn;
@@ -444,12 +446,16 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       closed = true;
     }
     written = true;
+    completeResponse();
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
+  }
+
+  private void completeResponse() {
     conn.responseComplete();
     if (bodyEndHandler != null) {
       bodyEndHandler.handle(null);
-    }
-    if (endHandler != null) {
-      endHandler.handle(null);
     }
   }
 
@@ -523,13 +529,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (!keepAlive) {
         closeConnAfterWrite();
       }
-      conn.responseComplete();
 
-      if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
-      }
+      completeResponse();
     }
   }
+
 
   private void closeConnAfterWrite() {
     ChannelPromise channelFuture = conn.channelFuture();
@@ -547,6 +551,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   void handleException(Throwable t) {
     synchronized (conn) {
+      this.failed = true;
       if (exceptionHandler != null) {
         exceptionHandler.handle(t);
       }
@@ -648,5 +653,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
     return this;
+  }
+
+  public boolean failed() {
+    return failed;
   }
 }

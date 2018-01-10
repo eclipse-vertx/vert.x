@@ -23,7 +23,6 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.FileRegion;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -38,18 +37,15 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
-import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -89,27 +85,23 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
-  private final Deque<Object> pending = new ArrayDeque<>(8);
+  private final Deque<HttpServerRequestImpl> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final SSLHelper sslHelper;
   final HttpServerOptions options;
   private WebSocketServerHandshaker handshaker;
   private final HttpServerMetrics metrics;
-  private boolean requestFailed;
-  private Object requestMetric;
   private Handler<HttpServerRequest> requestHandler = NULL_REQUEST_HANDLER;
   private Handler<ServerWebSocket> wsHandler;
+
+  private HttpServerRequestImpl currentConsumingRequest;
   private HttpServerRequestImpl currentRequest;
   private HttpServerResponseImpl pendingResponse;
-  private ServerWebSocketImpl ws;
-  private boolean channelPaused;
-  private boolean paused;
-  private boolean sentCheck;
-  private long bytesRead;
-  private long bytesWritten;
 
-  // queuing == true <=> (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty())
-  private boolean queueing;
+  private ServerWebSocketImpl ws;
+  private volatile boolean paused;
+  private volatile boolean sentCheck;
+
 
   public ServerConnection(VertxInternal vertx,
                    SSLHelper sslHelper,
@@ -130,61 +122,96 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     return metrics;
   }
 
+  public boolean isPaused() {
+    return paused;
+  }
+
   public synchronized void pause() {
     if (!paused) {
       paused = true;
-      queueing = true;
+      super.doPause();
     }
   }
 
   public synchronized void resume() {
     if (paused) {
+      super.doResume();
       paused = false;
-      if (pending.isEmpty()) {
-        queueing = false;
-      } else if (pendingResponse == null || !(pending.peek() instanceof HttpRequest)) {
-        queueing = false;
-      }
-      checkNextTick();
+    }
+  }
+
+  private void checkQueueLimit() {
+    if (pending.size() >= CHANNEL_PAUSE_QUEUE_SIZE) {
+//      this.pause();
     }
   }
 
   synchronized void handleMessage(Object msg) {
-    if (queueing) {
-      enqueue(msg);
-    } else {
-      processMessage(msg);
-    }
-  }
+    if (msg instanceof HttpRequest) {
+      HttpRequest request = (HttpRequest) msg;
+      if (request.decoderResult().isFailure()) {
+        handleError(request);
+        return;
+      }
+      if (options.isHandle100ContinueAutomatically() && HttpUtil.is100ContinueExpected(request)) {
+        write100Continue();
+      }
+      HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
+      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
 
-  private void enqueue(Object msg) {
-    //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-    queueing = true;
-    pending.add(msg);
-    if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
-      //We pause the channel too, to prevent the queue growing too large, but we don't do this
-      //until the queue reaches a certain size, to avoid pausing it too often
-      super.doPause();
-      channelPaused = true;
+      currentConsumingRequest = req;
+
+      if (pendingResponse == null) {
+        currentRequest = req;
+        pendingResponse = resp;
+        requestHandler.handle(req);
+      } else {
+        req.pause();
+        pending.addLast(req);
+        this.checkQueueLimit();
+      }
+
+    } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
+      currentConsumingRequest.handleData(LastHttpContent.EMPTY_LAST_CONTENT);
+//      this.resume();
+    } else if (msg instanceof HttpContent) {
+      HttpContent content = (HttpContent) msg;
+      if (content.decoderResult().isFailure()) {
+        handleError(content);
+        return;
+      }
+
+      currentConsumingRequest.handleData(content);
+
+    } else {
+      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+      handleWsFrame(frame);
     }
   }
 
   synchronized void responseComplete() {
     if (METRICS_ENABLED && metrics != null) {
-      reportBytesWritten(bytesWritten);
-      bytesWritten = 0;
-      if (requestFailed) {
-        metrics.requestReset(requestMetric);
-        requestFailed = false;
-      } else {
-        metrics.responseEnd(requestMetric, pendingResponse);
-      }
+      metrics.responseEnd(currentRequest.getRequestMetric(), pendingResponse);
     }
     pendingResponse = null;
-    if (queueing) {
-      queueing = paused;
+    startQueuedRequest();
+  }
+
+  private void startQueuedRequest() {
+    if (pendingResponse == null && pending.size() > 0 && !sentCheck) {
+      vertx.runOnContext(v -> {
+        synchronized (ServerConnection.this) {
+          sentCheck = false;
+          HttpServerRequestImpl req = this.pending.pollFirst();
+          currentRequest = req;
+          pendingResponse = (HttpServerResponseImpl) req.response();
+          requestHandler.handle(req);
+          req.resume();
+        }
+      });
+    } else if (currentRequest != null || pendingResponse != null) {
+
     }
-    checkNextTick();
   }
 
   synchronized void requestHandler(Handler<HttpServerRequest> handler) {
@@ -204,19 +231,6 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     return vertx;
   }
 
-  @Override
-  public void writeToChannel(Object msg, ChannelPromise promise) {
-    if (METRICS_ENABLED && metrics != null) {
-      long bytes = getBytes(msg);
-      if (bytes == -1) {
-        log.warn("Metrics could not be updated to include bytes written because of unknown object " + msg.getClass() + " being written.");
-      } else {
-        bytesWritten += bytes;
-      }
-    }
-    super.writeToChannel(msg, promise);
-  }
-
   ServerWebSocket upgrade(HttpServerRequest request, HttpRequest nettyReq) {
     if (ws != null) {
       return ws;
@@ -231,7 +245,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
-      ws.setMetric(metrics.upgrade(requestMetric, ws));
+      ws.setMetric(metrics.upgrade(((HttpServerRequestImpl) request).getRequestMetric(), ws));
     }
     try {
       handshaker.handshake(chctx.channel(), nettyReq);
@@ -291,12 +305,6 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     return socket;
   }
 
-  private void handleChunk(Buffer chunk) {
-    if (METRICS_ENABLED && metrics != null) {
-      bytesRead += chunk.length();
-    }
-    currentRequest.handleData(chunk);
-  }
 
   @Override
   public synchronized void handleInterestedOpsChanged() {
@@ -346,12 +354,14 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     if (ws != null) {
       ws.handleClosed();
     }
+
     if (currentRequest != null) {
       currentRequest.handleException(new VertxException("Connection was closed"));
     }
+
     if (pendingResponse != null) {
       if (METRICS_ENABLED && metrics != null) {
-        metrics.requestReset(requestMetric);
+        metrics.requestReset(currentRequest.getRequestMetric());
       }
       pendingResponse.handleClosed();
     }
@@ -364,8 +374,9 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
   @Override
   protected synchronized void handleException(Throwable t) {
     super.handleException(t);
+
     if (METRICS_ENABLED && metrics != null) {
-      requestFailed = true;
+      metrics.requestReset(currentRequest.getRequestMetric());
     }
     if (currentRequest != null) {
       currentRequest.handleException(t);
@@ -373,6 +384,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     if (pendingResponse != null) {
       pendingResponse.handleException(t);
     }
+
     if (ws != null) {
       ws.handleException(t);
     }
@@ -420,119 +432,11 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     }
   }
 
-  private void processMessage(Object msg) {
-    if (msg instanceof HttpRequest) {
-      if (pendingResponse != null) {
-        enqueue(msg);
-        return;
-      }
-      HttpRequest request = (HttpRequest) msg;
-      if (request.decoderResult().isFailure()) {
-        handleError(request);
-        return;
-      }
-      if (options.isHandle100ContinueAutomatically() && HttpUtil.is100ContinueExpected(request)) {
-        write100Continue();
-      }
-      HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
-      currentRequest = req;
-      pendingResponse = resp;
-      if (METRICS_ENABLED && metrics != null) {
-        requestMetric = metrics.requestBegin(metric(), req);
-      }
-      requestHandler.handle(req);
-    } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
-      handleLastHttpContent();
-    } else if (msg instanceof HttpContent) {
-      HttpContent content = (HttpContent) msg;
-      handleContent(content);
-    } else {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      handleWsFrame(frame);
-    }
-    checkNextTick();
-  }
-
-  private void handleContent(HttpContent content) {
-    if (content.decoderResult().isFailure()) {
-      handleError(content);
-      return;
-    }
-    ByteBuf chunk = content.content();
-    if (chunk.isReadable()) {
-      Buffer buff = Buffer.buffer(chunk);
-      handleChunk(buff);
-    }
-    //TODO chunk trailers
-    if (content instanceof LastHttpContent) {
-      handleLastHttpContent();
-    }
-  }
-
-  private void handleLastHttpContent() {
-    if (!paused) {
-      currentRequest.handleEnd();
-      if (METRICS_ENABLED) {
-        reportBytesRead(bytesRead);
-        bytesRead = 0;
-      }
-      currentRequest = null;
-    } else {
-      // Requeue
-      // paused = true => queueing = true
-      // todo : this should be added first if pending.size() > 0
-      // case : user call resume on the last http content and then call pause
-      // it will be added at the wrong place and create a bug
-      pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
-    }
-  }
-
-  private void checkNextTick() {
-    // Check if there are more pending messages in the queue that can be processed next time around
-    if (!queueing && !sentCheck) {
-      sentCheck = true;
-      vertx.runOnContext(v -> {
-        // Should be synchronized ...
-        sentCheck = false;
-        if (!queueing) {
-          Object msg = pending.poll();
-          if (msg != null) {
-            if (msg instanceof HttpRequest && pendingResponse != null) {
-              pending.addFirst(msg);
-              queueing = true;
-              return;
-            }
-            processMessage(msg);
-          }
-          if (channelPaused && pending.isEmpty()) {
-            //Resume the actual channel
-            ServerConnection.super.doResume();
-            channelPaused = false;
-          }
-        }
-      });
-    }
-  }
-
-  private long getBytes(Object obj) {
-    if (obj == null) return 0;
-
-    if (obj instanceof Buffer) {
-      return ((Buffer) obj).length();
-    } else if (obj instanceof ByteBuf) {
-      return ((ByteBuf) obj).readableBytes();
-    } else if (obj instanceof HttpContent) {
-      return ((HttpContent) obj).content().readableBytes();
-    } else if (obj instanceof WebSocketFrame) {
-      return ((WebSocketFrame) obj).binaryData().length();
-    } else if (obj instanceof FileRegion) {
-      return ((FileRegion) obj).count();
-    } else if (obj instanceof ChunkedFile) {
-      ChunkedFile file = (ChunkedFile) obj;
-      return file.endOffset() - file.startOffset();
-    } else {
-      return -1;
-    }
-  }
+//  private void handleLastHttpContent() {
+////    if (currentRequest != null) {
+//    currentConsumingRequest.handleEnd();
+//    currentRequest = null;
+////    }
+//    startQueuedRequest();
+//  }
 }

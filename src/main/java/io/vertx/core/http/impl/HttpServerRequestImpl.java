@@ -16,7 +16,9 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -48,6 +50,10 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -63,6 +69,9 @@ import java.net.URISyntaxException;
 public class HttpServerRequestImpl implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
+
+  private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
+  private Deque<HttpContent> queue = new ArrayDeque<>(8);
 
   private final ServerConnection conn;
   private final HttpRequest request;
@@ -90,6 +99,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private HttpPostRequestDecoder decoder;
   private boolean ended;
 
+  //FIXME do we need that?
+  private Object requestMetric;
+  private long bytesRead;
+
+  private volatile boolean paused;
 
   HttpServerRequestImpl(ServerConnection conn,
                         HttpRequest request,
@@ -97,6 +111,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     this.conn = conn;
     this.request = request;
     this.response = response;
+    if (METRICS_ENABLED && conn.metrics() != null) {
+      requestMetric = conn.metrics().requestBegin(conn.metric(), this);
+    }
+  }
+
+  public Object getRequestMetric() {
+    return requestMetric;
   }
 
   @Override
@@ -223,7 +244,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      conn.pause();
+      //FIXME only pause this request. backpressure will pause the connection if necessary
+//      conn.pause();
+      this.paused = true;
       return this;
     }
   }
@@ -231,7 +254,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest resume() {
     synchronized (conn) {
-      conn.resume();
+//      conn.resume();
+      if (this.paused) {
+        this.paused = false;
+        if (queue.size() > 0) {
+          this.handleChunk(queue.pollFirst());
+        }
+      }
       return this;
     }
   }
@@ -372,18 +401,63 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return conn;
   }
 
-  void handleData(Buffer data) {
+  void handleData(HttpContent content) {
     synchronized (conn) {
+
+      if (this.queue.size() > 0 || this.paused) {
+        this.queue.addLast(content);
+      } else if (!this.paused) {
+        if (this.queue.size() > 0) {
+          handleChunk(this.queue.pollFirst());
+        } else {
+          handleChunk(content);
+        }
+      }
+
+      this.checkQueue();
+    }
+  }
+
+  private void checkQueue() {
+    if (this.queue.size() > CHANNEL_PAUSE_QUEUE_SIZE) {
+      this.pause();
+      this.conn.pause();
+    }
+  }
+
+  private void handleChunk(HttpContent content) {
+    ByteBuf chunk = content.content();
+    if (chunk.isReadable()) {
       if (decoder != null) {
         try {
-          decoder.offer(new DefaultHttpContent(data.getByteBuf()));
+          decoder.offer(content);
         } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
           handleException(e);
         }
       }
+
+
+      Buffer buff = Buffer.buffer(chunk);
       if (dataHandler != null) {
-        dataHandler.handle(data);
+
+        if (METRICS_ENABLED) {
+          bytesRead += buff.length();
+        }
+        dataHandler.handle(buff);
       }
+      //TODO chunk trailers?
+      if (content instanceof LastHttpContent) {
+        this.handleEnd();
+      }
+    } else if (content instanceof LastHttpContent) {
+      this.handleEnd();
+    }
+
+    if (!this.paused && this.queue.size() > 0) {
+      handleChunk(this.queue.pollFirst());
+    }
+    if (!this.paused && this.queue.isEmpty()) {
+      this.conn.resume();
     }
   }
 
@@ -416,6 +490,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
       if (endHandler != null) {
         endHandler.handle(null);
+      }
+
+      // FIXME report metrics?
+      if (METRICS_ENABLED) {
+        conn.reportBytesRead(bytesRead);
+        bytesRead = 0;
       }
     }
   }
