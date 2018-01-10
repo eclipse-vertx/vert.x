@@ -239,8 +239,9 @@ public class KeyStoreHelper {
     return getKeyMgrFactory().getKeyManagers();
   }
 
-  public TrustManagerFactory getTrustMgr(String serverName) {
-    return trustMgrMap.get(serverName);
+  public TrustManager[] getTrustMgr(String serverName) {
+    TrustManagerFactory fact = trustMgrMap.get(serverName);
+    return fact != null ? fact.getTrustManagers() : null;
   }
 
   public TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {

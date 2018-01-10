@@ -15,6 +15,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.KeyStoreHelper;
 
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.util.function.Function;
 
@@ -54,12 +55,8 @@ public interface TrustOptions {
    * @param vertx the vertx instance
    * @return the trustManager
    */
-  default Function<String, TrustManagerFactory> trustManagerMapper(Vertx vertx) throws Exception {
+  default Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
     KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, this);
-    if (helper == null){
-      // if there is no KeyStoreHelper for the concrete TrustOptions type return a function which always returns null.
-      return (hostName) -> null;
-    }
-    return helper::getTrustMgr;
+    return helper != null ? helper::getTrustMgr : null;
   }
 }

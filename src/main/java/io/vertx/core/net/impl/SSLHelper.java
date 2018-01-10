@@ -41,6 +41,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -305,20 +306,29 @@ public class SSLHelper {
   }
 
   private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, String serverName) throws Exception {
-    TrustManagerFactory fact;
+    TrustManager[] mgrs = null;
     if (trustAll) {
-      TrustManager[] mgrs = new TrustManager[]{createTrustAllTrustManager()};
-      fact = new VertxTrustManagerFactory(mgrs);
+      mgrs = new TrustManager[]{createTrustAllTrustManager()};
     } else if (trustOptions != null) {
-      if (serverName != null){
-        fact = trustOptions.trustManagerMapper(vertx).apply(serverName);
-        if (fact == null){
-          fact = trustOptions.getTrustManagerFactory(vertx);
+      if (serverName != null) {
+        Function<String, TrustManager[]> mapper = trustOptions.trustManagerMapper(vertx);
+        if (mapper != null) {
+          mgrs = mapper.apply(serverName);
+        }
+        if (mgrs == null) {
+          TrustManagerFactory fact = trustOptions.getTrustManagerFactory(vertx);
+          if (fact != null) {
+            mgrs = fact.getTrustManagers();
+          }
         }
       } else {
-        fact = trustOptions.getTrustManagerFactory(vertx);
+        TrustManagerFactory fact = trustOptions.getTrustManagerFactory(vertx);
+        if (fact != null) {
+          mgrs = fact.getTrustManagers();
+        }
       }
-    } else {
+    }
+    if (mgrs == null) {
       return null;
     }
     if (crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
@@ -332,10 +342,9 @@ public class SSLHelper {
       for (Buffer crlValue : tmp.collect(Collectors.toList())) {
         crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
       }
-      TrustManager[] mgrs = createUntrustRevokedCertTrustManager(fact.getTrustManagers(), crls);
-      fact = new VertxTrustManagerFactory(mgrs);
+      mgrs = createUntrustRevokedCertTrustManager(mgrs, crls);
     }
-    return fact;
+    return new VertxTrustManagerFactory(mgrs);
   }
 
   /*

@@ -770,32 +770,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSNICustomTrustManagerFactoryMapper2() throws Exception {
     testTLS(Cert.CLIENT_PEM, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, () -> new TrustOptions() {
       @Override
-      public Function<String, TrustManagerFactory> trustManagerMapper(Vertx v) throws Exception {
-        return (serverName) -> {
-          try {
-            return new TrustManagerFactory(new TrustManagerFactorySpi() {
-              @Override
-              protected void engineInit(KeyStore keyStore) throws KeyStoreException {
-              }
-
-              @Override
-              protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws
-                  InvalidAlgorithmParameterException {
-
-              }
-
-              @Override
-              protected TrustManager[] engineGetTrustManagers() {
-                return new TrustManager[]{TrustAllTrustManager.INSTANCE};
-              }
-            }, KeyPairGenerator.getInstance("RSA")
-                .getProvider(), KeyPairGenerator.getInstance("RSA")
-                .getAlgorithm()) {
-            };
-          } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-          }
-        };
+      public Function<String, TrustManager[]> trustManagerMapper(Vertx v) throws Exception {
+        return (serverName) -> new TrustManager[]{TrustAllTrustManager.INSTANCE};
       }
 
       @Override
