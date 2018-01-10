@@ -64,7 +64,7 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
 
   /**
    * Set the number of messages this registration will buffer when this stream is paused. The default
-   * value is <code>0</code>. When a new value is set, buffered messages may be discarded to reach
+   * value is <code>1000</code>. When a new value is set, buffered messages may be discarded to reach
    * the new value.
    *
    * @param maxBufferedMessages the maximum number of messages that can be buffered
