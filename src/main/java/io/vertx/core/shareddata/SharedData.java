@@ -26,6 +26,10 @@ import io.vertx.core.Handler;
  *   <li>asynchronous counters (local or cluster-wide)</li>
  * </ul>
  * <p>
+ * <p>
+ *   <strong>WARNING</strong>: In clustered mode, asynchronous maps/locks/counters rely on distributed data structures provided by the cluster manager.
+ *   Beware that the latency relative to asynchronous maps/locks/counters operations can be much higher in clustered than in local mode.
+ * </p>
  * Please see the documentation for more information.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -46,6 +50,10 @@ public interface SharedData {
   /**
    * Get the {@link AsyncMap} with the specified name. When clustered, the map is accessible to all nodes in the cluster
    * and data put into the map from any node is visible to to any other node.
+   * <p>
+   *   <strong>WARNING</strong>: In clustered mode, asynchronous shared maps rely on distributed data structures provided by the cluster manager.
+   *   Beware that the latency relative to asynchronous shared maps operations can be much higher in clustered than in local mode.
+   * </p>
    *
    * @param name the name of the map
    * @param resultHandler the map will be returned asynchronously in this handler
