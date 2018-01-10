@@ -84,7 +84,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
     @Override
     public ByteBuf buffer(int initialCapacity) {
-      if (initialCapacity < capacity) {
+      if (initialCapacity <= capacity) {
         return buffer();
       } else {
         throw new IllegalArgumentException();
@@ -93,7 +93,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
     @Override
     public ByteBuf buffer(int initialCapacity, int maxCapacity) {
-      if (initialCapacity < capacity) {
+      if (initialCapacity <= capacity) {
         return buffer();
       } else {
         throw new IllegalArgumentException();
