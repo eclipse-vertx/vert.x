@@ -16,6 +16,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.util.function.Function;
 
 /**
  * Certification authority configuration options.
@@ -39,5 +40,26 @@ public interface TrustOptions {
    */
   default TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
     return KeyStoreHelper.create((VertxInternal) vertx, this).getTrustMgrFactory((VertxInternal) vertx);
+  }
+
+  /**
+   * Returns a function that maps SNI server names to a {@link TrustManagerFactory} instance.
+   *
+   * The returned {@code TrustManagerFactory} must already be initialized and ready to use.
+   *
+   * The mapper is only used when the server has SNI enabled and the client indicated a server name.
+   * <p/>
+   * The returned function may return {@code null} in which case {@link #getTrustManagerFactory(Vertx)} is used as fallback.
+   *
+   * @param vertx the vertx instance
+   * @return the trustManager
+   */
+  default Function<String, TrustManagerFactory> trustManagerMapper(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, this);
+    if (helper == null){
+      // if there is no KeyStoreHelper for the concrete TrustOptions type return a function which always returns null.
+      return (hostName) -> null;
+    }
+    return helper::getTrustMgr;
   }
 }

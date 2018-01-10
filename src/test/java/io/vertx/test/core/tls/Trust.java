@@ -11,18 +11,30 @@
 
 package io.vertx.test.core.tls;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface Trust<T extends TrustOptions> extends Supplier<T> {
-
   Trust<TrustOptions> NONE = () -> null;
   Trust<JksOptions> SERVER_JKS = () -> new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble");
   Trust<JksOptions> CLIENT_JKS = () -> new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble");
@@ -40,5 +52,8 @@ public interface Trust<T extends TrustOptions> extends Supplier<T> {
   Trust<JksOptions> SNI_JKS_HOST3 = () -> new JksOptions().setPath("tls/sni-truststore-host3.jks").setPassword("wibble");
   Trust<JksOptions> SNI_JKS_HOST4 = () -> new JksOptions().setPath("tls/sni-truststore-host4.jks").setPassword("wibble");
   Trust<JksOptions> SNI_JKS_HOST5 = () -> new JksOptions().setPath("tls/sni-truststore-host5.jks").setPassword("wibble");
-
+  Trust<TrustOptions> SNI_SERVER_ROOT_CA_AND_OTHER_CA_1 = () -> new JksOptions().setPath("tls/server-truststore-root-ca-host2.jks").setPassword("wibble");
+  Trust<TrustOptions> SNI_SERVER_ROOT_CA_AND_OTHER_CA_2 = () -> new JksOptions().setPath("tls/server-truststore-root-ca-host3.jks").setPassword("wibble");
+  Trust<TrustOptions> SNI_SERVER_ROOT_CA_FALLBACK = () -> new JksOptions().setPath("tls/server-truststore-root-ca-fallback.jks").setPassword("wibble");
+  Trust<TrustOptions> SNI_SERVER_OTHER_CA_FALLBACK = () -> new JksOptions().setPath("tls/server-truststore-other-ca-fallback.jks").setPassword("wibble");
 }

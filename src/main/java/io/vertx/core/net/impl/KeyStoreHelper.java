@@ -33,10 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -67,6 +64,7 @@ public class KeyStoreHelper {
 
   // Dummy password for encrypting pem based stores in memory
   private static final String DUMMY_PASSWORD = "dummy";
+  private static final String DUMMY_CERT_ALIAS = "cert-";
 
   private static final Pattern BEGIN_PATTERN = Pattern.compile("-----BEGIN ([A-Z ]+)-----");
   private static final Pattern END_PATTERN = Pattern.compile("-----END ([A-Z ]+)-----");
@@ -133,13 +131,22 @@ public class KeyStoreHelper {
   private final KeyStore store;
   private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
   private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
+  private final Map<String, TrustManagerFactory> trustMgrMap = new HashMap<>();
 
   public KeyStoreHelper(KeyStore ks, String password) throws Exception {
     Enumeration<String> en = ks.aliases();
     while (en.hasMoreElements()) {
       String alias = en.nextElement();
       Certificate cert = ks.getCertificate(alias);
-      if (cert instanceof X509Certificate) {
+      if (ks.isCertificateEntry(alias) && ! alias.startsWith(DUMMY_CERT_ALIAS)){
+        KeyStore keyStore = KeyStore.getInstance("jks");
+        keyStore.load(null, null);
+        keyStore.setCertificateEntry("cert-1", cert);
+        TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        fact.init(keyStore);
+        trustMgrMap.put(alias, fact);
+      }
+      if (ks.isKeyEntry(alias) && cert instanceof X509Certificate) {
         X509Certificate x509Cert = (X509Certificate) cert;
         Collection<List<?>> ans = x509Cert.getSubjectAlternativeNames();
         List<String> domains = new ArrayList<>();
@@ -232,6 +239,10 @@ public class KeyStoreHelper {
     return getKeyMgrFactory().getKeyManagers();
   }
 
+  public TrustManagerFactory getTrustMgr(String serverName) {
+    return trustMgrMap.get(serverName);
+  }
+
   public TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     fact.init(store);
@@ -317,7 +328,7 @@ public class KeyStoreHelper {
     Iterable<Buffer> iterable = certValues::iterator;
     for (Buffer certValue : iterable) {
       for (Certificate cert : loadCerts(certValue)) {
-        keyStore.setCertificateEntry("cert-" + count++, cert);
+        keyStore.setCertificateEntry(DUMMY_CERT_ALIAS + count++, cert);
       }
     }
     return keyStore;

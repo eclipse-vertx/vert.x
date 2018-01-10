@@ -24,20 +24,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.net.ssl.ManagerFactoryParameters;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.TrustManagerFactorySpi;
+import javax.net.ssl.*;
 import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
+import java.security.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -692,6 +685,153 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .pass();
     assertEquals("host1", test.indicatedServerName);
   }
+
+  @Test
+  public void testSNIWithServerNameTrust() throws Exception {
+    testTLS(Cert.CLIENT_PEM_ROOT_CA, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.SNI_SERVER_ROOT_CA_AND_OTHER_CA_1)
+        .serverSni()
+        .requestOptions(new RequestOptions().setSsl(true)
+            .setPort(4043)
+            .setHost("host2.com"))
+        .requiresClientAuth()
+        .pass();
+  }
+
+  @Test
+  public void testSNIWithServerNameTrustFallback() throws Exception {
+    testTLS(Cert.CLIENT_PEM_ROOT_CA, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.SNI_SERVER_ROOT_CA_FALLBACK)
+        .serverSni()
+        .requestOptions(new RequestOptions().setSsl(true)
+            .setPort(4043)
+            .setHost("host2.com"))
+        .requiresClientAuth()
+        .pass();
+  }
+
+  @Test
+  public void testSNIWithServerNameTrustFallbackFail() throws Exception {
+    testTLS(Cert.CLIENT_PEM_ROOT_CA, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.SNI_SERVER_OTHER_CA_FALLBACK)
+        .serverSni()
+        .requestOptions(new RequestOptions().setSsl(true)
+            .setPort(4043)
+            .setHost("host2.com"))
+        .requiresClientAuth()
+        .fail();
+  }
+
+  @Test
+  public void testSNIWithServerNameTrustFail() throws Exception {
+    testTLS(Cert.CLIENT_PEM_ROOT_CA, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.SNI_SERVER_ROOT_CA_AND_OTHER_CA_2).serverSni()
+        .requestOptions(new RequestOptions().setSsl(true)
+            .setPort(4043)
+            .setHost("host2.com"))
+        .requiresClientAuth()
+        .fail();
+  }
+
+  @Test
+  public void testSNICustomTrustManagerFactoryMapper() throws Exception {
+    testTLS(Cert.CLIENT_PEM, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, () -> new TrustOptions() {
+      @Override
+      public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
+        return new TrustManagerFactory(new TrustManagerFactorySpi() {
+          @Override
+          protected void engineInit(KeyStore keyStore) throws KeyStoreException {
+          }
+
+          @Override
+          protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws
+              InvalidAlgorithmParameterException {
+          }
+
+          @Override
+          protected TrustManager[] engineGetTrustManagers() {
+            return new TrustManager[]{TrustAllTrustManager.INSTANCE};
+          }
+        }, KeyPairGenerator.getInstance("RSA")
+            .getProvider(), KeyPairGenerator.getInstance("RSA")
+            .getAlgorithm()) {
+        };
+      }
+
+      @Override
+      public TrustOptions clone() {
+        return this;
+      }
+    }).serverSni()
+        .requestOptions(new RequestOptions().setSsl(true)
+            .setPort(4043)
+            .setHost("host2.com"))
+        .requiresClientAuth()
+        .pass();
+  }
+
+  @Test
+  public void testSNICustomTrustManagerFactoryMapper2() throws Exception {
+    testTLS(Cert.CLIENT_PEM, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, () -> new TrustOptions() {
+      @Override
+      public Function<String, TrustManagerFactory> trustManagerMapper(Vertx v) throws Exception {
+        return (serverName) -> {
+          try {
+            return new TrustManagerFactory(new TrustManagerFactorySpi() {
+              @Override
+              protected void engineInit(KeyStore keyStore) throws KeyStoreException {
+              }
+
+              @Override
+              protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws
+                  InvalidAlgorithmParameterException {
+
+              }
+
+              @Override
+              protected TrustManager[] engineGetTrustManagers() {
+                return new TrustManager[]{TrustAllTrustManager.INSTANCE};
+              }
+            }, KeyPairGenerator.getInstance("RSA")
+                .getProvider(), KeyPairGenerator.getInstance("RSA")
+                .getAlgorithm()) {
+            };
+          } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+          }
+        };
+      }
+
+      @Override
+      public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
+        return new TrustManagerFactory(new TrustManagerFactorySpi() {
+          @Override
+          protected void engineInit(KeyStore keyStore) throws KeyStoreException {
+          }
+
+          @Override
+          protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws
+              InvalidAlgorithmParameterException {
+          }
+
+          @Override
+          protected TrustManager[] engineGetTrustManagers() {
+            return new TrustManager[]{TrustAllTrustManager.INSTANCE};
+          }
+        }, KeyPairGenerator.getInstance("RSA")
+            .getProvider(), KeyPairGenerator.getInstance("RSA")
+            .getAlgorithm()) {
+        };
+      }
+
+      @Override
+      public TrustOptions clone() {
+        return this;
+      }
+    }).serverSni()
+        .requestOptions(new RequestOptions().setSsl(true)
+            .setPort(4043)
+            .setHost("host2.com"))
+        .requiresClientAuth()
+        .pass();
+  }
+
 
   // Other tests
 
