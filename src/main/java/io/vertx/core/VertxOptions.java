@@ -455,7 +455,7 @@ public class VertxOptions {
    */
   public VertxOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
     if (maxWorkerExecuteTime < 1) {
-      throw new IllegalArgumentException("maxWorkerpExecuteTime must be > 0");
+      throw new IllegalArgumentException("maxWorkerExecuteTime must be > 0");
     }
     this.maxWorkerExecuteTime = maxWorkerExecuteTime;
     return this;
