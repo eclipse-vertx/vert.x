@@ -18,6 +18,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.AsyncMap;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -99,6 +100,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testMapPutGetSerializableObject() {
     testMapPutGet(new SomeSerializableObject("bar"), new SomeSerializableObject("bar"));
+  }
+
+  @Test
+  public void testMapPutGetClusterSerializableObject() {
+    testMapPutGet(new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("bar"));
   }
 
   @Test
@@ -203,6 +209,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapPutIfAbsentGetClusterSerializableObject() {
+    testMapPutIfAbsentGet(new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("bar"));
+  }
+
+  @Test
   public void testMapPutIfAbsentTtl() {
     getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.putIfAbsent("pipo", "molo", 10, onSuccess(vd -> {
@@ -286,6 +297,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapRemoveClusterSerializableObject() {
+    testMapRemove(new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("bar"));
+  }
+
+  @Test
   public void testMapRemoveIfPresentByte() {
     testMapRemoveIfPresent((byte)1, (byte)2, (byte)3);
   }
@@ -350,6 +366,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testMapRemoveIfPresentSerializableObject() {
     testMapRemoveIfPresent(new SomeSerializableObject("foo"), new SomeSerializableObject("bar"), new SomeSerializableObject("quux"));
+  }
+
+  @Test
+  public void testMapRemoveIfPresentClusterSerializableObject() {
+    testMapRemoveIfPresent(new SomeClusterSerializableObject("foo"), new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("quux"));
   }
 
   @Test
@@ -420,6 +441,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapReplaceClusterSerializableObject() {
+    testMapReplace(new SomeClusterSerializableObject("foo"), new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("quux"));
+  }
+
+  @Test
   public void testMapReplaceIfPresentByte() {
     testMapReplaceIfPresent((byte)1, (byte)2, (byte)3);
   }
@@ -484,6 +510,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testMapReplaceIfPresentSerializableObject() {
     testMapReplaceIfPresent(new SomeSerializableObject("foo"), new SomeSerializableObject("bar"), new SomeSerializableObject("quux"));
+  }
+
+  @Test
+  public void testMapReplaceIfPresentClusterSerializableObject() {
+    testMapReplaceIfPresent(new SomeClusterSerializableObject("foo"), new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("quux"));
   }
 
   @Test
@@ -803,6 +834,44 @@ public abstract class AsyncMapTest extends VertxTestBase {
     @Override
     public int hashCode() {
       return str != null ? str.hashCode() : 0;
+    }
+  }
+
+  public static final class SomeClusterSerializableObject implements ClusterSerializable {
+    private String str;
+
+    public SomeClusterSerializableObject() {
+    }
+
+    public SomeClusterSerializableObject(String str) {
+      this.str = str;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof SomeClusterSerializableObject)) return false;
+      SomeClusterSerializableObject that = (SomeClusterSerializableObject) o;
+      if (str != null ? !str.equals(that.str) : that.str != null) return false;
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return str != null ? str.hashCode() : 0;
+    }
+
+    @Override
+    public void writeToBuffer(Buffer buffer) {
+      buffer.appendInt(str.length());
+      buffer.appendString(str);
+    }
+
+    @Override
+    public int readFromBuffer(int pos, Buffer buffer) {
+      int length = buffer.getInt(pos);
+      str = buffer.getString(pos + 4, pos + 4 + length);
+      return pos + 4 + length;
     }
   }
 }
