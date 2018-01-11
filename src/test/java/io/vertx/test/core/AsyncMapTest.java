@@ -18,8 +18,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -34,25 +32,9 @@ import static io.vertx.test.core.TestUtils.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClusterWideMapTest extends VertxTestBase {
+public abstract class AsyncMapTest extends VertxTestBase {
 
-  protected int getNumNodes() {
-    return 1;
-  }
-
-  protected Vertx getVertx() {
-    return vertices[0];
-  }
-
-  public void setUp() throws Exception {
-    super.setUp();
-    startNodes(getNumNodes());
-  }
-
-  @Override
-  protected ClusterManager getClusterManager() {
-    return new FakeClusterManager();
-  }
+  protected abstract Vertx getVertx();
 
   @Test
   public void testMapPutGetByte() {
@@ -121,16 +103,35 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMapPutTtl() {
-    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.put("pipo", "molo", 10, onSuccess(vd -> {
-        vertx.setTimer(10, l -> {
-          getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map2 -> {
+        vertx.setTimer(15, l -> {
+          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
             map2.get("pipo", onSuccess(res -> {
               assertNull(res);
               testComplete();
             }));
           }));
         });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testMapPutTtlThenPut() {
+    getVertx().sharedData().getAsyncMap("foo", onSuccess(map -> {
+      map.put("pipo", "molo", 10, onSuccess(vd -> {
+        map.put("pipo", "mili", onSuccess(vd2 -> {
+          vertx.setTimer(20, l -> {
+            getVertx().sharedData().getAsyncMap("foo", onSuccess(map2 -> {
+              map2.get("pipo", onSuccess(res -> {
+                assertEquals("mili", res);
+                testComplete();
+              }));
+            }));
+          });
+        }));
       }));
     }));
     await();
@@ -203,11 +204,11 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMapPutIfAbsentTtl() {
-    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.putIfAbsent("pipo", "molo", 10, onSuccess(vd -> {
         assertNull(vd);
         vertx.setTimer(10, l -> {
-          getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map2 -> {
+          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
             map2.get("pipo", onSuccess(res -> {
               assertNull(res);
               testComplete();
@@ -487,17 +488,17 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testGetMapWithNullName() throws Exception {
-    assertNullPointerException(() -> getVertx().sharedData().<String, String>getClusterWideMap(null, ar -> {}));
+    assertNullPointerException(() -> getVertx().sharedData().<String, String>getAsyncMap(null, ar -> {}));
   }
 
   @Test
   public void testGetMapWithNullResultHandler() throws Exception {
-    assertNullPointerException(() -> getVertx().sharedData().<String, String>getClusterWideMap("foo", null));
+    assertNullPointerException(() -> getVertx().sharedData().<String, String>getAsyncMap("foo", null));
   }
 
   @Test
   public void testPutNullKey() {
-    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       assertIllegalArgumentException(() -> map.put(null, "foo", ar2 -> {}));
       testComplete();
     }));
@@ -506,7 +507,7 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testPutNullValue() {
-    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       assertIllegalArgumentException(() -> map.put("foo", null, ar2 -> {}));
       testComplete();
     }));
@@ -515,7 +516,7 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testPutInvalidKey() {
-    getVertx().sharedData().<SomeObject, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<SomeObject, String>getAsyncMap("foo", onSuccess(map -> {
       assertIllegalArgumentException(() -> map.put(new SomeObject(), "foo", ar2 -> {}));
       testComplete();
     }));
@@ -524,7 +525,7 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testPutInvalidValue() {
-    getVertx().sharedData().<String, SomeObject>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, SomeObject>getAsyncMap("foo", onSuccess(map -> {
       assertIllegalArgumentException(() -> map.put("foo", new SomeObject(), ar2 -> {}));
       testComplete();
     }));
@@ -533,7 +534,7 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testPutIfAbsentInvalidKey() {
-    getVertx().sharedData().<SomeObject, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<SomeObject, String>getAsyncMap("foo", onSuccess(map -> {
       assertIllegalArgumentException(() -> map.putIfAbsent(new SomeObject(), "foo", ar2 -> {}));
       testComplete();
     }));
@@ -542,7 +543,7 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testPutIfAbsentInvalidValue() {
-    getVertx().sharedData().<String, SomeObject>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, SomeObject>getAsyncMap("foo", onSuccess(map -> {
       assertIllegalArgumentException(() -> map.putIfAbsent("foo", new SomeObject(), ar2 -> {}));
       testComplete();
     }));
@@ -551,9 +552,9 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMultipleMaps() {
-    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.put("foo", "bar", onSuccess(v -> {
-        getVertx().sharedData().<String, String>getClusterWideMap("bar", onSuccess(map2 -> {
+        getVertx().sharedData().<String, String>getAsyncMap("bar", onSuccess(map2 -> {
           map2.get("foo", onSuccess(res -> {
             assertNull(res);
             testComplete();
@@ -566,9 +567,9 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testClear() {
-    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.put("foo", "bar", onSuccess(v -> {
-        getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map2 -> {
+        getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
           map2.clear(onSuccess(v2 -> {
             map.get("foo", onSuccess(res -> {
               assertNull(res);
@@ -583,13 +584,13 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testSize() {
-    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.size(onSuccess(size -> {
         assertEquals(0, size.intValue());
         map.put("foo", "bar", onSuccess(v -> {
           map.size(onSuccess(size2 -> {
             assertEquals(1, size2.intValue());
-            getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map2 -> {
+            getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
               map2.size(onSuccess(size3 -> {
                 assertEquals(1, size3.intValue());
                 testComplete();
@@ -653,23 +654,23 @@ public class ClusterWideMapTest extends VertxTestBase {
     List<Future> futures = new ArrayList<>(map.size());
     map.forEach((key, value) -> {
       Future future = Future.future();
-      getVertx().sharedData().getClusterWideMap("foo", onSuccess(asyncMap -> {
+      getVertx().sharedData().getAsyncMap("foo", onSuccess(asyncMap -> {
         asyncMap.put(key, value, future);
       }));
       futures.add(future);
     });
     CompositeFuture.all(futures).setHandler(onSuccess(cf -> {
       Vertx v = getVertx();
-      v.sharedData().<JsonObject, Buffer>getClusterWideMap("foo", onSuccess(asyncMap -> {
+      v.sharedData().<JsonObject, Buffer>getAsyncMap("foo", onSuccess(asyncMap -> {
         test.accept(v, asyncMap);
       }));
     }));
   }
 
   private <K, V> void testMapPutGet(K k, V v) {
-    getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map -> {
       map.put(k, v, onSuccess(vd -> {
-        getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map2 -> {
+        getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map2 -> {
           map2.get(k, onSuccess(res -> {
             assertEquals(v, res);
             testComplete();
@@ -681,10 +682,10 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   private <K, V> void testMapPutIfAbsentGet(K k, V v) {
-    getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map -> {
       map.putIfAbsent(k, v, onSuccess(res -> {
         assertNull(res);
-        getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map2 -> {
+        getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map2 -> {
           map2.get(k, onSuccess(res2 -> {
             assertEquals(v, res2);
             map.putIfAbsent(k, v, onSuccess(res3 -> {
@@ -699,10 +700,10 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   private <K, V> void testMapRemove(K k, V v) {
-    getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map -> {
       map.put(k, v, onSuccess(res -> {
         assertNull(res);
-        getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map2 -> {
+        getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map2 -> {
           map2.remove(k, onSuccess(res2 -> {
             assertEquals(v, res2);
             testComplete();
@@ -714,10 +715,10 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   private <K, V> void testMapRemoveIfPresent(K k, V v, V other) {
-    getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map -> {
       map.put(k, v, onSuccess(res -> {
         assertNull(res);
-        getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map2 -> {
+        getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map2 -> {
           map2.removeIfPresent(k, other, onSuccess(res2 -> {
             assertFalse(res2);
             map2.removeIfPresent(k, v, onSuccess(res3 -> {
@@ -732,10 +733,10 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   private <K, V> void testMapReplace(K k, V v, V other) {
-    getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map -> {
       map.put(k, v, onSuccess(res -> {
         assertNull(res);
-        getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map2 -> {
+        getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map2 -> {
           map2.replace(k, other, onSuccess(res2 -> {
             assertEquals(v, res2);
             map2.get(k, onSuccess(res3 -> {
@@ -758,10 +759,10 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   private <K, V> void testMapReplaceIfPresent(K k, V v, V other) {
-    getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map -> {
       map.put(k, v, onSuccess(res -> {
         assertNull(res);
-        getVertx().sharedData().<K, V>getClusterWideMap("foo", onSuccess(map2 -> {
+        getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map2 -> {
           map2.replaceIfPresent(k, v, other, onSuccess(res2 -> {
             map2.replaceIfPresent(k, v, other, onSuccess(res3 -> {
               assertFalse(res3);

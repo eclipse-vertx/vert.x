@@ -24,6 +24,7 @@ import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.shareddata.impl.AsynchronousCounter;
 import io.vertx.core.shareddata.impl.AsynchronousLock;
+import io.vertx.core.shareddata.impl.LocalAsyncMapImpl;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -31,14 +32,11 @@ import io.vertx.core.spi.cluster.NodeListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,7 +47,7 @@ public class FakeClusterManager implements ClusterManager {
 
   private static Map<String, FakeClusterManager> nodes = Collections.synchronizedMap(new LinkedHashMap<>());
 
-  private static ConcurrentMap<String, ConcurrentMap> asyncMaps = new ConcurrentHashMap<>();
+  private static ConcurrentMap<String, LocalAsyncMapImpl> asyncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, ConcurrentMap> asyncMultiMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, AsynchronousLock> locks = new ConcurrentHashMap<>();
@@ -128,18 +126,10 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
-    ConcurrentMap map = asyncMaps.get(name);
-    if (map == null) {
-      map = new ConcurrentHashMap<>();
-      ConcurrentMap prevMap = asyncMaps.putIfAbsent(name, map);
-      if (prevMap != null) {
-        map = prevMap;
-      }
-    }
-    @SuppressWarnings("unchecked")
-    ConcurrentMap<K, V> theMap = map;
-    vertx.runOnContext(v -> resultHandler.handle(Future.succeededFuture(new FakeAsyncMap<>(theMap))));
+    LocalAsyncMapImpl<K, V> asyncMap = asyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl(vertx));
+    vertx.runOnContext(v -> resultHandler.handle(Future.succeededFuture(asyncMap)));
   }
 
   @Override
@@ -257,98 +247,6 @@ public class FakeClusterManager implements ClusterManager {
     public void release() {
       delegate.release();
     }
-  }
-
-  private class FakeAsyncMap<K, V> implements AsyncMap<K, V> {
-
-    private final Map<K, V> map;
-
-    public FakeAsyncMap(Map<K, V> map) {
-      this.map = map;
-    }
-
-    @Override
-    public void get(final K k, Handler<AsyncResult<V>> resultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(map.get(k)), resultHandler);
-    }
-
-    @Override
-    public void put(final K k, final V v, Handler<AsyncResult<Void>> resultHandler) {
-      vertx.executeBlocking(fut -> {
-        map.put(k, v);
-        fut.complete();
-      }, resultHandler);
-    }
-
-    @Override
-    public void putIfAbsent(K k, V v, Handler<AsyncResult<V>> resultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(map.putIfAbsent(k, v)), resultHandler);
-    }
-
-    @Override
-    public void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler) {
-      put(k, v, completionHandler);
-      vertx.setTimer(timeout, tid -> map.remove(k));
-    }
-
-    @Override
-    public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
-      Future<V> future = Future.future();
-      putIfAbsent(k, v, future);
-      future.map(vv -> {
-        if (vv == null) vertx.setTimer(timeout, tid -> map.remove(k));
-        return vv;
-      }).setHandler(completionHandler);
-    }
-
-    @Override
-    public void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(map.remove(k, v)), resultHandler);
-    }
-
-    @Override
-    public void replace(K k, V v, Handler<AsyncResult<V>> resultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(map.replace(k, v)), resultHandler);
-    }
-
-    @Override
-    public void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(map.replace(k, oldValue, newValue)), resultHandler);
-    }
-
-    @Override
-    public void clear(Handler<AsyncResult<Void>> resultHandler) {
-      vertx.executeBlocking(fut -> {
-        map.clear();
-        fut.complete();
-      }, resultHandler);
-    }
-
-    @Override
-    public void size(Handler<AsyncResult<Integer>> resultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(map.size()), resultHandler);
-    }
-
-    @Override
-    public void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(new HashSet<>(map.keySet())), resultHandler);
-    }
-
-    @Override
-    public void values(Handler<AsyncResult<List<V>>> asyncResultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(new ArrayList<>(map.values())), asyncResultHandler);
-    }
-
-    @Override
-    public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(new HashMap<>(map)), asyncResultHandler);
-    }
-
-    @Override
-    public void remove(final K k, Handler<AsyncResult<V>> resultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(map.remove(k)), resultHandler);
-    }
-
   }
 
   private class FakeAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {

@@ -12,19 +12,16 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.test.fakecluster.FakeClusterManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClusterWideMapTestDifferentNodes extends ClusterWideMapTest {
-
-
-  @Override
-  protected int getNumNodes() {
-    return 2;
-  }
+public class ClusteredAsyncMapTest extends AsyncMapTest {
 
   int pos;
+
   @Override
   protected Vertx getVertx() {
     Vertx vertx = vertices[pos];
@@ -34,5 +31,17 @@ public class ClusterWideMapTestDifferentNodes extends ClusterWideMapTest {
     return vertx;
   }
 
+  public void setUp() throws Exception {
+    super.setUp();
+    startNodes(getNumNodes());
+  }
 
+  protected int getNumNodes() {
+    return 2;
+  }
+
+  @Override
+  protected ClusterManager getClusterManager() {
+    return new FakeClusterManager();
+  }
 }
