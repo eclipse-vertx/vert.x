@@ -275,6 +275,11 @@ public class NetServerOptions extends TCPSSLOptions {
     return (NetServerOptions) super.addCrlValue(crlValue);
   }
 
+  @Override
+  public NetServerOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    return (NetServerOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
+  }
+
   /**
    * @return the value of accept backlog
    */

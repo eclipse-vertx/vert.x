@@ -187,6 +187,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
                   ch.pipeline().addFirst("ssl", sniHandler);
                 } else {
                   SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
+                  sslHandler.setHandshakeTimeoutMillis(options.getSslHandshakeTimeout());
                   handshakeFuture = sslHandler.handshakeFuture();
                   ch.pipeline().addFirst("ssl", sslHandler);
                 }
