@@ -191,7 +191,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private void startQueuedRequest() {
     if (pendingResponse == null && pending.size() > 0 && !sentCheck) {
       vertx.runOnContext(v -> {
-        synchronized (ServerConnection.this) {
+        synchronized (Http1xServerConnection.this) {
           sentCheck = false;
           HttpServerRequestImpl req = this.pending.pollFirst();
           currentRequest = req;
