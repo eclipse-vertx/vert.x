@@ -2054,6 +2054,7 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
+  @Test
   public void testWebsocketAbs() {
     SelfSignedCertificate certificate = SelfSignedCertificate.create();
     HttpServerOptions serverOptions = new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
