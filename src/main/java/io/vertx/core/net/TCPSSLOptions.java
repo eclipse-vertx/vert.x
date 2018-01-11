@@ -90,12 +90,18 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final boolean DEFAULT_TCP_QUICKACK = false;
 
+  /**
+   * The default value of SSL handshakeTimeout (in milliseconds) = 10000L
+   */
+  public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10000L;
+
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
   private boolean usePooledBuffers;
   private int idleTimeout;
   private boolean ssl;
+  private long sslHandshakeTimeout;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
   private Set<String> enabledCipherSuites;
@@ -129,6 +135,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.usePooledBuffers = other.isUsePooledBuffers();
     this.idleTimeout = other.getIdleTimeout();
     this.ssl = other.isSsl();
+    this.sslHandshakeTimeout = other.sslHandshakeTimeout;
     this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
     this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
@@ -172,6 +179,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
     ssl = DEFAULT_SSL;
     enabledCipherSuites = new LinkedHashSet<>();
+    sslHandshakeTimeout = DEFAULT_SSL_HANDSHAKE_TIMEOUT;
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
@@ -655,6 +663,27 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return new LinkedHashSet<>(enabledSecureTransportProtocols);
   }
 
+  /**
+   * @return the SSL handshake timeout, in milliseconds.
+   */
+  public long getSslHandshakeTimeout() {
+    return sslHandshakeTimeout;
+  }
+
+  /**
+   * Set the SSL handshake timeout, in milliseconds.
+   *
+   * @param sslHandshakeTimeout the SSL handshake timeout to set, in milliseconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    if (sslHandshakeTimeout < 0) {
+      throw new IllegalArgumentException("sslHandshakeTimeout must be >= 0");
+    }
+    this.sslHandshakeTimeout = sslHandshakeTimeout;
+    return this;
+  }
+
   @Override
   public TCPSSLOptions setLogActivity(boolean logEnabled) {
     return (TCPSSLOptions) super.setLogActivity(logEnabled);
@@ -696,6 +725,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (idleTimeout != that.idleTimeout) return false;
     if (soLinger != that.soLinger) return false;
     if (ssl != that.ssl) return false;
+    if (sslHandshakeTimeout != that.sslHandshakeTimeout) return false;
     if (tcpKeepAlive != that.tcpKeepAlive) return false;
     if (tcpNoDelay != that.tcpNoDelay) return false;
     if (tcpFastOpen != that.tcpFastOpen) return false;
@@ -727,6 +757,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + (usePooledBuffers ? 1 : 0);
     result = 31 * result + idleTimeout;
     result = 31 * result + (ssl ? 1 : 0);
+    result = 31 * result + (int) sslHandshakeTimeout;
     result = 31 * result + (keyCertOptions != null ? keyCertOptions.hashCode() : 0);
     result = 31 * result + (trustOptions != null ? trustOptions.hashCode() : 0);
     result = 31 * result + (enabledCipherSuites != null ? enabledCipherSuites.hashCode() : 0);

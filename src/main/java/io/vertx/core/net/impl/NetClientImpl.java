@@ -199,6 +199,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
         if (sslHelper.isSSL()) {
           // TCP connected, so now we must do the SSL handshake
           SslHandler sslHandler = (SslHandler) ch.pipeline().get("ssl");
+          sslHandler.setHandshakeTimeoutMillis(options.getSslHandshakeTimeout());
 
           io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
           fut.addListener(future2 -> {

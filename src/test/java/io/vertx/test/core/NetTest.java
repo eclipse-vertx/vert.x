@@ -64,6 +64,7 @@ import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.tls.Cert;
@@ -267,6 +268,12 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
 
+    assertEquals(TCPSSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
+    long randLong = TestUtils.randomPositiveLong();
+    assertEquals(options, options.setSslHandshakeTimeout(randLong));
+    assertEquals(randLong, options.getSslHandshakeTimeout());
+    assertIllegalArgumentException(() -> options.setSslHandshakeTimeout(-123));
+
     testComplete();
   }
 
@@ -407,6 +414,7 @@ public class NetTest extends VertxTestBase {
     long reconnectInterval = TestUtils.randomPositiveInt();
     boolean useAlpn = TestUtils.randomBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
+    long sslHandshakeTimeout = TestUtils.randomPositiveLong();
 
     SSLEngineOptions sslEngine = TestUtils.randomBoolean() ? new JdkSSLEngineOptions() : new OpenSSLEngineOptions();
     options.setSendBufferSize(sendBufferSize);
@@ -431,6 +439,7 @@ public class NetTest extends VertxTestBase {
     options.setUseAlpn(useAlpn);
     options.setSslEngineOptions(sslEngine);
     options.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm);
+    options.setSslHandshakeTimeout(sslHandshakeTimeout);
 
     NetClientOptions copy = new NetClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
@@ -460,6 +469,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngineOptions());
     assertEquals(hostnameVerificationAlgorithm, copy.getHostnameVerificationAlgorithm());
+    assertEquals(sslHandshakeTimeout, copy.getSslHandshakeTimeout());
   }
 
   @Test
@@ -480,6 +490,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
     assertEquals(def.getHostnameVerificationAlgorithm(), json.getHostnameVerificationAlgorithm());
+    assertEquals(def.getSslHandshakeTimeout(), json.getSslHandshakeTimeout());
   }
 
   @Test
@@ -515,6 +526,7 @@ public class NetTest extends VertxTestBase {
     String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
     String sslEngine = TestUtils.randomBoolean() ? "jdkSslEngineOptions" : "openSslEngineOptions";
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
+    long sslHandshakeTimeout = TestUtils.randomPositiveLong();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -538,7 +550,8 @@ public class NetTest extends VertxTestBase {
         .put("useAlpn", useAlpn)
         .put(sslEngine, new JsonObject())
         .put("hostnameVerificationAlgorithm", hostnameVerificationAlgorithm)
-        .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled);
+        .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
+        .put("sslHandshakeTimeout", sslHandshakeTimeout);
 
     NetClientOptions options = new NetClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -551,6 +564,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
+    assertEquals(sslHandshakeTimeout, options.getSslHandshakeTimeout());
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
     assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
@@ -3359,5 +3373,31 @@ public class NetTest extends VertxTestBase {
 
   protected void startServer(Context context, NetServer server) throws Exception {
     startServer(testAddress, context, server);
+  }
+
+  @Test
+  public void testSslHandshakeTimeoutInClient() throws Exception {
+    server.close();
+    NetServerOptions serverOptions = new NetServerOptions();
+    serverOptions.setSsl(true)
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
+      .setTrustOptions(Trust.SERVER_JKS.get());
+    server = vertx.createNetServer(serverOptions);
+
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true)
+      .setTrustAll(true)
+      .setSslHandshakeTimeout(10));
+
+    server.connectHandler(s -> {
+    }).listen(testAddress, ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(testAddress, res -> {
+        assertTrue(res.failed());
+        testComplete();
+      });
+    });
+
+    await();
   }
 }

@@ -232,6 +232,10 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`sslHandshakeTimeout`|`Number (long)`|
++++
+Set the SSL handshake timeout, in milliseconds.
++++
 |[[tcpCork]]`tcpCork`|`Boolean`|
 +++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
@@ -623,6 +627,10 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`sslHandshakeTimeout`|`Number (long)`|
++++
+Set the SSL handshake timeout, in milliseconds.
++++
 |[[tcpCork]]`tcpCork`|`Boolean`|
 +++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
@@ -947,6 +955,10 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`sslHandshakeTimeout`|`Number (long)`|
++++
+Set the SSL handshake timeout, in milliseconds.
++++
 |[[tcpCork]]`tcpCork`|`Boolean`|
 +++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
@@ -1189,6 +1201,10 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`sslHandshakeTimeout`|`Number (long)`|
++++
+Set the SSL handshake timeout, in milliseconds.
++++
 |[[tcpCork]]`tcpCork`|`Boolean`|
 +++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
@@ -1424,6 +1440,10 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`sslHandshakeTimeout`|`Number (long)`|
++++
+Set the SSL handshake timeout, in milliseconds.
++++
 |[[tcpCork]]`tcpCork`|`Boolean`|
 +++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
@@ -1574,6 +1594,10 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`ssl`|`Boolean`|
 +++
 Set whether SSL/TLS is enabled
++++
+|[[sslHandshakeTimeout]]`sslHandshakeTimeout`|`Number (long)`|
++++
+Set the SSL handshake timeout, in milliseconds.
 +++
 |[[tcpCork]]`tcpCork`|`Boolean`|
 +++
@@ -2153,6 +2177,10 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`ssl`|`Boolean`|
 +++
 Set whether SSL/TLS is enabled
++++
+|[[sslHandshakeTimeout]]`sslHandshakeTimeout`|`Number (long)`|
++++
+Set the SSL handshake timeout, in milliseconds.
 +++
 |[[tcpCork]]`tcpCork`|`Boolean`|
 +++

@@ -83,6 +83,9 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("ssl") instanceof Boolean) {
       obj.setSsl((Boolean)json.getValue("ssl"));
     }
+    if (json.getValue("sslHandshakeTimeout") instanceof Number) {
+      obj.setSslHandshakeTimeout(((Number)json.getValue("sslHandshakeTimeout")).longValue());
+    }
     if (json.getValue("tcpCork") instanceof Boolean) {
       obj.setTcpCork((Boolean)json.getValue("tcpCork"));
     }
@@ -154,6 +157,7 @@ import io.vertx.core.json.JsonArray;
     }
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
+    json.put("sslHandshakeTimeout", obj.getSslHandshakeTimeout());
     json.put("tcpCork", obj.isTcpCork());
     json.put("tcpFastOpen", obj.isTcpFastOpen());
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
