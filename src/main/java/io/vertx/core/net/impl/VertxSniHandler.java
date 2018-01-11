@@ -70,6 +70,7 @@ public class VertxSniHandler extends SniHandler {
     try {
       SSLEngine engine = helper.createEngine(sslContext);
       sslHandler = new SslHandler(engine);
+      sslHandler.setHandshakeTimeoutMillis(helper.getSslHandshakeTimeout());
       ctx.pipeline().replace(this, "ssl", sslHandler);
       Future<Channel> fut = sslHandler.handshakeFuture();
       fut.addListener(future -> {

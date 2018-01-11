@@ -121,6 +121,7 @@ public class SSLHelper {
 
   private boolean ssl;
   private boolean sni;
+  private long sslHandshakeTimeout;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
   private boolean trustAll;
@@ -179,6 +180,7 @@ public class SSLHelper {
   public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
+    this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
     this.trustAll = options.isTrustAll();
@@ -196,6 +198,7 @@ public class SSLHelper {
   public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
+    this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
     this.clientAuth = options.getClientAuth();
@@ -517,5 +520,9 @@ public class SSLHelper {
     SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT);
     configureEngine(engine, null);
     return engine;
+  }
+
+  public long getSslHandshakeTimeout() {
+    return sslHandshakeTimeout;
   }
 }
