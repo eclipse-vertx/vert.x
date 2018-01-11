@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.http.impl;
@@ -382,9 +377,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private void end(ByteBuf chunk) {
     synchronized (conn) {
-      if (chunk != null && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
-        headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
-      }
       write(chunk, true);
     }
   }
@@ -409,18 +401,22 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   void write(ByteBuf chunk, boolean end) {
     synchronized (conn) {
       checkEnded();
+      boolean hasBody = false;
+      if (chunk != null) {
+        hasBody = true;
+        bytesWritten += chunk.readableBytes();
+      } else {
+        chunk = Unpooled.EMPTY_BUFFER;
+      }
       if (end) {
+        if (!headWritten && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
+          headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
+        }
         handleEnded(false);
       }
-      boolean hasBody = chunk != null;
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
       if (hasBody || (!sent && end)) {
-        if (chunk == null) {
-          chunk = Unpooled.EMPTY_BUFFER;
-        }
-        int len = chunk.readableBytes();
         stream.writeData(chunk, end && trailers == null);
-        bytesWritten += len;
       }
       if (end && trailers != null) {
         stream.writeHeaders(trailers, true);

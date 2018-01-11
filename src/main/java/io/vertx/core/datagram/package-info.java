@@ -1,17 +1,12 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *  The Eclipse Public License is available at
- *  http://www.eclipse.org/legal/epl-v10.html
- *
- *  The Apache License v2.0 is available at
- *  http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 /**
@@ -99,14 +94,13 @@
  *
  * ==== Sending Multicast packets
  *
- * Multicast allows multiple sockets to receive the same packets. This works by have same join a multicast group
- * to which you can send packets.
+ * Multicast allows multiple sockets to receive the same packets. This works by having the sockets join the same multicast group
+ * to which you can then send packets.
  *
- * We will look at how you can joint a Multicast Group and so receive packets in the next section.
+ * We will look at how you can join a Multicast Group and receive packets in the next section.
  *
- * For now let us focus on how to send those. Sending multicast packets is not different to send normal Datagram Packets.
- *
- * The only difference is that you would pass in a multicast group address to the send method.
+ * Sending multicast packets is not different than sending normal Datagram packets.  The difference is that you pass
+ * in a multicast group address to the send method.
  *
  * This is show here:
  *
@@ -120,9 +114,9 @@
  * ===== Receiving Multicast packets
  *
  * If you want to receive packets for specific Multicast group you need to bind the {@link io.vertx.core.datagram.DatagramSocket} by
- * calling `listen(...)` on it and join the Multicast group.
+ * calling `listen(...)` on it to join the Multicast group.
  *
- * This way you will be able to receive DatagramPackets that were sent to the address and port on which the
+ * This way you will receive DatagramPackets that were sent to the address and port on which the
  * {@link io.vertx.core.datagram.DatagramSocket} listens and also to those sent to the Multicast group.
  *
  * Beside this you also want to set a Handler which will be called for each received DatagramPacket.

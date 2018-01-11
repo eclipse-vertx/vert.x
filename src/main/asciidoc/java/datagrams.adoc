@@ -100,14 +100,13 @@ If you need such a guarantee then you want to use TCP with some handshaking logi
 
 ==== Sending Multicast packets
 
-Multicast allows multiple sockets to receive the same packets. This works by have same join a multicast group
-to which you can send packets.
+Multicast allows multiple sockets to receive the same packets. This works by having the sockets join the same multicast group
+to which you can then send packets.
 
-We will look at how you can joint a Multicast Group and so receive packets in the next section.
+We will look at how you can join a Multicast Group and receive packets in the next section.
 
-For now let us focus on how to send those. Sending multicast packets is not different to send normal Datagram Packets.
-
-The only difference is that you would pass in a multicast group address to the send method.
+Sending multicast packets is not different than sending normal Datagram packets.  The difference is that you pass
+in a multicast group address to the send method.
 
 This is show here:
 
@@ -126,9 +125,9 @@ All sockets that have joined the multicast group 230.0.0.1 will receive the pack
 ===== Receiving Multicast packets
 
 If you want to receive packets for specific Multicast group you need to bind the `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` by
-calling `listen(...)` on it and join the Multicast group.
+calling `listen(...)` on it to join the Multicast group.
 
-This way you will be able to receive DatagramPackets that were sent to the address and port on which the
+This way you will receive DatagramPackets that were sent to the address and port on which the
 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` listens and also to those sent to the Multicast group.
 
 Beside this you also want to set a Handler which will be called for each received DatagramPacket.

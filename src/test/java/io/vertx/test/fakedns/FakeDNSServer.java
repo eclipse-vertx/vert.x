@@ -1,17 +1,12 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- * The Eclipse Public License is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * The Apache License v2.0 is available at
- * http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.fakedns;
@@ -43,11 +38,7 @@ import org.apache.mina.transport.socket.DatagramSessionConfig;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -72,9 +63,14 @@ public final class FakeDNSServer extends DnsServer {
   private int port = PORT;
   private final RecordStore store;
   private DatagramAcceptor acceptor;
+  private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
 
   public FakeDNSServer(RecordStore store) {
     this.store = store;
+  }
+
+  public synchronized DnsMessage pollMessage() {
+    return currentMessage.poll();
   }
 
   public InetSocketAddress localAddress() {
@@ -340,6 +336,15 @@ public final class FakeDNSServer extends DnsServer {
         // Use our own codec to support AAAA testing
         session.getFilterChain().addFirst("codec",
           new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
+      }
+      @Override
+      public void messageReceived(IoSession session, Object message) {
+        if (message instanceof DnsMessage) {
+          synchronized (FakeDNSServer.this) {
+           currentMessage.add((DnsMessage) message);
+          }
+        }
+        super.messageReceived(session, message);
       }
     });
 

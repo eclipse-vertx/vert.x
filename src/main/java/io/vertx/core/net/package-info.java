@@ -1,17 +1,12 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *  The Eclipse Public License is available at
- *  http://www.eclipse.org/legal/epl-v10.html
- *
- *  The Apache License v2.0 is available at
- *  http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 /**
@@ -665,15 +660,24 @@
  *
  * ==== Server Name Indication (SNI)
  *
- * Server Name Indication (SNI) is a TLS extension by which a client specifies an hostname attempting to connect: during
- * the TLS handshake the clients gives a server name and the server can use it to respond with a specific certificate
+ * Server Name Indication (SNI) is a TLS extension by which a client specifies a hostname attempting to connect: during
+ * the TLS handshake the client gives a server name and the server can use it to respond with a specific certificate
  * for this server name instead of the default deployed certificate.
+ * If the server requires client authentication the server can use a specific trusted CA certificate depending on the
+ * indicated server name.
  *
  * When SNI is active the server uses
  *
  * * the certificate CN or SAN DNS (Subject Alternative Name with DNS) to do an exact match, e.g `www.example.com`
  * * the certificate CN or SAN DNS certificate to match a wildcard name, e.g `*.example.com`
- * * otherwise the first certificate when the client does not present a server name or the presenter server name cannot be matched
+ * * otherwise the first certificate when the client does not present a server name or the presented server name cannot be matched
+ *
+ * When the server additionally requires client authentication:
+ *
+ * * if {@link io.vertx.core.net.JksOptions} were used to set the trust options
+ *  ({@link io.vertx.core.net.NetServerOptions#setTrustOptions options}) then an exact match with the trust store
+ *  alias is done
+ * * otherwise the available CA certificates are used in the same way as if no SNI is in place
  *
  * You can enable SNI on the server by setting {@link io.vertx.core.net.NetServerOptions#setSni(boolean)} to `true` and
  * configured the server with multiple key/certificate pairs.

@@ -1,17 +1,12 @@
 /*
- * Copyright 2017 Red Hat, Inc.
+ * Copyright 2017 Red Hat, Inc. and others
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- * The Eclipse Public License is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * The Apache License v2.0 is available at
- * http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.core;
@@ -639,5 +634,69 @@ public class JsonParserTest {
       TheObject that = (TheObject) obj;
       return Objects.equals(f, that.f);
     }
+  }
+
+  @Test
+  public void testParseConcatedJSONStream() {
+    JsonParser parser = JsonParser.newParser();
+    AtomicInteger startCount = new AtomicInteger();
+    AtomicInteger endCount = new AtomicInteger();
+
+    parser.handler(event -> {
+      switch (event.type()) {
+        case START_OBJECT:
+          startCount.incrementAndGet();
+          break;
+        case END_OBJECT:
+          endCount.incrementAndGet();
+          break;
+        default:
+          fail();
+          break;
+      }
+    });
+    parser.handle(Buffer.buffer("{}{}"));
+    assertEquals(2, startCount.get());
+    assertEquals(2, endCount.get());
+  }
+
+  @Test
+  public void testParseLineDelimitedJSONStream() {
+    JsonParser parser = JsonParser.newParser();
+    AtomicInteger startCount = new AtomicInteger();
+    AtomicInteger endCount = new AtomicInteger();
+    AtomicInteger numberCount = new AtomicInteger();
+    AtomicInteger nullCount = new AtomicInteger();
+    AtomicInteger stringCount = new AtomicInteger();
+    parser.handler(event -> {
+      switch (event.type()) {
+        case START_OBJECT:
+          startCount.incrementAndGet();
+          break;
+        case END_OBJECT:
+          endCount.incrementAndGet();
+          break;
+        case VALUE:
+          if (event.isNull()) {
+            nullCount.incrementAndGet();
+          } else if (event.isNumber()) {
+            numberCount.incrementAndGet();
+          } else if (event.isString()) {
+            stringCount.incrementAndGet();
+          } else {
+            fail("Unexpected " + event.type());
+          }
+          break;
+        default:
+          fail("Unexpected " + event.type());
+          break;
+      }
+    });
+    parser.handle(Buffer.buffer("{}\r\n1\r\nnull\r\n\"foo\""));
+    assertEquals(1, startCount.get());
+    assertEquals(1, endCount.get());
+    assertEquals(1, numberCount.get());
+    assertEquals(1, nullCount.get());
+    assertEquals(1, stringCount.get());
   }
 }

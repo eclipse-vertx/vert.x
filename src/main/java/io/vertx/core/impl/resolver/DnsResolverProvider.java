@@ -1,18 +1,14 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
+
 package io.vertx.core.impl.resolver;
 
 import io.netty.channel.ChannelFactory;
@@ -62,10 +58,17 @@ public class DnsResolverProvider implements ResolverProvider {
   private final Vertx vertx;
   private final List<ResolverRegistration> resolvers = Collections.synchronizedList(new ArrayList<>());
   private AddressResolverGroup<InetSocketAddress> resolverGroup;
+  private final List<InetSocketAddress> serverList = new ArrayList<>();
+
+  /**
+   * @return a list of DNS servers available to use
+   */
+  public List<InetSocketAddress> nameServerAddresses() {
+    return serverList;
+  }
 
   public DnsResolverProvider(VertxImpl vertx, AddressResolverOptions options) {
     List<String> dnsServers = options.getServers();
-    List<InetSocketAddress> serverList = new ArrayList<>();
     if (dnsServers != null && dnsServers.size() > 0) {
       for (String dnsServer : dnsServers) {
         int sep = dnsServer.indexOf(':');
@@ -85,7 +88,7 @@ public class DnsResolverProvider implements ResolverProvider {
         }
       }
     } else {
-      DnsServerAddressStream stream = DnsServerAddresses.defaultAddresses().stream();
+      DnsServerAddressStream stream = DefaultDnsServerAddressStreamProvider.defaultAddresses().stream();
       Set<InetSocketAddress> all = new HashSet<>();
       while (true) {
         InetSocketAddress address = stream.next();

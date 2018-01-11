@@ -1,24 +1,21 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- * The Eclipse Public License is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * The Apache License v2.0 is available at
- * http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.DnsException;
@@ -27,6 +24,7 @@ import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.test.fakedns.FakeDNSServer;
+import org.apache.directory.server.dns.messages.DnsMessage;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -60,6 +58,26 @@ public class DNSTest extends VertxTestBase {
     assertNullPointerException(() -> dns.resolveSRV(null, ar -> {}));
 
     dnsServer.stop();
+  }
+
+  @Test
+  public void testDefaultDnsClient() throws Exception {
+    final String ip = "10.0.0.1";
+    FakeDNSServer fakeDNSServer = FakeDNSServer.testLookup4(ip);
+    fakeDNSServer.start();
+    VertxOptions vertxOptions = new VertxOptions();
+    InetSocketAddress fakeServerAddress = fakeDNSServer.localAddress();
+    vertxOptions.getAddressResolverOptions().addServer(fakeServerAddress.getHostString() + ":" + fakeServerAddress.getPort());
+    Vertx vertxWithFakeDns = Vertx.vertx(vertxOptions);
+    DnsClient dnsClient = vertxWithFakeDns.createDnsClient();
+
+    dnsClient.lookup4("vertx.io", onSuccess(result -> {
+      assertEquals(ip, result);
+      testComplete();
+    }));
+    await();
+    fakeDNSServer.stop();
+    vertxWithFakeDns.close();
   }
 
   @Test
@@ -202,10 +220,12 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testLookup4() throws Exception {
     final String ip = "10.0.0.1";
-    DnsClient dns = prepareDns(FakeDNSServer.testLookup4(ip));
-
+    FakeDNSServer server = FakeDNSServer.testLookup4(ip);
+    DnsClient dns = prepareDns(server);
     dns.lookup4("vertx.io", onSuccess(result -> {
       assertEquals(ip, result);
+      DnsMessage msg = server.pollMessage();
+      assertTrue(msg.isRecursionDesired());
       testComplete();
     }));
     await();

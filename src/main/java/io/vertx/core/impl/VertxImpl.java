@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.impl;
@@ -19,6 +14,9 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
+import io.netty.resolver.DefaultAddressResolverGroup;
+import io.netty.resolver.dns.DefaultDnsServerAddressStreamProvider;
+import io.netty.resolver.dns.DnsServerAddressStream;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
@@ -35,6 +33,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
@@ -50,6 +49,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -126,6 +126,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
   private final AddressResolver addressResolver;
+  private final AddressResolverOptions addressResolverOptions;
   private EventBus eventBus;
   private HAManager haManager;
   private boolean closed;
@@ -183,6 +184,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
     this.fileResolver = new FileResolver(this, options.isFileResolverCachingEnabled());
+    this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
     this.haEnabled = options.isClustered() && options.isHAEnabled();
@@ -404,6 +406,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public DnsClient createDnsClient(int port, String host) {
     return new DnsClientImpl(this, port, host, DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
+  }
+
+  @Override
+  public DnsClient createDnsClient() {
+    DnsResolverProvider provider = new DnsResolverProvider(this, addressResolverOptions);
+    InetSocketAddress address = provider.nameServerAddresses().get(0);
+    return new DnsClientImpl(this, address.getPort(), address.getAddress().getHostAddress(), DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
   }
 
   @Override

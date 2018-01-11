@@ -1,17 +1,12 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- * The Eclipse Public License is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * The Apache License v2.0 is available at
- * http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.core;
@@ -1372,6 +1367,58 @@ public class NetTest extends VertxTestBase {
     test.run(true);
     await();
     assertEquals("host1", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  public void testSniWithServerNameTrust(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_ROOT_CA_AND_OTHER_CA_1);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  public void testSniWithServerNameTrustFallback(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_ROOT_CA_FALLBACK);
+    test.run(true);
+    await();
+  }
+
+  @Test
+  public void testSniWithServerNameTrustFallbackFail(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_OTHER_CA_FALLBACK);
+    test.run(false);
+    await();
+  }
+
+  @Test
+  public void testSniWithServerNameTrustFail(){
+    TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
+        .clientCert(Cert.CLIENT_PEM_ROOT_CA)
+        .requireClientAuth(true)
+        .serverCert(Cert.SNI_JKS)
+        .sni(true)
+        .serverName("host2.com")
+        .serverTrust(Trust.SNI_SERVER_ROOT_CA_AND_OTHER_CA_2);
+    test.run(false);
+    await();
   }
 
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
@@ -3253,6 +3300,26 @@ public class NetTest extends VertxTestBase {
         assertEquals("Hello World", msg.toString());
         testComplete();
       });
+    }));
+    await();
+  }
+
+  @Test
+  public void testCloseCompletionHandlerNotCalledWhenActualServerFailed() {
+    server.close();
+    server = vertx.createNetServer(
+      new NetServerOptions()
+        .setSsl(true)
+        .setPemKeyCertOptions(new PemKeyCertOptions().setKeyPath("invalid")))
+      .connectHandler(c -> {
+    });
+    try {
+      server.listen(10000, r -> fail());
+    } catch (Exception ignore) {
+      // Expected
+    }
+    server.close(onSuccess(v -> {
+      testComplete();
     }));
     await();
   }

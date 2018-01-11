@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2014 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.impl;
@@ -465,7 +460,7 @@ public class DeploymentManager {
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
-      WorkerExecutorImpl workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize()) : null;
+      WorkerExecutorImpl workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
       ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, pool, conf, tccl) :
         vertx.createEventLoopContext(deploymentID, pool, conf, tccl);
@@ -493,15 +488,26 @@ public class DeploymentManager {
               if (deployCount.incrementAndGet() == verticles.length) {
                 reportSuccess(deploymentID, callingContext, completionHandler);
               }
-            } else if (!failureReported.get()) {
-              context.runCloseHooks(closeHookAsyncResult -> reportFailure(ar.cause(), callingContext, completionHandler));
+            } else if (failureReported.compareAndSet(false, true)) {
+              rollbackDeployment(callingContext, completionHandler, deployment, context, ar.cause());
             }
           });
         } catch (Throwable t) {
-          context.runCloseHooks(closeHookAsyncResult -> reportFailure(t, callingContext, completionHandler));
+          if (failureReported.compareAndSet(false, true))
+            rollbackDeployment(callingContext, completionHandler, deployment, context, t);
         }
       });
     }
+  }
+
+  private void rollbackDeployment(ContextImpl callingContext, Handler<AsyncResult<String>> completionHandler, DeploymentImpl deployment, ContextImpl context, Throwable cause) {
+    deployment.doUndeployChildren(callingContext, childrenResult -> {
+      if (childrenResult.failed()) {
+        reportFailure(cause, callingContext, completionHandler);
+      } else {
+        context.runCloseHooks(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
+      }
+    });
   }
 
   static class VerticleHolder {
@@ -542,11 +548,7 @@ public class DeploymentManager {
       doUndeploy(currentContext, completionHandler);
     }
 
-    public synchronized void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
-      if (undeployed) {
-        reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, completionHandler);
-        return;
-      }
+    private synchronized void doUndeployChildren(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
       if (!children.isEmpty()) {
         final int size = children.size();
         AtomicInteger childCount = new AtomicInteger();
@@ -559,14 +561,32 @@ public class DeploymentManager {
               reportFailure(ar.cause(), undeployingContext, completionHandler);
             } else if (childCount.incrementAndGet() == size) {
               // All children undeployed
-              doUndeploy(undeployingContext, completionHandler);
+              completionHandler.handle(Future.succeededFuture());
             }
           });
         }
         if (!undeployedSome) {
           // It's possible that children became empty before iterating
-          doUndeploy(undeployingContext, completionHandler);
+          completionHandler.handle(Future.succeededFuture());
         }
+      } else {
+        completionHandler.handle(Future.succeededFuture());
+      }
+    }
+
+    public synchronized void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
+      if (undeployed) {
+        reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, completionHandler);
+        return;
+      }
+      if (!children.isEmpty()) {
+        doUndeployChildren(undeployingContext, ar -> {
+          if (ar.failed()) {
+            reportFailure(ar.cause(), undeployingContext, completionHandler);
+          } else {
+            doUndeploy(undeployingContext, completionHandler);
+          }
+        });
       } else {
         undeployed = true;
         AtomicInteger undeployCount = new AtomicInteger();

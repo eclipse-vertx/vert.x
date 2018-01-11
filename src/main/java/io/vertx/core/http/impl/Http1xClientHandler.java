@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.http.impl;
@@ -25,7 +20,8 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -33,33 +29,43 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class ClientHandler extends VertxHttpHandler<ClientConnection> {
+class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   private boolean closeFrameSent;
   private ContextImpl context;
   private ChannelHandlerContext chctx;
-  private Http1xPool pool;
-  private HttpClientImpl client;
-  private Object endpointMetric;
-  private HttpClientMetrics metrics;
+  private final HttpVersion version;
+  private final String host;
+  private final int port;
+  private final boolean ssl;
+  private final HttpClientImpl client;
+  private final HttpClientMetrics metrics;
+  private final ConnectionListener<HttpClientConnection> listener;
+  private final Object endpointMetric;
 
-  public ClientHandler(ContextImpl context,
-                       Http1xPool pool,
-                       HttpClientImpl client,
-                       Object endpointMetric,
-                       HttpClientMetrics metrics) {
+  public Http1xClientHandler(ConnectionListener<HttpClientConnection> listener,
+                             ContextImpl context,
+                             HttpVersion version,
+                             String host,
+                             int port,
+                             boolean ssl,
+                             HttpClientImpl client,
+                             Object endpointMetric,
+                             HttpClientMetrics metrics) {
     this.context = context;
-    this.pool = pool;
+    this.version = version;
     this.client = client;
+    this.host = host;
+    this.port = port;
+    this.ssl = ssl;
     this.endpointMetric = endpointMetric;
     this.metrics = metrics;
+    this.listener = listener;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
-    ClientConnection conn = new ClientConnection(pool.version(), client, endpointMetric, ctx,
-      pool.ssl(), pool.host(), pool.port(), context, pool, metrics);
-    setConnection(conn);
+    Http1xClientConnection conn = new Http1xClientConnection(listener, version, client, endpointMetric, ctx, ssl, host, port, context, metrics);
     if (metrics != null) {
       context.executeFromIO(() -> {
         Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
@@ -67,6 +73,7 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
         metrics.endpointConnected(endpointMetric, metric);
       });
     }
+    setConnection(conn);
   }
 
   public ChannelHandlerContext context() {
@@ -74,7 +81,15 @@ class ClientHandler extends VertxHttpHandler<ClientConnection> {
   }
 
   @Override
-  protected void handleMessage(ClientConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+    if (metrics != null) {
+      metrics.endpointDisconnected(endpointMetric, getConnection().metric());
+    }
+    super.channelInactive(chctx);
+  }
+
+  @Override
+  protected void handleMessage(Http1xClientConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
       DecoderResult result = obj.decoderResult();

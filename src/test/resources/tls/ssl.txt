@@ -1,3 +1,8 @@
+This file describes the sequence of commands to create the various files necessary for TLS tests.
+
+- when prompted for a password use "wibble"
+- to generate the test-host5 entry in the sni-keystore.jks you need to use the KeyStore Explorer GUI application and create the entry manually
+
 # Self signed server->client
 
 ## Self signed JKS (Java KeyStore)
@@ -69,6 +74,7 @@ echo "unique_subject = no" > root-ca/index.txt.attr
 openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -in server-csr.pem  -extensions req_ext -extfile openssl.cnf | openssl x509 -out server-cert-root-ca.pem -outform PEM
 
 
+
 # PKCS#12 key store signed by root CA
 
 1) Import the signed certificate and the private key into a new PKCS#12 key-store for the server
@@ -95,22 +101,6 @@ keytool -import -trustcacerts -alias test-store -file root-ca/ca-cert.pem -keyst
 1) Convert the JKS trust-store containg the root CA certificate to the PKCS#12 format
 
 keytool -importkeystore -srckeystore client-truststore-root-ca.jks -destkeystore client-truststore-root-ca.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
-
-
-# Certificate Revocation List
-
-1) Revoke the server cert
-
-openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -revoke root-ca/01.pem
-
-2) Revoke the client cert
-
-openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -revoke root-ca/03.pem
-
-3) Generate the Certificate Revocation List
-
-openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -gencrl -out root-ca/crl.pem
-
 
 
 # Signed by intermediate CA server-client (i.e chain)
@@ -216,6 +206,22 @@ openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert r
 
 
 
+# Certificate Revocation List
+
+1) Revoke the server cert
+
+openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -revoke root-ca/01.pem
+
+2) Revoke the client cert
+
+openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -revoke root-ca/03.pem
+
+3) Generate the Certificate Revocation List
+
+openssl ca -config openssl.cnf -name CA_root -keyfile root-ca/ca-key.pem -cert root-ca/ca-cert.pem -gencrl -out root-ca/crl.pem
+
+
+
 # Self signed server->client using SNI
 
 ## JKS (Java KeyStore)
@@ -249,6 +255,17 @@ keytool -import -trustcacerts -alias test-host3 -file host3.crt -keystore sni-tr
 keytool -import -trustcacerts -alias test-host4 -file host4.crt -keystore sni-truststore-host4.jks -keypass wibble -storepass wibble
 keytool -import -trustcacerts -alias test-host5 -file host5.crt -keystore sni-truststore-host5.jks -keypass wibble -storepass wibble
 
+5) Create trust stores for the SNI server trust tests
+
+keytool -noprompt -import -trustcacerts -alias host2.com -file root-ca/ca-cert.pem -keystore server-truststore-root-ca-host2.jks -storepass wibble
+keytool -noprompt -import -trustcacerts -alias host3.com -file other-ca/ca-cert.pem -keystore server-truststore-root-ca-host2.jks -storepass wibble
+
+keytool -noprompt -import -trustcacerts -alias host3.com -file root-ca/ca-cert.pem -keystore server-truststore-root-ca-host3.jks -storepass wibble
+keytool -noprompt -import -trustcacerts -alias host2.com -file other-ca/ca-cert.pem -keystore server-truststore-root-ca-host3.jks -storepass wibble
+
+keytool -noprompt -import -trustcacerts -alias xxx.com -file root-ca/ca-cert.pem -keystore server-truststore-root-ca-fallback.jks -storepass wibble
+
+keytool -noprompt -import -trustcacerts -alias xxx.com -file other-ca/ca-cert.pem -keystore server-truststore-other-ca-fallback.jks -storepass wibble
 
 ## Self signed PKCS12
 

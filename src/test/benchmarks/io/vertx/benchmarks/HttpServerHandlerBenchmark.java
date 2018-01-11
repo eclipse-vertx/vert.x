@@ -1,25 +1,20 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
+
 package io.vertx.benchmarks;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -42,7 +37,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.HttpHandlers;
-import io.vertx.core.http.impl.ServerHandler;
+import io.vertx.core.http.impl.Http1xServerHandler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
@@ -89,7 +84,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
     @Override
     public ByteBuf buffer(int initialCapacity) {
-      if (initialCapacity < capacity) {
+      if (initialCapacity <= capacity) {
         return buffer();
       } else {
         throw new IllegalArgumentException();
@@ -98,7 +93,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
     @Override
     public ByteBuf buffer(int initialCapacity, int maxCapacity) {
-      if (initialCapacity < capacity) {
+      if (initialCapacity <= capacity) {
         return buffer();
       } else {
         throw new IllegalArgumentException();
@@ -232,7 +227,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       response.end(HELLO_WORLD_BUFFER);
     };
     HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null, null));
-    ServerHandler handler = new ServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
+    Http1xServerHandler handler = new Http1xServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
     vertxChannel.pipeline().addLast("handler", handler);
 
     nettyChannel = new EmbeddedChannel(new HttpRequestDecoder(

@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.http.impl;
@@ -77,9 +72,9 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerConnection extends Http1xConnectionBase implements HttpConnection {
+public class Http1xServerConnection extends Http1xConnectionBase implements HttpConnection {
 
-  private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
+  private static final Logger log = LoggerFactory.getLogger(Http1xServerConnection.class);
 
   private static final Handler<HttpServerRequest> NULL_REQUEST_HANDLER = req -> {};
 
@@ -103,13 +98,13 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
   private volatile boolean sentCheck;
 
 
-  public ServerConnection(VertxInternal vertx,
-                   SSLHelper sslHelper,
-                   HttpServerOptions options,
-                   ChannelHandlerContext channel,
-                   ContextImpl context,
-                   String serverOrigin,
-                   HttpServerMetrics metrics) {
+  public Http1xServerConnection(VertxInternal vertx,
+                                SSLHelper sslHelper,
+                                HttpServerOptions options,
+                                ChannelHandlerContext channel,
+                                ContextImpl context,
+                                String serverOrigin,
+                                HttpServerMetrics metrics) {
     super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.options = options;
@@ -120,10 +115,6 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
   @Override
   public HttpServerMetrics metrics() {
     return metrics;
-  }
-
-  public boolean isPaused() {
-    return paused;
   }
 
   public synchronized void pause() {
@@ -235,7 +226,7 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     if (ws != null) {
       return ws;
     }
-    ServerHandler serverHandler = (ServerHandler) chctx.pipeline().get("handler");
+    Http1xServerHandler serverHandler = (Http1xServerHandler) chctx.pipeline().get("handler");
     handshaker = serverHandler.createHandshaker(this, chctx.channel(), nettyReq);
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
@@ -354,11 +345,9 @@ public class ServerConnection extends Http1xConnectionBase implements HttpConnec
     if (ws != null) {
       ws.handleClosed();
     }
-
     if (currentRequest != null) {
       currentRequest.handleException(new VertxException("Connection was closed"));
     }
-
     if (pendingResponse != null) {
       if (METRICS_ENABLED && metrics != null) {
         metrics.requestReset(currentRequest.getRequestMetric());

@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.core;
@@ -97,7 +92,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   @Test
   public void testAsyncResolveFail() throws Exception {
     ((VertxImpl) vertx).resolveAddress("vertx.com", onFailure(failure -> {
-      assertEquals(UnknownHostException.class, failure.getClass());
+      assertTrue("Was expecting " + failure + " to be an instanceof UnknownHostException", failure instanceof UnknownHostException);
       testComplete();
     }));
     await();
@@ -533,10 +528,10 @@ public class HostnameResolutionTest extends VertxTestBase {
     }));
     awaitLatch(latch3);
 
-    // "host3" does not contain a dot or is not absolute
+    // "host3" resolves to addr_host3 as fallback
     CountDownLatch latch4 = new CountDownLatch(1);
-    vertx.resolveAddress("host3", onFailure(cause -> {
-      assertTrue(cause instanceof UnknownHostException);
+    vertx.resolveAddress("host3", onSuccess(cause -> {
+      assertEquals(addr_host3, cause.getHostAddress());
       latch4.countDown();
     }));
     awaitLatch(latch4);
@@ -565,9 +560,10 @@ public class HostnameResolutionTest extends VertxTestBase {
     }));
     awaitLatch(latch7);
 
-    // "host7.sub.sub" contains two dots and is not resolved to "host6.sub.sub.foo.com"
+    // "host6.sub.sub" contains two dots and is resolved to "host6.sub.sub.foo.com" as fallback
     CountDownLatch latch8 = new CountDownLatch(1);
-    vertx.resolveAddress("host6.sub.sub", onFailure(resolved -> {
+    vertx.resolveAddress("host6.sub.sub", onSuccess(resolved -> {
+      assertEquals(addr_host6_sub_sub_foo_com, resolved.getHostAddress());
       latch8.countDown();
     }));
     awaitLatch(latch8);

@@ -1,23 +1,17 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.http.impl;
 
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -33,7 +27,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
 
   public WebSocketImpl(VertxInternal vertx,
-                       ClientConnection conn, boolean supportsContinuation,
+                       Http1xClientConnection conn, boolean supportsContinuation,
                        int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
   }
@@ -41,7 +35,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
   @Override
   void handleClosed() {
     synchronized (conn) {
-      HttpClientMetrics metrics = ((ClientConnection) conn).metrics();
+      HttpClientMetrics metrics = ((Http1xClientConnection) conn).metrics();
       if (metrics != null) {
         metrics.disconnected(getMetric());
       }

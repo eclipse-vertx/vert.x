@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.http.impl;
@@ -122,7 +117,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
   private final ContextImpl creatingContext;
-  private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
+  private final Map<Channel, Http1xServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final Map<Channel, Http2ServerConnection> connectionMap2 = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<HttpHandlers> httpHandlerMgr = new HandlerManager<>(availableWorkers);
@@ -395,26 +390,37 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   private VertxHttp2ConnectionHandler<Http2ServerConnection> setHandler(HandlerHolder<HttpHandlers> holder, Http2Settings upgrade, Channel ch) {
-    return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>(ch)
-        .connectionMap(connectionMap2)
-        .server(true)
-        .serverUpgrade(upgrade)
-        .useCompression(options.isCompressionSupported())
-        .useDecompression(options.isDecompressionSupported())
-        .compressionLevel(options.getCompressionLevel())
-        .initialSettings(options.getInitialSettings())
-        .connectionFactory(connHandler -> {
-          Http2ServerConnection conn = new Http2ServerConnection(holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
-          if (metrics != null) {
-            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-          }
-          if (options.getHttp2ConnectionWindowSize() > 0) {
-            conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-          }
-          return conn;
-        })
-        .logEnabled(logEnabled)
-        .build();
+    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>(ch)
+      .server(true)
+      .serverUpgrade(upgrade)
+      .useCompression(options.isCompressionSupported())
+      .useDecompression(options.isDecompressionSupported())
+      .compressionLevel(options.getCompressionLevel())
+      .initialSettings(options.getInitialSettings())
+      .connectionFactory(connHandler -> {
+        Http2ServerConnection conn = new Http2ServerConnection(holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics);
+        if (metrics != null) {
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        }
+        if (options.getHttp2ConnectionWindowSize() > 0) {
+          conn.setWindowSize(options.getHttp2ConnectionWindowSize());
+        }
+        return conn;
+      })
+      .logEnabled(logEnabled)
+      .build();
+    handler.addHandler(conn -> {
+      connectionMap2.put(conn.channel(), conn);
+      if (holder.handler.connectionHandler != null) {
+        holder.context.executeFromIO(() -> {
+          holder.handler.connectionHandler.handle(conn);
+        });
+      }
+    });
+    handler.removeHandler(conn -> {
+      connectionMap2.remove(conn.channel());
+    });
+    return handler;
   }
 
   private void configureHttp1(ChannelPipeline pipeline) {
@@ -444,11 +450,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
     HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(pipeline.channel().eventLoop());
-    ServerHandler handler;
+    Http1xServerHandler handler;
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
       // some casting and a header check
-      handler = new ServerHandler(sslHelper, options, serverOrigin, holder, metrics);
+      handler = new Http1xServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     } else {
       handler = new ServerHandlerWithWebSockets(sslHelper, options, serverOrigin, holder, metrics);
     }
@@ -464,12 +470,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public void handleHttp2(Channel ch) {
     HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(ch.eventLoop());
     configureHttp2(ch.pipeline());
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = setHandler(holder, null, ch);
-    if (holder.handler.connectionHandler != null) {
-      holder.context.executeFromIO(() -> {
-        holder.handler.connectionHandler.handle(handler.connection);
-      });
-    }
+    setHandler(holder, null, ch);
   }
 
   public void configureHttp2(ChannelPipeline pipeline) {
@@ -579,7 +580,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     ContextImpl currCon = vertx.getContext();
 
-    for (ServerConnection conn : connectionMap.values()) {
+    for (Http1xServerConnection conn : connectionMap.values()) {
       conn.close();
     }
     for (Http2ServerConnection conn : connectionMap2.values()) {
@@ -611,7 +612,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  public class ServerHandlerWithWebSockets extends ServerHandler {
+  public class ServerHandlerWithWebSockets extends Http1xServerHandler {
 
     private boolean closeFrameSent;
     private FullHttpRequest wsRequest;
@@ -623,7 +624,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void handleMessage(ServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    protected void handleMessage(Http1xServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
       Channel ch = chctx.channel();
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;
@@ -708,7 +709,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
-    protected void handshake(ServerConnection conn, FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
+    protected void handshake(Http1xServerConnection conn, FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
 
       WebSocketServerHandshaker shake = createHandshaker(conn, ch, request);
       if (shake == null) {

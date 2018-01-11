@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.net.impl;
@@ -347,19 +342,24 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   @Override
-  public synchronized void close(Handler<AsyncResult<Void>> done) {
+  public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
+    if (creatingContext != null) {
+      creatingContext.removeCloseHook(this);
+    }
+    Handler<AsyncResult<Void>> done;
     if (endHandler != null) {
       Handler<Void> handler = endHandler;
       endHandler = null;
-      Handler<AsyncResult<Void>> next = done;
       done = event -> {
         if (event.succeeded()) {
           handler.handle(event.result());
         }
-        if (next != null) {
-          next.handle(event);
+        if (completionHandler != null) {
+          completionHandler.handle(event);
         }
       };
+    } else {
+      done = completionHandler;
     }
     ContextImpl context = vertx.getOrCreateContext();
     if (!listening) {
@@ -385,10 +385,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
           // of the actual server
           actualServer.actualClose(context, done);
         }
+      } else {
+        context.runOnContext(v -> {
+          done.handle(Future.succeededFuture());
+        });
       }
-    }
-    if (creatingContext != null) {
-      creatingContext.removeCloseHook(this);
     }
   }
 

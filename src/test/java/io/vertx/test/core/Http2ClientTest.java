@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.core;
@@ -71,6 +66,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -134,20 +130,19 @@ public class Http2ClientTest extends Http2TestBase {
         req.response().end();
       });
     }).connectionHandler(conn -> {
+      io.vertx.core.http.Http2Settings initialRemoteSettings = conn.remoteSettings();
+      assertEquals(initialSettings.isPushEnabled(), initialRemoteSettings.isPushEnabled());
+      assertEquals(initialSettings.getMaxHeaderListSize(), initialRemoteSettings.getMaxHeaderListSize());
+      assertEquals(initialSettings.getMaxFrameSize(), initialRemoteSettings.getMaxFrameSize());
+      assertEquals(initialSettings.getInitialWindowSize(), initialRemoteSettings.getInitialWindowSize());
+//            assertEquals(Math.min(initialSettings.getMaxConcurrentStreams(), Integer.MAX_VALUE), settings.getMaxConcurrentStreams());
+      assertEquals(initialSettings.getHeaderTableSize(), initialRemoteSettings.getHeaderTableSize());
+      assertEquals(initialSettings.get('\u0007'), initialRemoteSettings.get(7));
       Context ctx = Vertx.currentContext();
       conn.remoteSettingsHandler(settings -> {
         assertOnIOContext(ctx);
         switch (count.getAndIncrement()) {
           case 0:
-            assertEquals(initialSettings.isPushEnabled(), settings.isPushEnabled());
-            assertEquals(initialSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
-            assertEquals(initialSettings.getMaxFrameSize(), settings.getMaxFrameSize());
-            assertEquals(initialSettings.getInitialWindowSize(), settings.getInitialWindowSize());
-//            assertEquals(Math.min(initialSettings.getMaxConcurrentStreams(), Integer.MAX_VALUE), settings.getMaxConcurrentStreams());
-            assertEquals(initialSettings.getHeaderTableSize(), settings.getHeaderTableSize());
-            assertEquals(initialSettings.get('\u0007'), settings.get(7));
-            break;
-          case 1:
             // find out why it fails sometimes ...
             // assertEquals(updatedSettings.pushEnabled(), settings.getEnablePush());
             assertEquals(updatedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
@@ -159,6 +154,9 @@ public class Http2ClientTest extends Http2TestBase {
             assertEquals(updatedSettings.get('\u0007'), settings.get(7));
             complete();
             break;
+          default:
+            fail();
+
         }
       });
     });
@@ -198,7 +196,6 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testServerSettings() throws Exception {
-    waitFor(2);
     io.vertx.core.http.Http2Settings expectedSettings = TestUtils.randomHttp2Settings();
     expectedSettings.setHeaderTableSize((int)io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
     server.close();
@@ -210,26 +207,20 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     server.requestHandler(req -> {
-      req.response().end();
     });
     startServer();
     AtomicInteger count = new AtomicInteger();
-    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
-      complete();
-    }).connectionHandler(conn -> {
+    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> fail()).connectionHandler(conn -> {
       conn.remoteSettingsHandler(settings -> {
         switch (count.getAndIncrement()) {
           case 0:
-            // Initial settings
-            break;
-          case 1:
             assertEquals(expectedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
             assertEquals(expectedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
             assertEquals(expectedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
             assertEquals(expectedSettings.getMaxConcurrentStreams(), settings.getMaxConcurrentStreams());
             assertEquals(expectedSettings.getHeaderTableSize(), settings.getHeaderTableSize());
             assertEquals(expectedSettings.get('\u0007'), settings.get(7));
-            complete();
+            testComplete();
             break;
         }
       });
@@ -594,10 +585,8 @@ public class Http2ClientTest extends Http2TestBase {
     CountDownLatch latch = new CountDownLatch(1);
     client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
     }).connectionHandler(conn -> {
-      conn.remoteSettingsHandler(settings -> {
-        assertEquals(max == null ? 0xFFFFFFFFL : max, settings.getMaxConcurrentStreams());
-        latch.countDown();
-      });
+      assertEquals(max == null ? 0xFFFFFFFFL : max, conn.remoteSettings().getMaxConcurrentStreams());
+      latch.countDown();
     }).exceptionHandler(err -> {
       fail();
     }).end();
@@ -946,6 +935,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testConnectionShutdownInConnectionHandler() throws Exception {
+    waitFor(2);
     AtomicInteger serverStatus = new AtomicInteger();
     server.connectionHandler(conn -> {
       if (serverStatus.getAndIncrement() == 0) {
@@ -963,28 +953,27 @@ public class Http2ClientTest extends Http2TestBase {
     });
     server.requestHandler(req -> {
       assertEquals(5, serverStatus.getAndIncrement());
-      req.response().end();
+      req.response().end("" + serverStatus.get());
     });
     startServer();
     AtomicInteger clientStatus = new AtomicInteger();
     HttpClientRequest req1 = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
     req1.connectionHandler(conn -> {
       Context ctx = Vertx.currentContext();
-      conn.shutdownHandler(v -> {
-        assertOnIOContext(ctx);
-        clientStatus.compareAndSet(1, 2);
-      });
       if (clientStatus.getAndIncrement() == 0) {
+        conn.shutdownHandler(v -> {
+          assertOnIOContext(ctx);
+          clientStatus.compareAndSet(1, 2);
+          complete();
+        });
         conn.shutdown();
       }
     });
-    req1.exceptionHandler(err -> {
-      fail();
-    });
+    req1.exceptionHandler(err -> fail());
     req1.handler(resp -> {
-      assertEquals(2, clientStatus.getAndIncrement());
-      resp.endHandler(v -> {
-        testComplete();
+      resp.bodyHandler(body -> {
+        assertEquals("6", body.toString());
+        complete();
       });
     });
     req1.end();
@@ -1021,7 +1010,9 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testReceivingGoAwayDiscardsTheConnection() throws Exception {
     AtomicInteger reqCount = new AtomicInteger();
+    Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
     server.requestHandler(req -> {
+      connections.add(req.connection());
       switch (reqCount.getAndIncrement()) {
         case 0:
           req.connection().goAway(0);
@@ -1040,6 +1031,7 @@ public class Http2ClientTest extends Http2TestBase {
       conn.goAwayHandler(ga -> {
         if (gaCount.getAndIncrement() == 0) {
           client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp2 -> {
+            assertEquals(2, connections.size());
             testComplete();
           }).setTimeout(5000).exceptionHandler(this::fail).end();
         }
@@ -1748,14 +1740,13 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testMaxConcurrencyMultipleConnections() throws Exception {
-    testMaxConcurrency(3, 5);
+    testMaxConcurrency(2, 1);
   }
 
   private void testMaxConcurrency(int poolSize, int maxConcurrency) throws Exception {
     int rounds = 1 + poolSize;
     int maxRequests = poolSize * maxConcurrency;
     int totalRequests = maxRequests + maxConcurrency;
-
     Set<HttpConnection> serverConns = new HashSet<>();
     server.connectionHandler(conn -> {
       serverConns.add(conn);
@@ -1781,7 +1772,6 @@ public class Http2ClientTest extends Http2TestBase {
         setHttp2MaxPoolSize(poolSize).
         setHttp2MultiplexingLimit(maxConcurrency));
     AtomicInteger respCount = new AtomicInteger();
-
     Set<HttpConnection> clientConnections = Collections.synchronizedSet(new HashSet<>());
     for (int j = 0;j < rounds;j++) {
       for (int i = 0;i < maxConcurrency;i++) {

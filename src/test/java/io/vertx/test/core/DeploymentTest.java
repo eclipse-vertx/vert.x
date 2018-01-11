@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2014 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.core;
@@ -823,6 +818,64 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testSimpleChildUndeploymentOnParentAsyncFailure() throws Exception {
+    AtomicInteger childDeployed = new AtomicInteger();
+    AtomicInteger childUndeployed = new AtomicInteger();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        vertx.deployVerticle(new AbstractVerticle() {
+          @Override
+          public void start() throws Exception {
+            childDeployed.incrementAndGet();
+          }
+          @Override
+          public void stop() throws Exception {
+            childUndeployed.incrementAndGet();
+          }
+        }, onSuccess(child -> {
+          startFuture.fail("Undeployed");
+        }));
+      }
+    }, onFailure(expected -> {
+      assertEquals(1, childDeployed.get());
+      assertEquals(1, childUndeployed.get());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testSimpleChildUndeploymentOnParentSyncFailure() throws Exception {
+    AtomicInteger childDeployed = new AtomicInteger();
+    AtomicInteger childUndeployed = new AtomicInteger();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        vertx.deployVerticle(new AbstractVerticle() {
+          @Override
+          public void start() throws Exception {
+            childDeployed.incrementAndGet();
+            latch.countDown();
+          }
+          @Override
+          public void stop() throws Exception {
+            childUndeployed.incrementAndGet();
+          }
+        });
+        awaitLatch(latch);
+        throw new RuntimeException();
+      }
+    }, onFailure(expected -> {
+      assertEquals(1, childDeployed.get());
+      assertEquals(1, childUndeployed.get());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
   public void testAsyncDeployCalledSynchronously() throws Exception {
     MyAsyncVerticle verticle = new MyAsyncVerticle(f -> f.complete(null), f -> f.complete(null));
     vertx.deployVerticle(verticle, ar -> {
@@ -1389,6 +1442,36 @@ public class DeploymentTest extends VertxTestBase {
       assertTrue(asyncResult.failed());
       assertNull(asyncResult.result());
       testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testMultipleFailedDeploys() throws InterruptedException {
+    int instances = 10;
+    DeploymentOptions options = new DeploymentOptions();
+    options.setInstances(instances);
+
+    AtomicBoolean called = new AtomicBoolean(false);
+
+    vertx.deployVerticle(() -> {
+      Verticle v = new AbstractVerticle() {
+        @Override
+        public void start(final Future<Void> startFuture) throws Exception {
+          startFuture.fail("Fail to deploy.");
+        }
+      };
+      return v;
+    }, options, asyncResult -> {
+      assertTrue(asyncResult.failed());
+      assertNull(asyncResult.result());
+      if (!called.compareAndSet(false, true)) {
+        fail("Completion handler called more than once");
+      }
+      vertx.setTimer(30, id -> {
+        testComplete();
+      });
+
     });
     await();
   }

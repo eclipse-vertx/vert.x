@@ -1,18 +1,14 @@
 /*
- * Copyright (c) 2011-2014 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
+
 package io.vertx.core.net.impl;
 
 import io.vertx.core.VertxException;
@@ -37,10 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -71,6 +64,7 @@ public class KeyStoreHelper {
 
   // Dummy password for encrypting pem based stores in memory
   private static final String DUMMY_PASSWORD = "dummy";
+  private static final String DUMMY_CERT_ALIAS = "cert-";
 
   private static final Pattern BEGIN_PATTERN = Pattern.compile("-----BEGIN ([A-Z ]+)-----");
   private static final Pattern END_PATTERN = Pattern.compile("-----END ([A-Z ]+)-----");
@@ -137,13 +131,22 @@ public class KeyStoreHelper {
   private final KeyStore store;
   private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
   private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
+  private final Map<String, TrustManagerFactory> trustMgrMap = new HashMap<>();
 
   public KeyStoreHelper(KeyStore ks, String password) throws Exception {
     Enumeration<String> en = ks.aliases();
     while (en.hasMoreElements()) {
       String alias = en.nextElement();
       Certificate cert = ks.getCertificate(alias);
-      if (cert instanceof X509Certificate) {
+      if (ks.isCertificateEntry(alias) && ! alias.startsWith(DUMMY_CERT_ALIAS)){
+        KeyStore keyStore = KeyStore.getInstance("jks");
+        keyStore.load(null, null);
+        keyStore.setCertificateEntry("cert-1", cert);
+        TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        fact.init(keyStore);
+        trustMgrMap.put(alias, fact);
+      }
+      if (ks.isKeyEntry(alias) && cert instanceof X509Certificate) {
         X509Certificate x509Cert = (X509Certificate) cert;
         Collection<List<?>> ans = x509Cert.getSubjectAlternativeNames();
         List<String> domains = new ArrayList<>();
@@ -236,6 +239,11 @@ public class KeyStoreHelper {
     return getKeyMgrFactory().getKeyManagers();
   }
 
+  public TrustManager[] getTrustMgr(String serverName) {
+    TrustManagerFactory fact = trustMgrMap.get(serverName);
+    return fact != null ? fact.getTrustManagers() : null;
+  }
+
   public TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     fact.init(store);
@@ -321,7 +329,7 @@ public class KeyStoreHelper {
     Iterable<Buffer> iterable = certValues::iterator;
     for (Buffer certValue : iterable) {
       for (Certificate cert : loadCerts(certValue)) {
-        keyStore.setCertificateEntry("cert-" + count++, cert);
+        keyStore.setCertificateEntry(DUMMY_CERT_ALIAS + count++, cert);
       }
     }
     return keyStore;

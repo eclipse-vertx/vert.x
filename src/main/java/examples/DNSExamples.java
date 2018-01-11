@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package examples;
@@ -33,7 +28,7 @@ public class DNSExamples {
   }
 
   public void example2(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.lookup("vertx.io", ar -> {
       if (ar.succeeded()) {
         System.out.println(ar.result());
@@ -44,7 +39,7 @@ public class DNSExamples {
   }
 
   public void example3(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.lookup4("vertx.io", ar -> {
       if (ar.succeeded()) {
         System.out.println(ar.result());
@@ -55,7 +50,7 @@ public class DNSExamples {
   }
 
   public void example4(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.lookup6("vertx.io", ar -> {
       if (ar.succeeded()) {
         System.out.println(ar.result());
@@ -66,7 +61,7 @@ public class DNSExamples {
   }
 
   public void example5(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.resolveA("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
@@ -80,7 +75,7 @@ public class DNSExamples {
   }
 
   public void example6(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.resolveAAAA("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
@@ -94,7 +89,7 @@ public class DNSExamples {
   }
 
   public void example7(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.resolveCNAME("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
@@ -108,7 +103,7 @@ public class DNSExamples {
   }
 
   public void example8(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.resolveMX("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<MxRecord> records = ar.result();
@@ -127,7 +122,7 @@ public class DNSExamples {
   }
 
   public void example10(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.resolveTXT("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
@@ -141,7 +136,7 @@ public class DNSExamples {
   }
 
   public void example11(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.resolveNS("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
@@ -155,7 +150,7 @@ public class DNSExamples {
   }
 
   public void example12(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.resolveSRV("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<SrvRecord> records = ar.result();
@@ -183,7 +178,7 @@ public class DNSExamples {
   }
 
   public void example14(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.resolvePTR("1.0.0.10.in-addr.arpa", ar -> {
       if (ar.succeeded()) {
         String record = ar.result();
@@ -195,7 +190,7 @@ public class DNSExamples {
   }
 
   public void example15(Vertx vertx) {
-    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
     client.reverseLookup("10.0.0.1", ar -> {
       if (ar.succeeded()) {
         String record = ar.result();

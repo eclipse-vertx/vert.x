@@ -1,36 +1,21 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2ConnectionHandler;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Flags;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2RemoteFlowController;
-import io.netty.handler.codec.http2.Http2Settings;
-import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.EventExecutor;
@@ -38,24 +23,35 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
-import java.util.Map;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2ConnectionHandler implements Http2Connection.Listener {
+class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2ConnectionHandler implements Http2FrameListener, Http2Connection.Listener {
 
-  private final Map<Channel, ? super C> connectionMap;
-  C connection;
+  private final Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
+  private C connection;
   private ChannelHandlerContext chctx;
+  private Handler<C> addHandler;
+  private Handler<C> removeHandler;
+  private final boolean useDecompressor;
+  private final Http2Settings serverUpgradeSettings;
+  private final boolean upgrade;
 
   public VertxHttp2ConnectionHandler(
-      Map<Channel, ? super C> connectionMap,
+      Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory,
+      boolean useDecompressor,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
-      Http2Settings initialSettings) {
+      Http2Settings initialSettings,
+      Http2Settings serverUpgradeSettings,
+      boolean upgrade) {
     super(decoder, encoder, initialSettings);
-    this.connectionMap = connectionMap;
+    this.connectionFactory = connectionFactory;
+    this.useDecompressor = useDecompressor;
+    this.serverUpgradeSettings = serverUpgradeSettings;
+    this.upgrade = upgrade;
     encoder().flowController().listener(s -> {
       if (connection != null) {
         connection.onStreamwritabilityChanged(s);
@@ -68,15 +64,32 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     return chctx;
   }
 
+  /**
+   * Set an handler to be called when the connection is set on this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHttp2ConnectionHandler<C> addHandler(Handler<C> handler) {
+    this.addHandler = handler;
+    return this;
+  }
+
+  /**
+   * Set an handler to be called when the connection is unset from this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHttp2ConnectionHandler<C> removeHandler(Handler<C> handler) {
+    this.removeHandler = handler;
+    return this;
+  }
+
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
     chctx = ctx;
-  }
-
-  void init(C conn) {
-    connection = conn;
-    connectionMap.put(chctx.channel(), connection);
   }
 
   @Override
@@ -88,13 +101,28 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     super.channelActive(ctx);
+
+    if (upgrade) {
+      if (serverUpgradeSettings != null) {
+        onHttpServerUpgrade(serverUpgradeSettings);
+      } else {
+        onHttpClientUpgrade();
+      }
+    }
+
+    // super call writes the connection preface
+    // we need to flush to send it
+    // this is called only on the client
+    ctx.flush();
   }
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
-    connectionMap.remove(ctx.channel());
     connection.getContext().executeFromIO(connection::handleClosed);
+    if (removeHandler != null) {
+      removeHandler.handle(connection);
+    }
   }
 
   @Override
@@ -320,5 +348,82 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   private void _writePushPromise(int streamId, int promisedStreamId, Http2Headers headers, ChannelPromise promise) {
     encoder().writePushPromise(chctx, streamId, promisedStreamId, headers, 0, promise);
+  }
+
+  // Http2FrameListener
+
+  @Override
+  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+    assert connection != null;
+    connection.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endOfStream);
+  }
+
+  @Override
+  public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onSettingsAckRead(ChannelHandlerContext ctx) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
+    connection = connectionFactory.apply(this);
+    if (useDecompressor) {
+      decoder().frameListener(new DelegatingDecompressorFrameListener(decoder().connection(), connection));
+    } else {
+      decoder().frameListener(connection);
+    }
+    connection.onSettingsRead(ctx, settings);
+    if (addHandler != null) {
+      addHandler.handle(connection);
+    }
+  }
+
+  @Override
+  public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) throws Http2Exception {
+    throw new UnsupportedOperationException();
   }
 }

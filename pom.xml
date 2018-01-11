@@ -1,18 +1,15 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright (c) 2011-2014 The original author or authors
+  ~ Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
   ~
-  ~  All rights reserved. This program and the accompanying materials
-  ~  are made available under the terms of the Eclipse Public License v1.0
-  ~  and Apache License v2.0 which accompanies this distribution.
+  ~ This program and the accompanying materials are made available under the
+  ~ terms of the Eclipse Public License 2.0 which is available at
   ~
-  ~      The Eclipse Public License is available at
-  ~      http://www.eclipse.org/legal/epl-v10.html
+  ~ http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+  ~ which is available at https://www.apache.org/licenses/LICENSE-2.0.
   ~
-  ~      The Apache License v2.0 is available at
-  ~      http://www.opensource.org/licenses/apache2.0.php
+  ~ SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
   ~
-  ~  You may elect to redistribute this code under either of these licenses.
   --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
@@ -23,7 +20,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>3.5.0-SNAPSHOT</version>
+  <version>3.5.1-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -34,8 +31,8 @@
       <distribution>repo</distribution>
     </license>
     <license>
-      <name>Eclipse Public License - v 1.0</name>
-      <url>http://www.eclipse.org/legal/epl-v10.html</url>
+      <name>Eclipse Public License - v 2.0</name>
+      <url>http://www.eclipse.org/legal/epl-v20.html</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -47,7 +44,7 @@
   </scm>
 
   <properties>
-    <tcnative.version>2.0.6.Final</tcnative.version>
+    <tcnative.version>2.0.7.Final</tcnative.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
     <log4j2.version>2.8.2</log4j2.version>
@@ -55,8 +52,8 @@
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>3.5.0-SNAPSHOT</stack.version>
-    <jetty.alpnAgent.argLine><![CDATA[]]></jetty.alpnAgent.argLine>
+    <stack.version>3.5.1-SNAPSHOT</stack.version>
+    <jetty.alpnAgent.argLine/>
     <jmh.version>1.19</jmh.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>

@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- *  ------------------------------------------------------
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies this distribution.
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
- *      The Eclipse Public License is available at
- *      http://www.eclipse.org/legal/epl-v10.html
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *      The Apache License v2.0 is available at
- *      http://www.opensource.org/licenses/apache2.0.php
- *
- *  You may elect to redistribute this code under either of these licenses.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.test.core;
@@ -25,11 +20,13 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.tls.Cert;
 import org.junit.Test;
 
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -355,5 +352,73 @@ public class Http2Test extends HttpTest {
     } catch (IllegalArgumentException ignore) {
       // Expected
     }
+  }
+
+  @Test
+  public void testServePendingRequests() throws Exception {
+    int n = 10;
+    waitFor(n);
+    LinkedList<HttpServerRequest> requests = new LinkedList<>();
+    Set<HttpConnection> connections = new HashSet<>();
+    server.requestHandler(req -> {
+      requests.add(req);
+      connections.add(req.connection());
+      assertEquals(1, connections.size());
+      if (requests.size() == n) {
+        while (requests.size() > 0) {
+          requests.removeFirst().response().end();
+        }
+      }
+    });
+    startServer();
+    for (int i = 0;i < n;i++) {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> complete()).end();
+    }
+    await();
+  }
+
+  @Test
+  public void testInitialMaxConcurrentStreamZero() throws Exception {
+    AtomicLong concurrency = new AtomicLong();
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server.requestHandler(req -> {
+      assertEquals(10, concurrency.get());
+      req.response().end();
+    });
+    server.connectionHandler(conn -> {
+      vertx.setTimer(500, id -> {
+        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(10));
+      });
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      testComplete();
+    }).connectionHandler(conn -> {
+      assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
+      conn.remoteSettingsHandler(settings -> concurrency.set(settings.getMaxConcurrentStreams()));
+    }).setTimeout(10000).exceptionHandler(err -> fail(err)).end();
+    await();
+  }
+
+  @Test
+  public void testFoo() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.write("Hello");
+      resp.end("World");
+      assertNull(resp.headers().get("content-length"));
+      complete();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertNull(resp.getHeader("content-length"));
+      resp.bodyHandler(body -> {
+        assertEquals("HelloWorld", body.toString());
+        complete();
+      });
+    });
+    await();
   }
 }
