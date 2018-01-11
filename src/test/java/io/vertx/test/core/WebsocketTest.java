@@ -1774,227 +1774,181 @@ public class WebsocketTest extends VertxTestBase {
 
   @Test
   public void testServerWebsocketPingPong() {
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST));
     server.websocketHandler(ws -> {
-      ws.pongHandler(pongQueue::push);
+      ws.pongHandler(buff -> {
+        assertEquals("ping", buff.toString());
+        testComplete();
+      });
       ws.writePing(Buffer.buffer("ping"));
-    }).listen(ar -> {
+    }).listen(onSuccess(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {});
-    });
-
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.isEmpty()) { }
-    assertEquals("ping", pongQueue.pop().toString());
+    }));
+    await();
   }
 
   @Test
   public void testServerWebsocketPingExceeds125Bytes() {
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
-    AtomicReference<Throwable> throwableContainer = new AtomicReference<Throwable>();
-    Integer maxFrameSize = 255;
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
-    server.websocketHandler(ws -> {
-      ws.pongHandler(pongQueue::push);
+    testServerWebsocketPingPongCheck(255, ws -> {
       try {
         ws.writePing(Buffer.buffer(randomAlphaString(126)));
-      } catch(Throwable t) {
-        throwableContainer.set(t);
+      } catch(Throwable expected) {
+        assertEquals("Ping cannot exceed maxWebSocketFrameSize or 125 bytes", expected.getMessage());
         ws.close();
+        testComplete();
       }
-    }).listen(ar -> {
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {});
     });
-
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && throwableContainer.get() == null) { }
-    assertEquals("Ping cannot exceed maxWebSocketFrameSize or 125 bytes", throwableContainer.get().getMessage());
-    assertTrue(pongQueue.isEmpty());
   }
 
   @Test
   public void testServerWebsocketPongExceeds125Bytes() {
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
-    AtomicReference<Throwable> throwableContainer = new AtomicReference<Throwable>();
-    Integer maxFrameSize = 255;
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
-    server.websocketHandler(ws -> {
-      ws.pongHandler(pongQueue::push);
+    testServerWebsocketPingPongCheck(255, ws -> {
       try {
         ws.writePong(Buffer.buffer(randomAlphaString(126)));
-      } catch(Throwable t) {
-        throwableContainer.set(t);
+      } catch(Throwable expected) {
+        assertEquals("Pong cannot exceed maxWebSocketFrameSize or 125 bytes", expected.getMessage());
         ws.close();
+        testComplete();
       }
-    }).listen(ar -> {
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {});
     });
-
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && throwableContainer.get() == null) { }
-    assertEquals("Pong cannot exceed maxWebSocketFrameSize or 125 bytes", throwableContainer.get().getMessage());
-    assertTrue(pongQueue.isEmpty());
   }
 
   @Test
   public void testServerWebsocketPingExceedsMaxFrameSize() {
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
-    AtomicReference<Throwable> throwableContainer = new AtomicReference<Throwable>();
-    Integer maxFrameSize = 100;
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
-    server.websocketHandler(ws -> {
-      ws.pongHandler(pongQueue::push);
+    testServerWebsocketPingPongCheck(100, ws -> {
       try {
         ws.writePing(Buffer.buffer(randomAlphaString(101)));
-      } catch(Throwable t) {
-        throwableContainer.set(t);
+      } catch(Throwable expected) {
+        assertEquals("Ping cannot exceed maxWebSocketFrameSize or 125 bytes", expected.getMessage());
         ws.close();
+        testComplete();
       }
-    }).listen(ar -> {
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {});
     });
-
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && throwableContainer.get() == null) { }
-    assertEquals("Ping cannot exceed maxWebSocketFrameSize or 125 bytes", throwableContainer.get().getMessage());
-    assertTrue(pongQueue.isEmpty());
   }
 
   @Test
   public void testServerWebsocketPongExceedsMaxFrameSize() {
-    AtomicReference<Throwable> throwableContainer = new AtomicReference<Throwable>();
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
-    Integer maxFrameSize = 100;
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
-    server.websocketHandler(ws -> {
-      ws.pongHandler(pongQueue::push);
+    testServerWebsocketPingPongCheck(100, ws -> {
       try {
         ws.writePong(Buffer.buffer(randomAlphaString(101)));
-      } catch(Throwable t) {
-        throwableContainer.set(t);
+      } catch(Throwable expected) {
+        assertEquals("Pong cannot exceed maxWebSocketFrameSize or 125 bytes", expected.getMessage());
         ws.close();
+        testComplete();
       }
-    }).listen(ar -> {
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {});
     });
+  }
 
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && throwableContainer.get() == null) { }
-    assertEquals("Pong cannot exceed maxWebSocketFrameSize or 125 bytes", throwableContainer.get().getMessage());
-    assertTrue(pongQueue.isEmpty());
+  private void testServerWebsocketPingPongCheck(int maxFrameSize, Consumer<ServerWebSocket> check) {
+    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
+    server.websocketHandler(ws -> {
+      ws.pongHandler(buff -> fail());
+      check.accept(ws);
+    }).listen(onSuccess(v -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {});
+    }));
+    await();
   }
 
   @Test
   public void testServerWebsocketSendPingExceeds125Bytes() {
     //Netty will prevent us from encoding a pingBody greater than 126 bytes by silently throwing an error in the background
     String pingBody = randomAlphaString(126);
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
     Integer maxFrameSize = 256;
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
     server.websocketHandler(ws -> {
-      ws.pongHandler(pongQueue::push);
+      ws.pongHandler(buff -> fail());
       ws.writeFrame(WebSocketFrame.pingFrame(Buffer.buffer(pingBody)));
-    }).listen(ar -> {
+      vertx.setTimer(2000, id -> testComplete());
+    }).listen(onSuccess(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {});
-    });
-
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.isEmpty()) { }
-    assertTrue(pongQueue.isEmpty());
+    }));
+    await();
   }
 
   @Test
   public void testClientWebsocketSendPingExceeds125Bytes() {
     //Netty will prevent us from encoding a pingBody greater than 126 bytes by silently throwing an error in the background
     String pingBody = randomAlphaString(126);
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
     Integer maxFrameSize = 256;
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
-    server.websocketHandler(ws -> { }).listen(ar -> {
+    server.websocketHandler(ws -> { }).listen(onSuccess(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
-        ws.pongHandler(pongQueue::push);
+        ws.pongHandler(buffer -> fail());
         ws.writeFrame(WebSocketFrame.pingFrame(Buffer.buffer(pingBody)));
+        vertx.setTimer(2000, id -> testComplete());
       });
-    });
-
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.isEmpty()) { }
-    assertTrue(pongQueue.isEmpty());
+    }));
+    await();
   }
 
   @Test
   public void testServerWebsocketSendPongExceeds125Bytes() {
     //Netty will prevent us from encoding a pingBody greater than 126 bytes by silently throwing an error in the background
     String pingBody = randomAlphaString(126);
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
     Integer maxFrameSize = 256;
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
     server.websocketHandler(ws -> {
       ws.writeFrame(WebSocketFrame.pongFrame(Buffer.buffer(pingBody)));
-    }).listen(ar -> {
+    }).listen(onSuccess(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
-        ws.pongHandler(pongQueue::push);
+        ws.pongHandler(buff -> fail());
+        vertx.setTimer(2000, id -> testComplete());
       });
-    });
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.isEmpty()) { }
-    assertTrue(pongQueue.isEmpty());
+    }));
+    await();
   }
 
   @Test
   public void testClientWebsocketSendPongExceeds125Bytes() {
     //Netty will prevent us from encoding a pingBody greater than 126 bytes by silently throwing an error in the background
     String pingBody = randomAlphaString(126);
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
     Integer maxFrameSize = 256;
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
     server.websocketHandler(ws -> {
-      ws.pongHandler(pongQueue::push);
-    }).listen(ar -> {
+      ws.pongHandler(buff -> fail());
+      vertx.setTimer(2000, id -> testComplete());
+    }).listen(onSuccess(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         ws.writeFrame(WebSocketFrame.pongFrame(Buffer.buffer(pingBody)));
       });
-    });
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.isEmpty()) { }
-    assertTrue(pongQueue.isEmpty());
+    }));
+    await();
   }
 
   @Test
   public void testServerWebsocketReceivePongExceedsMaxFrameSize() {
     String pingBody = randomAlphaString(113);
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
-    AtomicReference<Throwable> throwableContainer = new AtomicReference<Throwable>();
     Integer maxFrameSize = 64;
     Buffer ping1 = Buffer.buffer(Buffer.buffer(pingBody.getBytes()).getBytes(0, maxFrameSize));
     Buffer ping2 = Buffer.buffer(Buffer.buffer(pingBody.getBytes()).getBytes(maxFrameSize, pingBody.length()));
 
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
     server.websocketHandler(ws -> {
-      ws.pongHandler(pongQueue::push);
-    }).listen(ar -> {
+      List<Buffer> pongs = new ArrayList<>();
+      ws.pongHandler(pong -> {
+        pongs.add(pong);
+        if (pongs.size() == 2) {
+          assertEquals(pongs, Arrays.asList(ping1, ping2));
+          testComplete();
+        }
+      });
+    }).listen(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         try {
           ws.writeFrame(new WebSocketFrameImpl(FrameType.PONG, ping1.copy().getByteBuf(), false));
           ws.writeFrame(new WebSocketFrameImpl(FrameType.PONG, ping2.copy().getByteBuf(), true));
         } catch(Throwable t) {
-          throwableContainer.set(t);
+          fail(t);
         }
       });
     });
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.size() < 2) { }
-    assertNull(throwableContainer.get());
-    assertEquals(2, pongQueue.size());
-    assertEquals(pongQueue.pop().toString(), ping2.toString());
-    assertEquals(pongQueue.pop().toString(), ping1.toString());
+    await();
   }
 
   @Test
   public void testClientWebsocketReceivePongExceedsMaxFrameSize() {
     String pingBody = randomAlphaString(113);
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
-    AtomicReference<Throwable> throwableContainer = new AtomicReference<Throwable>();
     Integer maxFrameSize = 64;
     Buffer ping1 = Buffer.buffer(Buffer.buffer(pingBody.getBytes()).getBytes(0, maxFrameSize));
     Buffer ping2 = Buffer.buffer(Buffer.buffer(pingBody.getBytes()).getBytes(maxFrameSize, pingBody.length()));
@@ -2005,57 +1959,57 @@ public class WebsocketTest extends VertxTestBase {
         ws.writeFrame(new WebSocketFrameImpl(FrameType.PONG, ping1.copy().getByteBuf(), false));
         ws.writeFrame(new WebSocketFrameImpl(FrameType.PONG, ping2.copy().getByteBuf(), true));
       } catch(Throwable t) {
-        throwableContainer.set(t);
+        fail(t);
       }
-    }).listen(ar -> {
+    }).listen(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
-        ws.pongHandler(pongQueue::push);
+        List<Buffer> pongs = new ArrayList<>();
+        ws.pongHandler(pong -> {
+          pongs.add(pong);
+          if (pongs.size() == 2) {
+            assertEquals(pongs, Arrays.asList(ping1, ping2));
+            testComplete();
+          }
+        });
       });
     });
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.size() < 2) { }
-    assertNull(throwableContainer.get());
-    assertEquals(2, pongQueue.size());
-    assertEquals(pongQueue.pop().toString(), ping2.toString());
-    assertEquals(pongQueue.pop().toString(), ping1.toString());
+    await();
   }
 
   @Test
   public void testServerWebsocketReceivePingExceedsMaxFrameSize() {
     String pingBody = randomAlphaString(113);
-    AtomicReference<Throwable> throwableContainer = new AtomicReference<Throwable>();
     Integer maxFrameSize = 64;
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
     Buffer ping1 = Buffer.buffer(Buffer.buffer(pingBody.getBytes()).getBytes(0, maxFrameSize));
     Buffer ping2 = Buffer.buffer(Buffer.buffer(pingBody.getBytes()).getBytes(maxFrameSize, pingBody.length()));
 
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
     server.websocketHandler(ws -> {
 
-    }).listen(ar -> {
+    }).listen(onSuccess(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
-        ws.pongHandler(pongQueue::push);
+        List<Buffer> pongs = new ArrayList<>();
+        ws.pongHandler(pong -> {
+          pongs.add(pong);
+          if (pongs.size() == 2) {
+            assertEquals(pongs, Arrays.asList(ping1, ping2));
+            testComplete();
+          }
+        });
         try {
           ws.writeFrame(new WebSocketFrameImpl(FrameType.PING, ping1.copy().getByteBuf(), false));
           ws.writeFrame(new WebSocketFrameImpl(FrameType.PING, ping2.copy().getByteBuf(), true));
         } catch(Throwable t) {
+          fail(t);
         }
       });
-    });
-
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.size() < 2) { }
-    assertNull(throwableContainer.get());
-    assertEquals(2, pongQueue.size());
-    assertEquals(pongQueue.pop().toString(), ping2.toString());
-    assertEquals(pongQueue.pop().toString(), ping1.toString());
+    }));
+    await();
   }
 
   @Test
   public void testClientWebsocketReceivePingExceedsMaxFrameSize() {
     String pingBody = randomAlphaString(113);
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
-    AtomicReference<Throwable> throwableContainer = new AtomicReference<Throwable>();
     Integer maxFrameSize = 64;
     Buffer ping1 = Buffer.buffer(Buffer.buffer(pingBody.getBytes()).getBytes(0, maxFrameSize));
     Buffer ping2 = Buffer.buffer(Buffer.buffer(pingBody.getBytes()).getBytes(maxFrameSize, pingBody.length()));
@@ -2063,45 +2017,44 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebsocketFrameSize(maxFrameSize));
     server.websocketHandler(ws -> {
 
-    }).listen(ar -> {
+    }).listen(onSuccess(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
-        ws.pongHandler(pongQueue::push);
+        List<Buffer> pongs = new ArrayList<>();
+        ws.pongHandler(pong -> {
+          pongs.add(pong);
+          if (pongs.size() == 2) {
+            assertEquals(pongs, Arrays.asList(ping1, ping2));
+            testComplete();
+          }
+        });
         try {
           ws.writeFrame(new WebSocketFrameImpl(FrameType.PING, ping1.copy().getByteBuf(), false));
           ws.writeFrame(new WebSocketFrameImpl(FrameType.PING, ping2.copy().getByteBuf(), true));
         } catch(Throwable t) {
-          throwableContainer.set(t);
+          fail(t);
         }
       });
-    });
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.size() < 2) { }
-    assertNull(throwableContainer.get());
-    assertEquals(2, pongQueue.size());
-    assertEquals(pongQueue.pop().toString(), ping2.toString());
-    assertEquals(pongQueue.pop().toString(), ping1.toString());
+    }));
+    await();
   }
 
   @Test
   public void testClientWebsocketPingPong() {
-    ArrayDeque<Buffer> pongQueue = new ArrayDeque<>();
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST));
     server.websocketHandler(ws -> {
-    }).listen(ar -> {
+    }).listen(onSuccess(v -> {
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         ws.pongHandler( pong -> {
-          pongQueue.push(pong);
+          assertEquals("ping", pong.toString());
+          testComplete();
         });
         ws.writePing(Buffer.buffer("ping"));
       });
-    });
-
-    Long start = System.currentTimeMillis();
-    while(System.currentTimeMillis() - start < 2000 && pongQueue.isEmpty()) { }
-    assertEquals(1, pongQueue.size());
-    assertEquals("ping", pongQueue.pop().toString());
+    }));
+    await();
   }
 
+  @Test
   public void testWebsocketAbs() {
     SelfSignedCertificate certificate = SelfSignedCertificate.create();
     HttpServerOptions serverOptions = new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTPS_PORT)

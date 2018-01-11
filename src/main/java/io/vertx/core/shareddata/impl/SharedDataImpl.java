@@ -41,6 +41,7 @@ public class SharedDataImpl implements SharedData {
 
   private final VertxInternal vertx;
   private final ClusterManager clusterManager;
+  private final ConcurrentMap<String, LocalAsyncMapImpl<?, ?>> localAsyncMaps = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, AsynchronousLock> localLocks = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Counter> localCounters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, LocalMap<?, ?>> localMaps = new ConcurrentHashMap<>();
@@ -65,6 +66,24 @@ public class SharedDataImpl implements SharedData {
         resultHandler.handle(Future.failedFuture(ar.cause()));
       }
     });
+  }
+
+  @Override
+  public <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    if (clusterManager == null) {
+      getLocalAsyncMap(name, resultHandler);
+    } else {
+      clusterManager.<K, V>getAsyncMap(name, ar -> {
+        if (ar.succeeded()) {
+          // Wrap it
+          resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<K, V>(ar.result())));
+        } else {
+          resultHandler.handle(Future.failedFuture(ar.cause()));
+        }
+      });
+    }
   }
 
   @Override
@@ -106,6 +125,11 @@ public class SharedDataImpl implements SharedData {
     return (LocalMap<K, V>) localMaps.computeIfAbsent(name, n -> new LocalMapImpl<>(n, localMaps));
   }
 
+  @SuppressWarnings("unchecked")
+  private <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+    LocalAsyncMapImpl<K, V> asyncMap = (LocalAsyncMapImpl<K, V>) localAsyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl<>(vertx));
+    resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<>(asyncMap)));
+  }
 
   private void getLocalLock(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
     AsynchronousLock lock = localLocks.computeIfAbsent(name, n -> new AsynchronousLock(vertx));
@@ -120,7 +144,7 @@ public class SharedDataImpl implements SharedData {
 
   private static void checkType(Object obj) {
     if (obj == null) {
-      throw new IllegalArgumentException("Cannot put null in key or value of cluster wide map");
+      throw new IllegalArgumentException("Cannot put null in key or value of async map");
     }
     Class<?> clazz = obj.getClass();
     if (clazz == Integer.class || clazz == int.class ||
@@ -140,7 +164,7 @@ public class SharedDataImpl implements SharedData {
       // OK
       return;
     } else {
-      throw new IllegalArgumentException("Invalid type: " + clazz + " to put in cluster wide map");
+      throw new IllegalArgumentException("Invalid type: " + clazz + " to put in async map");
     }
   }
 

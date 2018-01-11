@@ -11,11 +11,13 @@
 
 package examples;
 
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.*;
-import io.vertx.core.shareddata.*;
+import io.vertx.core.shareddata.AsyncMap;
+import io.vertx.core.shareddata.Counter;
+import io.vertx.core.shareddata.LocalMap;
+import io.vertx.core.shareddata.Lock;
+import io.vertx.core.shareddata.SharedData;
 
 /**
  * Created by tim on 19/01/15.
@@ -49,7 +51,7 @@ public class SharedDataExamples {
 
     SharedData sd = vertx.sharedData();
 
-    sd.<String, String>getClusterWideMap("mymap", res -> {
+    sd.<String, String>getAsyncMap("mymap", res -> {
       if (res.succeeded()) {
         AsyncMap<String, String> map = res.result();
       } else {
