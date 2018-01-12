@@ -405,7 +405,7 @@ public class SSLHelper {
     };
   }
 
-  private void configureEngine(SSLEngine engine, boolean client, String serverName) {
+  public void configureEngine(SSLEngine engine, String serverName) {
     if (enabledCipherSuites != null && !enabledCipherSuites.isEmpty()) {
       String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);
       engine.setEnabledCipherSuites(toUse);
@@ -491,7 +491,7 @@ public class SSLHelper {
 
   public SSLEngine createEngine(SslContext sslContext) {
     SSLEngine engine = sslContext.newEngine(ByteBufAllocator.DEFAULT);
-    configureEngine(engine, false, null);
+    configureEngine(engine, null);
     return engine;
   }
 
@@ -503,25 +503,25 @@ public class SSLHelper {
     } else {
       engine = context.newEngine(ByteBufAllocator.DEFAULT, socketAddress.host(), socketAddress.port());
     }
-    configureEngine(engine, client, serverName);
+    configureEngine(engine, serverName);
     return engine;
   }
 
   public SSLEngine createEngine(VertxInternal vertx, String host, int port, String serverName) {
     SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT, host, port);
-    configureEngine(engine, client, serverName);
+    configureEngine(engine, serverName);
     return engine;
   }
 
   public SSLEngine createEngine(VertxInternal vertx, String host, int port) {
     SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT, host, port);
-    configureEngine(engine, client, null);
+    configureEngine(engine, null);
     return engine;
   }
 
   public SSLEngine createEngine(VertxInternal vertx) {
     SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT);
-    configureEngine(engine, client, null);
+    configureEngine(engine, null);
     return engine;
   }
 }
