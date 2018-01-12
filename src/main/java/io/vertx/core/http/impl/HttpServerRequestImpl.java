@@ -27,6 +27,7 @@ import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpConnection;
@@ -65,9 +66,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
-  private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
+  private static final int MAX_QUEUE_SIZE = 8;
   private Deque<HttpContent> queue = new ArrayDeque<>(8);
 
+  private final Vertx vertx;
   private final Http1xServerConnection conn;
   private final HttpRequest request;
   private final HttpServerResponse response;
@@ -94,19 +96,27 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private HttpPostRequestDecoder decoder;
   private boolean ended;
 
-  //FIXME do we need that?
   private Object requestMetric;
   private long bytesRead;
 
-  private volatile boolean paused;
+  private boolean paused;
 
-  HttpServerRequestImpl(Http1xServerConnection conn,
+  /* when set to false the request queues all incoming messages
+  (when the connection should not be paused, but we need to process data later) */
+  private boolean started = true;
+  private boolean channelPaused;
+  private boolean sentCheck;
+
+  HttpServerRequestImpl(Vertx vertx,
+                        Http1xServerConnection conn,
                         HttpRequest request,
                         HttpServerResponse response) {
+    this.vertx = vertx;
     this.conn = conn;
     this.request = request;
     this.response = response;
     if (METRICS_ENABLED && conn.metrics() != null) {
+      // FIXME probably we call this too early
       requestMetric = conn.metrics().requestBegin(conn.metric(), this);
     }
   }
@@ -239,9 +249,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      //FIXME only pause this request. backpressure will pause the connection if necessary
-//      conn.pause();
       this.paused = true;
+      conn.pause();
       return this;
     }
   }
@@ -249,14 +258,29 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest resume() {
     synchronized (conn) {
-//      conn.resume();
-      if (this.paused) {
+      if (paused) {
+        conn.resume();
         this.paused = false;
-        if (queue.size() > 0) {
-          this.handleChunk(queue.pollFirst());
-        }
+        checkNextTick();
       }
       return this;
+    }
+  }
+
+  boolean started() {
+    synchronized (conn) {
+      return started;
+    }
+  }
+
+  void started(boolean started) {
+    synchronized (conn) {
+      if (this.started != started) {
+        this.started = started;
+        if (started) {
+          checkNextTick();
+        }
+      }
     }
   }
 
@@ -399,30 +423,34 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   void handleData(HttpContent content) {
     synchronized (conn) {
 
-      if (this.queue.size() > 0 || this.paused) {
-        this.queue.addLast(content);
-      } else if (!this.paused) {
-        if (this.queue.size() > 0) {
-          handleChunk(this.queue.pollFirst());
-        } else {
-          handleChunk(content);
-        }
+      if (this.queue.size() > 0 || this.paused || !this.started) {
+        enqueue(content);
       }
 
-      this.checkQueue();
+      if (!this.paused && this.started) {
+        if (this.queue.isEmpty()) {
+          handleChunk(content);
+        } else {
+          handleChunk(this.queue.pollFirst());
+        }
+      }
+      checkNextTick();
     }
   }
 
-  private void checkQueue() {
-    if (this.queue.size() > CHANNEL_PAUSE_QUEUE_SIZE) {
-      this.pause();
-      this.conn.pause();
+  private void enqueue(HttpContent content) {
+    this.queue.addLast(content);
+    if (this.queue.size() >= MAX_QUEUE_SIZE) {
+      conn.doPause();
+      channelPaused = true;
     }
   }
+
 
   private void handleChunk(HttpContent content) {
     ByteBuf chunk = content.content();
     if (chunk.isReadable()) {
+      Buffer buff = Buffer.buffer(chunk);
       if (decoder != null) {
         try {
           decoder.offer(content);
@@ -431,15 +459,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         }
       }
 
-
-      Buffer buff = Buffer.buffer(chunk);
       if (dataHandler != null) {
-
         if (METRICS_ENABLED) {
           bytesRead += buff.length();
         }
         dataHandler.handle(buff);
       }
+
       //TODO chunk trailers?
       if (content instanceof LastHttpContent) {
         this.handleEnd();
@@ -448,11 +474,27 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       this.handleEnd();
     }
 
-    if (!this.paused && this.queue.size() > 0) {
-      handleChunk(this.queue.pollFirst());
-    }
-    if (!this.paused && this.queue.isEmpty()) {
-      this.conn.resume();
+    checkNextTick();
+  }
+
+  private void checkNextTick() {
+    // Check if there are more pending messages in the queue that can be processed next time around
+    if (!queue.isEmpty() && !sentCheck && !paused && started) {
+      sentCheck = true;
+      vertx.runOnContext(v -> {
+        synchronized (conn) {
+          sentCheck = false;
+          HttpContent content = queue.pollFirst();
+          if (content != null) {
+            handleChunk(content);
+          }
+          if (channelPaused && queue.isEmpty()) {
+            //Resume the actual channel
+            conn.doResume();
+            channelPaused = false;
+          }
+        }
+      });
     }
   }
 
@@ -487,10 +529,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         endHandler.handle(null);
       }
 
-      // FIXME report metrics?
       if (METRICS_ENABLED) {
         conn.reportBytesRead(bytesRead);
-        bytesRead = 0;
       }
     }
   }
