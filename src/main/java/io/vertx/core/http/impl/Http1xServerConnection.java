@@ -97,6 +97,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private volatile boolean paused;
   private volatile boolean sentCheck;
 
+  private boolean channelPaused;
+
 
   public Http1xServerConnection(VertxInternal vertx,
                                 SSLHelper sslHelper,
@@ -118,22 +120,21 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   }
 
   public synchronized void pause() {
-    if (!paused) {
-      paused = true;
-      super.doPause();
-    }
+    paused = true;
   }
 
   public synchronized void resume() {
-    if (paused) {
-      super.doResume();
-      paused = false;
-    }
+    paused = false;
+    this.startQueuedRequest();
   }
 
-  private void checkQueueLimit() {
-    if (pending.size() >= CHANNEL_PAUSE_QUEUE_SIZE) {
-//      this.pause();
+  private void enqueue(HttpServerRequestImpl request) {
+    pending.addLast(request);
+    if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+      //We pause the channel too, to prevent the queue growing too large, but we don't do this
+      //until the queue reaches a certain size, to avoid pausing it too often
+      super.doPause();
+      channelPaused = true;
     }
   }
 
@@ -148,30 +149,29 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
         write100Continue();
       }
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
+      HttpServerRequestImpl req = new HttpServerRequestImpl(vertx,this, request, resp);
 
+      // always points to the latest received HttpRequest, which should receive the incoming messages
       currentConsumingRequest = req;
 
-      if (pendingResponse == null) {
+      if (pendingResponse == null && !paused) {
         currentRequest = req;
         pendingResponse = resp;
         requestHandler.handle(req);
       } else {
-        req.pause();
-        pending.addLast(req);
-        this.checkQueueLimit();
+        req.started(false);
+        enqueue(req);
       }
 
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       currentConsumingRequest.handleData(LastHttpContent.EMPTY_LAST_CONTENT);
-//      this.resume();
     } else if (msg instanceof HttpContent) {
       HttpContent content = (HttpContent) msg;
+
       if (content.decoderResult().isFailure()) {
         handleError(content);
         return;
       }
-
       currentConsumingRequest.handleData(content);
 
     } else {
@@ -184,24 +184,36 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (METRICS_ENABLED && metrics != null) {
       metrics.responseEnd(currentRequest.getRequestMetric(), pendingResponse);
     }
+    if (METRICS_ENABLED && metrics != null) {
+      reportBytesWritten(pendingResponse.bytesWritten());
+      if (pendingResponse.failed()) {
+        metrics.requestReset(currentRequest.getRequestMetric());
+      } else {
+        metrics.responseEnd(currentRequest.getRequestMetric(), pendingResponse);
+      }
+    }
     pendingResponse = null;
     startQueuedRequest();
   }
 
   private void startQueuedRequest() {
-    if (pendingResponse == null && pending.size() > 0 && !sentCheck) {
+    if (pendingResponse == null && !pending.isEmpty() && !sentCheck) {
+      sentCheck = true;
       vertx.runOnContext(v -> {
         synchronized (Http1xServerConnection.this) {
           sentCheck = false;
           HttpServerRequestImpl req = this.pending.pollFirst();
           currentRequest = req;
           pendingResponse = (HttpServerResponseImpl) req.response();
+          req.started(true);
           requestHandler.handle(req);
-          req.resume();
+
+          if (channelPaused && pending.isEmpty()) {
+            super.doResume();
+            channelPaused = false;
+          }
         }
       });
-    } else if (currentRequest != null || pendingResponse != null) {
-
     }
   }
 
