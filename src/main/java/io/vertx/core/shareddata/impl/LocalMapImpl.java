@@ -113,7 +113,6 @@ class LocalMapImpl<K, V> implements LocalMap<K, V> {
       checkType(v);
       V output = function.apply(k, v);
 
-      // if output is null then user want to remove a given key. See: https://github.com/vert-x3/issues/issues/313
       if (output != null) {
         checkType(output);
       }
@@ -158,7 +157,6 @@ class LocalMapImpl<K, V> implements LocalMap<K, V> {
       checkType(k);
       V output = function.apply(k, v);
 
-      // if output is null then user want to remove a given key. See: https://github.com/vert-x3/issues/issues/313
       if (output != null) {
         checkType(output);
       }
@@ -180,7 +178,6 @@ class LocalMapImpl<K, V> implements LocalMap<K, V> {
       checkType(k);
       V output = function.apply(k);
 
-      // if output is null then user want to remove a given key. See: https://github.com/vert-x3/issues/issues/313
       if (output != null) {
         checkType(output);
       }
@@ -260,7 +257,6 @@ class LocalMapImpl<K, V> implements LocalMap<K, V> {
       // No need to check the key, already check above.
       V output = remappingFunction.apply(k, v);
 
-      // if output is null then user want to remove a given key. See: https://github.com/vert-x3/issues/issues/313
       if (output != null) {
         checkType(output);
       }
