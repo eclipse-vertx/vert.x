@@ -23,6 +23,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
+import io.vertx.core.http.impl.ws.WebSocketCloseFrameCodes;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
@@ -711,7 +712,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       // make sure everything is flushed out on close
       endReadAndFlush();
       // close the websocket connection by sending a close frame.
-      handshaker.close(chctx.channel(), new CloseWebSocketFrame(1000, null));
+      handshaker.close(chctx.channel(), new CloseWebSocketFrame(true, 0, WebSocketCloseFrameCodes.CLOSE_1000));
     }
   }
 

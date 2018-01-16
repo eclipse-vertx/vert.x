@@ -28,10 +28,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
+
+import java.nio.charset.Charset;
 
 import static io.vertx.core.http.impl.Http2ConnectionBase.safeBuffer;
 
@@ -53,7 +56,7 @@ abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.c
   }
 
   private WebSocketFrame encodeFrame(Object obj) {
-    WebSocketFrameInternal frame = (WebSocketFrameInternal) obj;
+    WebSocketFrameImpl frame = (WebSocketFrameImpl) obj;
     ByteBuf buf = frame.getBinaryData();
     if (buf != Unpooled.EMPTY_BUFFER) {
       buf = safeBuffer(buf, chctx.alloc());

@@ -18,6 +18,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.impl.ws.WebSocketCloseFrameCodes;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -92,7 +93,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public void close() {
     synchronized (conn) {
       checkClosed();
-      conn.close();
+      writeFrame(WebSocketFrame.factory.closeFrame(WebSocketCloseFrameCodes.CLOSE_1000));
       cleanupHandlers();
     }
   }
@@ -263,6 +264,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
           }
           break;
         case TEXT:
+        case CLOSE:
         case BINARY:
         case CONTINUATION:
           if (frameHandler != null) {

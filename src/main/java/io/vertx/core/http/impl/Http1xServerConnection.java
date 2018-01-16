@@ -45,6 +45,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.impl.ws.WebSocketCloseFrameCodes;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -310,7 +311,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       super.close();
     } else {
       endReadAndFlush();
-      handshaker.close(chctx.channel(), new CloseWebSocketFrame(1000, null));
+      handshaker.close(chctx.channel(), new CloseWebSocketFrame(true, 0, WebSocketCloseFrameCodes.CLOSE_1000));
     }
   }
 

@@ -130,6 +130,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
           chctx.writeAndFlush(new PongWebSocketFrame(frame.getBinaryData().copy()));
           break;
         case CLOSE:
+          conn.handleWsFrame(frame);
           if (!closeFrameSent) {
             // Echo back close frame and close the connection once it was written.
             // This is specified in the WebSockets RFC 6455 Section  5.4.1
