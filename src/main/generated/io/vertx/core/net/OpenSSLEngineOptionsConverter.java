@@ -33,8 +33,6 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(OpenSSLEngineOptions obj, JsonObject json) {
-    json.put("alpnAvailable", obj.isAlpnAvailable());
-    json.put("available", obj.isAvailable());
     json.put("sessionCacheEnabled", obj.isSessionCacheEnabled());
   }
 }
