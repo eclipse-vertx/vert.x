@@ -44,19 +44,19 @@ public class LocalSharedDataTest extends VertxTestBase {
 
     // retuning null we should remove the entry
     map.computeIfPresent("hello", (key, oldValue) -> null);
-    assertNull(map.get("hello"));
+    assertFalse(map.containsKey("hello"));
 
     // Same for LocalMap#compute and LocalMap#compute
     map.compute("hello", (key, oldValue) -> null);
-    assertNull(map.get("hello"));
+    assertFalse(map.containsKey("hello"));
 
     // put a value one more time
     map.put("hello", "world");
     map.merge("hello", "world!!!!!!", (key, oldValue) -> null);
-    assertNull(map.get("hello"));
+    assertFalse(map.containsKey("hello"));
 
     map.computeIfAbsent("hello", key -> null);
-    assertNull(map.get("hello"));
+    assertFalse(map.containsKey("hello"));
   }
 
   @Test
