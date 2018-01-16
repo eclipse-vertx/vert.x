@@ -36,6 +36,30 @@ public class LocalSharedDataTest extends VertxTestBase {
   }
 
   @Test
+  public void deleteElementOnComputeFunctionReturningNull() {
+    LocalMap<String, String> map = sharedData.getLocalMap("foo");
+
+    // put an initial value
+    map.put("hello", "world");
+
+    // retuning null we should remove the entry
+    map.computeIfPresent("hello", (key, oldValue) -> null);
+    assertFalse(map.containsKey("hello"));
+
+    // Same for LocalMap#compute and LocalMap#compute
+    map.compute("hello", (key, oldValue) -> null);
+    assertFalse(map.containsKey("hello"));
+
+    // put a value one more time
+    map.put("hello", "world");
+    map.merge("hello", "world!!!!!!", (key, oldValue) -> null);
+    assertFalse(map.containsKey("hello"));
+
+    map.computeIfAbsent("hello", key -> null);
+    assertFalse(map.containsKey("hello"));
+  }
+
+  @Test
   public void testMap() throws Exception {
     assertNullPointerException(() -> sharedData.getLocalMap(null));
     LocalMap<String, String> map = sharedData.getLocalMap("foo");
