@@ -46,10 +46,12 @@ import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.security.cert.X509Certificate;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -2079,5 +2081,55 @@ public class WebsocketTest extends VertxTestBase {
       }, null);
     }));
     await();
+  }
+
+  @Test
+  public void testCloseStatusCodeFromServer() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(2);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          System.out.println("Closed");
+          latch.countDown();
+        });
+        vertx.setTimer(1000, (ar) -> socket.close());
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.frameHandler(frame -> {
+            System.out.println("Frame Received");
+            System.out.println(frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
+            System.out.println(frame.binaryData().getByteBuf().getShort(0));
+            latch.countDown();
+          });
+        });
+    });
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testCloseStatusCodeFromClient() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(2);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          System.out.println("Closed");
+          latch.countDown();
+        });
+        socket.frameHandler(frame -> {
+          System.out.println("Frame Received");
+          System.out.println(frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
+          System.out.println(frame.binaryData().getByteBuf().getShort(0));
+          latch.countDown();
+        });
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.close();
+        });
+      });
+    awaitLatch(latch);
   }
 }
