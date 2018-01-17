@@ -18,7 +18,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.impl.ws.WebSocketCloseFrameCodes;
+import io.vertx.core.http.impl.ws.WebSocketCloseFrameCode;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -57,11 +57,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
-  protected final ConnectionBase conn;
+  protected final Http1xConnectionBase conn;
   protected boolean closed;
 
 
-  WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
+  WebSocketImplBase(VertxInternal vertx, Http1xConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     this.supportsContinuation = supportsContinuation;
     this.textHandlerID = UUID.randomUUID().toString();
@@ -93,7 +93,15 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public void close() {
     synchronized (conn) {
       checkClosed();
-      writeFrame(WebSocketFrame.factory.closeFrame(WebSocketCloseFrameCodes.CLOSE_1000));
+      conn.close();
+      cleanupHandlers();
+    }
+  }
+
+  public void closeWithReason(short statusCode, String reason) {
+    synchronized (conn) {
+      checkClosed();
+      conn.closeWithPayload(WebSocketCloseFrameCode.generateByteBuffer(statusCode, reason));
       cleanupHandlers();
     }
   }
@@ -253,7 +261,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   void handleFrame(WebSocketFrameInternal frame) {
     synchronized (conn) {
       conn.reportBytesRead(frame.binaryData().length());
-      if (dataHandler != null) {
+      if (dataHandler != null && frame.type() != FrameType.CLOSE) {
         Buffer buff = Buffer.buffer(frame.getBinaryData());
         dataHandler.handle(buff);
       }

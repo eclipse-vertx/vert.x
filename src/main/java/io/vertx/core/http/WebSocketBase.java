@@ -239,6 +239,11 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   void close();
 
+  /*
+   * Close sending a close frame with specified status code and reason
+   */
+  void closeWithReason(short statusCode, String reason);
+
   /**
    * @return the remote address for this socket
    */

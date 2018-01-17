@@ -12,6 +12,8 @@
 package io.vertx.test.core;
 
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -1110,7 +1112,7 @@ public class WebsocketTest extends VertxTestBase {
         Buffer actual = Buffer.buffer();
         ws.handler(actual::appendBuffer);
         ws.closeHandler(v -> {
-          assertArrayEquals(expected, actual.getBytes());
+          assertArrayEquals(expected, actual.getBytes(0, actual.length()));
           testComplete();
         });
       });
@@ -1459,7 +1461,8 @@ public class WebsocketTest extends VertxTestBase {
             buff.appendBuffer(b);
           });
           ws.endHandler(v -> {
-            assertEquals("helloworld", buff.toString());
+            // Last two bytes are status code payload
+            assertEquals("helloworld", buff.toString("UTF-8"));
             testComplete();
           });
           ws.write(Buffer.buffer("foo"));
@@ -2090,7 +2093,6 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
-          System.out.println("Closed");
           latch.countDown();
         });
         vertx.setTimer(1000, (ar) -> socket.close());
@@ -2098,9 +2100,7 @@ public class WebsocketTest extends VertxTestBase {
       .listen(ar -> {
         client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
           ws.frameHandler(frame -> {
-            System.out.println("Frame Received");
-            System.out.println(frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
-            System.out.println(frame.binaryData().getByteBuf().getShort(0));
+            assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
             latch.countDown();
           });
         });
@@ -2115,19 +2115,68 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
-          System.out.println("Closed");
           latch.countDown();
         });
         socket.frameHandler(frame -> {
-          System.out.println("Frame Received");
-          System.out.println(frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
-          System.out.println(frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
           latch.countDown();
         });
       })
       .listen(ar -> {
         client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
           ws.close();
+        });
+      });
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testCloseCustomPayloadFromServer() throws InterruptedException {
+    final String REASON = "I'm moving away!";
+    final short STATUS_CODE = (short)1001;
+
+    CountDownLatch latch = new CountDownLatch(2);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          latch.countDown();
+        });
+        vertx.setTimer(1000, (ar) -> socket.closeWithReason(STATUS_CODE, REASON));
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.frameHandler(frame -> {
+            assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
+            assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+            latch.countDown();
+          });
+        });
+      });
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testCloseCustomPayloadFromClient() throws InterruptedException {
+    final String REASON = "I'm moving away!";
+    final short STATUS_CODE = (short)1001;
+
+    CountDownLatch latch = new CountDownLatch(2);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          latch.countDown();
+        });
+        socket.frameHandler(frame -> {
+          assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
+          assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+          latch.countDown();
+        });
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.closeWithReason(STATUS_CODE, REASON);
         });
       });
     awaitLatch(latch);

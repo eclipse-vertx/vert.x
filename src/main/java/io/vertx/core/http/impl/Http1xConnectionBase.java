@@ -79,6 +79,8 @@ abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.c
     }
   }
 
+  abstract public void closeWithPayload(ByteBuf byteBuf);
+
   @Override
   public Http1xConnectionBase closeHandler(Handler<Void> handler) {
     return (Http1xConnectionBase) super.closeHandler(handler);
