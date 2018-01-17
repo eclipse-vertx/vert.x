@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
@@ -36,6 +37,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  *
@@ -75,6 +78,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
   private long bytesWritten;
+
+  private boolean failed;
 
   HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, HttpRequest request) {
     this.vertx = vertx;
@@ -516,6 +521,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   void handleException(Throwable t) {
     synchronized (conn) {
+      this.failed = true;
       if (exceptionHandler != null) {
         exceptionHandler.handle(t);
       }
@@ -623,5 +629,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
     return this;
+  }
+
+  public boolean failed() {
+    return failed;
   }
 }
