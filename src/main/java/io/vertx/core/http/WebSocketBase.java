@@ -246,7 +246,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param statusCode Status code
    * @param reason reason of closure
    */
-  void closeWithReason(short statusCode, @Nullable String reason);
+  void close(short statusCode, @Nullable String reason);
 
   /**
    * @return the remote address for this socket

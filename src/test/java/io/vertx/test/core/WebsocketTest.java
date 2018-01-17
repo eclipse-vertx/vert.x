@@ -12,8 +12,6 @@
 package io.vertx.test.core;
 
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -48,7 +46,6 @@ import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.tls.Cert;
 import io.vertx.test.core.tls.Trust;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.security.cert.X509Certificate;
@@ -2142,7 +2139,7 @@ public class WebsocketTest extends VertxTestBase {
         socket.closeHandler(a -> {
           latch.countDown();
         });
-        vertx.setTimer(1000, (ar) -> socket.closeWithReason(STATUS_CODE, REASON));
+        vertx.setTimer(1000, (ar) -> socket.close(STATUS_CODE, REASON));
       })
       .listen(ar -> {
         client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
@@ -2176,7 +2173,7 @@ public class WebsocketTest extends VertxTestBase {
       })
       .listen(ar -> {
         client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
-          ws.closeWithReason(STATUS_CODE, REASON);
+          ws.close(STATUS_CODE, REASON);
         });
       });
     awaitLatch(latch);

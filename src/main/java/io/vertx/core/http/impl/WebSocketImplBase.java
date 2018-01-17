@@ -98,7 +98,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  public void closeWithReason(short statusCode, String reason) {
+  public void close(short statusCode, String reason) {
     synchronized (conn) {
       checkClosed();
       conn.closeWithPayload(WebSocketCloseFrameCode.generateByteBuffer(statusCode, reason));
