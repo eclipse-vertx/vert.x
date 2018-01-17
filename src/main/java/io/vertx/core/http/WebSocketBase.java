@@ -240,9 +240,13 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   void close();
 
   /*
-   * Close sending a close frame with specified status code and reason
+   * Close sending a close frame with specified status code and reason. You can give a look at various close payloads
+   * here: <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">RFC6455 Section 7.4.1</a>
+   *
+   * @param statusCode Status code
+   * @param reason reason of closure
    */
-  void closeWithReason(short statusCode, String reason);
+  void closeWithReason(short statusCode, @Nullable String reason);
 
   /**
    * @return the remote address for this socket
