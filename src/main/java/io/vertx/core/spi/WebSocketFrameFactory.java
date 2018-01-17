@@ -29,6 +29,4 @@ public interface WebSocketFrameFactory {
   WebSocketFrame pingFrame(Buffer data);
 
   WebSocketFrame pongFrame(Buffer data);
-
-  WebSocketFrame closeFrame(ByteBuf buf);
 }

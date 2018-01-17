@@ -52,9 +52,4 @@ public class WebSocketFrameFactoryImpl implements WebSocketFrameFactory {
     return new WebSocketFrameImpl(FrameType.PONG, data.getByteBuf(), true);
   }
 
-  @Override
-  public WebSocketFrame closeFrame(ByteBuf buf) {
-    return new WebSocketFrameImpl(FrameType.CLOSE, buf);
-  }
-
 }
