@@ -71,7 +71,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
    */
-  public static final String[] DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
+  public static final List<String> DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = Collections.unmodifiableList(Arrays.asList("SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"));
 
   /**
    * The default TCP_FASTOPEN value = false
@@ -175,7 +175,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
     sslEngineOptions = DEFAULT_SSL_ENGINE;
-    enabledSecureTransportProtocols = new LinkedHashSet<>(Arrays.asList(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS));
+    enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
     tcpFastOpen = DEFAULT_TCP_FAST_OPEN;
     tcpCork = DEFAULT_TCP_CORK;
     tcpQuickAck = DEFAULT_TCP_QUICKACK;
