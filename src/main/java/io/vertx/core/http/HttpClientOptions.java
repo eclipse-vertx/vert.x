@@ -392,6 +392,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions removeEnabledSecureTransportProtocol(String protocol) {
+    return (HttpClientOptions) super.removeEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
   public HttpClientOptions setTcpFastOpen(boolean tcpFastOpen) {
     return (HttpClientOptions) super.setTcpFastOpen(tcpFastOpen);
   }

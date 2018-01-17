@@ -337,6 +337,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase removeEnabledSecureTransportProtocol(String protocol) {
+    return (ClientOptionsBase) super.removeEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
   public ClientOptionsBase setTcpFastOpen(boolean tcpFastOpen) {
     return (ClientOptionsBase) super.setTcpFastOpen(tcpFastOpen);
   }

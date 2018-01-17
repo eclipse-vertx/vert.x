@@ -1553,6 +1553,9 @@ public class NetTest extends VertxTestBase {
       for (String suite: enabledCipherSuites) {
         options.addEnabledCipherSuite(suite);
       }
+      if(enabledSecureTransportProtocols.length > 0) {
+        options.getEnabledSecureTransportProtocols().forEach(options::removeEnabledSecureTransportProtocol);
+      }
       for (String protocol : enabledSecureTransportProtocols) {
         options.addEnabledSecureTransportProtocol(protocol);
       }
@@ -1618,6 +1621,9 @@ public class NetTest extends VertxTestBase {
         clientOptions.setKeyCertOptions(clientCert.get());
         for (String suite: enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);
+        }
+        if(enabledSecureTransportProtocols.length > 0) {
+          clientOptions.getEnabledSecureTransportProtocols().forEach(clientOptions::removeEnabledSecureTransportProtocol);
         }
         for (String protocol : enabledSecureTransportProtocols) {
           clientOptions.addEnabledSecureTransportProtocol(protocol);

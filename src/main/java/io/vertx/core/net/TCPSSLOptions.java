@@ -67,6 +67,13 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final SSLEngineOptions DEFAULT_SSL_ENGINE = null;
 
   /**
+   * The default ENABLED_SECURE_TRANSPORT_PROTOCOLS value = { "SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2" }
+   *
+   * SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
+   */
+  public static final String[] DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
+
+  /**
    * The default TCP_FASTOPEN value = false
    */
   public static final boolean DEFAULT_TCP_FAST_OPEN = false;
@@ -89,12 +96,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean ssl;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
-  private Set<String> enabledCipherSuites = new LinkedHashSet<>();
+  private Set<String> enabledCipherSuites;
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
   private boolean useAlpn;
   private SSLEngineOptions sslEngineOptions;
-  private Set<String> enabledSecureTransportProtocols = new LinkedHashSet<>();
+  private Set<String> enabledSecureTransportProtocols;
   private boolean tcpFastOpen;
   private boolean tcpCork;
   private boolean tcpQuickAck;
@@ -141,6 +148,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions(JsonObject json) {
     super(json);
     init();
+    enabledSecureTransportProtocols.clear();
     TCPSSLOptionsConverter.fromJson(json ,this);
   }
 
@@ -162,10 +170,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     usePooledBuffers = DEFAULT_USE_POOLED_BUFFERS;
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
     ssl = DEFAULT_SSL;
+    enabledCipherSuites = new LinkedHashSet<>();
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
     sslEngineOptions = DEFAULT_SSL_ENGINE;
+    enabledSecureTransportProtocols = new LinkedHashSet<>(Arrays.asList(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS));
     tcpFastOpen = DEFAULT_TCP_FAST_OPEN;
     tcpCork = DEFAULT_TCP_CORK;
     tcpQuickAck = DEFAULT_TCP_QUICKACK;
@@ -555,11 +565,22 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * Add an enabled SSL/TLS protocols, appended to the ordered protocols.
    *
-   * @param protocol  the SSL/TLS protocol do enabled
+   * @param protocol  the SSL/TLS protocol to enable
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions addEnabledSecureTransportProtocol(String protocol) {
     enabledSecureTransportProtocols.add(protocol);
+    return this;
+  }
+
+  /**
+   * Removes an enabled SSL/TLS protocol from the ordered protocols.
+   *
+   * @param protocol the SSL/TLS protocol to disable
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions removeEnabledSecureTransportProtocol(String protocol) {
+    enabledSecureTransportProtocols.remove(protocol);
     return this;
   }
 
@@ -619,7 +640,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the enabled protocols
    */
   public Set<String> getEnabledSecureTransportProtocols() {
-    return enabledSecureTransportProtocols;
+    return new LinkedHashSet<>(enabledSecureTransportProtocols);
   }
 
   @Override
