@@ -32,6 +32,9 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   private final boolean isFinalFrame;
   private ByteBuf binaryData;
 
+  private short closeStatusCode;
+  private String closeReason;
+
   /**
    * Creates a new empty text frame.
    */
@@ -89,6 +92,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
     this.type = type;
     this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.unreleasableBuffer(binaryData);
+    parseCloseFrame();
   }
 
   public boolean isText() {
@@ -102,6 +106,8 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   public boolean isContinuation() {
     return this.type == FrameType.CONTINUATION;
   }
+
+  public boolean isClose() { return this.type == FrameType.CLOSE; }
 
   public ByteBuf getBinaryData() {
     return binaryData;
@@ -175,6 +181,32 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   @Override
   public boolean isFinal() {
     return isFinalFrame;
+  }
+
+  private void parseCloseFrame() {
+    if (this.isClose()) {
+      Buffer buffer = this.binaryData();
+      if (buffer.length() == 0) {
+        this.closeStatusCode = 1000;
+        this.closeReason = null;
+      } else if (buffer.length() == 2) {
+        this.closeStatusCode = buffer.getShort(0);
+        this.closeReason = null;
+      } else {
+        this.closeStatusCode = buffer.getShort(0);
+        this.closeReason = buffer.getString(2, buffer.length(), "UTF-8");
+      }
+    }
+  }
+
+  @Override
+  public short closeStatusCode() {
+    return this.closeStatusCode;
+  }
+
+  @Override
+  public String closeReason() {
+    return this.closeReason;
   }
 
   @Override

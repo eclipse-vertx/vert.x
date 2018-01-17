@@ -2098,6 +2098,8 @@ public class WebsocketTest extends VertxTestBase {
         client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
           ws.frameHandler(frame -> {
             assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
+            assertEquals(1000, frame.closeStatusCode());
+            assertNull(frame.closeReason());
             latch.countDown();
           });
         });
@@ -2116,6 +2118,8 @@ public class WebsocketTest extends VertxTestBase {
         });
         socket.frameHandler(frame -> {
           assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(1000, frame.closeStatusCode());
+          assertNull(frame.closeReason());
           latch.countDown();
         });
       })
@@ -2146,6 +2150,8 @@ public class WebsocketTest extends VertxTestBase {
           ws.frameHandler(frame -> {
             assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
             assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+            assertEquals(REASON, frame.closeReason());
+            assertEquals(STATUS_CODE, frame.closeStatusCode());
             latch.countDown();
           });
         });
@@ -2168,6 +2174,8 @@ public class WebsocketTest extends VertxTestBase {
         socket.frameHandler(frame -> {
           assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
           assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(REASON, frame.closeReason());
+          assertEquals(STATUS_CODE, frame.closeStatusCode());
           latch.countDown();
         });
       })

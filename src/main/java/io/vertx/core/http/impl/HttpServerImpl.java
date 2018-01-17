@@ -676,13 +676,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             chctx.writeAndFlush(new PongWebSocketFrame(wsFrame.getBinaryData().copy()));
             break;
           case CLOSE:
-            conn.handleMessage(msg);
             if (!closeFrameSent) {
               // Echo back close frame and close the connection once it was written.
               // This is specified in the WebSockets RFC 6455 Section  5.4.1
               ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
               closeFrameSent = true;
             }
+            conn.handleMessage(msg);
             break;
           default:
             throw new IllegalStateException("Invalid type: " + wsFrame.type());
