@@ -50,11 +50,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1274,6 +1270,37 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testServerPipeliningConnectionConcurrency() throws Exception {
+    int n = 5;
+    boolean[] processing = {false};
+    int[] count = {0};
+    server.requestHandler(req -> {
+      count[0]++;
+      assertFalse(processing[0]);
+      processing[0] = true;
+      vertx.setTimer(20, id -> {
+        processing[0] = false;
+        HttpServerResponse resp = req.response();
+        resp.end();
+        if (count[0] == n) {
+          resp.close();
+        }
+      });
+    });
+    startServer();
+    Buffer requests = Buffer.buffer();
+    for (int i = 0;i < n;i++) {
+      requests.appendString("GET " + DEFAULT_TEST_URI + " HTTP/1.1\r\n\r\n");
+    }
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+      so.closeHandler(v -> testComplete());
+      so.write(requests);
+    }));
+    await();
+  }
+
+  @Test
   public void testKeepAlive() throws Exception {
     testKeepAlive(true, 5, 10, 5);
   }
@@ -2109,6 +2136,90 @@ public class Http1xTest extends HttpTest {
       });
       clientRequest.end();
     }));
+    await();
+  }
+
+  /*
+   A reproducer for this issue https://github.com/eclipse/vert.x/issues/2230
+   */
+  @Test
+  public void testPauseResumeServerRequestFromAnotherThread() throws Exception {
+    ExecutorService exec = Executors.newSingleThreadExecutor();
+    Buffer buffer = TestUtils.randomBuffer(64 * 1024 * 1024);
+    Buffer readBuffer = Buffer.buffer(64 * 1024 * 1024);
+    server.requestHandler(request -> {
+      request.handler(b -> {
+        readBuffer.appendBuffer(b);
+        request.pause();
+        exec.execute(() -> {
+          try {
+            Thread.sleep(0, 100);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+          request.resume();
+        });
+      });
+      request.endHandler(v -> {
+        byte[] expectedData = buffer.getBytes();
+        byte[] actualData = readBuffer.getBytes();
+        assertTrue(Arrays.equals(expectedData, actualData));
+        testComplete();
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, "/", resp -> fail());
+    req.setChunked(true);
+    for (int i = 0; i < buffer.length() / 8192; i++) {
+      req.write(buffer.slice(i * 8192, (i + 1) * 8192));
+      Thread.sleep(0, 100);
+    }
+    req.end();
+  }
+
+  @Test
+  public void testEndServerResponseResumeTheConnection() throws Exception {
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        req.pause();
+        req.response().end();
+      });
+    });
+    startServer();
+    client.close();
+    waitFor(2);
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setMaxPoolSize(1));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    });
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    });
+    await();
+  }
+
+  @Test
+  public void testEndServerRequestResumeTheConnection() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+      req.endHandler(v -> {
+        req.pause();
+      });
+    });
+    startServer();
+    client.close();
+    waitFor(2);
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setMaxPoolSize(1));
+    client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    }).end("1");
+    client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    }).end("2");
     await();
   }
 

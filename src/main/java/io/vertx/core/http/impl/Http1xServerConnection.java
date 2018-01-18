@@ -58,10 +58,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -102,8 +99,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private boolean sentCheck;
   private long bytesRead;
   private long bytesWritten;
-
-  // queuing == true <=> (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty())
   private boolean queueing;
 
   public Http1xServerConnection(VertxInternal vertx,
@@ -125,21 +120,16 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     return metrics;
   }
 
-  public synchronized void pause() {
+  synchronized void pause() {
     if (!paused) {
       paused = true;
       queueing = true;
     }
   }
 
-  public synchronized void resume() {
+  synchronized void resume() {
     if (paused) {
       paused = false;
-      if (pending.isEmpty()) {
-        queueing = false;
-      } else if (pendingResponse == null || !(pending.peek() instanceof HttpRequest)) {
-        queueing = false;
-      }
       checkNextTick();
     }
   }
@@ -148,7 +138,11 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (queueing) {
       enqueue(msg);
     } else {
-      processMessage(msg);
+      if (processMessage(msg)) {
+        checkNextTick();
+      } else {
+        enqueue(msg);
+      }
     }
   }
 
@@ -176,9 +170,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
     }
     pendingResponse = null;
-    if (queueing) {
-      queueing = paused;
-    }
     checkNextTick();
   }
 
@@ -336,12 +327,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
   }
 
-  synchronized private void handleWsFrame(WebSocketFrameInternal frame) {
-    if (ws != null) {
-      ws.handleFrame(frame);
-    }
-  }
-
   synchronized protected void handleClosed() {
     if (METRICS_ENABLED && metrics != null && ws != null) {
       metrics.disconnected(ws.getMetric());
@@ -425,16 +410,15 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
   }
 
-  private void processMessage(Object msg) {
+  private boolean processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       if (pendingResponse != null) {
-        enqueue(msg);
-        return;
+        return false;
       }
       HttpRequest request = (HttpRequest) msg;
       if (request.decoderResult().isFailure()) {
         handleError(request);
-        return;
+        return false;
       }
       if (options.isHandle100ContinueAutomatically() && HttpUtil.is100ContinueExpected(request)) {
         write100Continue();
@@ -450,16 +434,15 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       handleLastHttpContent();
     } else if (msg instanceof HttpContent) {
-      HttpContent content = (HttpContent) msg;
-      handleContent(content);
+      handleContent(msg);
     } else {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      handleWsFrame(frame);
+      handleOther(msg);
     }
-    checkNextTick();
+    return true;
   }
 
-  private void handleContent(HttpContent content) {
+  private void handleContent(Object msg) {
+    HttpContent content = (HttpContent) msg;
     if (content.decoderResult().isFailure()) {
       handleError(content);
       return;
@@ -476,44 +459,50 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   }
 
   private void handleLastHttpContent() {
-    if (!paused) {
-      currentRequest.handleEnd();
-      if (METRICS_ENABLED) {
-        reportBytesRead(bytesRead);
-        bytesRead = 0;
+    currentRequest.handleEnd();
+    if (METRICS_ENABLED) {
+      reportBytesRead(bytesRead);
+      bytesRead = 0;
+    }
+    currentRequest = null;
+  }
+
+  private void handleOther(Object msg) {
+    if (msg instanceof WebSocketFrameInternal) {
+      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+      if (ws != null) {
+        ws.handleFrame(frame);
       }
-      currentRequest = null;
-    } else {
-      // Requeue
-      // paused = true => queueing = true
-      // todo : this should be added first if pending.size() > 0
-      // case : user call resume on the last http content and then call pause
-      // it will be added at the wrong place and create a bug
-      pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
     }
   }
 
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!queueing && !sentCheck) {
+    if (!paused && !sentCheck) {
       sentCheck = true;
       vertx.runOnContext(v -> {
-        // Should be synchronized ...
-        sentCheck = false;
-        if (!queueing) {
-          Object msg = pending.poll();
-          if (msg != null) {
-            if (msg instanceof HttpRequest && pendingResponse != null) {
-              pending.addFirst(msg);
-              queueing = true;
-              return;
+        synchronized (Http1xServerConnection.this) {
+          sentCheck = false;
+          if (!paused) {
+            Object msg = pending.poll();
+            if (msg != null) {
+              if (processMessage(msg)) {
+                checkNextTick();
+              } else {
+                pending.addFirst(msg);
+              }
             }
-            processMessage(msg);
-          }
-          if (channelPaused && pending.isEmpty()) {
-            //Resume the actual channel
-            Http1xServerConnection.super.doResume();
-            channelPaused = false;
+            if (pending.isEmpty()) {
+              queueing = false;
+              if (channelPaused) {
+                // Resume the actual channel
+                channelPaused = false;
+                Http1xServerConnection.super.doResume();
+              }
+            } else {
+              queueing = true;
+              checkNextTick();
+            }
           }
         }
       });

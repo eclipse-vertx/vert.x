@@ -218,7 +218,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      conn.pause();
+      if (!ended) {
+        conn.pause();
+      }
       return this;
     }
   }
@@ -226,7 +228,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest resume() {
     synchronized (conn) {
-      conn.resume();
+      if (!ended) {
+        conn.resume();
+      }
       return this;
     }
   }
