@@ -11,15 +11,10 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledDirectByteBuf;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.spi.WebSocketFrameFactory;
-
-import java.nio.charset.Charset;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -51,5 +46,4 @@ public class WebSocketFrameFactoryImpl implements WebSocketFrameFactory {
   public WebSocketFrame pongFrame(Buffer data) {
     return new WebSocketFrameImpl(FrameType.PONG, data.getByteBuf(), true);
   }
-
 }

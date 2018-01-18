@@ -18,12 +18,10 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.impl.ws.WebSocketCloseFrameCode;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -105,7 +103,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public void close(short statusCode, String reason) {
     synchronized (conn) {
       checkClosed();
-      conn.closeWithPayload(WebSocketCloseFrameCode.generateByteBuffer(statusCode, reason));
+      conn.closeWithPayload(HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason));
       cleanupHandlers();
     }
   }

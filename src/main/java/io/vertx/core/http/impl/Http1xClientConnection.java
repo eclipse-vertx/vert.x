@@ -23,7 +23,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
-import io.vertx.core.http.impl.ws.WebSocketCloseFrameCode;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
