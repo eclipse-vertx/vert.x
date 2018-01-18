@@ -2132,6 +2132,34 @@ public class WebsocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testCloseFrame() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(3);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          latch.countDown();
+        });
+        socket.frameHandler(frame -> {
+          if (frame.isText()) {
+            assertIllegalStateException(frame::closeStatusCode);
+          } else {
+            assertEquals(frame.closeReason(), "It was a good talk");
+            assertEquals(frame.closeStatusCode(), 1001);
+          }
+          latch.countDown();
+        });
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.writeTextMessage("Hello");
+          ws.close((short)1001, "It was a good talk");
+        });
+      });
+    awaitLatch(latch);
+  }
+
+  @Test
   public void testCloseCustomPayloadFromServer() throws InterruptedException {
     final String REASON = "I'm moving away!";
     final short STATUS_CODE = (short)1001;
