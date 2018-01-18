@@ -12,6 +12,8 @@
 package io.vertx.core.http.impl;
 
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -27,6 +29,7 @@ import io.vertx.core.http.HttpServerRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -379,6 +382,16 @@ public final class HttpUtils {
     } catch (Exception ignore) {
     }
     return null;
+  }
+
+  public static ByteBuf generateWSCloseFrameByteBuf(short statusCode, String reason) {
+    if (reason != null)
+      return Unpooled.copiedBuffer(
+        Unpooled.copyShort(statusCode), // First two bytes are reserved for status code
+        Unpooled.copiedBuffer(reason, Charset.forName("UTF-8"))
+      );
+    else
+      return Unpooled.copyShort(statusCode);
   }
 
   private static class CustomCompressor extends HttpContentCompressor {

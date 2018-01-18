@@ -22,7 +22,6 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -56,11 +55,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
-  protected final ConnectionBase conn;
+  protected final Http1xConnectionBase conn;
   protected boolean closed;
 
 
-  WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
+  WebSocketImplBase(VertxInternal vertx, Http1xConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     this.supportsContinuation = supportsContinuation;
     this.textHandlerID = UUID.randomUUID().toString();
@@ -93,6 +92,18 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     synchronized (conn) {
       checkClosed();
       conn.close();
+      cleanupHandlers();
+    }
+  }
+
+  public void close(short statusCode) {
+    this.close(statusCode, null);
+  }
+
+  public void close(short statusCode, String reason) {
+    synchronized (conn) {
+      checkClosed();
+      conn.closeWithPayload(HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason));
       cleanupHandlers();
     }
   }
@@ -252,7 +263,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   void handleFrame(WebSocketFrameInternal frame) {
     synchronized (conn) {
       conn.reportBytesRead(frame.binaryData().length());
-      if (dataHandler != null) {
+      if (dataHandler != null && frame.type() != FrameType.CLOSE) {
         Buffer buff = Buffer.buffer(frame.getBinaryData());
         dataHandler.handle(buff);
       }
@@ -263,6 +274,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
           }
           break;
         case TEXT:
+        case CLOSE:
         case BINARY:
         case CONTINUATION:
           if (frameHandler != null) {

@@ -48,7 +48,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private HttpResponseStatus rejectedStatus;
 
   public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
-                             ConnectionBase conn, boolean supportsContinuation, Supplier<String> connectRunnable,
+                             Http1xConnectionBase conn, boolean supportsContinuation, Supplier<String> connectRunnable,
                              int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.uri = uri;

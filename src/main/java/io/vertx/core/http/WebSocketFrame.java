@@ -104,6 +104,11 @@ public interface WebSocketFrame {
   boolean isContinuation();
 
   /**
+   * @return true if it's close frame
+   */
+  boolean isClose();
+
+  /**
    * @return the content of this frame as a UTF-8 string and returns the
    * converted string. Only use this for text frames.
    */
@@ -120,6 +125,16 @@ public interface WebSocketFrame {
    * @return true if this is the final frame.
    */
   boolean isFinal();
+
+  /**
+   * @return status code of close frame. Only use this for close frames
+   */
+  short closeStatusCode();
+
+  /**
+   * @return string explaining close reason. Only use this for close frames
+   */
+  String closeReason();
 
   WebSocketFrameFactory factory = ServiceHelper.loadFactory(WebSocketFrameFactory.class);
 }

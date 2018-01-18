@@ -11,6 +11,7 @@
 
 package io.vertx.core.spi;
 
+import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocketFrame;
 

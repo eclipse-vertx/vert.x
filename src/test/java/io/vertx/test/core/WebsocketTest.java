@@ -50,6 +50,7 @@ import org.junit.Test;
 
 import javax.security.cert.X509Certificate;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -1108,7 +1109,7 @@ public class WebsocketTest extends VertxTestBase {
         Buffer actual = Buffer.buffer();
         ws.handler(actual::appendBuffer);
         ws.closeHandler(v -> {
-          assertArrayEquals(expected, actual.getBytes());
+          assertArrayEquals(expected, actual.getBytes(0, actual.length()));
           testComplete();
         });
       });
@@ -1457,7 +1458,8 @@ public class WebsocketTest extends VertxTestBase {
             buff.appendBuffer(b);
           });
           ws.endHandler(v -> {
-            assertEquals("helloworld", buff.toString());
+            // Last two bytes are status code payload
+            assertEquals("helloworld", buff.toString("UTF-8"));
             testComplete();
           });
           ws.write(Buffer.buffer("foo"));
@@ -2079,5 +2081,137 @@ public class WebsocketTest extends VertxTestBase {
       }, null);
     }));
     await();
+  }
+
+  @Test
+  public void testCloseStatusCodeFromServer() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(2);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          latch.countDown();
+        });
+        vertx.setTimer(1000, (ar) -> socket.close());
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.frameHandler(frame -> {
+            assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
+            assertEquals(1000, frame.closeStatusCode());
+            assertNull(frame.closeReason());
+            latch.countDown();
+          });
+        });
+    });
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testCloseStatusCodeFromClient() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(2);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          latch.countDown();
+        });
+        socket.frameHandler(frame -> {
+          assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(1000, frame.closeStatusCode());
+          assertNull(frame.closeReason());
+          latch.countDown();
+        });
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.close();
+        });
+      });
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testCloseFrame() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(3);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          latch.countDown();
+        });
+        socket.frameHandler(frame -> {
+          if (frame.isText()) {
+            assertIllegalStateException(frame::closeStatusCode);
+          } else {
+            assertEquals(frame.closeReason(), "It was a good talk");
+            assertEquals(frame.closeStatusCode(), 1001);
+          }
+          latch.countDown();
+        });
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.writeTextMessage("Hello");
+          ws.close((short)1001, "It was a good talk");
+        });
+      });
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testCloseCustomPayloadFromServer() throws InterruptedException {
+    final String REASON = "I'm moving away!";
+    final short STATUS_CODE = (short)1001;
+
+    CountDownLatch latch = new CountDownLatch(2);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          latch.countDown();
+        });
+        vertx.setTimer(1000, (ar) -> socket.close(STATUS_CODE, REASON));
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.frameHandler(frame -> {
+            assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
+            assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+            assertEquals(REASON, frame.closeReason());
+            assertEquals(STATUS_CODE, frame.closeStatusCode());
+            latch.countDown();
+          });
+        });
+      });
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testCloseCustomPayloadFromClient() throws InterruptedException {
+    final String REASON = "I'm moving away!";
+    final short STATUS_CODE = (short)1001;
+
+    CountDownLatch latch = new CountDownLatch(2);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.closeHandler(a -> {
+          latch.countDown();
+        });
+        socket.frameHandler(frame -> {
+          assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
+          assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(REASON, frame.closeReason());
+          assertEquals(STATUS_CODE, frame.closeStatusCode());
+          latch.countDown();
+        });
+      })
+      .listen(ar -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.close(STATUS_CODE, REASON);
+        });
+      });
+    awaitLatch(latch);
   }
 }

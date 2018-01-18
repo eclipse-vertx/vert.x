@@ -682,6 +682,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
               closeFrameSent = true;
             }
+            conn.handleMessage(msg);
             break;
           default:
             throw new IllegalStateException("Invalid type: " + wsFrame.type());

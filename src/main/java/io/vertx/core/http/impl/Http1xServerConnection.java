@@ -310,7 +310,17 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       super.close();
     } else {
       endReadAndFlush();
-      handshaker.close(chctx.channel(), new CloseWebSocketFrame(1000, null));
+      handshaker.close(chctx.channel(), new CloseWebSocketFrame(true, 0, 1000, null));
+    }
+  }
+
+  @Override
+  public void closeWithPayload(ByteBuf byteBuf) {
+    if (handshaker == null) {
+      super.close();
+    } else {
+      endReadAndFlush();
+      handshaker.close(chctx.channel(), new CloseWebSocketFrame(true, 0, byteBuf));
     }
   }
 
