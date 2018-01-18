@@ -98,6 +98,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
+  public void close(short statusCode) {
+    this.close(statusCode, null);
+  }
+
   public void close(short statusCode, String reason) {
     synchronized (conn) {
       checkClosed();
