@@ -205,6 +205,11 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions removeEnabledSecureTransportProtocol(String protocol) {
+    return (NetClientOptions) super.removeEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
   public NetClientOptions setUseAlpn(boolean useAlpn) {
     return (NetClientOptions) super.setUseAlpn(useAlpn);
   }

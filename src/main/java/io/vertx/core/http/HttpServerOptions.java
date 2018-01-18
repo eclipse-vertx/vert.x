@@ -324,6 +324,11 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions removeEnabledSecureTransportProtocol(String protocol) {
+    return (HttpServerOptions) super.removeEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
   public HttpServerOptions setTcpFastOpen(boolean tcpFastOpen) {
     return (HttpServerOptions) super.setTcpFastOpen(tcpFastOpen);
   }

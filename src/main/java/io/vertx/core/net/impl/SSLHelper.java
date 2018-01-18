@@ -119,9 +119,6 @@ public class SSLHelper {
 
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
-  // Make sure SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
-  private static final String[] DEFAULT_ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
-
   private boolean ssl;
   private boolean sni;
   private KeyCertOptions keyCertOptions;
@@ -411,13 +408,10 @@ public class SSLHelper {
       engine.setEnabledCipherSuites(toUse);
     }
     engine.setUseClientMode(client);
-    Set<String> protocols = new LinkedHashSet<>(Arrays.asList(DEFAULT_ENABLED_PROTOCOLS));
-    protocols.retainAll(Arrays.asList(engine.getEnabledProtocols()));
-    if (enabledProtocols != null && !enabledProtocols.isEmpty() && !protocols.isEmpty()) {
-      protocols.retainAll(enabledProtocols);
-      if (protocols.isEmpty()) {
-        log.warn("no SSL/TLS protocols are enabled due to configuration restrictions");
-      }
+    Set<String> protocols = new LinkedHashSet<>(enabledProtocols);
+    protocols.retainAll(Arrays.asList(engine.getSupportedProtocols()));
+    if (protocols.isEmpty()) {
+      log.warn("no SSL/TLS protocols are enabled due to configuration restrictions");
     }
     engine.setEnabledProtocols(protocols.toArray(new String[protocols.size()]));
     if (!client) {

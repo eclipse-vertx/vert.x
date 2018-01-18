@@ -295,7 +295,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Specify some non matching TLS protocols
   public void testTLSNonMatchingProtocolVersions() throws Exception {
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello"}).fail();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1.1"}).fail();
   }
 
   @Test
@@ -1051,8 +1051,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       for (String suite: clientEnabledCipherSuites) {
         options.addEnabledCipherSuite(suite);
       }
-      for (String protocols: clientEnabledSecureTransportProtocol) {
-        options.addEnabledSecureTransportProtocol(protocols);
+      if(clientEnabledSecureTransportProtocol.length > 0) {
+        options.getEnabledSecureTransportProtocols().forEach(options::removeEnabledSecureTransportProtocol);
+      }
+      for (String protocol : clientEnabledSecureTransportProtocol) {
+        options.addEnabledSecureTransportProtocol(protocol);
       }
       if (proxyType != null) {
         ProxyOptions proxyOptions;
@@ -1085,8 +1088,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
       }
-      for (String protocols: serverEnabledSecureTransportProtocol) {
-        serverOptions.addEnabledSecureTransportProtocol(protocols);
+      if(serverEnabledSecureTransportProtocol.length > 0) {
+        serverOptions.getEnabledSecureTransportProtocols().forEach(serverOptions::removeEnabledSecureTransportProtocol);
+      }
+      for (String protocol : serverEnabledSecureTransportProtocol) {
+        serverOptions.addEnabledSecureTransportProtocol(protocol);
       }
       server = createHttpServer(serverOptions.setPort(4043));
       server.connectionHandler(conn -> complete());

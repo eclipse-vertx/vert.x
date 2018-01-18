@@ -114,19 +114,17 @@ public class SSLHelperTest extends VertxTestBase {
 
   @Test
   public void testPreserveEnabledSecureTransportProtocolOrder() throws Exception {
-    String[] protocols = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
     HttpServerOptions options = new HttpServerOptions();
-    for (String protocol : protocols) {
-      options.addEnabledSecureTransportProtocol(protocol);
-    }
-    assertEquals(new ArrayList<>(options.getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
-    assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
+    List<String> expectedProtocols = new ArrayList<>(options.getEnabledSecureTransportProtocols());
+
+    options.removeEnabledSecureTransportProtocol("TLSv1");
+    options.addEnabledSecureTransportProtocol("SSLv3");
+    expectedProtocols.remove("TLSv1");
+    expectedProtocols.add("SSLv3");
+
+    assertEquals(new ArrayList<>(options.getEnabledSecureTransportProtocols()), expectedProtocols);
+    assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledSecureTransportProtocols()), expectedProtocols);
     JsonObject json = options.toJson();
-    assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledSecureTransportProtocols()), Arrays.asList(protocols));
-    SSLHelper helper = new SSLHelper(options, Cert.SERVER_JKS.get(), null);
-    List<String> engineProtocols = Arrays.asList(helper.createEngine((VertxInternal) vertx).getEnabledProtocols());
-    List<String> expectedProtocols = new ArrayList<>(Arrays.asList(protocols));
-    expectedProtocols.retainAll(engineProtocols);
-    assertEquals(engineProtocols, expectedProtocols);
+    assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledSecureTransportProtocols()), expectedProtocols);
   }
 }

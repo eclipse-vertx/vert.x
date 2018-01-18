@@ -246,6 +246,11 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions removeEnabledSecureTransportProtocol(String protocol) {
+    return (NetServerOptions) super.removeEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
   public NetServerOptions setTcpFastOpen(boolean tcpFastOpen) {
     return (NetServerOptions) super.setTcpFastOpen(tcpFastOpen);
   }
