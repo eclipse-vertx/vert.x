@@ -371,12 +371,19 @@ public class DeploymentManager {
     return factoryList;
   }
 
+  /**
+   * <strong>IMPORTANT</strong> - Isolation groups are not supported on Java 9+ because the application classloader is not
+   * an URLClassLoader anymore. Thus we can't extract the list of jars to configure the IsolatedClassLoader.
+   *
+   */
   private ClassLoader getClassLoader(DeploymentOptions options, ContextImpl parentContext) {
     String isolationGroup = options.getIsolationGroup();
     ClassLoader cl;
     if (isolationGroup == null) {
       cl = getCurrentClassLoader();
     } else {
+      // IMPORTANT - Isolation groups are not supported on Java 9+, because the system classloader is not an URLClassLoader
+      // anymore. Thus we can't extract the paths from the classpath and isolate the loading.
       synchronized (this) {
         cl = classloaders.get(isolationGroup);
         if (cl == null) {
