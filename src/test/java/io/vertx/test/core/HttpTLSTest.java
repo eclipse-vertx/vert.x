@@ -286,6 +286,24 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
   }
 
+  /*
+
+  checks that we can enable algorithms
+
+  static
+  {
+    Security.setProperty("jdk.tls.disabledAlgorithms", "");
+  }
+
+  @Test
+  public void testEnableProtocols() throws Exception {
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+      .clientEnabledSecureTransportProtocol(new String[]{"SSLv3"})
+      .serverEnabledSecureTransportProtocol(new String[]{"SSLv3"})
+      .pass();
+  }
+  */
+
   @Test
   // Specify some matching TLS protocols
   public void testTLSInvalidProtocolVersion() throws Exception {
