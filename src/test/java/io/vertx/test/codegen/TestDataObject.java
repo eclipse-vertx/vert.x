@@ -17,10 +17,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -66,6 +63,22 @@ public class TestDataObject {
   private List<JsonArray> jsonArrays;
   private List<HttpMethod> httpMethods;
   private List<Object> objects;
+
+  private Set<String> stringSet;
+  private Set<Boolean> boxedBooleanSet;
+  private Set<Byte> boxedByteSet;
+  private Set<Short> boxedShortSet;
+  private Set<Integer> boxedIntSet;
+  private Set<Long> boxedLongSet;
+  private Set<Float> boxedFloatSet;
+  private Set<Double> boxedDoubleSet;
+  private Set<Character> boxedCharSet;
+  private Set<AggregatedDataObject> aggregatedDataObjectSet;
+  private Set<Buffer> bufferSet;
+  private Set<JsonObject> jsonObjectSet;
+  private Set<JsonArray> jsonArraySet;
+  private Set<HttpMethod> httpMethodSet;
+  private Set<Object> objectSet;
 
   private List<String> addedStringValues = new ArrayList<>();
   private List<Boolean> addedBoxedBooleanValues = new ArrayList<>();
@@ -454,6 +467,142 @@ public class TestDataObject {
 
   public TestDataObject setObjects(List<Object> objects) {
     this.objects = objects;
+    return this;
+  }
+
+
+  public Set<String> getStringSet() {
+    return stringSet;
+  }
+
+  public TestDataObject setStringSet(Set<String> stringSet) {
+    this.stringSet = stringSet;
+    return this;
+  }
+
+  public Set<Boolean> getBoxedBooleanSet() {
+    return boxedBooleanSet;
+  }
+
+  public TestDataObject setBoxedBooleanSet(Set<Boolean> boxedBooleanSet) {
+    this.boxedBooleanSet = boxedBooleanSet;
+    return this;
+  }
+
+  public Set<Byte> getBoxedByteSet() {
+    return boxedByteSet;
+  }
+
+  public TestDataObject setBoxedByteSet(Set<Byte> boxedByteSet) {
+    this.boxedByteSet = boxedByteSet;
+    return this;
+  }
+
+  public Set<Short> getBoxedShortSet() {
+    return boxedShortSet;
+  }
+
+  public TestDataObject setBoxedShortSet(Set<Short> boxedShortSet) {
+    this.boxedShortSet = boxedShortSet;
+    return this;
+  }
+
+  public Set<Integer> getBoxedIntSet() {
+    return boxedIntSet;
+  }
+
+  public TestDataObject setBoxedIntSet(Set<Integer> boxedIntSet) {
+    this.boxedIntSet = boxedIntSet;
+    return this;
+  }
+
+  public Set<Long> getBoxedLongSet() {
+    return boxedLongSet;
+  }
+
+  public TestDataObject setBoxedLongSet(Set<Long> boxedLongSet) {
+    this.boxedLongSet = boxedLongSet;
+    return this;
+  }
+
+  public Set<Float> getBoxedFloatSet() {
+    return boxedFloatSet;
+  }
+
+  public TestDataObject setBoxedFloatSet(Set<Float> boxedFloatSet) {
+    this.boxedFloatSet = boxedFloatSet;
+    return this;
+  }
+
+  public Set<Double> getBoxedDoubleSet() {
+    return boxedDoubleSet;
+  }
+
+  public TestDataObject setBoxedDoubleSet(Set<Double> boxedDoubleSet) {
+    this.boxedDoubleSet = boxedDoubleSet;
+    return this;
+  }
+
+  public Set<Character> getBoxedCharSet() {
+    return boxedCharSet;
+  }
+
+  public TestDataObject setBoxedCharSet(Set<Character> boxedCharSet) {
+    this.boxedCharSet = boxedCharSet;
+    return this;
+  }
+
+  public Set<AggregatedDataObject> getAggregatedDataObjectSet() {
+    return aggregatedDataObjectSet;
+  }
+
+  public TestDataObject setAggregatedDataObjectSet(Set<AggregatedDataObject> aggregatedDataObjectSet) {
+    this.aggregatedDataObjectSet = aggregatedDataObjectSet;
+    return this;
+  }
+
+  public Set<Buffer> getBufferSet() {
+    return bufferSet;
+  }
+
+  public TestDataObject setBufferSet(Set<Buffer> bufferSet) {
+    this.bufferSet = bufferSet;
+    return this;
+  }
+
+  public Set<JsonObject> getJsonObjectSet() {
+    return jsonObjectSet;
+  }
+
+  public TestDataObject setJsonObjectSet(Set<JsonObject> jsonObjectSet) {
+    this.jsonObjectSet = jsonObjectSet;
+    return this;
+  }
+
+  public Set<JsonArray> getJsonArraySet() {
+    return jsonArraySet;
+  }
+
+  public TestDataObject setJsonArraySet(Set<JsonArray> jsonArraySet) {
+    this.jsonArraySet = jsonArraySet;
+    return this;
+  }
+
+  public Set<HttpMethod> getHttpMethodSet() {
+    return httpMethodSet;
+  }
+
+  public TestDataObject setHttpMethodSet(Set<HttpMethod> httpMethodSet) {
+    this.httpMethodSet = httpMethodSet;
+    return this;
+  }
+
+  public Set<Object> getObjectSet() {
+    return objectSet;
+  }
+
+  public TestDataObject setObjectSet(Set<Object> objectSet) {
+    this.objectSet = objectSet;
     return this;
   }
 

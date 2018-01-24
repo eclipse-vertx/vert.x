@@ -128,6 +128,14 @@ public class TestDataObjectConverter {
       });
       obj.setAggregatedDataObjectMap(map);
     }
+    if (json.getValue("aggregatedDataObjectSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<io.vertx.test.codegen.AggregatedDataObject> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("aggregatedDataObjectSet").forEach( item -> {
+        if (item instanceof JsonObject)
+          list.add(new io.vertx.test.codegen.AggregatedDataObject((JsonObject)item));
+      });
+      obj.setAggregatedDataObjectSet(list);
+    }
     if (json.getValue("aggregatedDataObjects") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.test.codegen.AggregatedDataObject> list = new java.util.ArrayList<>();
       json.getJsonArray("aggregatedDataObjects").forEach( item -> {
@@ -138,6 +146,14 @@ public class TestDataObjectConverter {
     }
     if (json.getValue("booleanValue") instanceof Boolean) {
       obj.setBooleanValue((Boolean)json.getValue("booleanValue"));
+    }
+    if (json.getValue("boxedBooleanSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Boolean> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("boxedBooleanSet").forEach( item -> {
+        if (item instanceof Boolean)
+          list.add((Boolean)item);
+      });
+      obj.setBoxedBooleanSet(list);
     }
     if (json.getValue("boxedBooleanValue") instanceof Boolean) {
       obj.setBoxedBooleanValue((Boolean)json.getValue("boxedBooleanValue"));
@@ -158,6 +174,14 @@ public class TestDataObjectConverter {
       });
       obj.setBoxedBooleanValues(list);
     }
+    if (json.getValue("boxedByteSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Byte> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("boxedByteSet").forEach( item -> {
+        if (item instanceof Number)
+          list.add(((Number)item).byteValue());
+      });
+      obj.setBoxedByteSet(list);
+    }
     if (json.getValue("boxedByteValue") instanceof Number) {
       obj.setBoxedByteValue(((Number)json.getValue("boxedByteValue")).byteValue());
     }
@@ -176,6 +200,14 @@ public class TestDataObjectConverter {
           list.add(((Number)item).byteValue());
       });
       obj.setBoxedByteValues(list);
+    }
+    if (json.getValue("boxedCharSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Character> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("boxedCharSet").forEach( item -> {
+        if (item instanceof String)
+          list.add(((String)item).charAt(0));
+      });
+      obj.setBoxedCharSet(list);
     }
     if (json.getValue("boxedCharValue") instanceof String) {
       obj.setBoxedCharValue(((String)json.getValue("boxedCharValue")).charAt(0));
@@ -196,6 +228,14 @@ public class TestDataObjectConverter {
       });
       obj.setBoxedCharValues(list);
     }
+    if (json.getValue("boxedDoubleSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Double> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("boxedDoubleSet").forEach( item -> {
+        if (item instanceof Number)
+          list.add(((Number)item).doubleValue());
+      });
+      obj.setBoxedDoubleSet(list);
+    }
     if (json.getValue("boxedDoubleValue") instanceof Number) {
       obj.setBoxedDoubleValue(((Number)json.getValue("boxedDoubleValue")).doubleValue());
     }
@@ -214,6 +254,14 @@ public class TestDataObjectConverter {
           list.add(((Number)item).doubleValue());
       });
       obj.setBoxedDoubleValues(list);
+    }
+    if (json.getValue("boxedFloatSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Float> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("boxedFloatSet").forEach( item -> {
+        if (item instanceof Number)
+          list.add(((Number)item).floatValue());
+      });
+      obj.setBoxedFloatSet(list);
     }
     if (json.getValue("boxedFloatValue") instanceof Number) {
       obj.setBoxedFloatValue(((Number)json.getValue("boxedFloatValue")).floatValue());
@@ -234,6 +282,14 @@ public class TestDataObjectConverter {
       });
       obj.setBoxedFloatValues(list);
     }
+    if (json.getValue("boxedIntSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Integer> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("boxedIntSet").forEach( item -> {
+        if (item instanceof Number)
+          list.add(((Number)item).intValue());
+      });
+      obj.setBoxedIntSet(list);
+    }
     if (json.getValue("boxedIntValue") instanceof Number) {
       obj.setBoxedIntValue(((Number)json.getValue("boxedIntValue")).intValue());
     }
@@ -253,6 +309,14 @@ public class TestDataObjectConverter {
       });
       obj.setBoxedIntValues(list);
     }
+    if (json.getValue("boxedLongSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Long> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("boxedLongSet").forEach( item -> {
+        if (item instanceof Number)
+          list.add(((Number)item).longValue());
+      });
+      obj.setBoxedLongSet(list);
+    }
     if (json.getValue("boxedLongValue") instanceof Number) {
       obj.setBoxedLongValue(((Number)json.getValue("boxedLongValue")).longValue());
     }
@@ -271,6 +335,14 @@ public class TestDataObjectConverter {
           list.add(((Number)item).longValue());
       });
       obj.setBoxedLongValues(list);
+    }
+    if (json.getValue("boxedShortSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Short> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("boxedShortSet").forEach( item -> {
+        if (item instanceof Number)
+          list.add(((Number)item).shortValue());
+      });
+      obj.setBoxedShortSet(list);
     }
     if (json.getValue("boxedShortValue") instanceof Number) {
       obj.setBoxedShortValue(((Number)json.getValue("boxedShortValue")).shortValue());
@@ -301,6 +373,14 @@ public class TestDataObjectConverter {
           map.put(entry.getKey(), io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)entry.getValue())));
       });
       obj.setBufferMap(map);
+    }
+    if (json.getValue("bufferSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<io.vertx.core.buffer.Buffer> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("bufferSet").forEach( item -> {
+        if (item instanceof String)
+          list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+      });
+      obj.setBufferSet(list);
     }
     if (json.getValue("buffers") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.buffer.Buffer> list = new java.util.ArrayList<>();
@@ -333,6 +413,14 @@ public class TestDataObjectConverter {
       });
       obj.setHttpMethodMap(map);
     }
+    if (json.getValue("httpMethodSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<io.vertx.core.http.HttpMethod> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("httpMethodSet").forEach( item -> {
+        if (item instanceof String)
+          list.add(io.vertx.core.http.HttpMethod.valueOf((String)item));
+      });
+      obj.setHttpMethodSet(list);
+    }
     if (json.getValue("httpMethods") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.http.HttpMethod> list = new java.util.ArrayList<>();
       json.getJsonArray("httpMethods").forEach( item -> {
@@ -355,6 +443,14 @@ public class TestDataObjectConverter {
       });
       obj.setJsonArrayMap(map);
     }
+    if (json.getValue("jsonArraySet") instanceof JsonArray) {
+      java.util.LinkedHashSet<io.vertx.core.json.JsonArray> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("jsonArraySet").forEach( item -> {
+        if (item instanceof JsonArray)
+          list.add(((JsonArray)item).copy());
+      });
+      obj.setJsonArraySet(list);
+    }
     if (json.getValue("jsonArrays") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.json.JsonArray> list = new java.util.ArrayList<>();
       json.getJsonArray("jsonArrays").forEach( item -> {
@@ -373,6 +469,14 @@ public class TestDataObjectConverter {
           map.put(entry.getKey(), ((JsonObject)entry.getValue()).copy());
       });
       obj.setJsonObjectMap(map);
+    }
+    if (json.getValue("jsonObjectSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<io.vertx.core.json.JsonObject> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("jsonObjectSet").forEach( item -> {
+        if (item instanceof JsonObject)
+          list.add(((JsonObject)item).copy());
+      });
+      obj.setJsonObjectSet(list);
     }
     if (json.getValue("jsonObjects") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.json.JsonObject> list = new java.util.ArrayList<>();
@@ -483,6 +587,14 @@ public class TestDataObjectConverter {
       });
       obj.setObjectMap(map);
     }
+    if (json.getValue("objectSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.Object> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("objectSet").forEach( item -> {
+        if (item instanceof Object)
+          list.add(item);
+      });
+      obj.setObjectSet(list);
+    }
     if (json.getValue("objects") instanceof JsonArray) {
       java.util.ArrayList<java.lang.Object> list = new java.util.ArrayList<>();
       json.getJsonArray("objects").forEach( item -> {
@@ -493,6 +605,14 @@ public class TestDataObjectConverter {
     }
     if (json.getValue("shortValue") instanceof Number) {
       obj.setShortValue(((Number)json.getValue("shortValue")).shortValue());
+    }
+    if (json.getValue("stringSet") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.String> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("stringSet").forEach( item -> {
+        if (item instanceof String)
+          list.add((String)item);
+      });
+      obj.setStringSet(list);
     }
     if (json.getValue("stringValue") instanceof String) {
       obj.setStringValue((String)json.getValue("stringValue"));
@@ -599,12 +719,22 @@ public class TestDataObjectConverter {
       obj.getAggregatedDataObjectMap().forEach((key,value) -> map.put(key, value.toJson()));
       json.put("aggregatedDataObjectMap", map);
     }
+    if (obj.getAggregatedDataObjectSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getAggregatedDataObjectSet().forEach(item -> array.add(item.toJson()));
+      json.put("aggregatedDataObjectSet", array);
+    }
     if (obj.getAggregatedDataObjects() != null) {
       JsonArray array = new JsonArray();
       obj.getAggregatedDataObjects().forEach(item -> array.add(item.toJson()));
       json.put("aggregatedDataObjects", array);
     }
     json.put("booleanValue", obj.isBooleanValue());
+    if (obj.getBoxedBooleanSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBoxedBooleanSet().forEach(item -> array.add(item));
+      json.put("boxedBooleanSet", array);
+    }
     if (obj.isBoxedBooleanValue() != null) {
       json.put("boxedBooleanValue", obj.isBoxedBooleanValue());
     }
@@ -617,6 +747,11 @@ public class TestDataObjectConverter {
       JsonArray array = new JsonArray();
       obj.getBoxedBooleanValues().forEach(item -> array.add(item));
       json.put("boxedBooleanValues", array);
+    }
+    if (obj.getBoxedByteSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBoxedByteSet().forEach(item -> array.add(item));
+      json.put("boxedByteSet", array);
     }
     if (obj.getBoxedByteValue() != null) {
       json.put("boxedByteValue", obj.getBoxedByteValue());
@@ -631,6 +766,11 @@ public class TestDataObjectConverter {
       obj.getBoxedByteValues().forEach(item -> array.add(item));
       json.put("boxedByteValues", array);
     }
+    if (obj.getBoxedCharSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBoxedCharSet().forEach(item -> array.add(Character.toString(item)));
+      json.put("boxedCharSet", array);
+    }
     if (obj.getBoxedCharValue() != null) {
       json.put("boxedCharValue", Character.toString(obj.getBoxedCharValue()));
     }
@@ -643,6 +783,11 @@ public class TestDataObjectConverter {
       JsonArray array = new JsonArray();
       obj.getBoxedCharValues().forEach(item -> array.add(Character.toString(item)));
       json.put("boxedCharValues", array);
+    }
+    if (obj.getBoxedDoubleSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBoxedDoubleSet().forEach(item -> array.add(item));
+      json.put("boxedDoubleSet", array);
     }
     if (obj.getBoxedDoubleValue() != null) {
       json.put("boxedDoubleValue", obj.getBoxedDoubleValue());
@@ -657,6 +802,11 @@ public class TestDataObjectConverter {
       obj.getBoxedDoubleValues().forEach(item -> array.add(item));
       json.put("boxedDoubleValues", array);
     }
+    if (obj.getBoxedFloatSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBoxedFloatSet().forEach(item -> array.add(item));
+      json.put("boxedFloatSet", array);
+    }
     if (obj.getBoxedFloatValue() != null) {
       json.put("boxedFloatValue", obj.getBoxedFloatValue());
     }
@@ -669,6 +819,11 @@ public class TestDataObjectConverter {
       JsonArray array = new JsonArray();
       obj.getBoxedFloatValues().forEach(item -> array.add(item));
       json.put("boxedFloatValues", array);
+    }
+    if (obj.getBoxedIntSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBoxedIntSet().forEach(item -> array.add(item));
+      json.put("boxedIntSet", array);
     }
     if (obj.getBoxedIntValue() != null) {
       json.put("boxedIntValue", obj.getBoxedIntValue());
@@ -683,6 +838,11 @@ public class TestDataObjectConverter {
       obj.getBoxedIntValues().forEach(item -> array.add(item));
       json.put("boxedIntValues", array);
     }
+    if (obj.getBoxedLongSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBoxedLongSet().forEach(item -> array.add(item));
+      json.put("boxedLongSet", array);
+    }
     if (obj.getBoxedLongValue() != null) {
       json.put("boxedLongValue", obj.getBoxedLongValue());
     }
@@ -695,6 +855,11 @@ public class TestDataObjectConverter {
       JsonArray array = new JsonArray();
       obj.getBoxedLongValues().forEach(item -> array.add(item));
       json.put("boxedLongValues", array);
+    }
+    if (obj.getBoxedShortSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBoxedShortSet().forEach(item -> array.add(item));
+      json.put("boxedShortSet", array);
     }
     if (obj.getBoxedShortValue() != null) {
       json.put("boxedShortValue", obj.getBoxedShortValue());
@@ -717,6 +882,11 @@ public class TestDataObjectConverter {
       obj.getBufferMap().forEach((key,value) -> map.put(key, value.getBytes()));
       json.put("bufferMap", map);
     }
+    if (obj.getBufferSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getBufferSet().forEach(item -> array.add(item.getBytes()));
+      json.put("bufferSet", array);
+    }
     if (obj.getBuffers() != null) {
       JsonArray array = new JsonArray();
       obj.getBuffers().forEach(item -> array.add(item.getBytes()));
@@ -734,6 +904,11 @@ public class TestDataObjectConverter {
       obj.getHttpMethodMap().forEach((key,value) -> map.put(key, value.name()));
       json.put("httpMethodMap", map);
     }
+    if (obj.getHttpMethodSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getHttpMethodSet().forEach(item -> array.add(item.name()));
+      json.put("httpMethodSet", array);
+    }
     if (obj.getHttpMethods() != null) {
       JsonArray array = new JsonArray();
       obj.getHttpMethods().forEach(item -> array.add(item.name()));
@@ -748,6 +923,11 @@ public class TestDataObjectConverter {
       obj.getJsonArrayMap().forEach((key,value) -> map.put(key, value));
       json.put("jsonArrayMap", map);
     }
+    if (obj.getJsonArraySet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getJsonArraySet().forEach(item -> array.add(item));
+      json.put("jsonArraySet", array);
+    }
     if (obj.getJsonArrays() != null) {
       JsonArray array = new JsonArray();
       obj.getJsonArrays().forEach(item -> array.add(item));
@@ -760,6 +940,11 @@ public class TestDataObjectConverter {
       JsonObject map = new JsonObject();
       obj.getJsonObjectMap().forEach((key,value) -> map.put(key, value));
       json.put("jsonObjectMap", map);
+    }
+    if (obj.getJsonObjectSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getJsonObjectSet().forEach(item -> array.add(item));
+      json.put("jsonObjectSet", array);
     }
     if (obj.getJsonObjects() != null) {
       JsonArray array = new JsonArray();
@@ -847,12 +1032,22 @@ public class TestDataObjectConverter {
       obj.getObjectMap().forEach((key,value) -> map.put(key, value));
       json.put("objectMap", map);
     }
+    if (obj.getObjectSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getObjectSet().forEach(item -> array.add(item));
+      json.put("objectSet", array);
+    }
     if (obj.getObjects() != null) {
       JsonArray array = new JsonArray();
       obj.getObjects().forEach(item -> array.add(item));
       json.put("objects", array);
     }
     json.put("shortValue", obj.getShortValue());
+    if (obj.getStringSet() != null) {
+      JsonArray array = new JsonArray();
+      obj.getStringSet().forEach(item -> array.add(item));
+      json.put("stringSet", array);
+    }
     if (obj.getStringValue() != null) {
       json.put("stringValue", obj.getStringValue());
     }

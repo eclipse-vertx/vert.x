@@ -4,7 +4,7 @@
 	@if{property.list || property.set}
 	@{indent}if (json.getValue("@{property.name}") instanceof JsonArray) {\n
 		@if{property.setter}
-			@code{coll = property.list ? 'java.util.ArrayList' : 'java.util.HashSet'}
+			@code{coll = property.list ? 'java.util.ArrayList' : 'java.util.LinkedHashSet'}
 			@{indent}  @{coll}<@{propType.name}> list = new @{coll}<>();\n
 			@{indent}  json.getJsonArray("@{property.name}").forEach( item -> {\n
 			@{indent}    if (item instanceof @{cast})\n

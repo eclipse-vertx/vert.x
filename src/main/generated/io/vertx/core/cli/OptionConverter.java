@@ -31,7 +31,7 @@ import io.vertx.core.json.JsonArray;
       obj.setArgName((String)json.getValue("argName"));
     }
     if (json.getValue("choices") instanceof JsonArray) {
-      java.util.HashSet<java.lang.String> list = new java.util.HashSet<>();
+      java.util.LinkedHashSet<java.lang.String> list = new java.util.LinkedHashSet<>();
       json.getJsonArray("choices").forEach( item -> {
         if (item instanceof String)
           list.add((String)item);

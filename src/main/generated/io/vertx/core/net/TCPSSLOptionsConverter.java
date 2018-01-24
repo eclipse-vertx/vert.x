@@ -46,7 +46,7 @@ import io.vertx.core.json.JsonArray;
       });
     }
     if (json.getValue("enabledSecureTransportProtocols") instanceof JsonArray) {
-      java.util.HashSet<java.lang.String> list = new java.util.HashSet<>();
+      java.util.LinkedHashSet<java.lang.String> list = new java.util.LinkedHashSet<>();
       json.getJsonArray("enabledSecureTransportProtocols").forEach( item -> {
         if (item instanceof String)
           list.add((String)item);
