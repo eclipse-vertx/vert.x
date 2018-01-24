@@ -61,16 +61,20 @@ import io.vertx.core.json.JsonArray;
       obj.setRotateServers((Boolean)json.getValue("rotateServers"));
     }
     if (json.getValue("searchDomains") instanceof JsonArray) {
-      json.getJsonArray("searchDomains").forEach(item -> {
+      java.util.ArrayList<java.lang.String> list = new java.util.ArrayList<>();
+      json.getJsonArray("searchDomains").forEach( item -> {
         if (item instanceof String)
-          obj.addSearchDomain((String)item);
+          list.add((String)item);
       });
+      obj.setSearchDomains(list);
     }
     if (json.getValue("servers") instanceof JsonArray) {
-      json.getJsonArray("servers").forEach(item -> {
+      java.util.ArrayList<java.lang.String> list = new java.util.ArrayList<>();
+      json.getJsonArray("servers").forEach( item -> {
         if (item instanceof String)
-          obj.addServer((String)item);
+          list.add((String)item);
       });
+      obj.setServers(list);
     }
   }
 

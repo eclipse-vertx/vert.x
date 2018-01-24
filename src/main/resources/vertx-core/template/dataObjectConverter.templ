@@ -3,12 +3,7 @@
 @declare{'genPropFromJson'}
 	@if{property.list || property.set}
 	@{indent}if (json.getValue("@{property.name}") instanceof JsonArray) {\n
-		@if{property.adder}
-			@{indent}  json.getJsonArray("@{property.name}").forEach(item -> {\n
-			@{indent}    if (item instanceof @{cast})\n
-			@{indent}      obj.@{property.adderMethod}(@{before}item@{after});\n
-			@{indent}  });\n
-		@else{property.setter}
+		@if{property.setter}
 			@code{coll = property.list ? 'java.util.ArrayList' : 'java.util.HashSet'}
 			@{indent}  @{coll}<@{propType.name}> list = new @{coll}<>();\n
 			@{indent}  json.getJsonArray("@{property.name}").forEach( item -> {\n
@@ -16,6 +11,11 @@
 			@{indent}      list.add(@{before}item@{after});\n
 			@{indent}  });\n
 			@{indent}  obj.@{property.setterMethod}(list);\n
+		@else{property.adder}
+			@{indent}  json.getJsonArray("@{property.name}").forEach(item -> {\n
+			@{indent}    if (item instanceof @{cast})\n
+			@{indent}      obj.@{property.adderMethod}(@{before}item@{after});\n
+			@{indent}  });\n
 		@end{}
 	@{indent}}\n
 	@else{property.map}

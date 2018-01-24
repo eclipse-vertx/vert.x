@@ -19,12 +19,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -639,5 +634,14 @@ public class DataObjectTest extends VertxTestBase {
 
   private String toBase64(Buffer buffer) {
     return Base64.getEncoder().encodeToString(buffer.getBytes());
+  }
+
+  @Test
+  public void testPreferSetterToAdder() {
+    SetterAdderDataObject obj = new SetterAdderDataObject();
+    SetterAdderDataObjectConverter.fromJson(new JsonObject().put("values", new JsonArray().add("first").add("second")), obj);
+    assertEquals(Arrays.asList("first", "second"), obj.getValues());
+    assertEquals(1, obj.sets);
+    assertEquals(0, obj.adds);
   }
 }

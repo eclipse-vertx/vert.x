@@ -31,10 +31,12 @@ import io.vertx.core.json.JsonArray;
       obj.setArgName((String)json.getValue("argName"));
     }
     if (json.getValue("choices") instanceof JsonArray) {
-      json.getJsonArray("choices").forEach(item -> {
+      java.util.HashSet<java.lang.String> list = new java.util.HashSet<>();
+      json.getJsonArray("choices").forEach( item -> {
         if (item instanceof String)
-          obj.addChoice((String)item);
+          list.add((String)item);
       });
+      obj.setChoices(list);
     }
     if (json.getValue("defaultValue") instanceof String) {
       obj.setDefaultValue((String)json.getValue("defaultValue"));

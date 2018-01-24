@@ -70,10 +70,12 @@ import io.vertx.core.json.JsonArray;
       });
     }
     if (json.getValue("enabledSecureTransportProtocols") instanceof JsonArray) {
-      json.getJsonArray("enabledSecureTransportProtocols").forEach(item -> {
+      java.util.HashSet<java.lang.String> list = new java.util.HashSet<>();
+      json.getJsonArray("enabledSecureTransportProtocols").forEach( item -> {
         if (item instanceof String)
-          obj.addEnabledSecureTransportProtocol((String)item);
+          list.add((String)item);
       });
+      obj.setEnabledSecureTransportProtocols(list);
     }
     if (json.getValue("host") instanceof String) {
       obj.setHost((String)json.getValue("host"));
