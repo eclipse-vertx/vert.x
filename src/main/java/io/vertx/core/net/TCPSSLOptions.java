@@ -150,7 +150,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions(JsonObject json) {
     super(json);
     init();
-    enabledSecureTransportProtocols.clear();
     TCPSSLOptionsConverter.fromJson(json ,this);
   }
 
@@ -562,6 +561,17 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   public TCPSSLOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return setSslEngineOptions(sslEngineOptions);
+  }
+
+  /**
+   * Sets the list of enabled SSL/TLS protocols.
+   *
+   * @param enabledSecureTransportProtocols  the SSL/TLS protocols to enable
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
+    this.enabledSecureTransportProtocols = enabledSecureTransportProtocols;
+    return this;
   }
 
   /**
