@@ -11,9 +11,10 @@
 
 package io.vertx.core.logging;
 
+import static java.util.Objects.requireNonNull;
+
 import io.vertx.core.spi.logging.LogDelegate;
 import io.vertx.core.spi.logging.LogDelegateFactory;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -67,6 +68,33 @@ public class LoggerFactory {
     } catch (Exception e) {
       throw new IllegalArgumentException("Error instantiating LogDelegateFactory implemention: \"" + className + "\"", e);
     }
+  }
+
+  /**
+   * Set new custom LoggerFactory.
+   * @param factory the new LogDelegateFactory to use
+   */
+  public static synchronized void setLogDelegateFactory(LogDelegateFactory factory) {
+      requireNonNull(factory, "factory == null");
+      LogDelegateFactory current = delegateFactory;
+      if (current != null) {
+          try {
+            getLogger(LoggerFactory.class).debug("Replacing LogDelegateFactory " + current + " by " + factory);
+          } catch (Throwable t) {
+            factory.createDelegate(LoggerFactory.class.getCanonicalName())
+                .error("Failed to log LogDelegateFactory replacement on previous implementation", t);
+          }
+          loggers.clear();
+      }
+      delegateFactory = factory;
+  }
+
+  /**
+   * Get current LoggerFactory.
+   * @return the currently used LogDelegateFactory
+   */
+  public static LogDelegateFactory getLogDelegateFactory() {
+      return delegateFactory;
   }
 
   public static Logger getLogger(final Class<?> clazz) {
