@@ -11,9 +11,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
 
 import java.util.AbstractList;
@@ -25,18 +23,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.netty.util.AsciiString.*;
-
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class Http2HeadersAdaptor implements MultiMap {
 
   static CharSequence toLowerCase(CharSequence s) {
-    if (s instanceof AsciiString) {
-      AsciiString asciiString = (AsciiString) s;
-      return asciiString.toLowerCase();
-    }
     StringBuilder buffer = null;
     int len = s.length();
     for (int index = 0; index < len; index++) {
@@ -234,24 +226,6 @@ public class Http2HeadersAdaptor implements MultiMap {
   @Override
   public boolean contains(CharSequence name) {
     return headers.contains(toLowerCase(name));
-  }
-
-  @Override
-  public boolean contains(String name, String value, boolean caseInsensitive) {
-    if (headers instanceof DefaultHttp2Headers) {
-      DefaultHttp2Headers h = (DefaultHttp2Headers) headers;
-      return h.contains(toLowerCase(name), value, caseInsensitive ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER);
-    }
-    return MultiMap.super.contains(name, value, caseInsensitive);
-  }
-
-  @Override
-  public boolean contains(CharSequence name, CharSequence value, boolean caseInsensitive) {
-    if (headers instanceof DefaultHttp2Headers) {
-      DefaultHttp2Headers h = (DefaultHttp2Headers) headers;
-      return h.contains(toLowerCase(name), value, caseInsensitive ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER);
-    }
-    return MultiMap.super.contains(name, value, caseInsensitive);
   }
 
   @Override
