@@ -1004,10 +1004,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
       req = new HttpClientRequestImpl(this, useSSL, method, proxyOptions.getHost(), proxyOptions.getPort(),
-          relativeURI, vertx);
+          relativeURI, options.getMaxRedirectCacheSize(), vertx);
       req.setHost(host + addPort);
     } else {
-      req = new HttpClientRequestImpl(this, useSSL, method, host, port, relativeURI, vertx);
+      req = new HttpClientRequestImpl(this, useSSL, method, host, port, relativeURI, options.getMaxRedirectCacheSize(), vertx);
     }
     if (headers != null) {
       req.headers().setAll(headers);

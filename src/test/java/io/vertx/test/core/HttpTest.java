@@ -42,9 +42,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
-import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -3438,7 +3436,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testFollowRedirectWithBody(Function<Buffer, Buffer> translator) throws Exception {
-    Buffer expected = TestUtils.randomBuffer(2048);
+    Buffer expected = TestUtils.randomBuffer(HttpClientOptions.DEFAULT_MAX_REDIRECT_CACHE_SIZE);
     AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
       req.bodyHandler(body -> {
@@ -3799,6 +3797,36 @@ public abstract class HttpTest extends HttpTestBase {
     } else {
       assertTrue(redirection == null || redirection.failed());
     }
+  }
+
+  @Test
+  public void testFollowRedirectMaxCacheSize() throws Exception {
+    AtomicInteger redirections = new AtomicInteger();
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        switch (redirections.getAndIncrement()) {
+          case 0:
+            String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
+            req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/otherpath").end();
+            break;
+          default:
+            fail();
+        }
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(301, resp.statusCode());
+      testComplete();
+    }).setChunked(true).setFollowRedirects(true);
+    int len = HttpClientOptions.DEFAULT_MAX_REDIRECT_CACHE_SIZE + 1;
+    while (len > 0) {
+      int size = Math.min(1024, len);
+      req.write(TestUtils.randomAlphaString(size));
+      len -= size;
+    }
+    req.end();
+    await();
   }
 
   @Test

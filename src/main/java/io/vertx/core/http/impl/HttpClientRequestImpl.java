@@ -24,7 +24,6 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -49,6 +48,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
   private final VertxInternal vertx;
+  private final int maxRedirectCacheSize;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
@@ -65,7 +65,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> completionHandler;
   private Long reset;
   private ByteBuf pendingChunks;
-  private CompositeByteBuf cachedChunks;
+  private CompositeByteBuf redirectCache;
   private int pendingMaxSize = -1;
   private int followRedirects;
   private boolean connecting;
@@ -75,10 +75,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   // completed => drainHandler = null
 
   HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port,
-                        String relativeURI, VertxInternal vertx) {
+                        String relativeURI, int maxRedirectCacheSize, VertxInternal vertx) {
     super(client, ssl, method, host, port, relativeURI);
     this.chunked = false;
     this.vertx = vertx;
+    this.maxRedirectCacheSize = maxRedirectCacheSize;
   }
 
   @Override
@@ -410,14 +411,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         body = null;
         break;
       default:
-        if (cachedChunks != null) {
-          body = cachedChunks;
+        if (redirectCache != null) {
+          body = redirectCache;
         } else {
           body = null;
         }
         break;
     }
-    cachedChunks = null;
+    redirectCache = null;
     Future<Void> fut = Future.future();
     fut.setHandler(ar -> {
       if (ar.succeeded()) {
@@ -812,10 +813,15 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (buff != null) {
       written += buff.readableBytes();
       if (followRedirects > 0) {
-        if (cachedChunks == null) {
-          cachedChunks = Unpooled.compositeBuffer();
+        if (written <= maxRedirectCacheSize) {
+          if (redirectCache == null) {
+            redirectCache = Unpooled.compositeBuffer();
+          }
+          redirectCache.addComponent(true, buff);
+        } else {
+          followRedirects = 0;
+          redirectCache = null;
         }
-        cachedChunks.addComponent(true, buff);
       }
     }
 
