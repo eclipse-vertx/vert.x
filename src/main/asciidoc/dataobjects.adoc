@@ -159,7 +159,7 @@ Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols, appended to the ordered protocols.
+Sets the list of enabled SSL/TLS protocols.
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
@@ -548,7 +548,7 @@ Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols, appended to the ordered protocols.
+Sets the list of enabled SSL/TLS protocols.
 +++
 |[[host]]`host`|`String`|
 +++
@@ -784,7 +784,7 @@ Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols, appended to the ordered protocols.
+Sets the list of enabled SSL/TLS protocols.
 +++
 |[[forceSni]]`forceSni`|`Boolean`|
 +++
@@ -1082,7 +1082,7 @@ Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols, appended to the ordered protocols.
+Sets the list of enabled SSL/TLS protocols.
 +++
 |[[handle100ContinueAutomatically]]`handle100ContinueAutomatically`|`Boolean`|
 +++
@@ -1338,7 +1338,7 @@ Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols, appended to the ordered protocols.
+Sets the list of enabled SSL/TLS protocols.
 +++
 |[[hostnameVerificationAlgorithm]]`hostnameVerificationAlgorithm`|`String`|
 +++
@@ -1504,7 +1504,7 @@ Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols, appended to the ordered protocols.
+Sets the list of enabled SSL/TLS protocols.
 +++
 |[[host]]`host`|`String`|
 +++
@@ -2095,7 +2095,7 @@ Add an enabled cipher suite, appended to the ordered suites.
 +++
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
 +++
-Add an enabled SSL/TLS protocols, appended to the ordered protocols.
+Sets the list of enabled SSL/TLS protocols.
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
