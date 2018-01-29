@@ -86,6 +86,7 @@ import io.vertx.core.streams.ReadStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -276,12 +277,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                       SslHandler sslHandler = pipeline.get(SslHandler.class);
                       String protocol = sslHandler.applicationProtocol();
                       if ("h2".equals(protocol)) {
-                        handleHttp2(pipeline.channel());
+                        handleHttp2(ch);
                       } else {
-                        configureHttp1(pipeline);
+                        handleHttp1(ch);
                       }
                     } else {
-                      configureHttp1(pipeline);
+                      handleHttp1(ch);
                     }
                   } else {
                     HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
@@ -290,7 +291,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 });
               } else {
                 if (DISABLE_HC2) {
-                  configureHttp1(pipeline);
+                  handleHttp1(ch);
                 } else {
                   IdleStateHandler idle;
                   if (options.getIdleTimeout() > 0) {
@@ -311,7 +312,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                       if (h2c) {
                         handleHttp2(ctx.channel());
                       } else {
-                        configureHttp1(ctx.pipeline());
+                        handleHttp1(ch);
                       }
                     }
 
@@ -423,7 +424,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return handler;
   }
 
-  private void configureHttp1(ChannelPipeline pipeline) {
+  private void configureHttp1(ChannelPipeline pipeline, HandlerHolder<HttpHandlers> holder) {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler());
     }
@@ -449,7 +450,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (!DISABLE_HC2) {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
-    HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(pipeline.channel().eventLoop());
     Http1xServerHandler handler;
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
@@ -467,13 +467,34 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     pipeline.addLast("handler", handler);
   }
 
-  public void handleHttp2(Channel ch) {
+  private void handleHttp1(Channel ch) {
     HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(ch.eventLoop());
+    if (holder == null) {
+      sendServiceUnavailable(ch);
+      return;
+    }
+    configureHttp1(ch.pipeline(), holder);
+  }
+
+  private void sendServiceUnavailable(Channel ch) {
+    ch.writeAndFlush(
+      Unpooled.copiedBuffer("HTTP/1.1 503 Service Unavailable\r\n" +
+        "Content-Length:0\r\n" +
+        "\r\n", StandardCharsets.ISO_8859_1))
+      .addListener(ChannelFutureListener.CLOSE);
+  }
+
+  private void handleHttp2(Channel ch) {
+    HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(ch.eventLoop());
+    if (holder == null) {
+      ch.close();
+      return;
+    }
     configureHttp2(ch.pipeline());
     setHandler(holder, null, ch);
   }
 
-  public void configureHttp2(ChannelPipeline pipeline) {
+  private void configureHttp2(ChannelPipeline pipeline) {
     if (options.getIdleTimeout() > 0) {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
     }
@@ -934,7 +955,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       } else if (msg instanceof LastHttpContent) {
         if (settings != null) {
           HandlerHolder<HttpHandlers> reqHandler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
-          if (reqHandler.context.isEventLoopContext()) {
+          if (reqHandler != null && reqHandler.context.isEventLoopContext()) {
             ChannelPipeline pipeline = ctx.pipeline();
             DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
             res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
