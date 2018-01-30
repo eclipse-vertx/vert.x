@@ -49,6 +49,7 @@ import io.vertx.test.core.tls.Trust;
 import org.junit.Test;
 
 import javax.security.cert.X509Certificate;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -1286,7 +1287,7 @@ public class WebsocketTest extends VertxTestBase {
           doneHandler.handle(Future.failedFuture(new AssertionError()));
         }
       }, err -> {
-        if (err instanceof WebSocketHandshakeException) {
+        if (err instanceof WebSocketHandshakeException || err instanceof IOException) {
           doneHandler.handle(Future.succeededFuture());
         } else if (count < 100) {
           connectUntilWebsocketHandshakeException(client, count + 1, doneHandler);

@@ -166,7 +166,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler){
-    websocketStream(port, host, requestURI, null, null).exceptionHandler(failureHandler).handler(wsConnect);
+    websocketStream(port, host, requestURI, null, null).subscribe(wsConnect, failureHandler);
     return this;
   }
 
@@ -198,7 +198,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStream(port, host, requestURI, headers, null).exceptionHandler(failureHandler).handler(wsConnect);
+    websocketStream(port, host, requestURI, headers, null).subscribe(wsConnect, failureHandler);
     return this;
   }
 
@@ -231,7 +231,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version
           , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStream(port, host, requestURI, headers, version, null).exceptionHandler(failureHandler).handler(wsConnect);
+    websocketStream(port, host, requestURI, headers, version, null).subscribe(wsConnect, failureHandler);
     return this;
   }
 
@@ -261,20 +261,20 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClient websocketAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStreamAbs(url, headers, version, subProtocols).exceptionHandler(failureHandler).handler(wsConnect);
+    websocketStreamAbs(url, headers, version, subProtocols).subscribe(wsConnect, failureHandler);
     return this;
   }
 
   @Override
   public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStream(options, headers, version, subProtocols).exceptionHandler(failureHandler).handler(wsConnect);
+    websocketStream(options, headers, version, subProtocols).subscribe(wsConnect, failureHandler);
     return this;
   }
 
   @Override
   public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                               String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStream(port, host, requestURI, headers, version, subProtocols).exceptionHandler(failureHandler).handler(wsConnect);
+    websocketStream(port, host, requestURI, headers, version, subProtocols).subscribe(wsConnect, failureHandler);
     return this;
   }
 
@@ -1042,6 +1042,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       this.version = version;
       this.subProtocols = subProtocols;
       this.ssl = ssl;
+    }
+
+    void subscribe(Handler<WebSocket> completionHandler, Handler<Throwable> failureHandler) {
+      Future<WebSocket> fut = Future.future();
+      fut.setHandler(ar -> {
+        if (ar.succeeded()) {
+          completionHandler.handle(ar.result());
+        } else {
+          failureHandler.handle(ar.cause());
+        }
+      });
+      exceptionHandler(fut::tryFail);
+      handler(fut::tryComplete);
     }
 
     @Override
