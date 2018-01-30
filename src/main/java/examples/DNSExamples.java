@@ -13,6 +13,7 @@ package examples;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.dns.DnsClient;
+import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 
@@ -25,6 +26,21 @@ public class DNSExamples {
 
   public void example1(Vertx vertx) {
     DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+  }
+
+  public void example1_(Vertx vertx) {
+    DnsClient client = vertx.createDnsClient(new DnsClientOptions()
+      .setPort(53)
+      .setHost("10.0.0.1")
+      .setQueryTimeout(10000)
+    );
+  }
+
+  public void example1__(Vertx vertx) {
+    DnsClient client1 = vertx.createDnsClient();
+
+    // Just the same but with a different query timeout
+    DnsClient client2 = vertx.createDnsClient(new DnsClientOptions().setQueryTimeout(10000));
   }
 
   public void example2(Vertx vertx) {

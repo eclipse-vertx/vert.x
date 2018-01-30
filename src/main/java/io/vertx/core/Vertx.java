@@ -208,7 +208,8 @@ public interface Vertx extends Measured {
   EventBus eventBus();
 
   /**
-   * Create a DNS client to connect to a DNS server at the specified host and port
+   * Create a DNS client to connect to a DNS server at the specified host and port, with the default query timeout (5 seconds)
+   * <p/>
    *
    * @param port  the port
    * @param host  the host

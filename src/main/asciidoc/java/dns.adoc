@@ -12,9 +12,27 @@ To obtain a DnsClient instance you will create a new via the Vertx instance.
 DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
 ----
 
-Be aware that you can pass in a varargs of InetSocketAddress arguments to specifiy more then one DNS Server to try
-to query for DNS resolution. The DNS Servers will be queried in the same order as specified here. Where the next
-will be used once the first produce an error while be used.
+You can also create the client with options and configure the query timeout.
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(new DnsClientOptions()
+  .setPort(53)
+  .setHost("10.0.0.1")
+  .setQueryTimeout(10000)
+);
+----
+
+Creating the client with no arguments or omitting the server address will use the address of the server used internally
+for non blocking address resolution.
+
+[source,java]
+----
+DnsClient client1 = vertx.createDnsClient();
+
+// Just the same but with a different query timeout
+DnsClient client2 = vertx.createDnsClient(new DnsClientOptions().setQueryTimeout(10000));
+----
 
 === lookup
 

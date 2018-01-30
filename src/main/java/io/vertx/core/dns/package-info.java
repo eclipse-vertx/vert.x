@@ -23,9 +23,20 @@
  * {@link examples.DNSExamples#example1}
  * ----
  *
- * Be aware that you can pass in a varargs of InetSocketAddress arguments to specifiy more then one DNS Server to try
- * to query for DNS resolution. The DNS Servers will be queried in the same order as specified here. Where the next
- * will be used once the first produce an error while be used.
+ * You can also create the client with options and configure the query timeout.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.DNSExamples#example1_}
+ * ----
+ *
+ * Creating the client with no arguments or omitting the server address will use the address of the server used internally
+ * for non blocking address resolution.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.DNSExamples#example1__}
+ * ----
  *
  * === lookup
  *
