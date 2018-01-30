@@ -53,8 +53,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       String location = resp.getHeader(HttpHeaders.LOCATION);
       if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)) {
         HttpMethod m = resp.request().method();
-        if (statusCode == 301 || statusCode == 302 || statusCode == 303) {
+        if (statusCode == 303) {
           m = HttpMethod.GET;
+        } else if (m != HttpMethod.GET && m != HttpMethod.HEAD) {
+          return null;
         }
         URI uri = HttpUtils.resolveURIReference(resp.request().absoluteURI(), location);
         boolean ssl;

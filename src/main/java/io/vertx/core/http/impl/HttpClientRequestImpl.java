@@ -24,7 +24,6 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -65,7 +64,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> completionHandler;
   private Long reset;
   private ByteBuf pendingChunks;
-  private CompositeByteBuf cachedChunks;
   private int pendingMaxSize = -1;
   private int followRedirects;
   private boolean connecting;
@@ -400,31 +398,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (headers != null && next.headers == null) {
       next.headers().addAll(headers);
     }
-    ByteBuf body;
-    switch (next.method) {
-      case GET:
-        body = null;
-        break;
-      case OTHER:
-        next.rawMethod = rawMethod;
-        body = null;
-        break;
-      default:
-        if (cachedChunks != null) {
-          body = cachedChunks;
-        } else {
-          body = null;
-        }
-        break;
-    }
-    cachedChunks = null;
     Future<Void> fut = Future.future();
     fut.setHandler(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
           next.setTimeout(timeoutMs);
         }
-        next.write(body, true);
+        next.end();
       } else {
         next.handleException(ar.cause());
       }
@@ -811,12 +791,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
     if (buff != null) {
       written += buff.readableBytes();
-      if (followRedirects > 0) {
-        if (cachedChunks == null) {
-          cachedChunks = Unpooled.compositeBuffer();
-        }
-        cachedChunks.addComponent(true, buff);
-      }
     }
 
     if (stream == null) {

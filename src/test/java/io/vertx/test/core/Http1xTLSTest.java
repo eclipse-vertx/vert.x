@@ -113,7 +113,7 @@ public class Http1xTLSTest extends HttpTLSTest {
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
     ).requestHandler(req -> {
-      req.response().setStatusCode(307).putHeader("location", "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
+      req.response().setStatusCode(303).putHeader("location", "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
     });
     startServer(redirectServer);
     RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(DEFAULT_HTTP_PORT);
@@ -133,7 +133,7 @@ public class Http1xTLSTest extends HttpTLSTest {
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
     ).requestHandler(req -> {
-      req.response().setStatusCode(307).putHeader("location", "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
+      req.response().setStatusCode(303).putHeader("location", "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
     });
     startServer(redirectServer);
     RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043);
