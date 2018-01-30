@@ -57,10 +57,18 @@ class ConnectionManager {
 
     private final boolean ssl;
     private final int port;
+    private final String peerHost;
     private final String host;
 
-    EndpointKey(boolean ssl, int port, String host) {
+    EndpointKey(boolean ssl, int port, String peerHost, String host) {
+      if (host == null) {
+        throw new NullPointerException("No null host");
+      }
+      if (peerHost == null) {
+        throw new NullPointerException("No null peer host");
+      }
       this.ssl = ssl;
+      this.peerHost = peerHost;
       this.host = host;
       this.port = port;
     }
@@ -69,20 +77,15 @@ class ConnectionManager {
     public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
-
       EndpointKey that = (EndpointKey) o;
-
-      if (ssl != that.ssl) return false;
-      if (port != that.port) return false;
-      if (!Objects.equals(host, that.host)) return false;
-
-      return true;
+      return ssl == that.ssl && port == that.port && peerHost.equals(that.peerHost) && host.equals(that.host);
     }
 
     @Override
     public int hashCode() {
       int result = ssl ? 1 : 0;
-      result = 31 * result + (host != null ? host.hashCode() : 0);
+      result = 31 * result + peerHost.hashCode();
+      result = 31 * result + host.hashCode();
       result = 31 * result + port;
       return result;
     }
@@ -103,7 +106,7 @@ class ConnectionManager {
                      Handler<HttpConnection> connectionHandler,
                      BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
                      BiConsumer<ContextInternal, Throwable> onFailure) {
-    EndpointKey key = new EndpointKey(ssl, port, peerHost);
+    EndpointKey key = new EndpointKey(ssl, port, peerHost, host);
     while (true) {
       Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
         int maxPoolSize = Math.max(client.getOptions().getMaxPoolSize(), client.getOptions().getHttp2MaxPoolSize());

@@ -12,13 +12,7 @@
 package io.vertx.test.core;
 
 import io.netty.handler.codec.TooLongFrameException;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
@@ -66,6 +60,17 @@ import static io.vertx.test.core.TestUtils.*;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public class Http1xTest extends HttpTest {
+
+  @Override
+  protected VertxOptions getOptions() {
+    VertxOptions options = super.getOptions();
+    options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
+      "127.0.0.1 localhost\n" +
+      "127.0.0.1 host0\n" +
+      "127.0.0.1 host1\n" +
+      "127.0.0.1 host2\n"));
+    return options;
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -3619,13 +3624,24 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPerHostPooling() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setMaxPoolSize(1)
+      .setKeepAlive(true)
+      .setPipelining(false));
+    testPerXXXPooling(i -> client.get(DEFAULT_HTTP_PORT, "host" + i, "/somepath").setHost("host:8080")
+      .putHeader("key", "host" + i), req -> req.getHeader("key"));
+  }
+
+  @Test
   public void testPerPeerPooling() throws Exception {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
         .setMaxPoolSize(1)
         .setKeepAlive(true)
         .setPipelining(false));
-    testPerPeerPooling(i -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath").setHost("host" + i));
+    testPerXXXPooling(i -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath").setHost("host" + i + ":8080"), HttpServerRequest::host);
   }
 
   @Test
@@ -3638,7 +3654,43 @@ public class Http1xTest extends HttpTest {
             .setType(ProxyType.HTTP)
             .setHost(DEFAULT_HTTP_HOST)
             .setPort(DEFAULT_HTTP_PORT)));
-    testPerPeerPooling(i -> client.get(80, "host" + i, "/somepath"));
+    testPerXXXPooling(i -> client.get(80, "host" + i, "/somepath"), HttpServerRequest::host);
+  }
+
+  private void testPerXXXPooling(Function<Integer, HttpClientRequest> requestProvider, Function<HttpServerRequest, String> keyExtractor) throws Exception {
+    // Even though we use the same server host, we pool per peer host
+    waitFor(2);
+    int numPeers = 3;
+    int numRequests = 5;
+    Map<String, HttpServerResponse> map = new HashMap<>();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      String key = keyExtractor.apply(req);
+      assertFalse(map.containsKey(key));
+      map.put(key, req.response());
+      if (map.size() == numPeers) {
+        map.values().forEach(HttpServerResponse::end);
+        map.clear();
+        if (count.incrementAndGet() == numRequests) {
+          complete();
+        }
+      }
+    });
+    startServer();
+    AtomicInteger remaining = new AtomicInteger(numPeers * numRequests);
+    for (int i = 0;i < numPeers;i++) {
+      for (int j = 0;j < numRequests;j++) {
+        HttpClientRequest req = requestProvider.apply(i);
+        req.handler(resp -> {
+          assertEquals(200, resp.statusCode());
+          if (remaining.decrementAndGet() == 0) {
+            complete();
+          }
+        });
+        req.end();
+      }
+    }
+    await();
   }
 
   @Test
@@ -3663,41 +3715,6 @@ public class Http1xTest extends HttpTest {
     vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, socket -> {
       socket.result().write("GET / HTTP/1.1\r\n\r\n").close();
     });
-    await();
-  }
-
-  private void testPerPeerPooling(Function<Integer, HttpClientRequest> requestProvider) throws Exception {
-    // Even though we use the same server host, we pool per peer host
-    waitFor(2);
-    int numPeers = 3;
-    int numRequests = 5;
-    Map<String, HttpServerResponse> map = new HashMap<>();
-    AtomicInteger count = new AtomicInteger();
-    server.requestHandler(req -> {
-      assertFalse(map.containsKey(req.host()));
-      map.put(req.host(), req.response());
-      if (map.size() == numPeers) {
-        map.values().forEach(HttpServerResponse::end);
-        map.clear();
-        if (count.incrementAndGet() == numRequests) {
-          complete();
-        }
-      }
-    });
-    startServer();
-    AtomicInteger remaining = new AtomicInteger(numPeers * numRequests);
-    for (int i = 0;i < numPeers;i++) {
-      for (int j = 0;j < numRequests;j++) {
-        HttpClientRequest req = requestProvider.apply(i);
-        req.handler(resp -> {
-          assertEquals(200, resp.statusCode());
-          if (remaining.decrementAndGet() == 0) {
-            complete();
-          }
-        });
-        req.end();
-      }
-    }
     await();
   }
 
