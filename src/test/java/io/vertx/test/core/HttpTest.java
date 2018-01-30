@@ -3814,6 +3814,44 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testFollowRedirectEncodedUrl() throws Exception {
+    String value1 = "한글", value2 = "A B+C";
+    server.requestHandler(req -> {
+      switch (req.path()) {
+        case "/first/call/from/client":
+          StringBuilder location = null;
+          try {
+            location = new StringBuilder()
+              .append(req.scheme()).append("://").append(DEFAULT_HTTP_HOST).append(':').append(DEFAULT_HTTP_PORT)
+              .append("/redirected/from/client?")
+              .append("encoded1=").append(URLEncoder.encode(value1, "UTF-8")).append('&')
+              .append("encoded2=").append(URLEncoder.encode(value2, "UTF-8"));
+          } catch (UnsupportedEncodingException e) {
+            fail(e);
+          }
+          req.response()
+            .setStatusCode(302)
+            .putHeader("location", location.toString())
+            .end();
+          break;
+        case "/redirected/from/client":
+          assertEquals(value1, req.params().get("encoded1"));
+          assertEquals(value2, req.params().get("encoded2"));
+          req.response().end();
+          break;
+        default:
+          fail("Unknown path: " + req.path());
+      }
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first/call/from/client", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true).end();
+    await();
+  }
+
+  @Test
   public void testServerResponseCloseHandlerNotHoldingLock() throws Exception {
     server.requestHandler(req -> {
       req.response().closeHandler(v -> {

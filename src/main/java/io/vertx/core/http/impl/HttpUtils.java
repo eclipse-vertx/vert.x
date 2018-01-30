@@ -34,12 +34,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-import static io.vertx.core.http.Http2Settings.DEFAULT_ENABLE_PUSH;
-import static io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_FRAME_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_HEADER_LIST_SIZE;
+import static io.vertx.core.http.Http2Settings.*;
 
 /**
  * Various http utils.
@@ -175,19 +170,19 @@ public final class HttpUtils {
       scheme = _ref.getScheme();
       authority = _ref.getAuthority();
       path = removeDots(_ref.getPath());
-      query = _ref.getQuery();
+      query = _ref.getRawQuery();
     } else {
       if (_ref.getAuthority() != null) {
         authority = _ref.getAuthority();
         path = _ref.getPath();
-        query = _ref.getQuery();
+        query = _ref.getRawQuery();
       } else {
         if (_ref.getPath().length() == 0) {
           path = base.getPath();
-          if (_ref.getQuery() != null) {
-            query = _ref.getQuery();
+          if (_ref.getRawQuery() != null) {
+            query = _ref.getRawQuery();
           } else {
-            query = base.getQuery();
+            query = base.getRawQuery();
           }
         } else {
           if (_ref.getPath().startsWith("/")) {
@@ -208,7 +203,7 @@ public final class HttpUtils {
             }
             path = removeDots(mergedPath);
           }
-          query = _ref.getQuery();
+          query = _ref.getRawQuery();
         }
         authority = base.getAuthority();
       }

@@ -11,8 +11,23 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.*;
-import io.vertx.core.http.*;
+import io.vertx.core.Closeable;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -75,8 +90,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           return null;
         }
         String requestURI = uri.getPath();
-        if (uri.getQuery() != null) {
-          requestURI += "?" + uri.getQuery();
+        String query = uri.getQuery();
+        if (query != null) {
+          requestURI += "?" + query;
         }
         return Future.succeededFuture(createRequest(m, uri.getHost(), port, ssl, requestURI, null));
       }
