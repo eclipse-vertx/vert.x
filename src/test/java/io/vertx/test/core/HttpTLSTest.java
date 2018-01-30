@@ -1127,11 +1127,15 @@ public abstract class HttpTLSTest extends HttpTestBase {
       server.requestHandler(req -> {
         indicatedServerName = req.connection().indicatedServerName();
         assertEquals(version, req.version());
-        req.bodyHandler(buffer -> {
-          assertEquals(serverSSL, req.isSSL());
-          assertEquals("foo", buffer.toString());
-          req.response().end("bar");
-        });
+        assertEquals(serverSSL, req.isSSL());
+        if (req.method() == HttpMethod.GET || req.method() == HttpMethod.HEAD) {
+          req.response().end();
+        } else {
+          req.bodyHandler(buffer -> {
+            assertEquals("foo", buffer.toString());
+            req.response().end("bar");
+          });
+        }
       });
       server.listen(ar -> {
         assertTrue(ar.succeeded());
@@ -1153,8 +1157,15 @@ public abstract class HttpTLSTest extends HttpTestBase {
           }
           if (shouldPass) {
             response.version();
-            response.bodyHandler(data -> assertEquals("bar", data.toString()));
-            complete();
+            HttpMethod method = response.request().method();
+            if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
+              complete();
+            } else {
+              response.bodyHandler(data -> {
+                assertEquals("bar", data.toString());
+                complete();
+              });
+            }
           } else {
             HttpTLSTest.this.fail("Should not get a response");
           }

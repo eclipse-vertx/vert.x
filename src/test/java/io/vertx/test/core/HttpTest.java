@@ -3327,12 +3327,12 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectPostOn301() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 301, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn301() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 301, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
   @Test
@@ -3342,12 +3342,12 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectPostOn302() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 302, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn302() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 302, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
   @Test
@@ -3377,12 +3377,12 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectPostOn307() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 307, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn307() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 307, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
   @Test
@@ -3453,16 +3453,17 @@ public abstract class HttpTest extends HttpTestBase {
     Buffer expected = TestUtils.randomBuffer(2048);
     AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
-      req.bodyHandler(body -> {
+      if (redirected.compareAndSet(false, true)) {
         assertEquals(HttpMethod.PUT, req.method());
-        assertEquals(body, expected);
-        if (redirected.compareAndSet(false, true)) {
+        req.bodyHandler(body -> {
+          assertEquals(body, expected);
           String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
-          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
-        } else {
-          req.response().end();
-        }
-      });
+          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
+        });
+      } else {
+        assertEquals(HttpMethod.GET, req.method());
+        req.response().end();
+      }
     });
     startServer();
     client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
@@ -3484,16 +3485,17 @@ public abstract class HttpTest extends HttpTestBase {
       if (redirect) {
         latch.countDown();
       }
-      req.bodyHandler(body -> {
+      if (redirect) {
         assertEquals(HttpMethod.PUT, req.method());
-        assertEquals(body, expected);
-        if (redirect) {
+        req.bodyHandler(body -> {
+          assertEquals(body, expected);
           String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
-          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
-        } else {
-          req.response().end();
-        }
-      });
+          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
+        });
+      } else {
+        assertEquals(HttpMethod.GET, req.method());
+        req.response().end();
+      }
     });
     startServer();
     HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
@@ -3531,7 +3533,7 @@ public abstract class HttpTest extends HttpTestBase {
           if (body.length() == 0) {
             HttpServerResponse resp = req.response();
             String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
-            resp.setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever");
+            resp.setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever");
             if (expectFail) {
               resp.setChunked(true).write("whatever");
               vertx.runOnContext(v -> {
@@ -3582,15 +3584,16 @@ public abstract class HttpTest extends HttpTestBase {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(2048));
     AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
-      req.bodyHandler(body -> {
+      if (redirected.compareAndSet(false, true)) {
         assertEquals(HttpMethod.PUT, req.method());
-        assertEquals(body, expected);
-        if (redirected.compareAndSet(false, true)) {
-          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, "/whatever").end();
-        } else {
-          req.response().end();
-        }
-      });
+        req.bodyHandler(body -> {
+          assertEquals(body, expected);
+          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, "/whatever").end();
+        });
+      } else {
+        assertEquals(HttpMethod.GET, req.method());
+        req.response().end();
+      }
     });
     startServer();
     HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
