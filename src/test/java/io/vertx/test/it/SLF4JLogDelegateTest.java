@@ -13,12 +13,15 @@ package io.vertx.test.it;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.logging.SLF4JLogDelegate;
 import io.vertx.core.logging.SLF4JLogDelegateFactory;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Marker;
 import org.slf4j.impl.SimpleLogger;
+import org.slf4j.spi.LocationAwareLogger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,8 +67,15 @@ public class SLF4JLogDelegateTest {
 
   @Test
   public void testInfo() {
-    Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
+    testInfo(LoggerFactory.getLogger("my-slf4j-logger"));
+  }
 
+  @Test
+  public void testInfoLocationAware() {
+    testInfo(new Logger(new SLF4JLogDelegate(new TestLocationAwareLogger("my-slf4j-logger"))));
+  }
+
+  private void testInfo(Logger logger) {
     String result = record(() -> logger.info("hello"));
     assertContains("[main] INFO my-slf4j-logger - hello", result);
 
@@ -96,7 +106,15 @@ public class SLF4JLogDelegateTest {
 
   @Test
   public void testError() {
-    Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
+    testError(LoggerFactory.getLogger("my-slf4j-logger"));
+  }
+
+  @Test
+  public void testErrorLocationAware() {
+    testError(LoggerFactory.getLogger("my-slf4j-logger"));
+  }
+
+  private void testError(Logger logger) {
     String result = record(() -> logger.error("hello"));
     assertContains("[main] ERROR my-slf4j-logger - hello", result);
 
@@ -132,8 +150,15 @@ public class SLF4JLogDelegateTest {
 
   @Test
   public void testWarning() {
-    Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
+    testWarning(LoggerFactory.getLogger("my-slf4j-logger"));
+  }
 
+  @Test
+  public void testWarningLocationAware() {
+    testWarning(LoggerFactory.getLogger("my-slf4j-logger"));
+  }
+
+  private void testWarning(Logger logger) {
     String result = record(() -> logger.warn("hello"));
     assertContains("[main] WARN my-slf4j-logger - hello", result);
 
@@ -194,4 +219,98 @@ public class SLF4JLogDelegateTest {
     }
   }
 
+  static class TestLocationAwareLogger implements LocationAwareLogger {
+
+    private final org.slf4j.Logger actual;
+
+    TestLocationAwareLogger(String name) {
+      Logger logger = LoggerFactory.getLogger(name);
+      SLF4JLogDelegate delegate = (SLF4JLogDelegate) logger.getDelegate();
+      this.actual = (org.slf4j.Logger) delegate.unwrap();
+    }
+
+    @Override
+    public void log(Marker marker, String fqcn, int level, String message, Object[] argArray, Throwable t) {
+      switch (level) {
+        case ERROR_INT:
+          error(marker, message, t);
+          break;
+        case WARN_INT:
+          warn(marker, message, t);
+          break;
+        case INFO_INT:
+          info(marker, message, t);
+          break;
+        case DEBUG_INT:
+          debug(marker, message, t);
+          break;
+        case TRACE_INT:
+          trace(marker, message, t);
+          break;
+        default:
+          throw new AssertionError();
+      }
+    }
+    @Override public String getName() { return actual.getName(); }
+    @Override public boolean isTraceEnabled() { return actual.isTraceEnabled(); }
+    @Override public void trace(String msg) { throw new AssertionError(); }
+    @Override public void trace(String format, Object arg) { throw new AssertionError(); }
+    @Override public void trace(String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void trace(String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void trace(String msg, Throwable t) { actual.trace(msg, t); }
+    @Override public boolean isTraceEnabled(Marker marker) { return actual.isTraceEnabled(); }
+    @Override public void trace(Marker marker, String msg) { throw new AssertionError(); }
+    @Override public void trace(Marker marker, String format, Object arg) { throw new AssertionError(); }
+    @Override public void trace(Marker marker, String format, Object arg1, Object arg2) { actual.trace(marker, format, arg1, arg2); }
+    @Override public void trace(Marker marker, String format, Object... argArray) { throw new AssertionError(); }
+    @Override public void trace(Marker marker, String msg, Throwable t) { actual.trace(marker, msg, t); }
+    @Override public boolean isDebugEnabled() { return actual.isDebugEnabled(); }
+    @Override public void debug(String msg) { throw new AssertionError(); }
+    @Override public void debug(String format, Object arg) { throw new AssertionError(); }
+    @Override public void debug(String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void debug(String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void debug(String msg, Throwable t) { throw new AssertionError(); }
+    @Override public boolean isDebugEnabled(Marker marker) { return actual.isDebugEnabled(marker); }
+    @Override public void debug(Marker marker, String msg) { throw new AssertionError(); }
+    @Override public void debug(Marker marker, String format, Object arg) { throw new AssertionError(); }
+    @Override public void debug(Marker marker, String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void debug(Marker marker, String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void debug(Marker marker, String msg, Throwable t) { actual.debug(marker, msg, t); }
+    @Override public boolean isInfoEnabled() { return actual.isInfoEnabled(); }
+    @Override public void info(String msg) { throw new AssertionError(); }
+    @Override public void info(String format, Object arg) { throw new AssertionError(); }
+    @Override public void info(String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void info(String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void info(String msg, Throwable t) { throw new AssertionError(); }
+    @Override public boolean isInfoEnabled(Marker marker) { return actual.isInfoEnabled(marker); }
+    @Override public void info(Marker marker, String msg) { throw new AssertionError(); }
+    @Override public void info(Marker marker, String format, Object arg) { throw new AssertionError(); }
+    @Override public void info(Marker marker, String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void info(Marker marker, String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void info(Marker marker, String msg, Throwable t) { actual.info(marker, msg, t); }
+    @Override public boolean isWarnEnabled() { return actual.isWarnEnabled(); }
+    @Override public void warn(String msg) { throw new AssertionError(); }
+    @Override public void warn(String format, Object arg) { throw new AssertionError(); }
+    @Override public void warn(String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void warn(String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void warn(String msg, Throwable t) { throw new AssertionError(); }
+    @Override public boolean isWarnEnabled(Marker marker) { return actual.isWarnEnabled(); }
+    @Override public void warn(Marker marker, String msg) { throw new AssertionError(); }
+    @Override public void warn(Marker marker, String format, Object arg) { throw new AssertionError(); }
+    @Override public void warn(Marker marker, String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void warn(Marker marker, String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void warn(Marker marker, String msg, Throwable t) { actual.warn(marker, msg, t); }
+    @Override public boolean isErrorEnabled() { return actual.isErrorEnabled(); }
+    @Override public void error(String msg) { throw new AssertionError(); }
+    @Override public void error(String format, Object arg) { throw new AssertionError(); }
+    @Override public void error(String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void error(String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void error(String msg, Throwable t) { throw new AssertionError(); }
+    @Override public boolean isErrorEnabled(Marker marker) { return actual.isErrorEnabled(marker); }
+    @Override public void error(Marker marker, String msg) { throw new AssertionError(); }
+    @Override public void error(Marker marker, String format, Object arg) { actual.error(marker, format, arg); }
+    @Override public void error(Marker marker, String format, Object arg1, Object arg2) { throw new AssertionError(); }
+    @Override public void error(Marker marker, String format, Object... arguments) { throw new AssertionError(); }
+    @Override public void error(Marker marker, String msg, Throwable t) { actual.error(marker, msg, t); }
+  }
 }
