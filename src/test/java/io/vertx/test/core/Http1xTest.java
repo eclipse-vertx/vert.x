@@ -265,6 +265,11 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setDecoderInitialBufferSize(256));
     assertEquals(256, options.getDecoderInitialBufferSize());
     assertIllegalArgumentException(() -> options.setDecoderInitialBufferSize(-1));
+
+    assertEquals(HttpClientOptions.DEFAULT_MAX_REDIRECT_CACHE_SIZE, options.getMaxRedirectCacheSize());
+    assertEquals(options, options.setMaxRedirectCacheSize(4096));
+    assertEquals(4096, options.getMaxRedirectCacheSize());
+    assertIllegalArgumentException(() -> options.setMaxRedirectCacheSize(-1));
   }
 
   @Test
@@ -459,6 +464,8 @@ public class Http1xTest extends HttpTest {
     boolean sendUnmaskedFrame = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
+    int maxRedirects = TestUtils.randomPositiveInt();
+    int maxRedirectCacheSize = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -499,6 +506,8 @@ public class Http1xTest extends HttpTest {
     options.setLocalAddress(localAddress);
     options.setSendUnmaskedFrames(sendUnmaskedFrame);
     options.setDecoderInitialBufferSize(decoderInitialBufferSize);
+    options.setMaxRedirects(maxRedirects);
+    options.setMaxRedirectCacheSize(maxRedirectCacheSize);
     HttpClientOptions copy = new HttpClientOptions(options);
     checkCopyHttpClientOptions(options, copy);
     HttpClientOptions copy2 = new HttpClientOptions(options.toJson());
@@ -553,6 +562,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(options.isHttp2ClearTextUpgrade(), copy.isHttp2ClearTextUpgrade());
     assertEquals(options.getLocalAddress(), copy.getLocalAddress());
     assertEquals(options.isSendUnmaskedFrames(), copy.isSendUnmaskedFrames());
+    assertEquals(options.getMaxRedirects(), copy.getMaxRedirects());
+    assertEquals(options.getMaxRedirectCacheSize(), copy.getMaxRedirectCacheSize());
   }
 
   @Test
@@ -589,6 +600,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.isHttp2ClearTextUpgrade(), json.isHttp2ClearTextUpgrade());
     assertEquals(def.getLocalAddress(), json.getLocalAddress());
     assertEquals(def.getDecoderInitialBufferSize(), json.getDecoderInitialBufferSize());
+    assertEquals(def.getMaxRedirects(), json.getMaxRedirects());
+    assertEquals(def.getMaxRedirectCacheSize(), json.getMaxRedirectCacheSize());
   }
 
   @Test
@@ -640,6 +653,8 @@ public class Http1xTest extends HttpTest {
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
+    int maxRedirects = TestUtils.randomPositiveInt();
+    int maxRedirectCacheSize = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -685,7 +700,9 @@ public class Http1xTest extends HttpTest {
       .put("http2ClearTextUpgrade", h2cUpgrade)
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
       .put("localAddress", localAddress)
-      .put("decoderInitialBufferSize", decoderInitialBufferSize);
+      .put("decoderInitialBufferSize", decoderInitialBufferSize)
+      .put("maxRedirects", maxRedirects)
+      .put("maxRedirectCacheSize", maxRedirectCacheSize);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -741,6 +758,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(h2cUpgrade, options.isHttp2ClearTextUpgrade());
     assertEquals(localAddress, options.getLocalAddress());
     assertEquals(decoderInitialBufferSize, options.getDecoderInitialBufferSize());
+    assertEquals(maxRedirects, options.getMaxRedirects());
+    assertEquals(maxRedirectCacheSize, options.getMaxRedirectCacheSize());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

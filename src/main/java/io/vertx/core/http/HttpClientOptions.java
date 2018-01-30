@@ -141,6 +141,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_REDIRECTS = 16;
 
   /*
+   * Default max redirect cache size = 16kb
+   */
+  public static final int DEFAULT_MAX_REDIRECT_CACHE_SIZE = 16 * 1024;
+
+  /*
    * Default force SNI = false
    */
   public static final boolean DEFAULT_FORCE_SNI = false;
@@ -174,6 +179,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean http2ClearTextUpgrade;
   private boolean sendUnmaskedFrames;
   private int maxRedirects;
+  private int maxRedirectCacheSize;
   private boolean forceSni;
   private int decoderInitialBufferSize;
 
@@ -215,6 +221,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
     this.maxRedirects = other.maxRedirects;
+    this.maxRedirectCacheSize = other.maxRedirectCacheSize;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
   }
@@ -265,6 +272,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     sendUnmaskedFrames = DEFAULT_SEND_UNMASKED_FRAMES;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
+    maxRedirectCacheSize = DEFAULT_MAX_REDIRECT_CACHE_SIZE;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
   }
@@ -927,6 +935,32 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * @return the current maximum redirect cache size
+   */
+  public int getMaxRedirectCacheSize() {
+    return maxRedirectCacheSize;
+  }
+
+  /**
+   * Return the maximum size of the buffer used for caching request bodies when the request is following HTTP redirections.
+   * <p/>
+   * When the request body exceeds the max size, the cached buffer is discarded, the HTTP redirections will not be followed
+   * and the response handler will handle the HTTP redirection.
+   * </p>
+   * Setting this value to {@code 0} disables request caching for redirection purpose.
+   *
+   * @param maxRedirectCacheSize the redirect cache max size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxRedirectCacheSize(int maxRedirectCacheSize) {
+    if (maxRedirectCacheSize < 0) {
+      throw new IllegalArgumentException("maxRedirectCacheSize must be >= 0");
+    }
+    this.maxRedirectCacheSize = maxRedirectCacheSize;
+    return this;
+  }
+
+  /**
    * @return whether the client should always use SNI on TLS/SSL connections
    */
   public boolean isForceSni() {
@@ -1006,6 +1040,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (http2ClearTextUpgrade != that.http2ClearTextUpgrade) return false;
     if (http2ConnectionWindowSize != that.http2ConnectionWindowSize) return false;
     if (sendUnmaskedFrames != that.sendUnmaskedFrames) return false;
+    if (maxRedirectCacheSize != that.maxRedirectCacheSize) return false;
     if (maxRedirects != that.maxRedirects) return false;
     if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
 
@@ -1035,6 +1070,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + http2ConnectionWindowSize;
     result = 31 * result + (sendUnmaskedFrames ? 1 : 0);
     result = 31 * result + maxRedirects;
+    result = 31 * result + maxRedirectCacheSize;
     result = 31 * result + decoderInitialBufferSize;
     return result;
   }

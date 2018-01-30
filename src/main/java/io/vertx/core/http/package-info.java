@@ -1110,9 +1110,10 @@
  * * on a `301`, `302` or `303` status code, follow the redirection with a `GET` method
  * * on a `307` status code, follow the redirection with the same HTTP method and the cached body
  *
- * WARNING: following redirections caches the request body
+ * WARNING: following redirections caches the request body up to `16384` bytes by default
  *
  * The maximum redirects is `16` by default and can be changed with {@link io.vertx.core.http.HttpClientOptions#setMaxRedirects(int)}.
+ * The cached request body max size is `16384` and can be changed with {@link io.vertx.core.http.HttpClientOptions#setMaxRedirectCacheSize(int)}
  *
  * [source,$lang]
  * ----
