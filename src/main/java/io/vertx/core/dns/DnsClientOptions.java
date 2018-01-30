@@ -12,6 +12,7 @@
 package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -23,17 +24,17 @@ import io.vertx.core.json.JsonObject;
 public class DnsClientOptions {
 
   /**
-   * The default value for the port = 53
+   * The default value for the port = {@code -1} (configured by {@link VertxOptions#getAddressResolverOptions()})
    */
-  public static final int DEFAULT_PORT = 53;
+  public static final int DEFAULT_PORT = -1;
 
   /**
-   * The default value for the host = localhost
+   * The default value for the host = {@code null} (configured by {@link VertxOptions#getAddressResolverOptions()})
    */
-  public static final String DEFAULT_HOST = "localhost";
+  public static final String DEFAULT_HOST = null;
 
   /**
-   * The default value for the query timeout in millis = 5000
+   * The default value for the query timeout in millis = {@code 5000}
    */
   public static final long DEFAULT_QUERY_TIMEOUT = 5000;
 

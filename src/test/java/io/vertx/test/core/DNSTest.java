@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.function.Function;
 
 import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
@@ -62,6 +63,15 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testDefaultDnsClient() throws Exception {
+    testDefaultDnsClient(vertx -> vertx.createDnsClient());
+  }
+
+  @Test
+  public void testDefaultDnsClientWithOptions() throws Exception {
+    testDefaultDnsClient(vertx -> vertx.createDnsClient(new DnsClientOptions()));
+  }
+
+  private void testDefaultDnsClient(Function<Vertx, DnsClient> clientProvider) throws Exception {
     final String ip = "10.0.0.1";
     FakeDNSServer fakeDNSServer = FakeDNSServer.testLookup4(ip);
     fakeDNSServer.start();
@@ -69,7 +79,7 @@ public class DNSTest extends VertxTestBase {
     InetSocketAddress fakeServerAddress = fakeDNSServer.localAddress();
     vertxOptions.getAddressResolverOptions().addServer(fakeServerAddress.getHostString() + ":" + fakeServerAddress.getPort());
     Vertx vertxWithFakeDns = Vertx.vertx(vertxOptions);
-    DnsClient dnsClient = vertxWithFakeDns.createDnsClient();
+    DnsClient dnsClient = clientProvider.apply(vertxWithFakeDns);
 
     dnsClient.lookup4("vertx.io", onSuccess(result -> {
       assertEquals(ip, result);
@@ -259,7 +269,7 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testTimeout() throws Exception {
-    DnsClient dns = vertx.createDnsClient(new DnsClientOptions().setPort(10000).setQueryTimeout(5000));
+    DnsClient dns = vertx.createDnsClient(new DnsClientOptions().setHost("localhost").setPort(10000).setQueryTimeout(5000));
 
     dns.lookup("vertx.io", onFailure(result -> {
       assertEquals(VertxException.class, result.getClass());
