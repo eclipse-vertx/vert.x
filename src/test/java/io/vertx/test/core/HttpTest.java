@@ -42,19 +42,33 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.WorkerContext;
-import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,10 +76,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertIllegalStateException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
-import static java.util.Collections.singletonList;
+import static io.vertx.test.core.TestUtils.*;
+import static java.util.Collections.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -3931,6 +3943,102 @@ public abstract class HttpTest extends HttpTestBase {
 
     await();
 
+  }
+
+  @Test
+  public void testContainsValueString() {
+    server.requestHandler(req -> {
+      assertTrue(req.headers().contains("Foo", "foo", false));
+      assertFalse(req.headers().contains("Foo", "fOo", false));
+      req.response().putHeader("quux", "quux");
+      req.response().end();
+    });
+    server.listen(onSuccess(server -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertTrue(resp.headers().contains("Quux", "quux", false));
+        assertFalse(resp.headers().contains("Quux", "quUx", false));
+        testComplete();
+      });
+      req.putHeader("foo", "foo");
+      req.end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testContainsValueStringIgnoreCase() {
+    server.requestHandler(req -> {
+      assertTrue(req.headers().contains("Foo", "foo", true));
+      assertTrue(req.headers().contains("Foo", "fOo", true));
+      req.response().putHeader("quux", "quux");
+      req.response().end();
+    });
+    server.listen(onSuccess(server -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertTrue(resp.headers().contains("Quux", "quux", true));
+        assertTrue(resp.headers().contains("Quux", "quUx", true));
+        testComplete();
+      });
+      req.putHeader("foo", "foo");
+      req.end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testContainsValueCharSequence() {
+    CharSequence Foo = HttpHeaders.createOptimized("Foo");
+    CharSequence foo = HttpHeaders.createOptimized("foo");
+    CharSequence fOo = HttpHeaders.createOptimized("fOo");
+
+    CharSequence Quux = HttpHeaders.createOptimized("Quux");
+    CharSequence quux = HttpHeaders.createOptimized("quux");
+    CharSequence quUx = HttpHeaders.createOptimized("quUx");
+
+    server.requestHandler(req -> {
+      assertTrue(req.headers().contains(Foo, foo, false));
+      assertFalse(req.headers().contains(Foo, fOo, false));
+      req.response().putHeader(quux, quux);
+      req.response().end();
+    });
+    server.listen(onSuccess(server -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertTrue(resp.headers().contains(Quux, quux, false));
+        assertFalse(resp.headers().contains(Quux, quUx, false));
+        testComplete();
+      });
+      req.putHeader(foo, foo);
+      req.end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testContainsValueCharSequenceIgnoreCase() {
+    CharSequence Foo = HttpHeaders.createOptimized("Foo");
+    CharSequence foo = HttpHeaders.createOptimized("foo");
+    CharSequence fOo = HttpHeaders.createOptimized("fOo");
+
+    CharSequence Quux = HttpHeaders.createOptimized("Quux");
+    CharSequence quux = HttpHeaders.createOptimized("quux");
+    CharSequence quUx = HttpHeaders.createOptimized("quUx");
+
+    server.requestHandler(req -> {
+      assertTrue(req.headers().contains(Foo, foo, true));
+      assertTrue(req.headers().contains(Foo, fOo, true));
+      req.response().putHeader(quux, quux);
+      req.response().end();
+    });
+    server.listen(onSuccess(server -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertTrue(resp.headers().contains(Quux, quux, true));
+        assertTrue(resp.headers().contains(Quux, quUx, true));
+        testComplete();
+      });
+      req.putHeader(foo, foo);
+      req.end();
+    }));
+    await();
   }
 
   protected File setupFile(String fileName, String content) throws Exception {

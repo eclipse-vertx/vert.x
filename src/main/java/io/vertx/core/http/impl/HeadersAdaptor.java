@@ -154,6 +154,16 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
+  public boolean contains(String name, String value, boolean caseInsensitive) {
+    return headers.contains(name, value, caseInsensitive);
+  }
+
+  @Override
+  public boolean contains(CharSequence name, CharSequence value, boolean caseInsensitive) {
+    return headers.contains(name, value, caseInsensitive);
+  }
+
+  @Override
   public MultiMap add(CharSequence name, CharSequence value) {
     headers.add(name, value);
     return this;

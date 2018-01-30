@@ -13,6 +13,7 @@ package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
+import io.netty.util.HashingStrategy;
 import io.vertx.core.MultiMap;
 
 import java.util.AbstractMap;
@@ -25,6 +26,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+
+import static io.netty.util.AsciiString.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -209,6 +212,40 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     }
     head.before = head.after = head;
     return this;
+  }
+
+  @Override
+  public boolean contains(String name, String value, boolean ignoreCase) {
+    int h = AsciiString.hashCode(name);
+    int i = index(h);
+    VertxHttpHeaders.MapEntry e = entries[i];
+    HashingStrategy<CharSequence> strategy = ignoreCase ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER;
+    while (e != null) {
+      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+        if (strategy.equals(value, e.getValue())) {
+          return true;
+        }
+      }
+      e = e.next;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean contains(CharSequence name, CharSequence value, boolean ignoreCase) {
+    int h = AsciiString.hashCode(name);
+    int i = index(h);
+    VertxHttpHeaders.MapEntry e = entries[i];
+    HashingStrategy<CharSequence> strategy = ignoreCase ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER;
+    while (e != null) {
+      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+        if (strategy.equals(value, e.getValue())) {
+          return true;
+        }
+      }
+      e = e.next;
+    }
+    return false;
   }
 
   @Override
