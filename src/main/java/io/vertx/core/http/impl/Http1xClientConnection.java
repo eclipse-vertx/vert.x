@@ -240,7 +240,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         }
         if (!reset) {
           reset = true;
-          if (!requestEnded || !responseEnded) {
+          if (!responseEnded) {
             conn.close();
           }
         }

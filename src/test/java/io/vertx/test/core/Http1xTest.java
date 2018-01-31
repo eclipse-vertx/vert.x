@@ -3165,7 +3165,7 @@ public class Http1xTest extends HttpTest {
       client.close();
       client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
       HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        fail();
+        // We may or not receive the response
       });
       req1.connectionHandler(conn -> {
         conn.closeHandler(v -> {
