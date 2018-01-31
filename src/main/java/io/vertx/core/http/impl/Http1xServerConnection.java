@@ -519,7 +519,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     } else if (obj instanceof HttpContent) {
       return ((HttpContent) obj).content().readableBytes();
     } else if (obj instanceof WebSocketFrame) {
-      return ((WebSocketFrame) obj).binaryData().length();
+      return ((WebSocketFrameInternal) obj).length();
     } else if (obj instanceof FileRegion) {
       return ((FileRegion) obj).count();
     } else if (obj instanceof ChunkedFile) {

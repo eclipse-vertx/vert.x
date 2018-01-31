@@ -45,5 +45,10 @@ public interface WebSocketFrameInternal extends WebSocketFrame {
    */
   void setTextData(String textData);
 
+  /**
+   * @return the frame binary data length
+   */
+  int length();
+
   FrameType type();
 }

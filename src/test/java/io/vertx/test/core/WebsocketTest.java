@@ -52,6 +52,7 @@ import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -2177,7 +2178,7 @@ public class WebsocketTest extends VertxTestBase {
       .listen(ar -> {
         client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
           ws.frameHandler(frame -> {
-            assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
+            assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
             assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
             assertEquals(REASON, frame.closeReason());
             assertEquals(STATUS_CODE, frame.closeStatusCode());
@@ -2201,7 +2202,7 @@ public class WebsocketTest extends VertxTestBase {
           latch.countDown();
         });
         socket.frameHandler(frame -> {
-          assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(Charset.forName("UTF-8")));
+          assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
           assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
           assertEquals(REASON, frame.closeReason());
           assertEquals(STATUS_CODE, frame.closeStatusCode());

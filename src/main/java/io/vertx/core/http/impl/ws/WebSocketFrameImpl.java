@@ -18,6 +18,8 @@ import io.netty.util.ReferenceCounted;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.FrameType;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * The default {@link WebSocketFrameInternal} implementation.
  *
@@ -136,6 +138,11 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   @Override
+  public int length() {
+    return binaryData.readableBytes();
+  }
+
+  @Override
   public String toString() {
     return getClass().getSimpleName() +
         "(type: " + type + ", " + "data: " + getBinaryData() + ')';
@@ -184,16 +191,18 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   private void parseCloseFrame() {
-    Buffer buffer = this.binaryData();
-    if (buffer.length() == 0) {
-      this.closeStatusCode = 1000;
-      this.closeReason = null;
-    } else if (buffer.length() == 2) {
-      this.closeStatusCode = buffer.getShort(0);
-      this.closeReason = null;
+    int length = length();
+    if (length < 2) {
+      closeStatusCode = 1000;
+      closeReason = null;
     } else {
-      this.closeStatusCode = buffer.getShort(0);
-      this.closeReason = buffer.getString(2, buffer.length(), "UTF-8");
+      int index = binaryData.readerIndex();
+      closeStatusCode = binaryData.getShort(index);
+      if (length == 2) {
+        closeReason = null;
+      } else {
+        closeReason = binaryData.toString(index + 2, length - 2, StandardCharsets.UTF_8);
+      }
     }
   }
 
