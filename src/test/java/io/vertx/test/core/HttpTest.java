@@ -644,7 +644,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testParamUmlauteDecoding() throws UnsupportedEncodingException {
-    testParamDecoding("äüö");
+    testParamDecoding("\u00e4\u00fc\u00f6");
   }
 
   @Test
@@ -669,7 +669,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testParamAltogetherDecoding() throws UnsupportedEncodingException {
-    testParamDecoding("äüö+% hello");
+    testParamDecoding("\u00e4\u00fc\u00f6+% hello");
   }
 
   private void testParamDecoding(String value) throws UnsupportedEncodingException {
@@ -3814,6 +3814,46 @@ public abstract class HttpTest extends HttpTestBase {
     } else {
       assertTrue(redirection == null || redirection.failed());
     }
+  }
+
+  @Test
+  public void testFollowRedirectEncodedParams() throws Exception {
+    String value1 = "\ud55c\uae00", value2 = "A B+C", value3 = "123 \u20ac";
+    server.requestHandler(req -> {
+      switch (req.path()) {
+        case "/first/call/from/client":
+          StringBuilder location = null;
+          try {
+            location = new StringBuilder()
+              .append(req.scheme()).append("://").append(DEFAULT_HTTP_HOST).append(':').append(DEFAULT_HTTP_PORT)
+              .append("/redirected/from/client?")
+              .append("encoded1=").append(URLEncoder.encode(value1, "UTF-8")).append('&')
+              .append("encoded2=").append(URLEncoder.encode(value2, "UTF-8")).append('&')
+              .append("encoded3=").append(URLEncoder.encode(value3, "UTF-8"));
+          } catch (UnsupportedEncodingException e) {
+            fail(e);
+          }
+          req.response()
+            .setStatusCode(302)
+            .putHeader("location", location.toString())
+            .end();
+          break;
+        case "/redirected/from/client":
+          assertEquals(value1, req.params().get("encoded1"));
+          assertEquals(value2, req.params().get("encoded2"));
+          assertEquals(value3, req.params().get("encoded3"));
+          req.response().end();
+          break;
+        default:
+          fail("Unknown path: " + req.path());
+      }
+    });
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first/call/from/client", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).setFollowRedirects(true).end();
+    await();
   }
 
   @Test
