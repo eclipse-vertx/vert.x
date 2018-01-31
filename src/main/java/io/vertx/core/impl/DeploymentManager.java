@@ -484,8 +484,13 @@ public class DeploymentManager {
           startFuture.setHandler(ar -> {
             if (ar.succeeded()) {
               if (parent != null) {
-                parent.addChild(deployment);
-                deployment.child = true;
+                if (parent.addChild(deployment)) {
+                  deployment.child = true;
+                } else {
+                  // Orphan
+                  deployment.undeploy(null);
+                  return;
+                }
               }
               VertxMetrics metrics = vertx.metricsSPI();
               if (metrics != null) {
@@ -496,25 +501,15 @@ public class DeploymentManager {
                 reportSuccess(deploymentID, callingContext, completionHandler);
               }
             } else if (failureReported.compareAndSet(false, true)) {
-              rollbackDeployment(callingContext, completionHandler, deployment, context, ar.cause());
+              deployment.rollback(callingContext, completionHandler, context, ar.cause());
             }
           });
         } catch (Throwable t) {
           if (failureReported.compareAndSet(false, true))
-            rollbackDeployment(callingContext, completionHandler, deployment, context, t);
+            deployment.rollback(callingContext, completionHandler, context, t);
         }
       });
     }
-  }
-
-  private void rollbackDeployment(ContextImpl callingContext, Handler<AsyncResult<String>> completionHandler, DeploymentImpl deployment, ContextImpl context, Throwable cause) {
-    deployment.doUndeployChildren(callingContext, childrenResult -> {
-      if (childrenResult.failed()) {
-        reportFailure(cause, callingContext, completionHandler);
-      } else {
-        context.runCloseHooks(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
-      }
-    });
   }
 
   static class VerticleHolder {
@@ -529,13 +524,15 @@ public class DeploymentManager {
 
   private class DeploymentImpl implements Deployment {
 
+    private static final int ST_DEPLOYED = 0, ST_UNDEPLOYING = 1, ST_UNDEPLOYED = 2;
+
     private final Deployment parent;
     private final String deploymentID;
     private final String verticleIdentifier;
     private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private final DeploymentOptions options;
-    private boolean undeployed;
+    private int status = ST_DEPLOYED;
     private volatile boolean child;
 
     private DeploymentImpl(Deployment parent, String deploymentID, String verticleIdentifier, DeploymentOptions options) {
@@ -547,6 +544,22 @@ public class DeploymentManager {
 
     public void addVerticle(VerticleHolder holder) {
       verticles.add(holder);
+    }
+
+    private synchronized void rollback(ContextImpl callingContext, Handler<AsyncResult<String>> completionHandler, ContextImpl context, Throwable cause) {
+      if (status == ST_DEPLOYED) {
+        status = ST_UNDEPLOYING;
+        doUndeployChildren(callingContext, childrenResult -> {
+          synchronized (DeploymentImpl.this) {
+            status = ST_UNDEPLOYED;
+          }
+          if (childrenResult.failed()) {
+            reportFailure(cause, callingContext, completionHandler);
+          } else {
+            context.runCloseHooks(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
+          }
+        });
+      }
     }
 
     @Override
@@ -582,11 +595,12 @@ public class DeploymentManager {
     }
 
     public synchronized void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
-      if (undeployed) {
+      if (status == ST_UNDEPLOYED) {
         reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, completionHandler);
         return;
       }
       if (!children.isEmpty()) {
+        status = ST_UNDEPLOYING;
         doUndeployChildren(undeployingContext, ar -> {
           if (ar.failed()) {
             reportFailure(ar.cause(), undeployingContext, completionHandler);
@@ -595,7 +609,7 @@ public class DeploymentManager {
           }
         });
       } else {
-        undeployed = true;
+        status = ST_UNDEPLOYED;
         AtomicInteger undeployCount = new AtomicInteger();
         int numToUndeploy = verticles.size();
         for (VerticleHolder verticleHolder: verticles) {
@@ -610,7 +624,6 @@ public class DeploymentManager {
                 metrics.verticleUndeployed(verticleHolder.verticle);
               }
               context.runCloseHooks(ar2 -> {
-
                 if (ar2.failed()) {
                   // Log error but we report success anyway
                   log.error("Failed to run close hook", ar2.cause());
@@ -649,8 +662,13 @@ public class DeploymentManager {
     }
 
     @Override
-    public void addChild(Deployment deployment) {
-      children.add(deployment);
+    public synchronized boolean addChild(Deployment deployment) {
+      if (status == ST_DEPLOYED) {
+        children.add(deployment);
+        return true;
+      } else {
+        return false;
+      }
     }
 
     @Override

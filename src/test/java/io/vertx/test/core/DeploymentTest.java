@@ -868,10 +868,36 @@ public class DeploymentTest extends VertxTestBase {
         throw new RuntimeException();
       }
     }, onFailure(expected -> {
-      assertEquals(1, childDeployed.get());
-      assertEquals(1, childUndeployed.get());
+      waitUntil(() -> childDeployed.get() == 1);
+      waitUntil(() -> childUndeployed.get() == 1);
       testComplete();
     }));
+    await();
+  }
+
+  @Test
+  public void testSimpleChildUndeploymentDeployedAfterParentFailure() throws Exception {
+    AtomicInteger parentFailed = new AtomicInteger();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        vertx.deployVerticle(new AbstractVerticle() {
+          @Override
+          public void start(Future<Void> fut) throws Exception {
+            vertx.setTimer(100, id -> {
+              fut.complete();
+            });
+          }
+          @Override
+          public void stop() throws Exception {
+            waitUntil(() -> parentFailed.get() == 1);
+            testComplete();
+          }
+        });
+        parentFailed.incrementAndGet();
+        throw new RuntimeException();
+      }
+    });
     await();
   }
 

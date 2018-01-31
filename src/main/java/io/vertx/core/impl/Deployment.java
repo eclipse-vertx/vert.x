@@ -23,7 +23,7 @@ import java.util.Set;
  */
 public interface Deployment {
 
-  void addChild(Deployment deployment);
+  boolean addChild(Deployment deployment);
 
   void removeChild(Deployment deployment);
 
