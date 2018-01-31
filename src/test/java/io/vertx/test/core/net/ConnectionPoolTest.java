@@ -186,7 +186,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertWaitUntil(waiter::isComplete);
     waiter.assertFailure(expected);
     assertTrue(waiter.isFailure());
-    assertTrue(mgr.closed());
+    assertWaitUntil(mgr::closed);
   }
 
   @Test
