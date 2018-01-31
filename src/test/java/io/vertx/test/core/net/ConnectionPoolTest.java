@@ -127,7 +127,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertWaitUntil(waiter::isComplete);
     assertEquals(Boolean.FALSE, handleLock.get());
     assertEquals(Boolean.FALSE, initLock.get());
-    waiter.assertInitialized(conn);
+    waiter.waitUntilInitialized(conn);
     waiter.assertSuccess(conn);
     waiter.recycle();
     assertEquals(0, mgr.size());
@@ -169,7 +169,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     waiter.cancel();
     conn.connect();
     waitUntil(() -> mgr.size() == 1);
-    waiter.assertInitialized(conn);
+    waiter.waitUntilInitialized(conn);
     assertTrue(waiter.isComplete());
     assertFalse(waiter.isSuccess());
     assertFalse(waiter.isFailure());
@@ -474,7 +474,12 @@ public class ConnectionPoolTest extends VertxTestBase {
       }
     }
 
-    synchronized void assertInitialized(FakeConnection conn) {
+    synchronized void waitUntilInitialized(FakeConnection conn) {
+      waitUntil(() -> {
+        synchronized (FakeWaiter.this) {
+          return init != null;
+        }
+      });
       assertSame(conn, init);
     }
 
