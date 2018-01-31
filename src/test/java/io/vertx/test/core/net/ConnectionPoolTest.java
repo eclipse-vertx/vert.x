@@ -17,8 +17,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.pool.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -127,7 +125,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertWaitUntil(waiter::isComplete);
     assertEquals(Boolean.FALSE, handleLock.get());
     assertEquals(Boolean.FALSE, initLock.get());
-    waiter.waitUntilInitialized(conn);
+    assertWaitUntil(() -> waiter.isInitialized(conn));
     waiter.assertSuccess(conn);
     waiter.recycle();
     assertEquals(0, mgr.size());
@@ -168,9 +166,9 @@ public class ConnectionPoolTest extends VertxTestBase {
     FakeConnection conn = connector.assertRequest();
     waiter.cancel();
     conn.connect();
-    waitUntil(() -> mgr.size() == 1);
-    waiter.waitUntilInitialized(conn);
-    assertTrue(waiter.isComplete());
+    assertWaitUntil(() -> mgr.size() == 1);
+    assertWaitUntil(() -> waiter.isInitialized(conn));
+    assertWaitUntil(waiter::isComplete);
     assertFalse(waiter.isSuccess());
     assertFalse(waiter.isFailure());
     assertTrue(mgr.contains(conn));
@@ -216,16 +214,16 @@ public class ConnectionPoolTest extends VertxTestBase {
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
     conn.connect();
-    waitUntil(waiter1::isComplete);
+    assertWaitUntil(waiter1::isComplete);
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
     conn.close();
     waiter1.recycle();
-    waitUntil(() -> connector.requests() == 1);
+    assertWaitUntil(() -> connector.requests() == 1);
     assertFalse(mgr.closed());
     FakeConnection conn2 = connector.assertRequest();
     conn2.connect();
-    waitUntil(waiter2::isSuccess);
+    assertWaitUntil(waiter2::isSuccess);
   }
 
   @Test
@@ -253,9 +251,9 @@ public class ConnectionPoolTest extends VertxTestBase {
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
     conn.connect();
-    waitUntil(waiter1::isSuccess);
+    assertWaitUntil(waiter1::isSuccess);
     conn.close();
-    waitUntil(mgr::closed);
+    assertWaitUntil(mgr::closed);
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
     assertEquals(2, mgr.sequence());
@@ -269,11 +267,11 @@ public class ConnectionPoolTest extends VertxTestBase {
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
     conn.connect();
-    waitUntil(waiter1::isComplete);
+    assertWaitUntil(waiter1::isComplete);
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
     conn.close();
-    waitUntil(() -> !mgr.contains(conn));
+    assertWaitUntil(() -> !mgr.contains(conn));
     assertFalse(mgr.closed());
   }
 
@@ -291,7 +289,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     FakeConnection conn = connector.assertRequest();
     conn.concurrency(n).connect();
     waiters.forEach(waiter -> {
-      waitUntil(waiter::isSuccess);
+      assertWaitUntil(waiter::isSuccess);
     });
     waiters.forEach(FakeWaiter::recycle);
   }
@@ -310,10 +308,10 @@ public class ConnectionPoolTest extends VertxTestBase {
     FakeConnection conn = connector.assertRequest();
     conn.concurrency(0).connect().awaitConnected();
     conn.concurrency(n - 1);
-    waitUntil(() -> waiters.stream().filter(FakeWaiter::isSuccess).count() == n - 1);
+    assertWaitUntil(() -> waiters.stream().filter(FakeWaiter::isSuccess).count() == n - 1);
     waiters.stream().filter(FakeWaiter::isSuccess).findFirst().get().recycle();
     waiters.forEach(waiter -> {
-      waitUntil(waiter::isSuccess);
+      assertWaitUntil(waiter::isSuccess);
     });
   }
 
@@ -325,11 +323,11 @@ public class ConnectionPoolTest extends VertxTestBase {
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
     conn.connect();
-    waitUntil(waiter1::isSuccess);
+    assertWaitUntil(waiter1::isSuccess);
     conn.recycle(false);
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
-    waitUntil(waiter2::isSuccess);
+    assertWaitUntil(waiter2::isSuccess);
     waiter2.assertSuccess(conn);
     conn.recycle(true);
     assertEquals(0, mgr.size());
@@ -474,13 +472,8 @@ public class ConnectionPoolTest extends VertxTestBase {
       }
     }
 
-    synchronized void waitUntilInitialized(FakeConnection conn) {
-      waitUntil(() -> {
-        synchronized (FakeWaiter.this) {
-          return init != null;
-        }
-      });
-      assertSame(conn, init);
+    synchronized boolean isInitialized(FakeConnection conn) {
+      return init == conn;
     }
 
     synchronized void assertNotInitialized() {
