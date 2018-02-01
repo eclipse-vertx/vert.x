@@ -319,13 +319,25 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Test host verification with a CN matching localhost
   public void testTLSVerifyMatchingHost() throws Exception {
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().clientVerifyHost().pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientVerifyHost().pass();
   }
 
   @Test
   // Test host verification with a CN NOT matching localhost
   public void testTLSVerifyNonMatchingHost() throws Exception {
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_MIM, Trust.NONE).clientTrustAll().clientVerifyHost().fail();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_MIM, Trust.NONE).clientVerifyHost().fail();
+  }
+
+  @Test
+  // Test host verification with a CN matching localhost
+  public void testTLSVerifyMatchingHostOpenSSL() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientVerifyHost().clientOpenSSL().pass();
+  }
+
+  @Test
+  // Test host verification with a CN NOT matching localhost
+  public void testTLSVerifyNonMatchingHostOpenSSL() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_MIM, Trust.NONE).clientVerifyHost().clientOpenSSL().fail();
   }
 
   // OpenSSL tests
