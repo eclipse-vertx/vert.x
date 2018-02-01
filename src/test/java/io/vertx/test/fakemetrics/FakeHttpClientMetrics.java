@@ -180,7 +180,4 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
     return true;
   }
 
-  @Override
-  public void close() {
-  }
 }

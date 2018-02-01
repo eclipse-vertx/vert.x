@@ -125,7 +125,4 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
     return true;
   }
 
-  @Override
-  public void close() {
-  }
 }

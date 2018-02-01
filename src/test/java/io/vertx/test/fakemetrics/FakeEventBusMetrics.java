@@ -150,6 +150,4 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
     return true;
   }
 
-  public void close() {
-  }
 }
