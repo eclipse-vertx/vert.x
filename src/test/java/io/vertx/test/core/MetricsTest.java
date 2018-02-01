@@ -33,6 +33,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -56,12 +57,7 @@ import io.vertx.test.fakemetrics.WebSocketMetric;
 import org.junit.Test;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -926,8 +922,6 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithInternalExecuteBlocking() {
-    // Internal blocking thread pool is used by blocking file system actions.
-
     Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
 
@@ -939,29 +933,34 @@ public class MetricsTest extends VertxTestBase {
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
 
-    FileSystem system = vertx.fileSystem();
-    for (int i = 0; i < 100; i++) {
-      vertx.executeBlocking(
-          fut -> {
-            system.readFile("afile.html", buffer -> {
-              fut.complete(null);
-            });
-            if (metrics.numberOfRunningTasks() > 0) {
-              hadRunning.set(true);
-            }
-          },
-          ar -> {
-            if (metrics.numberOfWaitingTasks() > 0) {
-              hadWaitingQueue.set(true);
-            }
-            if (metrics.numberOfIdleThreads() > 0) {
-              hadIdle.set(true);
-            }
-            if (counter.incrementAndGet() == 100) {
-              testComplete();
-            }
-          }
-      );
+    VertxInternal v = (VertxInternal) vertx;
+    Map<Integer, CountDownLatch> latches = new HashMap<>();
+    int num = VertxOptions.DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
+    int count = num * 5;
+    for (int i = 0; i < count; i++) {
+      CountDownLatch latch = latches.computeIfAbsent(i / num, k -> new CountDownLatch(num));
+      v.executeBlockingInternal(() -> {
+        latch.countDown();
+        try {
+          awaitLatch(latch);
+        } catch (InterruptedException e) {
+          fail(e);
+          Thread.currentThread().interrupt();
+        }
+        if (metrics.numberOfRunningTasks() > 0) {
+          hadRunning.set(true);
+        }
+        return null; }, ar -> {
+        if (metrics.numberOfWaitingTasks() > 0) {
+          hadWaitingQueue.set(true);
+        }
+        if (metrics.numberOfIdleThreads() > 0) {
+          hadIdle.set(true);
+        }
+        if (counter.incrementAndGet() == count) {
+          testComplete();
+        }
+      });
     }
 
     await();
