@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;
 
 /**
@@ -69,8 +70,9 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler) {
+    long timestamp = System.nanoTime();
     long timerId = vertx.setTimer(timeout, l -> removeIfExpired(k));
-    Holder<V> previous = map.put(k, new Holder<>(v, timerId, timeout));
+    Holder<V> previous = map.put(k, new Holder<>(v, timerId, timeout, timestamp));
     if (previous != null && previous.expires()) {
       vertx.cancelTimer(previous.timerId);
     }
@@ -83,8 +85,9 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
+    long timestamp = System.nanoTime();
     long timerId = vertx.setTimer(timeout, l -> removeIfExpired(k));
-    Holder<V> existing = map.putIfAbsent(k, new Holder<>(v, timerId, timeout));
+    Holder<V> existing = map.putIfAbsent(k, new Holder<>(v, timerId, timeout, timestamp));
     if (existing != null) {
       if (existing.expires()) {
         vertx.cancelTimer(timerId);
@@ -191,38 +194,37 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
   private static class Holder<V> {
     final V value;
     final long timerId;
-    final long expiresOn;
+    final long ttl;
+    final long timestamp;
 
     Holder(V value) {
       Objects.requireNonNull(value);
       this.value = value;
-      expiresOn = timerId = -1;
+      timestamp = ttl = timerId = 0;
     }
 
-    Holder(V value, long timerId, long ttl) {
+    Holder(V value, long timerId, long ttl, long timestamp) {
       Objects.requireNonNull(value);
-      if (ttl < 0) {
+      if (ttl < 1) {
         throw new IllegalArgumentException("ttl must be positive: " + ttl);
       }
       this.value = value;
       this.timerId = timerId;
-      expiresOn = System.currentTimeMillis() + ttl;
-      if (!expires()) {
-        throw new IllegalArgumentException("ttl too big: " + ttl);
-      }
+      this.ttl = ttl;
+      this.timestamp = timestamp;
     }
 
     boolean expires() {
-      return expiresOn > 0;
+      return ttl > 0;
     }
 
     boolean hasNotExpired() {
-      return !expires() || System.currentTimeMillis() <= expiresOn;
+      return !expires() || MILLISECONDS.convert(System.nanoTime() - timestamp, NANOSECONDS) < ttl;
     }
 
     @Override
     public String toString() {
-      return "Holder{" + "value=" + value + ", timerId=" + timerId + ", expiresOn=" + expiresOn + '}';
+      return "Holder{" + "value=" + value + ", timerId=" + timerId + ", ttl=" + ttl + ", timestamp=" + timestamp + '}';
     }
   }
 }
