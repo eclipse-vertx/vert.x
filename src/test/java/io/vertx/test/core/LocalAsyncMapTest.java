@@ -12,6 +12,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Vertx;
+import org.junit.Test;
 
 /**
  * @author Thomas Segismont
@@ -21,5 +22,26 @@ public class LocalAsyncMapTest extends AsyncMapTest {
   @Override
   protected Vertx getVertx() {
     return vertx;
+  }
+
+  @Test
+  @Repeat(times = 100)
+  @Override
+  public void testMapPutTtl() {
+    super.testMapPutTtl();
+  }
+
+  @Test
+  @Repeat(times = 100)
+  @Override
+  public void testMapPutTtlThenPut() {
+    super.testMapPutTtlThenPut();
+  }
+
+  @Test
+  @Repeat(times = 100)
+  @Override
+  public void testMapPutIfAbsentTtl() {
+    super.testMapPutIfAbsentTtl();
   }
 }
