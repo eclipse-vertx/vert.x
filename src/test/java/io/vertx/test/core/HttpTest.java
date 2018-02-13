@@ -1324,20 +1324,31 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerResponseExceptionHandlerCalledWhenConnectionClosed() throws Exception {
+    final AtomicInteger errs = new AtomicInteger();
+    final AtomicInteger ends = new AtomicInteger();
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
-      AtomicInteger errs = new AtomicInteger();
       resp.exceptionHandler(err -> errs.incrementAndGet());
       resp.endHandler(v -> {
-        assertEquals(1, errs.get());
-        testComplete();
+        if (ends.incrementAndGet() == 2) {
+          assertEquals(1, errs.get());
+          testComplete();
+        }
       });
       resp.setChunked(true).write("chunk");
+      if (ends.get() == 0) {
+        resp.end();
+      }
     });
     startServer();
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      resp.handler(chunk -> {
-        resp.request().connection().close();
+      resp.bodyHandler(body -> {});
+      resp.endHandler(end -> {
+        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp2 -> {
+          resp2.handler(chunk -> {
+            resp2.request().connection().close();
+          });
+        });
       });
     });
     await();

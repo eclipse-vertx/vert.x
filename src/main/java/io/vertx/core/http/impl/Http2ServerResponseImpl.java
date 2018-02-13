@@ -456,7 +456,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
           conn.metrics().responseEnd(metric, this);
         }
       }
-      if (exceptionHandler != null) {
+      if (failed && exceptionHandler != null) {
         conn.getContext().runOnContext(v -> exceptionHandler.handle(new VertxException("Connection was closed")));
       }
       if (endHandler != null) {
