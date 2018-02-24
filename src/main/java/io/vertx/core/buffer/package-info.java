@@ -135,8 +135,5 @@
  * After writing a buffer to a socket or other similar place, they cannot be re-used.
  *
  */
-@Document(fileName = "buffers.adoc")
 package io.vertx.core.buffer;
-
-import io.vertx.docgen.Document;
 

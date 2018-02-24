@@ -131,8 +131,5 @@
  *
  *
  */
-@Document(fileName = "override/json.adoc")
 package docoverride.json;
-
-import io.vertx.docgen.Document;
 

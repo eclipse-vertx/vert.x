@@ -173,8 +173,5 @@
  * if you want to be notified when the close has been completed you can specify a handler function as an argument.
  *
  */
-@Document(fileName = "filesystem.adoc")
 package io.vertx.core.file;
-
-import io.vertx.docgen.Document;
 

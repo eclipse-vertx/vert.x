@@ -20,7 +20,4 @@
  * {@link docoverride.eventbus.Examples#headers(io.vertx.core.eventbus.EventBus)}
  * ----
  */
-@Document(fileName = "override/eventbus_headers.adoc")
 package docoverride.eventbus.headers;
-
-import io.vertx.docgen.Document;

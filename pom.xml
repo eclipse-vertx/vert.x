@@ -247,20 +247,6 @@
         </plugin>
 
         <plugin>
-          <groupId>org.asciidoctor</groupId>
-          <artifactId>asciidoctor-maven-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>asciidoctor-processing</id>
-              <goals>
-                <goal>process-asciidoc</goal>
-              </goals>
-              <phase>package</phase>
-            </execution>
-          </executions>
-        </plugin>
-
-        <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
           <configuration>
             <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
@@ -275,7 +261,6 @@
               <configuration>
                 <filesets>
                   <fileset>
-                    <directory>${asciidoc.dir}</directory>
                     <directory>${generated.dir}</directory>
                   </fileset>
                 </filesets>
@@ -322,7 +307,8 @@
               <optionMap>
                 <codegen.output>${project.basedir}/src/main</codegen.output>
                 <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
-                <docgen.output>${asciidoc.dir}/java</docgen.output>
+                <docgen.source>${asciidoc.dir}</docgen.source>
+                <docgen.output>${project.build.directory}/asciidoctor/java</docgen.output>
                 <maven.groupId>${project.groupId}</maven.groupId>
                 <maven.artifactId>${project.artifactId}</maven.artifactId>
                 <maven.version>${project.version}</maven.version>
@@ -362,6 +348,7 @@
             <configuration>
               <sources>
                 <source>${generated.dir}</source>
+                <source>${asciidoc.dir}</source>
               </sources>
             </configuration>
           </execution>
@@ -748,6 +735,9 @@
                 <goals>
                   <goal>process-asciidoc</goal>
                 </goals>
+                <configuration>
+                  <sourceDirectory>${project.build.directory}/asciidoctor</sourceDirectory>
+                </configuration>
                 <phase>package</phase>
               </execution>
             </executions>

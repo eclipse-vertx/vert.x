@@ -8,8 +8,8 @@
   <includeBaseDirectory>false</includeBaseDirectory>
   <fileSets>
     <fileSet>
-      <directory>${asciidoc.dir}</directory>
-      <outputDirectory>/</outputDirectory>
+      <directory>${project.build.directory}/asciidoctor</directory>
+      <outputDirectory>/java</outputDirectory>
     </fileSet>
   </fileSets>
 </assembly>

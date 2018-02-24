@@ -108,7 +108,4 @@
  * INFO: You don't need to manually the HTTP server started by a verticle, in the verticle's stop method. Vert.x
  * will automatically stop any running server when the verticle is undeployed.
  */
-@Document(fileName = "override/verticles.adoc")
 package docoverride.verticles;
-
-import io.vertx.docgen.Document;

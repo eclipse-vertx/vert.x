@@ -33,7 +33,4 @@
  * }
  * ----
  */
-@Document(fileName = "override/dependencies.adoc")
 package docoverride.dependencies;
-
-import io.vertx.docgen.Document;

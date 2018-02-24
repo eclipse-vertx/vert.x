@@ -1772,8 +1772,5 @@
  * very careful when using this settings.
  *
  */
-@Document(fileName = "index.adoc")
 @io.vertx.codegen.annotations.ModuleGen(name = "vertx", groupPackage = "io.vertx")
 package io.vertx.core;
-
-import io.vertx.docgen.Document;

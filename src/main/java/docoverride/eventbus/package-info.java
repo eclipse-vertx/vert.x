@@ -35,7 +35,4 @@
  * Message codecs don't always have to encode and decode as the same type. For example you can write a codec that
  * allows a MyPOJO class to be sent, but when that message is sent to a handler it arrives as a MyOtherPOJO class.
  */
-@Document(fileName = "override/eventbus.adoc")
 package docoverride.eventbus;
-
-import io.vertx.docgen.Document;

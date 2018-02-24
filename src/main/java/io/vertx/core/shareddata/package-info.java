@@ -145,8 +145,5 @@
  *
  *
  */
-@Document(fileName = "shareddata.adoc")
 package io.vertx.core.shareddata;
-
-import io.vertx.docgen.Document;
 

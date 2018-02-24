@@ -204,8 +204,5 @@
  *
  * include::override/dns.adoc[]
  */
-@Document(fileName = "dns.adoc")
 package io.vertx.core.dns;
-
-import io.vertx.docgen.Document;
 

@@ -1756,8 +1756,5 @@
  * when the verticle is undeployed.
  *
  */
-@Document(fileName = "http.adoc")
 package io.vertx.core.http;
-
-import io.vertx.docgen.Document;
 

@@ -114,8 +114,5 @@
  *
  * For more details, check out the {@link io.vertx.core.parsetools.JsonParser} class.
  */
-@Document(fileName = "parsetools.adoc")
 package io.vertx.core.parsetools;
-
-import io.vertx.docgen.Document;
 

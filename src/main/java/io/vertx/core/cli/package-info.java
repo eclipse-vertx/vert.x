@@ -189,7 +189,4 @@
  * ----
  *
  */
-@Document(fileName = "cli.adoc")
 package io.vertx.core.cli;
-
-import io.vertx.docgen.Document;

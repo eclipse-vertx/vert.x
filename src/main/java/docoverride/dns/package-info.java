@@ -43,7 +43,4 @@
  * {@link docoverride.dns.Examples#example16}
  * ----
  */
-@Document(fileName = "override/dns.adoc")
 package docoverride.dns;
-
-import io.vertx.docgen.Document;

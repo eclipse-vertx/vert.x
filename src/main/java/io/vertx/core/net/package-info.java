@@ -779,8 +779,5 @@
  * The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
  * to resolve the DNS address locally.
  */
-@Document(fileName = "net.adoc")
 package io.vertx.core.net;
-
-import io.vertx.docgen.Document;
 

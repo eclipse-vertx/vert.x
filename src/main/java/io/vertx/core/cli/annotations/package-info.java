@@ -93,7 +93,4 @@
  * ----
  *
  */
-@Document(fileName = "cli-for-java.adoc")
 package io.vertx.core.cli.annotations;
-
-import io.vertx.docgen.Document;

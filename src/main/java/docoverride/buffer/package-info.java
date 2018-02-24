@@ -17,8 +17,5 @@
  * {@link docoverride.buffer.Examples#example4}
  * ----
  */
-@Document(fileName = "override/buffer_from_bytes.adoc")
 package docoverride.buffer;
-
-import io.vertx.docgen.Document;
 

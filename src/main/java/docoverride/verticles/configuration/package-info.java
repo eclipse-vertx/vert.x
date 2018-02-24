@@ -38,7 +38,4 @@
  * ----
  *
  */
-@Document(fileName = "override/verticle-configuration.adoc")
 package docoverride.verticles.configuration;
-
-import io.vertx.docgen.Document;

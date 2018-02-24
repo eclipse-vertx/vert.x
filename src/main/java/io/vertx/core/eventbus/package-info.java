@@ -324,8 +324,5 @@
  * {@link examples.EventBusExamples#example14}
  * ----
  */
-@Document(fileName = "eventbus.adoc")
 package io.vertx.core.eventbus;
-
-import io.vertx.docgen.Document;
 
