@@ -780,6 +780,30 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Query this object using a Json Pointer (RFC6901). For more info: {@link io.vertx.core.json.JsonPointer#query(Object)}
+   *
+   * @param pointer String representing a Json Pointer
+   * @return null if pointer points to not existing value, otherwise the requested value
+   * @throws java.lang.IllegalArgumentException if the provided pointer has a wrong format
+   */
+  public Object query(String pointer) {
+    return JsonPointer.from(pointer).query(this);
+  }
+
+  /**
+   * Write a value to this object using a Json Pointer (RFC6901). For more info: {@link io.vertx.core.json.JsonPointer#writeObject(JsonObject, Object)}
+   *
+   * @param pointer String representing a Json Pointer
+   * @param value The object to write
+   * @return true if the write is completed, false otherwise
+   * @throws java.lang.IllegalArgumentException if the provided pointer has a wrong format
+   * @throws IllegalStateException if the pointer is a root pointer
+   */
+  public boolean write(String pointer, Object value) {
+    return JsonPointer.from(pointer).writeObject(this, value);
+  }
+
+  /**
    * Copy the JSON object
    *
    * @return a copy of the object

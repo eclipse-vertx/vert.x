@@ -129,6 +129,28 @@
  *
  * You use {@link io.vertx.core.json.JsonArray#encode} to encode the array to a String form.
  *
+ * ==== Using Json Pointers
+ *
+ * Vert.x supports <a href="https://tools.ietf.org/html/rfc6901">Json Pointers from RFC6901</a>.
+ * You can use pointers both for querying and for writing. You can build your {@link io.vertx.core.json.JsonPointer} using
+ * a string, a URI or manually appending paths:
+ *
+ * [source,java]
+ * ----
+ * {@link docoverride.json.Examples#example1Pointers}
+ * ----
+ *
+ * After instantiating your pointer, you can use method {@link io.vertx.core.json.JsonPointer#query(java.lang.Object)} to query
+ * a JsonObject/JsonArray. If you want to write inside a JsonObject/JsonArray use {@link io.vertx.core.json.JsonPointer#writeObject(io.vertx.core.json.JsonObject, java.lang.Object)}/
+ * {@link io.vertx.core.json.JsonPointer#writeArray(io.vertx.core.json.JsonArray, java.lang.Object)}
+ *
+ * There are also some shorthands in {@link io.vertx.core.json.JsonObject} and {@link io.vertx.core.json.JsonArray}
+ * to build and use at same time the pointers:
+ *
+ * [source,java]
+ * ----
+ * {@link docoverride.json.Examples#example2Pointers}
+ * ----
  *
  */
 package docoverride.json;

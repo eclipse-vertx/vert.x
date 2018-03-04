@@ -14,8 +14,10 @@ package docoverride.json;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonPointer;
 import io.vertx.docgen.Source;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,7 +82,27 @@ public class Examples {
     Boolean boolVal = array.getBoolean(2);
   }
 
+  public void example1Pointers() {
+    // Build a pointer from a string
+    JsonPointer pointer1 = JsonPointer.from("/hello/world");
+    // Build a pointer from an URI
+    JsonPointer pointer2 = JsonPointer.fromURI("#/hello/world");
+    // Build a pointer manually
+    JsonPointer pointer3 = JsonPointer.create()
+      .append("hello")
+      .append("world");
+  }
 
+  public void example2Pointers(JsonObject jsonObject, JsonArray jsonArray) {
+    // Query a JsonObject
+    Object result1 = jsonObject.query("/hello/world");
+    // Query a JsonArray
+    Object result2 = jsonArray.query("/hello/world");
+    // Write starting from a JsonObject
+    jsonObject.write("/hello/world", 2);
+    // Write starting from a JsonObject
+    jsonArray.write("/hello/world", 2);
+  }
 
 
 }

@@ -442,6 +442,20 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
+   * Add an Object to the JSON array at specified position.
+   *
+   * @param value  the value
+   * @param position position to insert
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(Object value, int position) {
+    Objects.requireNonNull(value);
+    value = Json.checkAndCopy(value, false);
+    list.set(position, value);
+    return this;
+  }
+
+  /**
    * Appends all of the elements in the specified array to the end of this JSON array.
    *
    * @param array the array
@@ -578,6 +592,30 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
       copiedList.add(val);
     }
     return new JsonArray(copiedList);
+  }
+
+  /**
+   * Query this array using a Json Pointer (RFC6901). For more info: {@link io.vertx.core.json.JsonPointer#query(Object)}
+   *
+   * @param pointer String representing a Json Pointer
+   * @return null if pointer points to not existing value, otherwise the requested value
+   * @throws java.lang.IllegalArgumentException if the provided pointer has a wrong format
+   */
+  public Object query(String pointer) {
+    return JsonPointer.from(pointer).query(this);
+  }
+
+  /**
+   * Write a value to this array using a Json Pointer (RFC6901). For more info: {@link io.vertx.core.json.JsonPointer#writeArray(JsonArray, Object)}
+   *
+   * @param pointer String representing a Json Pointer
+   * @param value The object to write
+   * @return true if the write is completed, false otherwise
+   * @throws java.lang.IllegalArgumentException if the provided pointer has a wrong format
+   * @throws IllegalStateException if the pointer is a root pointer
+   */
+  public boolean write(String pointer, Object value) {
+    return JsonPointer.from(pointer).writeArray(this, value);
   }
 
   /**
