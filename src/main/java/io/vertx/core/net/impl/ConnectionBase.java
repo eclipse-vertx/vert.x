@@ -199,7 +199,11 @@ public abstract class ConnectionBase {
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     } else {
-      log.error("Unhandled exception", t);
+      if (log.isInfoEnabled())
+        log.info("Unhandled exception: " + chctx.channel(), t);
+      else {
+        log.error("Unhandled exception: <enable info level for more information>");
+      }
     }
   }
 
