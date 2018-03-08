@@ -138,9 +138,7 @@ public class JsonPointerImpl implements JsonPointer {
       } else if (v instanceof JsonArray && !"-".equals(lastKey)) {
         try {
           return ((JsonArray)v).getValue(Integer.parseInt(lastKey));
-        } catch (IndexOutOfBoundsException e) {
-          return null;
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
           return null;
         }
       } else
@@ -163,10 +161,7 @@ public class JsonPointerImpl implements JsonPointer {
       throw new IllegalStateException("writeObject() doesn't support root pointers");
     else {
       Object lastElem = walkTillLastElement(input);
-      if (lastElem != null)
-        return writeLastElement(walkTillLastElement(input), value);
-      else
-        return false;
+      return lastElem != null && writeLastElement(lastElem, value);
     }
   }
 
@@ -174,13 +169,13 @@ public class JsonPointerImpl implements JsonPointer {
     for (int i = 0; i < undecodedTokens.size() - 1; i++) {
       String k = undecodedTokens.get(i);
       if (i == 0 && "".equals(k)) {
-        continue;
+        continue; // Avoid errors with root empty string
       } else if (input instanceof JsonObject) {
         JsonObject obj = (JsonObject) input;
         if (obj.containsKey(k))
           input = obj.getValue(k);
         else
-          return null;
+          return null; // Missing array element
       } else if (input instanceof JsonArray) {
         JsonArray arr = (JsonArray) input;
         if (k.equals("-"))
@@ -188,9 +183,7 @@ public class JsonPointerImpl implements JsonPointer {
         else {
           try {
             input = arr.getValue(Integer.parseInt(k));
-          } catch (IndexOutOfBoundsException e) {
-            return null;
-          } catch (NumberFormatException e) {
+          } catch (Exception e) {
             return null;
           }
         }
@@ -207,21 +200,19 @@ public class JsonPointerImpl implements JsonPointer {
       ((JsonObject)input).put(lastKey, value);
       return true;
     } else if (input instanceof JsonArray) {
-      if ("-".equals(lastKey)) {
+      if ("-".equals(lastKey)) { // Append to end
         ((JsonArray)input).add(value);
         return true;
-      } else {
+      } else { // We have a index
         try {
           ((JsonArray)input).set(value, Integer.parseInt(lastKey));
           return true;
-        } catch (IndexOutOfBoundsException e) {
-          return false;
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
           return false;
         }
       }
-    }
-    return false;
+    } else
+      return false;
   }
 
   @Override
