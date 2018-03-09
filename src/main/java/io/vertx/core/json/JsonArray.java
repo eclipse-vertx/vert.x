@@ -444,11 +444,11 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   /**
    * Add an Object to the JSON array at specified position.
    *
-   * @param value  the value
    * @param position position to insert
+   * @param value  the value
    * @return  a reference to this, so the API can be used fluently
    */
-  public JsonArray set(Object value, int position) {
+  public JsonArray set(int position, Object value) {
     Objects.requireNonNull(value);
     value = Json.checkAndCopy(value, false);
     list.set(position, value);

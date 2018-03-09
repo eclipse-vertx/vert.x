@@ -16,7 +16,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonPointer;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -205,7 +204,7 @@ public class JsonPointerImpl implements JsonPointer {
         return true;
       } else { // We have a index
         try {
-          ((JsonArray)input).set(value, Integer.parseInt(lastKey));
+          ((JsonArray)input).set(Integer.parseInt(lastKey), value);
           return true;
         } catch (Exception e) {
           return false;
