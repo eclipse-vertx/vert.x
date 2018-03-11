@@ -3321,6 +3321,44 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientLocalPort() throws Exception {
+    int expectedPort = TestUtils.randomHighPortInt();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setLocalPort(expectedPort));
+    server.requestHandler(req -> {
+      assertEquals(expectedPort, req.remoteAddress().port());
+      req.response().end();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testClientLocalAddrAndPort() throws Exception {
+    String expectedAddress = InetAddress.getLocalHost().getHostAddress();
+    int expectedPort = TestUtils.randomHighPortInt();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions()
+                                      .setLocalAddress(expectedAddress)
+                                      .setLocalPort(expectedPort));
+    server.requestHandler(req -> {
+      assertEquals(expectedAddress, req.remoteAddress().host());
+      assertEquals(expectedPort, req.remoteAddress().port());
+      req.response().end();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testFollowRedirectGetOn301() throws Exception {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }

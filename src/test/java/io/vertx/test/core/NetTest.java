@@ -3061,6 +3061,52 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testClientLocalPort() throws Exception {
+    int expectedPort = TestUtils.randomHighPortInt();
+    NetClientOptions clientOptions = new NetClientOptions().setLocalPort(expectedPort);
+    client.close();
+    client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+      assertEquals(expectedPort, sock.remoteAddress().port());
+      sock.close();
+    });
+    int serverListenPort = TestUtils.randomHighPortInt();
+    server.listen(serverListenPort, "localhost", onSuccess(v -> {
+      client.connect(serverListenPort, "localhost", onSuccess(socket -> {
+        socket.closeHandler(v2 -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientLocalAddrAndPort() throws Exception {
+    String expectedAddress = InetAddress.getLocalHost().getHostAddress();
+    int expectedPort = TestUtils.randomHighPortInt();
+    NetClientOptions clientOptions = new NetClientOptions()
+                                        .setLocalAddress(expectedAddress)
+                                        .setLocalPort(expectedPort);
+    client.close();
+    client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+      assertEquals(expectedAddress, sock.remoteAddress().host());
+      assertEquals(expectedPort, sock.remoteAddress().port());
+      sock.close();
+    });
+    int serverListenPort = TestUtils.randomHighPortInt();
+    server.listen(serverListenPort, "localhost", onSuccess(v -> {
+      client.connect(serverListenPort, "localhost", onSuccess(socket -> {
+        socket.closeHandler(v2 -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testSelfSignedCertificate() throws Exception {
     CountDownLatch latch = new CountDownLatch(2);
 
