@@ -33,6 +33,9 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("localAddress") instanceof String) {
       obj.setLocalAddress((String)json.getValue("localAddress"));
     }
+    if (json.getValue("localPort") instanceof Number) {
+      obj.setLocalPort(((Number)json.getValue("localPort")).intValue());
+    }
     if (json.getValue("metricsName") instanceof String) {
       obj.setMetricsName((String)json.getValue("metricsName"));
     }
@@ -49,6 +52,7 @@ import io.vertx.core.json.JsonArray;
     if (obj.getLocalAddress() != null) {
       json.put("localAddress", obj.getLocalAddress());
     }
+    json.put("localPort", obj.getLocalPort());
     if (obj.getMetricsName() != null) {
       json.put("metricsName", obj.getMetricsName());
     }

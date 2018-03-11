@@ -45,6 +45,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private String metricsName;
   private ProxyOptions proxyOptions;
   private String localAddress;
+  private int localPort;
 
   /**
    * Default constructor
@@ -66,6 +67,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.metricsName = other.metricsName;
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.localAddress = other.localAddress;
+    this.localPort = other.localPort;
   }
 
   /**
@@ -96,6 +98,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.metricsName = DEFAULT_METRICS_NAME;
     this.proxyOptions = null;
     this.localAddress = null;
+    this.localPort = 0;
   }
 
   /**
@@ -185,6 +188,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   /**
+   * @return the local port to bind for network connections.
+   */
+  public int getLocalPort() { return localPort; }
+
+  /**
    * Set the local interface to bind for network connections. When the local address is null,
    * it will pick any local address, the default local address is null.
    *
@@ -193,6 +201,19 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public ClientOptionsBase setLocalAddress(String localAddress) {
     this.localAddress = localAddress;
+    return this;
+  }
+
+  /**
+   * Set the local port to bind for network connections.
+   * When the port is set to 0, it will pick a random port by os,
+   * the default local port is 0.
+   *
+   * @param localPort the local port
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setLocalPort(int localPort) {
+    this.localPort = localPort;
     return this;
   }
 
@@ -369,6 +390,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     if (!Objects.equals(metricsName, that.metricsName)) return false;
     if (!Objects.equals(proxyOptions, that.proxyOptions)) return false;
     if (!Objects.equals(localAddress, that.localAddress)) return false;
+    if (localPort != that.localPort) return false;
 
     return true;
   }
@@ -381,6 +403,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     result = 31 * result + (metricsName != null ? metricsName.hashCode() : 0);
     result = 31 * result + (proxyOptions != null ? proxyOptions.hashCode() : 0);
     result = 31 * result + (localAddress != null ? localAddress.hashCode() : 0);
+    result = 31 * result + localPort;
     return result;
   }
 }

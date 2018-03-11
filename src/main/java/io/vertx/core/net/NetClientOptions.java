@@ -350,6 +350,11 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setLocalPort(int localPort) {
+    return (NetClientOptions) super.setLocalPort(localPort);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof NetClientOptions)) return false;

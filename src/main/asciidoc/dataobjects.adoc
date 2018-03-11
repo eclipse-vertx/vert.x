@@ -176,6 +176,12 @@ Set the key/cert options in jks format, aka Java keystore.
 Set the local interface to bind for network connections. When the local address is null,
  it will pick any local address, the default local address is null.
 +++
+|[[localPort]]`localPort`|`Number (int)`|
++++
+Set the local port to bind for network connections.
+ When the port is set to 0, it will pick a random port by os,
+ the default local port is 0.
++++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -840,6 +846,12 @@ Set the key/cert options in jks format, aka Java keystore.
 Set the local interface to bind for network connections. When the local address is null,
  it will pick any local address, the default local address is null.
 +++
+|[[localPort]]`localPort`|`Number (int)`|
++++
+Set the local port to bind for network connections.
+ When the port is set to 0, it will pick a random port by os,
+ the default local port is 0.
++++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -1359,6 +1371,12 @@ Set the key/cert options in jks format, aka Java keystore.
 +++
 Set the local interface to bind for network connections. When the local address is null,
  it will pick any local address, the default local address is null.
++++
+|[[localPort]]`localPort`|`Number (int)`|
++++
+Set the local port to bind for network connections.
+ When the port is set to 0, it will pick a random port by os,
+ the default local port is 0.
 +++
 |[[logActivity]]`logActivity`|`Boolean`|
 +++

@@ -214,7 +214,9 @@ public class Transport {
     setOption("TCK_FASTOPEN", options.isTcpFastOpen(), setter);
     setOption("SO_REUSEPORT", options.isReusePort(), setter);
     if (options.getLocalAddress() != null) {
-      bootstrap.localAddress(options.getLocalAddress(), 0);
+      bootstrap.localAddress(options.getLocalAddress(), options.getLocalPort());
+    } else if (options.getLocalPort() != 0) {
+      bootstrap.localAddress(options.getLocalPort());
     }
     bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
