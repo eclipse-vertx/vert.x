@@ -11,12 +11,17 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
+import io.netty.util.Timer;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -25,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 abstract class HttpClientRequestBase implements HttpClientRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
+  private static final Timer timer = new HashedWheelTimer();
 
   protected final HttpClientImpl client;
   protected final io.vertx.core.http.HttpMethod method;
@@ -35,7 +41,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final String query;
   protected final boolean ssl;
   private Handler<Throwable> exceptionHandler;
-  private long currentTimeoutTimerId = -1;
+  private Timeout currentTimeout;
   private long currentTimeoutMs;
   private long lastDataReceived;
   protected Throwable exceptionOccurred;
@@ -118,7 +124,12 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
       currentTimeoutMs = timeoutMs;
-      currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+      currentTimeout = timer.newTimeout(new TimerTask() {
+        @Override
+        public void run(Timeout timeout) throws Exception {
+            setTimeout(timeoutMs);
+        }
+      }, timeoutMs, TimeUnit.MILLISECONDS);
       return this;
     }
   }
@@ -151,9 +162,8 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   private void cancelOutstandingTimeoutTimer() {
-    if (currentTimeoutTimerId != -1) {
-      client.getVertx().cancelTimer(currentTimeoutTimerId);
-      currentTimeoutTimerId = -1;
+    if ((currentTimeout != null) && !(currentTimeout.isCancelled() || currentTimeout.isExpired())) {
+      currentTimeout.cancel();
       currentTimeoutMs = 0;
     }
   }
@@ -183,7 +193,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
 
   void dataReceived() {
     synchronized (getLock()) {
-      if (currentTimeoutTimerId != -1) {
+      if ((currentTimeout != null) && !currentTimeout.isExpired() && !currentTimeout.isCancelled()) {
         lastDataReceived = System.currentTimeMillis();
       }
     }
