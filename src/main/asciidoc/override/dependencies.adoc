@@ -6,8 +6,8 @@ project descriptor to access the Vert.x Core API:
 [source,xml,subs="+attributes"]
 ----
 <dependency>
-  <groupId>${maven.groupId}</groupId>
-  <artifactId>${maven.artifactId}</artifactId>
+  <groupId>io.vertx</groupId>
+  <artifactId>vertx-core</artifactId>
   <version>${maven.version}</version>
 </dependency>
 ----
@@ -17,6 +17,6 @@ project descriptor to access the Vert.x Core API:
 [source,groovy,subs="+attributes"]
 ----
 dependencies {
-  compile '${maven.groupId}:${maven.artifactId}:${maven.version}'
+  compile 'io.vertx:vertx-core:${maven.version}'
 }
 ----
