@@ -8,7 +8,7 @@
   <includeBaseDirectory>false</includeBaseDirectory>
   <fileSets>
     <fileSet>
-      <directory>${project.build.directory}/asciidoctor</directory>
+      <directory>${project.build.directory}/asciidoc</directory>
       <outputDirectory>/java</outputDirectory>
     </fileSet>
   </fileSets>
