@@ -1233,6 +1233,39 @@ public class FutureTest extends VertxTestBase {
     testOtherwiseEmpty(f, f);
   }
 
+  private final Function<AsyncResult<String>, Future<String>> FUTURE_INVERTER =
+    ar -> (ar.succeeded()) ? Future.failedFuture("bla") : Future.succeededFuture("bla");
+
+  @Test
+  public void testAndThenCombinedCompleted() {
+    Future<String> completed = Future.succeededFuture("foo");
+    Future<String> f = completed.andThen(FUTURE_INVERTER);
+    assertEquals(true, f.failed());
+  }
+
+  @Test
+  public void testAndThenCombinedFailure() {
+    Future<String> failed = Future.failedFuture("foo");
+    Future<String> f = failed.andThen(FUTURE_INVERTER);
+    assertEquals(true, f.isComplete());
+  }
+
+  @Test
+  public void testAndThenCompleted() {
+    Future<String> completed = Future.succeededFuture("foo");
+    Future<Integer> f = completed.andThen(r -> Future.succeededFuture(r.length()), e -> Future.succeededFuture(0));
+    assertEquals(true, f.isComplete());
+    assertEquals(3, f.result().intValue());
+  }
+
+  @Test
+  public void testAndThenFailure() {
+    Future<String> failed = Future.failedFuture("foo");
+    Future<String> f = failed.andThen(r -> Future.succeededFuture("error"), e -> Future.succeededFuture(e.getMessage()));
+    assertEquals(true, f.isComplete());
+    assertEquals("foo", f.result());
+  }
+
   @Test
   public void testToString() {
     assertEquals("Future{unresolved}", Future.future().toString());

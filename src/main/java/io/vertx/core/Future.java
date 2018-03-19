@@ -468,6 +468,80 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
     return (Future<T>) AsyncResult.super.otherwiseEmpty();
   }
 
+  /**
+   * Apply a mapper to this future with a {@code mapper} function.<p>
+   *
+   * Both when this future (the one on which {@code andThen} is called) succeeds or fail, the {@code mapper} will be called with
+   * the actual async result and this mapper returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * If the {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * @param mapper the mapper function
+   * @return the composed future
+   */
+  default <U> Future<U> andThen(Function<AsyncResult<T>, Future<U>> mapper) {
+    if (mapper == null) {
+      throw new NullPointerException();
+    }
+    Future<U> ret = Future.future();
+    setHandler(ar -> {
+      Future<U> apply;
+      try {
+        apply = mapper.apply(ar);
+      } catch (Throwable e) {
+        ret.fail(e);
+        return;
+      }
+      apply.setHandler(ret);
+    });
+    return ret;
+  }
+
+  /**
+   * Apply one mapper {@code completionMapper} to this future when it succeeds and one when it fails {@code failureMapper}.<p>
+   *
+   * When this future succeeds, the {@code completionMapper} will be called with the completed value and this mapper
+   * returns another future object. When this future fails, the {@code failureMapper} will be called with the exception value
+   * and this mapper returns another future object.<p>
+   *
+   * This returned future completion will complete the future returned by this method call.<p>
+   *
+   * If the {@code completionMapper} or {@code failureMapper} throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * @param completionMapper the completion mapper function
+   * @param failureMapper the failure mapper function
+   * @return the composed future
+   */
+  default <U> Future<U> andThen(Function<T, Future<U>> completionMapper, Function<Throwable, Future<U>> failureMapper) {
+    if (completionMapper == null || failureMapper == null) {
+      throw new NullPointerException();
+    }
+    Future<U> ret = Future.future();
+    setHandler(ar -> {
+      if (ar.succeeded()) {
+        Future<U> apply;
+        try {
+          apply = completionMapper.apply(ar.result());
+        } catch (Throwable e) {
+          ret.fail(e);
+          return;
+        }
+        apply.setHandler(ret);
+      } else {
+        Future<U> apply;
+        try {
+          apply = failureMapper.apply(ar.cause());
+        } catch (Throwable e) {
+          ret.fail(e);
+          return;
+        }
+        apply.setHandler(ret);
+      }
+    });
+    return ret;
+  }
+
   FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 
 }
