@@ -3855,4 +3855,32 @@ public class Http1xTest extends HttpTest {
       .end();
     await();
   }
+
+  @Test
+  public void testBytesReadRequest() throws Exception {
+    int length = 2048;
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(length));
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setCompressionSupported(true));
+    server.requestHandler(req -> {
+      req.bodyHandler(buffer -> {
+        assertEquals(req.bytesRead(), length);
+        req.response().end();
+      });
+    });
+
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.bodyHandler(buff -> {
+        complete();
+      });
+    }).exceptionHandler(this::fail)
+      .putHeader("content-length", String.valueOf(length))
+      .write(expected)
+      .end();
+    await();
+  }
+
 }
