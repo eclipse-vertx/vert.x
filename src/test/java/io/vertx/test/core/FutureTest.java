@@ -1233,7 +1233,7 @@ public class FutureTest extends VertxTestBase {
     testOtherwiseEmpty(f, f);
   }
 
-  private final Function<AsyncResult<String>, Future<String>> FUTURE_INVERTER =
+  private final Function<Future<String>, Future<String>> FUTURE_INVERTER =
     ar -> (ar.succeeded()) ? Future.failedFuture("bla") : Future.succeededFuture("bla");
 
   @Test

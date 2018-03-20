@@ -480,7 +480,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @param mapper the mapper function
    * @return the composed future
    */
-  default <U> Future<U> andThen(Function<AsyncResult<T>, Future<U>> mapper) {
+  default <U> Future<U> andThen(Function<Future<T>, Future<U>> mapper) {
     if (mapper == null) {
       throw new NullPointerException();
     }
@@ -488,7 +488,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
     setHandler(ar -> {
       Future<U> apply;
       try {
-        apply = mapper.apply(ar);
+        apply = mapper.apply(this);
       } catch (Throwable e) {
         ret.fail(e);
         return;
