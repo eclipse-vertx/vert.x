@@ -11,11 +11,14 @@
 
 package io.vertx.core.parsetools;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * The possibles types of {@link JsonEvent} emitted by the {@link JsonParser}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@VertxGen
 public enum JsonEventType {
 
   /**
