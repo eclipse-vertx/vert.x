@@ -89,6 +89,10 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     return uri;
   }
 
+  public String host() {
+    return host;
+  }
+
   @Override
   public io.vertx.core.http.HttpMethod method() {
     return method;
