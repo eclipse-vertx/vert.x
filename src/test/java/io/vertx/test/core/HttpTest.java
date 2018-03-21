@@ -4084,6 +4084,29 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testBytesReadRequest() throws Exception {
+    int length = 2048;
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(length));;
+    server.requestHandler(req -> {
+      req.bodyHandler(buffer -> {
+        assertEquals(req.bytesRead(), length);
+        req.response().end();
+      });
+    });
+    startServer();
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.bodyHandler(buff -> {
+        complete();
+      });
+    }).exceptionHandler(this::fail)
+      .putHeader("content-length", String.valueOf(length))
+      .write(expected)
+      .end();
+    await();
+  }
+
+
   protected File setupFile(String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
     if (file.exists()) {
