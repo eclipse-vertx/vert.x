@@ -21,8 +21,8 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -82,19 +82,23 @@ public class VertxTestBase extends AsyncTestBase {
       close(vertx);
     }
     if (created != null) {
-      CountDownLatch latch = new CountDownLatch(created.size());
-      for (Vertx v : created) {
-        v.close(ar -> {
-          if (ar.failed()) {
-            log.error("Failed to shutdown vert.x", ar.cause());
-          }
-          latch.countDown();
-        });
-      }
-      assertTrue(latch.await(180, TimeUnit.SECONDS));
+      closeClustered(created);
     }
     FakeClusterManager.reset(); // Bit ugly
     super.tearDown();
+  }
+
+  protected void closeClustered(List<Vertx> clustered) throws Exception {
+    CountDownLatch latch = new CountDownLatch(clustered.size());
+    for (Vertx clusteredVertx : clustered) {
+      clusteredVertx.close(ar -> {
+        if (ar.failed()) {
+          log.error("Failed to shutdown vert.x", ar.cause());
+        }
+        latch.countDown();
+      });
+    }
+    assertTrue(latch.await(180, TimeUnit.SECONDS));
   }
 
   /**
