@@ -1402,6 +1402,9 @@ public interface HttpClient extends Measured {
    *   <li>when null is returned, the original response is processed by the original request response handler</li>
    *   <li>when a new {@code Future<HttpClientRequest>} is returned, the client will send this new request</li>
    * </ul>
+   * The new request will get a copy of the previous request headers unless headers are set. In this case,
+   * the client assumes that the redirect handler exclusively managers the headers of the new request.
+   * <p>
    * The handler must return a {@code Future<HttpClientRequest>} unsent so the client can further configure it and send it.
    *
    * @param handler the new redirect handler
