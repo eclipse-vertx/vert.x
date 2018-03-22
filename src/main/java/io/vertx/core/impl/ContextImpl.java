@@ -219,7 +219,7 @@ abstract class ContextImpl implements ContextInternal {
     return owner;
   }
 
-  // Execute an internal task on the internal blocking ordered executor
+  @Override
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(action, null, resultHandler, internalBlockingPool.executor(), internalOrderedTasks, internalBlockingPool.metrics());
   }
@@ -290,6 +290,7 @@ abstract class ContextImpl implements ContextInternal {
     }
   }
 
+  @Override
   public synchronized ConcurrentMap<Object, Object> contextData() {
     if (contextData == null) {
       contextData = new ConcurrentHashMap<>();

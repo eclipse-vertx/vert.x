@@ -18,6 +18,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * This interface provides an api for vert.x core internal use only
  * It is not part of the public API and should not be used by
@@ -54,6 +56,9 @@ public interface ContextInternal extends Context {
    */
   <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler);
 
+  /**
+   * Execute an internal task on the internal blocking ordered executor.
+   */
   <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler);
 
   /**
@@ -75,4 +80,11 @@ public interface ContextInternal extends Context {
    * @param task the task to execute
    */
   void executeFromIO(ContextTask task);
+
+  /**
+   * @return the {@link ConcurrentMap} used to store context data
+   * @see Context#get(String)
+   * @see Context#put(String, Object)
+   */
+  ConcurrentMap<Object, Object> contextData();
 }
