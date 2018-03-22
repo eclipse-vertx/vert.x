@@ -19,6 +19,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.core.spi.BufferFactory;
 
@@ -36,7 +37,7 @@ import java.nio.charset.Charset;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface Buffer extends ClusterSerializable {
+public interface Buffer extends ClusterSerializable, Shareable {
 
   /**
    * Create a new, empty buffer.
