@@ -12,6 +12,8 @@
 package io.vertx.core.http.impl.pool;
 
 import io.netty.channel.Channel;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
@@ -136,13 +138,15 @@ public class Pool<C> {
   /**
    * Get a connection for a waiter asynchronously.
    *
-   * @param waiter the waiter
+   * @param context the context
+   * @param handler the handler
    * @return whether the pool can satisfy the request
    */
-  public synchronized boolean getConnection(Waiter<C> waiter) {
+  public synchronized boolean getConnection(ContextInternal context, Handler<AsyncResult<C>> handler) {
     if (closed) {
       return false;
     }
+    Waiter<C> waiter = new Waiter<>(context, handler);
     int size = waitersQueue.size();
     if (size == 0 && acquireConnection(waiter)) {
       waitersCount++;
@@ -151,7 +155,7 @@ public class Pool<C> {
       waitersQueue.add(waiter);
     } else {
       waiter.context.nettyEventLoop().execute(() -> {
-        waiter.handleFailure(waiter.context, new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize));
+        waiter.handler.handle(Future.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize)));
       });
     }
     return true;
@@ -175,7 +179,7 @@ public class Pool<C> {
         synchronized (Pool.this) {
           waitersCount--;
         }
-        waiter.handleConnection(conn.context, conn.connection);
+        waiter.handler.handle(Future.succeededFuture(conn.connection));
       });
       return true;
     } else if (weight < maxWeight) {
@@ -222,14 +226,14 @@ public class Pool<C> {
             available.add(holder);
           }
         }
-        waiter.handleConnection(holder.context, holder.connection);
+        waiter.handler.handle(Future.succeededFuture(holder.connection));
         synchronized (Pool.this) {
           checkPending();
         }
       }
       @Override
       public void onConnectFailure(ContextInternal context, Throwable err) {
-        waiter.handleFailure(context, err);
+        waiter.handler.handle(Future.failedFuture(err));
         synchronized (Pool.this) {
           waitersCount--;
           Pool.this.weight -= initialWeight;

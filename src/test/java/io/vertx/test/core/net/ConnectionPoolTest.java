@@ -13,6 +13,8 @@ package io.vertx.test.core.net;
 
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.pool.*;
 import io.vertx.core.impl.ContextInternal;
@@ -66,7 +68,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       return pool;
     }
 
-    void getConnection(Waiter<FakeConnection> waiter) {
+    void getConnection(FakeWaiter waiter) {
       synchronized (this) {
         if (closed) {
           seq++;
@@ -92,7 +94,7 @@ public class ConnectionPoolTest extends VertxTestBase {
           );
         }
       }
-      pool.getConnection(waiter);
+      pool.getConnection(waiter.context, waiter.handler);
     }
   }
 
@@ -103,12 +105,12 @@ public class ConnectionPoolTest extends VertxTestBase {
     AtomicReference<Boolean> handleLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
-      public synchronized void handleConnection(ContextInternal ctx, FakeConnection conn) {
+      public synchronized void handleConnection(FakeConnection conn) {
         assertNull(Vertx.currentContext());
-        assertSame(ctx, context);
+        assertSame(conn.context, context);
         Pool<FakeConnection> pool = mgr.pool();
         handleLock.set(Thread.holdsLock(pool));
-        super.handleConnection(ctx, conn);
+        super.handleConnection(conn);
       }
     };
     mgr.getConnection(waiter);
@@ -129,12 +131,11 @@ public class ConnectionPoolTest extends VertxTestBase {
     AtomicReference<Boolean> holdsLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
-      public synchronized void handleFailure(ContextInternal ctx, Throwable failure) {
+      public synchronized void handleFailure(Throwable failure) {
         assertNull(Vertx.currentContext());
-        assertSame(ctx, context);
         Pool<FakeConnection> pool = mgr.pool();
         holdsLock.set(Thread.holdsLock(pool));
-        super.handleFailure(ctx, failure);
+        super.handleFailure(failure);
       }
     };
     mgr.getConnection(waiter);
@@ -402,14 +403,14 @@ public class ConnectionPoolTest extends VertxTestBase {
       actors[i] = new Thread(() -> {
         CountDownLatch latch = new CountDownLatch(numConnections);
         for (int i1 = 0; i1 < numConnections; i1++) {
-          mgr.getConnection(new Waiter<FakeConnection>((ContextInternal) vertx.getOrCreateContext()) {
+          mgr.getConnection(new FakeWaiter() {
             @Override
-            public void handleFailure(ContextInternal ctx, Throwable failure) {
+            public void handleFailure(Throwable failure) {
               latch.countDown();
             }
 
             @Override
-            public void handleConnection(ContextInternal ctx, FakeConnection conn) {
+            public void handleConnection(FakeConnection conn) {
               int action = ThreadLocalRandom.current().nextInt(100);
               if (action < -1) {
                 latch.countDown();
@@ -457,14 +458,23 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertEquals(0, mgr.pool.capacity());
   }
 
-  class FakeWaiter extends Waiter<FakeConnection> {
+  class FakeWaiter {
 
+    protected final ContextInternal context;
     private boolean cancelled;
     private boolean completed;
     private Object result;
+    private final Handler<AsyncResult<FakeConnection>> handler;
 
     FakeWaiter() {
-      super((ContextInternal) vertx.getOrCreateContext());
+      context = (ContextInternal) vertx.getOrCreateContext();
+      handler = ar -> {
+        if (ar.succeeded()) {
+          handleConnection(ar.result());
+        } else {
+          handleFailure(ar.cause());
+        }
+      };
     }
 
     synchronized boolean cancel() {
@@ -496,15 +506,13 @@ public class ConnectionPoolTest extends VertxTestBase {
       return completed && result instanceof Throwable;
     }
 
-    @Override
-    public synchronized void handleFailure(ContextInternal ctx, Throwable failure) {
+    public synchronized void handleFailure(Throwable failure) {
       assertFalse(completed);
       completed = true;
       result = failure;
     }
 
-    @Override
-    public synchronized void handleConnection(ContextInternal ctx, FakeConnection conn) {
+    public synchronized void handleConnection(FakeConnection conn) {
       assertFalse(completed);
       completed = true;
       if (cancelled) {

@@ -11,33 +11,20 @@
 
 package io.vertx.core.http.impl.pool;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Waiter<C> {
+final class Waiter<C> {
 
   public final ContextInternal context;
+  public final Handler<AsyncResult<C>> handler;
 
-  protected Waiter(ContextInternal context) {
+  Waiter(ContextInternal context, Handler<AsyncResult<C>> handler) {
     this.context = context;
+    this.handler = handler;
   }
-
-  /**
-   * Handle connection failure, this callback is on an event loop thread.
-   *
-   * @param ctx the context used to create the connection
-   * @param failure the failure
-   */
-  public abstract void handleFailure(ContextInternal ctx, Throwable failure);
-
-  /**
-   * Handle connection success, this callback is on an event loop thread.
-   *
-   * @param ctx the context used to create the connection
-   * @param conn the connection
-   */
-  public abstract void handleConnection(ContextInternal ctx, C conn);
-
 }

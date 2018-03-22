@@ -14,14 +14,12 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
-import io.vertx.core.http.impl.pool.Waiter;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * The connection manager associates remote hosts with pools, it also tracks all connections so they can be closed
@@ -101,8 +99,8 @@ class ConnectionManager {
   }
 
   void getConnection(String peerHost, boolean ssl, int port, String host,
-                     BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
-                     BiConsumer<ContextInternal, Throwable> onFailure) {
+                     Function<HttpClientConnection, Boolean> onSuccess,
+                     Consumer<Throwable> onFailure) {
     EndpointKey key = new EndpointKey(ssl, port, peerHost, host);
     while (true) {
       Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
@@ -126,17 +124,8 @@ class ConnectionManager {
       } else {
         metric = null;
       }
-      if (endpoint.pool.getConnection(new Waiter<HttpClientConnection>(client.getVertx().getOrCreateContext()) {
-        @Override
-        public void handleFailure(ContextInternal ctx, Throwable failure) {
-          if (metrics != null) {
-            metrics.dequeueRequest(endpoint.metric, metric);
-          }
-          onFailure.accept(ctx, failure);
-        }
-        @Override
-        public void handleConnection(ContextInternal ctx, HttpClientConnection conn) {
-
+      if (endpoint.pool.getConnection(client.getVertx().getOrCreateContext(), ar -> {
+        if (ar.succeeded()) {
           /*
         @Override
         public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
@@ -148,14 +137,21 @@ class ConnectionManager {
         }
            */
 
+          HttpClientConnection conn = ar.result();
+
           if (metrics != null) {
             metrics.dequeueRequest(endpoint.metric, metric);
           }
 
-          boolean claimed = onSuccess.apply(ctx, conn);
+          boolean claimed = onSuccess.apply(conn);
           if (!claimed) {
             conn.recycle();
           }
+        } else {
+          if (metrics != null) {
+            metrics.dequeueRequest(endpoint.metric, metric);
+          }
+          onFailure.accept(ar.cause());
         }
       })) {
         break;
