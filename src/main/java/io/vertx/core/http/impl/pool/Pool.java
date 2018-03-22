@@ -172,16 +172,10 @@ public class Pool<C> {
       }
       ContextInternal ctx = conn.context;
       ctx.nettyEventLoop().execute(() -> {
-        boolean handled = deliverToWaiter(conn, waiter);
         synchronized (Pool.this) {
           waitersCount--;
-          if (!handled) {
-            synchronized (Pool.this) {
-              recycleConnection(conn, 1,false);
-              checkPending();
-            }
-          }
         }
+        waiter.handleConnection(conn.context, conn.connection);
       });
       return true;
     } else if (weight < maxWeight) {
@@ -216,7 +210,6 @@ public class Pool<C> {
           initConnection(holder, context, concurrency, conn, channel, actualWeight);
         }
         // Init connection - state might change (i.e init could close the connection)
-        waiter.initConnection(context, conn);
         synchronized (Pool.this) {
           if (holder.capacity == 0) {
             waitersQueue.add(waiter);
@@ -229,11 +222,8 @@ public class Pool<C> {
             available.add(holder);
           }
         }
-        boolean consumed = deliverToWaiter(holder, waiter);
+        waiter.handleConnection(holder.context, holder.connection);
         synchronized (Pool.this) {
-          if (!consumed) {
-            recycleConnection(holder, 1,false);
-          }
           checkPending();
         }
       }
@@ -309,19 +299,6 @@ public class Pool<C> {
       holder.capacity = 0;
     }
     weight -= holder.weight;
-  }
-
-  /**
-   * Should not be called under the pool lock.
-   */
-  private boolean deliverToWaiter(Holder<C> conn, Waiter<C> waiter) {
-    try {
-      return waiter.handleConnection(conn.context, conn.connection);
-    } catch (Exception e) {
-      // Handle this case gracefully
-      e.printStackTrace();
-      return true;
-    }
   }
 
   // These methods assume to be called under synchronization

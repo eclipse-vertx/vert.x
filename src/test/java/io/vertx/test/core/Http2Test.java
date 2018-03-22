@@ -379,11 +379,9 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testInitialMaxConcurrentStreamZero() throws Exception {
-    AtomicLong concurrency = new AtomicLong();
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
     server.requestHandler(req -> {
-      assertEquals(10, concurrency.get());
       req.response().end();
     });
     server.connectionHandler(conn -> {
@@ -395,9 +393,8 @@ public class Http2Test extends HttpTest {
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       testComplete();
     }).connectionHandler(conn -> {
-      assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
-      conn.remoteSettingsHandler(settings -> concurrency.set(settings.getMaxConcurrentStreams()));
-    }).setTimeout(10000).exceptionHandler(err -> fail(err)).end();
+      assertEquals(10, conn.remoteSettings().getMaxConcurrentStreams());
+    }).setTimeout(10000).exceptionHandler(this::fail).end();
     await();
   }
 

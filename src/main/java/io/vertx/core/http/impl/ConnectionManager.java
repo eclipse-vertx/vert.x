@@ -12,8 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.http.impl.pool.Waiter;
@@ -103,7 +101,6 @@ class ConnectionManager {
   }
 
   void getConnection(String peerHost, boolean ssl, int port, String host,
-                     Handler<HttpConnection> connectionHandler,
                      BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
                      BiConsumer<ContextInternal, Throwable> onFailure) {
     EndpointKey key = new EndpointKey(ssl, port, peerHost, host);
@@ -131,14 +128,6 @@ class ConnectionManager {
       }
       if (endpoint.pool.getConnection(new Waiter<HttpClientConnection>(client.getVertx().getOrCreateContext()) {
         @Override
-        public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
-          if (connectionHandler != null) {
-            ctx.executeFromIO(v -> {
-              connectionHandler.handle(conn);
-            });
-          }
-        }
-        @Override
         public void handleFailure(ContextInternal ctx, Throwable failure) {
           if (metrics != null) {
             metrics.dequeueRequest(endpoint.metric, metric);
@@ -146,11 +135,27 @@ class ConnectionManager {
           onFailure.accept(ctx, failure);
         }
         @Override
-        public boolean handleConnection(ContextInternal ctx, HttpClientConnection conn) throws Exception {
+        public void handleConnection(ContextInternal ctx, HttpClientConnection conn) {
+
+          /*
+        @Override
+        public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
+          if (connectionHandler != null) {
+            ctx.executeFromIO(v -> {
+              connectionHandler.handle(conn);
+            });
+          }
+        }
+           */
+
           if (metrics != null) {
             metrics.dequeueRequest(endpoint.metric, metric);
           }
-          return onSuccess.apply(ctx, conn);
+
+          boolean claimed = onSuccess.apply(ctx, conn);
+          if (!claimed) {
+            conn.recycle();
+          }
         }
       })) {
         break;

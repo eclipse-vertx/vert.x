@@ -21,7 +21,6 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
@@ -946,7 +945,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                          String host,
                                          Handler<Http1xClientConnection> handler,
                                          Handler<Throwable> connectionExceptionHandler) {
-    websocketCM.getConnection(host, ssl, port, host, null, (ctx, conn) -> {
+    websocketCM.getConnection(host, ssl, port, host, (ctx, conn) -> {
       ctx.executeFromIO(v -> {
         handler.handle((Http1xClientConnection) conn);
       });
@@ -959,10 +958,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   void getConnectionForRequest(String peerHost, boolean ssl, int port, String host,
-                               Handler<HttpConnection> connectionHandler,
                                BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
                                BiConsumer<ContextInternal, Throwable> onFailure) {
-    httpCM.getConnection(peerHost, ssl, port, host, connectionHandler, onSuccess, onFailure);
+    httpCM.getConnection(peerHost, ssl, port, host, onSuccess, onFailure);
   }
 
   /**

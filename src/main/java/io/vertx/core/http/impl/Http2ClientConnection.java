@@ -42,6 +42,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
+  private boolean initialized;
   final HttpClientMetrics metrics;
   final Object queueMetric;
 
@@ -56,6 +57,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.queueMetric = queueMetric;
     this.client = client;
     this.listener = listener;
+  }
+
+  @Override
+  public synchronized boolean checkInitialized() {
+    boolean ret = initialized;
+    initialized = true;
+    return ret;
   }
 
   @Override
@@ -95,6 +103,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     synchronized (this) {
       try {
         Http2Connection conn = handler.connection();
+
+
+
         Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
         boolean writable = handler.encoder().flowController().isWritable(stream);
         Http2ClientStream clientStream = new Http2ClientStream(this, req, stream, writable);
@@ -105,6 +116,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
     }
     completionHandler.handle(fut);
+  }
+
+  @Override
+  public void recycle() {
+    listener.onRecycle(false);
   }
 
   @Override

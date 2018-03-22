@@ -78,6 +78,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   private boolean paused;
   private Buffer pausedChunk;
+  private boolean initialized;
 
   Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
                          HttpVersion version,
@@ -734,5 +735,17 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       this.currentRequest = stream;
     }
     handler.handle(Future.succeededFuture(currentRequest));
+  }
+
+  @Override
+  public void recycle() {
+    listener.onRecycle(true);
+  }
+
+  @Override
+  public synchronized boolean checkInitialized() {
+    boolean ret = initialized;
+    initialized = true;
+    return ret;
   }
 }

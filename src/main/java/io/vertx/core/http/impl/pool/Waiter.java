@@ -33,20 +33,11 @@ public abstract class Waiter<C> {
   public abstract void handleFailure(ContextInternal ctx, Throwable failure);
 
   /**
-   * Init connection, this callback is on an event loop thread.
-   *
-   * @param ctx the context used to create the connection
-   * @param conn the connection
-   */
-  public abstract void initConnection(ContextInternal ctx, C conn);
-
-  /**
    * Handle connection success, this callback is on an event loop thread.
    *
    * @param ctx the context used to create the connection
    * @param conn the connection
-   * @return whether the waiter uses the connection
    */
-  public abstract boolean handleConnection(ContextInternal ctx, C conn) throws Exception;
+  public abstract void handleConnection(ContextInternal ctx, C conn);
 
 }

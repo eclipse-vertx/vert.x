@@ -632,16 +632,27 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         peerHost = host;
       }
 
+      // Capture the handler
+      Handler<HttpConnection> initializer = connectionHandler;
+
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnectionForRequest(peerHost, ssl, port, host, connectionHandler, (ctx, conn) -> {
+      client.getConnectionForRequest(peerHost, ssl, port, host, (ctx, conn) -> {
         // No need to synchronize as the thread is the same that set exceptionOccurred to true
         // exceptionOccurred=true getting the connection => it's a TimeoutException
         if (exceptionOccurred != null || reset != null) {
           return false;
         }
-        // checkContext(ctx);
+
+        //
+        if (!conn.checkInitialized() && initializer != null) {
+          ctx.executeFromIO(() -> {
+            initializer.handle(conn);
+          });
+        }
+
+        //
         conn.createStream(HttpClientRequestImpl.this, ar -> {
           if (ar.succeeded()) {
             HttpClientStream stream = ar.result();
