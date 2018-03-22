@@ -27,7 +27,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.pool.ConnectionListener;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -48,7 +48,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
                                Object queueMetric,
                                HttpClientImpl client,
-                               ContextImpl context,
+                               ContextInternal context,
                                VertxHttp2ConnectionHandler connHandler,
                                HttpClientMetrics metrics) {
     super(context, connHandler);

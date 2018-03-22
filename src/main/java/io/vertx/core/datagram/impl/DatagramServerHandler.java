@@ -16,7 +16,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.VertxHandler;
 
 /**
@@ -36,7 +36,7 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connec
   }
 
   @Override
-  protected void handleMessage(final DatagramSocketImpl.Connection server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
+  protected void handleMessage(final DatagramSocketImpl.Connection server, final ContextInternal context, ChannelHandlerContext chctx, final Object msg) throws Exception {
     server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg);
   }
 

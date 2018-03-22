@@ -20,10 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.impl.*;
 import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -282,7 +279,7 @@ public class DeploymentTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true), ar -> {
       assertDeployment(1, verticle, null, ar);
-      assertTrue(verticle.startContext instanceof WorkerContext);
+      assertTrue(verticle.startContext.isWorkerContext());
       vertx.undeploy(ar.result(), ar2 -> {
         assertTrue(ar2.succeeded());
         assertEquals(verticle.startContext, verticle.stopContext);
@@ -1075,7 +1072,7 @@ public class DeploymentTest extends VertxTestBase {
       completionHandler.handle(Future.succeededFuture());
     };
     MyAsyncVerticle verticle = new MyAsyncVerticle(f-> {
-      ContextImpl ctx = (ContextImpl)Vertx.currentContext();
+      ContextInternal ctx = (ContextInternal)Vertx.currentContext();
       ctx.addCloseHook(myCloseable1);
       ctx.addCloseHook(myCloseable2);
       f.complete(null);

@@ -26,7 +26,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.http.impl.pool.ConnectionProvider;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
@@ -90,7 +90,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
   public long connect(
     ConnectionListener<HttpClientConnection> listener,
-    ContextImpl context) {
+    ContextInternal context) {
 
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
@@ -245,7 +245,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     }
   }
 
-  private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, ConnectionListener<HttpClientConnection> listener) {
+  private void handshakeFailure(ContextInternal context, Channel ch, Throwable cause, ConnectionListener<HttpClientConnection> listener) {
     SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
     if (cause != null) {
       sslException.initCause(cause);
@@ -258,7 +258,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                                String host,
                                int port,
                                boolean ssl,
-                               ContextImpl context,
+                               ContextInternal context,
                                Channel ch) {
     Http1xClientHandler clientHandler = new Http1xClientHandler(
       listener,
@@ -280,7 +280,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   }
 
   private void http2Connected(ConnectionListener<HttpClientConnection> listener,
-                              ContextImpl context,
+                              ContextInternal context,
                               Channel ch) {
     try {
       boolean upgrade;
@@ -318,7 +318,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     }
   }
 
-  private void connectFailed(ContextImpl context, Channel ch, ConnectionListener<HttpClientConnection> listener, Throwable t) {
+  private void connectFailed(ContextInternal context, Channel ch, ConnectionListener<HttpClientConnection> listener, Throwable t) {
     if (ch != null) {
       try {
         ch.close();

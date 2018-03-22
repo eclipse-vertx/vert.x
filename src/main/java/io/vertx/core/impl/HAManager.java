@@ -343,13 +343,13 @@ public class HAManager {
           if (System.currentTimeMillis() - start > 10000) {
             log.warn("Timed out waiting for group information to appear");
           } else if (!stopped) {
-            ContextImpl context = vertx.getContext();
+            ContextInternal context = vertx.getContext();
             try {
               // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
               ContextImpl.setContext(null);
               checkQuorumWhenAdded(nodeID, start);
             } finally {
-              ContextImpl.setContext(context);
+              ContextImpl.setContext((ContextImpl) context);
             }
           }
           return null;
@@ -406,12 +406,12 @@ public class HAManager {
   private void addToHADeployList(final String verticleName, final DeploymentOptions deploymentOptions,
                                  final Handler<AsyncResult<String>> doneHandler) {
     toDeployOnQuorum.add(() -> {
-      ContextImpl ctx = vertx.getContext();
+      ContextInternal ctx = vertx.getContext();
       try {
         ContextImpl.setContext(null);
         deployVerticle(verticleName, deploymentOptions, doneHandler);
       } finally {
-        ContextImpl.setContext(ctx);
+        ContextImpl.setContext((ContextImpl) ctx);
       }
     });
    }
@@ -434,7 +434,7 @@ public class HAManager {
       Deployment dep = deploymentManager.getDeployment(deploymentID);
       if (dep != null) {
         if (dep.deploymentOptions().isHa()) {
-          ContextImpl ctx = vertx.getContext();
+          ContextInternal ctx = vertx.getContext();
           try {
             ContextImpl.setContext(null);
             deploymentManager.undeployVerticle(deploymentID, result -> {
@@ -452,7 +452,7 @@ public class HAManager {
               }
             });
           } finally {
-            ContextImpl.setContext(ctx);
+            ContextImpl.setContext((ContextImpl) ctx);
           }
         }
       }
@@ -543,7 +543,7 @@ public class HAManager {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Throwable> err = new AtomicReference<>();
     // Now deploy this verticle on this node
-    ContextImpl ctx = vertx.getContext();
+    ContextInternal ctx = vertx.getContext();
     if (ctx != null) {
       // We could be on main thread in which case we don't want to overwrite tccl
       ContextImpl.setContext(null);
@@ -565,7 +565,7 @@ public class HAManager {
       });
     } finally {
       if (ctx != null) {
-        ContextImpl.setContext(ctx);
+        ContextImpl.setContext((ContextImpl) ctx);
       }
     }
     try {

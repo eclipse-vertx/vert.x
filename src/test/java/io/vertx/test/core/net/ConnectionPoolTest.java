@@ -15,7 +15,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.pool.*;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -374,7 +373,7 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     FakeConnectionProvider connector = new FakeConnectionProvider() {
       @Override
-      public long connect(ConnectionListener<FakeConnection> listener, ContextImpl context) {
+      public long connect(ConnectionListener<FakeConnection> listener, ContextInternal context) {
         int i = ThreadLocalRandom.current().nextInt(100);
         FakeConnection conn = new FakeConnection(context, listener);
         if (i < 10) {
@@ -392,7 +391,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       actors[i] = new Thread(() -> {
         CountDownLatch latch = new CountDownLatch(numConnections);
         for (int i1 = 0; i1 < numConnections; i1++) {
-          mgr.getConnection(new Waiter<FakeConnection>((ContextImpl) vertx.getOrCreateContext()) {
+          mgr.getConnection(new Waiter<FakeConnection>((ContextInternal) vertx.getOrCreateContext()) {
             @Override
             public void handleFailure(ContextInternal ctx, Throwable failure) {
               latch.countDown();
@@ -460,7 +459,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     private Object result;
 
     FakeWaiter() {
-      super((ContextImpl) vertx.getOrCreateContext());
+      super((ContextInternal) vertx.getOrCreateContext());
     }
 
     synchronized boolean cancel() {
@@ -658,7 +657,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     private static final int CONNECTED = 2;
     private static final int CLOSED = 3;
 
-    private final ContextImpl context;
+    private final ContextInternal context;
     private final ConnectionListener<FakeConnection> listener;
     private final Channel channel = new EmbeddedChannel();
 
@@ -666,7 +665,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     private long concurrency = 1;
     private int status = DISCONNECTED;
 
-    FakeConnection(ContextImpl context, ConnectionListener<FakeConnection> listener) {
+    FakeConnection(ContextInternal context, ConnectionListener<FakeConnection> listener) {
       this.context = context;
       this.listener = listener;
     }
@@ -757,7 +756,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
 
     @Override
-    public long connect(ConnectionListener<FakeConnection> listener, ContextImpl context) {
+    public long connect(ConnectionListener<FakeConnection> listener, ContextInternal context) {
       pendingRequests.add(new FakeConnection(context, listener));
       return 1;
     }

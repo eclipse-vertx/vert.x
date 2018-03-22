@@ -93,8 +93,8 @@ public class DeploymentManager {
     if (options.getIsolatedClasses() != null) {
       throw new IllegalArgumentException("Can't specify isolatedClasses for already created verticle");
     }
-    ContextImpl currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = getClassLoader(options, currentContext);
+    ContextInternal currentContext = vertx.getOrCreateContext();
+    ClassLoader cl = getClassLoader(options);
     int nbInstances = options.getInstances();
     Set<Verticle> verticles = Collections.newSetFromMap(new IdentityHashMap<>());
     for (int i = 0; i < nbInstances; i++) {
@@ -126,16 +126,16 @@ public class DeploymentManager {
     if (options.isMultiThreaded() && !options.isWorker()) {
       throw new IllegalArgumentException("If multi-threaded then must be worker too");
     }
-    ContextImpl callingContext = vertx.getOrCreateContext();
-    ClassLoader cl = getClassLoader(options, callingContext);
+    ContextInternal callingContext = vertx.getOrCreateContext();
+    ClassLoader cl = getClassLoader(options);
     doDeployVerticle(identifier, generateDeploymentID(), options, callingContext, callingContext, cl, completionHandler);
   }
 
   private void doDeployVerticle(String identifier,
                                 String deploymentID,
                                 DeploymentOptions options,
-                                ContextImpl parentContext,
-                                ContextImpl callingContext,
+                                ContextInternal parentContext,
+                                ContextInternal callingContext,
                                 ClassLoader cl,
                                 Handler<AsyncResult<String>> completionHandler) {
     List<VerticleFactory> verticleFactories = resolveFactories(identifier);
@@ -148,8 +148,8 @@ public class DeploymentManager {
                                 String identifier,
                                 String deploymentID,
                                 DeploymentOptions options,
-                                ContextImpl parentContext,
-                                ContextImpl callingContext,
+                                ContextInternal parentContext,
+                                ContextInternal callingContext,
                                 ClassLoader cl,
                                 Handler<AsyncResult<String>> completionHandler) {
     if (iter.hasNext()) {
@@ -376,7 +376,7 @@ public class DeploymentManager {
    * an URLClassLoader anymore. Thus we can't extract the list of jars to configure the IsolatedClassLoader.
    *
    */
-  private ClassLoader getClassLoader(DeploymentOptions options, ContextImpl parentContext) {
+  private ClassLoader getClassLoader(DeploymentOptions options) {
     String isolationGroup = options.getIsolationGroup();
     ClassLoader cl;
     if (isolationGroup == null) {
@@ -454,8 +454,8 @@ public class DeploymentManager {
   }
 
   private void doDeploy(String identifier, String deploymentID, DeploymentOptions options,
-                        ContextImpl parentContext,
-                        ContextImpl callingContext,
+                        ContextInternal parentContext,
+                        ContextInternal callingContext,
                         Handler<AsyncResult<String>> completionHandler,
                         ClassLoader tccl, Verticle... verticles) {
     JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
@@ -546,7 +546,7 @@ public class DeploymentManager {
       verticles.add(holder);
     }
 
-    private synchronized void rollback(ContextImpl callingContext, Handler<AsyncResult<String>> completionHandler, ContextImpl context, Throwable cause) {
+    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<String>> completionHandler, ContextImpl context, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext, childrenResult -> {
@@ -564,11 +564,11 @@ public class DeploymentManager {
 
     @Override
     public void undeploy(Handler<AsyncResult<Void>> completionHandler) {
-      ContextImpl currentContext = vertx.getOrCreateContext();
+      ContextInternal currentContext = vertx.getOrCreateContext();
       doUndeploy(currentContext, completionHandler);
     }
 
-    private synchronized void doUndeployChildren(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
+    private synchronized void doUndeployChildren(ContextInternal undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
       if (!children.isEmpty()) {
         final int size = children.size();
         AtomicInteger childCount = new AtomicInteger();
@@ -594,7 +594,7 @@ public class DeploymentManager {
       }
     }
 
-    public synchronized void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
+    public synchronized void doUndeploy(ContextInternal undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
       if (status == ST_UNDEPLOYED) {
         reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, completionHandler);
         return;

@@ -21,7 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.ContextTask;
 
 /**
@@ -96,7 +96,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
-    ContextImpl context = conn.getContext();
+    ContextInternal context = conn.getContext();
     context.executeFromIO(conn::handleInterestedOpsChanged);
   }
 
@@ -106,7 +106,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
     C connection = getConnection();
     if (connection != null) {
-      ContextImpl context = conn.getContext();
+      ContextInternal context = conn.getContext();
       context.executeFromIO(() -> {
         try {
           if (ch.isOpen()) {
@@ -126,20 +126,20 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     if (removeHandler != null) {
       removeHandler.handle(conn);
     }
-    ContextImpl context = conn.getContext();
+    ContextInternal context = conn.getContext();
     context.executeFromIO(conn::handleClosed);
   }
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    ContextImpl context = conn.getContext();
+    ContextInternal context = conn.getContext();
     context.executeFromIO(endReadAndFlush);
   }
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     Object message = decode(msg, chctx.alloc());
-    ContextImpl context;
+    ContextInternal context;
     context = conn.getContext();
     context.executeFromIO(() -> {
       conn.startRead();
@@ -155,7 +155,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     ctx.fireUserEventTriggered(evt);
   }
 
-  protected abstract void handleMessage(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception;
+  protected abstract void handleMessage(C connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception;
 
   /**
    * Decode the message before passing it to the channel

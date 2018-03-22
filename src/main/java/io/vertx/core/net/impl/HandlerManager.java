@@ -12,8 +12,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -50,7 +49,7 @@ public class HandlerManager<T> {
     return handlers == null ? null : handlers.chooseHandler();
   }
 
-  public synchronized void addHandler(T handler, ContextImpl context) {
+  public synchronized void addHandler(T handler, ContextInternal context) {
     EventLoop worker = context.nettyEventLoop();
     availableWorkers.addWorker(worker);
     Handlers<T> handlers = new Handlers<>();
@@ -62,7 +61,7 @@ public class HandlerManager<T> {
     hasHandlers = true;
   }
 
-  public synchronized void removeHandler(T handler, ContextImpl context) {
+  public synchronized void removeHandler(T handler, ContextInternal context) {
     EventLoop worker = context.nettyEventLoop();
     Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {

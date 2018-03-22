@@ -24,7 +24,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -87,7 +87,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
                          boolean ssl,
                          String host,
                          int port,
-                         ContextImpl context,
+                         ContextInternal context,
                          HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context);
     this.listener = listener;
@@ -321,7 +321,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
             super.channelRead(chctx, msg);
           }
           @Override
-          protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+          protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
             ByteBuf buf = (ByteBuf) msg;
             connection.handleMessageReceived(buf);
           }
@@ -505,7 +505,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     private final boolean supportsContinuation;
     private final Handler<WebSocket> wsConnect;
-    private final ContextImpl context;
+    private final ContextInternal context;
     private final Queue<Object> buffered = new ArrayDeque<>();
     private FullHttpResponse response;
     private boolean handshaking = true;
@@ -589,8 +589,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      // Need to set context before constructor is called as writehandler registration needs this
-      ContextImpl.setContext(context);
       WebSocketImpl webSocket = new WebSocketImpl(vertx, Http1xClientConnection.this, supportsContinuation,
                                                   client.getOptions().getMaxWebsocketFrameSize(),
                                                   client.getOptions().getMaxWebsocketMessageSize());
@@ -602,6 +600,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         if (metrics != null ) {
           webSocket.setMetric(metrics.connected(endpointMetric, metric(), webSocket));
         }
+        webSocket.registerHandler(vertx.eventBus());
         wsConnect.handle(webSocket);
       });
     }
@@ -682,7 +681,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
-  public ContextImpl getContext() {
+  public ContextInternal getContext() {
     return super.getContext();
   }
 

@@ -20,7 +20,7 @@ import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -57,7 +57,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private final VertxInternal vertx;
   private final AsynchronousFileChannel ch;
-  private final ContextImpl context;
+  private final ContextInternal context;
   private boolean closed;
   private Runnable closedDeferred;
   private long writesOutstanding;
@@ -73,7 +73,7 @@ public class AsyncFileImpl implements AsyncFile {
   private long readPos;
   private boolean readInProgress;
 
-  AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextImpl context) {
+  AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextInternal context) {
     if (!options.isRead() && !options.isWrite()) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
@@ -465,7 +465,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
-    ContextImpl handlerContext = vertx.getOrCreateContext();
+    ContextInternal handlerContext = vertx.getOrCreateContext();
     handlerContext.executeBlocking(res -> {
       try {
         ch.close();
@@ -487,5 +487,4 @@ public class AsyncFileImpl implements AsyncFile {
       closedDeferred = () -> doClose(handler);
     }
   }
-
 }

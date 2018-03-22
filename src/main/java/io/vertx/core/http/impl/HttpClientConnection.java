@@ -15,7 +15,7 @@ import io.netty.channel.Channel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -32,6 +32,6 @@ interface HttpClientConnection extends HttpConnection {
 
   void createStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler);
 
-  ContextImpl getContext();
+  ContextInternal getContext();
 
 }

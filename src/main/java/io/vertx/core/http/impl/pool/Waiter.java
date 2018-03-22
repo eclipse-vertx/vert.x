@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl.pool;
 
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 
 /**
@@ -19,9 +18,9 @@ import io.vertx.core.impl.ContextInternal;
  */
 public abstract class Waiter<C> {
 
-  public final ContextImpl context;
+  public final ContextInternal context;
 
-  protected Waiter(ContextImpl context) {
+  protected Waiter(ContextInternal context) {
     this.context = context;
   }
 

@@ -26,7 +26,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.net.URI;
@@ -48,7 +48,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
 
   Http2ServerConnection(
-      ContextImpl context,
+    ContextInternal context,
       String serverOrigin,
       VertxHttp2ConnectionHandler connHandler,
       HttpServerOptions options,

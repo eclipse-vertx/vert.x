@@ -23,7 +23,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -57,7 +57,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
   protected final SSLHelper sslHelper;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final Closeable closeHook;
-  private final ContextImpl creatingContext;
+  private final ContextInternal creatingContext;
   private final TCPMetrics metrics;
   private volatile boolean closed;
 
@@ -169,7 +169,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
                            int remainingAttempts) {
     checkClosed();
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
-    ContextImpl context = vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
@@ -230,15 +230,13 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), remoteAddress, channelInitializer, channelHandler);
   }
 
-  private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {
+  private void connected(ContextInternal context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {
 
-    // Need to set context before constructor is called as writehandler registration needs this
-    ContextImpl.setContext(context);
     initChannel(ch.pipeline());
 
     VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics)) {
       @Override
-      protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
         connection.handleMessageReceived(msg);;
       }
     };
@@ -248,6 +246,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
         if (metrics != null) {
           sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
         }
+        sock.registerEventBusHandler();
         connectHandler.handle(Future.succeededFuture(sock));
       });
     });
@@ -257,7 +256,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     ch.pipeline().addLast("handler", handler);
   }
 
-  private void failed(ContextImpl context, Channel ch, Throwable th, Handler<AsyncResult<NetSocket>> connectHandler) {
+  private void failed(ContextInternal context, Channel ch, Throwable th, Handler<AsyncResult<NetSocket>> connectHandler) {
     if (ch != null) {
       ch.close();
     }

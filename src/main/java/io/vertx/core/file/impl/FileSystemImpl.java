@@ -22,7 +22,7 @@ import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.impl.Action;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 
 import java.io.File;
@@ -770,7 +770,7 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  protected AsyncFile doOpen(String path, OpenOptions options, ContextImpl context) {
+  protected AsyncFile doOpen(String path, OpenOptions options, ContextInternal context) {
     return new AsyncFileImpl(vertx, path, options, context);
   }
 
@@ -826,7 +826,7 @@ public class FileSystemImpl implements FileSystem {
   protected abstract class BlockingAction<T> implements Action<T> {
 
     private final Handler<AsyncResult<T>> handler;
-    protected final ContextImpl context;
+    protected final ContextInternal context;
 
     public BlockingAction(Handler<AsyncResult<T>> handler) {
       this.handler = handler;

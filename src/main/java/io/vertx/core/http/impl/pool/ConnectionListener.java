@@ -12,7 +12,7 @@
 package io.vertx.core.http.impl.pool;
 
 import io.netty.channel.Channel;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * The listener definest the contract used by the {@link ConnectionProvider} to interact with the
@@ -33,7 +33,7 @@ public interface ConnectionListener<C> {
   void onConnectSuccess(C conn,
                         long concurrency,
                         Channel channel,
-                        ContextImpl context,
+                        ContextInternal context,
                         long initialWeight,
                         long actualWeight);
 
@@ -44,7 +44,7 @@ public interface ConnectionListener<C> {
    * @param err the error
    * @param weight the weight
    */
-  void onConnectFailure(ContextImpl context, Throwable err, long weight);
+  void onConnectFailure(ContextInternal context, Throwable err, long weight);
 
   /**
    * Signals the connrection changed to the {@code concurrency} value.

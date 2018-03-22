@@ -28,7 +28,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -65,7 +65,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
-  private final MessageConsumer registration;
   private final SSLHelper helper;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
@@ -74,19 +73,23 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Void> drainHandler;
   private Buffer pendingData;
   private boolean paused = false;
+  private MessageConsumer registration;
 
-  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextImpl context,
+  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextInternal context,
                        SSLHelper helper, TCPMetrics metrics) {
     this(vertx, channel, null, context, helper, metrics);
   }
 
-  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, SocketAddress remoteAddress, ContextImpl context,
+  public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, SocketAddress remoteAddress, ContextInternal context,
                        SSLHelper helper, TCPMetrics metrics) {
     super(vertx, channel, context);
     this.helper = helper;
     this.writeHandlerID = UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
+  }
+
+  synchronized void registerEventBusHandler() {
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
   }
@@ -340,8 +343,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       endHandler.handle(null);
     }
     super.handleClosed();
-    if (vertx.eventBus() != null) {
+    if (registration != null) {
       registration.unregister();
+      registration = null;
     }
   }
 

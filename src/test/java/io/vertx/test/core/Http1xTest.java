@@ -17,7 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -1978,12 +1978,12 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testContexts() throws Exception {
-    Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    Set<ContextInternal> contexts = new ConcurrentHashSet<>();
     AtomicInteger cnt = new AtomicInteger();
-    AtomicReference<ContextImpl> serverRequestContext = new AtomicReference<>();
+    AtomicReference<ContextInternal> serverRequestContext = new AtomicReference<>();
     // Server connect handler should always be called with same context
     server.requestHandler(req -> {
-      ContextImpl serverContext = ((VertxInternal) vertx).getContext();
+      ContextInternal serverContext = ((VertxInternal) vertx).getContext();
       if (serverRequestContext.get() != null) {
         assertSame(serverRequestContext.get(), serverContext);
       } else {
@@ -1992,7 +1992,7 @@ public class Http1xTest extends HttpTest {
       req.response().end();
     });
     CountDownLatch latch = new CountDownLatch(1);
-    AtomicReference<ContextImpl> listenContext = new AtomicReference<>();
+    AtomicReference<ContextInternal> listenContext = new AtomicReference<>();
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       listenContext.set(((VertxInternal) vertx).getContext());
@@ -2020,7 +2020,7 @@ public class Http1xTest extends HttpTest {
     // Close should be in own context
     server.close(ar -> {
       assertTrue(ar.succeeded());
-      ContextImpl closeContext = ((VertxInternal) vertx).getContext();
+      ContextInternal closeContext = ((VertxInternal) vertx).getContext();
       assertFalse(contexts.contains(closeContext));
       assertNotSame(serverRequestContext.get(), closeContext);
       assertFalse(contexts.contains(listenContext.get()));

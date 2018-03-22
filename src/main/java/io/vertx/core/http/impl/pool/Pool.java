@@ -14,7 +14,7 @@ package io.vertx.core.http.impl.pool;
 import io.netty.channel.Channel;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -77,7 +77,7 @@ public class Pool<C> {
     long concurrency;    // How many times we can borrow from the connection
     long capacity;       // How many times the connection is currently borrowed (0 <= capacity <= concurrency)
     Channel channel;     // Transport channel
-    ContextImpl context; // Context associated with the connection
+    ContextInternal context; // Context associated with the connection
     long weight;         // The weight that participates in the pool weight
 
   }
@@ -167,7 +167,7 @@ public class Pool<C> {
       if (--conn.capacity == 0) {
         available.poll();
       }
-      ContextImpl ctx = conn.context;
+      ContextInternal ctx = conn.context;
       ctx.nettyEventLoop().execute(() -> {
         boolean handled = deliverToWaiter(conn, waiter);
         synchronized (Pool.this) {
@@ -204,7 +204,7 @@ public class Pool<C> {
     Holder<C> holder  = new Holder<>();
     ConnectionListener<C> listener = new ConnectionListener<C>() {
       @Override
-      public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextImpl context, long initialWeight, long actualWeight) {
+      public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextInternal context, long initialWeight, long actualWeight) {
         // Update state
         synchronized (Pool.this) {
           initConnection(holder, context, concurrency, conn, channel, initialWeight, actualWeight);
@@ -232,7 +232,7 @@ public class Pool<C> {
         }
       }
       @Override
-      public void onConnectFailure(ContextImpl context, Throwable err, long weight) {
+      public void onConnectFailure(ContextInternal context, Throwable err, long weight) {
         waiter.handleFailure(context, err);
         synchronized (Pool.this) {
           waitersCount--;
@@ -341,7 +341,7 @@ public class Pool<C> {
     }
   }
 
-  private void initConnection(Holder<C> holder, ContextImpl context, long concurrency, C conn, Channel channel, long oldWeight, long newWeight) {
+  private void initConnection(Holder<C> holder, ContextInternal context, long concurrency, C conn, Channel channel, long oldWeight, long newWeight) {
     weight += newWeight - oldWeight;
     holder.context = context;
     holder.concurrency = concurrency;

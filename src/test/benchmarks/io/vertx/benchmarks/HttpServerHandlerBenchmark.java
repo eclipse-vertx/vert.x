@@ -38,7 +38,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.HttpHandlers;
 import io.vertx.core.http.impl.Http1xServerHandler;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -215,7 +215,10 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         new HttpResponseEncoder()
     );
     vertxChannel.config().setAllocator(new Alloc());
-    ContextImpl context = new EventLoopContext(vertx, vertxChannel.eventLoop(), null, null, null, new JsonObject(), Thread.currentThread().getContextClassLoader());
+
+
+
+    ContextInternal context = new EventLoopContext(vertx, vertxChannel.eventLoop(), null, null, null, new JsonObject(), Thread.currentThread().getContextClassLoader());
     Handler<HttpServerRequest> app = request -> {
       HttpServerResponse response = request.response();
       MultiMap headers = response.headers();

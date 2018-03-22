@@ -27,6 +27,19 @@ import io.vertx.core.Vertx;
  */
 public interface ContextInternal extends Context {
 
+  static boolean isOnWorkerThread() {
+    return ContextImpl.isOnVertxThread(true);
+  }
+
+  static boolean isOnEventLoopThread() {
+    return ContextImpl.isOnVertxThread(false);
+  }
+
+  static boolean isOnVertxThread() {
+    Thread t = Thread.currentThread();
+    return (t instanceof VertxThread);
+  }
+
   /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate
    * a Netty Server with a Vert.x runtime, specially the Context part.
@@ -40,6 +53,16 @@ public interface ContextInternal extends Context {
    * of the internal queue of this context.
    */
   <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler);
+
+  <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler);
+
+  /**
+   * @return the deployment associated with this context or {@code null}
+   */
+  Deployment getDeployment();
+
+  @Override
+  VertxInternal owner();
 
   /**
    * Execute the context task and switch on this context if necessary, this also associates the

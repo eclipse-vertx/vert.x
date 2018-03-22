@@ -16,7 +16,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -24,9 +24,9 @@ import io.vertx.core.impl.ContextImpl;
 final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
   private final Handler<AsyncResult<T>> handler;
   private final T result;
-  private final ContextImpl context;
+  private final ContextInternal context;
 
-  DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, ContextImpl context) {
+  DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, ContextInternal context) {
     this.handler = handler;
     this.result = result;
     this.context = context;

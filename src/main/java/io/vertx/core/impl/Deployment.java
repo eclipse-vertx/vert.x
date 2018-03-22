@@ -29,7 +29,7 @@ public interface Deployment {
 
   void undeploy(Handler<AsyncResult<Void>> completionHandler);
 
-  void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler);
+  void doUndeploy(ContextInternal undeployingContext, Handler<AsyncResult<Void>> completionHandler);
 
   String deploymentID();
 

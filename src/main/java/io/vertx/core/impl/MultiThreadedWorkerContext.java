@@ -17,9 +17,9 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class MultiThreadedWorkerContext extends WorkerContext {
+class MultiThreadedWorkerContext extends WorkerContext {
 
-  public MultiThreadedWorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool,
+  MultiThreadedWorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool,
                                     String deploymentID, JsonObject config, ClassLoader tccl) {
     super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }

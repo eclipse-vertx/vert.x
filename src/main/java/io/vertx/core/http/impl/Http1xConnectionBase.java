@@ -30,11 +30,9 @@ import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
-
-import java.nio.charset.Charset;
 
 import static io.vertx.core.http.impl.Http2ConnectionBase.safeBuffer;
 
@@ -43,7 +41,7 @@ import static io.vertx.core.http.impl.Http2ConnectionBase.safeBuffer;
  */
 abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.core.http.HttpConnection {
 
-  Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context) {
+  Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     super(vertx, chctx, context);
   }
 

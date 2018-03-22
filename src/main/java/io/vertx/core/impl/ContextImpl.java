@@ -34,7 +34,7 @@ import java.util.concurrent.RejectedExecutionException;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class ContextImpl implements ContextInternal {
+abstract class ContextImpl implements ContextInternal {
 
   private static EventLoop getEventLoop(VertxInternal vertx) {
     EventLoopGroup group = vertx.getEventLoopGroup();
@@ -91,7 +91,7 @@ public abstract class ContextImpl implements ContextInternal {
     this.closeHooks = new CloseHooks(log);
   }
 
-  public static void setContext(ContextImpl context) {
+  static void setContext(ContextImpl context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
       setContext((VertxThread) current, context);
@@ -162,20 +162,7 @@ public abstract class ContextImpl implements ContextInternal {
     return !isEventLoopContext();
   }
 
-  public static boolean isOnWorkerThread() {
-    return isOnVertxThread(true);
-  }
-
-  public static boolean isOnEventLoopThread() {
-    return isOnVertxThread(false);
-  }
-
-  public static boolean isOnVertxThread() {
-    Thread t = Thread.currentThread();
-    return (t instanceof VertxThread);
-  }
-
-  private static boolean isOnVertxThread(boolean worker) {
+  static boolean isOnVertxThread(boolean worker) {
     Thread t = Thread.currentThread();
     if (t instanceof VertxThread) {
       VertxThread vt = (VertxThread) t;

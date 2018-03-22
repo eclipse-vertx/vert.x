@@ -40,8 +40,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
-import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
@@ -2816,9 +2814,9 @@ public abstract class HttpTest extends HttpTestBase {
       public void start() {
         ctx = Vertx.currentContext();
         if (worker) {
-          assertTrue(ctx instanceof WorkerContext);
+          assertTrue(ctx.isWorkerContext());
         } else {
-          assertTrue(ctx instanceof EventLoopContext);
+          assertTrue(ctx.isEventLoopContext());
         }
         Thread thr = Thread.currentThread();
         server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));

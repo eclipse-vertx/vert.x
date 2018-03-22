@@ -34,7 +34,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -88,7 +88,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private int windowSize;
   private long maxConcurrentStreams;
 
-  public Http2ConnectionBase(ContextImpl context, VertxHttp2ConnectionHandler handler) {
+  public Http2ConnectionBase(ContextInternal context, VertxHttp2ConnectionHandler handler) {
     super(context.owner(), handler.context(), context);
     this.handler = handler;
     this.handlerContext = chctx;
@@ -113,7 +113,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public ContextImpl getContext() {
+  public ContextInternal getContext() {
     return super.getContext();
   }
 

@@ -28,7 +28,6 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebsocketVersion;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -108,7 +107,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   private final VertxInternal vertx;
   private final HttpClientOptions options;
-  private final ContextImpl creatingContext;
+  private final ContextInternal creatingContext;
   private final ConnectionManager websocketCM; // The queue manager for websockets
   private final ConnectionManager httpCM; // The queue manager for requests
   private final Closeable closeHook;
@@ -943,11 +942,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   private void getConnectionForWebsocket(boolean ssl,
-                                 int port,
-                                 String host,
-                                 Handler<Http1xClientConnection> handler,
-                                 Handler<Throwable> connectionExceptionHandler,
-                                 ContextImpl context) {
+                                         int port,
+                                         String host,
+                                         Handler<Http1xClientConnection> handler,
+                                         Handler<Throwable> connectionExceptionHandler) {
     websocketCM.getConnection(host, ssl, port, host, null, (ctx, conn) -> {
       ctx.executeFromIO(() -> {
         handler.handle((Http1xClientConnection) conn);
@@ -1086,7 +1084,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       if (this.handler == null && handler != null) {
         this.handler = handler;
         checkClosed();
-        ContextImpl context = vertx.getOrCreateContext();
+        ContextInternal context = vertx.getOrCreateContext();
         Handler<Throwable> connectionExceptionHandler;
         if (exceptionHandler == null) {
           connectionExceptionHandler = log::error;
@@ -1106,7 +1104,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         getConnectionForWebsocket(ssl != null ? ssl : options.isSsl(), port, host, conn -> {
           conn.exceptionHandler(connectionExceptionHandler);
           conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
-        }, connectionExceptionHandler, context);
+        }, connectionExceptionHandler);
       }
       return this;
     }

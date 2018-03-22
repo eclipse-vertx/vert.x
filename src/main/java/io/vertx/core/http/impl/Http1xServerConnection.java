@@ -46,7 +46,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -105,7 +105,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
                                 SSLHelper sslHelper,
                                 HttpServerOptions options,
                                 ChannelHandlerContext channel,
-                                ContextImpl context,
+                                ContextInternal context,
                                 String serverOrigin,
                                 HttpServerMetrics metrics) {
     super(vertx, channel, context);
@@ -216,9 +216,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
-    if (METRICS_ENABLED && metrics != null) {
-      ws.setMetric(metrics.upgrade(requestMetric, ws));
-    }
     try {
       handshaker.handshake(chctx.channel(), nettyReq);
     } catch (WebSocketHandshakeException e) {
@@ -231,6 +228,10 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       // remove compressor as its not needed anymore once connection was upgraded to websockets
       chctx.pipeline().remove(handler);
     }
+    if (METRICS_ENABLED && metrics != null) {
+      ws.setMetric(metrics.upgrade(requestMetric, ws));
+    }
+    ws.registerHandler(vertx.eventBus());
     return ws;
   }
 
@@ -266,7 +267,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
 
       @Override
-      protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
         connection.handleMessageReceived(buf);
       }
@@ -347,7 +348,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
   }
 
-  public ContextImpl getContext() {
+  public ContextInternal getContext() {
     return super.getContext();
   }
 

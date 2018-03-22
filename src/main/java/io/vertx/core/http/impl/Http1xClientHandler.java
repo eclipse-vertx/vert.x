@@ -23,7 +23,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
@@ -31,7 +31,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   private boolean closeFrameSent;
-  private ContextImpl context;
+  private ContextInternal context;
   private ChannelHandlerContext chctx;
   private final HttpVersion version;
   private final String host;
@@ -43,7 +43,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   private final Object endpointMetric;
 
   public Http1xClientHandler(ConnectionListener<HttpClientConnection> listener,
-                             ContextImpl context,
+                             ContextInternal context,
                              HttpVersion version,
                              String host,
                              int port,
@@ -89,7 +89,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   }
 
   @Override
-  protected void handleMessage(Http1xClientConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void handleMessage(Http1xClientConnection conn, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
       DecoderResult result = obj.decoderResult();

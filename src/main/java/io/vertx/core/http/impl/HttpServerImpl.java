@@ -64,7 +64,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -117,7 +117,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final HttpServerOptions options;
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
-  private final ContextImpl creatingContext;
+  private final ContextInternal creatingContext;
   private final Map<Channel, Http1xServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final Map<Channel, Http2ServerConnection> connectionMap2 = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
@@ -133,7 +133,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private ServerID id;
   private HttpServerImpl actualServer;
   private volatile int actualPort;
-  private ContextImpl listenContext;
+  private ContextInternal listenContext;
   private HttpServerMetrics metrics;
   private boolean logEnabled;
   private Handler<Throwable> exceptionHandler;
@@ -528,7 +528,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       };
     }
 
-    ContextImpl context = vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     if (!listening) {
       executeCloseDone(context, done, null);
       return;
@@ -584,7 +584,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
 
-  private void addHandlers(HttpServerImpl server, ContextImpl context) {
+  private void addHandlers(HttpServerImpl server, ContextInternal context) {
     server.httpHandlerMgr.addHandler(
       new HttpHandlers(
         requestStream.handler(),
@@ -594,12 +594,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       , context);
   }
 
-  private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
+  private void actualClose(final ContextInternal closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
     }
 
-    ContextImpl currCon = vertx.getContext();
+    ContextInternal currCon = vertx.getContext();
 
     for (Http1xServerConnection conn : connectionMap.values()) {
       conn.close();
@@ -626,7 +626,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return actualPort;
   }
 
-  private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
+  private void executeCloseDone(final ContextInternal closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
       Future<Void> fut = e != null ? Future.failedFuture(e) : Future.succeededFuture();
       closeContext.runOnContext((v) -> done.handle(fut));
@@ -645,7 +645,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void handleMessage(Http1xServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    protected void handleMessage(Http1xServerConnection conn, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
       Channel ch = chctx.channel();
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;
@@ -775,6 +775,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           if (METRICS_ENABLED && metrics != null) {
             ws.setMetric(metrics.connected(conn.metric(), ws));
           }
+          ws.registerHandler(vertx.eventBus());
           conn.handleWebsocketConnect(ws);
           if (!ws.isRejected()) {
             ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);

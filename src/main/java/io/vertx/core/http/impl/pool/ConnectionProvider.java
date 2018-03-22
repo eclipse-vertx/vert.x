@@ -11,7 +11,7 @@
 
 package io.vertx.core.http.impl.pool;
 
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * Provides how the connection manager interacts its connections.
@@ -28,7 +28,7 @@ public interface ConnectionProvider<C> {
    * @param context the context to use for the connection
    * @return the initial weight of the connection, which will eventually be corrected when calling the listener
    */
-  long connect(ConnectionListener<C> listener, ContextImpl context);
+  long connect(ConnectionListener<C> listener, ContextInternal context);
 
   /**
    * Close a connection.

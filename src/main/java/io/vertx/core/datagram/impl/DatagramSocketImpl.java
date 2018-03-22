@@ -25,7 +25,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -53,7 +53,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     return socket;
   }
 
-  private final ContextImpl context;
+  private final ContextInternal context;
   private final DatagramSocketMetrics metrics;
   private DatagramChannel channel;
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
@@ -64,7 +64,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     Transport transport = vertx.transport();
     DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
     transport.configure(channel, new DatagramSocketOptions(options));
-    ContextImpl context = vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     if (context.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
     }
@@ -325,7 +325,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
 
   class Connection extends ConnectionBase {
 
-    public Connection(VertxInternal vertx, ChannelHandlerContext channel, ContextImpl context) {
+    public Connection(VertxInternal vertx, ChannelHandlerContext channel, ContextInternal context) {
       super(vertx, channel, context);
     }
 

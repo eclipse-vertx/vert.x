@@ -15,7 +15,7 @@ import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.vertx.core.*;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -46,7 +46,7 @@ public abstract class ConnectionBase {
 
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
-  protected final ContextImpl context;
+  protected final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private boolean read;
@@ -54,7 +54,7 @@ public abstract class ConnectionBase {
   private int writeInProgress;
   private Object metric;
 
-  protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context) {
+  protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     this.vertx = vertx;
     this.chctx = chctx;
     this.context = context;
@@ -177,7 +177,7 @@ public abstract class ConnectionBase {
     return chctx.channel();
   }
 
-  public ContextImpl getContext() {
+  public ContextInternal getContext() {
     return context;
   }
 

@@ -39,7 +39,7 @@ import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.dns.impl.decoder.RecordDecoder;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.transport.Transport;
@@ -64,7 +64,7 @@ public final class DnsClientImpl implements DnsClient {
   private final Vertx vertx;
   private final IntObjectMap<Query> inProgressMap = new IntObjectHashMap<>();
   private final InetSocketAddress dnsServer;
-  private final ContextImpl actualCtx;
+  private final ContextInternal actualCtx;
   private final DatagramChannel channel;
   private final long timeoutMillis;
 
@@ -73,7 +73,7 @@ public final class DnsClientImpl implements DnsClient {
       throw new IllegalArgumentException("DNS client timeout " + timeoutMillis + " must be > 0");
     }
 
-    ContextImpl creatingContext = vertx.getContext();
+    ContextInternal creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DnsClient in a multi-threaded worker verticle");
     }

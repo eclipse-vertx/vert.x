@@ -42,12 +42,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.impl.NetSocketInternal;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -2219,9 +2214,9 @@ public class NetTest extends VertxTestBase {
       public void start() {
         ctx = context;
         if (worker) {
-          assertTrue(ctx instanceof WorkerContext);
+          assertTrue(ctx.isWorkerContext());
         } else {
-          assertTrue(ctx instanceof EventLoopContext);
+          assertTrue(ctx.isEventLoopContext());
         }
         Thread thr = Thread.currentThread();
         server = vertx.createNetServer();
@@ -2297,13 +2292,13 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testContexts() throws Exception {
-    Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    Set<ContextInternal> contexts = new ConcurrentHashSet<>();
     AtomicInteger cnt = new AtomicInteger();
-    AtomicReference<ContextImpl> serverConnectContext = new AtomicReference<>();
+    AtomicReference<ContextInternal> serverConnectContext = new AtomicReference<>();
     // Server connect handler should always be called with same context
     server.connectHandler(sock -> {
       sock.handler(sock::write);
-      ContextImpl serverContext = ((VertxInternal) vertx).getContext();
+      ContextInternal serverContext = ((VertxInternal) vertx).getContext();
       if (serverConnectContext.get() != null) {
         assertSame(serverConnectContext.get(), serverContext);
       } else {
@@ -2311,7 +2306,7 @@ public class NetTest extends VertxTestBase {
       }
     });
     CountDownLatch latch = new CountDownLatch(1);
-    AtomicReference<ContextImpl> listenContext = new AtomicReference<>();
+    AtomicReference<ContextInternal> listenContext = new AtomicReference<>();
     server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       listenContext.set(((VertxInternal) vertx).getContext());
@@ -2334,7 +2329,7 @@ public class NetTest extends VertxTestBase {
     // Close should be in own context
     server.close(ar -> {
       assertTrue(ar.succeeded());
-      ContextImpl closeContext = ((VertxInternal) vertx).getContext();
+      ContextInternal closeContext = ((VertxInternal) vertx).getContext();
       assertFalse(contexts.contains(closeContext));
       assertNotSame(serverConnectContext.get(), closeContext);
       assertFalse(contexts.contains(listenContext.get()));

@@ -43,7 +43,7 @@ import java.util.concurrent.ExecutorService;
 public interface VertxInternal extends Vertx {
 
   @Override
-  ContextImpl getOrCreateContext();
+  ContextInternal getOrCreateContext();
 
   EventLoopGroup getEventLoopGroup();
 
@@ -63,7 +63,7 @@ public interface VertxInternal extends Vertx {
    * Get the current context
    * @return the context
    */
-  ContextImpl getContext();
+  ContextInternal getContext();
 
   /**
    * @return event loop context

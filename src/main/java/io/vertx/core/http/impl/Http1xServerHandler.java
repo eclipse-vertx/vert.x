@@ -21,7 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.impl.HandlerHolder;
@@ -76,7 +76,7 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
   }
 
   @Override
-  protected void handleMessage(Http1xServerConnection conn, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void handleMessage(Http1xServerConnection conn, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
     conn.handleMessage(msg);
   }
 

@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.WebSocketBase;
@@ -44,8 +45,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final String binaryHandlerID;
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
-  private final MessageConsumer binaryHandlerRegistration;
-  private final MessageConsumer textHandlerRegistration;
+  private MessageConsumer binaryHandlerRegistration;
+  private MessageConsumer textHandlerRegistration;
   private String subProtocol;
   private Object metric;
   private Handler<WebSocketFrameInternal> frameHandler;
@@ -65,12 +66,15 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.textHandlerID = UUID.randomUUID().toString();
     this.binaryHandlerID = UUID.randomUUID().toString();
     this.conn = conn;
-    Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
-    binaryHandlerRegistration = vertx.eventBus().<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
-    Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
-    textHandlerRegistration = vertx.eventBus().<String>localConsumer(textHandlerID).handler(textHandler);
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
+  }
+
+  void registerHandler(EventBus eventBus) {
+    Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
+    Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
+    binaryHandlerRegistration = eventBus.<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
+    textHandlerRegistration = eventBus.<String>localConsumer(textHandlerID).handler(textHandler);
   }
 
   public String binaryHandlerID() {
@@ -433,9 +437,15 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   private void cleanupHandlers() {
     if (!closed) {
-      binaryHandlerRegistration.unregister();
-      textHandlerRegistration.unregister();
       closed = true;
+      if (binaryHandlerRegistration != null) {
+        binaryHandlerRegistration.unregister();
+        binaryHandlerRegistration = null;
+      }
+      if (textHandlerRegistration != null) {
+        textHandlerRegistration.unregister();
+        textHandlerRegistration = null;
+      }
     }
   }
 

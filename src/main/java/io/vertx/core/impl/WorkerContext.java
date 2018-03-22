@@ -17,9 +17,9 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkerContext extends ContextImpl {
+class WorkerContext extends ContextImpl {
 
-  public WorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID,
+  WorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID,
                        JsonObject config, ClassLoader tccl) {
     super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }

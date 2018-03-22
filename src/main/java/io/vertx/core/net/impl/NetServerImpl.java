@@ -16,7 +16,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoop;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -29,7 +28,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -60,7 +59,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
   protected final VertxInternal vertx;
   protected final NetServerOptions options;
-  protected final ContextImpl creatingContext;
+  protected final ContextInternal creatingContext;
   protected final SSLHelper sslHelper;
   protected final boolean logEnabled;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
@@ -75,7 +74,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private NetServerImpl actualServer;
   private AsyncResolveConnectHelper bindFuture;
   private volatile int actualPort;
-  private ContextImpl listenContext;
+  private ContextInternal listenContext;
   private TCPMetrics metrics;
   private Handler<NetSocket> handler;
   private Handler<Void> endHandler;
@@ -361,7 +360,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     } else {
       done = completionHandler;
     }
-    ContextImpl context = vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     if (!listening) {
       if (done != null) {
         executeCloseDone(context, done, null);
@@ -407,12 +406,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     return metrics;
   }
 
-  private void actualClose(ContextImpl closeContext, Handler<AsyncResult<Void>> done) {
+  private void actualClose(ContextInternal closeContext, Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedNetServers().remove(id);
     }
 
-    ContextImpl currCon = vertx.getContext();
+    ContextInternal currCon = vertx.getContext();
 
     for (NetSocketImpl sock : socketMap.values()) {
       sock.close();
@@ -434,15 +433,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   private void connected(HandlerHolder<Handlers> handler, Channel ch) {
-    EventLoop worker = ch.eventLoop();
-    // Need to set context before constructor is called as writehandler registration needs this
-    ContextImpl.setContext(handler.context);
-
     NetServerImpl.this.initChannel(ch.pipeline());
 
     VertxNetHandler nh = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics)) {
       @Override
-      protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
         connection.handleMessageReceived(msg);
       }
     };
@@ -454,11 +449,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       }
+      sock.registerEventBusHandler();
       handler.handler.connectionHandler.handle(sock);
     });
   }
 
-  private void executeCloseDone(ContextImpl closeContext, Handler<AsyncResult<Void>> done, Exception e) {
+  private void executeCloseDone(ContextInternal closeContext, Handler<AsyncResult<Void>> done, Exception e) {
     if (done != null) {
       Future<Void> fut = e == null ? Future.succeededFuture() : Future.failedFuture(e);
       closeContext.runOnContext(v -> done.handle(fut));

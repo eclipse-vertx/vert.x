@@ -11,16 +11,16 @@
 
 package io.vertx.core.net.impl;
 
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HandlerHolder<T> {
-  public final ContextImpl context;
+  public final ContextInternal context;
   public final T handler;
 
-  public HandlerHolder(ContextImpl context, T handler) {
+  public HandlerHolder(ContextInternal context, T handler) {
     this.context = context;
     this.handler = handler;
   }

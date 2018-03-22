@@ -685,9 +685,9 @@ public class LocalEventBusTest extends EventBusTestBase {
         ctx = context;
         if (worker) {
           if (multiThreaded) {
-            assertTrue(ctx instanceof MultiThreadedWorkerContext);
+            assertTrue(ctx.isMultiThreadedWorkerContext());
           } else {
-            assertTrue(ctx instanceof WorkerContext && !(ctx instanceof MultiThreadedWorkerContext));
+            assertTrue(ctx.isWorkerContext() && !ctx.isMultiThreadedWorkerContext());
           }
         } else {
           assertTrue(ctx instanceof EventLoopContext);
@@ -724,7 +724,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testContextsSend() throws Exception {
-    Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    Set<ContextInternal> contexts = new ConcurrentHashSet<>();
     CountDownLatch latch = new CountDownLatch(2);
     vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
       msg.reply("bar");
@@ -742,7 +742,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testContextsPublish() throws Exception {
-    Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    Set<ContextInternal> contexts = new ConcurrentHashSet<>();
     AtomicInteger cnt = new AtomicInteger();
     int numHandlers = 10;
     for (int i = 0; i < numHandlers; i++) {

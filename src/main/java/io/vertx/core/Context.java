@@ -15,7 +15,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
@@ -66,7 +66,7 @@ public interface Context {
    * @return true if current thread is a worker thread, false otherwise
    */
   static boolean isOnWorkerThread() {
-    return ContextImpl.isOnWorkerThread();
+    return ContextInternal.isOnWorkerThread();
   }
 
   /**
@@ -78,7 +78,7 @@ public interface Context {
    * @return true if current thread is a worker thread, false otherwise
    */
   static boolean isOnEventLoopThread() {
-    return ContextImpl.isOnEventLoopThread();
+    return ContextInternal.isOnEventLoopThread();
   }
 
   /**
@@ -87,7 +87,7 @@ public interface Context {
    * @return true if current thread is a Vert.x thread, false otherwise
    */
   static boolean isOnVertxThread() {
-    return ContextImpl.isOnVertxThread();
+    return ContextInternal.isOnVertxThread();
   }
 
   /**
