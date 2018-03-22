@@ -50,6 +50,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
 
   /**
+   * The default keep alive timeout for HTTP/2 connection can send = 60 seconds
+   */
+  public static final int DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT = 60;
+
+  /**
    * Default value of whether keep-alive is enabled = true
    */
   public static final boolean DEFAULT_KEEP_ALIVE = true;
@@ -63,6 +68,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    * The default maximum number of requests an HTTP/1.1 pipe-lined connection can send = 10
    */
   public static final int DEFAULT_PIPELINING_LIMIT = 10;
+
+  /**
+   * The default keep alive timeout for HTTP/1.1 connection can send = 60 seconds
+   */
+  public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 60;
 
   /**
    * Default value of whether the client will attempt to use compression = false
@@ -150,14 +160,22 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
 
+  /**
+   * Default pool cleaner period = 1000 ms (1 second)
+   */
+  public static final int DEFAULT_POOL_CLEANER_PERIOD = 1000;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
+  private int keepAliveTimeout;
   private int pipeliningLimit;
   private boolean pipelining;
   private int http2MaxPoolSize;
   private int http2MultiplexingLimit;
   private int http2ConnectionWindowSize;
+  private int http2KeepAliveTimeout;
+  private int poolCleanerPeriod;
 
   private boolean tryUseCompression;
   private int maxWebsocketFrameSize;
@@ -195,11 +213,13 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.verifyHost = other.isVerifyHost();
     this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
+    this.keepAliveTimeout = other.getKeepAliveTimeout();
     this.pipelining = other.isPipelining();
     this.pipeliningLimit = other.getPipeliningLimit();
     this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
     this.http2MultiplexingLimit = other.http2MultiplexingLimit;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
+    this.http2KeepAliveTimeout = other.getHttp2KeepAliveTimeout();
     this.tryUseCompression = other.isTryUseCompression();
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
     this.maxWebsocketMessageSize = other.maxWebsocketMessageSize;
@@ -217,6 +237,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
+    this.poolCleanerPeriod = other.getPoolCleanerPeriod();
   }
 
   /**
@@ -245,11 +266,13 @@ public class HttpClientOptions extends ClientOptionsBase {
     verifyHost = DEFAULT_VERIFY_HOST;
     maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
+    keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
     pipelining = DEFAULT_PIPELINING;
     pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
     http2MaxPoolSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
+    http2KeepAliveTimeout = DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     maxWebsocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
@@ -267,6 +290,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
+    poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
   }
 
   @Override
@@ -529,6 +553,29 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * @return the keep alive timeout value in seconds for HTTP/2 connections
+   */
+  public int getHttp2KeepAliveTimeout() {
+    return http2KeepAliveTimeout;
+  }
+
+  /**
+   * Set the keep alive timeout for HTTP/2 connections, in seconds.
+   * <p/>
+   * This value determines how long a connection remains unused in the pool before being evicted and closed.
+   *
+   * @param keepAliveTimeout the timeout, in seconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setHttp2KeepAliveTimeout(int keepAliveTimeout) {
+    if (keepAliveTimeout < 0) {
+      throw new IllegalArgumentException("HTTP/2 keepAliveTimeout must be >= 0");
+    }
+    this.http2KeepAliveTimeout = keepAliveTimeout;
+    return this;
+  }
+
+  /**
    * Is keep alive enabled on the client?
    *
    * @return true if enabled
@@ -545,6 +592,29 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
+    return this;
+  }
+
+  /**
+   * @return the keep alive timeout value in seconds for HTTP/1.x connections
+   */
+  public int getKeepAliveTimeout() {
+    return keepAliveTimeout;
+  }
+
+  /**
+   * Set the keep alive timeout for HTTP/1.x, in seconds.
+   * <p/>
+   * This value determines how long a connection remains unused in the pool before being evicted and closed.
+   *
+   * @param keepAliveTimeout the timeout, in seconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setKeepAliveTimeout(int keepAliveTimeout) {
+    if (keepAliveTimeout < 0) {
+      throw new IllegalArgumentException("keepAliveTimeout must be >= 0");
+    }
+    this.keepAliveTimeout = keepAliveTimeout;
     return this;
   }
 
@@ -979,6 +1049,25 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * @return the connection pool cleaner period in ms.
+   */
+  public int getPoolCleanerPeriod() {
+    return poolCleanerPeriod;
+  }
+
+  /**
+   * Set the connection pool cleaner period in milli seconds, a non positive value disables expiration checks and connections
+   * will remain in the pool until they are closed.
+   *
+   * @param poolCleanerPeriod the pool cleaner period
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setPoolCleanerPeriod(int poolCleanerPeriod) {
+    this.poolCleanerPeriod = poolCleanerPeriod;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -1008,6 +1097,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (sendUnmaskedFrames != that.sendUnmaskedFrames) return false;
     if (maxRedirects != that.maxRedirects) return false;
     if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
+    if (keepAliveTimeout != that.keepAliveTimeout) return false;
+    if (http2KeepAliveTimeout != that.http2KeepAliveTimeout) return false;
+    if (poolCleanerPeriod != that.poolCleanerPeriod) return false;
 
     return true;
   }
@@ -1036,6 +1128,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (sendUnmaskedFrames ? 1 : 0);
     result = 31 * result + maxRedirects;
     result = 31 * result + decoderInitialBufferSize;
+    result = 31 * result + keepAliveTimeout;
+    result = 31 * result + http2KeepAliveTimeout;
+    result = 31 * result + poolCleanerPeriod;
     return result;
   }
 

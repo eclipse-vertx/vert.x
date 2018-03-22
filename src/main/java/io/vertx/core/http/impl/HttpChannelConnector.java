@@ -93,7 +93,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   }
 
   @Override
-  public void connect(ConnectionListener<HttpClientConnection> listener, ContextInternal context) {
+  public void connect(ConnectionListener<HttpClientConnection> listener, ContextImpl context) {
     try {
       doConnect(listener, context);
     } catch(Exception e) {

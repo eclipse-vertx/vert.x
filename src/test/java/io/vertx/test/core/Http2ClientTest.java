@@ -969,13 +969,8 @@ public class Http2ClientTest extends Http2TestBase {
         conn.shutdown();
       }
     });
-    req1.exceptionHandler(err -> fail());
-    req1.handler(resp -> {
-      resp.bodyHandler(body -> {
-        assertEquals("6", body.toString());
-        complete();
-      });
-    });
+    req1.exceptionHandler(err -> complete());
+    req1.handler(resp -> fail("Was not expecting the response to complete"));
     req1.end();
     await();
   }

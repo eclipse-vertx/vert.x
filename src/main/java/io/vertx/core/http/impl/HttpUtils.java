@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
@@ -477,5 +478,48 @@ public final class HttpUtils {
     } catch (IllegalArgumentException e) {
       return io.vertx.core.http.HttpMethod.OTHER;
     }
+  }
+
+  private static final AsciiString TIMEOUT_EQ = AsciiString.of("timeout=");
+
+  public static int parseKeepAliveHeaderTimeout(CharSequence value) {
+    int len = value.length();
+    int pos = 0;
+    while (pos < len) {
+      int idx = AsciiString.indexOf(value, ',', pos);
+      int next;
+      if (idx == -1) {
+        idx = next = len;
+      } else {
+        next = idx + 1;
+      }
+      while (pos < idx && value.charAt(pos) == ' ') {
+        pos++;
+      }
+      int to = idx;
+      while (to > pos && value.charAt(to -1) == ' ') {
+        to--;
+      }
+      if (AsciiString.regionMatches(value, true, pos, TIMEOUT_EQ, 0, TIMEOUT_EQ.length())) {
+        pos += TIMEOUT_EQ.length();
+        if (pos < to) {
+          int ret = 0;
+          while (pos < to) {
+            int ch = value.charAt(pos++);
+            if (ch >= '0' && ch < '9') {
+              ret = ret * 10 + (ch - '0');
+            } else {
+              ret = -1;
+              break;
+            }
+          }
+          if (ret > -1) {
+            return ret;
+          }
+        }
+      }
+      pos = next;
+    }
+    return -1;
   }
 }

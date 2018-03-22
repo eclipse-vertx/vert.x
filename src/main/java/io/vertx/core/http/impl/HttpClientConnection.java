@@ -34,4 +34,8 @@ interface HttpClientConnection extends HttpConnection {
 
   ContextImpl getContext();
 
+  boolean checkInitialized();
+
+  void recycle();
+
 }

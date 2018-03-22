@@ -21,7 +21,6 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
@@ -50,8 +49,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -161,6 +159,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     websocketCM = new ConnectionManager(this, metrics, HttpVersion.HTTP_1_1, maxWeight, options.getMaxWaitQueueSize());
     httpCM = new ConnectionManager(this, metrics, options.getProtocolVersion(), maxWeight, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
+    httpCM.start();
+    websocketCM.start();
   }
 
   HttpClientMetrics metrics() {
@@ -943,17 +943,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   private void getConnectionForWebsocket(boolean ssl,
-                                 int port,
-                                 String host,
-                                 Handler<Http1xClientConnection> handler,
-                                 Handler<Throwable> connectionExceptionHandler,
-                                 ContextImpl context) {
-    websocketCM.getConnection(host, ssl, port, host, null, (ctx, conn) -> {
-      ctx.executeFromIO(() -> {
+                                         int port,
+                                         String host,
+                                         Handler<Http1xClientConnection> handler,
+                                         Handler<Throwable> connectionExceptionHandler) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    websocketCM.getConnection(host, ssl, port, host, conn -> {
+      conn.getContext().executeFromIO(() -> {
         handler.handle((Http1xClientConnection) conn);
       });
       return true;
-    }, (ctx, failure) -> {
+    }, (failure) -> {
       ctx.executeFromIO(() -> {
         connectionExceptionHandler.handle(failure);
       });
@@ -961,16 +961,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   void getConnectionForRequest(String peerHost, boolean ssl, int port, String host,
-                               Handler<HttpConnection> connectionHandler,
-                               BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
-                               BiConsumer<ContextInternal, Throwable> onFailure) {
-    httpCM.getConnection(peerHost, ssl, port, host, connectionHandler, onSuccess, onFailure);
+                               Function<HttpClientConnection, Boolean> onSuccess,
+                               Consumer<Throwable> onFailure) {
+    httpCM.getConnection(peerHost, ssl, port, host, onSuccess, onFailure);
   }
 
   /**
    * @return the vertx, for use in package related classes only.
    */
-  VertxInternal getVertx() {
+  public VertxInternal getVertx() {
     return vertx;
   }
 
@@ -1106,7 +1105,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         getConnectionForWebsocket(ssl != null ? ssl : options.isSsl(), port, host, conn -> {
           conn.exceptionHandler(connectionExceptionHandler);
           conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
-        }, connectionExceptionHandler, context);
+        }, connectionExceptionHandler);
       }
       return this;
     }

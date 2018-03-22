@@ -42,6 +42,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
+  private boolean initialized;
   final HttpClientMetrics metrics;
   final Object queueMetric;
 
@@ -56,6 +57,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.queueMetric = queueMetric;
     this.client = client;
     this.listener = listener;
+  }
+
+  @Override
+  public synchronized boolean checkInitialized() {
+    boolean ret = initialized;
+    initialized = true;
+    return ret;
   }
 
   @Override
@@ -100,6 +108,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     synchronized (this) {
       try {
         Http2Connection conn = handler.connection();
+
+
+
         Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
         boolean writable = handler.encoder().flowController().isWritable(stream);
         Http2ClientStream clientStream = new Http2ClientStream(this, req, stream, writable);
@@ -110,6 +121,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
     }
     completionHandler.handle(fut);
+  }
+
+  @Override
+  public void recycle() {
+    int timeout = client.getOptions().getHttp2KeepAliveTimeout();
+    long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
+    listener.onRecycle(expired);
   }
 
   @Override
@@ -210,7 +228,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
       // boolean disposable = conn.streams.isEmpty();
       if (request instanceof HttpClientRequestImpl) {
-        conn.listener.onRecycle(1, false);
+        conn.recycle();
       } /* else {
         conn.listener.onRecycle(0, dispable);
       } */
