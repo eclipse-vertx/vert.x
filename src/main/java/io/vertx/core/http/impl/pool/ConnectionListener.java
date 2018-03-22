@@ -21,7 +21,7 @@ import io.vertx.core.impl.ContextInternal;
 public interface ConnectionListener<C> {
 
   /**
-   * Callback to signal the connection succeeded and provide all the info requires to manage the connection
+   * Signal the connection succeeded, provide all the info requires to manage the connection
    *
    * @param conn the connection
    * @param concurrency the connection concurrency
@@ -36,30 +36,29 @@ public interface ConnectionListener<C> {
                         long actualWeight);
 
   /**
-   * Callback to signal the connection failed.
-   * 
+   * Signal the connection failed.
+   *
    * @param context the context
    * @param err the error
    */
   void onConnectFailure(ContextInternal context, Throwable err);
 
   /**
-   * Signals the connrection changed to the {@code concurrency} value.
+   * Signals the connection concurrent changed to the {@code concurrency} value.
    *
    * @param concurrency the concurrency
    */
   void onConcurrencyChange(long concurrency);
 
   /**
-   * Signals the connection can recycled, it must not give back more than it borrowed.
+   * Recycles the connection.
    *
-   * @param capacity the capacity to recycle
-   * @param disposable wether the connection can be disposed
+   * @param disposable whether the connection can be disposed
    */
-  void onRecycle(int capacity, boolean disposable);
+  void onRecycle(boolean disposable);
 
   /**
-   * Signals the connection must not be used anymore by the pool.
+   * Discard the connection from the pool, it will now be fully managed by the borrower.
    */
   void onDiscard();
 

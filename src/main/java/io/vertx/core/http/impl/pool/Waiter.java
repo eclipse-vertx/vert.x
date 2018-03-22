@@ -25,7 +25,7 @@ public abstract class Waiter<C> {
   }
 
   /**
-   * Handle connection failure, this callback is on a Netty even loop.
+   * Handle connection failure, this callback is on an event loop thread.
    *
    * @param ctx the context used to create the connection
    * @param failure the failure
@@ -33,7 +33,7 @@ public abstract class Waiter<C> {
   public abstract void handleFailure(ContextInternal ctx, Throwable failure);
 
   /**
-   * Init connection, this callback is on a Netty event loop.
+   * Init connection, this callback is on an event loop thread.
    *
    * @param ctx the context used to create the connection
    * @param conn the connection
@@ -41,11 +41,11 @@ public abstract class Waiter<C> {
   public abstract void initConnection(ContextInternal ctx, C conn);
 
   /**
-   * Handle connection success, , this callback is on a Netty event loop.
+   * Handle connection success, this callback is on an event loop thread.
    *
    * @param ctx the context used to create the connection
    * @param conn the connection
-   * @return wether the waiter uses the connection
+   * @return whether the waiter uses the connection
    */
   public abstract boolean handleConnection(ContextInternal ctx, C conn) throws Exception;
 

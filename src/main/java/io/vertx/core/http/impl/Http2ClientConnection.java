@@ -205,7 +205,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
       // boolean disposable = conn.streams.isEmpty();
       if (request instanceof HttpClientRequestImpl) {
-        conn.listener.onRecycle(1, false);
+        conn.listener.onRecycle(false);
       } /* else {
         conn.listener.onRecycle(0, dispable);
       } */

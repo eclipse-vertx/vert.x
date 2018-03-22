@@ -709,7 +709,7 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     synchronized long recycle(int capacity, boolean dispose) {
       inflight -= capacity;
-      listener.onRecycle(capacity, dispose);
+      listener.onRecycle(dispose);
       return inflight;
     }
 

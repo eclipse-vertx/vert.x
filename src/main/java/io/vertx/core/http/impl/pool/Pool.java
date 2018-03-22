@@ -49,7 +49,7 @@ import java.util.function.BiConsumer;
  * provides the initial weight so it can be used to correct the current weight.
  *
  * When a connection is recycled and reaches its full capacity (i.e {@code Holder#concurrency == Holder#capacity},
- * the behavior depends on the {@link ConnectionListener#onRecycle(int, boolean)} event that release this connection.
+ * the behavior depends on the {@link ConnectionListener#onRecycle(boolean)} event that release this connection.
  * When {@code disposable} is {@code true} the connection is closed, otherwise it is maintained in the pool, letting
  * the borrower define the behavior. HTTP/1 will close the connection and HTTP/2 will maintain it.
  *
@@ -268,15 +268,12 @@ public class Pool<C> {
         }
       }
       @Override
-      public void onRecycle(int capacity, boolean disposable) {
-        if (capacity < 0) {
-          throw new IllegalArgumentException("Illegal capacity");
-        }
+      public void onRecycle(boolean disposable) {
         synchronized (Pool.this) {
           if (holder.removed) {
             return;
           }
-          recycle(holder, capacity, disposable);
+          recycle(holder, 1, disposable);
         }
       }
       @Override
