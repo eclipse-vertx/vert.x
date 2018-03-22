@@ -22,8 +22,7 @@ public interface ConnectionListener<C> {
 
   /**
    * Signal the connection succeeded, provide all the info requires to manage the connection
-   *
-   * @param conn the connection
+   *  @param conn the connection
    * @param concurrency the connection concurrency
    * @param channel the channel
    * @param context the context
@@ -53,9 +52,9 @@ public interface ConnectionListener<C> {
   /**
    * Recycles the connection.
    *
-   * @param disposable whether the connection can be disposed
+   * @param expirationTimestamp the expiration timestamp or {@code 0L} to expire immediately
    */
-  void onRecycle(boolean disposable);
+  void onRecycle(long expirationTimestamp);
 
   /**
    * Discard the connection from the pool, it will now be fully managed by the borrower.

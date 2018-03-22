@@ -53,6 +53,9 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("http2ConnectionWindowSize") instanceof Number) {
       obj.setHttp2ConnectionWindowSize(((Number)json.getValue("http2ConnectionWindowSize")).intValue());
     }
+    if (json.getValue("http2KeepAliveTimeout") instanceof Number) {
+      obj.setHttp2KeepAliveTimeout(((Number)json.getValue("http2KeepAliveTimeout")).intValue());
+    }
     if (json.getValue("http2MaxPoolSize") instanceof Number) {
       obj.setHttp2MaxPoolSize(((Number)json.getValue("http2MaxPoolSize")).intValue());
     }
@@ -64,6 +67,9 @@ import io.vertx.core.json.JsonArray;
     }
     if (json.getValue("keepAlive") instanceof Boolean) {
       obj.setKeepAlive((Boolean)json.getValue("keepAlive"));
+    }
+    if (json.getValue("keepAliveTimeout") instanceof Number) {
+      obj.setKeepAliveTimeout(((Number)json.getValue("keepAliveTimeout")).intValue());
     }
     if (json.getValue("maxChunkSize") instanceof Number) {
       obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
@@ -123,12 +129,14 @@ import io.vertx.core.json.JsonArray;
     json.put("forceSni", obj.isForceSni());
     json.put("http2ClearTextUpgrade", obj.isHttp2ClearTextUpgrade());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
+    json.put("http2KeepAliveTimeout", obj.getHttp2KeepAliveTimeout());
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
     json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
     json.put("keepAlive", obj.isKeepAlive());
+    json.put("keepAliveTimeout", obj.getKeepAliveTimeout());
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());

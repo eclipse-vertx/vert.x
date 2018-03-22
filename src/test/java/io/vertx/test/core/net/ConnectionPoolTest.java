@@ -64,6 +64,10 @@ public class ConnectionPoolTest extends VertxTestBase {
       return active.size();
     }
 
+    int removeExpired(long timestamp) {
+      return pool.closeIdle(timestamp);
+    }
+
     synchronized Pool<FakeConnection> pool() {
       return pool;
     }
@@ -380,6 +384,23 @@ public class ConnectionPoolTest extends VertxTestBase {
   */
 
   @Test
+  public void testDiscardExpiredConnections() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(2, 1, connector);
+    FakeWaiter waiter1 = new FakeWaiter();
+    mgr.getConnection(waiter1);
+    FakeConnection conn = connector.assertRequest();
+    conn.connect();
+    assertWaitUntil(waiter1::isSuccess);
+    conn.recycle(2L);
+    assertEquals(1, mgr.size());
+    assertEquals(0, mgr.removeExpired(1L));
+    assertEquals(1, mgr.size());
+    assertEquals(1, mgr.removeExpired(2L));
+    assertEquals(0, mgr.size());
+  }
+
+  @Test
   public void testStress() {
     int numActors = 16;
     int numConnections = 1000;
@@ -414,7 +435,7 @@ public class ConnectionPoolTest extends VertxTestBase {
               int action = ThreadLocalRandom.current().nextInt(100);
               if (action < -1) {
                 latch.countDown();
-                conn.listener.onRecycle(true);
+                conn.listener.onRecycle(0L);
               } /* else if (i < 30) {
                 latch.countDown();
                 throw new Exception();
@@ -516,7 +537,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       assertFalse(completed);
       completed = true;
       if (cancelled) {
-        conn.listener.onRecycle(true);
+        conn.listener.onRecycle(0L);
       } else {
         synchronized (conn) {
           conn.inflight++;
@@ -677,16 +698,16 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
 
     synchronized long recycle(boolean dispose) {
-      return recycle(1, dispose);
+      return recycle(dispose ? 0L : Long.MAX_VALUE);
     }
 
     synchronized long recycle() {
       return recycle(true);
     }
 
-    synchronized long recycle(int capacity, boolean dispose) {
-      inflight -= capacity;
-      listener.onRecycle(dispose);
+    synchronized long recycle(long timestamp) {
+      inflight -= 1;
+      listener.onRecycle(timestamp);
       return inflight;
     }
 

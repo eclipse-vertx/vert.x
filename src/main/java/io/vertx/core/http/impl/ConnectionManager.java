@@ -18,6 +18,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -36,6 +37,7 @@ class ConnectionManager {
   private final Map<EndpointKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private final HttpVersion version;
   private final long maxSize;
+  private long timerID;
 
   ConnectionManager(HttpClientImpl client,
                     HttpClientMetrics metrics,
@@ -47,6 +49,18 @@ class ConnectionManager {
     this.metrics = metrics;
     this.maxSize = maxSize;
     this.version = version;
+  }
+
+  synchronized void start(boolean checkExpired) {
+    this.timerID = checkExpired ? client.getVertx().setTimer(1, id -> checkExpired()) : -1;
+  }
+
+  private synchronized void checkExpired() {
+    if (timerID >= 0) {
+      long timestamp = System.currentTimeMillis();
+      endpointMap.values().forEach(e -> e.pool.closeIdle(timestamp));
+      timerID = client.getVertx().setTimer(1, id -> checkExpired());
+    }
   }
 
   private static final class EndpointKey {
@@ -159,7 +173,13 @@ class ConnectionManager {
     }
   }
 
-  public void close() {
+  public synchronized void close() {
+    synchronized (this) {
+      if (timerID >= 0) {
+        client.getVertx().cancelTimer(timerID);
+        timerID = -1;
+      }
+    }
     endpointMap.clear();
     for (HttpClientConnection conn : connectionMap.values()) {
       conn.close();

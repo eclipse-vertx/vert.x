@@ -61,6 +61,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
+  private final HttpClientOptions options;
   private final boolean ssl;
   private final String host;
   private final int port;
@@ -79,6 +80,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   private boolean paused;
   private Buffer pausedChunk;
   private boolean initialized;
+  private int keepAliveTimeout;
 
   Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
                          HttpVersion version,
@@ -93,12 +95,14 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     super(client.getVertx(), channel, context);
     this.listener = listener;
     this.client = client;
+    this.options = client.getOptions();
     this.ssl = ssl;
     this.host = host;
     this.port = port;
     this.metrics = metrics;
     this.version = version;
     this.endpointMetric = endpointMetric;
+    this.keepAliveTimeout = options.getKeepAliveTimeout();
   }
 
   private static class StreamImpl implements HttpClientStream {
@@ -159,13 +163,13 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       if (chunked) {
         HttpUtil.setTransferEncodingChunked(request, true);
       }
-      if (conn.client.getOptions().isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
+      if (conn.options.isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
         // if compression should be used but nothing is specified by the user support deflate and gzip.
         request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
       }
-      if (!conn.client.getOptions().isKeepAlive() && conn.client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
+      if (!conn.options.isKeepAlive() && conn.options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
         request.headers().set(CONNECTION, CLOSE);
-      } else if (conn.client.getOptions().isKeepAlive() && conn.client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      } else if (conn.options.isKeepAlive() && conn.options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
         request.headers().set(CONNECTION, KEEP_ALIVE);
       }
     }
@@ -339,7 +343,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       if (resp.status().code() != 100 && request.method() != io.vertx.core.http.HttpMethod.CONNECT) {
         // See https://tools.ietf.org/html/rfc7230#section-6.3
         String responseConnectionHeader = resp.headers().get(HttpHeaders.Names.CONNECTION);
-        io.vertx.core.http.HttpVersion protocolVersion = conn.client.getOptions().getProtocolVersion();
+        io.vertx.core.http.HttpVersion protocolVersion = conn.options.getProtocolVersion();
         String requestConnectionHeader = request.headers().get(HttpHeaders.Names.CONNECTION);
         // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
         if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
@@ -349,6 +353,13 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
           // currently Vertx forces the Connection header if keepalive is enabled for 1.0
           close = true;
+        }
+        String keepAliveHeader = resp.headers().get(HttpHeaderNames.KEEP_ALIVE);
+        if (keepAliveHeader != null) {
+          int timeout = HttpUtils.parseKeepAliveHeaderTimeout(keepAliveHeader);
+          if (timeout != -1) {
+            conn.keepAliveTimeout = timeout;
+          }
         }
       }
       HttpVersion version = HttpUtils.toVertxHttpVersion(resp.protocolVersion());
@@ -379,7 +390,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
         // Also we keep the connection open for an HTTP CONNECT
         responseEnded = true;
-        if (!conn.client.getOptions().isKeepAlive()) {
+        if (!conn.options.isKeepAlive()) {
           close = true;
         }
         checkLifecycle();
@@ -393,7 +404,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         } else if (close) {
           conn.close();
         } else {
-          conn.listener.onRecycle(true);
+          conn.recycle();
         }
       }
     }
@@ -488,7 +499,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         nettyHeaders = null;
       }
       handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
-                                                                  nettyHeaders, maxWebSocketFrameSize,!client.getOptions().isSendUnmaskedFrames(),false);
+                                                                  nettyHeaders, maxWebSocketFrameSize,!options.isSendUnmaskedFrames(),false);
       ChannelPipeline p = chctx.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(chctx.channel()).addListener(future -> {
@@ -591,8 +602,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         ctx.pipeline().remove(handler);
       }
       WebSocketImpl webSocket = new WebSocketImpl(vertx, Http1xClientConnection.this, supportsContinuation,
-                                                  client.getOptions().getMaxWebsocketFrameSize(),
-                                                  client.getOptions().getMaxWebsocketMessageSize());
+                                                  options.getMaxWebsocketFrameSize(),
+                                                  options.getMaxWebsocketMessageSize());
       ws = webSocket;
       handshaker.finishHandshake(chctx.channel(), response);
       ws.subProtocol(handshaker.actualSubprotocol());
@@ -739,7 +750,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   @Override
   public void recycle() {
-    listener.onRecycle(true);
+    long expiration = keepAliveTimeout == 0 ? 0L : System.currentTimeMillis() + keepAliveTimeout * 1000;
+    listener.onRecycle(expiration);
   }
 
   @Override

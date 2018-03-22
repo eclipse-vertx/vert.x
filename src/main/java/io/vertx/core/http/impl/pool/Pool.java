@@ -51,9 +51,10 @@ import java.util.function.BiConsumer;
  * provides the initial weight so it can be used to correct the current weight.
  *
  * When a connection is recycled and reaches its full capacity (i.e {@code Holder#concurrency == Holder#capacity},
- * the behavior depends on the {@link ConnectionListener#onRecycle(boolean)} event that release this connection.
- * When {@code disposable} is {@code true} the connection is closed, otherwise it is maintained in the pool, letting
- * the borrower define the behavior. HTTP/1 will close the connection and HTTP/2 will maintain it.
+ * the behavior depends on the {@link ConnectionListener#onRecycle(long)} event that releases this connection.
+ * When {@code expirationTimestamp} is {@code 0L} the connection is closed, otherwise it is maintained in the pool,
+ * letting the borrower define the expiration timestamp. The value is set according to the HTTP client connection
+ * keep alive timeout.
  *
  * When a waiter asks for a connection, it is either added to the queue (when it's not empty) or attempted to be
  * served (from the pool or by creating a new connection) or failed. The {@link #waitersCount} is the number
@@ -74,14 +75,19 @@ public class Pool<C> {
    */
   public static class Holder<C> {
 
-    boolean removed;     // Removed
-    C connection;        // The connection instance
-    long concurrency;    // How many times we can borrow from the connection
-    long capacity;       // How many times the connection is currently borrowed (0 <= capacity <= concurrency)
-    Channel channel;     // Transport channel
-    ContextInternal context; // Context associated with the connection
-    long weight;         // The weight that participates in the pool weight
+    boolean removed;          // Removed
+    C connection;             // The connection instance
+    long concurrency;         // How many times we can borrow from the connection
+    long capacity;            // How many times the connection is currently borrowed (0 <= capacity <= concurrency)
+    Channel channel;          // Transport channel
+    ContextInternal context;  // Context associated with the connection
+    long weight;              // The weight that participates in the pool weight
+    long expirationTimestamp; // The expiration timestamp when (concurrency == capacity) otherwise -1L
 
+    @Override
+    public String toString() {
+      return "Holder[removed=" + removed + ",capacity=" + capacity + ",concurrency=" + concurrency + ",expirationTimestamp=" + expirationTimestamp + "]";
+    }
   }
   private static final Logger log = LoggerFactory.getLogger(Pool.class);
 
@@ -172,6 +178,7 @@ public class Pool<C> {
     if (available.size() > 0) {
       Holder<C> conn = available.peek();
       if (--conn.capacity == 0) {
+        conn.expirationTimestamp = -1L;
         available.poll();
       }
       ContextInternal ctx = conn.context;
@@ -193,6 +200,27 @@ public class Pool<C> {
     }
   }
 
+  /**
+   * Close all unused connections with a {@code timestamp} greater than expiration timestamp.
+   *
+   * @param timestamp the timestamp value
+   * @return the number of closed connections when calling this method
+   */
+  public synchronized int closeIdle(long timestamp) {
+    int removed = 0;
+    if (waitersQueue.isEmpty() && available.size() > 0) {
+      List<Holder<C>> copy = new ArrayList<>(available);
+      for (Holder<C> conn : copy) {
+        if (conn.capacity == conn.concurrency && conn.expirationTimestamp <= timestamp) {
+          removed++;
+          closeConnection(conn);
+          connector.close(conn.connection);
+        }
+      }
+    }
+    return removed;
+  }
+
   private void checkPending() {
     while (waitersQueue.size() > 0) {
       Waiter<C> waiter = waitersQueue.peek();
@@ -207,7 +235,6 @@ public class Pool<C> {
   private void createConnection(Waiter<C> waiter) {
     Holder<C> holder  = new Holder<>();
     ConnectionListener<C> listener = new ConnectionListener<C>() {
-      @Override
       public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextInternal context, long actualWeight) {
         // Update state
         synchronized (Pool.this) {
@@ -262,12 +289,15 @@ public class Pool<C> {
         }
       }
       @Override
-      public void onRecycle(boolean disposable) {
+      public void onRecycle(long expirationTimestamp) {
+        if (expirationTimestamp < 0L) {
+          throw new IllegalArgumentException("Invalid TTL");
+        }
         synchronized (Pool.this) {
           if (holder.removed) {
             return;
           }
-          recycle(holder, 1, disposable);
+          recycle(holder, 1, expirationTimestamp);
         }
       }
       @Override
@@ -283,8 +313,8 @@ public class Pool<C> {
     connector.connect(listener, waiter.context);
   }
 
-  private synchronized void recycle(Holder<C> holder, int capacity, boolean closeable) {
-    recycleConnection(holder, capacity, closeable);
+  private synchronized void recycle(Holder<C> holder, int capacity, long timestamp) {
+    recycleConnection(holder, capacity, timestamp);
     checkPending();
     checkClose();
   }
@@ -307,20 +337,22 @@ public class Pool<C> {
 
   // These methods assume to be called under synchronization
 
-  private void recycleConnection(Holder<C> conn, int c, boolean closeable) {
+  private void recycleConnection(Holder<C> conn, int c, long timestamp) {
     long newCapacity = conn.capacity + c;
     if (newCapacity > conn.concurrency) {
       log.debug("Attempt to recycle a connection more than permitted");
       return;
     }
-    if (closeable && newCapacity == conn.concurrency && waitersQueue.isEmpty()) {
+    if (timestamp == 0L && newCapacity == conn.concurrency && waitersQueue.isEmpty()) {
       available.remove(conn);
+      conn.expirationTimestamp = -1L;
       conn.capacity = 0;
       connector.close(conn.connection);
     } else {
       if (conn.capacity == 0) {
         available.add(conn);
       }
+      conn.expirationTimestamp = timestamp;
       conn.capacity = newCapacity;
     }
   }
@@ -333,6 +365,7 @@ public class Pool<C> {
     holder.channel = channel;
     holder.weight = weight;
     holder.capacity = concurrency;
+    holder.expirationTimestamp = -1L;
     connectionAdded.accept(holder.channel, holder.connection);
   }
 

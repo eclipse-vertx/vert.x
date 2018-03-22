@@ -120,7 +120,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public void recycle() {
-    listener.onRecycle(false);
+    int timeout = client.getOptions().getHttp2KeepAliveTimeout();
+    long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
+    listener.onRecycle(expired);
   }
 
   @Override
@@ -221,7 +223,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
       // boolean disposable = conn.streams.isEmpty();
       if (request instanceof HttpClientRequestImpl) {
-        conn.listener.onRecycle(false);
+        conn.recycle();
       } /* else {
         conn.listener.onRecycle(0, dispable);
       } */
