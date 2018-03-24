@@ -300,11 +300,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (sslHandler == null) {
       if (remoteAddress != null) {
         sslHandler = new SslHandler(helper.createEngine(vertx, remoteAddress, serverName));
+        ((SslHandler)sslHandler).setHandshakeTimeoutMillis(helper.getSslHandshakeTimeout());
       } else {
         if (helper.isSNI()) {
           sslHandler = new VertxSniHandler(helper, vertx);
         } else {
           sslHandler = new SslHandler(helper.createEngine(vertx));
+          ((SslHandler)sslHandler).setHandshakeTimeoutMillis(helper.getSslHandshakeTimeout());
         }
       }
       chctx.pipeline().addFirst("ssl", sslHandler);
