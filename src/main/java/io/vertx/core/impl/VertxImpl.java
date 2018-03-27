@@ -16,8 +16,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.*;
 import io.vertx.core.Future;
+import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -868,9 +868,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     boolean cancel() {
       if (cancelled.compareAndSet(false, true)) {
-        if (metrics != null) {
-          metrics.timerEnded(timerID, true);
-        }
         future.cancel(false);
         return true;
       } else {
@@ -891,9 +888,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       } else {
         future = el.schedule(toRun, delay, TimeUnit.MILLISECONDS);
       }
-      if (metrics != null) {
-        metrics.timerCreated(timerID);
-      }
     }
 
     public void handle(Void v) {
@@ -911,9 +905,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     private void cleanupNonPeriodic() {
       VertxImpl.this.timeouts.remove(timerID);
-      if (metrics != null) {
-        metrics.timerEnded(timerID, false);
-      }
       ContextImpl context = getContext();
       if (context != null) {
         context.removeCloseHook(this);
