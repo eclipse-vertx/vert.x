@@ -22,7 +22,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class HttpClientRequestBase implements HttpClientRequest {
+public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
@@ -87,6 +87,10 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
 
   public String uri() {
     return uri;
+  }
+
+  public String host() {
+    return host;
   }
 
   @Override
