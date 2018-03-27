@@ -70,9 +70,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_PIPELINING_LIMIT = 10;
 
   /**
-   * The default keep alive timeout for HTTP/1.1 connection can send = 30 seconds
+   * The default keep alive timeout for HTTP/1.1 connection can send = 60 seconds
    */
-  public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 30;
+  public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 60;
 
   /**
    * Default value of whether the client will attempt to use compression = false
