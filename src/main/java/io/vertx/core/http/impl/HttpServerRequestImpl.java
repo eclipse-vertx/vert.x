@@ -381,7 +381,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   void handleData(Buffer data) {
     synchronized (conn) {
-      bytesRead += data.getByteBuf().readableBytes();
+      bytesRead += data.length();
       if (decoder != null) {
         try {
           decoder.offer(new DefaultHttpContent(data.getByteBuf()));

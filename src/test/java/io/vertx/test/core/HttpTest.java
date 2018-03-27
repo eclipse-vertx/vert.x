@@ -4097,7 +4097,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer();
     client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       resp.bodyHandler(buff -> {
-        complete();
+        testComplete();
       });
     }).exceptionHandler(this::fail)
       .putHeader("content-length", String.valueOf(length))
