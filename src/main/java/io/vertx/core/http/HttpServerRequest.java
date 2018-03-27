@@ -108,6 +108,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   String host();
 
   /**
+   * @return the total number of bytes read for the body of the request.
+   */
+  long bytesRead();
+
+  /**
    * @return the response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used
    * to send the response back to the client.
    */

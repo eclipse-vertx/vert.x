@@ -84,6 +84,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private MultiMap attributes;
   private HttpPostRequestDecoder decoder;
   private boolean ended;
+  private long bytesRead;
 
 
   HttpServerRequestImpl(Http1xServerConnection conn,
@@ -158,6 +159,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public @Nullable String host() {
     return getHeader(HttpHeaderNames.HOST);
+  }
+
+  @Override
+  public long bytesRead() {
+    synchronized (conn) {
+      return bytesRead;
+    }
   }
 
   @Override
@@ -373,6 +381,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   void handleData(Buffer data) {
     synchronized (conn) {
+      bytesRead += data.length();
       if (decoder != null) {
         try {
           decoder.offer(new DefaultHttpContent(data.getByteBuf()));

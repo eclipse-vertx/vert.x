@@ -82,6 +82,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   private NetSocket netSocket;
 
+
   public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable) {
     super(conn, stream, writable);
@@ -319,6 +320,14 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     CharSequence authority = headers.authority();
     return authority != null ? authority.toString() : null;
   }
+
+  @Override
+  public long bytesRead() {
+    synchronized (conn) {
+      return bytesRead;
+    }
+  }
+
 
   @Override
   public Http2ServerResponseImpl response() {
