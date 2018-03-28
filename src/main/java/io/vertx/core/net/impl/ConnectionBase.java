@@ -177,6 +177,10 @@ public abstract class ConnectionBase {
     return chctx.channel();
   }
 
+  public final ChannelHandlerContext channelHandlerContext() {
+    return chctx;
+  }
+
   public final ContextInternal getContext() {
     return context;
   }

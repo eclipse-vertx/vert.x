@@ -13,7 +13,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -236,7 +235,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics)) {
       @Override
-      protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, Object msg) throws Exception {
         connection.handleMessageReceived(msg);;
       }
     };

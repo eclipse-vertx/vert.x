@@ -89,7 +89,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   }
 
   @Override
-  protected void handleMessage(Http1xClientConnection conn, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void handleMessage(Http1xClientConnection conn, Object msg) throws Exception {
     if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
       DecoderResult result = obj.decoderResult();

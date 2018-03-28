@@ -645,8 +645,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void handleMessage(Http1xServerConnection conn, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
-      Channel ch = chctx.channel();
+    protected void handleMessage(Http1xServerConnection conn, Object msg) throws Exception {
+      Channel ch = conn.channel();
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;
 
@@ -672,7 +672,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           if (wsRequest == null) {
             if (request instanceof FullHttpRequest) {
-              handshake(conn, (FullHttpRequest) request, ch, chctx);
+              handshake(conn, (FullHttpRequest) request);
             } else {
               wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
               wsRequest.headers().set(request.headers());
@@ -694,7 +694,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             break;
           case PING:
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            chctx.writeAndFlush(new PongWebSocketFrame(wsFrame.getBinaryData().copy()));
+            conn.channel().writeAndFlush(new PongWebSocketFrame(wsFrame.getBinaryData().copy()));
             break;
           case CLOSE:
             if (!closeFrameSent) {
@@ -714,7 +714,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           if (msg instanceof LastHttpContent) {
             FullHttpRequest req = wsRequest;
             wsRequest = null;
-            handshake(conn, req, ch, chctx);
+            handshake(conn, req);
             return;
           }
         } else if (handshakeErrorStatus != null) {
@@ -731,13 +731,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
-    protected void handshake(Http1xServerConnection conn, FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
+    protected void handshake(Http1xServerConnection conn, FullHttpRequest request) {
 
-      WebSocketServerHandshaker shake = createHandshaker(conn, ch, request);
+      WebSocketServerHandshaker shake = createHandshaker(conn, request);
       if (shake == null) {
         return;
       }
-      HandlerHolder<HttpHandlers> wsHandler = httpHandlerMgr.chooseHandler(ch.eventLoop());
+      HandlerHolder<HttpHandlers> wsHandler = httpHandlerMgr.chooseHandler(conn.channel().eventLoop());
 
       if (wsHandler == null || wsHandler.handler.wsHandler == null) {
         conn.handleMessage(request);
@@ -758,7 +758,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           Supplier<String> connectRunnable = () -> {
             try {
-              shake.handshake(ch, request);
+              shake.handshake(conn.channel(), request);
               return shake.selectedSubprotocol();
             } catch (WebSocketHandshakeException e) {
               conn.handleException(e);
@@ -778,14 +778,15 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           ws.registerHandler(vertx.eventBus());
           conn.handleWebsocketConnect(ws);
           if (!ws.isRejected()) {
-            ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);
+            ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
+            ChannelHandler handler = pipeline.get(HttpChunkContentCompressor.class);
             if (handler != null) {
               // remove compressor as its not needed anymore once connection was upgraded to websockets
-              ctx.pipeline().remove(handler);
+              pipeline.remove(handler);
             }
             ws.connectNow();
           } else {
-            ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, ws.getRejectedStatus()));
+            conn.channel().writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, ws.getRejectedStatus()));
           }
         });
       }

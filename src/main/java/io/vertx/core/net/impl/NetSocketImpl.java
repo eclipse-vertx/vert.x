@@ -95,11 +95,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public ChannelHandlerContext channelHandlerContext() {
-    return chctx;
-  }
-
-  @Override
   public TCPMetrics metrics() {
     return metrics;
   }

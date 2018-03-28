@@ -208,7 +208,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       return ws;
     }
     Http1xServerHandler serverHandler = (Http1xServerHandler) chctx.pipeline().get("handler");
-    handshaker = serverHandler.createHandshaker(this, chctx.channel(), nettyReq);
+    handshaker = serverHandler.createHandshaker(this, nettyReq);
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
@@ -267,7 +267,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
 
       @Override
-      protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
         connection.handleMessageReceived(buf);
       }

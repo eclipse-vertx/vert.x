@@ -321,7 +321,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
             super.channelRead(chctx, msg);
           }
           @Override
-          protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
+          protected void handleMessage(NetSocketImpl connection, Object msg) throws Exception {
             ByteBuf buf = (ByteBuf) msg;
             connection.handleMessageReceived(buf);
           }

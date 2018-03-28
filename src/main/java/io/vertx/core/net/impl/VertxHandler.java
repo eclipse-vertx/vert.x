@@ -143,7 +143,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     context = conn.getContext();
     context.executeFromIO(() -> {
       conn.startRead();
-      handleMessage(conn, context, chctx, message);
+      handleMessage(conn, message);
     });
   }
 
@@ -155,7 +155,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     ctx.fireUserEventTriggered(evt);
   }
 
-  protected abstract void handleMessage(C connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception;
+  protected abstract void handleMessage(C connection, Object msg) throws Exception;
 
   /**
    * Decode the message before passing it to the channel
