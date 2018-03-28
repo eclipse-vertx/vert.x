@@ -113,11 +113,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public ContextInternal getContext() {
-    return super.getContext();
-  }
-
-  @Override
   protected void handleInterestedOpsChanged() {
     // Handled by HTTP/2
   }

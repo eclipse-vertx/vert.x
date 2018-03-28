@@ -71,11 +71,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public Channel channel() {
-    return chctx.channel();
-  }
-
-  @Override
   protected void concurrencyChanged(long concurrency) {
     int limit = client.getOptions().getHttp2MultiplexingLimit();
     if (limit > 0) {

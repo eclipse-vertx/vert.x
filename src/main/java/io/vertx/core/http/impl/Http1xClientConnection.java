@@ -681,10 +681,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
-  public ContextInternal getContext() {
-    return super.getContext();
-  }
-
   @Override
   protected synchronized void handleException(Throwable e) {
     super.handleException(e);

@@ -348,10 +348,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
   }
 
-  public ContextInternal getContext() {
-    return super.getContext();
-  }
-
   @Override
   protected synchronized void handleException(Throwable t) {
     super.handleException(t);

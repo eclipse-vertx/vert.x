@@ -173,19 +173,19 @@ public abstract class ConnectionBase {
   /**
    * @return the Netty channel - for internal usage only
    */
-  public Channel channel() {
+  public final Channel channel() {
     return chctx.channel();
   }
 
-  public ContextInternal getContext() {
+  public final ContextInternal getContext() {
     return context;
   }
 
-  public synchronized void metric(Object metric) {
+  public final synchronized void metric(Object metric) {
     this.metric = metric;
   }
 
-  public synchronized Object metric() {
+  public final synchronized Object metric() {
     return metric;
   }
 
