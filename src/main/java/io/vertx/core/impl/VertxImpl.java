@@ -14,9 +14,6 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
-import io.netty.resolver.DefaultAddressResolverGroup;
-import io.netty.resolver.dns.DefaultDnsServerAddressStreamProvider;
-import io.netty.resolver.dns.DnsServerAddressStream;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
@@ -706,10 +703,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlockingInternal(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     ContextImpl context = getOrCreateContext();
 
-    context.executeBlocking(action, resultHandler);
+    context.executeBlockingInternal(blockingCodeHandler, resultHandler);
   }
 
   @Override

@@ -12,6 +12,7 @@
 package io.vertx.core.file.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -21,7 +22,6 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.impl.Action;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 
@@ -823,7 +823,7 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  protected abstract class BlockingAction<T> implements Action<T> {
+  protected abstract class BlockingAction<T> implements Handler<Future<T>> {
 
     private final Handler<AsyncResult<T>> handler;
     protected final ContextInternal context;
@@ -836,8 +836,21 @@ public class FileSystemImpl implements FileSystem {
      * Run the blocking action using a thread from the worker pool.
      */
     public void run() {
-      context.executeBlocking(this, handler);
+      context.executeBlockingInternal(this, handler);
     }
+
+    @Override
+    public void handle(Future<T> fut) {
+      try {
+        T result = perform();
+        fut.complete(result);
+      } catch (Exception e) {
+        fut.fail(e);
+      }
+    }
+
+    public abstract T perform();
+
   }
 
   // Visible for testing

@@ -339,7 +339,7 @@ public class HAManager {
     } else {
       vertx.setTimer(200, tid -> {
         // This can block on a monitor so it needs to run as a worker
-        vertx.executeBlockingInternal(() -> {
+        vertx.executeBlockingInternal(fut -> {
           if (System.currentTimeMillis() - start > 10000) {
             log.warn("Timed out waiting for group information to appear");
           } else if (!stopped) {
@@ -352,7 +352,7 @@ public class HAManager {
               ContextImpl.setContext((ContextImpl) context);
             }
           }
-          return null;
+          fut.complete();
         }, null);
       });
     }

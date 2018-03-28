@@ -59,7 +59,7 @@ public interface ContextInternal extends Context {
   /**
    * Execute an internal task on the internal blocking ordered executor.
    */
-  <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler);
+  <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler);
 
   /**
    * @return the deployment associated with this context or {@code null}
