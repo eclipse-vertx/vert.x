@@ -235,7 +235,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics)) {
       @Override
-      protected void handleMessage(NetSocketImpl connection, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, Object msg) {
         connection.handleMessageReceived(msg);;
       }
     };

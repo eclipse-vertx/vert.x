@@ -645,7 +645,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     @Override
-    protected void handleMessage(Http1xServerConnection conn, Object msg) throws Exception {
+    protected void handleMessage(Http1xServerConnection conn, Object msg) {
       Channel ch = conn.channel();
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;

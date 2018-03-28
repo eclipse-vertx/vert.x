@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
@@ -44,7 +43,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       String uri,
       String host,
       int port,
-      MultiMap headers) throws Http2Exception {
+      MultiMap headers) {
     super(client, ssl, method, host, port, uri);
     this.conn = conn;
     this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream, false);

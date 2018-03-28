@@ -174,7 +174,7 @@ abstract class ContextImpl implements ContextInternal {
   // This is called to execute code where the origin is IO (from Netty probably).
   // In such a case we should already be on an event loop thread (as Netty manages the event loops)
   // but check this anyway, then execute directly
-  public void executeFromIO(ContextTask task) {
+  public void executeFromIO(Runnable task) {
     if (THREAD_CHECKS) {
       checkCorrectThread();
     }
@@ -298,7 +298,7 @@ abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
-  protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread, PoolMetrics metrics) {
+  protected Runnable wrapTask(Runnable cTask, Handler<Void> hTask, boolean checkThread, PoolMetrics metrics) {
     Object metric = metrics != null ? metrics.submitted() : null;
     return () -> {
       Thread th = Thread.currentThread();

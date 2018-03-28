@@ -436,7 +436,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
     VertxNetHandler nh = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics)) {
       @Override
-      protected void handleMessage(NetSocketImpl connection, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, Object msg) {
         connection.handleMessageReceived(msg);
       }
     };

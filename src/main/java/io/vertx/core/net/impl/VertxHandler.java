@@ -22,7 +22,6 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.ContextTask;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -30,7 +29,7 @@ import io.vertx.core.impl.ContextTask;
 public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
   private C conn;
-  private ContextTask endReadAndFlush;
+  private Runnable endReadAndFlush;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
 
@@ -155,7 +154,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     ctx.fireUserEventTriggered(evt);
   }
 
-  protected abstract void handleMessage(C connection, Object msg) throws Exception;
+  protected abstract void handleMessage(C connection, Object msg);
 
   /**
    * Decode the message before passing it to the channel

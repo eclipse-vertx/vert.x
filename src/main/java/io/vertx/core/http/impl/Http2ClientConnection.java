@@ -151,7 +151,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     private boolean requestEnded;
     private boolean responseEnded;
 
-    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase request, Http2Stream stream, boolean writable) throws Http2Exception {
+    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase request, Http2Stream stream, boolean writable) {
       super(conn, stream, writable);
       this.request = request;
     }

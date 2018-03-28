@@ -267,7 +267,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
 
       @Override
-      protected void handleMessage(NetSocketImpl connection, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, Object msg) {
         ByteBuf buf = (ByteBuf) msg;
         connection.handleMessageReceived(buf);
       }

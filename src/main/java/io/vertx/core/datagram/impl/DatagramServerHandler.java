@@ -35,7 +35,7 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connec
   }
 
   @Override
-  protected void handleMessage(final DatagramSocketImpl.Connection server, final Object msg) throws Exception {
+  protected void handleMessage(final DatagramSocketImpl.Connection server, final Object msg) {
     server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg);
   }
 
