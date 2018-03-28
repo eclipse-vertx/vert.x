@@ -286,7 +286,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                     }
                   } else {
                     HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
-                    handler.context.executeFromIO(() -> handler.handler.exceptionHandler.handle(future.cause()));
+                    handler.context.executeFromIO(v -> handler.handler.exceptionHandler.handle(future.cause()));
                   }
                 });
               } else {
@@ -327,7 +327,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
                       super.exceptionCaught(ctx, cause);
                       HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
-                      handler.context.executeFromIO(() -> handler.handler.exceptionHandler.handle(cause));
+                      handler.context.executeFromIO(v -> handler.handler.exceptionHandler.handle(cause));
                     }
                   });
                 }
@@ -413,7 +413,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     handler.addHandler(conn -> {
       connectionMap2.put(conn.channel(), conn);
       if (holder.handler.connectionHandler != null) {
-        holder.context.executeFromIO(() -> {
+        holder.context.executeFromIO(v -> {
           holder.handler.connectionHandler.handle(conn);
         });
       }
@@ -743,7 +743,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         conn.handleMessage(request);
       } else {
 
-        wsHandler.context.executeFromIO(() -> {
+        wsHandler.context.executeFromIO(v -> {
           URI theURI;
           try {
             theURI = new URI(request.getUri());

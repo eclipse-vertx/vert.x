@@ -29,7 +29,7 @@ import io.vertx.core.impl.ContextInternal;
 public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
   private C conn;
-  private Runnable endReadAndFlush;
+  private Handler<Void> endReadAndFlush;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
 
@@ -40,7 +40,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
    */
   protected void setConnection(C connection) {
     conn = connection;
-    endReadAndFlush = conn::endReadAndFlush;
+    endReadAndFlush = v -> conn.endReadAndFlush();
     if (addHandler != null) {
       addHandler.handle(connection);
     }
@@ -96,7 +96,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
     ContextInternal context = conn.getContext();
-    context.executeFromIO(conn::handleInterestedOpsChanged);
+    context.executeFromIO(v -> conn.handleInterestedOpsChanged());
   }
 
   @Override
@@ -106,7 +106,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     C connection = getConnection();
     if (connection != null) {
       ContextInternal context = conn.getContext();
-      context.executeFromIO(() -> {
+      context.executeFromIO(v -> {
         try {
           if (ch.isOpen()) {
             ch.close();
@@ -126,7 +126,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
       removeHandler.handle(conn);
     }
     ContextInternal context = conn.getContext();
-    context.executeFromIO(conn::handleClosed);
+    context.executeFromIO(v -> conn.handleClosed());
   }
 
   @Override
@@ -140,7 +140,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     Object message = decode(msg, chctx.alloc());
     ContextInternal context;
     context = conn.getContext();
-    context.executeFromIO(() -> {
+    context.executeFromIO(v -> {
       conn.startRead();
       handleMessage(conn, message);
     });

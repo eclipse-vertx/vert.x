@@ -63,7 +63,7 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
       metrics);
     setConnection(conn);
     conn.requestHandler(holder.handler.requesthHandler);
-    holder.context.executeFromIO(() -> {
+    holder.context.executeFromIO(v -> {
       if (metrics != null) {
         conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
       }

@@ -645,7 +645,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         conn.createStream(HttpClientRequestImpl.this, ar -> {
           if (ar.succeeded()) {
             HttpClientStream stream = ar.result();
-            ctx.executeFromIO(() -> {
+            ctx.executeFromIO(v -> {
               connected(stream, HttpClientRequestImpl.this.headersCompletionHandler);
             });
           } else {
@@ -654,7 +654,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         });
         return true;
       }, (ctx, failure) -> {
-        ctx.executeFromIO(() -> {
+        ctx.executeFromIO(v -> {
           handleException(failure);
         });
       });

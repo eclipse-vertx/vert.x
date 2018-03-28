@@ -269,7 +269,7 @@ public final class DnsClientImpl implements DnsClient {
       if (timerID >= 0) {
         vertx.cancelTimer(timerID);
       }
-      actualCtx.executeFromIO(() -> fut.tryFail(cause));
+      actualCtx.executeFromIO(v -> fut.tryFail(cause));
     }
 
     void handle(DnsResponse msg) {
@@ -291,7 +291,7 @@ public final class DnsClientImpl implements DnsClient {
         if (records.size() > 0 && (records.get(0) instanceof MxRecordImpl || records.get(0) instanceof SrvRecordImpl)) {
           Collections.sort((List) records);
         }
-        actualCtx.executeFromIO(() -> {
+        actualCtx.executeFromIO(v -> {
           fut.tryComplete(records);
         });
       } else {

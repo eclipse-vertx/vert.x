@@ -310,7 +310,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     } else {
       handshakeFuture = ((VertxSniHandler) sslHandler).handshakeFuture();
     }
-    handshakeFuture.addListener(future -> context.executeFromIO(() -> {
+    handshakeFuture.addListener(future -> context.executeFromIO(v -> {
       if (future.isSuccess()) {
         handler.handle(null);
       } else {

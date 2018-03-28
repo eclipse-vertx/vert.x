@@ -67,7 +67,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
     chctx = ctx;
     Http1xClientConnection conn = new Http1xClientConnection(listener, version, client, endpointMetric, ctx, ssl, host, port, context, metrics);
     if (metrics != null) {
-      context.executeFromIO(() -> {
+      context.executeFromIO(v -> {
         Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
         conn.metric(metric);
         metrics.endpointConnected(endpointMetric, metric);

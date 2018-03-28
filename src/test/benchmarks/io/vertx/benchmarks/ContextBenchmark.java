@@ -14,7 +14,6 @@ package io.vertx.benchmarks;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.BenchmarkContext;
-import io.vertx.core.impl.ContextTask;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,14 +37,12 @@ public class ContextBenchmark extends BenchmarkBase {
     Vertx vertx;
     BenchmarkContext context;
     Handler<Void> task;
-    ContextTask ioTask;
 
     @Setup
     public void setup() {
       vertx = Vertx.vertx();
       context = BenchmarkContext.create(vertx);
       task = v -> consume("the-string");
-      ioTask = () -> consume("the-string");
     }
   }
 
@@ -62,12 +59,12 @@ public class ContextBenchmark extends BenchmarkBase {
 
   @Benchmark
   public void executeFromIO(BaselineState state) {
-    state.context.executeFromIO(state.ioTask);
+    state.context.executeFromIO(state.task);
   }
 
   @Benchmark
   @Fork(jvmArgsAppend = { "-Dvertx.threadChecks=false", "-Dvertx.disableContextTimings=true", "-Dvertx.disableTCCL=true" })
   public void executeFromIONoChecks(BaselineState state) {
-    state.context.executeFromIO(state.ioTask);
+    state.context.executeFromIO(state.task);
   }
 }

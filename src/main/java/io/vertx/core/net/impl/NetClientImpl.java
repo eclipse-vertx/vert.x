@@ -213,7 +213,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
       } else {
         if (remainingAttempts > 0 || remainingAttempts == -1) {
-          context.executeFromIO(() -> {
+          context.executeFromIO(v -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
@@ -241,7 +241,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     };
     handler.addHandler(sock -> {
       socketMap.put(ch, sock);
-      context.executeFromIO(() -> {
+      context.executeFromIO(v -> {
         if (metrics != null) {
           sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
         }
@@ -259,7 +259,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     if (ch != null) {
       ch.close();
     }
-    context.executeFromIO(() -> doFailed(connectHandler, th));
+    context.executeFromIO(v -> doFailed(connectHandler, th));
   }
 
   private void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable th) {

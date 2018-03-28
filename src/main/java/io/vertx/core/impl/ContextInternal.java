@@ -79,7 +79,7 @@ public interface ContextInternal extends Context {
    *
    * @param task the task to execute
    */
-  void executeFromIO(Runnable task);
+  void executeFromIO(Handler<Void> task);
 
   /**
    * @return the {@link ConcurrentMap} used to store context data

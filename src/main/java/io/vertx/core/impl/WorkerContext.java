@@ -26,7 +26,7 @@ class WorkerContext extends ContextImpl {
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    orderedTasks.execute(wrapTask(null, task, true, workerPool.metrics()), workerPool.executor());
+    orderedTasks.execute(wrapTask(task, true, workerPool.metrics()), workerPool.executor());
   }
 
   @Override
@@ -47,8 +47,8 @@ class WorkerContext extends ContextImpl {
   // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
   // so we need to execute it on the worker thread
   @Override
-  public void executeFromIO(Runnable task) {
-    orderedTasks.execute(wrapTask(task, null, true, workerPool.metrics()), workerPool.executor());
+  public void executeFromIO(Handler<Void> task) {
+    orderedTasks.execute(wrapTask(task, true, workerPool.metrics()), workerPool.executor());
   }
 
 }

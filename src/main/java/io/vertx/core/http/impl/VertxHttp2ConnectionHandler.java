@@ -119,7 +119,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
-    connection.getContext().executeFromIO(connection::handleClosed);
+    connection.getContext().executeFromIO(v -> connection.handleClosed());
     if (removeHandler != null) {
       removeHandler.handle(connection);
     }
@@ -127,7 +127,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
-    connection.getContext().executeFromIO(() -> {
+    connection.getContext().executeFromIO(v -> {
       connection.onConnectionError(cause);
     });
     // Default behavior send go away
@@ -136,7 +136,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   protected void onStreamError(ChannelHandlerContext ctx, Throwable cause, Http2Exception.StreamException http2Ex) {
-    connection.getContext().executeFromIO(() -> {
+    connection.getContext().executeFromIO(v -> {
       connection.onStreamError(http2Ex.streamId(), http2Ex);
     });
     // Default behavior reset stream
