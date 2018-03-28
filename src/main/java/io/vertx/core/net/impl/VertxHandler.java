@@ -32,6 +32,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
   private Handler<Void> endReadAndFlush;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
+  private Handler<Object> messageHandler;
 
   /**
    * Set the connection, this is usually called by subclasses when the channel is added to the pipeline.
@@ -44,6 +45,10 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     if (addHandler != null) {
       addHandler.handle(connection);
     }
+    messageHandler = m -> {
+      conn.startRead();
+      handleMessage(conn, m);
+    };
   }
 
   /**
@@ -138,12 +143,8 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     Object message = decode(msg, chctx.alloc());
-    ContextInternal context;
-    context = conn.getContext();
-    context.executeFromIO(v -> {
-      conn.startRead();
-      handleMessage(conn, message);
-    });
+    ContextInternal ctx = conn.getContext();
+    ctx.executeFromIO(message, messageHandler);
   }
 
   @Override

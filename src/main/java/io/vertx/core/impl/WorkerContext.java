@@ -26,7 +26,7 @@ class WorkerContext extends ContextImpl {
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    orderedTasks.execute(wrapTask(task, true, workerPool.metrics()), workerPool.executor());
+    orderedTasks.execute(wrapTask(null, task, true, workerPool.metrics()), workerPool.executor());
   }
 
   @Override
@@ -48,7 +48,11 @@ class WorkerContext extends ContextImpl {
   // so we need to execute it on the worker thread
   @Override
   public void executeFromIO(Handler<Void> task) {
-    orderedTasks.execute(wrapTask(task, true, workerPool.metrics()), workerPool.executor());
+    executeFromIO(null, task);
   }
 
+  @Override
+  public <T> void executeFromIO(T value, Handler<T> task) {
+    orderedTasks.execute(wrapTask(value, task, true, workerPool.metrics()), workerPool.executor());
+  }
 }

@@ -176,11 +176,16 @@ abstract class ContextImpl implements ContextInternal {
   // but check this anyway, then execute directly
   @Override
   public void executeFromIO(Handler<Void> task) {
+    executeFromIO(null, task);
+  }
+
+  @Override
+  public <T> void executeFromIO(T value, Handler<T> task) {
     if (THREAD_CHECKS) {
       checkCorrectThread();
     }
     // No metrics on this, as we are on the event loop.
-    wrapTask(task, true, null).run();
+    executeTask(value, task, true);
   }
 
   protected abstract void checkCorrectThread();
@@ -294,53 +299,56 @@ abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
-  protected Runnable wrapTask(Handler<Void> hTask, boolean checkThread, PoolMetrics metrics) {
+  protected <T> Runnable wrapTask(T arg, Handler<T> hTask, boolean checkThread, PoolMetrics metrics) {
     Object metric = metrics != null ? metrics.submitted() : null;
     return () -> {
-      Thread th = Thread.currentThread();
-      if (!(th instanceof VertxThread)) {
-        throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + th);
-      }
-      VertxThread current = (VertxThread) th;
-      if (THREAD_CHECKS && checkThread) {
-        if (contextThread == null) {
-          contextThread = current;
-        } else if (contextThread != current && !contextThread.isWorker()) {
-          throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
-        }
-      }
       if (metrics != null) {
         metrics.begin(metric);
       }
-      if (!DISABLE_TIMINGS) {
-        current.executeStart();
-      }
-      try {
-        setContext(current, ContextImpl.this);
-        hTask.handle(null);
-        if (metrics != null) {
-          metrics.end(metric, true);
-        }
-      } catch (Throwable t) {
-        log.error("Unhandled exception", t);
-        Handler<Throwable> handler = this.exceptionHandler;
-        if (handler == null) {
-          handler = owner.exceptionHandler();
-        }
-        if (handler != null) {
-          handler.handle(t);
-        }
-        if (metrics != null) {
-          metrics.end(metric, false);
-        }
-      } finally {
-        // We don't unset the context after execution - this is done later when the context is closed via
-        // VertxThreadFactory
-        if (!DISABLE_TIMINGS) {
-          current.executeEnd();
-        }
+      boolean succeeded = executeTask(arg, hTask, checkThread);
+      if (metrics != null) {
+        metrics.end(metric, succeeded);
       }
     };
+  }
+
+  protected <T> boolean executeTask(T arg, Handler<T> hTask, boolean checkThread) {
+    Thread th = Thread.currentThread();
+    if (!(th instanceof VertxThread)) {
+      throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + th);
+    }
+    VertxThread current = (VertxThread) th;
+    if (THREAD_CHECKS && checkThread) {
+      if (contextThread == null) {
+        contextThread = current;
+      } else if (contextThread != current && !contextThread.isWorker()) {
+        throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
+      }
+    }
+    if (!DISABLE_TIMINGS) {
+      current.executeStart();
+    }
+    try {
+      setContext(current, ContextImpl.this);
+      hTask.handle(arg);
+      return true;
+    } catch (Throwable t) {
+      log.error("Unhandled exception", t);
+      Handler<Throwable> handler = this.exceptionHandler;
+      if (handler == null) {
+        handler = owner.exceptionHandler();
+      }
+      if (handler != null) {
+        handler.handle(t);
+      }
+      return false;
+    } finally {
+      // We don't unset the context after execution - this is done later when the context is closed via
+      // VertxThreadFactory
+      if (!DISABLE_TIMINGS) {
+        current.executeEnd();
+      }
+    }
   }
 
   private void setTCCL() {
