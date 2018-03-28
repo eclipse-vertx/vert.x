@@ -241,7 +241,6 @@ public class Transport {
     setOption("TCK_CORK", options.isTcpCork(), setter);
     setOption("TCK_QUICKACK", options.isTcpQuickAck(), setter);
     setOption("TCK_FASTOPEN", options.isTcpFastOpen(), setter);
-    setOption("SO_REUSEPORT", options.isReusePort(), setter);
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
       bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
@@ -259,6 +258,7 @@ public class Transport {
     bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    setOption("SO_REUSEPORT", options.isReusePort(), bootstrap::option);
     if (options.getAcceptBacklog() != -1) {
       bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
     }
