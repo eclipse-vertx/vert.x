@@ -301,4 +301,12 @@ public class JsonPointerTest {
     JsonPointer.create().writeObject(object, new JsonArray());
   }
 
+  @Test
+  public void testCopy() {
+    JsonPointer jp1 = JsonPointer.create().append("bla");
+    JsonPointer jp2 = jp1.copy().append("bla");
+    assertEquals("/bla", jp1.build());
+    assertEquals("/bla/bla", jp2.build());
+  }
+
 }

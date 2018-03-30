@@ -92,6 +92,13 @@ public interface JsonPointer {
   boolean writeArray(JsonArray array, Object value);
 
   /**
+   * Copy this JsonPointer instance
+   *
+   * @return copy of this json pointer instance
+   */
+  JsonPointer copy();
+
+  /**
    * Build an empty JsonPointer
    *
    * @return a new empty JsonPointer

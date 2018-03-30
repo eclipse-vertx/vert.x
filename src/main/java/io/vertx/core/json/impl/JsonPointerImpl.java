@@ -29,13 +29,13 @@ public class JsonPointerImpl implements JsonPointer {
   final public static Pattern VALID_POINTER_PATTERN = Pattern.compile("([0-9]*|-)(\\/([\\u0000-\\u002E]|[\\u0030-\\u007D]|[\\u007F-\\u10FFFF]|\\~0|\\~1)*)*");
 
   // Empty means a pointer to root
-  List<String> undecodedTokens;
+  LinkedList<String> undecodedTokens;
 
   public JsonPointerImpl(List<String> tokens) {
     if (tokens.size() == 0 || tokens.size() == 1 && "".equals(tokens.get(0)))
       undecodedTokens = null;
     else
-      undecodedTokens = tokens;
+      undecodedTokens = new LinkedList<>(tokens);
   }
 
   public JsonPointerImpl(String pointer) {
@@ -43,18 +43,18 @@ public class JsonPointerImpl implements JsonPointer {
   }
 
   public JsonPointerImpl() {
-    undecodedTokens = new ArrayList<>();
+    undecodedTokens = new LinkedList<>();
     undecodedTokens.add(""); // Root
   }
 
-  private List<String> parse(String pointer) {
+  private LinkedList<String> parse(String pointer) {
     if ("".equals(pointer))
       return null;
     if (VALID_POINTER_PATTERN.matcher(pointer).matches()) {
       return Arrays
         .stream(pointer.split("/", -1))
         .map(this::unescape)
-        .collect(Collectors.toList());
+        .collect(Collectors.toCollection(LinkedList::new));
     } else
       throw new IllegalArgumentException("The provided pointer is not a valid JSON Pointer");
   }
@@ -153,6 +153,11 @@ public class JsonPointerImpl implements JsonPointer {
   @Override
   public boolean writeArray(JsonArray input, Object value) {
     return write(input, value);
+  }
+
+  @Override
+  public JsonPointer copy() {
+    return new JsonPointerImpl(new LinkedList<>(this.undecodedTokens));
   }
 
   private boolean write(Object input, Object value) {
