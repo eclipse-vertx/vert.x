@@ -18,10 +18,14 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
 import org.junit.Test;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -121,5 +125,41 @@ public class JsonMapperTest extends VertxTestBase {
   private static class Pojo {
     @JsonProperty
     String value;
+  }
+
+  private static final TypeReference<Integer> INTEGER_TYPE_REF = new TypeReference<Integer>() {};
+  private static final TypeReference<Long> LONG_TYPE_REF = new TypeReference<Long>() {};
+  private static final TypeReference<String> STRING_TYPE_REF = new TypeReference<String>() {};
+  private static final TypeReference<Float> FLOAT_TYPE_REF = new TypeReference<Float>() {};
+  private static final TypeReference<Double> DOUBLE_TYPE_REF = new TypeReference<Double>() {};
+  private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<Map<String, Object>>() {};
+  private static final TypeReference<List<Object>> LIST_TYPE_REF = new TypeReference<List<Object>>() {};
+  private static final TypeReference<Boolean> BOOLEAN_TYPE_REF = new TypeReference<Boolean>() {};
+
+  @Test
+  public void testDecodeValue() {
+    assertDecodeValue(Buffer.buffer("42"), 42, INTEGER_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("42"), 42L, LONG_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("\"foobar\""), "foobar", STRING_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("3.4"), 3.4f, FLOAT_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("3.4"), 3.4d, DOUBLE_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("{\"foo\":4}"), Collections.singletonMap("foo", 4), MAP_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("[0,1,2]"), Arrays.asList(0, 1, 2), LIST_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("true"), true, BOOLEAN_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("false"), false, BOOLEAN_TYPE_REF);
+  }
+
+  private <T> void assertDecodeValue(Buffer buffer, T expected, TypeReference<T> ref) {
+    Type type = ref.getType();
+    Class<?> clazz = type instanceof Class ? (Class<?>) type : (Class<?>) ((ParameterizedType) type).getRawType();
+    assertEquals(expected, Json.decodeValue(buffer, clazz));
+    assertEquals(expected, Json.decodeValue(buffer, ref));
+    assertEquals(expected, Json.decodeValue(buffer.toString(StandardCharsets.UTF_8), clazz));
+    assertEquals(expected, Json.decodeValue(buffer.toString(StandardCharsets.UTF_8), ref));
+    Buffer nullValue = Buffer.buffer("null");
+    assertNull(Json.decodeValue(nullValue, clazz));
+    assertNull(Json.decodeValue(nullValue, ref));
+    assertNull(Json.decodeValue(nullValue.toString(StandardCharsets.UTF_8), clazz));
+    assertNull(Json.decodeValue(nullValue.toString(StandardCharsets.UTF_8), ref));
   }
 }
