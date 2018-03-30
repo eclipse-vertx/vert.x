@@ -220,6 +220,19 @@ public class JsonPointerImpl implements JsonPointer {
   }
 
   @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    JsonPointerImpl that = (JsonPointerImpl) o;
+    return undecodedTokens.equals(that.undecodedTokens);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(undecodedTokens);
+  }
+
+  @Override
   public String toString() {
     return this.build();
   }
