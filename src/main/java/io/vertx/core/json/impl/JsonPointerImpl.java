@@ -33,9 +33,15 @@ public class JsonPointerImpl implements JsonPointer {
 
   public JsonPointerImpl(List<String> tokens) {
     if (tokens.size() == 0 || tokens.size() == 1 && "".equals(tokens.get(0)))
-      undecodedTokens = new LinkedList<>();
+      undecodedTokens = initializeRootJsonPointer();
     else
       undecodedTokens = new LinkedList<>(tokens);
+  }
+
+  private LinkedList<String> initializeRootJsonPointer() {
+    LinkedList<String> l = new LinkedList<>();
+    l.add("");
+    return l;
   }
 
   public JsonPointerImpl(String pointer) {
