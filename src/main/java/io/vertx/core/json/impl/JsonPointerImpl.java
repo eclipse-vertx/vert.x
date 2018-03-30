@@ -33,7 +33,7 @@ public class JsonPointerImpl implements JsonPointer {
 
   public JsonPointerImpl(List<String> tokens) {
     if (tokens.size() == 0 || tokens.size() == 1 && "".equals(tokens.get(0)))
-      undecodedTokens = null;
+      undecodedTokens = new LinkedList<>();
     else
       undecodedTokens = new LinkedList<>(tokens);
   }
