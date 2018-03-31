@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -22,6 +23,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.ContextInternal;
 
 import java.util.function.Function;
 
@@ -36,22 +38,16 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
   private final boolean useDecompressor;
-  private final Http2Settings serverUpgradeSettings;
-  private final boolean upgrade;
 
   public VertxHttp2ConnectionHandler(
       Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory,
       boolean useDecompressor,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
-      Http2Settings initialSettings,
-      Http2Settings serverUpgradeSettings,
-      boolean upgrade) {
+      Http2Settings initialSettings) {
     super(decoder, encoder, initialSettings);
     this.connectionFactory = connectionFactory;
     this.useDecompressor = useDecompressor;
-    this.serverUpgradeSettings = serverUpgradeSettings;
-    this.upgrade = upgrade;
     encoder().flowController().listener(s -> {
       if (connection != null) {
         connection.onStreamwritabilityChanged(s);
@@ -94,22 +90,22 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    super.exceptionCaught(ctx, cause);
+    onError(ctx, cause);
     ctx.close();
   }
 
-  @Override
-  public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    super.channelActive(ctx);
+  public void serverUpgrade(
+    ChannelHandlerContext ctx,
+    Http2Settings serverUpgradeSettings,
+    HttpRequest request) throws Exception {
+    onHttpServerUpgrade(serverUpgradeSettings);
+    onSettingsRead(ctx, serverUpgradeSettings);
+    // Http2ServerConnection c = (Http2ServerConnection) connection;
+    // return c.createUpgradeRequest(request);
+  }
 
-    if (upgrade) {
-      if (serverUpgradeSettings != null) {
-        onHttpServerUpgrade(serverUpgradeSettings);
-      } else {
-        onHttpClientUpgrade();
-      }
-    }
-
+  public void clientUpgrade(ChannelHandlerContext ctx) throws Exception {
+    onHttpClientUpgrade();
     // super call writes the connection preface
     // we need to flush to send it
     // this is called only on the client
@@ -117,11 +113,14 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   @Override
-  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    super.channelInactive(ctx);
-    connection.getContext().executeFromIO(v -> connection.handleClosed());
-    if (removeHandler != null) {
-      removeHandler.handle(connection);
+  public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+    super.channelInactive(chctx);
+    if (connection != null) {
+      ContextInternal ctx = connection.getContext();
+      ctx.executeFromIO(v -> connection.handleClosed());
+      if (removeHandler != null) {
+        removeHandler.handle(connection);
+      }
     }
   }
 
@@ -201,7 +200,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end) {
-    encoder().writeHeaders(chctx, stream.id(), headers, 0, end, chctx.newPromise());;
+    encoder().writeHeaders(chctx, stream.id(), headers, 0, end, chctx.newPromise());
   }
 
   void writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
@@ -394,6 +393,22 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     connection.onSettingsRead(ctx, settings);
     if (addHandler != null) {
       addHandler.handle(connection);
+    }
+  }
+
+  @Override
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    if (msg instanceof Http2StreamFrame) {
+      // Handle HTTP/2 clear text upgrade request
+      if (msg instanceof Http2HeadersFrame) {
+        Http2HeadersFrame frame = (Http2HeadersFrame) msg;
+        connection.onHeadersRead(ctx, 1, frame.headers(), frame.padding(), frame.isEndStream());
+      } else if (msg instanceof Http2DataFrame) {
+        Http2DataFrame frame = (Http2DataFrame) msg;
+        connection.onDataRead(ctx, 1, frame.content(), frame.padding(), frame.isEndStream());
+      }
+    } else {
+      super.channelRead(ctx, msg);
     }
   }
 

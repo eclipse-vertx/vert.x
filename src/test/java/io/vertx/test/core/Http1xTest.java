@@ -44,6 +44,7 @@ import io.vertx.core.streams.Pump;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -2874,6 +2875,29 @@ public class Http1xTest extends HttpTest {
         assertTrue(err instanceof TooLongFrameException);
         testComplete();
       });
+    });
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp1 -> {
+      HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp2 -> {
+      });
+      req.putHeader("the_header", TestUtils.randomAlphaString(10000));
+      req.sendHead();
+    });
+    await();
+  }
+
+  @Test
+  public void testServerExceptionHandler() throws Exception {
+    server.exceptionHandler(err -> {
+      assertTrue(err instanceof TooLongFrameException);
+      testComplete();
     });
     server.requestHandler(req -> {
       fail();

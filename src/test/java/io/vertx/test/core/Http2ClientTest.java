@@ -24,19 +24,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
-import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2ConnectionHandler;
-import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2EventAdapter;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2FrameListener;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
-import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -1129,7 +1117,20 @@ public class Http2ClientTest extends Http2TestBase {
           HttpServerCodec sourceCodec = new HttpServerCodec();
           HttpServerUpgradeHandler.UpgradeCodecFactory upgradeCodecFactory = protocol -> {
             if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
-              return new Http2ServerUpgradeCodec(createHttpConnectionHandler(handler));
+              Http2ConnectionHandler httpConnectionHandler = createHttpConnectionHandler((a, b) -> {
+                return new Http2FrameListenerDecorator(handler.apply(a, b)) {
+                  @Override
+                  public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
+                    super.onSettingsRead(ctx, settings);
+                    Http2Connection conn = a.connection();
+                    Http2Stream stream = conn.stream(1);
+                    DefaultHttp2Headers blah = new DefaultHttp2Headers();
+                    blah.status("200");
+                    b.frameWriter().writeHeaders(ctx, 1, blah, 0, true, ctx.voidPromise());
+                  }
+                };
+              });
+              return new Http2ServerUpgradeCodec(httpConnectionHandler);
             } else {
               return null;
             }
@@ -1541,9 +1542,15 @@ public class Http2ClientTest extends Http2TestBase {
     try {
       client.close();
       client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(upgrade));
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        assertEquals(HttpVersion.HTTP_2, resp.version());
-        testComplete();
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp1 -> {
+        HttpConnection conn = resp1.request().connection();
+        assertEquals(HttpVersion.HTTP_2, resp1.version());
+        client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp2 -> {
+          assertSame(conn, resp2.request().connection());
+          testComplete();
+        }).exceptionHandler(this::fail).end();
+      }).connectionHandler(conn -> {
+        System.out.println("CONNECTED " + conn);
       }).exceptionHandler(this::fail).end();
       await();
     } finally {
@@ -1572,10 +1579,9 @@ public class Http2ClientTest extends Http2TestBase {
       client.close();
       client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        assertEquals(200, resp.statusCode());
+        assertEquals(400, resp.statusCode());
         assertEquals(HttpVersion.HTTP_1_1, resp.version());
         resp.bodyHandler(body -> {
-          assertEquals("wibble", body.toString());
           testComplete();
         });
       }).exceptionHandler(this::fail).end();

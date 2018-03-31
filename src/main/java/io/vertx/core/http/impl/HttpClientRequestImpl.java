@@ -645,7 +645,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void connected(Handler<HttpVersion> headersHandler, HttpClientStream stream) {
-    HttpClientConnection conn = stream.connection();
+    HttpConnection conn = stream.connection();
 
     synchronized (this) {
       this.stream = stream;
@@ -664,20 +664,20 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHeadWithContent(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true);
-          conn.reportBytesWritten(written);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true);
+          stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHeadWithContent(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false);
         }
       } else {
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHeadWithContent(method, rawMethod, uri, headers, hostHeader(), chunked, null, true);
-          conn.reportBytesWritten(written);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true);
+          stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false);
         }
       }
       this.connecting = false;
@@ -781,7 +781,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     s.writeBuffer(buff, end);
     if (end) {
-      s.connection().reportBytesWritten(written); // MUST BE READ UNDER SYNCHRONIZATION
+      s.reportBytesWritten(written); // MUST BE READ UNDER SYNCHRONIZATION
     }
     if (end) {
       Handler<Void> handler;

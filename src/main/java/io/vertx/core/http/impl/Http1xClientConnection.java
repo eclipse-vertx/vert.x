@@ -108,11 +108,19 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     this.keepAliveTimeout = options.getKeepAliveTimeout();
   }
 
+  Object endpointMetric() {
+    return endpointMetric;
+  }
+
+  ConnectionListener<HttpClientConnection> listener() {
+    return listener;
+  }
+
   private static class StreamImpl implements HttpClientStream {
 
-    private final Http1xClientConnection conn;
-    private final Handler<AsyncResult<HttpClientStream>> handler;
-    private HttpClientRequestImpl request;
+    protected final Http1xClientConnection conn;
+    protected final Handler<AsyncResult<HttpClientStream>> handler;
+    protected HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
@@ -123,6 +131,16 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     StreamImpl(Http1xClientConnection conn, Handler<AsyncResult<HttpClientStream>> handler) {
       this.conn = conn;
       this.handler = handler;
+    }
+
+    @Override
+    public void reportBytesWritten(long numberOfBytes) {
+      conn.reportBytesWritten(numberOfBytes);
+    }
+
+    @Override
+    public void reportBytesRead(long numberOfBytes) {
+      conn.reportBytesRead(numberOfBytes);
     }
 
     @Override
@@ -176,24 +194,34 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       }
     }
 
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked) {
-      HttpRequest request = createRequest(conn.version, method, rawMethod, uri, headers);
-      prepareHeaders(request, hostHeader, chunked);
-      conn.writeToChannel(request);
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
+      writeHead(conn.version, method, rawMethod, uri, headers, hostHeader, chunked, buf, end);
     }
 
-    public void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
-      HttpRequest request = createRequest(conn.version, method, rawMethod, uri, headers);
+    protected void writeHead(
+      HttpVersion version,
+      HttpMethod method,
+      String rawMethod,
+      String uri,
+      MultiMap headers,
+      String hostHeader,
+      boolean chunked,
+      ByteBuf buf,
+      boolean end) {
+      HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
       prepareHeaders(request, hostHeader, chunked);
       if (end) {
         if (buf != null) {
-          conn.writeToChannel(new AssembledFullHttpRequest(request, buf));
+          request = new AssembledFullHttpRequest(request, buf);
         } else {
-          conn.writeToChannel(new AssembledFullHttpRequest(request));
+          request = new AssembledFullHttpRequest(request);
         }
       } else {
-        conn.writeToChannel(new AssembledHttpRequest(request, buf));
+        if (buf != null) {
+          request = new AssembledHttpRequest(request, buf);
+        }
       }
+      conn.writeToChannel(request);
     }
 
     @Override

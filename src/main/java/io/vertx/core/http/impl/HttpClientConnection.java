@@ -24,10 +24,6 @@ interface HttpClientConnection extends HttpConnection {
 
   Channel channel();
 
-  void reportBytesWritten(long numberOfBytes);
-
-  void reportBytesRead(long s);
-
   void close();
 
   void createStream(Handler<AsyncResult<HttpClientStream>> handler);

@@ -21,9 +21,6 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * The connection manager associates remote hosts with pools, it also tracks all connections so they can be closed
@@ -137,18 +134,9 @@ class ConnectionManager {
       } else {
         metric = null;
       }
+
       if (endpoint.pool.getConnection(client.getVertx().getOrCreateContext(), ar -> {
         if (ar.succeeded()) {
-          /*
-        @Override
-        public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
-          if (connectionHandler != null) {
-            ctx.executeFromIO(v -> {
-              connectionHandler.handle(conn);
-            });
-          }
-        }
-           */
 
           HttpClientConnection conn = ar.result();
 
