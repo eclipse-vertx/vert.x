@@ -56,17 +56,14 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  protected Object getLock() {
-    return this; //
-  }
-
-  @Override
   protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
-    synchronized (getLock()) {
-      if (respHandler != null) {
-        respHandler.handle(resp);
+    Handler<HttpClientResponse> handler;
+    synchronized (this) {
+      if ((handler = respHandler) == null) {
+        return;
       }
     }
+    handler.handle(resp);
   }
 
   @Override
@@ -74,11 +71,9 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest handler(Handler<HttpClientResponse> handler) {
-    synchronized (getLock()) {
-      respHandler = handler;
-      return this;
-    }
+  public synchronized HttpClientRequest handler(Handler<HttpClientResponse> handler) {
+    respHandler = handler;
+    return this;
   }
 
   @Override

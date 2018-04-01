@@ -60,7 +60,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.metric = metric;
   }
 
-  protected abstract Object getLock();
   protected abstract void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs);
   protected abstract void checkComplete();
 
@@ -99,67 +98,67 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    synchronized (getLock()) {
-      if (handler != null) {
-        checkComplete();
-        this.exceptionHandler = handler;
-      } else {
-        this.exceptionHandler = null;
-      }
-      return this;
+  public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
+    if (handler != null) {
+      checkComplete();
+      this.exceptionHandler = handler;
+    } else {
+      this.exceptionHandler = null;
     }
+    return this;
   }
 
-  Handler<Throwable> exceptionHandler() {
-    synchronized (getLock()) {
-      return exceptionHandler;
-    }
+  synchronized Handler<Throwable> exceptionHandler() {
+    return exceptionHandler;
   }
 
   @Override
-  public HttpClientRequest setTimeout(long timeoutMs) {
-    synchronized (getLock()) {
-      cancelOutstandingTimeoutTimer();
-      currentTimeoutMs = timeoutMs;
-      currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
-      return this;
-    }
+  public synchronized HttpClientRequest setTimeout(long timeoutMs) {
+    cancelOutstandingTimeoutTimer();
+    currentTimeoutMs = timeoutMs;
+    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+    return this;
   }
 
   public void handleException(Throwable t) {
-    synchronized (getLock()) {
+    Handler<Throwable> handler;
+    synchronized (this) {
       cancelOutstandingTimeoutTimer();
       exceptionOccurred = t;
       if (exceptionHandler != null) {
-        exceptionHandler.handle(t);
+        handler = exceptionHandler;
       } else {
-        log.error(t);
+        handler = log::error;
       }
     }
+    handler.handle(t);
   }
 
   void handleResponse(HttpClientResponseImpl resp) {
-    synchronized (getLock()) {
+    long timeoutMS;
+    synchronized (this) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
-      if (exceptionOccurred == null) {
-        long timeoutMS = currentTimeoutMs;
-        cancelOutstandingTimeoutTimer();
-        try {
-          doHandleResponse(resp, timeoutMS);
-        } catch (Throwable t) {
-          handleException(t);
-        }
+      if (exceptionOccurred != null) {
+        return;
       }
+      timeoutMS = cancelOutstandingTimeoutTimer();
+    }
+    try {
+      doHandleResponse(resp, timeoutMS);
+    } catch (Throwable t) {
+      handleException(t);
     }
   }
 
-  private void cancelOutstandingTimeoutTimer() {
-    if (currentTimeoutTimerId != -1) {
+  private long cancelOutstandingTimeoutTimer() {
+    long ret;
+    if ((ret = currentTimeoutTimerId) != -1) {
       client.getVertx().cancelTimer(currentTimeoutTimerId);
       currentTimeoutTimerId = -1;
+      ret = currentTimeoutMs;
       currentTimeoutMs = 0;
     }
+    return ret;
   }
 
   private void handleTimeout(long timeoutMs) {
@@ -185,11 +184,9 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   void handleResponseEnd() {
   }
 
-  void dataReceived() {
-    synchronized (getLock()) {
-      if (currentTimeoutTimerId != -1) {
-        lastDataReceived = System.currentTimeMillis();
-      }
+  synchronized void dataReceived() {
+    if (currentTimeoutTimerId != -1) {
+      lastDataReceived = System.currentTimeMillis();
     }
   }
 }
