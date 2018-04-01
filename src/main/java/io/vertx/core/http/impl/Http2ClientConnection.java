@@ -241,13 +241,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void checkDrained() {
-      synchronized (conn) {
-        handleInterestedOpsChanged();
-      }
-    }
-
-    @Override
     void handleInterestedOpsChanged() {
       if (request instanceof HttpClientRequestImpl && !isNotWritable()) {
         if (!isNotWritable()) {

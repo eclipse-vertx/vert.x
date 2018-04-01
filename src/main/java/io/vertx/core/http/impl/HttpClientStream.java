@@ -43,7 +43,6 @@ interface HttpClientStream {
 
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();
-  void checkDrained();
   void doPause();
   void doResume();
 

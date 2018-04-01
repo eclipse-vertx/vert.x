@@ -225,11 +225,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
 
     @Override
-    public void checkDrained() {
-      conn.handleInterestedOpsChanged();
-    }
-
-    @Override
     public void doPause() {
       conn.doPause();
     }

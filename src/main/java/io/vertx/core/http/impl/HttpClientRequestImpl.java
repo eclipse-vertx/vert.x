@@ -249,7 +249,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           stream.getContext().runOnContext(v -> {
             synchronized (getLock()) {
               if (stream != null) {
-                stream.checkDrained();
+                if (!stream.isNotWritable()) {
+                  handleDrained();
+                }
               }
             }
           });
