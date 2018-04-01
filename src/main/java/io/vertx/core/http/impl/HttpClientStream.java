@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.NetSocket;
@@ -33,23 +34,24 @@ interface HttpClientStream {
    */
   HttpVersion version();
 
-  HttpClientConnection connection();
+  HttpConnection connection();
   Context getContext();
 
-  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked);
-  void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
+  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
   void writeFrame(int type, int flags, ByteBuf payload);
 
+  void reportBytesWritten(long numberOfBytes);
+  void reportBytesRead(long numberOfBytes);
+
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();
-  void checkDrained();
   void doPause();
   void doResume();
 
   void reset(long code);
 
-  void beginRequest();
+  void beginRequest(HttpClientRequestImpl req);
   void endRequest();
 
   NetSocket createNetSocket();

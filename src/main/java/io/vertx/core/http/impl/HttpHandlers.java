@@ -25,17 +25,17 @@ import java.util.Objects;
  */
 public class HttpHandlers {
 
-  final Handler<HttpServerRequest> requesthHandler;
+  final Handler<HttpServerRequest> requestHandler;
   final Handler<ServerWebSocket> wsHandler;
   final Handler<HttpConnection> connectionHandler;
   final Handler<Throwable> exceptionHandler;
 
   public HttpHandlers(
-    Handler<HttpServerRequest> requesthHandler,
+    Handler<HttpServerRequest> requestHandler,
     Handler<ServerWebSocket> wsHandler,
     Handler<HttpConnection> connectionHandler,
     Handler<Throwable> exceptionHandler) {
-    this.requesthHandler = requesthHandler;
+    this.requestHandler = requestHandler;
     this.wsHandler = wsHandler;
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
@@ -48,7 +48,7 @@ public class HttpHandlers {
 
     HttpHandlers that = (HttpHandlers) o;
 
-    if (!Objects.equals(requesthHandler, that.requesthHandler)) return false;
+    if (!Objects.equals(requestHandler, that.requestHandler)) return false;
     if (!Objects.equals(wsHandler, that.wsHandler)) return false;
     if (!Objects.equals(connectionHandler, that.connectionHandler)) return false;
     if (!Objects.equals(exceptionHandler, that.exceptionHandler)) return false;
@@ -59,8 +59,8 @@ public class HttpHandlers {
   @Override
   public int hashCode() {
     int result = 0;
-    if (requesthHandler != null) {
-      result = 31 * result + requesthHandler.hashCode();
+    if (requestHandler != null) {
+      result = 31 * result + requestHandler.hashCode();
     }
     if (wsHandler != null) {
       result = 31 * result + wsHandler.hashCode();

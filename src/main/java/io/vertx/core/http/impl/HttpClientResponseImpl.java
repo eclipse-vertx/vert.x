@@ -15,10 +15,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -43,7 +40,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final int statusCode;
   private final String statusMessage;
   private final HttpClientRequestBase request;
-  private final HttpClientConnection conn;
+  private final HttpConnection conn;
   private final HttpClientStream stream;
 
   private Handler<Buffer> dataHandler;
@@ -240,7 +237,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   void handleEnd(Buffer lastChunk, MultiMap trailers) {
     synchronized (conn) {
-      conn.reportBytesRead(bytesRead);
+      stream.reportBytesRead(bytesRead);
       bytesRead = 0;
       if (paused) {
         pausedLastChunk = lastChunk;

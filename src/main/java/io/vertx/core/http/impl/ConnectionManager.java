@@ -12,6 +12,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -110,9 +113,7 @@ class ConnectionManager {
     }
   }
 
-  void getConnection(String peerHost, boolean ssl, int port, String host,
-                     Function<HttpClientConnection, Boolean> onSuccess,
-                     Consumer<Throwable> onFailure) {
+  void getConnection(String peerHost, boolean ssl, int port, String host, Handler<AsyncResult<HttpClientConnection>> handler) {
     EndpointKey key = new EndpointKey(ssl, port, peerHost, host);
     while (true) {
       Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
@@ -136,6 +137,7 @@ class ConnectionManager {
       } else {
         metric = null;
       }
+
       if (endpoint.pool.getConnection(client.getVertx().getOrCreateContext(), ar -> {
         if (ar.succeeded()) {
           /*
@@ -155,15 +157,12 @@ class ConnectionManager {
             metrics.dequeueRequest(endpoint.metric, metric);
           }
 
-          boolean claimed = onSuccess.apply(conn);
-          if (!claimed) {
-            conn.recycle();
-          }
+          handler.handle(Future.succeededFuture(conn));
         } else {
           if (metrics != null) {
             metrics.dequeueRequest(endpoint.metric, metric);
           }
-          onFailure.accept(ar.cause());
+          handler.handle(Future.failedFuture(ar.cause()));
         }
       })) {
         break;

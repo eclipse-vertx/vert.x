@@ -380,6 +380,15 @@ public final class HttpUtils {
     return null;
   }
 
+  public static String encodeSettings(io.vertx.core.http.Http2Settings settings) {
+    Buffer buffer = Buffer.buffer();
+    fromVertxSettings(settings).forEach((c, l) -> {
+      buffer.appendUnsignedShort(c);
+      buffer.appendUnsignedInt(l);
+    });
+    return Base64.getUrlEncoder().encodeToString(buffer.getBytes());
+  }
+
   public static ByteBuf generateWSCloseFrameByteBuf(short statusCode, String reason) {
     if (reason != null)
       return Unpooled.copiedBuffer(

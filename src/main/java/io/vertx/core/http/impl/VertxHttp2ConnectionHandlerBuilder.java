@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
@@ -36,19 +35,12 @@ import java.util.function.Function;
  */
 class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2ConnectionHandler<C>, VertxHttp2ConnectionHandlerBuilder<C>> {
 
-  private final Channel channel;
   private boolean useCompression;
   private boolean useDecompression;
   private int compressionLevel = HttpServerOptions.DEFAULT_COMPRESSION_LEVEL;
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private boolean logEnabled;
-  private boolean upgrade;
-  private Http2Settings serverUpgradeSettings;
-
-  VertxHttp2ConnectionHandlerBuilder(Channel channel) {
-    this.channel = channel;
-  }
 
   protected VertxHttp2ConnectionHandlerBuilder<C> server(boolean isServer) {
     return super.server(isServer);
@@ -61,17 +53,6 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
 
   VertxHttp2ConnectionHandlerBuilder<C> useCompression(boolean useCompression) {
     this.useCompression = useCompression;
-    return this;
-  }
-
-  public VertxHttp2ConnectionHandlerBuilder<C> clientUpgrade(boolean upgrade) {
-    this.upgrade = upgrade;
-    return this;
-  }
-
-  public VertxHttp2ConnectionHandlerBuilder<C> serverUpgrade(Http2Settings upgradeSettings) {
-    this.serverUpgradeSettings = upgradeSettings;
-    this.upgrade = serverUpgradeSettings != null;
     return this;
   }
 
@@ -186,13 +167,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
       if (useCompression) {
         encoder = new CompressorHttp2ConnectionEncoder(encoder,compressionLevel,CompressorHttp2ConnectionEncoder.DEFAULT_WINDOW_BITS,CompressorHttp2ConnectionEncoder.DEFAULT_MEM_LEVEL);
       }
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, initialSettings, serverUpgradeSettings, upgrade);
-      channel.pipeline().addLast(handler);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, initialSettings);
       decoder.frameListener(handler);
       return handler;
     } else {
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useCompression, decoder, encoder, initialSettings, null, upgrade);
-      channel.pipeline().addLast(handler);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useCompression, decoder, encoder, initialSettings);
       decoder.frameListener(handler);
       return handler;
     }
