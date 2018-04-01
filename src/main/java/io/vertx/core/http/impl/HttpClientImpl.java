@@ -11,12 +11,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -947,22 +942,23 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                          Handler<Http1xClientConnection> handler,
                                          Handler<Throwable> connectionExceptionHandler) {
     ContextInternal ctx = vertx.getOrCreateContext();
-    websocketCM.getConnection(host, ssl, port, host, conn -> {
-      conn.getContext().executeFromIO(v -> {
-        handler.handle((Http1xClientConnection) conn);
-      });
-      return true;
-    }, (failure) -> {
-      ctx.executeFromIO(v -> {
-        connectionExceptionHandler.handle(failure);
-      });
+    websocketCM.getConnection(host, ssl, port, host, ar -> {
+      if (ar.succeeded()) {
+        HttpClientConnection conn = ar.result();
+        conn.getContext().executeFromIO(v -> {
+          handler.handle((Http1xClientConnection) conn);
+        });
+      } else {
+        ctx.executeFromIO(v -> {
+          connectionExceptionHandler.handle(ar.cause());
+        });
+      }
     });
   }
 
   void getConnectionForRequest(String peerHost, boolean ssl, int port, String host,
-                               Function<HttpClientConnection, Boolean> onSuccess,
-                               Consumer<Throwable> onFailure) {
-    httpCM.getConnection(peerHost, ssl, port, host, onSuccess, onFailure);
+                               Handler<AsyncResult<HttpClientConnection>> handler) {
+    httpCM.getConnection(peerHost, ssl, port, host, handler);
   }
 
   /**

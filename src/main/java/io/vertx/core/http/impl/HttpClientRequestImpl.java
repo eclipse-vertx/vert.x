@@ -640,37 +640,36 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnectionForRequest(peerHost, ssl, port, host, conn -> {
-        // No need to synchronize as the thread is the same that set exceptionOccurred to true
-        // exceptionOccurred=true getting the connection => it's a TimeoutException
-        if (exceptionOccurred != null || reset != null) {
-          return false;
-        }
-
-        //
-        ContextInternal ctx = conn.getContext();
-        if (!conn.checkInitialized() && initializer != null) {
-          ctx.executeFromIO(v -> {
-            initializer.handle(conn);
+      client.getConnectionForRequest(peerHost, ssl, port, host, ar1 -> {
+        if (ar1.succeeded()) {
+          HttpClientConnection conn = ar1.result();
+          // No need to synchronize as the thread is the same that set exceptionOccurred to true
+          // exceptionOccurred=true getting the connection => it's a TimeoutException
+          if (exceptionOccurred != null || reset != null) {
+            conn.recycle();
+            return;
+          }
+          ContextInternal ctx = conn.getContext();
+          if (!conn.checkInitialized() && initializer != null) {
+            ctx.executeFromIO(v -> {
+              initializer.handle(conn);
+            });
+          }
+          conn.createStream(HttpClientRequestImpl.this, ar2 -> {
+            if (ar2.succeeded()) {
+              HttpClientStream stream = ar2.result();
+              ctx.executeFromIO(v -> {
+                connected(stream, HttpClientRequestImpl.this.headersCompletionHandler);
+              });
+            } else {
+              throw new RuntimeException(ar2.cause());
+            }
+          });
+        } else {
+          connectCtx.executeFromIO(v -> {
+            handleException(ar1.cause());
           });
         }
-
-        //
-        conn.createStream(HttpClientRequestImpl.this, ar -> {
-          if (ar.succeeded()) {
-            HttpClientStream stream = ar.result();
-            ctx.executeFromIO(v -> {
-              connected(stream, HttpClientRequestImpl.this.headersCompletionHandler);
-            });
-          } else {
-            throw new RuntimeException(ar.cause());
-          }
-        });
-        return true;
-      }, failure -> {
-        connectCtx.executeFromIO(v -> {
-          handleException(failure);
-        });
       });
       connecting = true;
     }
