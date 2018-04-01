@@ -655,15 +655,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
               initializer.handle(conn);
             });
           }
-          conn.createStream(HttpClientRequestImpl.this, ar2 -> {
-            if (ar2.succeeded()) {
-              HttpClientStream stream = ar2.result();
-              ctx.executeFromIO(v -> {
-                connected(stream, HttpClientRequestImpl.this.headersCompletionHandler);
-              });
-            } else {
-              throw new RuntimeException(ar2.cause());
-            }
+          conn.createStream(ar2 -> {
+            ctx.executeFromIO(v -> {
+              if (ar2.succeeded()) {
+                connected(ar2.result(), HttpClientRequestImpl.this.headersCompletionHandler);
+              } else {
+                handleException(ar2.cause());
+              }
+            });
           });
         } else {
           connectCtx.executeFromIO(v -> {
@@ -675,18 +674,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  synchronized void retry() {
-    connecting = false;
-    connect();
-  }
-
   private void connected(HttpClientStream stream, Handler<HttpVersion> headersCompletionHandler) {
 
     HttpClientConnection conn = stream.connection();
 
     synchronized (this) {
       this.stream = stream;
-      stream.beginRequest();
+      stream.beginRequest(this);
 
       // If anything was written or the request ended before we got the connection, then
       // we need to write it now

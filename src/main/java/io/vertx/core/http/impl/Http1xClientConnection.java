@@ -63,6 +63,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   private final HttpClientImpl client;
   private final HttpClientOptions options;
   private final boolean ssl;
+  private final String peerHost;
   private final String host;
   private final int port;
   private final Object endpointMetric;
@@ -88,6 +89,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
                          Object endpointMetric,
                          ChannelHandlerContext channel,
                          boolean ssl,
+                         String peerHost,
                          String host,
                          int port,
                          ContextInternal context,
@@ -97,6 +99,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     this.client = client;
     this.options = client.getOptions();
     this.ssl = ssl;
+    this.peerHost = peerHost;
     this.host = host;
     this.port = port;
     this.metrics = metrics;
@@ -109,7 +112,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     private final Http1xClientConnection conn;
     private final Handler<AsyncResult<HttpClientStream>> handler;
-    private final HttpClientRequestImpl request;
+    private HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
@@ -117,8 +120,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     private boolean close;
     private boolean upgraded;
 
-    StreamImpl(Http1xClientConnection conn, HttpClientRequestImpl request, Handler<AsyncResult<HttpClientStream>> handler) {
-      this.request = request;
+    StreamImpl(Http1xClientConnection conn, Handler<AsyncResult<HttpClientStream>> handler) {
       this.conn = conn;
       this.handler = handler;
     }
@@ -252,11 +254,13 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       }
     }
 
-    public void beginRequest() {
+    @Override
+    public void beginRequest(HttpClientRequestImpl req) {
       synchronized (conn) {
         if (conn.currentRequest != this) {
           throw new IllegalStateException("Connection is already writing another request");
         }
+        request = req;
         if (conn.metrics != null) {
           Object reqMetric = conn.metrics.requestBegin(conn.endpointMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
           request.metric(reqMetric);
@@ -657,7 +661,21 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   private void retryPending() {
     StreamImpl stream;
     while ((stream = pending.poll()) != null) {
-      stream.request.retry();
+      Handler<AsyncResult<HttpClientStream>> handler = stream.handler;
+      client.getConnectionForRequest(peerHost, ssl, port, host, ar1 -> {
+        if (ar1.succeeded()) {
+          HttpClientConnection conn = ar1.result();
+          conn.createStream(ar2 -> {
+            if (ar2.succeeded()) {
+              handler.handle(Future.succeededFuture(ar2.result()));
+            } else {
+              handler.handle(Future.failedFuture(ar2.cause()));
+            }
+          });
+        } else {
+          handler.handle(Future.failedFuture(ar1.cause()));
+        }
+      });
     }
   }
 
@@ -666,6 +684,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     if (ws != null) {
       ws.handleClosed();
     }
+
     retryPending();
 
     Exception e = new VertxException("Connection was closed");
@@ -736,8 +755,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   }
 
   @Override
-  public void createStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler) {
-    StreamImpl stream = new StreamImpl(this, req, handler);
+  public void createStream(Handler<AsyncResult<HttpClientStream>> handler) {
+    StreamImpl stream = new StreamImpl(this, handler);
     synchronized (this) {
       if (currentRequest != null) {
         pending.add(stream);

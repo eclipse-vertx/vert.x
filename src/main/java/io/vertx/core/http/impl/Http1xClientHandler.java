@@ -34,6 +34,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   private ContextInternal context;
   private ChannelHandlerContext chctx;
   private final HttpVersion version;
+  private final String peerHost;
   private final String host;
   private final int port;
   private final boolean ssl;
@@ -45,6 +46,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   public Http1xClientHandler(ConnectionListener<HttpClientConnection> listener,
                              ContextInternal context,
                              HttpVersion version,
+                             String peerHost,
                              String host,
                              int port,
                              boolean ssl,
@@ -54,6 +56,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
     this.context = context;
     this.version = version;
     this.client = client;
+    this.peerHost = peerHost;
     this.host = host;
     this.port = port;
     this.ssl = ssl;
@@ -65,7 +68,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
-    Http1xClientConnection conn = new Http1xClientConnection(listener, version, client, endpointMetric, ctx, ssl, host, port, context, metrics);
+    Http1xClientConnection conn = new Http1xClientConnection(listener, version, client, endpointMetric, ctx, ssl, peerHost, host, port, context, metrics);
     if (metrics != null) {
       context.executeFromIO(v -> {
         Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());

@@ -275,6 +275,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       listener,
       context,
       version,
+      peerHost,
       host,
       port,
       ssl,

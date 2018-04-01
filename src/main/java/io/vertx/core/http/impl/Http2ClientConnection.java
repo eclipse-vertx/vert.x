@@ -98,7 +98,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public void createStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  public void createStream(Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
@@ -108,7 +108,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
         Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
         boolean writable = handler.encoder().flowController().isWritable(stream);
-        Http2ClientStream clientStream = new Http2ClientStream(this, req, stream, writable);
+        Http2ClientStream clientStream = new Http2ClientStream(this, stream, writable);
         streams.put(clientStream.stream.id(), clientStream);
         fut = Future.succeededFuture(clientStream);
       } catch (Http2Exception e) {
@@ -164,12 +164,16 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   static class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> implements HttpClientStream {
 
-    private final HttpClientRequestBase request;
+    private HttpClientRequestBase request;
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
 
-    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase request, Http2Stream stream, boolean writable) {
+    Http2ClientStream(Http2ClientConnection conn, Http2Stream stream, boolean writable) {
+      super(conn, stream, writable);
+    }
+
+    Http2ClientStream(Http2ClientConnection conn, HttpClientRequestPushPromise request, Http2Stream stream, boolean writable) {
       super(conn, stream, writable);
       this.request = request;
     }
@@ -379,7 +383,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void beginRequest() {
+    public void beginRequest(HttpClientRequestImpl req) {
+      request = req;
     }
 
     @Override

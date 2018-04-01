@@ -49,7 +49,7 @@ interface HttpClientStream {
 
   void reset(long code);
 
-  void beginRequest();
+  void beginRequest(HttpClientRequestImpl req);
   void endRequest();
 
   NetSocket createNetSocket();
