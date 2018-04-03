@@ -13,13 +13,8 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -68,7 +63,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     chctx = ctx;
-    Http1xClientConnection conn = new Http1xClientConnection(listener, version, client, endpointMetric, ctx, ssl, peerHost, host, port, context, metrics);
+    Http1xClientConnection conn = new Http1xClientConnection(listener, version, client, endpointMetric, ctx, ssl, host, port, context, metrics);
     if (metrics != null) {
       context.executeFromIO(v -> {
         Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
@@ -95,30 +90,7 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
   protected void handleMessage(Http1xClientConnection conn, Object msg) {
     if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
-      DecoderResult result = obj.decoderResult();
-      if (result.isFailure()) {
-        // Close the connection as Netty's HttpResponseDecoder will not try further processing
-        // see https://github.com/netty/netty/issues/3362
-        conn.handleException(result.cause());
-        conn.close();
-        return;
-      }
-      if (msg instanceof HttpResponse) {
-        HttpResponse response = (HttpResponse) obj;
-        conn.handleResponse(response);
-        return;
-      }
-      if (msg instanceof HttpContent) {
-        HttpContent chunk = (HttpContent) obj;
-        if (chunk.content().isReadable()) {
-          Buffer buff = Buffer.buffer(chunk.content().slice());
-          conn.handleResponseChunk(buff);
-        }
-        if (chunk instanceof LastHttpContent) {
-          conn.handleResponseEnd((LastHttpContent) chunk);
-        }
-        return;
-      }
+      conn.handleMessage(obj);
     } else if (msg instanceof WebSocketFrameInternal) {
       WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
       switch (frame.type()) {
@@ -144,8 +116,8 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
         default:
           throw new IllegalStateException("Invalid type: " + frame.type());
       }
-      return;
+    } else {
+      throw new IllegalStateException("Invalid object " + msg);
     }
-    throw new IllegalStateException("Invalid object " + msg);
   }
 }

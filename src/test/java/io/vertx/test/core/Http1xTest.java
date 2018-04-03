@@ -41,6 +41,7 @@ import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -1305,23 +1306,23 @@ public class Http1xTest extends HttpTest {
     });
     startServer();
     AtomicInteger succeeded = new AtomicInteger();
-    List<HttpClientRequest> requests = new ArrayList<>();
+    List<HttpClientRequest> requests = new CopyOnWriteArrayList<>();
+    Consumer<HttpClientRequest> checkEnd = req -> {
+      requests.remove(req);
+      if (requests.isEmpty()) {
+        assertEquals(n, succeeded.get());
+        testComplete();
+      }
+    };
     for (int i = 0;i < n * 2;i++) {
       HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/" + i);
       req.handler(resp -> {
         succeeded.incrementAndGet();
-        requests.remove(req);
-        if (requests.isEmpty()) {
-          assertEquals(n * 2 - 1, succeeded.get());
-          testComplete();
-        }
+        checkEnd.accept(req);
       });
       req.exceptionHandler(err -> {
-        requests.remove(req);
-        for (HttpClientRequest r : requests) {
-          r.end();
-        }
-      }).sendHead();
+        checkEnd.accept(req);
+      }).end();
       requests.add(req);
     }
     closeFuture.complete(null);
@@ -3330,11 +3331,13 @@ public class Http1xTest extends HttpTest {
       if (pipelined) {
         req1.sendHead(v -> {
           assertTrue(req1.reset());
-          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-            assertEquals(200, resp.statusCode());
-            resp.bodyHandler(body -> {
-              assertEquals("Hello world", body.toString());
-              complete();
+          req1.connection().closeHandler(v2 -> {
+            client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+              assertEquals(200, resp.statusCode());
+              resp.bodyHandler(body -> {
+                assertEquals("Hello world", body.toString());
+                complete();
+              });
             });
           });
         });
@@ -3428,12 +3431,15 @@ public class Http1xTest extends HttpTest {
         req1.handler(resp1 -> {
           resp1.handler(buff -> {
             req1.reset();
-            client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-              assertEquals(200, resp.statusCode());
-              resp.bodyHandler(body -> {
-                assertEquals("Hello world", body.toString());
-                complete();
-              });
+            // Since we pipeline we must be sure that the first request is closed before running a new one
+            req1.connection().closeHandler(v -> {
+              client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+                assertEquals(200, resp.statusCode());
+                resp.bodyHandler(body -> {
+                  assertEquals("Hello world", body.toString());
+                  complete();
+                });
+              }).end();
             });
           });
         });
@@ -3532,13 +3538,20 @@ public class Http1xTest extends HttpTest {
       if (pipelined) {
         requestReceived.thenAccept(v -> {
           req1.reset();
-          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", resp -> {
-            assertEquals(200, resp.statusCode());
-            resp.bodyHandler(body -> {
-              assertEquals("Hello world", body.toString());
-              complete();
+          requestReceived.thenAccept(v1 -> {
+            req1.reset();
+            req1.connection().closeHandler(v2 -> {
+              client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", resp -> {
+                assertEquals(200, resp.statusCode());
+                resp.bodyHandler(body -> {
+                  assertEquals("Hello world", body.toString());
+                  complete();
+                });
+              });
             });
           });
+          req1.handler(resp1 -> fail());
+          req1.end();
         });
         req1.handler(resp1 -> fail());
         req1.end();

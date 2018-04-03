@@ -471,16 +471,6 @@ public final class HttpUtils {
     }
   }
 
-  static io.vertx.core.http.HttpVersion toVertxHttpVersion(HttpVersion version) {
-    if (version == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
-      return io.vertx.core.http.HttpVersion.HTTP_1_0;
-    } else if (version == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
-      return io.vertx.core.http.HttpVersion.HTTP_1_1;
-    } else {
-      return null;
-    }
-  }
-
   static io.vertx.core.http.HttpMethod toVertxMethod(String method) {
     try {
       return io.vertx.core.http.HttpMethod.valueOf(method);
