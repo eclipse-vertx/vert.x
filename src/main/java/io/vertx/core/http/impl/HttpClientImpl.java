@@ -957,8 +957,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   void getConnectionForRequest(String peerHost, boolean ssl, int port, String host,
-                               Handler<AsyncResult<HttpClientConnection>> handler) {
-    httpCM.getConnection(peerHost, ssl, port, host, handler);
+                               Handler<AsyncResult<HttpClientStream>> handler) {
+    httpCM.getConnection(peerHost, ssl, port, host, ar -> {
+      if (ar.succeeded()) {
+        ar.result().createStream(handler);
+      } else {
+        handler.handle(Future.failedFuture(ar.cause()));
+      }
+    });
   }
 
   /**

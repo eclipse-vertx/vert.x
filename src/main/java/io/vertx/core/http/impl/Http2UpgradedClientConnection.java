@@ -78,7 +78,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
 
     @Override
     public HttpClientConnection connection() {
-      return current == null ? conn : current;
+      return Http2UpgradedClientConnection.this;
     }
 
     /**
@@ -251,16 +251,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   @Override
   public ContextInternal getContext() {
     return current.getContext();
-  }
-
-  @Override
-  public boolean checkInitialized() {
-    return current.checkInitialized();
-  }
-
-  @Override
-  public void recycle() {
-    current.recycle();
   }
 
   @Override

@@ -20,7 +20,7 @@ import io.vertx.core.impl.ContextInternal;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface HttpClientConnection extends HttpConnection {
+public interface HttpClientConnection extends HttpConnection {
 
   Channel channel();
 
@@ -29,9 +29,5 @@ interface HttpClientConnection extends HttpConnection {
   void createStream(Handler<AsyncResult<HttpClientStream>> handler);
 
   ContextInternal getContext();
-
-  boolean checkInitialized();
-
-  void recycle();
 
 }

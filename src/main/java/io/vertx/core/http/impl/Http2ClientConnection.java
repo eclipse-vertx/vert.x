@@ -43,7 +43,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
-  private boolean initialized;
   final HttpClientMetrics metrics;
   final Object queueMetric;
 
@@ -58,13 +57,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.queueMetric = queueMetric;
     this.client = client;
     this.listener = listener;
-  }
-
-  @Override
-  public synchronized boolean checkInitialized() {
-    boolean ret = initialized;
-    initialized = true;
-    return ret;
   }
 
   @Override
@@ -135,8 +127,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     return clientStream;
   }
 
-  @Override
-  public void recycle() {
+  private void recycle() {
     int timeout = client.getOptions().getHttp2KeepAliveTimeout();
     long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
     listener.onRecycle(expired);
@@ -243,7 +234,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     void handleClose() {
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
       // boolean disposable = conn.streams.isEmpty();
-      if (request instanceof HttpClientRequestImpl) {
+      if (request == null || request instanceof HttpClientRequestImpl) {
         conn.recycle();
       } /* else {
         conn.listener.onRecycle(0, dispable);
@@ -304,7 +295,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     void handleException(Throwable exception) {
-      if (!requestEnded || response == null) {
+      if (request != null && (!requestEnded || response == null)) {
         context.executeFromIO(v -> {
           request.handleException(exception);
         });
@@ -412,12 +403,16 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void reset(long code) {
-      if (!(requestEnded && responseEnded)) {
-        requestEnded = true;
-        responseEnded = true;
+      if (request == null) {
         writeReset(code);
-        if (conn.metrics != null) {
-          conn.metrics.requestReset(request.metric());
+      } else {
+        if (!(requestEnded && responseEnded)) {
+          requestEnded = true;
+          responseEnded = true;
+          writeReset(code);
+          if (conn.metrics != null) {
+            conn.metrics.requestReset(request.metric());
+          }
         }
       }
     }

@@ -80,8 +80,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   private boolean paused;
   private Buffer pausedChunk;
-  private boolean initialized;
   private int keepAliveTimeout;
+  private int seq = 1;
 
   Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
                          HttpVersion version,
@@ -118,9 +118,10 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   private static class StreamImpl implements HttpClientStream {
 
-    protected final Http1xClientConnection conn;
-    protected final Handler<AsyncResult<HttpClientStream>> handler;
-    protected HttpClientRequestImpl request;
+    private final int id;
+    private final Http1xClientConnection conn;
+    private final Handler<AsyncResult<HttpClientStream>> handler;
+    private HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
@@ -128,9 +129,10 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     private boolean close;
     private boolean upgraded;
 
-    StreamImpl(Http1xClientConnection conn, Handler<AsyncResult<HttpClientStream>> handler) {
+    StreamImpl(Http1xClientConnection conn, int id, Handler<AsyncResult<HttpClientStream>> handler) {
       this.conn = conn;
       this.handler = handler;
+      this.id = id;
     }
 
     @Override
@@ -145,7 +147,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public int id() {
-      return -1;
+      return id;
     }
 
     @Override
@@ -265,12 +267,12 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     @Override
     public void reset(long code) {
       synchronized (conn) {
-        if (request == null) {
-          throw new IllegalStateException("Sanity check");
-        }
         if (!reset) {
           reset = true;
-          if (!responseEnded) {
+          if (request == null) {
+            conn.currentRequest = null;
+            conn.recycle();
+          } else if (!responseEnded) {
             conn.close();
           }
         }
@@ -684,21 +686,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   private void retryPending() {
     StreamImpl stream;
     while ((stream = pending.poll()) != null) {
-      Handler<AsyncResult<HttpClientStream>> handler = stream.handler;
-      client.getConnectionForRequest(peerHost, ssl, port, host, ar1 -> {
-        if (ar1.succeeded()) {
-          HttpClientConnection conn = ar1.result();
-          conn.createStream(ar2 -> {
-            if (ar2.succeeded()) {
-              handler.handle(Future.succeededFuture(ar2.result()));
-            } else {
-              handler.handle(Future.failedFuture(ar2.cause()));
-            }
-          });
-        } else {
-          handler.handle(Future.failedFuture(ar1.cause()));
-        }
-      });
+      client.getConnectionForRequest(peerHost, ssl, port, host, stream.handler);
     }
   }
 
@@ -779,8 +767,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   @Override
   public void createStream(Handler<AsyncResult<HttpClientStream>> handler) {
-    StreamImpl stream = new StreamImpl(this, handler);
     synchronized (this) {
+      StreamImpl stream = new StreamImpl(this, seq++, handler);
       if (currentRequest != null) {
         pending.add(stream);
         return;
@@ -790,16 +778,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     handler.handle(Future.succeededFuture(currentRequest));
   }
 
-  @Override
-  public void recycle() {
+  private void recycle() {
     long expiration = keepAliveTimeout == 0 ? 0L : System.currentTimeMillis() + keepAliveTimeout * 1000;
     listener.onRecycle(expiration);
-  }
-
-  @Override
-  public synchronized boolean checkInitialized() {
-    boolean ret = initialized;
-    initialized = true;
-    return ret;
   }
 }

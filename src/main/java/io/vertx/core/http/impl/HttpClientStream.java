@@ -50,7 +50,6 @@ interface HttpClientStream {
   void doResume();
 
   void reset(long code);
-
   void beginRequest(HttpClientRequestImpl req);
   void endRequest();
 

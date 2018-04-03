@@ -613,28 +613,22 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       connecting = true;
       client.getConnectionForRequest(peerHost, ssl, port, host, ar1 -> {
         if (ar1.succeeded()) {
-          HttpClientConnection conn = ar1.result();
+          HttpClientStream stream = ar1.result();
+          ContextInternal ctx = (ContextInternal) stream.getContext();
+          if (stream.id() == 1 && initializer != null) {
+            ctx.executeFromIO(v -> {
+              initializer.handle(stream.connection());
+            });
+          }
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
           if (exceptionOccurred != null || reset != null) {
-            conn.recycle();
-            return;
-          }
-          ContextInternal ctx = conn.getContext();
-          if (!conn.checkInitialized() && initializer != null) {
+            stream.reset(0);
+          } else {
             ctx.executeFromIO(v -> {
-              initializer.handle(conn);
+              connected(headersHandler, stream);
             });
           }
-          conn.createStream(ar2 -> {
-            ctx.executeFromIO(v -> {
-              if (ar2.succeeded()) {
-                connected(headersHandler, ar2.result());
-              } else {
-                handleException(ar2.cause());
-              }
-            });
-          });
         } else {
           connectCtx.executeFromIO(v -> {
             handleException(ar1.cause());
@@ -645,8 +639,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void connected(Handler<HttpVersion> headersHandler, HttpClientStream stream) {
-    HttpConnection conn = stream.connection();
-
     synchronized (this) {
       this.stream = stream;
       stream.beginRequest(this);
