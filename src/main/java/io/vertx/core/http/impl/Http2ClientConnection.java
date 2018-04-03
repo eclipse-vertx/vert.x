@@ -102,7 +102,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        Http2ClientStream stream = createStream(true, 1);
+        Http2ClientStream stream = createStream(handler.connection().stream(1));
         stream.beginRequest(req);
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
@@ -118,7 +118,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     synchronized (this) {
       Http2Connection conn = handler.connection();
       try {
-        Http2ClientStream stream = createStream(false, conn.local().incrementAndGetNextStreamId());
+        int id = conn.local().lastStreamCreated() == 0 ? 1 : conn.local().lastStreamCreated() + 2;
+        Http2ClientStream stream = createStream(conn.local().createStream(id, false));
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
@@ -127,9 +128,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     completionHandler.handle(fut);
   }
 
-  private Http2ClientStream createStream(boolean upgrade, int streamId) throws Exception {
-    Http2Connection conn = handler.connection();
-    Http2Stream stream = upgrade ? conn.stream(1) : conn.local().createStream(streamId, false);
+  private Http2ClientStream createStream(Http2Stream stream) {
     boolean writable = handler.encoder().flowController().isWritable(stream);
     Http2ClientStream clientStream = new Http2ClientStream(this, stream, writable);
     streams.put(clientStream.stream.id(), clientStream);

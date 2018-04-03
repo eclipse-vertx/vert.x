@@ -277,7 +277,7 @@ public class Http2ClientTest extends Http2TestBase {
     req.handler(resp -> {
       Context ctx = vertx.getOrCreateContext();
       assertOnIOContext(ctx);
-      assertEquals(3, req.streamId());
+      assertEquals(1, req.streamId());
       assertEquals(1, reqCount.get());
       assertEquals(HttpVersion.HTTP_2, resp.version());
       assertEquals(200, resp.statusCode());
@@ -1338,7 +1338,7 @@ public class Http2ClientTest extends Http2TestBase {
       req.end(Buffer.buffer("request-body"));
     });
     req.sendHead(version -> {
-      assertEquals(3, req.streamId());
+      assertEquals(1, req.streamId());
     });
     await();
   }
