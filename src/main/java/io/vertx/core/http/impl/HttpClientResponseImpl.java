@@ -255,7 +255,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
             handleException(t);
           }
         }
-        request.handleResponseEnd();
       }
     }
   }

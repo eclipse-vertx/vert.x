@@ -93,7 +93,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public io.vertx.core.http.HttpMethod method() {
+  public HttpMethod method() {
     return method;
   }
 
@@ -179,9 +179,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   private void timeout(long timeoutMs) {
     handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for host " + host));
-  }
-
-  void handleResponseEnd() {
   }
 
   synchronized void dataReceived() {
