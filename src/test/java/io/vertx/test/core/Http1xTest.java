@@ -1236,18 +1236,24 @@ public class Http1xTest extends HttpTest {
   @Repeat(times = 10)
   @Test
   public void testCloseServerConnectionWithPendingMessages() throws Exception {
+    int n = 5;
     server.requestHandler(req -> {
-      req.response().close();
+      vertx.setTimer(100, id -> {
+        req.response().close();
+      });
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true));
-    for (int i = 0;i < 10;i++) {
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(n).setPipelining(true));
+    AtomicBoolean completed = new AtomicBoolean();
+    for (int i = 0;i < n * 2;i++) {
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         fail();
       }).connectionHandler(conn -> {
         conn.closeHandler(v -> {
-          testComplete();
+          if (completed.compareAndSet(false, true)) {
+            testComplete();
+          }
         });
       }).end();
     }
