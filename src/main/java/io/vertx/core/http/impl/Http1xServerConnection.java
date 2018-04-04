@@ -81,7 +81,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
-  private final Deque<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final SSLHelper sslHelper;
   final HttpServerOptions options;
@@ -94,12 +93,15 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private HttpServerRequestImpl currentRequest;
   private HttpServerResponseImpl pendingResponse;
   private ServerWebSocketImpl ws;
-  private boolean channelPaused;
-  private boolean paused;
-  private boolean sentCheck;
   private long bytesRead;
   private long bytesWritten;
+
+  // (queueing == true) <=> (paused || pending.size() > 0)
+  private final Deque<Object> pending = new ArrayDeque<>(8);
+  private boolean paused;
+  private boolean sentCheck;
   private boolean queueing;
+  private boolean channelPaused;
 
   public Http1xServerConnection(VertxInternal vertx,
                                 SSLHelper sslHelper,
@@ -130,30 +132,40 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   synchronized void resume() {
     if (paused) {
       paused = false;
-      checkNextTick();
-    }
-  }
-
-  synchronized void handleMessage(Object msg) {
-    if (queueing) {
-      enqueue(msg);
-    } else {
-      if (processMessage(msg)) {
-        checkNextTick();
+      if (pending.isEmpty()) {
+        unsetQueueing();
       } else {
-        enqueue(msg);
+        checkNextTick();
       }
     }
   }
 
+  synchronized void handleMessage(Object msg) {
+    if (queueing || !processMessage(msg)) {
+      enqueue(msg);
+    }
+  }
+
+  /**
+   * Set in non queueing mode, i.e (pending.size() == 0 && !paused)
+   */
+  private void unsetQueueing() {
+    queueing = false;
+    if (channelPaused) {
+      // Resume the actual channel
+      channelPaused = false;
+      doResume();
+    }
+  }
+
   private void enqueue(Object msg) {
-    //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+    // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
     queueing = true;
     pending.add(msg);
     if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
-      //We pause the channel too, to prevent the queue growing too large, but we don't do this
-      //until the queue reaches a certain size, to avoid pausing it too often
-      super.doPause();
+      // We pause the channel too, to prevent the queue growing too large, but we don't do this
+      // until the queue reaches a certain size, to avoid pausing it too often
+      doPause();
       channelPaused = true;
     }
   }
@@ -478,30 +490,23 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
 
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!paused && !sentCheck) {
+    if (!paused && queueing && !sentCheck) {
       sentCheck = true;
-      vertx.runOnContext(v -> {
+      context.runOnContext(v -> {
         synchronized (Http1xServerConnection.this) {
           sentCheck = false;
           if (!paused) {
+            // The only place we poll the pending queue, so we are sure that pending.size() > 0
+            // since we got there because queueing was true
             Object msg = pending.poll();
-            if (msg != null) {
-              if (processMessage(msg)) {
-                checkNextTick();
+            if (processMessage(msg)) {
+              if (pending.isEmpty()) {
+                unsetQueueing();
               } else {
-                pending.addFirst(msg);
-              }
-            }
-            if (pending.isEmpty()) {
-              queueing = false;
-              if (channelPaused) {
-                // Resume the actual channel
-                channelPaused = false;
-                Http1xServerConnection.super.doResume();
+                checkNextTick();
               }
             } else {
-              queueing = true;
-              checkNextTick();
+              pending.addFirst(msg);
             }
           }
         }
