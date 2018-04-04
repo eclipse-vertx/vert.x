@@ -25,7 +25,8 @@ import io.vertx.core.net.NetSocket;
 interface HttpClientStream {
 
   /**
-   * @return the stream id or -1 for HTTP/1.x
+   * @return the stream id, {@code 1} denotes the first stream, HTTP/1 is a simple sequence, HTTP/2
+   * is the actual stream identifier.
    */
   int id();
 
