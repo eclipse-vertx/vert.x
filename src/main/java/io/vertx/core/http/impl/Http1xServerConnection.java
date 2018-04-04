@@ -141,14 +141,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   }
 
   synchronized void handleMessage(Object msg) {
-    if (queueing) {
+    if (queueing || !processMessage(msg)) {
       enqueue(msg);
-    } else {
-      if (processMessage(msg)) {
-        checkNextTick();
-      } else {
-        enqueue(msg);
-      }
     }
   }
 
