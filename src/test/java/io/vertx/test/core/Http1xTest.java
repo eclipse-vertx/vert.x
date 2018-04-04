@@ -1233,6 +1233,27 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
+  @Repeat(times = 10)
+  @Test
+  public void testCloseServerConnectionWithPendingMessages() throws Exception {
+    server.requestHandler(req -> {
+      req.response().close();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true));
+    for (int i = 0;i < 10;i++) {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        fail();
+      }).connectionHandler(conn -> {
+        conn.closeHandler(v -> {
+          testComplete();
+        });
+      }).end();
+    }
+    await();
+  }
+
   @Test
   public void testPipeliningFailure() throws Exception {
     int n = 5;
