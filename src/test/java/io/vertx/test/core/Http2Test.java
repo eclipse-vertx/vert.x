@@ -50,6 +50,7 @@ public class Http2Test extends HttpTest {
     return Http2TestBase.createHttp2ClientOptions();
   }
 
+  @Test
   @Override
   public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
     testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(1);

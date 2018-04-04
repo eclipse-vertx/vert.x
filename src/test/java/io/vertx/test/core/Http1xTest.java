@@ -1103,6 +1103,7 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 
+  @Test
   @Override
   public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
     testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(0);
