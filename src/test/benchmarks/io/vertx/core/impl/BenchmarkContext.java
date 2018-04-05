@@ -34,10 +34,6 @@ public class BenchmarkContext extends ContextImpl {
     wrapTask(null, task, true, null).run();
   }
 
-  public void runDirect(Handler<Void> task) {
-    wrapTask(null, task, true, null).run();
-  }
-
   @Override
   public boolean isEventLoopContext() {
     return false;
