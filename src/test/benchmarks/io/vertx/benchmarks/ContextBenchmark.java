@@ -26,7 +26,7 @@ import org.openjdk.jmh.annotations.State;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @State(Scope.Thread)
-public class RunOnContextBenchmark extends BenchmarkBase {
+public class ContextBenchmark extends BenchmarkBase {
 
   @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   public static void consume(final String buf) {
