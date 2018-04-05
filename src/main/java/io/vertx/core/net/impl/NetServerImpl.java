@@ -13,7 +13,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.group.ChannelGroup;
@@ -196,7 +195,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
                   } else {
                     Handler<Throwable> exceptionHandler = handler.handler.exceptionHandler;
                     if (exceptionHandler != null) {
-                      handler.context.executeFromIO(() -> {
+                      handler.context.executeFromIO(v -> {
                         exceptionHandler.handle(future.cause());
                       });
                     } else {
@@ -437,7 +436,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
     VertxNetHandler nh = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics)) {
       @Override
-      protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, Object msg) {
         connection.handleMessageReceived(msg);
       }
     };
@@ -445,7 +444,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     nh.removeHandler(conn -> socketMap.remove(ch));
     ch.pipeline().addLast("handler", nh);
     NetSocketImpl sock = nh.getConnection();
-    handler.context.executeFromIO(() -> {
+    handler.context.executeFromIO(v -> {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       }

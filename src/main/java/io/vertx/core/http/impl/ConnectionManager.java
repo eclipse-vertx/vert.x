@@ -133,7 +133,7 @@ class ConnectionManager {
         @Override
         public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
           if (connectionHandler != null) {
-            ctx.executeFromIO(() -> {
+            ctx.executeFromIO(v -> {
               connectionHandler.handle(conn);
             });
           }

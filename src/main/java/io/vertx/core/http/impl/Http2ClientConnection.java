@@ -111,7 +111,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
-      context.executeFromIO(() -> {
+      context.executeFromIO(v -> {
         stream.handleHeaders(headers, endOfStream);
       });
     }
@@ -123,7 +123,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     if (stream != null) {
       Handler<HttpClientRequest> pushHandler = stream.pushHandler();
       if (pushHandler != null) {
-        context.executeFromIO(() -> {
+        context.executeFromIO(v -> {
           String rawMethod = headers.method().toString();
           HttpMethod method = HttpUtils.toVertxMethod(rawMethod);
           String uri = headers.path().toString();
@@ -151,7 +151,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     private boolean requestEnded;
     private boolean responseEnded;
 
-    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase request, Http2Stream stream, boolean writable) throws Http2Exception {
+    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase request, Http2Stream stream, boolean writable) {
       super(conn, stream, writable);
       this.request = request;
     }
@@ -273,12 +273,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     void handleException(Throwable exception) {
       if (!requestEnded || response == null) {
-        context.executeFromIO(() -> {
+        context.executeFromIO(v -> {
           request.handleException(exception);
         });
       }
       if (response != null) {
-        context.executeFromIO(() -> {
+        context.executeFromIO(v -> {
           response.handleException(exception);
         });
       }

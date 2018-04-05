@@ -22,7 +22,6 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.ContextTask;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -30,9 +29,10 @@ import io.vertx.core.impl.ContextTask;
 public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
   private C conn;
-  private ContextTask endReadAndFlush;
+  private Handler<Void> endReadAndFlush;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
+  private Handler<Object> messageHandler;
 
   /**
    * Set the connection, this is usually called by subclasses when the channel is added to the pipeline.
@@ -41,10 +41,14 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
    */
   protected void setConnection(C connection) {
     conn = connection;
-    endReadAndFlush = conn::endReadAndFlush;
+    endReadAndFlush = v -> conn.endReadAndFlush();
     if (addHandler != null) {
       addHandler.handle(connection);
     }
+    messageHandler = m -> {
+      conn.startRead();
+      handleMessage(conn, m);
+    };
   }
 
   /**
@@ -97,7 +101,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
     ContextInternal context = conn.getContext();
-    context.executeFromIO(conn::handleInterestedOpsChanged);
+    context.executeFromIO(v -> conn.handleInterestedOpsChanged());
   }
 
   @Override
@@ -107,7 +111,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     C connection = getConnection();
     if (connection != null) {
       ContextInternal context = conn.getContext();
-      context.executeFromIO(() -> {
+      context.executeFromIO(v -> {
         try {
           if (ch.isOpen()) {
             ch.close();
@@ -127,7 +131,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
       removeHandler.handle(conn);
     }
     ContextInternal context = conn.getContext();
-    context.executeFromIO(conn::handleClosed);
+    context.executeFromIO(v -> conn.handleClosed());
   }
 
   @Override
@@ -139,12 +143,8 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     Object message = decode(msg, chctx.alloc());
-    ContextInternal context;
-    context = conn.getContext();
-    context.executeFromIO(() -> {
-      conn.startRead();
-      handleMessage(conn, context, chctx, message);
-    });
+    ContextInternal ctx = conn.getContext();
+    ctx.executeFromIO(message, messageHandler);
   }
 
   @Override
@@ -155,7 +155,7 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     ctx.fireUserEventTriggered(evt);
   }
 
-  protected abstract void handleMessage(C connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception;
+  protected abstract void handleMessage(C connection, Object msg);
 
   /**
    * Decode the message before passing it to the channel

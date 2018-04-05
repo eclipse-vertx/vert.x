@@ -307,7 +307,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
-    context.executeFromIO(() -> handler.handle(Future.failedFuture(cause)));
+    context.executeFromIO(v -> handler.handle(Future.failedFuture(cause)));
   }
 
   @Override

@@ -15,10 +15,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.NetServerImpl;
@@ -98,7 +95,10 @@ public interface VertxInternal extends Vertx {
 
   File resolveFile(String fileName);
 
-  <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler);
+  /**
+   * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.
+   */
+  <T> void executeBlockingInternal(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
 
   ClusterManager getClusterManager();
 

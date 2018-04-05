@@ -61,7 +61,7 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
       throw new IllegalStateException("Worker executor closed");
     }
     ContextImpl context = (ContextImpl) vertx.getOrCreateContext();
-    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, pool.executor(), ordered ? context.orderedTasks : null, pool.metrics());
+    context.executeBlocking(blockingCodeHandler, asyncResultHandler, pool.executor(), ordered ? context.orderedTasks : null, pool.metrics());
   }
 
   @Override

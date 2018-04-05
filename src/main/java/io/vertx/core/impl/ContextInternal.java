@@ -59,7 +59,7 @@ public interface ContextInternal extends Context {
   /**
    * Execute an internal task on the internal blocking ordered executor.
    */
-  <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler);
+  <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler);
 
   /**
    * @return the deployment associated with this context or {@code null}
@@ -70,16 +70,22 @@ public interface ContextInternal extends Context {
   VertxInternal owner();
 
   /**
+   * Like {@link #executeFromIO(Object, Handler)} but with no argument.
+   */
+  void executeFromIO(Handler<Void> task);
+
+  /**
    * Execute the context task and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
    *
    * The caller thread should be the the event loop thread of this context.<p/>
    *
-   * Any exception thrown from the {@literal stack} will be reported on this context.
+   * Any exception thrown from the {@literal task} will be reported on this context.
    *
-   * @param task the task to execute
+   * @param value the argument for the {@code task}
+   * @param task the task to execute with the {@code value} argument
    */
-  void executeFromIO(ContextTask task);
+  <T> void executeFromIO(T value, Handler<T> task);
 
   /**
    * @return the {@link ConcurrentMap} used to store context data

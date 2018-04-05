@@ -174,12 +174,18 @@ abstract class ContextImpl implements ContextInternal {
   // This is called to execute code where the origin is IO (from Netty probably).
   // In such a case we should already be on an event loop thread (as Netty manages the event loops)
   // but check this anyway, then execute directly
-  public void executeFromIO(ContextTask task) {
+  @Override
+  public void executeFromIO(Handler<Void> task) {
+    executeFromIO(null, task);
+  }
+
+  @Override
+  public <T> void executeFromIO(T value, Handler<T> task) {
     if (THREAD_CHECKS) {
       checkCorrectThread();
     }
     // No metrics on this, as we are on the event loop.
-    wrapTask(task, null, true, null).run();
+    executeTask(value, task, true);
   }
 
   protected abstract void checkCorrectThread();
@@ -220,13 +226,13 @@ abstract class ContextImpl implements ContextInternal {
   }
 
   @Override
-  public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, null, resultHandler, internalBlockingPool.executor(), internalOrderedTasks, internalBlockingPool.metrics());
+  public <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(action, resultHandler, internalBlockingPool.executor(), internalOrderedTasks, internalBlockingPool.metrics());
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(null, blockingCodeHandler, resultHandler, workerPool.executor(), ordered ? orderedTasks : null, workerPool.metrics());
+    executeBlocking(blockingCodeHandler, resultHandler, workerPool.executor(), ordered ? orderedTasks : null, workerPool.metrics());
   }
 
   @Override
@@ -236,10 +242,10 @@ abstract class ContextImpl implements ContextInternal {
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(null, blockingCodeHandler, resultHandler, workerPool.executor(), queue, workerPool.metrics());
+    executeBlocking(blockingCodeHandler, resultHandler, workerPool.executor(), queue, workerPool.metrics());
   }
 
-  <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler,
+  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
       Executor exec, TaskQueue queue, PoolMetrics metrics) {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
@@ -255,15 +261,10 @@ abstract class ContextImpl implements ContextInternal {
         }
         Future<T> res = Future.future();
         try {
-          if (blockingCodeHandler != null) {
-            ContextImpl.setContext(this);
-            blockingCodeHandler.handle(res);
-          } else {
-            T result = action.perform();
-            res.complete(result);
-          }
+          ContextImpl.setContext(this);
+          blockingCodeHandler.handle(res);
         } catch (Throwable e) {
-          res.fail(e);
+          res.tryFail(e);
         } finally {
           if (!DISABLE_TIMINGS) {
             current.executeEnd();
@@ -298,57 +299,56 @@ abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
-  protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread, PoolMetrics metrics) {
+  protected <T> Runnable wrapTask(T arg, Handler<T> hTask, boolean checkThread, PoolMetrics metrics) {
     Object metric = metrics != null ? metrics.submitted() : null;
     return () -> {
-      Thread th = Thread.currentThread();
-      if (!(th instanceof VertxThread)) {
-        throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + th);
-      }
-      VertxThread current = (VertxThread) th;
-      if (THREAD_CHECKS && checkThread) {
-        if (contextThread == null) {
-          contextThread = current;
-        } else if (contextThread != current && !contextThread.isWorker()) {
-          throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
-        }
-      }
       if (metrics != null) {
         metrics.begin(metric);
       }
-      if (!DISABLE_TIMINGS) {
-        current.executeStart();
-      }
-      try {
-        setContext(current, ContextImpl.this);
-        if (cTask != null) {
-          cTask.run();
-        } else {
-          hTask.handle(null);
-        }
-        if (metrics != null) {
-          metrics.end(metric, true);
-        }
-      } catch (Throwable t) {
-        log.error("Unhandled exception", t);
-        Handler<Throwable> handler = this.exceptionHandler;
-        if (handler == null) {
-          handler = owner.exceptionHandler();
-        }
-        if (handler != null) {
-          handler.handle(t);
-        }
-        if (metrics != null) {
-          metrics.end(metric, false);
-        }
-      } finally {
-        // We don't unset the context after execution - this is done later when the context is closed via
-        // VertxThreadFactory
-        if (!DISABLE_TIMINGS) {
-          current.executeEnd();
-        }
+      boolean succeeded = executeTask(arg, hTask, checkThread);
+      if (metrics != null) {
+        metrics.end(metric, succeeded);
       }
     };
+  }
+
+  protected <T> boolean executeTask(T arg, Handler<T> hTask, boolean checkThread) {
+    Thread th = Thread.currentThread();
+    if (!(th instanceof VertxThread)) {
+      throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + th);
+    }
+    VertxThread current = (VertxThread) th;
+    if (THREAD_CHECKS && checkThread) {
+      if (contextThread == null) {
+        contextThread = current;
+      } else if (contextThread != current && !contextThread.isWorker()) {
+        throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
+      }
+    }
+    if (!DISABLE_TIMINGS) {
+      current.executeStart();
+    }
+    try {
+      setContext(current, ContextImpl.this);
+      hTask.handle(arg);
+      return true;
+    } catch (Throwable t) {
+      log.error("Unhandled exception", t);
+      Handler<Throwable> handler = this.exceptionHandler;
+      if (handler == null) {
+        handler = owner.exceptionHandler();
+      }
+      if (handler != null) {
+        handler.handle(t);
+      }
+      return false;
+    } finally {
+      // We don't unset the context after execution - this is done later when the context is closed via
+      // VertxThreadFactory
+      if (!DISABLE_TIMINGS) {
+        current.executeEnd();
+      }
+    }
   }
 
   private void setTCCL() {

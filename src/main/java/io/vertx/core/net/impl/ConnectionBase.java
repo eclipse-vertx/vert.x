@@ -177,6 +177,10 @@ public abstract class ConnectionBase {
     return chctx.channel();
   }
 
+  public final ChannelHandlerContext channelHandlerContext() {
+    return chctx;
+  }
+
   public final ContextInternal getContext() {
     return context;
   }
@@ -217,7 +221,7 @@ public abstract class ConnectionBase {
 
   protected void addFuture(final Handler<AsyncResult<Void>> completionHandler, final ChannelFuture future) {
     if (future != null) {
-      future.addListener(channelFuture -> context.executeFromIO(() -> {
+      future.addListener(channelFuture -> context.executeFromIO(v -> {
         if (completionHandler != null) {
           if (channelFuture.isSuccess()) {
             completionHandler.handle(Future.succeededFuture());

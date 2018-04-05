@@ -939,7 +939,7 @@ public class MetricsTest extends VertxTestBase {
     int count = num * 5;
     for (int i = 0; i < count; i++) {
       CountDownLatch latch = latches.computeIfAbsent(i / num, k -> new CountDownLatch(num));
-      v.executeBlockingInternal(() -> {
+      v.executeBlockingInternal(fut -> {
         latch.countDown();
         try {
           awaitLatch(latch);
@@ -950,7 +950,8 @@ public class MetricsTest extends VertxTestBase {
         if (metrics.numberOfRunningTasks() > 0) {
           hadRunning.set(true);
         }
-        return null; }, ar -> {
+        fut.complete();
+      }, ar -> {
         if (metrics.numberOfWaitingTasks() > 0) {
           hadWaitingQueue.set(true);
         }

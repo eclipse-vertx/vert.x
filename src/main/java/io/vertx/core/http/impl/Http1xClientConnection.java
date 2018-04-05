@@ -321,7 +321,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
             super.channelRead(chctx, msg);
           }
           @Override
-          protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
+          protected void handleMessage(NetSocketImpl connection, Object msg) {
             ByteBuf buf = (ByteBuf) msg;
             connection.handleMessageReceived(buf);
           }
@@ -574,7 +574,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       buffered.clear();
       Handler<Throwable> handler = exceptionHandler();
       if (handler != null) {
-        context.executeFromIO(() -> {
+        context.executeFromIO(v -> {
           handler.handle(e);
         });
       } else {
@@ -595,7 +595,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       ws = webSocket;
       handshaker.finishHandshake(chctx.channel(), response);
       ws.subProtocol(handshaker.actualSubprotocol());
-      context.executeFromIO(() -> {
+      context.executeFromIO(v -> {
         log.debug("WebSocket handshake complete");
         if (metrics != null ) {
           webSocket.setMetric(metrics.connected(endpointMetric, metric(), webSocket));

@@ -21,7 +21,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.impl.HandlerHolder;
@@ -64,7 +63,7 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
       metrics);
     setConnection(conn);
     conn.requestHandler(holder.handler.requesthHandler);
-    holder.context.executeFromIO(() -> {
+    holder.context.executeFromIO(v -> {
       if (metrics != null) {
         conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
       }
@@ -76,14 +75,15 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
   }
 
   @Override
-  protected void handleMessage(Http1xServerConnection conn, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void handleMessage(Http1xServerConnection conn, Object msg) {
     conn.handleMessage(msg);
   }
 
-  WebSocketServerHandshaker createHandshaker(Http1xServerConnection conn, Channel ch, HttpRequest request) {
+  WebSocketServerHandshaker createHandshaker(Http1xServerConnection conn, HttpRequest request) {
     // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
     // it doesn't send a normal 'Connection: Upgrade' header. Instead it
     // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
+    Channel ch = conn.channel();
     String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
     if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
       HttpServerImpl.sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);

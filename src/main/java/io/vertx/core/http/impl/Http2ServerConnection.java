@@ -115,7 +115,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         req.response().writeContinue();
       }
       streams.put(streamId, req);
-      context.executeFromIO(() -> {
+      context.executeFromIO(v -> {
         Http2ServerResponseImpl resp = req.response();
         resp.beginRequest();
         requestHandler.handle(req);
@@ -128,7 +128,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       // Http server request trailer - not implemented yet (in api)
     }
     if (endOfStream) {
-      context.executeFromIO(stream::onEnd);
+      VertxHttp2Stream finalStream = stream;
+      context.executeFromIO(v -> finalStream.onEnd());
     }
   }
 
@@ -169,13 +170,13 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
-              context.executeFromIO(push::complete);
+              context.executeFromIO(v -> push.complete());
             } else {
               pendingPushes.add(push);
             }
           }
         } else {
-          context.executeFromIO(() -> {
+          context.executeFromIO(v -> {
             completionHandler.handle(Future.failedFuture(ar.cause()));
           });
         }

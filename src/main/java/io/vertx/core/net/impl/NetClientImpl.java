@@ -13,7 +13,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -214,7 +213,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
       } else {
         if (remainingAttempts > 0 || remainingAttempts == -1) {
-          context.executeFromIO(() -> {
+          context.executeFromIO(v -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
@@ -236,13 +235,13 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics)) {
       @Override
-      protected void handleMessage(NetSocketImpl connection, ContextInternal context, ChannelHandlerContext chctx, Object msg) throws Exception {
+      protected void handleMessage(NetSocketImpl connection, Object msg) {
         connection.handleMessageReceived(msg);;
       }
     };
     handler.addHandler(sock -> {
       socketMap.put(ch, sock);
-      context.executeFromIO(() -> {
+      context.executeFromIO(v -> {
         if (metrics != null) {
           sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
         }
@@ -260,7 +259,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     if (ch != null) {
       ch.close();
     }
-    context.executeFromIO(() -> doFailed(connectHandler, th));
+    context.executeFromIO(v -> doFailed(connectHandler, th));
   }
 
   private void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable th) {

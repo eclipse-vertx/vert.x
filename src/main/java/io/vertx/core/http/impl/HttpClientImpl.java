@@ -947,12 +947,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                          Handler<Http1xClientConnection> handler,
                                          Handler<Throwable> connectionExceptionHandler) {
     websocketCM.getConnection(host, ssl, port, host, null, (ctx, conn) -> {
-      ctx.executeFromIO(() -> {
+      ctx.executeFromIO(v -> {
         handler.handle((Http1xClientConnection) conn);
       });
       return true;
     }, (ctx, failure) -> {
-      ctx.executeFromIO(() -> {
+      ctx.executeFromIO(v -> {
         connectionExceptionHandler.handle(failure);
       });
     });

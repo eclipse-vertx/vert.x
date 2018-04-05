@@ -31,7 +31,7 @@ public class BenchmarkContext extends ContextImpl {
 
   @Override
   protected void executeAsync(Handler<Void> task) {
-    wrapTask(null, task, true, null).run();
+    executeTask(null, task, true);
   }
 
   @Override

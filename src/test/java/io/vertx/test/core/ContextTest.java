@@ -133,7 +133,7 @@ public class ContextTest extends VertxTestBase {
 
     // Check from other thread
     try {
-      eventLoopContext.executeFromIO(this::fail);
+      eventLoopContext.executeFromIO(v -> fail());
       fail();
     } catch (IllegalStateException expected) {
     }
@@ -144,7 +144,7 @@ public class ContextTest extends VertxTestBase {
       assertNull(Vertx.currentContext());
       Thread vertxThread = Thread.currentThread();
       AtomicBoolean nested = new AtomicBoolean(true);
-      eventLoopContext.executeFromIO(() -> {
+      eventLoopContext.executeFromIO(v -> {
         assertTrue(nested.get());
         assertSame(eventLoopContext, Vertx.currentContext());
         assertSame(vertxThread, Thread.currentThread());
@@ -169,7 +169,7 @@ public class ContextTest extends VertxTestBase {
     awaitLatch(latch);
     workerContext.get().nettyEventLoop().execute(() -> {
       assertNull(Vertx.currentContext());
-      workerContext.get().executeFromIO(() -> {
+      workerContext.get().executeFromIO(v -> {
         assertSame(workerContext.get(), Vertx.currentContext());
         assertTrue(Context.isOnWorkerThread());
         testComplete();
