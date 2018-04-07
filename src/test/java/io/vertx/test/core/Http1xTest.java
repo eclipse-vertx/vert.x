@@ -14,6 +14,7 @@ package io.vertx.test.core;
 import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.impl.ConcurrentHashSet;

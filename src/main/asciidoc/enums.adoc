@@ -146,6 +146,40 @@ ID 14, bad timestamp
 |[[HTTP_2]]`HTTP_2`|-
 |===
 
+[[JsonEventType]]
+== JsonEventType
+
+++++
+ The possibles types of link emitted by the link.
+++++
+'''
+
+[cols=">25%,75%"]
+[frame="topbot"]
+|===
+^|Name | Description
+|[[START_OBJECT]]`START_OBJECT`|
++++
+Signals the start of a JSON object.
++++
+|[[END_OBJECT]]`END_OBJECT`|
++++
+Signals the end of a JSON object.
++++
+|[[START_ARRAY]]`START_ARRAY`|
++++
+Signals the start of a JSON array.
++++
+|[[END_ARRAY]]`END_ARRAY`|
++++
+Signals the end of a JSON array.
++++
+|[[VALUE]]`VALUE`|
++++
+Signals a JSON value.
++++
+|===
+
 [[ProxyType]]
 == ProxyType
 

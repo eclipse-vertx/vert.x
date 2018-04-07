@@ -83,12 +83,16 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     this.port = port;
   }
 
+  public long weight() {
+    return weight;
+  }
+
   @Override
   public void close(HttpClientConnection conn) {
     conn.close();
   }
 
-  public long connect(
+  public void connect(
     ConnectionListener<HttpClientConnection> listener,
     ContextImpl context) {
 
@@ -212,8 +216,6 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     };
 
     channelProvider.connect(client.getVertx(), bootstrap, client.getOptions().getProxyOptions(), SocketAddress.inetSocketAddress(port, host), channelInitializer, channelHandler);
-
-    return weight;
   }
 
   private void applyConnectionOptions(Bootstrap bootstrap) {
@@ -271,7 +273,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       metric,
       client.metrics());
     clientHandler.addHandler(conn -> {
-      listener.onConnectSuccess(conn, http1MaxConcurrency, ch, context, weight, http1Weight);
+      listener.onConnectSuccess(conn, http1MaxConcurrency, ch, context, http1Weight);
     });
     clientHandler.removeHandler(conn -> {
       listener.onDiscard();
@@ -305,7 +307,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
         if (http2MaxConcurrency > 0) {
           concurrency = Math.min(concurrency, http2MaxConcurrency);
         }
-        listener.onConnectSuccess(conn, concurrency, ch, context, weight, http2Weight);
+        listener.onConnectSuccess(conn, concurrency, ch, context, http2Weight);
       });
       handler.removeHandler(conn -> {
         if (metrics != null) {
@@ -325,6 +327,6 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       } catch (Exception ignore) {
       }
     }
-    listener.onConnectFailure(context, t, weight);
+    listener.onConnectFailure(context, t);
   }
 }
