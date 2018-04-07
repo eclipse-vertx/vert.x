@@ -3330,17 +3330,17 @@ public class Http1xTest extends HttpTest {
         fail();
       });
       if (pipelined) {
-        req1.sendHead(v -> {
-          assertTrue(req1.reset());
-          req1.connection().closeHandler(v2 -> {
-            client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-              assertEquals(200, resp.statusCode());
-              resp.bodyHandler(body -> {
-                assertEquals("Hello world", body.toString());
-                complete();
-              });
+        req1.connectionHandler(conn -> conn.closeHandler(v2 -> {
+          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+            assertEquals(200, resp.statusCode());
+            resp.bodyHandler(body -> {
+              assertEquals("Hello world", body.toString());
+              complete();
             });
           });
+        }));
+        req1.sendHead(v -> {
+          assertTrue(req1.reset());
         });
       } else {
         req1.sendHead(v -> {
@@ -3539,21 +3539,16 @@ public class Http1xTest extends HttpTest {
       if (pipelined) {
         requestReceived.thenAccept(v -> {
           req1.reset();
-          requestReceived.thenAccept(v1 -> {
-            req1.reset();
-            req1.connection().closeHandler(v2 -> {
-              client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", resp -> {
-                assertEquals(200, resp.statusCode());
-                resp.bodyHandler(body -> {
-                  assertEquals("Hello world", body.toString());
-                  complete();
-                });
-              });
+        });
+        req1.connectionHandler(conn -> conn.closeHandler(v2 -> {
+          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", resp -> {
+            assertEquals(200, resp.statusCode());
+            resp.bodyHandler(body -> {
+              assertEquals("Hello world", body.toString());
+              complete();
             });
           });
-          req1.handler(resp1 -> fail());
-          req1.end();
-        });
+        }));
         req1.handler(resp1 -> fail());
         req1.end();
       } else {
