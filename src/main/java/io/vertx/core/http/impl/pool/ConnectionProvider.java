@@ -26,9 +26,8 @@ public interface ConnectionProvider<C> {
    *
    * @param listener the listener
    * @param context the context to use for the connection
-   * @return the initial weight of the connection, which will eventually be corrected when calling the listener
    */
-  long connect(ConnectionListener<C> listener, ContextInternal context);
+  void connect(ConnectionListener<C> listener, ContextInternal context);
 
   /**
    * Close a connection.

@@ -42,8 +42,8 @@ import java.util.function.BiConsumer;
  * {@link #maxWeight} value to create a connection. Weight is used instead of counting connection because this pool
  * can mix connections with different concurrency (HTTP/1 and HTTP/2) and this flexibility is necessary.
  *
- * When a connection is created an initial weight is returned by the {@link ConnectionProvider#connect} method and is
- * added to the current weight. When the channel is connected the {@link ConnectionListener#onConnectSuccess} callback
+ * When a connection is created an {@link #initialWeight} is added to the current weight.
+ * When the channel is connected the {@link ConnectionListener#onConnectSuccess} callback
  * provides the initial weight returned by the connect method and the actual connection weight so it can be used to
  * correct the current weight. When the channel fails to connect the {@link ConnectionListener#onConnectFailure} failure
  * provides the initial weight so it can be used to correct the current weight.
@@ -93,6 +93,7 @@ public class Pool<C> {
 
   private final Deque<Holder<C>> available;                         // Available connections
 
+  private final long initialWeight;                                 // The initial weight of a connection
   private final long maxWeight;                                     // The max weight (equivalent to max pool size)
   private long weight;                                              // The actual pool weight (equivalent to connection count)
 
@@ -101,11 +102,13 @@ public class Pool<C> {
 
   public Pool(ConnectionProvider<C> connector,
               int queueMaxSize,
+              long initialWeight,
               long maxWeight,
               Handler<Void> poolClosed,
               BiConsumer<Channel, C> connectionAdded,
               BiConsumer<Channel, C> connectionRemoved) {
     this.maxWeight = maxWeight;
+    this.initialWeight = initialWeight;
     this.connector = connector;
     this.queueMaxSize = queueMaxSize;
     this.poolClosed = poolClosed;
@@ -182,7 +185,10 @@ public class Pool<C> {
       });
       return true;
     } else if (weight < maxWeight) {
-      weight += createConnection(waiter);
+      weight += initialWeight;
+      waiter.context.nettyEventLoop().execute(() -> {
+        createConnection(waiter);
+      });
       return true;
     } else {
       return false;
@@ -200,14 +206,14 @@ public class Pool<C> {
     }
   }
 
-  private long createConnection(Waiter<C> waiter) {
+  private void createConnection(Waiter<C> waiter) {
     Holder<C> holder  = new Holder<>();
     ConnectionListener<C> listener = new ConnectionListener<C>() {
       @Override
-      public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextInternal context, long initialWeight, long actualWeight) {
+      public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextInternal context, long actualWeight) {
         // Update state
         synchronized (Pool.this) {
-          initConnection(holder, context, concurrency, conn, channel, initialWeight, actualWeight);
+          initConnection(holder, context, concurrency, conn, channel, actualWeight);
         }
         // Init connection - state might change (i.e init could close the connection)
         waiter.initConnection(context, conn);
@@ -232,11 +238,11 @@ public class Pool<C> {
         }
       }
       @Override
-      public void onConnectFailure(ContextInternal context, Throwable err, long weight) {
+      public void onConnectFailure(ContextInternal context, Throwable err) {
         waiter.handleFailure(context, err);
         synchronized (Pool.this) {
           waitersCount--;
-          Pool.this.weight -= weight;
+          Pool.this.weight -= initialWeight;
           holder.removed = true;
           checkPending();
           checkClose();
@@ -283,7 +289,7 @@ public class Pool<C> {
         }
       }
     };
-    return connector.connect(listener, waiter.context);
+    connector.connect(listener, waiter.context);
   }
 
   private synchronized void recycle(Holder<C> holder, int capacity, boolean closeable) {
@@ -341,13 +347,13 @@ public class Pool<C> {
     }
   }
 
-  private void initConnection(Holder<C> holder, ContextInternal context, long concurrency, C conn, Channel channel, long oldWeight, long newWeight) {
-    weight += newWeight - oldWeight;
+  private void initConnection(Holder<C> holder, ContextInternal context, long concurrency, C conn, Channel channel, long weight) {
+    this.weight += initialWeight - weight;
     holder.context = context;
     holder.concurrency = concurrency;
     holder.connection = conn;
     holder.channel = channel;
-    holder.weight = newWeight;
+    holder.weight = weight;
     holder.capacity = concurrency;
     connectionAdded.accept(holder.channel, holder.connection);
   }

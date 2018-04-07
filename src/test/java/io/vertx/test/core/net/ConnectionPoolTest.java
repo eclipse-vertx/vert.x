@@ -20,6 +20,7 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,7 +32,7 @@ public class ConnectionPoolTest extends VertxTestBase {
 
   class FakeConnectionManager {
 
-    private final FakeConnectionProvider connector;
+    private final ConnectionProvider<FakeConnection> connector;
     private final int queueMaxSize;
     private final int maxPoolSize;
     private Pool<FakeConnection> pool;
@@ -39,7 +40,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     private boolean closed = true;
     private int seq;
 
-    FakeConnectionManager(int queueMaxSize, int maxPoolSize, FakeConnectionProvider connector) {
+    FakeConnectionManager(int queueMaxSize, int maxPoolSize, ConnectionProvider<FakeConnection> connector) {
       this.queueMaxSize = queueMaxSize;
       this.maxPoolSize = maxPoolSize;
       this.connector = connector;
@@ -73,6 +74,7 @@ public class ConnectionPoolTest extends VertxTestBase {
           pool = new Pool<>(
             connector,
             queueMaxSize,
+            1,
             maxPoolSize,
             v -> {
               synchronized (FakeConnectionManager.this) {
@@ -186,6 +188,26 @@ public class ConnectionPoolTest extends VertxTestBase {
     waiter.assertFailure(expected);
     assertTrue(waiter.isFailure());
     assertWaitUntil(mgr::closed);
+  }
+
+  @Test
+  public void testSynchronousConnectionFailure() {
+    Throwable cause = new Throwable();
+    ConnectionProvider<FakeConnection> connector = new FakeConnectionProviderBase() {
+      @Override
+      public void connect(ConnectionListener<FakeConnection> listener, ContextInternal context) {
+        listener.onConnectFailure(context, cause);
+      }
+    };
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector);
+    for (int i = 0;i < 4;i++) {
+      FakeWaiter waiter = new FakeWaiter();
+      mgr.getConnection(waiter);
+      waitUntil(waiter::isFailure);
+      waiter.assertFailure(cause);
+      assertEquals(0, mgr.pool().weight());
+    }
+    assertTrue(mgr.closed());
   }
 
   @Test
@@ -373,7 +395,7 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     FakeConnectionProvider connector = new FakeConnectionProvider() {
       @Override
-      public long connect(ConnectionListener<FakeConnection> listener, ContextInternal context) {
+      public void connect(ConnectionListener<FakeConnection> listener, ContextInternal context) {
         int i = ThreadLocalRandom.current().nextInt(100);
         FakeConnection conn = new FakeConnection(context, listener);
         if (i < 10) {
@@ -381,7 +403,6 @@ public class ConnectionPoolTest extends VertxTestBase {
         } else {
           conn.connect();
         }
-        return 1;
       }
     };
     FakeConnectionManager mgr = new FakeConnectionManager(-1, 16, connector);
@@ -724,20 +745,29 @@ public class ConnectionPoolTest extends VertxTestBase {
       context.nettyEventLoop().execute(() -> {
         synchronized (FakeConnection.this) {
           status = CONNECTED;
-          listener.onConnectSuccess(this, concurrency, channel, context, 1, 1);
+          listener.onConnectSuccess(this, concurrency, channel, context, 1);
         }
       });
       return this;
     }
 
     void fail(Throwable err) {
-      context.nettyEventLoop().execute(() -> listener.onConnectFailure(context, err, 1));
+      context.nettyEventLoop().execute(() -> listener.onConnectFailure(context, err));
     }
   }
 
-  class FakeConnectionProvider implements ConnectionProvider<FakeConnection> {
+  abstract class FakeConnectionProviderBase implements ConnectionProvider<FakeConnection> {
 
-    private final ArrayDeque<FakeConnection> pendingRequests = new ArrayDeque<>();
+    @Override
+    public void close(FakeConnection conn) {
+      conn.listener.onDiscard();
+    }
+
+  }
+
+  class FakeConnectionProvider extends FakeConnectionProviderBase {
+
+    private final Deque<FakeConnection> pendingRequests = new ConcurrentLinkedDeque<>();
 
     void assertRequests(int expectedSize) {
       assertEquals(expectedSize, pendingRequests.size());
@@ -748,22 +778,15 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
 
     FakeConnection assertRequest() {
-      assertNotNull(pendingRequests);
-      assertTrue(pendingRequests.size() > 0);
+      waitUntil(() -> pendingRequests.size() > 0);
       FakeConnection request = pendingRequests.poll();
       assertNotNull(request);
       return request;
     }
 
     @Override
-    public long connect(ConnectionListener<FakeConnection> listener, ContextInternal context) {
+    public void connect(ConnectionListener<FakeConnection> listener, ContextInternal context) {
       pendingRequests.add(new FakeConnection(context, listener));
-      return 1;
-    }
-
-    @Override
-    public void close(FakeConnection conn) {
-      conn.listener.onDiscard();
     }
   }
 }

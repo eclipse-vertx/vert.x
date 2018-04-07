@@ -27,24 +27,21 @@ public interface ConnectionListener<C> {
    * @param concurrency the connection concurrency
    * @param channel the channel
    * @param context the context
-   * @param initialWeight the initial weight
    * @param actualWeight the actual weight
    */
   void onConnectSuccess(C conn,
                         long concurrency,
                         Channel channel,
                         ContextInternal context,
-                        long initialWeight,
                         long actualWeight);
 
   /**
    * Callback to signal the connection failed.
-   *
+   * 
    * @param context the context
    * @param err the error
-   * @param weight the weight
    */
-  void onConnectFailure(ContextInternal context, Throwable err, long weight);
+  void onConnectFailure(ContextInternal context, Throwable err);
 
   /**
    * Signals the connrection changed to the {@code concurrency} value.

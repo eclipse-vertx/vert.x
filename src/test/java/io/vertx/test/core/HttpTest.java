@@ -17,16 +17,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -4104,6 +4097,33 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testClientSynchronousConnectFailures() {
+    System.setProperty("vertx.disableDnsResolver", "true");
+    try {
+      int poolSize = 2;
+      Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setQueryTimeout(100)));
+      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(poolSize));
+      AtomicInteger failures = new AtomicInteger();
+      vertx.runOnContext(v -> {
+        for (int i = 0; i < (poolSize + 1); i++) {
+          HttpClientRequest clientRequest = client.getAbs("http://invalid-host-name.foo.bar", resp -> fail());
+          AtomicBoolean f = new AtomicBoolean();
+          clientRequest.exceptionHandler(e -> {
+            if (f.compareAndSet(false, true)) {
+              if (failures.incrementAndGet() == poolSize + 1) {
+                testComplete();
+              }
+            }
+          });
+          clientRequest.end();
+        }
+      });
+      await();
+    } finally {
+      System.setProperty("vertx.disableDnsResolver", "false");
+    }
+  }
 
   protected File setupFile(String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
