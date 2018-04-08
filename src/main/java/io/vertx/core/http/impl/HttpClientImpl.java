@@ -968,7 +968,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   /**
    * @return the vertx, for use in package related classes only.
    */
-  VertxInternal getVertx() {
+  public VertxInternal getVertx() {
     return vertx;
   }
 
