@@ -14,6 +14,7 @@ package io.vertx.test.core.net;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.pool.*;
@@ -192,8 +193,8 @@ public class ConnectionPoolTest extends VertxTestBase {
     Throwable cause = new Throwable();
     ConnectionProvider<FakeConnection> connector = new FakeConnectionProviderBase() {
       @Override
-      public void connect(ConnectionListener<FakeConnection> listener, ContextImpl context) {
-        listener.onConnectFailure(context, cause);
+      public void connect(ConnectionListener<FakeConnection> listener, ContextImpl context, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
+        handler.handle(Future.failedFuture(cause));
       }
     };
     FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector);
@@ -465,9 +466,9 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     FakeConnectionProvider connector = new FakeConnectionProvider() {
       @Override
-      public void connect(ConnectionListener<FakeConnection> listener, ContextImpl context) {
+      public void connect(ConnectionListener<FakeConnection> listener, ContextImpl context, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
         int i = ThreadLocalRandom.current().nextInt(100);
-        FakeConnection conn = new FakeConnection(context, listener);
+        FakeConnection conn = new FakeConnection(context, listener, Future.<ConnectResult<FakeConnection>>future().setHandler(handler));
         if (i < 10) {
           conn.fail(new Exception("Could not connect"));
         } else {
@@ -736,15 +737,17 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     private final ContextImpl context;
     private final ConnectionListener<FakeConnection> listener;
+    private final Future<ConnectResult<FakeConnection>> future;
     private final Channel channel = new EmbeddedChannel();
 
     private long inflight;
     private long concurrency = 1;
     private int status = DISCONNECTED;
 
-    FakeConnection(ContextImpl context, ConnectionListener<FakeConnection> listener) {
+    FakeConnection(ContextImpl context, ConnectionListener<FakeConnection> listener, Future<ConnectResult<FakeConnection>> future) {
       this.context = context;
       this.listener = listener;
+      this.future = future;
     }
 
     synchronized void close() {
@@ -801,14 +804,14 @@ public class ConnectionPoolTest extends VertxTestBase {
       context.nettyEventLoop().execute(() -> {
         synchronized (FakeConnection.this) {
           status = CONNECTED;
-          listener.onConnectSuccess(this, concurrency, channel, context, 1);
+          future.complete(new ConnectResult<>(this, concurrency, channel, context, 1));
         }
       });
       return this;
     }
 
     void fail(Throwable err) {
-      context.nettyEventLoop().execute(() -> listener.onConnectFailure(context, err));
+      context.nettyEventLoop().execute(() -> future.tryFail(err));
     }
   }
 
@@ -841,8 +844,8 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
 
     @Override
-    public void connect(ConnectionListener<FakeConnection> listener, ContextImpl context) {
-      pendingRequests.add(new FakeConnection(context, listener));
+    public void connect(ConnectionListener<FakeConnection> listener, ContextImpl context, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
+      pendingRequests.add(new FakeConnection(context, listener, Future.<ConnectResult<FakeConnection>>future().setHandler(handler)));
     }
   }
 }

@@ -237,43 +237,8 @@ public class Pool<C> {
     }
   }
 
-  private void createConnection(Waiter<C> waiter) {
-    Holder<C> holder  = new Holder<>();
-    ConnectionListener<C> listener = new ConnectionListener<C>() {
-      public void onConnectSuccess(C conn, long concurrency, Channel channel, ContextImpl context, long actualWeight) {
-        // Update state
-        synchronized (Pool.this) {
-          initConnection(holder, context, concurrency, conn, channel, actualWeight);
-        }
-        // Init connection - state might change (i.e init could close the connection)
-        synchronized (Pool.this) {
-          if (holder.capacity == 0) {
-            waitersQueue.add(waiter);
-            checkPending();
-            return;
-          }
-          waitersCount--;
-          holder.capacity--;
-          if (holder.capacity > 0) {
-            available.add(holder);
-          }
-        }
-        waiter.handler.handle(Future.succeededFuture(holder.connection));
-        synchronized (Pool.this) {
-          checkPending();
-        }
-      }
-      @Override
-      public void onConnectFailure(ContextImpl context, Throwable err) {
-        waiter.handler.handle(Future.failedFuture(err));
-        synchronized (Pool.this) {
-          waitersCount--;
-          Pool.this.weight -= initialWeight;
-          holder.removed = true;
-          checkPending();
-          checkClose();
-        }
-      }
+  private ConnectionListener<C> createListener(Holder<C> holder) {
+    return new ConnectionListener<C>() {
       @Override
       public void onConcurrencyChange(long concurrency) {
         synchronized (Pool.this) {
@@ -293,6 +258,7 @@ public class Pool<C> {
           }
         }
       }
+
       @Override
       public void onRecycle(long expirationTimestamp) {
         if (expirationTimestamp < 0L) {
@@ -305,6 +271,7 @@ public class Pool<C> {
           recycle(holder, 1, expirationTimestamp);
         }
       }
+
       @Override
       public void onDiscard() {
         synchronized (Pool.this) {
@@ -315,7 +282,46 @@ public class Pool<C> {
         }
       }
     };
-    connector.connect(listener, waiter.context);
+  }
+
+  private void createConnection(Waiter<C> waiter) {
+    Holder<C> holder  = new Holder<>();
+    ConnectionListener<C> listener = createListener(holder);
+    connector.connect(listener, waiter.context, ar -> {
+      if (ar.succeeded()) {
+        ConnectResult<C> result = ar.result();
+        // Update state
+        synchronized (Pool.this) {
+          initConnection(holder, result.context(), result.concurrency(), result.connection(), result.channel(), result.weight());
+        }
+        // Init connection - state might change (i.e init could close the connection)
+        synchronized (Pool.this) {
+          if (holder.capacity == 0) {
+            waitersQueue.add(waiter);
+            checkPending();
+            return;
+          }
+          waitersCount--;
+          holder.capacity--;
+          if (holder.capacity > 0) {
+            available.add(holder);
+          }
+        }
+        waiter.handler.handle(Future.succeededFuture(holder.connection));
+        synchronized (Pool.this) {
+          checkPending();
+        }
+      } else {
+        waiter.handler.handle(Future.failedFuture(ar.cause()));
+        synchronized (Pool.this) {
+          waitersCount--;
+          Pool.this.weight -= initialWeight;
+          holder.removed = true;
+          checkPending();
+          checkClose();
+        }
+      }
+    });
   }
 
   private synchronized void recycle(Holder<C> holder, int capacity, long timestamp) {

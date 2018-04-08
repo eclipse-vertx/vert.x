@@ -11,37 +11,11 @@
 
 package io.vertx.core.http.impl.pool;
 
-import io.netty.channel.Channel;
-import io.vertx.core.impl.ContextImpl;
-
 /**
  * The listener definest the contract used by the {@link ConnectionProvider} to interact with the
  * connection pool. Its purpose is also to use a connection implementation without a pool.
  */
 public interface ConnectionListener<C> {
-
-  /**
-   * Signals the connection succeeded, provide all the info required to manage the connection
-   *
-   * @param conn the connection
-   * @param concurrency the connection concurrency
-   * @param channel the channel
-   * @param context the context
-   * @param actualWeight the actual weight
-   */
-  void onConnectSuccess(C conn,
-                        long concurrency,
-                        Channel channel,
-                        ContextImpl context,
-                        long actualWeight);
-
-  /**
-   * Signals the connection failed.
-   *
-   * @param context the context
-   * @param err the error
-   */
-  void onConnectFailure(ContextImpl context, Throwable err);
 
   /**
    * Signals the connection the concurrency changed to the {@code concurrency} value.
