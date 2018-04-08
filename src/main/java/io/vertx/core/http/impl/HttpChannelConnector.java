@@ -92,7 +92,16 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     conn.close();
   }
 
-  public void connect(
+  @Override
+  public void connect(ConnectionListener<HttpClientConnection> listener, ContextInternal context) {
+    try {
+      doConnect(listener, context);
+    } catch(Exception e) {
+      listener.onConnectFailure(context, e);
+    }
+  }
+
+  private void doConnect(
     ConnectionListener<HttpClientConnection> listener,
     ContextInternal context) {
 

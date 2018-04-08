@@ -4100,9 +4100,9 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testClientSynchronousConnectFailures() {
     System.setProperty("vertx.disableDnsResolver", "true");
+    Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setQueryTimeout(100)));
     try {
       int poolSize = 2;
-      Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setQueryTimeout(100)));
       HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(poolSize));
       AtomicInteger failures = new AtomicInteger();
       vertx.runOnContext(v -> {
@@ -4121,8 +4121,21 @@ public abstract class HttpTest extends HttpTestBase {
       });
       await();
     } finally {
+      vertx.close();
       System.setProperty("vertx.disableDnsResolver", "false");
     }
+  }
+
+  @Test
+  public void testClientConnectInvalidPort() {
+    client.get(-1, "localhost", "/someuri", resp -> {
+      fail();
+    }).exceptionHandler(err -> {
+      assertEquals(err.getClass(), IllegalArgumentException.class);
+      assertEquals(err.getMessage(), "port p must be in range 0 <= p <= 65535");
+      testComplete();
+    }).end();
+    await();
   }
 
   protected File setupFile(String fileName, String content) throws Exception {
