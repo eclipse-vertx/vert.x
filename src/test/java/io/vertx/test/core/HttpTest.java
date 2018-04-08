@@ -4104,6 +4104,18 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
+  @Test
+  public void testClientConnectInvalidPort() {
+    client.get(-1, "localhost", "/someuri", resp -> {
+      fail();
+    }).exceptionHandler(err -> {
+      assertEquals(err.getClass(), IllegalArgumentException.class);
+      assertEquals(err.getMessage(), "port p must be in range 0 <= p <= 65535");
+      testComplete();
+    }).end();
+    await();
+  }
+
   protected File setupFile(String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
     if (file.exists()) {
