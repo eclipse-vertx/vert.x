@@ -3514,6 +3514,28 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testTooLongContentInHttpServerRequest() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    server.connectionHandler(conn -> {
+      conn.exceptionHandler(error -> {
+        assertEquals(IllegalArgumentException.class, error.getClass());
+        testComplete();
+      });
+    });
+    startServer();
+    NetClient client = vertx.createNetClient();
+    try {
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+        so.write("POST / HTTP/1.1\r\nContent-Length: 4\r\n\r\ntoolong\r\n");
+      }));
+      await();
+    } finally {
+      client.close();
+    }
+  }
+  @Test
   public void testInvalidTrailerInHttpServerRequest() throws Exception {
     testHttpServerRequestDecodeError(so -> {
       so.write("0\r\n"); // Empty chunk

@@ -57,8 +57,8 @@ public class Http1xOrH2CHandler extends ChannelInboundHandlerAdapter {
       buf = msg;
     }
     configure(ctx, h2c);
-    ctx.fireChannelRead(buf);
     ctx.pipeline().remove(this);
+    ctx.fireChannelRead(buf);
   }
 
   protected void configure(ChannelHandlerContext ctx, boolean h2c) {
