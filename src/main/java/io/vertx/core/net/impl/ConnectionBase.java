@@ -44,6 +44,7 @@ public abstract class ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
+  private final VoidChannelPromise voidPromise;
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
   protected final ContextImpl context;
@@ -58,6 +59,7 @@ public abstract class ConnectionBase {
     this.vertx = vertx;
     this.chctx = chctx;
     this.context = context;
+    this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
   }
 
   /**
@@ -119,7 +121,7 @@ public abstract class ConnectionBase {
   }
 
   public void writeToChannel(Object obj) {
-    writeToChannel(obj, chctx.voidPromise());
+    writeToChannel(obj, voidPromise);
   }
 
   // This is a volatile read inside the Netty channel implementation

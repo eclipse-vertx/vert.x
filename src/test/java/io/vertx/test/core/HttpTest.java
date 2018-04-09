@@ -4159,7 +4159,36 @@ public abstract class HttpTest extends HttpTestBase {
     }
     return headers;
   }
-/*
+
+  @Test
+  public void testReentrantResponseEnd() {
+    // Setting compression to true put the ChunkedWriteHandler in the pipeline
+    // when the exception handler is called, it performs a write and flush operation
+    // and the ChunkedWriteHandler fails the write and flush promise
+    // which can result in a loop when as it can call the exception handler again
+    vertx.createHttpServer(new HttpServerOptions().setCompressionSupported(true)).requestHandler(req -> {
+      AtomicInteger count = new AtomicInteger();
+      req.exceptionHandler(err -> {
+        count.incrementAndGet();
+        req.response().end("the-end-message");
+      });
+      req.connection().closeHandler(v -> {
+        assertEquals(1, count.get());
+        testComplete();
+      });
+    }).listen(DEFAULT_HTTP_PORT, ar -> {
+      HttpClient client = vertx.createHttpClient();
+      HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somerui", handler -> {
+
+      }).setChunked(true);
+      req.sendHead(v -> {
+        req.connection().close();
+      });
+    });
+    await();
+  }
+
+  /*
   @Test
   public void testReset() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
