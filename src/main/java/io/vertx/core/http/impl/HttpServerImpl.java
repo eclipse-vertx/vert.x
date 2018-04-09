@@ -111,7 +111,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
   private static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
   private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
-  private final boolean DISABLE_HC2 = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
+  private final boolean DISABLE_H2C = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
   private static final String[] H2C_HANDLERS_TO_REMOVE = { "idle", "flashpolicy", "deflater", "chunkwriter" };
 
   private final HttpServerOptions options;
@@ -290,7 +290,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                   }
                 });
               } else {
-                if (DISABLE_HC2) {
+                if (DISABLE_H2C) {
                   handleHttp1(ch);
                 } else {
                   IdleStateHandler idle;
@@ -447,7 +447,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (options.getIdleTimeout() > 0) {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
     }
-    if (!DISABLE_HC2) {
+    if (!DISABLE_H2C) {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
     }
     Http1xServerHandler handler;
