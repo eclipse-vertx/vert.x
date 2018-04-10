@@ -89,6 +89,7 @@ public class Pool<C> {
       return "Holder[removed=" + removed + ",capacity=" + capacity + ",concurrency=" + concurrency + ",expirationTimestamp=" + expirationTimestamp + "]";
     }
   }
+
   private static final Logger log = LoggerFactory.getLogger(Pool.class);
 
   private final ConnectionProvider<C> connector;
@@ -100,6 +101,7 @@ public class Pool<C> {
   private int waitersCount;                                         // The number of waiters (including the inflight waiters not in the queue)
 
   private final Deque<Holder<C>> available;                         // Available connections
+  private final boolean fifo;                                       // Recycling policy
 
   private final long initialWeight;                                 // The initial weight of a connection
   private final long maxWeight;                                     // The max weight (equivalent to max pool size)
@@ -108,13 +110,15 @@ public class Pool<C> {
   private boolean closed;
   private final Handler<Void> poolClosed;
 
+
   public Pool(ConnectionProvider<C> connector,
               int queueMaxSize,
               long initialWeight,
               long maxWeight,
               Handler<Void> poolClosed,
               BiConsumer<Channel, C> connectionAdded,
-              BiConsumer<Channel, C> connectionRemoved) {
+              BiConsumer<Channel, C> connectionRemoved,
+              boolean fifo) {
     this.maxWeight = maxWeight;
     this.initialWeight = initialWeight;
     this.connector = connector;
@@ -123,6 +127,7 @@ public class Pool<C> {
     this.available = new ArrayDeque<>();
     this.connectionAdded = connectionAdded;
     this.connectionRemoved = connectionRemoved;
+    this.fifo = fifo;
   }
 
   public synchronized int waitersInQueue() {
@@ -350,7 +355,11 @@ public class Pool<C> {
       connector.close(conn.connection);
     } else {
       if (conn.capacity == 0) {
-        available.add(conn);
+        if (fifo) {
+          available.addLast(conn);
+        } else {
+          available.addFirst(conn);
+        }
       }
       conn.expirationTimestamp = timestamp;
       conn.capacity = newCapacity;
