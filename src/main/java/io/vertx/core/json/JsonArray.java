@@ -170,7 +170,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * Get the JsonObject at position {@code pos} in the array.
    *
    * @param pos  the position in the array
-   * @return  the Integer, or null if a null value present
+   * @return  the JsonObject, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to JsonObject
    */
   public JsonObject getJsonObject(int pos) {
