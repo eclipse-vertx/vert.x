@@ -37,18 +37,21 @@ class ConnectionManager {
   private final Map<EndpointKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private final HttpVersion version;
   private final long maxSize;
+  private final Pool.ConnectionRecyclePolicy connectionPoolRecyclePolicy;
   private long timerID;
 
   ConnectionManager(HttpClientImpl client,
                     HttpClientMetrics metrics,
                     HttpVersion version,
                     long maxSize,
-                    int maxWaitQueueSize) {
+                    int maxWaitQueueSize,
+                    Pool.ConnectionRecyclePolicy connectionRecyclePolicy) {
     this.client = client;
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;
     this.maxSize = maxSize;
     this.version = version;
+    this.connectionPoolRecyclePolicy = connectionRecyclePolicy;
   }
 
   synchronized void start(boolean checkExpired) {
@@ -127,7 +130,8 @@ class ConnectionManager {
             endpointMap.remove(key);
           },
           connectionMap::put,
-          connectionMap::remove);
+          connectionMap::remove,
+          connectionPoolRecyclePolicy);
         return new Endpoint(pool, metric);
       });
       Object metric;

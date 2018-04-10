@@ -35,6 +35,9 @@ import io.vertx.core.json.JsonArray;
       });
       obj.setAlpnVersions(list);
     }
+    if (json.getValue("connectionRecyclePolicy") instanceof String) {
+      obj.setConnectionRecyclePolicy(io.vertx.core.http.impl.pool.Pool.ConnectionRecyclePolicy.valueOf((String)json.getValue("connectionRecyclePolicy")));
+    }
     if (json.getValue("decoderInitialBufferSize") instanceof Number) {
       obj.setDecoderInitialBufferSize(((Number)json.getValue("decoderInitialBufferSize")).intValue());
     }
@@ -120,6 +123,9 @@ import io.vertx.core.json.JsonArray;
       JsonArray array = new JsonArray();
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
+    }
+    if (obj.getConnectionRecyclePolicy() != null) {
+      json.put("connectionRecyclePolicy", obj.getConnectionRecyclePolicy().name());
     }
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     if (obj.getDefaultHost() != null) {

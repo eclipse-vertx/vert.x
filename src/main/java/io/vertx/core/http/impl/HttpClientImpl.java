@@ -155,8 +155,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     long maxWeight = options.getMaxPoolSize() * options.getHttp2MaxPoolSize();
-    websocketCM = new ConnectionManager(this, metrics, HttpVersion.HTTP_1_1, maxWeight, options.getMaxWaitQueueSize());
-    httpCM = new ConnectionManager(this, metrics, options.getProtocolVersion(), maxWeight, options.getMaxWaitQueueSize());
+    websocketCM = new ConnectionManager(this, metrics, HttpVersion.HTTP_1_1, maxWeight, options.getMaxWaitQueueSize(), options.getConnectionRecyclePolicy());
+
+    httpCM = new ConnectionManager(this, metrics, options.getProtocolVersion(), maxWeight, options.getMaxWaitQueueSize(), options.getConnectionRecyclePolicy());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
     httpCM.start(options.getKeepAliveTimeout() > 0 || options.getHttp2KeepAliveTimeout() > 0);
     websocketCM.start(options.getKeepAliveTimeout() > 0 || options.getHttp2KeepAliveTimeout() > 0);

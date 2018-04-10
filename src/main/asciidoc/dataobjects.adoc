@@ -758,6 +758,10 @@ Set the list of protocol versions to provide to the server during the Applicatio
 +++
 Set the connect timeout
 +++
+|[[connectionRecyclePolicy]]`connectionRecyclePolicy`|`link:enums.html#ConnectionRecyclePolicy[ConnectionRecyclePolicy]`|
++++
+set to <code>connectionRecyclePolicy</code> the policy in which connections are recycled
++++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
 Add a CRL path
