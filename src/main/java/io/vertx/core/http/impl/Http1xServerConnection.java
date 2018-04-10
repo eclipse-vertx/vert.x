@@ -344,7 +344,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       metrics.disconnected(ws.getMetric());
       ws.setMetric(null);
     }
-    super.handleClosed();
     if (ws != null) {
       ws.handleClosed();
     }
@@ -357,6 +356,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
       pendingResponse.handleClosed();
     }
+    super.handleClosed();
   }
 
   public ContextImpl getContext() {

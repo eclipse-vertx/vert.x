@@ -421,8 +421,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   void handleException(Throwable t) {
     synchronized (conn) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(t);
+      Handler<Throwable> handler = this.exceptionHandler;
+      if (handler != null) {
+        conn.getContext().runOnContext(v -> handler.handle(t));
       }
     }
   }
