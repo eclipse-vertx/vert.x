@@ -209,9 +209,9 @@ public class Transport {
 
   public void configure(ClientOptionsBase options, Bootstrap bootstrap) {
     BiConsumer<ChannelOption<Object>, Object> setter = bootstrap::option;
-    setOption("TCK_CORK", options.isTcpCork(), setter);
-    setOption("TCK_QUICKACK", options.isTcpQuickAck(), setter);
-    setOption("TCK_FASTOPEN", options.isTcpFastOpen(), setter);
+    setOption("TCP_CORK", options.isTcpCork(), setter);
+    setOption("TCP_QUICKACK", options.isTcpQuickAck(), setter);
+    setOption("TCP_FASTOPEN", options.isTcpFastOpen(), setter);
     setOption("SO_REUSEPORT", options.isReusePort(), setter);
     if (options.getLocalAddress() != null) {
       bootstrap.localAddress(options.getLocalAddress(), 0);
@@ -238,9 +238,9 @@ public class Transport {
 
   public void configure(NetServerOptions options, ServerBootstrap bootstrap) {
     BiConsumer<ChannelOption<Object>, Object> setter = bootstrap::childOption;
-    setOption("TCK_CORK", options.isTcpCork(), setter);
-    setOption("TCK_QUICKACK", options.isTcpQuickAck(), setter);
-    setOption("TCK_FASTOPEN", options.isTcpFastOpen(), setter);
+    setOption("TCP_CORK", options.isTcpCork(), setter);
+    setOption("TCP_QUICKACK", options.isTcpQuickAck(), setter);
+    setOption("TCP_FASTOPEN", options.isTcpFastOpen(), setter);
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
       bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
