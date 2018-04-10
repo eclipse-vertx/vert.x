@@ -27,17 +27,17 @@ import java.util.ArrayDeque;
  */
 abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
-  private static final Object END = new Object(); // Marker
-
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
   protected final ChannelHandlerContext handlerContext;
   protected final Http2Stream stream;
 
-  private final ArrayDeque<Object> pending = new ArrayDeque<>(8);
+  private final ArrayDeque<Buffer> pending = new ArrayDeque<>(8);
   private boolean paused;
-  private boolean writable = true;
+  private boolean ended;
+  private MultiMap trailers;
+  private boolean writable;
 
   VertxHttp2Stream(C conn, Http2Stream stream, boolean writable) {
     this.conn = conn;
@@ -84,15 +84,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     onEnd(null);
   }
 
-  void onEnd(MultiMap trailers) {
+  void onEnd(MultiMap map) {
     synchronized (conn) {
-      if (paused || pending.size() > 0) {
-        if (trailers != null) {
-          pending.add(trailers);
-        } else {
-          pending.add(END);
-        }
-      } else {
+      trailers = map;
+      ended = true;
+      if (pending.isEmpty()) {
         handleEnd(trailers);
       }
     }
@@ -104,18 +100,13 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private void checkNextTick(Void v) {
     synchronized (conn) {
       if (!paused) {
-        Object msg = pending.poll();
-        if (msg instanceof Buffer) {
-          Buffer buf = (Buffer) msg;
-          conn.handler.consume(stream, buf.length());
-          handleData(buf);
-          if (pending.size() > 0) {
-            vertx.runOnContext(this::checkNextTick);
-          }
-        } else if (msg == END) {
-          handleEnd(null);
-        } else if (msg instanceof MultiMap) {
-          handleEnd((MultiMap) msg);
+        Buffer buf = pending.poll();
+        conn.handler.consume(stream, buf.length());
+        handleData(buf);
+        if (pending.size() > 0) {
+          vertx.runOnContext(this::checkNextTick);
+        } else if (ended) {
+          handleEnd(trailers);
         }
       }
     }

@@ -452,7 +452,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
         requestHandler.handle(req);
       }
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
-      handleLastHttpContent();
+      handleEnd();
     } else if (msg instanceof HttpContent) {
       handleContent(msg);
     } else {
@@ -473,11 +473,11 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
-      handleLastHttpContent();
+      handleEnd();
     }
   }
 
-  private void handleLastHttpContent() {
+  private void handleEnd() {
     currentRequest.handleEnd();
     if (METRICS_ENABLED) {
       reportBytesRead(bytesRead);
@@ -486,6 +486,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     currentRequest = null;
     if (pendingResponse != null) {
       pause();
+    } else if (paused) {
+      resume();
     }
   }
 
