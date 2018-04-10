@@ -1296,41 +1296,47 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testServerRequestExceptionHandlerCalledWhenConnectionClosed() throws Exception {
-    CountDownLatch closeLatch = new CountDownLatch(1);
-    server.requestHandler(request -> {
-      request.exceptionHandler(err -> {
-        testComplete();
-      });
-      request.handler(buff -> {
-        closeLatch.countDown();
-      });
-    });
-    startServer();
-    AtomicReference<HttpConnection> conn = new AtomicReference<>();
-    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-    }).connectionHandler(conn::set).setChunked(true).write("some_chunk");
-    awaitLatch(closeLatch);
-    conn.get().close();
-    await();
-  }
-
-  @Test
-  public void testServerResponseExceptionHandlerCalledWhenConnectionClosed() throws Exception {
-    server.requestHandler(req -> {
+  public void testServerExceptionHandlerOnClose() {
+    vertx.createHttpServer().requestHandler(req -> {
       HttpServerResponse resp = req.response();
-      AtomicInteger errs = new AtomicInteger();
-      resp.exceptionHandler(err -> errs.incrementAndGet());
+      AtomicInteger reqExceptionHandlerCount = new AtomicInteger();
+      AtomicInteger respExceptionHandlerCount = new AtomicInteger();
+      AtomicInteger respEndHandlerCount = new AtomicInteger();
+      req.exceptionHandler(err -> {
+        assertEquals(1, reqExceptionHandlerCount.incrementAndGet());
+        assertEquals(0, respExceptionHandlerCount.get());
+        assertEquals(0, respEndHandlerCount.get());
+        assertTrue(resp.closed());
+        assertFalse(resp.ended());
+        try {
+          resp.end();
+        } catch (IllegalStateException ignore) {
+          // Expected
+        }
+      });
+      resp.exceptionHandler(err -> {
+        assertEquals(1, reqExceptionHandlerCount.get());
+        assertEquals(1, respExceptionHandlerCount.incrementAndGet());
+        assertEquals(0, respEndHandlerCount.get());
+      });
       resp.endHandler(v -> {
-        assertEquals(1, errs.get());
+        assertEquals(1, reqExceptionHandlerCount.get());
+        assertEquals(1, respExceptionHandlerCount.get());
+        assertEquals(1, respEndHandlerCount.incrementAndGet());
+      });
+      req.connection().closeHandler(v -> {
+        assertEquals(1, reqExceptionHandlerCount.get());
+        assertEquals(1, respExceptionHandlerCount.get());
+        assertEquals(1, respEndHandlerCount.get());
         testComplete();
       });
-      resp.setChunked(true).write("chunk");
-    });
-    startServer();
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      resp.handler(chunk -> {
-        resp.request().connection().close();
+    }).listen(DEFAULT_HTTP_PORT, ar -> {
+      HttpClient client = vertx.createHttpClient();
+      HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somerui", handler -> {
+
+      }).setChunked(true);
+      req.sendHead(v -> {
+        req.connection().close();
       });
     });
     await();
@@ -4180,34 +4186,6 @@ public abstract class HttpTest extends HttpTestBase {
       headers.add(entry.getKey(), entry.getValue());
     }
     return headers;
-  }
-
-  @Test
-  public void testReentrantResponseEnd() {
-    // Setting compression to true put the ChunkedWriteHandler in the pipeline
-    // when the exception handler is called, it performs a write and flush operation
-    // and the ChunkedWriteHandler fails the write and flush promise
-    // which can result in a loop when as it can call the exception handler again
-    vertx.createHttpServer(new HttpServerOptions().setCompressionSupported(true)).requestHandler(req -> {
-      AtomicInteger count = new AtomicInteger();
-      req.exceptionHandler(err -> {
-        count.incrementAndGet();
-        req.response().end("the-end-message");
-      });
-      req.connection().closeHandler(v -> {
-        assertEquals(1, count.get());
-        testComplete();
-      });
-    }).listen(DEFAULT_HTTP_PORT, ar -> {
-      HttpClient client = vertx.createHttpClient();
-      HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somerui", handler -> {
-
-      }).setChunked(true);
-      req.sendHead(v -> {
-        req.connection().close();
-      });
-    });
-    await();
   }
 
   /*
