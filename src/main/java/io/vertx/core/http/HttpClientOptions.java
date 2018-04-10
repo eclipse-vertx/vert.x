@@ -553,7 +553,8 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * Set the keep alive timeout for HTTP/2 connections, in seconds.
-   * This determines how long a connection will timeout and be closed after it has been put in the pool.
+   * <p/>
+   * This value determines how long a connection remains unused in the pool before being evicted and closed.
    *
    * @param keepAliveTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
@@ -595,7 +596,8 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * Set the keep alive timeout for HTTP/1.x, in seconds.
-   * This determines how long a connection will timeout and be closed after it has been put in the pool.
+   * <p/>
+   * This value determines how long a connection remains unused in the pool before being evicted and closed.
    *
    * @param keepAliveTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently

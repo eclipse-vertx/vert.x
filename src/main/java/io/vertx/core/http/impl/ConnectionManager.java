@@ -56,11 +56,9 @@ class ConnectionManager {
   }
 
   private synchronized void checkExpired() {
-    if (timerID >= 0) {
-      long timestamp = System.currentTimeMillis();
-      endpointMap.values().forEach(e -> e.pool.closeIdle(timestamp));
-      timerID = client.getVertx().setTimer(1, id -> checkExpired());
-    }
+    long timestamp = System.currentTimeMillis();
+    endpointMap.values().forEach(e -> e.pool.closeIdle(timestamp));
+    timerID = client.getVertx().setTimer(1, id -> checkExpired());
   }
 
   private static final class EndpointKey {
@@ -173,7 +171,7 @@ class ConnectionManager {
     }
   }
 
-  public synchronized void close() {
+  public void close() {
     synchronized (this) {
       if (timerID >= 0) {
         client.getVertx().cancelTimer(timerID);

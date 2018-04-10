@@ -21,8 +21,9 @@ import io.vertx.core.impl.ContextInternal;
 public interface ConnectionListener<C> {
 
   /**
-   * Signal the connection succeeded, provide all the info requires to manage the connection
-   *  @param conn the connection
+   * Signals the connection succeeded, provide all the info required to manage the connection
+   *
+   * @param conn the connection
    * @param concurrency the connection concurrency
    * @param channel the channel
    * @param context the context
@@ -35,7 +36,7 @@ public interface ConnectionListener<C> {
                         long actualWeight);
 
   /**
-   * Signal the connection failed.
+   * Signals the connection failed.
    *
    * @param context the context
    * @param err the error
@@ -43,7 +44,7 @@ public interface ConnectionListener<C> {
   void onConnectFailure(ContextInternal context, Throwable err);
 
   /**
-   * Signals the connection concurrent changed to the {@code concurrency} value.
+   * Signals the connection the concurrency changed to the {@code concurrency} value.
    *
    * @param concurrency the concurrency
    */
