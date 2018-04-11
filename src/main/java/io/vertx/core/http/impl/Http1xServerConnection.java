@@ -139,8 +139,10 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   }
 
   synchronized void handleMessage(Object msg) {
-    if (queueing || !processMessage(msg)) {
+    if (queueing) {
       enqueue(msg);
+    } else {
+      processMessage(msg);
     }
   }
 
@@ -180,7 +182,9 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
     }
     pendingResponse = null;
-    checkNextTick();
+    if (currentRequest == null && paused) {
+      resume();
+    }
   }
 
   synchronized void requestHandlers(HttpHandlers handlers) {
@@ -427,15 +431,12 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
   }
 
-  private boolean processMessage(Object msg) {
+  private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
-      if (pendingResponse != null) {
-        return false;
-      }
       HttpRequest request = (HttpRequest) msg;
       if (request.decoderResult().isFailure()) {
         handleError(request);
-        return false;
+        return;
       }
       if (options.isHandle100ContinueAutomatically() && HttpUtil.is100ContinueExpected(request)) {
         write100Continue();
@@ -457,7 +458,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     } else {
       handleOther(msg);
     }
-    return true;
   }
 
   private void handleContent(Object msg) {
@@ -484,6 +484,9 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       bytesRead = 0;
     }
     currentRequest = null;
+    if (pendingResponse != null) {
+      pause();
+    }
   }
 
   private void handleOther(Object msg) {
@@ -506,15 +509,14 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
             // The only place we poll the pending queue, so we are sure that pending.size() > 0
             // since we got there because queueing was true
             Object msg = pending.poll();
-            if (processMessage(msg)) {
-              if (pending.isEmpty()) {
-                unsetQueueing();
-              } else {
-                checkNextTick();
-              }
-            } else {
-              pending.addFirst(msg);
+            if (pending.isEmpty()) {
+              // paused == false && pending.size() == 0 => queueing = false
+              unsetQueueing();
             }
+            // Process message, it might pause the connection
+            processMessage(msg);
+            // Check next tick in case we still have pending messages and the connection is not paused
+            checkNextTick();
           }
         }
       });
