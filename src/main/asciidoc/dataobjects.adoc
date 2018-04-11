@@ -919,7 +919,7 @@ Set whether pipe-lining is enabled on the client
 +++
 Set the limit of pending requests a pipe-lined HTTP/1 connection can send.
 +++
-|[[poolRecyclePolicy]]`poolRecyclePolicy`|`link:enums.html#ConnectionRecyclePolicy[ConnectionRecyclePolicy]`|
+|[[poolRecyclePolicy]]`poolRecyclePolicy`|`link:enums.html#RecyclePolicy[RecyclePolicy]`|
 +++
 set to <code>poolRecyclePolicy</code> the policy in which connections are recycled
 +++

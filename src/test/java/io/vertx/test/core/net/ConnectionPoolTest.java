@@ -16,6 +16,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.RecyclePolicy;
 import io.vertx.core.http.impl.pool.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
@@ -41,11 +42,13 @@ public class ConnectionPoolTest extends VertxTestBase {
     private Set<FakeConnection> active = new HashSet<>();
     private boolean closed = true;
     private int seq;
+    private final RecyclePolicy recyclePolicy;
 
-    FakeConnectionManager(int queueMaxSize, int maxPoolSize, ConnectionProvider<FakeConnection> connector) {
+    FakeConnectionManager(int queueMaxSize, int maxPoolSize, ConnectionProvider<FakeConnection> connector, RecyclePolicy recyclePolicy) {
       this.queueMaxSize = queueMaxSize;
       this.maxPoolSize = maxPoolSize;
       this.connector = connector;
+      this.recyclePolicy = recyclePolicy;
     }
 
     synchronized int sequence() {
@@ -94,7 +97,7 @@ public class ConnectionPoolTest extends VertxTestBase {
             synchronized (FakeConnectionManager.this) {
               active.remove(conn);
             }
-          }
+          }, recyclePolicy
           );
         }
       }
@@ -105,7 +108,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testConnectSuccess() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 4, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 4, connector, RecyclePolicy.FIFO);
     AtomicReference<Boolean> handleLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
@@ -131,7 +134,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testConnectFailure() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 4, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 4, connector, RecyclePolicy.FIFO);
     AtomicReference<Boolean> holdsLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
@@ -154,7 +157,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testConnectPoolEmptyWaiterCancelledAfterConnectRequest() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter = new FakeWaiter();
     mgr.getConnection(waiter);
     FakeConnection conn = connector.assertRequest();
@@ -169,7 +172,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testConnectionFailure() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter = new FakeWaiter();
     mgr.getConnection(waiter);
     FakeConnection conn = connector.assertRequest();
@@ -190,7 +193,7 @@ public class ConnectionPoolTest extends VertxTestBase {
         listener.onConnectFailure(context, cause);
       }
     };
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 3, connector, RecyclePolicy.FIFO);
     for (int i = 0;i < 4;i++) {
       FakeWaiter waiter = new FakeWaiter();
       mgr.getConnection(waiter);
@@ -204,7 +207,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testRecycleConnection() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
@@ -221,7 +224,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testRecycleDiscardedConnection() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
@@ -260,7 +263,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testEndpointLifecycle() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 1, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
@@ -276,7 +279,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testDontCloseEndpointWithInflightRequest() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(3, 2, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(3, 2, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
@@ -293,7 +296,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   public void testInitialConcurrency() {
     int n = 10;
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(-1, 1, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 1, connector, RecyclePolicy.FIFO);
     List<FakeWaiter> waiters = new ArrayList<>();
     for (int i = 0; i < n; i++) {
       FakeWaiter waiter = new FakeWaiter();
@@ -312,7 +315,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   public void testInitialNoConcurrency() {
     int n = 10;
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(-1, 1, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 1, connector, RecyclePolicy.FIFO);
     List<FakeWaiter> waiters = new ArrayList<>();
     for (int i = 0; i < n; i++) {
       FakeWaiter waiter = new FakeWaiter();
@@ -332,7 +335,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testRecycleWithoutDispose() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(-1, 1, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 1, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
@@ -348,9 +351,61 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
+  public void testRecycleFifo() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 2, connector, RecyclePolicy.FIFO);
+    FakeWaiter waiter1 = new FakeWaiter();
+    mgr.getConnection(waiter1);
+    FakeConnection firstInConnection = connector.assertRequest();
+    firstInConnection.connect();
+    assertWaitUntil(waiter1::isSuccess);
+
+    FakeWaiter waiter2 = new FakeWaiter();
+    mgr.getConnection(waiter2);
+    FakeConnection lastInConnection = connector.assertRequest();
+    lastInConnection.connect();
+    assertWaitUntil(waiter2::isSuccess);
+    waiter2.assertSuccess(lastInConnection);
+    firstInConnection.recycle(false);
+    lastInConnection.recycle(false);
+    assertEquals(2, mgr.size());
+
+    FakeWaiter waiter3 = new FakeWaiter();
+    mgr.getConnection(waiter3);
+    assertWaitUntil(waiter3::isSuccess);
+    waiter3.assertSuccess(firstInConnection);
+  }
+
+  @Test
+  public void testRecycleLifo() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 2, connector, RecyclePolicy.LIFO);
+    FakeWaiter waiter1 = new FakeWaiter();
+    mgr.getConnection(waiter1);
+    FakeConnection firstInConnection = connector.assertRequest();
+    firstInConnection.connect();
+    assertWaitUntil(waiter1::isSuccess);
+
+    FakeWaiter waiter2 = new FakeWaiter();
+    mgr.getConnection(waiter2);
+    FakeConnection lastInConnection = connector.assertRequest();
+    lastInConnection.connect();
+    assertWaitUntil(waiter2::isSuccess);
+    waiter2.assertSuccess(lastInConnection);
+    firstInConnection.recycle(false);
+    lastInConnection.recycle(false);
+    assertEquals(2, mgr.size());
+
+    FakeWaiter waiter3 = new FakeWaiter();
+    mgr.getConnection(waiter3);
+    assertWaitUntil(waiter3::isSuccess);
+    waiter3.assertSuccess(lastInConnection);
+  }
+
+  @Test
   public void testDiscardWaiterWhenFull() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(2, 1, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(2, 1, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
@@ -386,7 +441,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   @Test
   public void testDiscardExpiredConnections() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(2, 1, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(2, 1, connector, RecyclePolicy.FIFO);
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
@@ -417,7 +472,7 @@ public class ConnectionPoolTest extends VertxTestBase {
         }
       }
     };
-    FakeConnectionManager mgr = new FakeConnectionManager(-1, 16, connector);
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 16, connector, RecyclePolicy.FIFO);
 
     Thread[] actors = new Thread[numActors];
     for (int i = 0; i < numActors; i++) {
