@@ -562,7 +562,7 @@ public interface Vertx extends Measured {
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 
   /**
-   * @return wether the native transport is used
+   * @return whether the native transport is used
    */
   @CacheReturn
   boolean isNativeTransportEnabled();
