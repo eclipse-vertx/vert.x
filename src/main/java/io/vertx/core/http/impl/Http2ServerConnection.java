@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Error;
@@ -94,6 +95,14 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     return false;
   }
 
+  private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers) {
+    Http2Stream stream = handler.connection().stream(streamId);
+    String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
+    boolean writable = handler.encoder().flowController().isWritable(stream);
+    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable);
+    return request;
+  }
+
   @Override
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId,
                             Http2Headers headers, int padding, boolean endOfStream) {
@@ -103,10 +112,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
         return;
       }
-      String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-      Http2Stream s = handler.connection().stream(streamId);
-      boolean writable = handler.encoder().flowController().isWritable(s);
-      Http2ServerRequestImpl req = new Http2ServerRequestImpl(this, s, metrics, serverOrigin, headers, contentEncoding, writable);
+      Http2ServerRequestImpl req = createRequest(streamId, headers);
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -187,6 +193,18 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     super.updateSettings(settingsUpdate, completionHandler);
+  }
+
+  Http2ServerRequestImpl createUpgradeRequest(HttpRequest request) {
+    DefaultHttp2Headers headers = new DefaultHttp2Headers();
+    headers.method(request.method().name());
+    headers.path(request.uri());
+    headers.authority(request.headers().get("host"));
+    headers.scheme("http");
+    request.headers().remove("http2-settings");
+    request.headers().remove("host");
+    request.headers().forEach(header -> headers.set(header.getKey().toLowerCase(), header.getValue()));
+    return createRequest(1, headers);
   }
 
   private class Push extends VertxHttp2Stream<Http2ServerConnection> {

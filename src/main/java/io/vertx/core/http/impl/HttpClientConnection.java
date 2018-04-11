@@ -20,22 +20,14 @@ import io.vertx.core.impl.ContextInternal;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface HttpClientConnection extends HttpConnection {
+public interface HttpClientConnection extends HttpConnection {
 
   Channel channel();
 
-  void reportBytesWritten(long numberOfBytes);
-
-  void reportBytesRead(long s);
-
   void close();
 
-  void createStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler);
+  void createStream(Handler<AsyncResult<HttpClientStream>> handler);
 
   ContextInternal getContext();
-
-  boolean checkInitialized();
-
-  void recycle();
 
 }

@@ -196,9 +196,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
   }
 
-  protected void onConnect() {
-  }
-
   protected void concurrencyChanged(long concurrency) {
   }
 

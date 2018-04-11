@@ -1101,6 +1101,7 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 
+  @Test
   @Override
   public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
     testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(0);
@@ -1304,23 +1305,23 @@ public class Http1xTest extends HttpTest {
     });
     startServer();
     AtomicInteger succeeded = new AtomicInteger();
-    List<HttpClientRequest> requests = new ArrayList<>();
+    List<HttpClientRequest> requests = new CopyOnWriteArrayList<>();
+    Consumer<HttpClientRequest> checkEnd = req -> {
+      requests.remove(req);
+      if (requests.isEmpty()) {
+        assertEquals(n, succeeded.get());
+        testComplete();
+      }
+    };
     for (int i = 0;i < n * 2;i++) {
       HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/" + i);
       req.handler(resp -> {
         succeeded.incrementAndGet();
-        requests.remove(req);
-        if (requests.isEmpty()) {
-          assertEquals(n * 2 - 1, succeeded.get());
-          testComplete();
-        }
+        checkEnd.accept(req);
       });
       req.exceptionHandler(err -> {
-        requests.remove(req);
-        for (HttpClientRequest r : requests) {
-          r.end();
-        }
-      }).sendHead();
+        checkEnd.accept(req);
+      }).end();
       requests.add(req);
     }
     closeFuture.complete(null);
@@ -2876,6 +2877,29 @@ public class Http1xTest extends HttpTest {
       });
     });
     server.requestHandler(req -> {
+      req.response().end();
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp1 -> {
+      HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp2 -> {
+      });
+      req.putHeader("the_header", TestUtils.randomAlphaString(10000));
+      req.sendHead();
+    });
+    await();
+  }
+
+  @Test
+  public void testServerExceptionHandler() throws Exception {
+    server.exceptionHandler(err -> {
+      assertTrue(err instanceof TooLongFrameException);
+      testComplete();
+    });
+    server.requestHandler(req -> {
       fail();
     });
     CountDownLatch listenLatch = new CountDownLatch(1);
@@ -3304,8 +3328,7 @@ public class Http1xTest extends HttpTest {
         fail();
       });
       if (pipelined) {
-        req1.sendHead(v -> {
-          assertTrue(req1.reset());
+        req1.connectionHandler(conn -> conn.closeHandler(v2 -> {
           client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
             assertEquals(200, resp.statusCode());
             resp.bodyHandler(body -> {
@@ -3313,6 +3336,9 @@ public class Http1xTest extends HttpTest {
               complete();
             });
           });
+        }));
+        req1.sendHead(v -> {
+          assertTrue(req1.reset());
         });
       } else {
         req1.sendHead(v -> {
@@ -3404,12 +3430,15 @@ public class Http1xTest extends HttpTest {
         req1.handler(resp1 -> {
           resp1.handler(buff -> {
             req1.reset();
-            client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-              assertEquals(200, resp.statusCode());
-              resp.bodyHandler(body -> {
-                assertEquals("Hello world", body.toString());
-                complete();
-              });
+            // Since we pipeline we must be sure that the first request is closed before running a new one
+            req1.connection().closeHandler(v -> {
+              client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+                assertEquals(200, resp.statusCode());
+                resp.bodyHandler(body -> {
+                  assertEquals("Hello world", body.toString());
+                  complete();
+                });
+              }).end();
             });
           });
         });
@@ -3508,6 +3537,8 @@ public class Http1xTest extends HttpTest {
       if (pipelined) {
         requestReceived.thenAccept(v -> {
           req1.reset();
+        });
+        req1.connectionHandler(conn -> conn.closeHandler(v2 -> {
           client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", resp -> {
             assertEquals(200, resp.statusCode());
             resp.bodyHandler(body -> {
@@ -3515,7 +3546,7 @@ public class Http1xTest extends HttpTest {
               complete();
             });
           });
-        });
+        }));
         req1.handler(resp1 -> fail());
         req1.end();
       } else {

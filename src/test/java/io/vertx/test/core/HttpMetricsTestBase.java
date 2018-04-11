@@ -39,7 +39,21 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpMetricsTest extends HttpTestBase {
+public class HttpMetricsTestBase extends HttpTestBase {
+
+  private final HttpVersion protocol;
+
+  public HttpMetricsTestBase(HttpVersion protocol) {
+    this.protocol = protocol;
+  }
+
+  protected HttpServerOptions createBaseServerOptions() {
+    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
+  }
+
+  protected HttpClientOptions createBaseClientOptions() {
+    return new HttpClientOptions();
+  }
 
   @Override
   protected VertxOptions getOptions() {
@@ -49,16 +63,7 @@ public class HttpMetricsTest extends HttpTestBase {
   }
 
   @Test
-  public void testHttp1MetricsLifecycle() throws Exception {
-    testHttpMetricsLifecycle(HttpVersion.HTTP_1_1);
-  }
-
-  @Test
-  public void testHttp2MetricsLifecycle() throws Exception {
-    testHttpMetricsLifecycle(HttpVersion.HTTP_2);
-  }
-
-  private void testHttpMetricsLifecycle(HttpVersion protocol) throws Exception {
+  public void testHttpMetricsLifecycle() throws Exception {
     int numBuffers = 10;
     int chunkSize = 1000;
     int contentLength = numBuffers * chunkSize;
@@ -90,7 +95,6 @@ public class HttpMetricsTest extends HttpTestBase {
     startServer();
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
-    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(protocol));
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
@@ -123,17 +127,7 @@ public class HttpMetricsTest extends HttpTestBase {
   }
 
   @Test
-  public void testHttp1ClientLifecycle() throws Exception {
-    testHttpClientLifecycle(HttpVersion.HTTP_1_1);
-  }
-
-  @Test
-  public void testHttp2ClientLifecycle() throws Exception {
-    testHttpClientLifecycle(HttpVersion.HTTP_2);
-  }
-
-  private void testHttpClientLifecycle(HttpVersion protocol) throws Exception {
-    HttpServer server = vertx.createHttpServer();
+  public void testHttpClientLifecycle() throws Exception {
     CountDownLatch requestBeginLatch = new CountDownLatch(1);
     CountDownLatch requestBodyLatch = new CountDownLatch(1);
     CountDownLatch requestEndLatch = new CountDownLatch(1);
@@ -163,7 +157,6 @@ public class HttpMetricsTest extends HttpTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(protocol));
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     CountDownLatch responseEndLatch = new CountDownLatch(1);
@@ -198,21 +191,12 @@ public class HttpMetricsTest extends HttpTestBase {
   }
 
   @Test
-  public void testHttp1ClientConnectionClosed() throws Exception {
-    testClientConnectionClosed(HttpVersion.HTTP_1_1);
-  }
-
-  @Test
-  public void testHttp2ClientConnectionClosed() throws Exception {
-    testClientConnectionClosed(HttpVersion.HTTP_2);
-  }
-
-  private void testClientConnectionClosed(HttpVersion protocol) throws Exception {
+  public void testClientConnectionClosed() throws Exception {
     server.requestHandler(req -> {
       req.response().setChunked(true).write(Buffer.buffer("some-data"));
     });
     startServer();
-    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(protocol).setIdleTimeout(2));
+    client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(2));
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
     req.handler(resp -> {
@@ -230,18 +214,9 @@ public class HttpMetricsTest extends HttpTestBase {
   }
 
   @Test
-  public void testHttp1ServerConnectionClosed() throws Exception {
-    testServerConnectionClosed(HttpVersion.HTTP_1_1);
-  }
-
-  @Test
-  public void testHttp2ServerConnectionClosed() throws Exception {
-    testServerConnectionClosed(HttpVersion.HTTP_2);
-  }
-
-  private void testServerConnectionClosed(HttpVersion protocol) throws Exception {
+  public void testServerConnectionClosed() throws Exception {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST).setIdleTimeout(2));
+    server = vertx.createHttpServer(createBaseServerOptions().setIdleTimeout(2));
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       HttpServerMetric metric = metrics.getMetric(req);
@@ -254,55 +229,9 @@ public class HttpMetricsTest extends HttpTestBase {
       });
     });
     startServer();
-    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(protocol));
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
     req.handler(resp -> {
     }).end();
-    await();
-  }
-
-  @Test
-  public void testPushPromise() throws Exception {
-    waitFor(2);
-    int numBuffers = 10;
-    int contentLength = numBuffers * 1000;
-    server.requestHandler(req -> {
-      req.response().push(HttpMethod.GET, "/wibble", ar -> {
-        HttpServerResponse pushedResp = ar.result();
-        FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
-        HttpServerMetric serverMetric = serverMetrics.getMetric(pushedResp);
-        assertNotNull(serverMetric);
-        pushedResp.putHeader("content-length", "" + contentLength);
-        AtomicInteger numBuffer = new AtomicInteger(numBuffers);
-        vertx.setPeriodic(1, timerID -> {
-          if (numBuffer.getAndDecrement() == 0) {
-            pushedResp.end();
-            assertNull(serverMetrics.getMetric(pushedResp));
-            vertx.cancelTimer(timerID);
-            complete();
-          } else {
-            pushedResp.write(TestUtils.randomBuffer(1000));
-          }
-        });
-      });
-    });
-    startServer();
-    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
-    FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-    });
-    req.pushHandler(pushedReq -> {
-      HttpClientMetric metric = metrics.getMetric(pushedReq);
-      assertNotNull(metric);
-      assertSame(pushedReq, metric.request);
-      pushedReq.handler(resp -> {
-        resp.endHandler(v -> {
-          assertNull(metrics.getMetric(pushedReq));
-          complete();
-        });
-      });
-    });
-    req.end();
     await();
   }
 }

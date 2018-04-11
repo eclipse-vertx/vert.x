@@ -77,8 +77,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerConnection.class);
 
-  private static final Handler<HttpServerRequest> NULL_REQUEST_HANDLER = req -> {};
-
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
   private final String serverOrigin;
@@ -88,7 +86,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private final HttpServerMetrics metrics;
   private boolean requestFailed;
   private Object requestMetric;
-  private Handler<HttpServerRequest> requestHandler = NULL_REQUEST_HANDLER;
+  private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private HttpServerRequestImpl currentRequest;
   private HttpServerResponseImpl pendingResponse;
@@ -185,13 +183,23 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     checkNextTick();
   }
 
-  synchronized void requestHandler(Handler<HttpServerRequest> handler) {
-    this.requestHandler = handler;
+  synchronized void requestHandlers(HttpHandlers handlers) {
+    Handler<HttpServerRequest> handler = handlers.requestHandler;
+    if (handlers.connectionHandler != null) {
+      handler = req -> {
+        requestHandler = handlers.requestHandler;
+        handlers.connectionHandler.handle(this);
+        handlers.requestHandler.handle(req);
+      };
+    }
+    requestHandler = handler;
+    exceptionHandler(handlers.exceptionHandler);
   }
 
-  synchronized void wsHandler(WebSocketServerHandshaker handshaker, Handler<ServerWebSocket> handler) {
+  synchronized void wsHandler(WebSocketServerHandshaker handshaker, HttpHandlers handlers) {
     this.handshaker = handshaker;
-    this.wsHandler = handler;
+    this.wsHandler = handlers.wsHandler;
+    exceptionHandler(handlers.exceptionHandler);
   }
 
   String getServerOrigin() {
@@ -439,7 +447,9 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       if (METRICS_ENABLED && metrics != null) {
         requestMetric = metrics.requestBegin(metric(), req);
       }
-      requestHandler.handle(req);
+      if (requestHandler != null) {
+        requestHandler.handle(req);
+      }
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       handleLastHttpContent();
     } else if (msg instanceof HttpContent) {

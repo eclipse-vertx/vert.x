@@ -36,6 +36,7 @@ import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -406,23 +407,20 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testSimpleRequest(String uri, HttpMethod method, boolean absolute, Handler<HttpClientResponse> handler) {
+    boolean ssl = this instanceof Http2Test;
     HttpClientRequest req;
     if (absolute) {
-      req = client.requestAbs(method, "http://" + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + uri, handler);
+      req = client.requestAbs(method, (ssl ? "https://" : "http://") + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + uri, handler);
     } else {
       req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, handler);
     }
-    testSimpleRequest(uri, method, req, absolute);
+    testSimpleRequest(uri, method, req);
   }
 
-  private void testSimpleRequest(String uri, HttpMethod method, HttpClientRequest request, boolean absolute) {
+  private void testSimpleRequest(String uri, HttpMethod method, HttpClientRequest request) {
     int index = uri.indexOf('?');
     String path = index == -1 ? uri : uri.substring(0, index);
     String query = index == -1 ? null : uri.substring(index + 1);
-    if (absolute) {
-      server.close();
-      server = vertx.createHttpServer(createBaseServerOptions().setSsl(false).setUseAlpn(false));
-    }
     server.requestHandler(req -> {
       String expectedPath = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : path;
       String expectedQuery = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : query;

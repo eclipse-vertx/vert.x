@@ -380,6 +380,15 @@ public final class HttpUtils {
     return null;
   }
 
+  public static String encodeSettings(io.vertx.core.http.Http2Settings settings) {
+    Buffer buffer = Buffer.buffer();
+    fromVertxSettings(settings).forEach((c, l) -> {
+      buffer.appendUnsignedShort(c);
+      buffer.appendUnsignedInt(l);
+    });
+    return Base64.getUrlEncoder().encodeToString(buffer.getBytes());
+  }
+
   public static ByteBuf generateWSCloseFrameByteBuf(short statusCode, String reason) {
     if (reason != null)
       return Unpooled.copiedBuffer(
@@ -459,16 +468,6 @@ public final class HttpUtils {
       }
       default:
         throw new IllegalArgumentException("Unsupported HTTP version: " + version);
-    }
-  }
-
-  static io.vertx.core.http.HttpVersion toVertxHttpVersion(HttpVersion version) {
-    if (version == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
-      return io.vertx.core.http.HttpVersion.HTTP_1_0;
-    } else if (version == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
-      return io.vertx.core.http.HttpVersion.HTTP_1_1;
-    } else {
-      return null;
     }
   }
 

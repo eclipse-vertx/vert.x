@@ -72,6 +72,10 @@ public abstract class ConnectionBase {
     return obj;
   }
 
+  public ChannelHandler handler() {
+    return chctx.handler();
+  }
+
   public synchronized final void startRead() {
     checkContext();
     read = true;

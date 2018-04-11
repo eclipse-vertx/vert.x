@@ -17,9 +17,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
-import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -62,16 +60,12 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
       serverOrigin,
       metrics);
     setConnection(conn);
-    conn.requestHandler(holder.handler.requesthHandler);
-    holder.context.executeFromIO(v -> {
-      if (metrics != null) {
+    conn.requestHandlers(holder.handler);
+    if (metrics != null) {
+      holder.context.executeFromIO(v -> {
         conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-      }
-      Handler<HttpConnection> connHandler = holder.handler.connectionHandler;
-      if (connHandler != null) {
-        connHandler.handle(conn);
-      }
-    });
+      });
+    }
   }
 
   @Override

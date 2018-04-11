@@ -11,6 +11,8 @@
 
 package io.vertx.core.http.impl.pool;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
 /**
@@ -21,13 +23,13 @@ import io.vertx.core.impl.ContextInternal;
 public interface ConnectionProvider<C> {
 
   /**
-   * Connect to the server and signals the {@code listener} the success with {@link ConnectionListener#onConnectSuccess}
-   * or the failure with {@link ConnectionListener#onConnectFailure}.
+   * Connect to the server.
    *
    * @param listener the listener
    * @param context the context to use for the connection
+   * @param resultHandler the handler notified with the connection success or failure
    */
-  void connect(ConnectionListener<C> listener, ContextInternal context);
+  void connect(ConnectionListener<C> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<C>>> resultHandler);
 
   /**
    * Close a connection.

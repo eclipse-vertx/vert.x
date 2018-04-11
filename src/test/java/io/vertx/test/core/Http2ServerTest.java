@@ -53,17 +53,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpUtils;
@@ -94,12 +84,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -2590,31 +2582,58 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-  public void testUpgradeToClearText() throws Exception {
+  public void testUpgradeToClearTextGet() throws Exception {
+    testUpgradeToClearText(HttpMethod.GET, Buffer.buffer());
+  }
+
+  @Test
+  public void testUpgradeToClearTextPut() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(8192));
+    testUpgradeToClearText(HttpMethod.PUT, expected);
+  }
+
+  private void testUpgradeToClearText(HttpMethod method, Buffer expected) throws Exception {
     server.close();
-    server = vertx.createHttpServer(serverOptions.
-        setHost(DEFAULT_HTTP_HOST).
-        setPort(DEFAULT_HTTP_PORT).
-        setUseAlpn(false).
-        setSsl(false).
-        setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)));
+    AtomicInteger serverConnectionCount = new AtomicInteger();
+    server = vertx.createHttpServer(serverOptions
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setUseAlpn(false)
+      .setSsl(false)
+      .setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)))
+      .connectionHandler(conn -> serverConnectionCount.incrementAndGet());
     server.requestHandler(req -> {
+      assertEquals(method, req.method());
       assertEquals(HttpVersion.HTTP_2, req.version());
       assertEquals(10000, req.connection().remoteSettings().getMaxConcurrentStreams());
       assertFalse(req.isSSL());
-      req.response().end();
+      req.bodyHandler(body -> {
+        assertEquals(expected, body);
+        req.response().end();
+      });
+    }).connectionHandler(conn -> {
+      assertNotNull(conn);
+      serverConnectionCount.incrementAndGet();
     });
     startServer();
+    AtomicInteger clientConnectionCount = new AtomicInteger();
     client = vertx.createHttpClient(clientOptions.
         setUseAlpn(false).
         setSsl(false).
         setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10000)));
-    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-    req.handler(resp -> {
+    HttpClientRequest req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       assertEquals(HttpVersion.HTTP_2, resp.version());
-      assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
+      // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
+      assertEquals(1, serverConnectionCount.get());
+      assertEquals(1, clientConnectionCount.get());
       testComplete();
-    }).exceptionHandler(this::fail).end();
+    }).connectionHandler(conn -> clientConnectionCount.incrementAndGet())
+      .exceptionHandler(this::fail);
+    if (expected.length() > 0) {
+      req.end(expected);
+    } else {
+      req.end();
+    }
     await();
   }
 
@@ -2691,7 +2710,7 @@ public class Http2ServerTest extends Http2TestBase {
     testUpgradeFailure(createWorker(), client -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
         .putHeader("Upgrade", "h2c")
         .putHeader("Connection", "Upgrade,HTTP2-Settings")
-        .putHeader("HTTP2-Settings", ""));
+        .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings())));
   }
 
   private void testUpgradeFailure(Context context, Function<HttpClient, HttpClientRequest> doRequest) throws Exception {
@@ -2707,6 +2726,34 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
       testComplete();
     }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testUpgradeToClearTextPartialFailure() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false));
+    CompletableFuture<Void> closeRequest = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      closeRequest.complete(null);
+      AtomicBoolean processed = new AtomicBoolean();
+      req.exceptionHandler(err -> {
+        if (processed.compareAndSet(false, true)) {
+          testComplete();
+        }
+      });
+    });
+    startServer();
+    client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
+    HttpClientRequest request = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+    }).putHeader("Upgrade", "h2c")
+      .putHeader("Connection", "Upgrade,HTTP2-Settings")
+      .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
+      .setChunked(true)
+      .write("some-data");
+    closeRequest.thenAccept(v -> {
+      request.connection().close();
+    });
     await();
   }
 
