@@ -2515,6 +2515,26 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testPausedHttpServerRequestDuringLastChunkEndsTheRequest() throws Exception {
+    server.requestHandler(req -> {
+      req.handler(buff -> {
+        assertEquals("small", buff.toString());
+        req.pause();
+      });
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
+      complete();
+    }).end("small");
+    await();
+  }
+
+  @Test
   public void testFormUploadSmallFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(100), false);
   }

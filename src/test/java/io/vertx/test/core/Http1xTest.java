@@ -4053,4 +4053,28 @@ public class Http1xTest extends HttpTest {
     });
     await();
   }
+
+  @Test
+  public void testPausedHttpServerRequestUnpauseTheConnectionAtRequestEnd() throws Exception {
+    int numRequests = 20;
+    waitFor(numRequests);
+    server.requestHandler(req -> {
+      req.handler(buff -> {
+        assertEquals("small", buff.toString());
+        req.pause();
+      });
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    for (int i = 0;i < numRequests;i++) {
+      client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
+        complete();
+      }).end("small");
+    }
+    await();
+  }
 }
