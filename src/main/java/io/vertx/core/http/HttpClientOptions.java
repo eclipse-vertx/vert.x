@@ -13,7 +13,6 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
@@ -164,7 +163,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Default policy on how to recycle HTTP connections in the connection POOL
    */
-  public static final Pool.ConnectionRecyclePolicy DEFAULT_CONNECTION_RECYCLE_POLICY = Pool.ConnectionRecyclePolicy.FIFO;
+  public static final RecyclePolicy DEFAULT_POOL_RECYCLE_POLICY = RecyclePolicy.FIFO;
 
   private boolean verifyHost = true;
   private int maxPoolSize;
@@ -194,7 +193,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxRedirects;
   private boolean forceSni;
   private int decoderInitialBufferSize;
-  private Pool.ConnectionRecyclePolicy connectionRecyclePolicy;
+  private RecyclePolicy poolRecyclePolicy;
 
   /**
    * Default constructor
@@ -238,7 +237,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
-    this.connectionRecyclePolicy = other.getConnectionRecyclePolicy();
+    this.poolRecyclePolicy = other.getPoolRecyclePolicy();
   }
 
   /**
@@ -291,7 +290,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
-    connectionRecyclePolicy = DEFAULT_CONNECTION_RECYCLE_POLICY;
+    poolRecyclePolicy = DEFAULT_POOL_RECYCLE_POLICY;
   }
 
   @Override
@@ -1051,20 +1050,20 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * set to {@code connectionRecyclePolicy} the policy in which connections are recycled
-   * @param connectionRecyclePolicy the connection recycle policy
+   * set to {@code poolRecyclePolicy} the policy in which connections are recycled
+   * @param poolRecyclePolicy the connection recycle policy
    * @returna reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setConnectionRecyclePolicy(Pool.ConnectionRecyclePolicy connectionRecyclePolicy) {
-    this.connectionRecyclePolicy = connectionRecyclePolicy;
+  public HttpClientOptions setPoolRecyclePolicy(RecyclePolicy poolRecyclePolicy) {
+    this.poolRecyclePolicy = poolRecyclePolicy;
     return this;
   }
 
   /**
    * @return the current connections recycle policy
    */
-  public Pool.ConnectionRecyclePolicy getConnectionRecyclePolicy() {
-    return connectionRecyclePolicy;
+  public RecyclePolicy getPoolRecyclePolicy() {
+    return poolRecyclePolicy;
   }
 
   @Override

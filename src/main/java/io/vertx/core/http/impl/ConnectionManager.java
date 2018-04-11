@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RecyclePolicy;
 import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -37,7 +38,7 @@ class ConnectionManager {
   private final Map<EndpointKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private final HttpVersion version;
   private final long maxSize;
-  private final Pool.ConnectionRecyclePolicy connectionPoolRecyclePolicy;
+  private final RecyclePolicy connectionPoolRecyclePolicy;
   private long timerID;
 
   ConnectionManager(HttpClientImpl client,
@@ -45,7 +46,7 @@ class ConnectionManager {
                     HttpVersion version,
                     long maxSize,
                     int maxWaitQueueSize,
-                    Pool.ConnectionRecyclePolicy connectionRecyclePolicy) {
+                    RecyclePolicy connectionRecyclePolicy) {
     this.client = client;
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;

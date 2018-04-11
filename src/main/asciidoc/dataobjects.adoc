@@ -758,10 +758,6 @@ Set the list of protocol versions to provide to the server during the Applicatio
 +++
 Set the connect timeout
 +++
-|[[connectionRecyclePolicy]]`connectionRecyclePolicy`|`link:enums.html#ConnectionRecyclePolicy[ConnectionRecyclePolicy]`|
-+++
-set to <code>connectionRecyclePolicy</code> the policy in which connections are recycled
-+++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
 Add a CRL path
@@ -922,6 +918,10 @@ Set whether pipe-lining is enabled on the client
 |[[pipeliningLimit]]`pipeliningLimit`|`Number (int)`|
 +++
 Set the limit of pending requests a pipe-lined HTTP/1 connection can send.
++++
+|[[poolRecyclePolicy]]`poolRecyclePolicy`|`link:enums.html#ConnectionRecyclePolicy[ConnectionRecyclePolicy]`|
++++
+set to <code>poolRecyclePolicy</code> the policy in which connections are recycled
 +++
 |[[protocolVersion]]`protocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|
 +++

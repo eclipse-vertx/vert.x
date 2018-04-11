@@ -16,6 +16,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
+import io.vertx.core.http.RecyclePolicy;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -45,9 +46,9 @@ import java.util.function.BiConsumer;
  * can mix connections with different concurrency (HTTP/1 and HTTP/2) and this flexibility is necessary.
  *
  * When a connection is created an {@link #initialWeight} is added to the current weight.
- * When the channel is connected, the {@link ConnectionListener#onConnectSuccess} callback
+ * When the channel is connected the {@link ConnectionListener#onConnectSuccess} callback
  * provides the initial weight returned by the connect method and the actual connection weight so it can be used to
- * correct the current weight. When the channel fails to connect, the {@link ConnectionListener#onConnectFailure} failure
+ * correct the current weight. When the channel fails to connect the {@link ConnectionListener#onConnectFailure} failure
  * provides the initial weight so it can be used to correct the current weight.
  *
  * When a connection is recycled and reaches its full capacity (i.e {@code Holder#concurrency == Holder#capacity},
@@ -59,7 +60,7 @@ import java.util.function.BiConsumer;
  * When a waiter asks for a connection, it is either added to the queue (when it's not empty) or attempted to be
  * served (from the pool or by creating a new connection) or failed. The {@link #waitersCount} is the number
  * of total waiters (the waiters in {@link #waitersQueue} but also the inflight) so we know if we can close the pool
- * or not. The {@link #waitersCount} is incremented when a waiter wants to acquire a connection successfully (i.e
+ * or not. The {@link #waitersCount} is incremented when a waiter wants to acquire a connection succesfully (i.e
  * it is either added to the queue or served from the pool) and decremented when the it gets a reply (either with
  * a connection or with a failure).
  *
@@ -90,15 +91,6 @@ public class Pool<C> {
     }
   }
 
-  /**
-   * Defines the policy in which connections will be reused in the pool
-   *
-   */
-  public enum ConnectionRecyclePolicy {
-    FIFO, // Maintains the available connection as a queue, keep connections for longer
-    LIFO // Maintains the available connection as a stack, allowing more connections to expire
-  }
-
   private static final Logger log = LoggerFactory.getLogger(Pool.class);
 
   private final ConnectionProvider<C> connector;
@@ -118,7 +110,7 @@ public class Pool<C> {
   private boolean closed;
   private final Handler<Void> poolClosed;
 
-  private final ConnectionRecyclePolicy connectionRecyclePolicy;
+  private final RecyclePolicy connectionRecyclePolicy;
 
   public Pool(ConnectionProvider<C> connector,
               int queueMaxSize,
@@ -127,7 +119,7 @@ public class Pool<C> {
               Handler<Void> poolClosed,
               BiConsumer<Channel, C> connectionAdded,
               BiConsumer<Channel, C> connectionRemoved,
-              ConnectionRecyclePolicy connectionRecyclePolicy) {
+              RecyclePolicy connectionRecyclePolicy) {
     this.maxWeight = maxWeight;
     this.initialWeight = initialWeight;
     this.connector = connector;

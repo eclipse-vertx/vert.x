@@ -35,9 +35,6 @@ import io.vertx.core.json.JsonArray;
       });
       obj.setAlpnVersions(list);
     }
-    if (json.getValue("connectionRecyclePolicy") instanceof String) {
-      obj.setConnectionRecyclePolicy(io.vertx.core.http.impl.pool.Pool.ConnectionRecyclePolicy.valueOf((String)json.getValue("connectionRecyclePolicy")));
-    }
     if (json.getValue("decoderInitialBufferSize") instanceof Number) {
       obj.setDecoderInitialBufferSize(((Number)json.getValue("decoderInitialBufferSize")).intValue());
     }
@@ -104,6 +101,9 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("pipeliningLimit") instanceof Number) {
       obj.setPipeliningLimit(((Number)json.getValue("pipeliningLimit")).intValue());
     }
+    if (json.getValue("poolRecyclePolicy") instanceof String) {
+      obj.setPoolRecyclePolicy(RecyclePolicy.valueOf((String)json.getValue("poolRecyclePolicy")));
+    }
     if (json.getValue("protocolVersion") instanceof String) {
       obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)json.getValue("protocolVersion")));
     }
@@ -123,9 +123,6 @@ import io.vertx.core.json.JsonArray;
       JsonArray array = new JsonArray();
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
-    }
-    if (obj.getConnectionRecyclePolicy() != null) {
-      json.put("connectionRecyclePolicy", obj.getConnectionRecyclePolicy().name());
     }
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     if (obj.getDefaultHost() != null) {
@@ -153,6 +150,9 @@ import io.vertx.core.json.JsonArray;
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
+    if (obj.getPoolRecyclePolicy() != null) {
+      json.put("poolRecyclePolicy", obj.getPoolRecyclePolicy().name());
+    }
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
