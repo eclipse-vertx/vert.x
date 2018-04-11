@@ -804,6 +804,12 @@ Set the default HTTP/2 connection window size. It overrides the initial window
  <p/>
  A value of <code>-1</code> reuses the initial window size setting.
 +++
+|[[http2KeepAliveTimeout]]`http2KeepAliveTimeout`|`Number (int)`|
++++
+Set the keep alive timeout for HTTP/2 connections, in seconds.
+ <p/>
+ This value determines how long a connection remains unused in the pool before being evicted and closed.
++++
 |[[http2MaxPoolSize]]`http2MaxPoolSize`|`Number (int)`|
 +++
 Set the maximum pool size for HTTP/2 connections
@@ -830,6 +836,12 @@ Set the HTTP/2 connection settings immediately sent by to the server when the cl
 |[[keepAlive]]`keepAlive`|`Boolean`|
 +++
 Set whether keep alive is enabled on the client
++++
+|[[keepAliveTimeout]]`keepAliveTimeout`|`Number (int)`|
++++
+Set the keep alive timeout for HTTP/1.x, in seconds.
+ <p/>
+ This value determines how long a connection remains unused in the pool before being evicted and closed.
 +++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++

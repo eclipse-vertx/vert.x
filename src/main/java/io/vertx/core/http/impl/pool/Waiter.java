@@ -11,42 +11,20 @@
 
 package io.vertx.core.http.impl.pool;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Waiter<C> {
+final class Waiter<C> {
 
   public final ContextInternal context;
+  public final Handler<AsyncResult<C>> handler;
 
-  protected Waiter(ContextInternal context) {
+  Waiter(ContextInternal context, Handler<AsyncResult<C>> handler) {
     this.context = context;
+    this.handler = handler;
   }
-
-  /**
-   * Handle connection failure, this callback is on a Netty even loop.
-   *
-   * @param ctx the context used to create the connection
-   * @param failure the failure
-   */
-  public abstract void handleFailure(ContextInternal ctx, Throwable failure);
-
-  /**
-   * Init connection, this callback is on a Netty event loop.
-   *
-   * @param ctx the context used to create the connection
-   * @param conn the connection
-   */
-  public abstract void initConnection(ContextInternal ctx, C conn);
-
-  /**
-   * Handle connection success, , this callback is on a Netty event loop.
-   *
-   * @param ctx the context used to create the connection
-   * @param conn the connection
-   * @return wether the waiter uses the connection
-   */
-  public abstract boolean handleConnection(ContextInternal ctx, C conn) throws Exception;
-
 }

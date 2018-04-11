@@ -1264,10 +1264,15 @@ The maximum number of connections to pool *for each server* is configured using 
 When making a request with pooling enabled, Vert.x will create a new connection if there are less than the maximum number of
 connections already created for that server, otherwise it will add the request to a queue.
 
-Keep alive connections will not be closed by the client automatically. To close them you can close the client instance.
+Keep alive connections will be closed by the client automatically after a timeout. The timeout can be specified
+by the server using the `keep-alive` header:
 
-Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
-connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
+----
+ keep-alive: timeout=30
+----
+
+You can set the default timeout using {@link io.vertx.core.http.HttpClientOptions#setKeepAliveTimeout(int)} - any
+connections not used within this timeout will be closed. Please note the timeout value is in seconds not milliseconds.
 
 === HTTP/1.1 pipe-lining
 

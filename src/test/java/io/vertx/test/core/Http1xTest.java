@@ -271,6 +271,16 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setDecoderInitialBufferSize(256));
     assertEquals(256, options.getDecoderInitialBufferSize());
     assertIllegalArgumentException(() -> options.setDecoderInitialBufferSize(-1));
+
+    assertEquals(HttpClientOptions.DEFAULT_KEEP_ALIVE_TIMEOUT, options.getKeepAliveTimeout());
+    assertEquals(options, options.setKeepAliveTimeout(10));
+    assertEquals(10, options.getKeepAliveTimeout());
+    assertIllegalArgumentException(() -> options.setKeepAliveTimeout(-1));
+
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT, options.getHttp2KeepAliveTimeout());
+    assertEquals(options, options.setHttp2KeepAliveTimeout(10));
+    assertEquals(10, options.getHttp2KeepAliveTimeout());
+    assertIllegalArgumentException(() -> options.setHttp2KeepAliveTimeout(-1));
   }
 
   @Test
@@ -441,6 +451,8 @@ public class Http1xTest extends HttpTest {
     boolean trustAll = rand.nextBoolean();
     String crlPath = TestUtils.randomUnicodeString(100);
     Buffer crlValue = TestUtils.randomBuffer(100);
+    int keepAliveTimeout = TestUtils.randomPositiveInt();
+    int http2KeepAliveTimeout = TestUtils.randomPositiveInt();
 
     boolean verifyHost = rand.nextBoolean();
     int maxPoolSize = TestUtils.randomPositiveInt();
@@ -505,6 +517,8 @@ public class Http1xTest extends HttpTest {
     options.setLocalAddress(localAddress);
     options.setSendUnmaskedFrames(sendUnmaskedFrame);
     options.setDecoderInitialBufferSize(decoderInitialBufferSize);
+    options.setKeepAliveTimeout(keepAliveTimeout);
+    options.setHttp2KeepAliveTimeout(http2KeepAliveTimeout);
     HttpClientOptions copy = new HttpClientOptions(options);
     checkCopyHttpClientOptions(options, copy);
     HttpClientOptions copy2 = new HttpClientOptions(options.toJson());
@@ -559,6 +573,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(options.isHttp2ClearTextUpgrade(), copy.isHttp2ClearTextUpgrade());
     assertEquals(options.getLocalAddress(), copy.getLocalAddress());
     assertEquals(options.isSendUnmaskedFrames(), copy.isSendUnmaskedFrames());
+    assertEquals(options.getKeepAliveTimeout(), copy.getKeepAliveTimeout());
+    assertEquals(options.getHttp2KeepAliveTimeout(), copy.getHttp2KeepAliveTimeout());
   }
 
   @Test
@@ -595,6 +611,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.isHttp2ClearTextUpgrade(), json.isHttp2ClearTextUpgrade());
     assertEquals(def.getLocalAddress(), json.getLocalAddress());
     assertEquals(def.getDecoderInitialBufferSize(), json.getDecoderInitialBufferSize());
+    assertEquals(def.getKeepAliveTimeout(), json.getKeepAliveTimeout());
+    assertEquals(def.getHttp2KeepAliveTimeout(), json.getHttp2KeepAliveTimeout());
   }
 
   @Test
@@ -646,6 +664,8 @@ public class Http1xTest extends HttpTest {
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
+    int keepAliveTimeout = TestUtils.randomPositiveInt();
+    int http2KeepAliveTimeout = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -691,7 +711,9 @@ public class Http1xTest extends HttpTest {
       .put("http2ClearTextUpgrade", h2cUpgrade)
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
       .put("localAddress", localAddress)
-      .put("decoderInitialBufferSize", decoderInitialBufferSize);
+      .put("decoderInitialBufferSize", decoderInitialBufferSize)
+      .put("keepAliveTimeout", keepAliveTimeout)
+      .put("http2KeepAliveTimeout", http2KeepAliveTimeout);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -768,6 +790,9 @@ public class Http1xTest extends HttpTest {
     // Test invalid protocolVersion
     json.put("protocolVersion", "invalidProtocolVersion");
     assertIllegalArgumentException(() -> new HttpClientOptions(json));
+
+    assertEquals(keepAliveTimeout, options.getKeepAliveTimeout());
+    assertEquals(http2KeepAliveTimeout, options.getHttp2KeepAliveTimeout());
   }
 
   @Test
@@ -3903,6 +3928,81 @@ public class Http1xTest extends HttpTest {
     }).putHeader("Connection", "close")
       .exceptionHandler(this::fail)
       .end();
+    await();
+  }
+
+  @Test
+  public void testKeepAliveTimeout() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    testKeepAliveTimeout(new HttpClientOptions().setMaxPoolSize(1).setKeepAliveTimeout(3), 1);
+  }
+
+  @Test
+  public void testKeepAliveTimeoutHeader() throws Exception {
+    AtomicBoolean sent = new AtomicBoolean();
+    server.requestHandler(req -> {
+      if (sent.compareAndSet(false, true)) {
+        req.response().putHeader("keep-alive", "timeout=3").end();
+      }
+    });
+    testKeepAliveTimeout(new HttpClientOptions().setMaxPoolSize(1).setKeepAliveTimeout(30), 1);
+  }
+
+  @Test
+  public void testKeepAliveTimeoutHeaderReusePrevious() throws Exception {
+    AtomicBoolean sent = new AtomicBoolean();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      if (sent.compareAndSet(false, true)) {
+        resp.putHeader("keep-alive", "timeout=3");
+      }
+      resp.end();
+    });
+    testKeepAliveTimeout(new HttpClientOptions().setMaxPoolSize(1).setKeepAliveTimeout(30), 2);
+  }
+
+  @Test
+  public void testKeepAliveTimeoutHeaderOverwritePrevious() throws Exception {
+    AtomicBoolean sent = new AtomicBoolean();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      int timeout;
+      if (sent.compareAndSet(false, true)) {
+        timeout = 15;
+      } else {
+        timeout = 3;
+      }
+      resp.putHeader("keep-alive", "timeout=" + timeout);
+      resp.end();
+    });
+    testKeepAliveTimeout(new HttpClientOptions().setMaxPoolSize(1).setKeepAliveTimeout(30), 2);
+  }
+
+  private void testKeepAliveTimeout(HttpClientOptions options, int numReqs) throws Exception {
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(options);
+    AtomicInteger respCount = new AtomicInteger();
+    for (int i = 0;i < numReqs;i++) {
+      int current = 1 + i;
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        respCount.incrementAndGet();
+        if (current == numReqs) {
+          long now = System.currentTimeMillis();
+          resp.request().connection().closeHandler(v -> {
+            long timeout = System.currentTimeMillis() - now;
+            int delta = 500;
+            int low = 3000 - delta;
+            int high = 3000 + delta;
+            assertTrue("Expected actual close timeout to be > " + low, low < timeout);
+            assertTrue("Expected actual close timeout to be < " + high, timeout < high);
+            testComplete();
+          });
+        }
+      });
+    }
     await();
   }
 }

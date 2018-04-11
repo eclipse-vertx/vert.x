@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -632,16 +633,29 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         peerHost = host;
       }
 
+      // Capture some stuff
+      Handler<HttpConnection> initializer = connectionHandler;
+      ContextInternal connectCtx = vertx.getOrCreateContext();
+
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnectionForRequest(peerHost, ssl, port, host, connectionHandler, (ctx, conn) -> {
+      client.getConnectionForRequest(peerHost, ssl, port, host, conn -> {
         // No need to synchronize as the thread is the same that set exceptionOccurred to true
         // exceptionOccurred=true getting the connection => it's a TimeoutException
         if (exceptionOccurred != null || reset != null) {
           return false;
         }
-        // checkContext(ctx);
+
+        //
+        ContextInternal ctx = conn.getContext();
+        if (!conn.checkInitialized() && initializer != null) {
+          ctx.executeFromIO(v -> {
+            initializer.handle(conn);
+          });
+        }
+
+        //
         conn.createStream(HttpClientRequestImpl.this, ar -> {
           if (ar.succeeded()) {
             HttpClientStream stream = ar.result();
@@ -653,8 +667,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
         });
         return true;
-      }, (ctx, failure) -> {
-        ctx.executeFromIO(v -> {
+      }, failure -> {
+        connectCtx.executeFromIO(v -> {
           handleException(failure);
         });
       });

@@ -12,18 +12,15 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
-import io.vertx.core.http.impl.pool.Waiter;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * The connection manager associates remote hosts with pools, it also tracks all connections so they can be closed
@@ -40,6 +37,7 @@ class ConnectionManager {
   private final Map<EndpointKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private final HttpVersion version;
   private final long maxSize;
+  private long timerID;
 
   ConnectionManager(HttpClientImpl client,
                     HttpClientMetrics metrics,
@@ -51,6 +49,16 @@ class ConnectionManager {
     this.metrics = metrics;
     this.maxSize = maxSize;
     this.version = version;
+  }
+
+  synchronized void start(boolean checkExpired) {
+    this.timerID = checkExpired ? client.getVertx().setTimer(1, id -> checkExpired()) : -1;
+  }
+
+  private synchronized void checkExpired() {
+    long timestamp = System.currentTimeMillis();
+    endpointMap.values().forEach(e -> e.pool.closeIdle(timestamp));
+    timerID = client.getVertx().setTimer(1, id -> checkExpired());
   }
 
   private static final class EndpointKey {
@@ -103,9 +111,8 @@ class ConnectionManager {
   }
 
   void getConnection(String peerHost, boolean ssl, int port, String host,
-                     Handler<HttpConnection> connectionHandler,
-                     BiFunction<ContextInternal, HttpClientConnection, Boolean> onSuccess,
-                     BiConsumer<ContextInternal, Throwable> onFailure) {
+                     Function<HttpClientConnection, Boolean> onSuccess,
+                     Consumer<Throwable> onFailure) {
     EndpointKey key = new EndpointKey(ssl, port, peerHost, host);
     while (true) {
       Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
@@ -129,7 +136,9 @@ class ConnectionManager {
       } else {
         metric = null;
       }
-      if (endpoint.pool.getConnection(new Waiter<HttpClientConnection>(client.getVertx().getOrCreateContext()) {
+      if (endpoint.pool.getConnection(client.getVertx().getOrCreateContext(), ar -> {
+        if (ar.succeeded()) {
+          /*
         @Override
         public void initConnection(ContextInternal ctx, HttpClientConnection conn) {
           if (connectionHandler != null) {
@@ -138,19 +147,23 @@ class ConnectionManager {
             });
           }
         }
-        @Override
-        public void handleFailure(ContextInternal ctx, Throwable failure) {
+           */
+
+          HttpClientConnection conn = ar.result();
+
           if (metrics != null) {
             metrics.dequeueRequest(endpoint.metric, metric);
           }
-          onFailure.accept(ctx, failure);
-        }
-        @Override
-        public boolean handleConnection(ContextInternal ctx, HttpClientConnection conn) throws Exception {
+
+          boolean claimed = onSuccess.apply(conn);
+          if (!claimed) {
+            conn.recycle();
+          }
+        } else {
           if (metrics != null) {
             metrics.dequeueRequest(endpoint.metric, metric);
           }
-          return onSuccess.apply(ctx, conn);
+          onFailure.accept(ar.cause());
         }
       })) {
         break;
@@ -159,6 +172,12 @@ class ConnectionManager {
   }
 
   public void close() {
+    synchronized (this) {
+      if (timerID >= 0) {
+        client.getVertx().cancelTimer(timerID);
+        timerID = -1;
+      }
+    }
     endpointMap.clear();
     for (HttpClientConnection conn : connectionMap.values()) {
       conn.close();
