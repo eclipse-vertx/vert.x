@@ -414,10 +414,10 @@ public abstract class HttpTest extends HttpTestBase {
     } else {
       req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, handler);
     }
-    testSimpleRequest(uri, method, req, absolute, ssl);
+    testSimpleRequest(uri, method, req);
   }
 
-  private void testSimpleRequest(String uri, HttpMethod method, HttpClientRequest request, boolean absolute, boolean ssl) {
+  private void testSimpleRequest(String uri, HttpMethod method, HttpClientRequest request) {
     int index = uri.indexOf('?');
     String path = index == -1 ? uri : uri.substring(0, index);
     String query = index == -1 ? null : uri.substring(index + 1);
@@ -3298,7 +3298,6 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Ignore
   @Test
   public void testClientLocalAddress() throws Exception {
     String expectedAddress = InetAddress.getLocalHost().getHostAddress();

@@ -41,11 +41,9 @@ import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
