@@ -94,7 +94,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private long bytesRead;
   private long bytesWritten;
 
-  // (pending == true) <=> (paused && pending.size() > 0)
+  // (queueing == true) <=> (paused || pending.size() > 0)
   private final Deque<Object> pending = new ArrayDeque<>(8);
   private boolean paused;
   private boolean sentCheck;
@@ -512,7 +512,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
             // since we got there because queueing was true
             Object msg = pending.poll();
             if (pending.isEmpty()) {
-              // paused == false && pending.size() == 0 => queueing = false
+              // paused == false && pending.size() == 0 => queueing == false
               unsetQueueing();
             }
             // Process message, it might pause the connection
