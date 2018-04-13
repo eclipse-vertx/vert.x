@@ -491,6 +491,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     URL url = parseUrl(absoluteURI);
     Boolean ssl = false;
     int port = url.getPort();
+    String relativeUri = url.getPath().isEmpty() ? "/" + url.getFile() : url.getFile();
     String protocol = url.getProtocol();
     if ("ftp".equals(protocol)) {
       if (port == -1) {
@@ -510,7 +511,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
     }
     // if we do not know the protocol, the port still may be -1, we will handle that below
-    return createRequest(method, protocol, url.getHost(), port, ssl, url.getFile(), null);
+    return createRequest(method, protocol, url.getHost(), port, ssl, relativeUri, null);
   }
 
   @Override
