@@ -363,6 +363,18 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testEmptyPathGETAbsolute() {
+    String uri = "";
+    testSimpleRequest(uri, HttpMethod.GET, true, resp -> testComplete());
+  }
+
+  @Test
+  public void testNoPathButQueryGETAbsolute() {
+    String uri = "?foo=bar";
+    testSimpleRequest(uri, HttpMethod.GET, true, resp -> testComplete());
+  }
+
+  @Test
   public void testSimplePUTAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.PUT, true, resp -> testComplete());
@@ -426,14 +438,15 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testSimpleRequest(String uri, HttpMethod method, HttpClientRequest request, boolean absolute) {
     int index = uri.indexOf('?');
-    String path = index == -1 ? uri : uri.substring(0, index);
+    String path = uri.substring(0, index);
+    String resource = (index == -1) ? uri : ((absolute && path.isEmpty()) ? "/" + path : path);
     String query = index == -1 ? null : uri.substring(index + 1);
     if (absolute) {
       server.close();
       server = vertx.createHttpServer(createBaseServerOptions().setSsl(false).setUseAlpn(false));
     }
     server.requestHandler(req -> {
-      String expectedPath = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : path;
+      String expectedPath = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : resource;
       String expectedQuery = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : query;
       assertEquals(expectedPath, req.path());
       assertEquals(method, req.method());
