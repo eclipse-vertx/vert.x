@@ -42,11 +42,17 @@ public class ConnectionPoolTest extends VertxTestBase {
     private Set<FakeConnection> active = new HashSet<>();
     private boolean closed = true;
     private int seq;
+    private final boolean fifo;
 
     FakeConnectionManager(int queueMaxSize, int maxPoolSize, ConnectionProvider<FakeConnection> connector) {
+      this(queueMaxSize, maxPoolSize, connector, false);
+    }
+
+    FakeConnectionManager(int queueMaxSize, int maxPoolSize, ConnectionProvider<FakeConnection> connector, boolean fifo) {
       this.queueMaxSize = queueMaxSize;
       this.maxPoolSize = maxPoolSize;
       this.connector = connector;
+      this.fifo = fifo;
     }
 
     synchronized int sequence() {
@@ -95,7 +101,7 @@ public class ConnectionPoolTest extends VertxTestBase {
             synchronized (FakeConnectionManager.this) {
               active.remove(conn);
             }
-          }
+          }, fifo
           );
         }
       }
@@ -346,6 +352,58 @@ public class ConnectionPoolTest extends VertxTestBase {
     waiter2.assertSuccess(conn);
     conn.recycle(true);
     assertEquals(0, mgr.size());
+  }
+
+  @Test
+  public void testRecycleFIFO() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 2, connector, true);
+    FakeWaiter waiter1 = new FakeWaiter();
+    mgr.getConnection(waiter1);
+    FakeConnection firstInConnection = connector.assertRequest();
+    firstInConnection.connect();
+    assertWaitUntil(waiter1::isSuccess);
+
+    FakeWaiter waiter2 = new FakeWaiter();
+    mgr.getConnection(waiter2);
+    FakeConnection lastInConnection = connector.assertRequest();
+    lastInConnection.connect();
+    assertWaitUntil(waiter2::isSuccess);
+    waiter2.assertSuccess(lastInConnection);
+    firstInConnection.recycle(false);
+    lastInConnection.recycle(false);
+    assertEquals(2, mgr.size());
+
+    FakeWaiter waiter3 = new FakeWaiter();
+    mgr.getConnection(waiter3);
+    assertWaitUntil(waiter3::isSuccess);
+    waiter3.assertSuccess(firstInConnection);
+  }
+
+  @Test
+  public void testRecycleLIFO() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 2, connector, false);
+    FakeWaiter waiter1 = new FakeWaiter();
+    mgr.getConnection(waiter1);
+    FakeConnection firstInConnection = connector.assertRequest();
+    firstInConnection.connect();
+    assertWaitUntil(waiter1::isSuccess);
+
+    FakeWaiter waiter2 = new FakeWaiter();
+    mgr.getConnection(waiter2);
+    FakeConnection lastInConnection = connector.assertRequest();
+    lastInConnection.connect();
+    assertWaitUntil(waiter2::isSuccess);
+    waiter2.assertSuccess(lastInConnection);
+    firstInConnection.recycle(false);
+    lastInConnection.recycle(false);
+    assertEquals(2, mgr.size());
+
+    FakeWaiter waiter3 = new FakeWaiter();
+    mgr.getConnection(waiter3);
+    assertWaitUntil(waiter3::isSuccess);
+    waiter3.assertSuccess(lastInConnection);
   }
 
   @Test

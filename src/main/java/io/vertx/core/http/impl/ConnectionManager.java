@@ -125,7 +125,8 @@ class ConnectionManager {
             endpointMap.remove(key);
           },
           connectionMap::put,
-          connectionMap::remove);
+          connectionMap::remove,
+          false);
         return new Endpoint(pool, metric);
       });
       Object metric;
