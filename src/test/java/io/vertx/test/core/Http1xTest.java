@@ -49,6 +49,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -4121,5 +4122,51 @@ public class Http1xTest extends HttpTest {
       testComplete();
     });
     await();
+  }
+
+  @Test
+  public void testHttpClientResponseThrowsExceptionInResponseHandler() throws Exception {
+    testHttpClientResponseThrowsExceptionInHandler((resp, latch) -> {
+      latch.countDown();
+      throw new RuntimeException();
+    });
+  }
+
+  @Test
+  public void testHttpClientResponseThrowsExceptionInChunkHandler() throws Exception {
+    testHttpClientResponseThrowsExceptionInHandler((resp, latch) -> {
+      resp.handler(chunk -> {
+        latch.countDown();
+        throw new RuntimeException();
+      });
+    });
+  }
+
+  @Test
+  public void testHttpClientResponseThrowsExceptionInEndHandler() throws Exception {
+    testHttpClientResponseThrowsExceptionInHandler((resp, latch) -> {
+      resp.endHandler(v -> {
+        latch.countDown();
+        throw new RuntimeException();
+      });
+    });
+  }
+
+  private void testHttpClientResponseThrowsExceptionInHandler(BiConsumer<HttpClientResponse, CountDownLatch> bilto) throws Exception {
+    Set<HttpConnection> conn = new ConcurrentHashSet<>();
+    server.requestHandler(req -> {
+      conn.add(req.connection());
+      req.response().end("blah");
+    });
+    startServer();
+    int num = 50;
+    CountDownLatch latch = new CountDownLatch(num);
+    for (int i = 0;i < num;i++) {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
+        bilto.accept(resp, latch);
+      });
+    }
+    awaitLatch(latch);
+    assertEquals(5, conn.size());
   }
 }
