@@ -51,7 +51,11 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
 
   @Test
   public void testExceptionCaught() throws Exception {
-    vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(8080, "localhost", onSuccess(NetSocket::close));
+    vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(8080, "localhost", onSuccess(socket -> {
+      vertx.setTimer(2000, id -> {
+        socket.close();
+      });
+    }));
     awaitLatch(resetLatch);
     assertThat(caught.get(), instanceOf(IOException.class));
   }
