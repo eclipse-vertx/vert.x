@@ -1822,43 +1822,30 @@ public class NetTest extends VertxTestBase {
   // This tests using NetSocket.writeHandlerID (on the server side)
   // Send some data and make sure it is fanned out to all connections
   public void testFanout() throws Exception {
+    int numConnections = 10;
 
-    CountDownLatch latch = new CountDownLatch(1);
     Set<String> connections = new ConcurrentHashSet<>();
     server.connectHandler(socket -> {
       connections.add(socket.writeHandlerID());
-      socket.handler(buffer -> {
+      if (connections.size() == numConnections) {
         for (String actorID : connections) {
-          vertx.eventBus().publish(actorID, buffer);
+          vertx.eventBus().publish(actorID, Buffer.buffer("some data"));
         }
-      });
+      }
       socket.closeHandler(v -> {
         connections.remove(socket.writeHandlerID());
       });
     });
-    server.listen(testAddress, ar -> {
-      assertTrue(ar.succeeded());
-      latch.countDown();
-    });
-    awaitLatch(latch);
+    startServer();
 
-    int numConnections = 10;
-    CountDownLatch connectLatch = new CountDownLatch(numConnections);
     CountDownLatch receivedLatch = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
-      client.connect(testAddress, res -> {
-        connectLatch.countDown();
-        res.result().handler(data -> {
+      client.connect(testAddress, onSuccess(socket -> {
+        socket.handler(data -> {
           receivedLatch.countDown();
         });
-      });
+      }));
     }
-    assertTrue(connectLatch.await(10, TimeUnit.SECONDS));
-
-    // Send some data
-    client.connect(testAddress, res -> {
-      res.result().write("foo");
-    });
     assertTrue(receivedLatch.await(10, TimeUnit.SECONDS));
 
     testComplete();
