@@ -1904,6 +1904,27 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testClientNetSocketCloseRemovesFromThePool() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    int num = 50;
+    CountDownLatch latch = new CountDownLatch(num);
+    for (int i = 0;i < num;i++) {
+      client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(200, resp.statusCode());
+        NetSocket socket = resp.netSocket();
+        socket.closeHandler(v -> {
+          latch.countDown();
+        });
+        socket.close();
+      }).end();
+    }
+    awaitLatch(latch);
+  }
+
+  @Test
   public void testRequestsTimeoutInQueue() {
 
     server.requestHandler(req -> {
