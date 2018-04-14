@@ -4081,6 +4081,7 @@ public class Http1xTest extends HttpTest {
     }
   }
 
+  @Test
   public void testPoolLIFOPolicy() throws Exception {
     List<HttpServerRequest> requests = new ArrayList<>();
     server.requestHandler(req -> {
