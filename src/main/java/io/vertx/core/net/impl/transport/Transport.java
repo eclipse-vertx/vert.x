@@ -21,7 +21,6 @@ import io.netty.channel.ServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -170,13 +169,6 @@ public class Transport {
     return NioServerSocketChannel.class;
   }
 
-  private void setOption(String name, Object value, BiConsumer<ChannelOption<Object>, Object> consumer) {
-    ChannelOption<Object> option = (ChannelOption<Object>) channelOption(name);
-    if (option != null) {
-      consumer.accept(option, value);
-    }
-  }
-
   public void configure(DatagramChannel channel, DatagramSocketOptions options) {
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     if (options.getSendBufferSize() != -1) {
@@ -186,7 +178,6 @@ public class Transport {
       channel.config().setReceiveBufferSize(options.getReceiveBufferSize());
       channel.config().setRecvByteBufAllocator(new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
     }
-    setOption("SO_REUSEPORT", options.isReusePort(), channel.config()::setOption);
     channel.config().setOption(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
     if (options.getTrafficClass() != -1) {
       channel.config().setTrafficClass(options.getTrafficClass());
@@ -209,10 +200,6 @@ public class Transport {
 
   public void configure(ClientOptionsBase options, Bootstrap bootstrap) {
     BiConsumer<ChannelOption<Object>, Object> setter = bootstrap::option;
-    setOption("TCP_CORK", options.isTcpCork(), setter);
-    setOption("TCP_QUICKACK", options.isTcpQuickAck(), setter);
-    setOption("TCP_FASTOPEN", options.isTcpFastOpen(), setter);
-    setOption("SO_REUSEPORT", options.isReusePort(), setter);
     if (options.getLocalAddress() != null) {
       bootstrap.localAddress(options.getLocalAddress(), 0);
     }
@@ -238,9 +225,6 @@ public class Transport {
 
   public void configure(NetServerOptions options, ServerBootstrap bootstrap) {
     BiConsumer<ChannelOption<Object>, Object> setter = bootstrap::childOption;
-    setOption("TCP_CORK", options.isTcpCork(), setter);
-    setOption("TCP_QUICKACK", options.isTcpQuickAck(), setter);
-    setOption("TCP_FASTOPEN", options.isTcpFastOpen(), setter);
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
       bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
@@ -258,7 +242,6 @@ public class Transport {
     bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    setOption("SO_REUSEPORT", options.isReusePort(), bootstrap::option);
     if (options.getAcceptBacklog() != -1) {
       bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
     }
