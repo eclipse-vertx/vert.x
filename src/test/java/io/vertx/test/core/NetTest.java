@@ -2279,44 +2279,48 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testContexts() throws Exception {
-    Set<ContextInternal> contexts = new ConcurrentHashSet<>();
-    AtomicInteger cnt = new AtomicInteger();
-    AtomicReference<ContextInternal> serverConnectContext = new AtomicReference<>();
-    // Server connect handler should always be called with same context
+    int numConnections = 10;
+
+    CountDownLatch serverLatch = new CountDownLatch(numConnections);
+    AtomicReference<Context> serverConnectContext = new AtomicReference<>();
     server.connectHandler(sock -> {
-      sock.handler(sock::write);
-      ContextInternal serverContext = ((VertxInternal) vertx).getContext();
+      // Server connect handler should always be called with same context
+      Context serverContext = Vertx.currentContext();
       if (serverConnectContext.get() != null) {
         assertSame(serverConnectContext.get(), serverContext);
       } else {
         serverConnectContext.set(serverContext);
       }
+      serverLatch.countDown();
     });
-    CountDownLatch latch = new CountDownLatch(1);
-    AtomicReference<ContextInternal> listenContext = new AtomicReference<>();
-    server.listen(testAddress, ar -> {
-      assertTrue(ar.succeeded());
-      listenContext.set(((VertxInternal) vertx).getContext());
-      latch.countDown();
-    });
-    awaitLatch(latch);
-    CountDownLatch latch2 = new CountDownLatch(1);
-    int numConns = 10;
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    AtomicReference<Context> listenContext = new AtomicReference<>();
+    server.listen(testAddress, onSuccess(v -> {
+      listenContext.set(Vertx.currentContext());
+      listenLatch.countDown();
+    }));
+    awaitLatch(listenLatch);
+
+    Set<Context> contexts = new ConcurrentHashSet<>();
+    AtomicInteger connectCount = new AtomicInteger();
+    CountDownLatch clientLatch = new CountDownLatch(1);
     // Each connect should be in its own context
-    for (int i = 0; i < numConns; i++) {
+    for (int i = 0; i < numConnections; i++) {
       client.connect(testAddress, conn -> {
-        contexts.add(((VertxInternal) vertx).getContext());
-        if (cnt.incrementAndGet() == numConns) {
-          assertEquals(numConns, contexts.size());
-          latch2.countDown();
+        contexts.add(Vertx.currentContext());
+        if (connectCount.incrementAndGet() == numConnections) {
+          assertEquals(numConnections, contexts.size());
+          clientLatch.countDown();
         }
       });
     }
-    awaitLatch(latch2);
+    awaitLatch(clientLatch);
+    awaitLatch(serverLatch);
+
     // Close should be in own context
     server.close(ar -> {
       assertTrue(ar.succeeded());
-      ContextInternal closeContext = ((VertxInternal) vertx).getContext();
+      Context closeContext = Vertx.currentContext();
       assertFalse(contexts.contains(closeContext));
       assertNotSame(serverConnectContext.get(), closeContext);
       assertFalse(contexts.contains(listenContext.get()));
@@ -2324,7 +2328,6 @@ public class NetTest extends VertxTestBase {
       testComplete();
     });
 
-    server = null;
     await();
   }
 
