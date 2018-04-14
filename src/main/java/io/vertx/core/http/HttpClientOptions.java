@@ -160,11 +160,6 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
 
-  /**
-   * Default policy on how to recycle HTTP connections in the connection POOL
-   */
-  public static final RecyclePolicy DEFAULT_POOL_RECYCLE_POLICY = RecyclePolicy.FIFO;
-
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -193,7 +188,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxRedirects;
   private boolean forceSni;
   private int decoderInitialBufferSize;
-  private RecyclePolicy poolRecyclePolicy;
 
   /**
    * Default constructor
@@ -237,7 +231,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
-    this.poolRecyclePolicy = other.getPoolRecyclePolicy();
   }
 
   /**
@@ -290,7 +283,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
-    poolRecyclePolicy = DEFAULT_POOL_RECYCLE_POLICY;
   }
 
   @Override
@@ -1047,23 +1039,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     Arguments.require(decoderInitialBufferSize > 0, "initialBufferSizeHttpDecoder must be > 0");
     this.decoderInitialBufferSize = decoderInitialBufferSize;
     return this;
-  }
-
-  /**
-   * set to {@code poolRecyclePolicy} the policy in which connections are recycled
-   * @param poolRecyclePolicy the connection recycle policy
-   * @returna reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setPoolRecyclePolicy(RecyclePolicy poolRecyclePolicy) {
-    this.poolRecyclePolicy = poolRecyclePolicy;
-    return this;
-  }
-
-  /**
-   * @return the current connections recycle policy
-   */
-  public RecyclePolicy getPoolRecyclePolicy() {
-    return poolRecyclePolicy;
   }
 
   @Override

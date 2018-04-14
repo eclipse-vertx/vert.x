@@ -13,13 +13,11 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RecyclePolicy;
 import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -38,21 +36,18 @@ class ConnectionManager {
   private final Map<EndpointKey, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private final HttpVersion version;
   private final long maxSize;
-  private final RecyclePolicy connectionPoolRecyclePolicy;
   private long timerID;
 
   ConnectionManager(HttpClientImpl client,
                     HttpClientMetrics metrics,
                     HttpVersion version,
                     long maxSize,
-                    int maxWaitQueueSize,
-                    RecyclePolicy connectionRecyclePolicy) {
+                    int maxWaitQueueSize) {
     this.client = client;
     this.maxWaitQueueSize = maxWaitQueueSize;
     this.metrics = metrics;
     this.maxSize = maxSize;
     this.version = version;
-    this.connectionPoolRecyclePolicy = connectionRecyclePolicy;
   }
 
   synchronized void start(boolean checkExpired) {
@@ -132,7 +127,7 @@ class ConnectionManager {
           },
           connectionMap::put,
           connectionMap::remove,
-          connectionPoolRecyclePolicy);
+          false);
         return new Endpoint(pool, metric);
       });
       Object metric;

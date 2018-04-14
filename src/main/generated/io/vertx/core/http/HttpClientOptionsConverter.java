@@ -101,9 +101,6 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("pipeliningLimit") instanceof Number) {
       obj.setPipeliningLimit(((Number)json.getValue("pipeliningLimit")).intValue());
     }
-    if (json.getValue("poolRecyclePolicy") instanceof String) {
-      obj.setPoolRecyclePolicy(io.vertx.core.http.RecyclePolicy.valueOf((String)json.getValue("poolRecyclePolicy")));
-    }
     if (json.getValue("protocolVersion") instanceof String) {
       obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)json.getValue("protocolVersion")));
     }
@@ -150,9 +147,6 @@ import io.vertx.core.json.JsonArray;
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
-    if (obj.getPoolRecyclePolicy() != null) {
-      json.put("poolRecyclePolicy", obj.getPoolRecyclePolicy().name());
-    }
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }

@@ -16,7 +16,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
-import io.vertx.core.http.RecyclePolicy;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -102,6 +101,7 @@ public class Pool<C> {
   private int waitersCount;                                         // The number of waiters (including the inflight waiters not in the queue)
 
   private final Deque<Holder<C>> available;                         // Available connections
+  private final boolean fifo;                                       // Recycling policy
 
   private final long initialWeight;                                 // The initial weight of a connection
   private final long maxWeight;                                     // The max weight (equivalent to max pool size)
@@ -110,7 +110,6 @@ public class Pool<C> {
   private boolean closed;
   private final Handler<Void> poolClosed;
 
-  private final RecyclePolicy connectionRecyclePolicy;
 
   public Pool(ConnectionProvider<C> connector,
               int queueMaxSize,
@@ -119,7 +118,7 @@ public class Pool<C> {
               Handler<Void> poolClosed,
               BiConsumer<Channel, C> connectionAdded,
               BiConsumer<Channel, C> connectionRemoved,
-              RecyclePolicy connectionRecyclePolicy) {
+              boolean fifo) {
     this.maxWeight = maxWeight;
     this.initialWeight = initialWeight;
     this.connector = connector;
@@ -128,7 +127,7 @@ public class Pool<C> {
     this.available = new ArrayDeque<>();
     this.connectionAdded = connectionAdded;
     this.connectionRemoved = connectionRemoved;
-    this.connectionRecyclePolicy = connectionRecyclePolicy;
+    this.fifo = fifo;
   }
 
   public synchronized int waitersInQueue() {
@@ -356,20 +355,14 @@ public class Pool<C> {
       connector.close(conn.connection);
     } else {
       if (conn.capacity == 0) {
-        returnConnectionToPool(conn);
+        if (fifo) {
+          available.addLast(conn);
+        } else {
+          available.addFirst(conn);
+        }
       }
       conn.expirationTimestamp = timestamp;
       conn.capacity = newCapacity;
-    }
-  }
-
-  private void returnConnectionToPool(Holder<C> conn) {
-    switch (this.connectionRecyclePolicy) {
-      case FIFO:
-        available.add(conn);
-        break;
-      case LIFO:
-        available.offerFirst(conn);
     }
   }
 

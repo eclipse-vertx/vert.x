@@ -4005,4 +4005,46 @@ public class Http1xTest extends HttpTest {
     }
     await();
   }
+
+  @Test
+  public void testPoolLIFOPolicy() throws Exception {
+    List<HttpServerRequest> requests = new ArrayList<>();
+    server.requestHandler(req -> {
+      requests.add(req);
+      switch (requests.size()) {
+        case 2:
+          requests.forEach(r -> r.response().end());
+          break;
+        case 3:
+          req.response().end();
+          break;
+      }
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(2));
+    // Make two concurrent requests and finish one first
+    List<HttpConnection> connections = Collections.synchronizedList(new ArrayList<>());
+    CountDownLatch latch = new CountDownLatch(2);
+    // Use one event loop to be sure about response ordering
+    vertx.runOnContext(v0 -> {
+      for (int i = 0;i < 2;i++) {
+        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
+          resp.endHandler(v1 -> {
+            // Use runOnContext to be sure the connections is put back in the pool
+            vertx.runOnContext(v2 -> {
+              connections.add(resp.request().connection());
+              latch.countDown();
+            });
+          });
+        });
+      }
+    });
+    awaitLatch(latch);
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
+      assertSame(resp.request().connection(), connections.get(1));
+      testComplete();
+    });
+    await();
+  }
 }
