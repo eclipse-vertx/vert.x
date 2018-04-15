@@ -1905,27 +1905,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testClientNetSocketCloseRemovesFromThePool() throws Exception {
-    server.requestHandler(req -> {
-      req.response().end();
-    });
-    startServer();
-    int num = 50;
-    CountDownLatch latch = new CountDownLatch(num);
-    for (int i = 0;i < num;i++) {
-      client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        assertEquals(200, resp.statusCode());
-        NetSocket socket = resp.netSocket();
-        socket.closeHandler(v -> {
-          latch.countDown();
-        });
-        socket.close();
-      }).end();
-    }
-    awaitLatch(latch);
-  }
-
-  @Test
   public void testRequestsTimeoutInQueue() {
 
     server.requestHandler(req -> {
@@ -4126,7 +4105,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testHttpClientResponseThrowsExceptionInResponseHandler() throws Exception {
-    testHttpClientResponseThrowsExceptionInHandler((resp, latch) -> {
+    testHttpClientResponseThrowsExceptionInHandler(null, (resp, latch) -> {
       latch.countDown();
       throw new RuntimeException();
     });
@@ -4134,7 +4113,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testHttpClientResponseThrowsExceptionInChunkHandler() throws Exception {
-    testHttpClientResponseThrowsExceptionInHandler((resp, latch) -> {
+    testHttpClientResponseThrowsExceptionInHandler("blah", (resp, latch) -> {
       resp.handler(chunk -> {
         latch.countDown();
         throw new RuntimeException();
@@ -4144,7 +4123,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testHttpClientResponseThrowsExceptionInEndHandler() throws Exception {
-    testHttpClientResponseThrowsExceptionInHandler((resp, latch) -> {
+    testHttpClientResponseThrowsExceptionInHandler(null, (resp, latch) -> {
       resp.endHandler(v -> {
         latch.countDown();
         throw new RuntimeException();
@@ -4152,21 +4131,37 @@ public class Http1xTest extends HttpTest {
     });
   }
 
-  private void testHttpClientResponseThrowsExceptionInHandler(BiConsumer<HttpClientResponse, CountDownLatch> bilto) throws Exception {
-    Set<HttpConnection> conn = new ConcurrentHashSet<>();
+  @Test
+  public void testClientNetSocketCloseRemovesFromThePool() throws Exception {
+    testHttpClientResponseThrowsExceptionInHandler(null, (resp, latch) -> {
+      NetSocket socket = resp.netSocket();
+      socket.closeHandler(v -> {
+        latch.countDown();
+      });
+      socket.close();
+    });
+  }
+
+
+  private void testHttpClientResponseThrowsExceptionInHandler(
+    String chunk,
+    BiConsumer<HttpClientResponse, CountDownLatch> handler) throws Exception {
     server.requestHandler(req -> {
-      conn.add(req.connection());
-      req.response().end("blah");
+      HttpServerResponse resp = req.response();
+      if (chunk != null) {
+        resp.end(chunk);
+      } else {
+        resp.end();
+      }
     });
     startServer();
     int num = 50;
     CountDownLatch latch = new CountDownLatch(num);
     for (int i = 0;i < num;i++) {
       client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
-        bilto.accept(resp, latch);
+        handler.accept(resp, latch);
       });
     }
     awaitLatch(latch);
-    assertEquals(5, conn.size());
   }
 }
