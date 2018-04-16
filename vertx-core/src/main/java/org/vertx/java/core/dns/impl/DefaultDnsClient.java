@@ -18,7 +18,6 @@ package org.vertx.java.core.dns.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.dns.*;
@@ -29,6 +28,7 @@ import org.vertx.java.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 import org.vertx.java.core.dns.impl.netty.decoder.record.ServiceRecord;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.NettySupport;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
 
@@ -58,7 +58,7 @@ public final class DefaultDnsClient implements DnsClient {
     this.vertx = vertx;
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.getEventLoop());
-    bootstrap.channel(NioDatagramChannel.class);
+    bootstrap.channel(NettySupport.datagramChannel());
     bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
       @Override
