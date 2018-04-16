@@ -729,52 +729,50 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         conn.handleMessage(request);
       } else {
 
-        wsHandler.context.executeFromIO(v -> {
-          URI theURI;
+        URI theURI;
+        try {
+          theURI = new URI(request.getUri());
+        } catch (URISyntaxException e2) {
+          throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+        }
+
+        if (metrics != null) {
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        }
+        conn.wsHandler(shake, wsHandler.handler);
+
+        Supplier<String> connectRunnable = () -> {
           try {
-            theURI = new URI(request.getUri());
-          } catch (URISyntaxException e2) {
-            throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+            shake.handshake(conn.channel(), request);
+            return shake.selectedSubprotocol();
+          } catch (WebSocketHandshakeException e) {
+            conn.handleException(e);
+            return null;
+          } catch (Exception e) {
+            log.error("Failed to generate shake response", e);
+            return null;
           }
+        };
 
-          if (metrics != null) {
-            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
+          theURI.getQuery(), new HeadersAdaptor(request.headers()), conn, shake.version() != WebSocketVersion.V00,
+          connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
+        if (METRICS_ENABLED && metrics != null) {
+          ws.setMetric(metrics.connected(conn.metric(), ws));
+        }
+        ws.registerHandler(vertx.eventBus());
+        conn.handleWebsocketConnect(ws);
+        if (!ws.isRejected()) {
+          ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
+          ChannelHandler handler = pipeline.get(HttpChunkContentCompressor.class);
+          if (handler != null) {
+            // remove compressor as its not needed anymore once connection was upgraded to websockets
+            pipeline.remove(handler);
           }
-          conn.wsHandler(shake, wsHandler.handler);
-
-          Supplier<String> connectRunnable = () -> {
-            try {
-              shake.handshake(conn.channel(), request);
-              return shake.selectedSubprotocol();
-            } catch (WebSocketHandshakeException e) {
-              conn.handleException(e);
-              return null;
-            } catch (Exception e) {
-              log.error("Failed to generate shake response", e);
-              return null;
-            }
-          };
-
-          ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
-              theURI.getQuery(), new HeadersAdaptor(request.headers()), conn, shake.version() != WebSocketVersion.V00,
-              connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
-          if (METRICS_ENABLED && metrics != null) {
-            ws.setMetric(metrics.connected(conn.metric(), ws));
-          }
-          ws.registerHandler(vertx.eventBus());
-          conn.handleWebsocketConnect(ws);
-          if (!ws.isRejected()) {
-            ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
-            ChannelHandler handler = pipeline.get(HttpChunkContentCompressor.class);
-            if (handler != null) {
-              // remove compressor as its not needed anymore once connection was upgraded to websockets
-              pipeline.remove(handler);
-            }
-            ws.connectNow();
-          } else {
-            conn.channel().writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, ws.getRejectedStatus()));
-          }
-        });
+          ws.connectNow();
+        } else {
+          conn.channel().writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, ws.getRejectedStatus()));
+        }
       }
     }
   }
