@@ -938,13 +938,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return options;
   }
 
-  private void getConnectionForWebsocket(boolean ssl,
+  private void getConnectionForWebsocket(ContextInternal ctx,
+                                         boolean ssl,
                                          int port,
                                          String host,
                                          Handler<Http1xClientConnection> handler,
                                          Handler<Throwable> connectionExceptionHandler) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    websocketCM.getConnection(host, ssl, port, host, ar -> {
+    websocketCM.getConnection(ctx, host, ssl, port, host, ar -> {
       if (ar.succeeded()) {
         HttpClientConnection conn = ar.result();
         conn.getContext().executeFromIO(v -> {
@@ -958,9 +958,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     });
   }
 
-  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host,
+  void getConnectionForRequest(ContextInternal ctx,
+                               String peerHost,
+                               boolean ssl,
+                               int port,
+                               String host,
                                Handler<AsyncResult<HttpClientStream>> handler) {
-    httpCM.getConnection(peerHost, ssl, port, host, ar -> {
+    httpCM.getConnection(ctx, peerHost, ssl, port, host, ar -> {
       if (ar.succeeded()) {
         ar.result().createStream(handler);
       } else {
@@ -1105,7 +1109,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         } else {
           wsConnect = handler;
         }
-        getConnectionForWebsocket(ssl != null ? ssl : options.isSsl(), port, host, conn -> {
+        getConnectionForWebsocket(vertx.getOrCreateContext(), ssl != null ? ssl : options.isSsl(), port, host, conn -> {
           conn.exceptionHandler(connectionExceptionHandler);
           conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
         }, connectionExceptionHandler);

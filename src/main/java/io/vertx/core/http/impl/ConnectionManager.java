@@ -17,6 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
@@ -110,7 +111,7 @@ class ConnectionManager {
     }
   }
 
-  void getConnection(String peerHost, boolean ssl, int port, String host, Handler<AsyncResult<HttpClientConnection>> handler) {
+  void getConnection(ContextInternal ctx, String peerHost, boolean ssl, int port, String host, Handler<AsyncResult<HttpClientConnection>> handler) {
     EndpointKey key = new EndpointKey(ssl, port, peerHost, host);
     while (true) {
       Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
@@ -136,7 +137,7 @@ class ConnectionManager {
         metric = null;
       }
 
-      if (endpoint.pool.getConnection(client.getVertx().getOrCreateContext(), ar -> {
+      if (endpoint.pool.getConnection(ctx, ar -> {
         if (ar.succeeded()) {
 
           HttpClientConnection conn = ar.result();
