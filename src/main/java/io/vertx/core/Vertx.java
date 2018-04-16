@@ -39,6 +39,7 @@ import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -556,10 +557,14 @@ public interface Vertx extends Measured {
    *
    * @param name the name of the worker executor
    * @param poolSize the size of the pool
-   * @param maxExecuteTime the value of max worker execute time, in ns
+   * @param maxExecuteTime the value of max worker execute time, in ms
    * @return the named worker executor
    */
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
+  /**
+   * Like {@link #createSharedWorkerExecutor(String, int, long)} but with the given time unit {@code maxExecuteTime}.
+   */
+  WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, TimeUnit maxExecuteTimeUnit, long maxExecuteTime);
 
   /**
    * @return whether the native transport is used
