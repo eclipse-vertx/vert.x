@@ -3941,6 +3941,29 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testIdleTimeoutInfiniteSkipOfControlCharactersState() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setIdleTimeout(1));
+    server.requestHandler(req -> {
+      testComplete();
+    });
+    startServer();
+    NetClient client = vertx.createNetClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(so -> {
+      so.closeHandler(v -> {
+        testComplete();
+      });
+      vertx.setPeriodic(1, id -> {
+        so.write(Buffer.buffer().setInt(0, 0xD));
+      });
+    }));
+    await();
+  }
+
+  @Test
   public void testCompressedResponseWithConnectionCloseAndNoCompressionHeader() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(2048));
     server.close();
