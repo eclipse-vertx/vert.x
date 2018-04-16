@@ -896,7 +896,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public synchronized void close() {
+  public void close() {
     synchronized (this) {
       checkClosed();
       closed = true;
