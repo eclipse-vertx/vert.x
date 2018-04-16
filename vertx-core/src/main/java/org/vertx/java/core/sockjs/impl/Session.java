@@ -176,6 +176,11 @@ class Session extends SockJSSocketBase implements Shareable {
   }
 
   @Override
+	public String transportType() {
+		return listener.getClass().getCanonicalName();
+	}
+
+	@Override
   public InetSocketAddress remoteAddress() {
     return remoteAddress;
   }
