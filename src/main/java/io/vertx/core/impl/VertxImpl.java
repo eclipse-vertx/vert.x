@@ -384,10 +384,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
+  @Override
   public EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
     return new EventLoopContext(this, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deploymentID, config, tccl);
   }
 
+  @Override
   public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool workerPool, JsonObject config,
                                          ClassLoader tccl) {
     if (workerPool == null) {

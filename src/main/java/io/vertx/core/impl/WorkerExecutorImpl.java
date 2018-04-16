@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -23,7 +22,7 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorInternal {
+class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
   private final Vertx vertx;
   private final WorkerPool pool;
@@ -52,6 +51,7 @@ class WorkerExecutorImpl implements Closeable, MetricsProvider, WorkerExecutorIn
     return vertx;
   }
 
+  @Override
   public WorkerPool getPool() {
     return pool;
   }
