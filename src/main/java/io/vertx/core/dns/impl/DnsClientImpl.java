@@ -264,12 +264,12 @@ public final class DnsClientImpl implements DnsClient {
       this.name = name;
     }
 
-    void fail(Throwable cause) {
+    private void fail(Throwable cause) {
       inProgressMap.remove(msg.id());
       if (timerID >= 0) {
         vertx.cancelTimer(timerID);
       }
-      actualCtx.executeFromIO(v -> fut.tryFail(cause));
+      fut.tryFail(cause);
     }
 
     void handle(DnsResponse msg) {
@@ -295,7 +295,7 @@ public final class DnsClientImpl implements DnsClient {
           fut.tryComplete(records);
         });
       } else {
-        fail(new DnsException(code));
+        actualCtx.executeFromIO(new DnsException(code), this::fail);
       }
     }
 
@@ -303,11 +303,13 @@ public final class DnsClientImpl implements DnsClient {
       inProgressMap.put(msg.id(), this);
       timerID = vertx.setTimer(timeoutMillis, id -> {
         timerID = -1;
-        fail(new VertxException("DNS query timeout for " + name));
+        actualCtx.runOnContext(v -> {
+          fail(new VertxException("DNS query timeout for " + name));
+        });
       });
       channel.writeAndFlush(msg).addListener((ChannelFutureListener) future -> {
         if (!future.isSuccess()) {
-          fail(future.cause());
+          actualCtx.executeFromIO(future.cause(), this::fail);
         }
       });
     }
