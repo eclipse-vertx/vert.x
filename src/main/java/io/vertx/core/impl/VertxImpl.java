@@ -1053,6 +1053,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return namedExec;
   }
 
+  @Override
+  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, TimeUnit maxExecuteTimeUnit, long maxExecuteTime) {
+    return createSharedWorkerExecutor(name, poolSize, maxExecuteTimeUnit.toNanos(maxExecuteTime));
+  }
+
   synchronized void releaseWorkerExecutor(String name) {
     namedWorkerPools.remove(name);
   }
