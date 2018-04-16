@@ -564,7 +564,7 @@ public interface Vertx extends Measured {
   /**
    * Like {@link #createSharedWorkerExecutor(String, int, long)} but with the given time unit {@code maxExecuteTime}.
    */
-  WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, TimeUnit maxExecuteTimeUnit, long maxExecuteTime);
+  WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit);
 
   /**
    * @return whether the native transport is used

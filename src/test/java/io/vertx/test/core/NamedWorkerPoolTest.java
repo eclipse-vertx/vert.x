@@ -213,7 +213,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testMaxExecuteTime() throws Exception{
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     int poolSize = 5;
-    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName, poolSize, TimeUnit.SECONDS, 60);
+    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName, poolSize, 60, TimeUnit.SECONDS);
     worker.executeBlocking(f -> {
       Thread t = Thread.currentThread();
       assertTrue(t instanceof VertxThread);

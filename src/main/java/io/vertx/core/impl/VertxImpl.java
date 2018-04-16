@@ -1054,7 +1054,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, TimeUnit maxExecuteTimeUnit, long maxExecuteTime) {
+  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     return createSharedWorkerExecutor(name, poolSize, maxExecuteTimeUnit.toNanos(maxExecuteTime));
   }
 
