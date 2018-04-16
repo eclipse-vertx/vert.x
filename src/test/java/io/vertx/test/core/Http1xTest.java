@@ -4187,4 +4187,28 @@ public class Http1xTest extends HttpTest {
     }
     awaitLatch(latch);
   }
+
+  @Test
+  public void testConnectionCloseDuringShouldCallHandleExceptionOnlyOnce() throws Exception {
+    server.requestHandler(req -> {
+      vertx.setTimer(500, id -> {
+        req.connection().close();
+      });
+    });
+    AtomicInteger count = new AtomicInteger();
+    startServer();
+    HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> fail());
+    post.setChunked(true);
+    post.write(TestUtils.randomBuffer(10000));
+    CountDownLatch latch = new CountDownLatch(1);
+    post.exceptionHandler(x-> {
+      count.incrementAndGet();
+      vertx.setTimer(10, id -> {
+        latch.countDown();
+      });
+    });
+    // then stall until timeout and the exception handler will be called.
+    awaitLatch(latch);
+    assertEquals(count.get(), 1);
+  }
 }
