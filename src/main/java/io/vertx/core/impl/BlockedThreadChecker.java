@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -31,7 +32,7 @@ public class BlockedThreadChecker {
   private final Map<VertxThread, Object> threads = new WeakHashMap<>();
   private final Timer timer; // Need to use our own timer - can't use event loop for this
 
-  BlockedThreadChecker(long interval, long warningExceptionTime) {
+  BlockedThreadChecker(long interval, TimeUnit intervalUnit, long warningExceptionTime, TimeUnit warningExceptionTimeUnit) {
     timer = new Timer("vertx-blocked-thread-checker", true);
     timer.schedule(new TimerTask() {
       @Override
@@ -42,9 +43,11 @@ public class BlockedThreadChecker {
             long execStart = thread.startTime();
             long dur = now - execStart;
             final long timeLimit = thread.getMaxExecTime();
-            if (execStart != 0 && dur > timeLimit) {
-              final String message = "Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms, time limit is " + (timeLimit / 1000000);
-              if (dur <= warningExceptionTime) {
+            TimeUnit maxExecTimeUnit = thread.getMaxExecTimeUnit();
+            long val = maxExecTimeUnit.convert(dur, TimeUnit.NANOSECONDS);
+            if (execStart != 0 && val >= timeLimit) {
+              final String message = "Thread " + thread + " has been blocked for " + (dur / 1_000_000) + " ms, time limit is " + TimeUnit.MILLISECONDS.convert(timeLimit, maxExecTimeUnit) + " ms";
+              if (warningExceptionTimeUnit.convert(dur, TimeUnit.NANOSECONDS) <= warningExceptionTime) {
                 log.warn(message);
               } else {
                 VertxException stackTrace = new VertxException("Thread blocked");
@@ -55,7 +58,7 @@ public class BlockedThreadChecker {
           }
         }
       }
-    }, interval, interval);
+    }, intervalUnit.toMillis(interval), intervalUnit.toMillis(interval));
   }
 
   public synchronized void registerThread(VertxThread thread) {

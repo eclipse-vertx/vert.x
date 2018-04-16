@@ -93,6 +93,8 @@ public class DeploymentTest extends VertxTestBase {
     long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
     assertEquals(options, options.setMaxWorkerExecuteTime(maxWorkerExecuteTime));
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
+    assertEquals(options, options.setMaxWorkerExecuteTimeUnit(TimeUnit.MILLISECONDS));
+    assertEquals(TimeUnit.MILLISECONDS, options.getMaxWorkerExecuteTimeUnit());
   }
 
   @Test
@@ -109,6 +111,7 @@ public class DeploymentTest extends VertxTestBase {
     String poolName = TestUtils.randomAlphaString(10);
     int poolSize = TestUtils.randomPositiveInt();
     long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
+    TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     options.setConfig(config);
     options.setWorker(worker);
     options.setMultiThreaded(multiThreaded);
@@ -119,6 +122,7 @@ public class DeploymentTest extends VertxTestBase {
     options.setWorkerPoolName(poolName);
     options.setWorkerPoolSize(poolSize);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
+    options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     DeploymentOptions copy = new DeploymentOptions(options);
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
@@ -133,6 +137,7 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(poolName, copy.getWorkerPoolName());
     assertEquals(poolSize, copy.getWorkerPoolSize());
     assertEquals(maxWorkerExecuteTime, copy.getMaxWorkerExecuteTime());
+    assertEquals(maxWorkerExecuteTimeUnit, copy.getMaxWorkerExecuteTimeUnit());
   }
 
   @Test
@@ -149,6 +154,7 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(def.getWorkerPoolName(), json.getWorkerPoolName());
     assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
     assertEquals(def.getMaxWorkerExecuteTime(), json.getMaxWorkerExecuteTime());
+    assertEquals(def.getMaxWorkerExecuteTimeUnit(), json.getMaxWorkerExecuteTimeUnit());
   }
 
   @Test
@@ -164,6 +170,7 @@ public class DeploymentTest extends VertxTestBase {
     String poolName = TestUtils.randomAlphaString(10);
     int poolSize = TestUtils.randomPositiveInt();
     long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
+    TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     JsonObject json = new JsonObject();
     json.put("config", config);
     json.put("worker", worker);
@@ -175,6 +182,7 @@ public class DeploymentTest extends VertxTestBase {
     json.put("workerPoolName", poolName);
     json.put("workerPoolSize", poolSize);
     json.put("maxWorkerExecuteTime", maxWorkerExecuteTime);
+    json.put("maxWorkerExecuteTimeUnit", maxWorkerExecuteTimeUnit);
     DeploymentOptions options = new DeploymentOptions(json);
     assertEquals(worker, options.isWorker());
     assertEquals(multiThreaded, options.isMultiThreaded());
@@ -186,6 +194,7 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(poolName, options.getWorkerPoolName());
     assertEquals(poolSize, options.getWorkerPoolSize());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
+    assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
   }
 
   @Test
@@ -202,6 +211,7 @@ public class DeploymentTest extends VertxTestBase {
     String poolName = TestUtils.randomAlphaString(10);
     int poolSize = TestUtils.randomPositiveInt();
     long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
+    TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     options.setConfig(config);
     options.setWorker(worker);
     options.setMultiThreaded(multiThreaded);
@@ -212,6 +222,7 @@ public class DeploymentTest extends VertxTestBase {
     options.setWorkerPoolName(poolName);
     options.setWorkerPoolSize(poolSize);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
+    options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     JsonObject json = options.toJson();
     DeploymentOptions copy = new DeploymentOptions(json);
     assertEquals(worker, copy.isWorker());
@@ -224,6 +235,7 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(poolName, copy.getWorkerPoolName());
     assertEquals(poolSize, copy.getWorkerPoolSize());
     assertEquals(maxWorkerExecuteTime, copy.getMaxWorkerExecuteTime());
+    assertEquals(maxWorkerExecuteTimeUnit, copy.getMaxWorkerExecuteTimeUnit());
   }
 
   @Test
