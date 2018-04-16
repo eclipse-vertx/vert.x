@@ -117,17 +117,19 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
   }
 
   public synchronized void removeWorker(EventLoop worker) {
-    //TODO can be optimised
-    EventLoopHolder holder = findHolder(worker);
-    if (holder != null) {
-      holder.count--;
-      if (holder.count == 0) {
-        workers.remove(holder);
+    EventLoopHolder wh = new EventLoopHolder(worker);
+    Iterator<EventLoopHolder> itr = workers.iterator();
+    while (itr.hasNext()) {
+      EventLoopHolder holder = itr.next();
+      if (holder.equals(wh)) {
+        if (--holder.count == 0) {
+          itr.remove();
+        }
+        checkPos();
+        return;
       }
-      checkPos();
-    } else {
-      throw new IllegalStateException("Can't find worker to remove");
     }
+    throw new IllegalStateException("Can't find worker to remove");
   }
 
   public synchronized int workerCount() {
