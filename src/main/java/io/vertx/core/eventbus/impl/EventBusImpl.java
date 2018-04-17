@@ -28,6 +28,7 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.SendContext;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.utils.CyclicSequence;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
@@ -55,7 +56,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
-  protected final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
+  protected final ConcurrentMap<String, CyclicSequence<HandlerHolder>> handlerMap = new ConcurrentHashMap<>();
   protected final CodecManager codecManager = new CodecManager();
   protected volatile boolean started;
 
@@ -230,7 +231,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   protected <T> HandlerHolder<T> addRegistration(String address, HandlerRegistration<T> registration,
                                      boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(registration.getHandler(), "handler");
-    LocalRegistrationResult result = addLocalRegistration(address, registration, replyHandler, localOnly);
+    LocalRegistrationResult<T> result = addLocalRegistration(address, registration, replyHandler, localOnly);
     addRegistration(result.newAddress, address, replyHandler, localOnly, registration::setResult);
     return result.holder;
   }
@@ -244,13 +245,13 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private static class LocalRegistrationResult<T> {
     final HandlerHolder<T> holder;
     final boolean newAddress;
-    public LocalRegistrationResult(HandlerHolder<T> holder, boolean newAddress) {
+    LocalRegistrationResult(HandlerHolder<T> holder, boolean newAddress) {
       this.holder = holder;
       this.newAddress = newAddress;
     }
   }
 
-  private <T> LocalRegistrationResult addLocalRegistration(String address, HandlerRegistration<T> registration,
+  private <T> LocalRegistrationResult<T> addLocalRegistration(String address, HandlerRegistration<T> registration,
                                                            boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
@@ -264,15 +265,18 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
     HandlerHolder<T> holder = new HandlerHolder<>(metrics, registration, replyHandler, localOnly, context);
 
-    Handlers handlers = new Handlers(holder);
-    Handlers actual = handlerMap.merge(address, handlers, (prev, current) -> prev.add(current.first()));
+    CyclicSequence<HandlerHolder> handlers = new CyclicSequence<HandlerHolder>().add(holder);
+    CyclicSequence<HandlerHolder> newHandlers = handlerMap.merge(
+      address,
+      handlers,
+      (oldHandlers, current) -> oldHandlers.add(current.first()));
 
     if (hasContext) {
       HandlerEntry entry = new HandlerEntry<>(address, registration);
       context.addCloseHook(entry);
     }
 
-    boolean newAddress = handlers == actual;
+    boolean newAddress = handlers == newHandlers;
     return new LocalRegistrationResult<>(holder, newAddress);
   }
 
@@ -281,7 +285,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     removeRegistration(last ? holder : null, holder.getHandler().address(), completionHandler);
   }
 
-  protected <T> void removeRegistration(HandlerHolder handlerHolder, String address,
+  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, String address,
                                         Handler<AsyncResult<Void>> completionHandler) {
     callCompletionHandlerAsync(completionHandler);
   }
@@ -292,7 +296,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (val == null) {
         return null;
       }
-      return val.remove(holder);
+      CyclicSequence<HandlerHolder> next = val.remove(holder);
+      return next.size() == 0 ? null : next;
     }) == null;
     if (holder.setRemoved()) {
       holder.getContext().removeCloseHook(new HandlerEntry<>(address, holder.getHandler()));
@@ -366,11 +371,11 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   protected <T> boolean deliverMessageLocally(MessageImpl msg) {
     msg.setBus(this);
-    Handlers handlers = handlerMap.get(msg.address());
+    CyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
     if (handlers != null) {
       if (msg.isSend()) {
         //Choose one
-        HandlerHolder holder = handlers.choose();
+        HandlerHolder holder = handlers.next();
         if (metrics != null) {
           metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), holder != null ? 1 : 0);
         }
@@ -498,7 +503,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private void unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
-    for (Handlers handlers: handlerMap.values()) {
+    for (CyclicSequence<HandlerHolder> handlers: handlerMap.values()) {
       for (HandlerHolder holder: handlers) {
         holder.getHandler().unregister();
       }
