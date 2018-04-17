@@ -22,11 +22,13 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
@@ -122,26 +124,44 @@ public class FileResolver {
         if (NON_UNIX_FILE_SEP) {
           fileName = fileName.replace(FILE_SEP, "/");
         }
+
+        //https://github.com/eclipse/vert.x/issues/2126
+        //Cache all elements in the parent directory if it exists
+        //this is so that listing the directory after an individual file has
+        //been read works.
+        if (file.getParent() != null) {
+          URL directoryContents = cl.getResource(file.getParent());
+          if (directoryContents != null) {
+            unpackUrlResource(directoryContents, file.getParent());
+          }
+        }
+
         URL url = cl.getResource(fileName);
         if (url != null) {
-          String prot = url.getProtocol();
-          switch (prot) {
-            case "file":
-              return unpackFromFileURL(url, fileName, cl);
-            case "jar":
-              return unpackFromJarURL(url, fileName, cl);
-            case "bundle": // Apache Felix, Knopflerfish
-            case "bundleentry": // Equinox
-            case "bundleresource": // Equinox
-              return unpackFromBundleURL(url);
-            default:
-              throw new IllegalStateException("Invalid url protocol: " + prot);
-          }
+          return unpackUrlResource(url, fileName);
         }
       }
     }
     return file;
   }
+
+  private File unpackUrlResource(URL url, String fileName) {
+    ClassLoader cl = getClassLoader();
+    String prot = url.getProtocol();
+    switch (prot) {
+      case "file":
+        return unpackFromFileURL(url, fileName, cl);
+      case "jar":
+        return unpackFromJarURL(url, fileName, cl);
+      case "bundle": // Apache Felix, Knopflerfish
+      case "bundleentry": // Equinox
+      case "bundleresource": // Equinox
+        return unpackFromBundleURL(url);
+      default:
+        throw new IllegalStateException("Invalid url protocol: " + prot);
+    }
+  }
+
 
   private synchronized File unpackFromFileURL(URL url, String fileName, ClassLoader cl) {
     File resource;
