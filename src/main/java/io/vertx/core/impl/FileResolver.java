@@ -22,13 +22,11 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
@@ -129,24 +127,24 @@ public class FileResolver {
         //Cache all elements in the parent directory if it exists
         //this is so that listing the directory after an individual file has
         //been read works.
-        if (file.getParent() != null) {
-          URL directoryContents = cl.getResource(file.getParent());
+        String parentFileName = file.getParent();
+        if (parentFileName != null) {
+          URL directoryContents = cl.getResource(parentFileName);
           if (directoryContents != null) {
-            unpackUrlResource(directoryContents, file.getParent());
+            unpackUrlResource(directoryContents, parentFileName, cl);
           }
         }
 
         URL url = cl.getResource(fileName);
         if (url != null) {
-          return unpackUrlResource(url, fileName);
+          return unpackUrlResource(url, fileName, cl);
         }
       }
     }
     return file;
   }
 
-  private File unpackUrlResource(URL url, String fileName) {
-    ClassLoader cl = getClassLoader();
+  private File unpackUrlResource(URL url, String fileName, ClassLoader cl) {
     String prot = url.getProtocol();
     switch (prot) {
       case "file":
