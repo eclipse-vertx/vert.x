@@ -1864,7 +1864,6 @@ public abstract class HttpTest extends HttpTestBase {
       res.response().sendFile("webroot/somefile.html", 6);
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
-        assertEquals(resp.headers().get("Content-Length"), String.valueOf(24));
         resp.bodyHandler(buff -> {
           assertTrue(buff.toString().startsWith("<body>blah</body></html>"));
           testComplete();
@@ -1877,10 +1876,9 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testSendRangeFileFromClasspath() {
     vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
-      res.response().sendFile("webroot/somefile.html", 6, 12);
+      res.response().sendFile("webroot/somefile.html", 6, 6);
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
-        assertEquals(resp.headers().get("Content-Length"), String.valueOf(6));
         resp.bodyHandler(buff -> {
           assertEquals("<body>", buff.toString());
           testComplete();
