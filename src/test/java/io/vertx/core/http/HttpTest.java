@@ -1943,8 +1943,10 @@ public abstract class HttpTest extends HttpTestBase {
       res.response().sendFile("webroot/somefile.html", 6);
     }).listen(testAddress, onSuccess(res -> {
       client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        assertEquals(String.valueOf(24), resp.headers().get("Content-Length"));
         resp.bodyHandler(buff -> {
           assertTrue(buff.toString().startsWith("<body>blah</body></html>"));
+          assertEquals(24, buff.toString().length());
           testComplete();
         });
       })).end();
@@ -1958,8 +1960,10 @@ public abstract class HttpTest extends HttpTestBase {
       res.response().sendFile("webroot/somefile.html", 6, 6);
     }).listen(testAddress, onSuccess(res -> {
       client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        assertEquals(String.valueOf(6), resp.headers().get("Content-Length"));
         resp.bodyHandler(buff -> {
           assertEquals("<body>", buff.toString());
+          assertEquals(6, buff.toString().length());
           testComplete();
         });
       })).end();

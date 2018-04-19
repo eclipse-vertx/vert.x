@@ -572,7 +572,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         if (resultHandler != null) {
           resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
         } else {
-           log.error("File not found: " + filename);
+          log.error("File not found: " + filename);
         }
         return this;
       }
