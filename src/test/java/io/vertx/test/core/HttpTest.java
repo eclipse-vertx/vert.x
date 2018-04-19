@@ -17,7 +17,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.HttpClient;
@@ -36,7 +45,6 @@ import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -1860,10 +1868,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testSendOpenRangeFileFromClasspath() {
-    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+    server.requestHandler(res -> {
       res.response().sendFile("webroot/somefile.html", 6);
     }).listen(onSuccess(res -> {
-      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(resp.headers().get("Content-Length"), String.valueOf(24));
         resp.bodyHandler(buff -> {
           assertTrue(buff.toString().startsWith("<body>blah</body></html>"));
@@ -1876,10 +1884,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testSendRangeFileFromClasspath() {
-    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+    server.requestHandler(res -> {
       res.response().sendFile("webroot/somefile.html", 6, 12);
     }).listen(onSuccess(res -> {
-      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(resp.headers().get("Content-Length"), String.valueOf(6));
         resp.bodyHandler(buff -> {
           assertEquals("<body>", buff.toString());

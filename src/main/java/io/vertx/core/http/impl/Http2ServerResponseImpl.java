@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -536,7 +535,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         return this;
       }
 
-      long contentLength = Math.min(length, file.length() - offset);
+      long contentLength = Math.min(length - offset, file.length() - offset);
       if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
         putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
       }
