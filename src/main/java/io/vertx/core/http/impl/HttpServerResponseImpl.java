@@ -440,7 +440,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         return;
       }
 
-      long contentLength = Math.min(length - offset, file.length() - offset);
+      long contentLength = Math.min(length, file.length() - offset);
       bytesWritten = contentLength;
       if (!headers.contentTypeSet()) {
         String contentType = MimeMapping.getMimeTypeForFilename(filename);
