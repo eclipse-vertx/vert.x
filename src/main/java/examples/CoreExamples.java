@@ -98,7 +98,7 @@ public class CoreExamples {
     int poolSize = 10;
 
     // 2 minutes
-    long maxExecuteTime = 120000000000;
+    long maxExecuteTime = 120000000000L;
 
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
   }
