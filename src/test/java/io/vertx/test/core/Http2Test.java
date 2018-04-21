@@ -427,7 +427,7 @@ public class Http2Test extends HttpTest {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3));
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       long now = System.currentTimeMillis();
       resp.request().connection().closeHandler(v -> {

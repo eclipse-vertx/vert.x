@@ -154,8 +154,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
     httpCM = new ConnectionManager(this, metrics, options.getProtocolVersion(), maxWeight, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
-    httpCM.start(options.getKeepAliveTimeout() > 0 || options.getHttp2KeepAliveTimeout() > 0);
-    websocketCM.start(options.getKeepAliveTimeout() > 0 || options.getHttp2KeepAliveTimeout() > 0);
+    httpCM.start();
+    websocketCM.start();
   }
 
   HttpClientMetrics metrics() {

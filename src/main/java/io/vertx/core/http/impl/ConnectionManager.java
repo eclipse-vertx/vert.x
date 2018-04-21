@@ -52,14 +52,15 @@ class ConnectionManager {
     this.version = version;
   }
 
-  synchronized void start(boolean checkExpired) {
-    this.timerID = checkExpired ? client.getVertx().setTimer(1000, id -> checkExpired()) : -1;
+  synchronized void start() {
+    long period = client.getOptions().getPoolCleanerPeriod();
+    this.timerID = period > 0 ? client.getVertx().setTimer(period, id -> checkExpired(period)) : -1;
   }
 
-  private synchronized void checkExpired() {
+  private synchronized void checkExpired(long period) {
     long timestamp = System.currentTimeMillis();
     endpointMap.values().forEach(e -> e.pool.closeIdle(timestamp));
-    timerID = client.getVertx().setTimer(1000, id -> checkExpired());
+    timerID = client.getVertx().setTimer(period, id -> checkExpired(period));
   }
 
   private static final class EndpointKey {

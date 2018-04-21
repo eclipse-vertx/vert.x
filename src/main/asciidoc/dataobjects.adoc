@@ -919,6 +919,11 @@ Set whether pipe-lining is enabled on the client
 +++
 Set the limit of pending requests a pipe-lined HTTP/1 connection can send.
 +++
+|[[poolCleanerPeriod]]`poolCleanerPeriod`|`Number (int)`|
++++
+Set the connection pool cleaner period in milli seconds, a non positive value disables expiration checks and connections
+ will remain in the pool until they are closed.
++++
 |[[protocolVersion]]`protocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|
 +++
 Set the protocol version.

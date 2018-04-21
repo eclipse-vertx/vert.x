@@ -101,6 +101,9 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("pipeliningLimit") instanceof Number) {
       obj.setPipeliningLimit(((Number)json.getValue("pipeliningLimit")).intValue());
     }
+    if (json.getValue("poolCleanerPeriod") instanceof Number) {
+      obj.setPoolCleanerPeriod(((Number)json.getValue("poolCleanerPeriod")).intValue());
+    }
     if (json.getValue("protocolVersion") instanceof String) {
       obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)json.getValue("protocolVersion")));
     }
@@ -147,6 +150,7 @@ import io.vertx.core.json.JsonArray;
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
+    json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
