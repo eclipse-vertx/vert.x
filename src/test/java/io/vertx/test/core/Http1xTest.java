@@ -4051,8 +4051,8 @@ public class Http1xTest extends HttpTest {
             int delta = 500;
             int low = 3000 - delta;
             int high = 3000 + delta;
-            assertTrue("Expected actual close timeout to be > " + low, low < timeout);
-            assertTrue("Expected actual close timeout to be < " + high, timeout < high);
+            assertTrue("Expected actual close timeout " + timeout + " to be > " + low, low < timeout);
+            assertTrue("Expected actual close timeout " + timeout + " + to be < " + high, timeout < high);
             testComplete();
           });
         }
