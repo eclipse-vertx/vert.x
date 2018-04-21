@@ -2221,7 +2221,7 @@ public class NetTest extends VertxTestBase {
       @Override
       public void start() {
         try {
-          server = vertx.createNetServer(new NetServerOptions());
+          server = vertx.createNetServer(new NetServerOptions()).listen();
           fail("Should throw exception");
         } catch (IllegalStateException e) {
           // OK

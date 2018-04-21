@@ -23,10 +23,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -58,7 +55,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
   protected final VertxInternal vertx;
   protected final NetServerOptions options;
-  protected final ContextInternal creatingContext;
   protected final SSLHelper sslHelper;
   protected final boolean logEnabled;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
@@ -74,6 +70,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private AsyncResolveConnectHelper bindFuture;
   private volatile int actualPort;
   private ContextInternal listenContext;
+  private boolean registerHook;
   private TCPMetrics metrics;
   private Handler<NetSocket> handler;
   private Handler<Void> endHandler;
@@ -83,14 +80,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
-    this.creatingContext = vertx.getContext();
     this.logEnabled = options.getLogActivity();
-    if (creatingContext != null) {
-      if (creatingContext.isMultiThreadedWorkerContext()) {
-        throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
-      }
-      creatingContext.addCloseHook(this);
-    }
   }
 
   protected synchronized void pauseAccepting() {
@@ -154,8 +144,13 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     }
     listening = true;
 
+    registerHook = Vertx.currentContext() != null;
     listenContext = vertx.getOrCreateContext();
     registeredHandler = handler;
+
+    if (listenContext.isMultiThreadedWorkerContext()) {
+      throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
+    }
 
     synchronized (vertx.sharedNetServers()) {
       this.actualPort = socketAddress.port(); // Will be updated on bind for a wildcard port
@@ -220,6 +215,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
             if (res.succeeded()) {
               Channel ch = res.result();
               log.trace("Net server listening on " + (hostOrPath) + ":" + ch.localAddress());
+              if (registerHook) {
+                listenContext.addCloseHook(this);
+              }
               // Update port to actual port - wildcard port 0 might have been used
               if (NetServerImpl.this.actualPort != -1) {
                 NetServerImpl.this.actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
@@ -281,7 +279,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         }
       });
     }
-    return;
   }
 
   public synchronized void close() {
@@ -341,8 +338,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
-    if (creatingContext != null) {
-      creatingContext.removeCloseHook(this);
+    if (registerHook) {
+      listenContext.removeCloseHook(this);
     }
     Handler<AsyncResult<Void>> done;
     if (endHandler != null) {
