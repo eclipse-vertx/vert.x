@@ -194,7 +194,7 @@ abstract class ContextImpl implements ContextInternal {
   @Override
   public void runOnContext(Handler<Void> task) {
     try {
-      executeAsync(task);
+      executeAsync(owner.captureContinuation(task));
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }
@@ -249,6 +249,8 @@ abstract class ContextImpl implements ContextInternal {
       Handler<AsyncResult<T>> resultHandler,
       Executor exec, TaskQueue queue, PoolMetrics metrics) {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
+    Handler<Future<T>> blockingCodeDispatcher = owner.captureContinuation(blockingCodeHandler);
+    Handler<AsyncResult<T>> resultDispatcher = owner.captureContinuation(resultHandler);
     try {
       Runnable command = () -> {
         VertxThread current = (VertxThread) Thread.currentThread();
@@ -262,7 +264,7 @@ abstract class ContextImpl implements ContextInternal {
         Future<T> res = Future.future();
         try {
           ContextImpl.setContext(this);
-          blockingCodeHandler.handle(res);
+          blockingCodeDispatcher.handle(res);
         } catch (Throwable e) {
           res.tryFail(e);
         } finally {
@@ -273,8 +275,8 @@ abstract class ContextImpl implements ContextInternal {
         if (metrics != null) {
           metrics.end(execMetric, res.succeeded());
         }
-        if (resultHandler != null) {
-          runOnContext(v -> res.setHandler(resultHandler));
+        if (resultDispatcher != null) {
+          runOnContext(v -> res.setHandler(resultDispatcher));
         }
       };
       if (queue != null) {

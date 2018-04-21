@@ -134,7 +134,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientResponse handler(Handler<Buffer> dataHandler) {
     synchronized (conn) {
-      this.dataHandler = dataHandler;
+      this.dataHandler = request.client.getVertx().captureContinuation(dataHandler);
       return this;
     }
   }
@@ -142,7 +142,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientResponse endHandler(Handler<Void> endHandler) {
     synchronized (conn) {
-      this.endHandler = endHandler;
+      this.endHandler = request.client.getVertx().captureContinuation(endHandler);
       return this;
     }
   }
@@ -150,7 +150,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientResponse exceptionHandler(Handler<Throwable> exceptionHandler) {
     synchronized (conn) {
-      this.exceptionHandler = exceptionHandler;
+      this.exceptionHandler = request.client.getVertx().captureContinuation(exceptionHandler);
       return this;
     }
   }
@@ -178,7 +178,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) {
     synchronized (conn) {
-      customFrameHandler = handler;
+      customFrameHandler = request.client.getVertx().captureContinuation(handler);
       return this;
     }
   }

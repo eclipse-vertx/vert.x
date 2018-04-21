@@ -149,12 +149,12 @@ public abstract class ConnectionBase {
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
-    closeHandler = handler;
+    closeHandler = vertx.captureContinuation(handler);
     return this;
   }
 
   public synchronized ConnectionBase exceptionHandler(Handler<Throwable> handler) {
-    this.exceptionHandler = handler;
+    this.exceptionHandler = vertx.captureContinuation(handler);
     return this;
   }
 

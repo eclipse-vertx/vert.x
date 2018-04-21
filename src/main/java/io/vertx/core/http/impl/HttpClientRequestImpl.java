@@ -97,7 +97,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public  synchronized HttpClientRequest handler(Handler<HttpClientResponse> handler) {
     if (handler != null) {
       checkComplete();
-      respHandler = checkConnect(method, handler);
+      respHandler = checkConnect(method, vertx.captureContinuation(handler));
     } else {
       respHandler = null;
     }
@@ -133,7 +133,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (handler != null) {
         checkComplete();
       }
-      endHandler = handler;
+      endHandler = vertx.captureContinuation(handler);
       return this;
     }
   }
@@ -234,7 +234,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       if (handler != null) {
         checkComplete();
-        drainHandler = handler;
+        drainHandler = vertx.captureContinuation(handler);
         HttpClientStream s;
         if ((s = stream) == null) {
           return this;
@@ -258,7 +258,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (handler != null) {
       checkComplete();
     }
-    this.continueHandler = handler;
+    this.continueHandler = vertx.captureContinuation(handler);
     return this;
   }
 
@@ -274,7 +274,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (stream != null) {
       throw new IllegalStateException("Head already written");
     } else {
-      connect(headersHandler);
+      connect(vertx.captureContinuation(headersHandler));
     }
     return this;
   }
@@ -295,7 +295,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public synchronized HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) {
-    pushHandler = handler;
+    pushHandler = vertx.captureContinuation(handler);
     return this;
   }
 
@@ -343,7 +343,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public synchronized HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) {
-    connectionHandler = handler;
+    connectionHandler = vertx.captureContinuation(handler);
     return this;
   }
 

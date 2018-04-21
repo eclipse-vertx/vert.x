@@ -311,7 +311,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       if (handler != null) {
         checkEnded();
       }
-      dataHandler = handler;
+      dataHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }
@@ -319,7 +319,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
-      this.exceptionHandler = handler;
+      this.exceptionHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }
@@ -351,7 +351,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       if (handler != null) {
         checkEnded();
       }
-      endHandler = handler;
+      endHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }
@@ -406,7 +406,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       if (handler != null) {
         checkEnded();
       }
-      uploadHandler = handler;
+      uploadHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }

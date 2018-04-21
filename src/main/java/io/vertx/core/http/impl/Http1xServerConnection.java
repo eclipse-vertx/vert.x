@@ -265,7 +265,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     return serverOrigin;
   }
 
-  Vertx vertx() {
+  VertxInternal vertx() {
     return vertx;
   }
 

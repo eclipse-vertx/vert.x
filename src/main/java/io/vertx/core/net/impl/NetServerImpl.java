@@ -64,7 +64,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private ChannelGroup serverChannelGroup;
   private boolean paused;
   private volatile boolean listening;
-  private Handler<NetSocket> registeredHandler;
+  private Handler<NetSocket> registeredDispatcher;
   private volatile ServerID id;
   private NetServerImpl actualServer;
   private AsyncResolveConnectHelper bindFuture;
@@ -72,9 +72,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private ContextInternal listenContext;
   private boolean registerHook;
   private TCPMetrics metrics;
-  private Handler<NetSocket> handler;
+  private Handler<NetSocket> dispatcher;
   private Handler<Void> endHandler;
-  private Handler<Throwable> exceptionHandler;
+  private Handler<Throwable> exceptionDispatcher;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
@@ -101,7 +101,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
   @Override
   public synchronized Handler<NetSocket> connectHandler() {
-    return handler;
+    return dispatcher; // SHOULD BE HANDLER ???
   }
 
   @Override
@@ -109,7 +109,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     if (isListening()) {
       throw new IllegalStateException("Cannot set connectHandler when server is listening");
     }
-    this.handler = handler;
+    this.dispatcher = vertx.captureContinuation(handler);
     return this;
   }
 
@@ -118,7 +118,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     if (isListening()) {
       throw new IllegalStateException("Cannot set exceptionHandler when server is listening");
     }
-    this.exceptionHandler = handler;
+    this.exceptionDispatcher = vertx.captureContinuation(handler);
     return this;
   }
 
@@ -135,8 +135,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     }
   }
 
-  public synchronized void listen(Handler<NetSocket> handler, SocketAddress socketAddress, Handler<AsyncResult<Void>> listenHandler) {
-    if (handler == null) {
+  public synchronized void listen(Handler<NetSocket> dispatcher, SocketAddress socketAddress, Handler<AsyncResult<Void>> listenHandler) {
+    if (dispatcher == null) {
       throw new IllegalStateException("Set connect handler first");
     }
     if (listening) {
@@ -146,7 +146,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
     registerHook = Vertx.currentContext() != null;
     listenContext = vertx.getOrCreateContext();
-    registeredHandler = handler;
+    registeredDispatcher = dispatcher;
 
     if (listenContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
@@ -188,10 +188,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
                   if (future.isSuccess()) {
                     connected(handler, ch);
                   } else {
-                    Handler<Throwable> exceptionHandler = handler.handler.exceptionHandler;
-                    if (exceptionHandler != null) {
+                    Handler<Throwable> exceptionDispatcher = handler.handler.exceptionDispatcher;
+                    if (exceptionDispatcher != null) {
                       handler.context.executeFromIO(v -> {
-                        exceptionHandler.handle(future.cause());
+                        exceptionDispatcher.handle(future.cause());
                       });
                     } else {
                       log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + future.cause());
@@ -207,7 +207,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
         applyConnectionOptions(bootstrap);
 
-        handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
+        handlerManager.addHandler(new Handlers(registeredDispatcher, exceptionDispatcher), listenContext);
 
         try {
           bindFuture = AsyncResolveConnectHelper.doBind(vertx, socketAddress, bootstrap);
@@ -255,7 +255,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         this.actualPort = shared.actualPort();
         VertxMetrics metrics = vertx.metricsSPI();
         this.metrics = metrics != null ? metrics.createNetServerMetrics(options, new SocketAddressImpl(id.port, id.host)) : null;
-        actualServer.handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
+        actualServer.handlerManager.addHandler(new Handlers(registeredDispatcher, exceptionDispatcher), listenContext);
       }
 
       // just add it to the future so it gets notified once the bind is complete
@@ -307,7 +307,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
   @Override
   public synchronized NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler) {
-    listen(handler, localAddress, ar -> {
+    listen(dispatcher, localAddress, ar -> {
       if (listenHandler != null) {
         listenHandler.handle(ar.map(this));
       }
@@ -341,6 +341,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     if (registerHook) {
       listenContext.removeCloseHook(this);
     }
+    ContextInternal context = vertx.getOrCreateContext();
+    Handler<AsyncResult<Void>> completionDispatcher = vertx.captureContinuation(completionHandler);
     Handler<AsyncResult<Void>> done;
     if (endHandler != null) {
       Handler<Void> handler = endHandler;
@@ -349,14 +351,13 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         if (event.succeeded()) {
           handler.handle(event.result());
         }
-        if (completionHandler != null) {
-          completionHandler.handle(event);
+        if (completionDispatcher != null) {
+          completionDispatcher.handle(event);
         }
       };
     } else {
-      done = completionHandler;
+      done = completionDispatcher;
     }
-    ContextInternal context = vertx.getOrCreateContext();
     if (!listening) {
       if (done != null) {
         executeCloseDone(context, done, null);
@@ -367,7 +368,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(new Handlers(registeredHandler, exceptionHandler), listenContext);
+        actualServer.handlerManager.removeHandler(new Handlers(registeredDispatcher, exceptionDispatcher), listenContext);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
@@ -446,7 +447,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       }
       sock.registerEventBusHandler();
-      handler.handler.connectionHandler.handle(sock);
+      handler.handler.connectionDispatcher.handle(sock);
     });
   }
 
@@ -516,11 +517,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   static class Handlers {
-    final Handler<NetSocket> connectionHandler;
-    final Handler<Throwable> exceptionHandler;
-    public Handlers(Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
-      this.connectionHandler = connectionHandler;
-      this.exceptionHandler = exceptionHandler;
+    final Handler<NetSocket> connectionDispatcher;
+    final Handler<Throwable> exceptionDispatcher;
+    public Handlers(Handler<NetSocket> connectionDispatcher, Handler<Throwable> exceptionDispatcher) {
+      this.connectionDispatcher = connectionDispatcher;
+      this.exceptionDispatcher = exceptionDispatcher;
     }
     public boolean equals(Object o) {
       if (this == o) return true;
@@ -528,18 +529,18 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
       Handlers that = (Handlers) o;
 
-      if (!Objects.equals(connectionHandler, that.connectionHandler)) return false;
-      if (!Objects.equals(exceptionHandler, that.exceptionHandler)) return false;
+      if (!Objects.equals(connectionDispatcher, that.connectionDispatcher)) return false;
+      if (!Objects.equals(exceptionDispatcher, that.exceptionDispatcher)) return false;
 
       return true;
     }
     public int hashCode() {
       int result = 0;
-      if (connectionHandler != null) {
-        result = 31 * result + connectionHandler.hashCode();
+      if (connectionDispatcher != null) {
+        result = 31 * result + connectionDispatcher.hashCode();
       }
-      if (exceptionHandler != null) {
-        result = 31 * result + exceptionHandler.hashCode();
+      if (exceptionDispatcher != null) {
+        result = 31 * result + exceptionDispatcher.hashCode();
       }
       return result;
     }

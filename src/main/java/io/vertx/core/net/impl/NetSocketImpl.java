@@ -69,8 +69,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
   private Handler<Object> messageHandler = NULL_MSG_HANDLER;
-  private Handler<Void> endHandler;
-  private Handler<Void> drainHandler;
+  private Handler<Void> endDispatcher;
+  private Handler<Void> drainDispatcher;
   private Buffer pendingData;
   private boolean paused = false;
   private MessageConsumer registration;
@@ -163,7 +163,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
     if (handler != null) {
-      messageHandler = handler;
+      messageHandler = vertx.captureContinuation(handler);
     } else {
       messageHandler = NULL_MSG_HANDLER;
     }
@@ -205,13 +205,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public synchronized NetSocket endHandler(Handler<Void> endHandler) {
-    this.endHandler = endHandler;
+    this.endDispatcher = vertx.captureContinuation(endHandler);
     return this;
   }
 
   @Override
   public synchronized NetSocket drainHandler(Handler<Void> drainHandler) {
-    this.drainHandler = drainHandler;
+    this.drainDispatcher = vertx.captureContinuation(drainHandler);
     vertx.runOnContext(v -> callDrainHandler()); //If the channel is already drained, we want to call it immediately
     return this;
   }
@@ -334,8 +334,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   protected synchronized void handleClosed() {
     checkContext();
-    if (endHandler != null) {
-      endHandler.handle(null);
+    if (endDispatcher != null) {
+      endDispatcher.handle(null);
     }
     super.handleClosed();
     if (registration != null) {
@@ -391,9 +391,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   private synchronized void callDrainHandler() {
-    if (drainHandler != null) {
+    if (drainDispatcher != null) {
       if (!writeQueueFull()) {
-        drainHandler.handle(null);
+        drainDispatcher.handle(null);
       }
     }
   }

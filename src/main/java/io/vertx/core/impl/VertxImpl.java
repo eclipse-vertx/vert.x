@@ -55,6 +55,8 @@ import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.instrumentation.Instrumentation;
+import io.vertx.core.spi.instrumentation.InstrumentationFactory;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -128,6 +130,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final TimeUnit defaultWorkerMaxExecTimeUnit;
   private final CloseHooks closeHooks;
   private final Transport transport;
+  private final Instrumentation instrumentation;
 
   private VertxImpl(VertxOptions options) {
     // Sanity check
@@ -144,6 +147,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       transport = Transport.JDK;
     }
+    instrumentation = InstrumentationFactory.getInstrumentation();
     closeHooks = new CloseHooks(log);
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
@@ -477,7 +481,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
     long timerId = timeoutCounter.getAndIncrement();
-    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, delay, context);
+    InternalTimerHandler task = new InternalTimerHandler(timerId, captureContinuation(handler), periodic, delay, context);
     timeouts.put(timerId, task);
     context.addCloseHook(task);
     return timerId;
@@ -861,7 +865,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private class InternalTimerHandler implements Handler<Void>, Closeable {
-    final Handler<Long> handler;
+    final Handler<Long> dispatcher;
     final boolean periodic;
     final long timerID;
     final ContextImpl context;
@@ -880,10 +884,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
     }
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, long delay, ContextImpl context) {
+    InternalTimerHandler(long timerID, Handler<Long> dispatcher, boolean periodic, long delay, ContextImpl context) {
       this.context = context;
       this.timerID = timerID;
-      this.handler = runnable;
+      this.dispatcher = dispatcher;
       this.periodic = periodic;
       this.cancelled = new AtomicBoolean();
       EventLoop el = context.nettyEventLoop();
@@ -901,7 +905,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     public void handle(Void v) {
       if (!cancelled.get()) {
         try {
-          handler.handle(timerID);
+          dispatcher.handle(timerID);
         } finally {
           if (!periodic) {
             // Clean up after it's fired
@@ -1099,5 +1103,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public void removeCloseHook(Closeable hook) {
     closeHooks.remove(hook);
+  }
+
+  @Override
+  public <T> Handler<T> captureContinuation(Handler<T> handler) {
+    if (instrumentation == null) {
+      return handler;
+    } else if (handler == null) {
+      return null;
+    } else {
+      return instrumentation.captureContinuation(handler);
+    }
   }
 }

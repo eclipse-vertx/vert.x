@@ -165,7 +165,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (listening) {
       throw new IllegalStateException("Please set handler before server is listening");
     }
-    connectionHandler = handler;
+    connectionHandler = vertx.captureContinuation(handler);
     return this;
   }
 
@@ -174,7 +174,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (listening) {
       throw new IllegalStateException("Please set handler before server is listening");
     }
-    exceptionHandler = handler;
+    exceptionHandler = vertx.captureContinuation(handler);
     return this;
   }
 
@@ -214,7 +214,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
-    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
+    return listen(SocketAddress.inetSocketAddress(port, host), vertx.captureContinuation(listenHandler));
   }
 
   public synchronized HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
@@ -889,7 +889,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         if (listening) {
           throw new IllegalStateException("Please set handler before server is listening");
         }
-        this.handler = handler;
+        this.handler = vertx.captureContinuation(handler);
         return this;
       }
     }
@@ -917,7 +917,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     public ReadStream endHandler(Handler<Void> endHandler) {
       synchronized (HttpServerImpl.this) {
-        this.endHandler = endHandler;
+        this.endHandler = vertx.captureContinuation(endHandler);
         return this;
       }
     }

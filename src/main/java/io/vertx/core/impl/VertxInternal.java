@@ -128,4 +128,9 @@ public interface VertxInternal extends Vertx {
   void addCloseHook(Closeable hook);
 
   void removeCloseHook(Closeable hook);
+
+  // Rules
+  // equals / hashCode should be implemented
+  // null -> null
+  <T> Handler<T> captureContinuation(Handler<T> handler);
 }

@@ -172,6 +172,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     checkClosed();
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextInternal context = vertx.getOrCreateContext();
+    Handler<AsyncResult<NetSocket>> connectDispatcher = vertx.captureContinuation(connectHandler);
     sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
@@ -205,13 +206,13 @@ public class NetClientImpl implements MetricsProvider, NetClient {
           io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
           fut.addListener(future2 -> {
             if (future2.isSuccess()) {
-              connected(context, ch, connectHandler, remoteAddress);
+              connected(context, ch, connectDispatcher, remoteAddress);
             } else {
-              failed(context, ch, future2.cause(), connectHandler);
+              failed(context, ch, future2.cause(), connectDispatcher);
             }
           });
         } else {
-          connected(context, ch, connectHandler, remoteAddress);
+          connected(context, ch, connectDispatcher, remoteAddress);
         }
 
       } else {
@@ -220,11 +221,11 @@ public class NetClientImpl implements MetricsProvider, NetClient {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
-                doConnect(remoteAddress, serverName, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+                doConnect(remoteAddress, serverName, connectDispatcher, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
             );
           });
         } else {
-          failed(context, null, res.cause(), connectHandler);
+          failed(context, null, res.cause(), connectDispatcher);
         }
       }
     };

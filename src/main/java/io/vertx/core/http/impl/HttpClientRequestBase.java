@@ -101,7 +101,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
     if (handler != null) {
       checkComplete();
-      this.exceptionHandler = handler;
+      this.exceptionHandler = client.getVertx().captureContinuation(handler);
     } else {
       this.exceptionHandler = null;
     }
