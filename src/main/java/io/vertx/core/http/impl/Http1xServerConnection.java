@@ -38,7 +38,6 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
@@ -360,7 +359,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       ws.handleClosed();
     }
     if (currentRequest != null) {
-      currentRequest.handleException(new VertxException("Connection was closed"));
+      currentRequest.handleException(CLOSED_EXCEPTION);
     }
     if (pendingResponse != null) {
       if (METRICS_ENABLED && metrics != null) {

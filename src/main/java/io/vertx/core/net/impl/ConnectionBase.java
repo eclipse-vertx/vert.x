@@ -42,6 +42,12 @@ import java.net.InetSocketAddress;
  */
 public abstract class ConnectionBase {
 
+  /**
+   * An exception used to signal a closed connection to an exception handler. Exception are
+   * expensive to create, this instance can be used for this purpose. It does not capture a stack
+   * trace to not be misleading.
+   */
+  public static final VertxException CLOSED_EXCEPTION = new VertxException("Connection was closed", true);
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
   private final VoidChannelPromise voidPromise;

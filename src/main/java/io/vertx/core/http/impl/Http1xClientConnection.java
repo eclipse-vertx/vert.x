@@ -28,6 +28,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -711,7 +712,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     retryPending();
 
-    Exception e = new VertxException("Connection was closed");
+    Exception e = ConnectionBase.CLOSED_EXCEPTION;
 
     // Signal requests failed
     if (metrics != null) {
