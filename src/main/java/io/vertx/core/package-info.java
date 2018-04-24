@@ -1079,7 +1079,7 @@
  *
  * [source]
  * ----
- * java -jar my-verticle-fat.jar start -Dvertx-id=my-app-name
+ * java -jar my-verticle-fat.jar start --vertx-id=my-app-name
  * ----
  *
  * If `my-app-name` is not set, a random id will be generated, and printed on the command prompt. You can pass `run`
@@ -1087,7 +1087,7 @@
  *
  * [source]
  * ----
- * java -jar my-verticle-fat.jar start -Dvertx-id=my-app-name -cluster
+ * java -jar my-verticle-fat.jar start —-vertx-id=my-app-name -cluster
  * ----
  *
  * Once launched in background, you can stop it with the `stop` command:
