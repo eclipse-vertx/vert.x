@@ -11,10 +11,12 @@
 
 package io.vertx.core.net.impl.transport;
 
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
+import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueChannelOption;
 import io.netty.channel.kqueue.KQueueDatagramChannel;
@@ -27,6 +29,7 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
+import io.vertx.core.net.NetServerOptions;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -99,11 +102,8 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public ChannelOption<?> channelOption(String name) {
-    switch (name) {
-      case "SO_REUSEPORT":
-        return KQueueChannelOption.SO_REUSEPORT;
-    }
-    return null;
+  public void configure(NetServerOptions options, ServerBootstrap bootstrap) {
+    bootstrap.option(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
+    super.configure(options, bootstrap);
   }
 }
