@@ -1578,12 +1578,27 @@ Native on BSD gives you extra networking options:
 
 === Domain sockets
 
-Natives provide support domain sockets for `NetServer`:
+Natives provide domain sockets support for `NetServer` and `HttpServer`:
 
 [source,$lang]
 ----
 {@link examples.CoreExamples#serverWithDomainSockets}
+----`
+
+Or for http:
+[source,$lang]
 ----
+vertx.createHttpServer().requestHandler(req -> {
+  // Handle application
+}).listen(SocketAddress.domainSocketAddress("/var/tmp/http.sock"), ar -> {
+  if (ar.succeeded()) {
+    // Bound to socket
+  } else {
+    ar.cause().printStackTrace();
+  }
+});
+----`
+
 
 As well as `NetClient`:
 
@@ -1592,7 +1607,7 @@ As well as `NetClient`:
 {@link examples.CoreExamples#clientWithDomainSockets}
 ----
 
-NOTE: support for `HttpServer` and `HttpClient` can be expected in later versions of Vert.x
+NOTE: support for `HttpClient` can be expected in later versions of Vert.x
 
 == Security notes
 
