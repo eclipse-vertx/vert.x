@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -198,6 +199,7 @@ public class StarterTest extends VertxTestBase {
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "maxEventLoopExecuteTime", "123767667");
     System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "haGroup", "somegroup");
+    System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "maxEventLoopExecuteTimeUnit", "SECONDS");
 
     MyStarter starter = new MyStarter();
     String[] args;
@@ -215,6 +217,7 @@ public class StarterTest extends VertxTestBase {
     assertEquals(123767667L, opts.getMaxEventLoopExecuteTime());
     assertEquals(true, opts.getMetricsOptions().isEnabled());
     assertEquals("somegroup", opts.getHAGroup());
+    assertEquals(TimeUnit.SECONDS, opts.getMaxEventLoopExecuteTimeUnit());
 
     cleanup(starter);
   }
