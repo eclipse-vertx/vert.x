@@ -20,6 +20,7 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
 
@@ -127,6 +128,10 @@ public class VertxOptions {
    * contains a stack trace
    */
   private static final long DEFAULT_WARNING_EXCEPTION_TIME = 5L * 1000 * 1000000;
+  /**
+   * The default value for the time unit
+   */
+  private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.NANOSECONDS;
 
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
@@ -144,6 +149,9 @@ public class VertxOptions {
   private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
   private boolean fileResolverCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
   private boolean preferNativeTransport = DEFAULT_PREFER_NATIVE_TRANSPORT;
+  private TimeUnit maxEventLoopExecuteTimeUnit = DEFAULT_TIME_UNIT;
+  private TimeUnit maxWorkerExecuteTimeUnit = DEFAULT_TIME_UNIT;
+  private TimeUnit warningExceptionTimeUnit = DEFAULT_TIME_UNIT;
 
   /**
    * Default constructor
@@ -172,6 +180,9 @@ public class VertxOptions {
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions() : null;
     this.fileResolverCachingEnabled = other.fileResolverCachingEnabled;
+    this.maxEventLoopExecuteTimeUnit = other.maxEventLoopExecuteTimeUnit;
+    this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
+    this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
   }
 
   /**
@@ -693,6 +704,52 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * @return the time unit of {@code maxEventLoopExecuteTime}
+   */
+  public TimeUnit getMaxEventLoopExecuteTimeUnit() {
+    return maxEventLoopExecuteTimeUnit;
+  }
+  /**
+   * Set the time unit of {@code maxEventLoopExecuteTime}
+   * @param maxEventLoopExecuteTimeUnit the time unit of {@code maxEventLoopExecuteTime}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setMaxEventLoopExecuteTimeUnit(TimeUnit maxEventLoopExecuteTimeUnit) {
+    this.maxEventLoopExecuteTimeUnit = maxEventLoopExecuteTimeUnit;
+    return this;
+  }
+  /**
+   * @return the time unit of {@code maxWorkerExecuteTime}
+   */
+  public TimeUnit getMaxWorkerExecuteTimeUnit() {
+    return maxWorkerExecuteTimeUnit;
+  }
+  /**
+   * Set the time unit of {@code maxWorkerExecuteTime}
+   * @param maxWorkerExecuteTimeUnit the time unit of {@code maxWorkerExecuteTime}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setMaxWorkerExecuteTimeUnit(TimeUnit maxWorkerExecuteTimeUnit) {
+    this.maxWorkerExecuteTimeUnit = maxWorkerExecuteTimeUnit;
+    return this;
+  }
+  /**
+   * @return the time unit of {@code warningExceptionTime}
+   */
+  public TimeUnit getWarningExceptionTimeUnit() {
+    return warningExceptionTimeUnit;
+  }
+  /**
+   * Set the time unit of {@code warningExceptionTime}
+   * @param warningExceptionTimeUnit the time unit of {@code warningExceptionTime}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setWarningExceptionTimeUnit(TimeUnit warningExceptionTimeUnit) {
+    this.warningExceptionTimeUnit = warningExceptionTimeUnit;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -705,10 +762,13 @@ public class VertxOptions {
     if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
     if (blockedThreadCheckInterval != that.blockedThreadCheckInterval) return false;
     if (maxEventLoopExecuteTime != that.maxEventLoopExecuteTime) return false;
+    if (maxEventLoopExecuteTimeUnit != that.maxEventLoopExecuteTimeUnit) return false;
     if (maxWorkerExecuteTime != that.maxWorkerExecuteTime) return false;
+    if (maxWorkerExecuteTimeUnit != that.maxWorkerExecuteTimeUnit) return false;
     if (haEnabled != that.haEnabled) return false;
     if (quorumSize != that.quorumSize) return false;
     if (warningExceptionTime != that.warningExceptionTime) return false;
+    if (warningExceptionTimeUnit != that.warningExceptionTimeUnit) return false;
     if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
@@ -739,6 +799,9 @@ public class VertxOptions {
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
     result = 31 * result + (addressResolverOptions != null ? addressResolverOptions.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
+    result = 31 * result + (maxEventLoopExecuteTimeUnit != null ? maxEventLoopExecuteTimeUnit.hashCode() : 0);
+    result = 31 * result + (maxWorkerExecuteTimeUnit != null ? maxWorkerExecuteTimeUnit.hashCode() : 0);
+    result = 31 * result + (warningExceptionTimeUnit != null ? warningExceptionTimeUnit.hashCode() : 0);
     return result;
   }
 
@@ -749,7 +812,9 @@ public class VertxOptions {
         ", workerPoolSize=" + workerPoolSize +
         ", internalBlockingPoolSize=" + internalBlockingPoolSize +
         ", blockedThreadCheckInterval=" + blockedThreadCheckInterval +
+        ", maxEventLoopExecuteTimeUnit=" + maxEventLoopExecuteTimeUnit +
         ", maxEventLoopExecuteTime=" + maxEventLoopExecuteTime +
+        ", maxWorkerExecuteTimeUnit=" + maxWorkerExecuteTimeUnit +
         ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
         ", clusterManager=" + clusterManager +
         ", haEnabled=" + haEnabled +
@@ -761,6 +826,7 @@ public class VertxOptions {
         ", addressResolver=" + addressResolverOptions.toJson() +
         ", addressResolver=" + addressResolverOptions.toJson() +
         ", eventbus=" + eventBusOptions.toJson() +
+        ", warningExceptionTimeUnit=" + warningExceptionTimeUnit +
         ", warningExceptionTime=" + warningExceptionTime +
         '}';
   }

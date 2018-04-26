@@ -75,8 +75,14 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("maxEventLoopExecuteTime") instanceof Number) {
       obj.setMaxEventLoopExecuteTime(((Number)json.getValue("maxEventLoopExecuteTime")).longValue());
     }
+    if (json.getValue("maxEventLoopExecuteTimeUnit") instanceof String) {
+      obj.setMaxEventLoopExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)json.getValue("maxEventLoopExecuteTimeUnit")));
+    }
     if (json.getValue("maxWorkerExecuteTime") instanceof Number) {
       obj.setMaxWorkerExecuteTime(((Number)json.getValue("maxWorkerExecuteTime")).longValue());
+    }
+    if (json.getValue("maxWorkerExecuteTimeUnit") instanceof String) {
+      obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)json.getValue("maxWorkerExecuteTimeUnit")));
     }
     if (json.getValue("metricsOptions") instanceof JsonObject) {
       obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)json.getValue("metricsOptions")));
@@ -89,6 +95,9 @@ import io.vertx.core.json.JsonArray;
     }
     if (json.getValue("warningExceptionTime") instanceof Number) {
       obj.setWarningExceptionTime(((Number)json.getValue("warningExceptionTime")).longValue());
+    }
+    if (json.getValue("warningExceptionTimeUnit") instanceof String) {
+      obj.setWarningExceptionTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)json.getValue("warningExceptionTimeUnit")));
     }
     if (json.getValue("workerPoolSize") instanceof Number) {
       obj.setWorkerPoolSize(((Number)json.getValue("workerPoolSize")).intValue());
@@ -122,13 +131,22 @@ import io.vertx.core.json.JsonArray;
     }
     json.put("internalBlockingPoolSize", obj.getInternalBlockingPoolSize());
     json.put("maxEventLoopExecuteTime", obj.getMaxEventLoopExecuteTime());
+    if (obj.getMaxEventLoopExecuteTimeUnit() != null) {
+      json.put("maxEventLoopExecuteTimeUnit", obj.getMaxEventLoopExecuteTimeUnit().name());
+    }
     json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
+    if (obj.getMaxWorkerExecuteTimeUnit() != null) {
+      json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
+    }
     if (obj.getMetricsOptions() != null) {
       json.put("metricsOptions", obj.getMetricsOptions().toJson());
     }
     json.put("preferNativeTransport", obj.getPreferNativeTransport());
     json.put("quorumSize", obj.getQuorumSize());
     json.put("warningExceptionTime", obj.getWarningExceptionTime());
+    if (obj.getWarningExceptionTimeUnit() != null) {
+      json.put("warningExceptionTimeUnit", obj.getWarningExceptionTimeUnit().name());
+    }
     json.put("workerPoolSize", obj.getWorkerPoolSize());
   }
 }

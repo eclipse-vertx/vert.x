@@ -19,6 +19,7 @@ import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -193,6 +194,13 @@ public class VertxOptionsTest extends VertxTestBase {
     }
     assertEquals(options, options.setWarningExceptionTime(1000000000l));
     assertEquals(1000000000l, options.getWarningExceptionTime());
+
+    assertEquals(options, options.setMaxEventLoopExecuteTimeUnit(TimeUnit.SECONDS));
+    assertEquals(TimeUnit.SECONDS, options.getMaxEventLoopExecuteTimeUnit());
+    assertEquals(options, options.setMaxWorkerExecuteTimeUnit(TimeUnit.MILLISECONDS));
+    assertEquals(TimeUnit.MILLISECONDS, options.getMaxWorkerExecuteTimeUnit());
+    assertEquals(options, options.setWarningExceptionTimeUnit(TimeUnit.MINUTES));
+    assertEquals(TimeUnit.MINUTES, options.getWarningExceptionTimeUnit());
   }
 
   @Test
@@ -218,6 +226,9 @@ public class VertxOptionsTest extends VertxTestBase {
     int quorumSize = 51214;
     String haGroup = TestUtils.randomAlphaString(100);
     long warningExceptionTime = TestUtils.randomPositiveLong();
+    TimeUnit maxEventLoopExecuteTimeUnit = TimeUnit.SECONDS;
+    TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
+    TimeUnit warningExceptionTimeUnit = TimeUnit.MINUTES;
     options.setClusterPort(clusterPort);
     options.setClusterPublicPort(clusterPublicPort);
     options.setEventLoopPoolSize(eventLoopPoolSize);
@@ -238,6 +249,10 @@ public class VertxOptionsTest extends VertxTestBase {
         new MetricsOptions().
             setEnabled(metricsEnabled));
     options.setWarningExceptionTime(warningExceptionTime);
+    options.setMaxEventLoopExecuteTimeUnit(maxEventLoopExecuteTimeUnit);
+    options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
+    options.setWarningExceptionTimeUnit(warningExceptionTimeUnit);
+
     options = new VertxOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(clusterPublicPort, options.getClusterPublicPort());
@@ -259,6 +274,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertNotNull(metricsOptions);
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
     assertEquals(warningExceptionTime, options.getWarningExceptionTime());
+    assertEquals(maxEventLoopExecuteTimeUnit, options.getMaxEventLoopExecuteTimeUnit());
+    assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
+    assertEquals(warningExceptionTimeUnit, options.getWarningExceptionTimeUnit());
   }
 
   @Test
@@ -282,6 +300,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getHAGroup(), json.getHAGroup());
     assertEquals(def.getWarningExceptionTime(), json.getWarningExceptionTime());
     assertEquals(def.isFileResolverCachingEnabled(), json.isFileResolverCachingEnabled());
+    assertEquals(def.getMaxEventLoopExecuteTimeUnit(), json.getMaxEventLoopExecuteTimeUnit());
+    assertEquals(def.getMaxWorkerExecuteTimeUnit(), json.getMaxWorkerExecuteTimeUnit());
+    assertEquals(def.getWarningExceptionTimeUnit(), json.getWarningExceptionTimeUnit());
   }
 
   @Test
@@ -306,6 +327,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(VertxOptions.DEFAULT_HA_GROUP, options.getHAGroup());
     assertNotNull(options.getMetricsOptions());
     assertEquals(5000000000l, options.getWarningExceptionTime());
+    assertEquals(TimeUnit.NANOSECONDS, options.getMaxEventLoopExecuteTimeUnit());
+    assertEquals(TimeUnit.NANOSECONDS, options.getMaxWorkerExecuteTimeUnit());
+    assertEquals(TimeUnit.NANOSECONDS, options.getWarningExceptionTimeUnit());
     int clusterPort = TestUtils.randomPortInt();
     int clusterPublicPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
@@ -328,6 +352,9 @@ public class VertxOptionsTest extends VertxTestBase {
     boolean metricsEnabled = rand.nextBoolean();
     boolean jmxEnabled = rand.nextBoolean();
     String jmxDomain = TestUtils.randomAlphaString(100);
+    TimeUnit maxEventLoopExecuteTimeUnit = TimeUnit.SECONDS;
+    TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
+    TimeUnit warningExceptionTimeUnit = TimeUnit.MINUTES;
     options = new VertxOptions(new JsonObject().
         put("clusterPort", clusterPort).
         put("clusterPublicPort", clusterPublicPort).
@@ -350,7 +377,10 @@ public class VertxOptionsTest extends VertxTestBase {
         put("metricsOptions", new JsonObject().
             put("enabled", metricsEnabled).
             put("jmxEnabled", jmxEnabled).
-            put("jmxDomain", jmxDomain))
+            put("jmxDomain", jmxDomain)).
+        put("maxEventLoopExecuteTimeUnit", maxEventLoopExecuteTimeUnit).
+        put("maxWorkerExecuteTimeUnit", maxWorkerExecuteTimeUnit).
+        put("warningExceptionTimeUnit", warningExceptionTimeUnit)
     );
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(clusterPublicPort, options.getClusterPublicPort());
@@ -372,5 +402,8 @@ public class VertxOptionsTest extends VertxTestBase {
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
     assertEquals(warningExceptionTime, options.getWarningExceptionTime());
+    assertEquals(maxEventLoopExecuteTimeUnit, options.getMaxEventLoopExecuteTimeUnit());
+    assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
+    assertEquals(warningExceptionTimeUnit, options.getWarningExceptionTimeUnit());
   }
 }
