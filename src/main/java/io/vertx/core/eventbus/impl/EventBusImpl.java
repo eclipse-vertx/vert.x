@@ -28,7 +28,7 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.SendContext;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.utils.CyclicSequence;
+import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
@@ -56,7 +56,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
-  protected final ConcurrentMap<String, CyclicSequence<HandlerHolder>> handlerMap = new ConcurrentHashMap<>();
+  protected final ConcurrentMap<String, ConcurrentCyclicSequence<HandlerHolder>> handlerMap = new ConcurrentHashMap<>();
   protected final CodecManager codecManager = new CodecManager();
   protected volatile boolean started;
 
@@ -265,8 +265,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
     HandlerHolder<T> holder = new HandlerHolder<>(metrics, registration, replyHandler, localOnly, context);
 
-    CyclicSequence<HandlerHolder> handlers = new CyclicSequence<HandlerHolder>().add(holder);
-    CyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
+    ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
+    ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
       address,
       handlers,
       (old, prev) -> old.add(prev.first()));
@@ -296,7 +296,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (val == null) {
         return null;
       }
-      CyclicSequence<HandlerHolder> next = val.remove(holder);
+      ConcurrentCyclicSequence<HandlerHolder> next = val.remove(holder);
       return next.size() == 0 ? null : next;
     }) == null;
     if (holder.setRemoved()) {
@@ -371,7 +371,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   protected <T> boolean deliverMessageLocally(MessageImpl msg) {
     msg.setBus(this);
-    CyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
+    ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
     if (handlers != null) {
       if (msg.isSend()) {
         //Choose one
@@ -503,7 +503,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private void unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
-    for (CyclicSequence<HandlerHolder> handlers: handlerMap.values()) {
+    for (ConcurrentCyclicSequence<HandlerHolder> handlers: handlerMap.values()) {
       for (HandlerHolder holder: handlers) {
         holder.getHandler().unregister();
       }

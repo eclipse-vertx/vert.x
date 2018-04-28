@@ -15,18 +15,18 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A thread safe cyclic sequence of elements that can be used for round robin.
+ * A concurrent cyclic sequence of elements that can be used for round robin.
  * <p/>
- * A sequence is immutable and mutations uses {@link #add(Object)} and {@link #remove(Object)}
- * to return a modified copy of the current instance.
+ * The sequence is immutable and modifications are done with copy-on-write using
+ * {@link #add(Object)} and {@link #remove(Object)} to return a modified copy of the current instance.
  * <p/>
- * The iterator uses a volatile index, so it can be incremented concurrently by several
- * threads with locking.
+ * The internal counter uses a volatile index, so it can be incremented concurrently by several
+ * threads without locking.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CyclicSequence<T> implements Iterable<T>, Iterator<T> {
+public class ConcurrentCyclicSequence<T> implements Iterable<T>, Iterator<T> {
 
   private final AtomicInteger pos;
   private final Object[] elements;
@@ -34,12 +34,19 @@ public class CyclicSequence<T> implements Iterable<T>, Iterator<T> {
   /**
    * Create a new empty sequence.
    */
-  public CyclicSequence() {
+  public ConcurrentCyclicSequence() {
     this(0, new Object[0]);
   }
 
-  private CyclicSequence(int pos, Object[] elements) {
-    this.pos = new AtomicInteger(elements.length > 0 ? pos % elements.length : 0);
+  /**
+   * Create a new empty sequence.
+   */
+  public ConcurrentCyclicSequence(T... elements) {
+    this(0, elements.clone());
+  }
+
+  private ConcurrentCyclicSequence(int pos, Object[] elements) {
+    this.pos = new AtomicInteger(pos);
     this.elements = elements;
   }
 
@@ -47,11 +54,11 @@ public class CyclicSequence<T> implements Iterable<T>, Iterator<T> {
    * @return the current index
    */
   public int index() {
-    return pos.get();
+    return elements.length > 0 ? pos.get() % elements.length : 0;
   }
 
   /**
-   * @return the first element
+   * @return the first element or {@code null} when the sequence is empty
    */
   @SuppressWarnings("unchecked")
   public T first() {
@@ -61,13 +68,13 @@ public class CyclicSequence<T> implements Iterable<T>, Iterator<T> {
   /**
    * Copy the current sequence, add {@code element} at the tail of this sequence and returns it.
    * @param element the element to add
-   * @return the result
+   * @return the resulting sequence
    */
-  public CyclicSequence<T> add(T element) {
+  public ConcurrentCyclicSequence<T> add(T element) {
     int len = elements.length;
     Object[] copy = Arrays.copyOf(elements, len + 1);
     copy[len] = element;
-    return new CyclicSequence<>(pos.get(), copy);
+    return new ConcurrentCyclicSequence<>(pos.get(), copy);
   }
 
   /**
@@ -76,9 +83,9 @@ public class CyclicSequence<T> implements Iterable<T>, Iterator<T> {
    * If the sequence does not contains {@code element}, this instance is returned instead.
    *
    * @param element the element to remove
-   * @return the result
+   * @return the resulting sequence
    */
-  public CyclicSequence<T> remove(T element) {
+  public ConcurrentCyclicSequence<T> remove(T element) {
     int len = elements.length;
     for (int i = 0;i < len;i++) {
       if (Objects.equals(element, elements[i])) {
@@ -86,20 +93,26 @@ public class CyclicSequence<T> implements Iterable<T>, Iterator<T> {
           Object[] copy = new Object[len - 1];
           System.arraycopy(elements,0, copy, 0, i);
           System.arraycopy(elements, i + 1, copy, i, len - i - 1);
-          return new CyclicSequence<>(pos.get(), copy);
+          return new ConcurrentCyclicSequence<>(pos.get() % copy.length, copy);
         } else {
-          return new CyclicSequence<>();
+          return new ConcurrentCyclicSequence<>();
         }
       }
     }
     return this;
   }
 
+  /**
+   * @return always {@code true}
+   */
   @Override
   public boolean hasNext() {
     return true;
   }
 
+  /**
+   * @return the next element in the sequence
+   */
   @SuppressWarnings("unchecked")
   @Override
   public T next() {
@@ -110,14 +123,9 @@ public class CyclicSequence<T> implements Iterable<T>, Iterator<T> {
       case 1:
         return (T) elements[0];
       default:
-        int p = pos.getAndIncrement();
-        if (p >= len) {
-          p = p % len;
-          if (p == 0) {
-            pos.addAndGet(-len);
-          }
-        }
-        return (T) elements[p];
+        int p;
+        p = pos.getAndIncrement();
+        return (T) elements[Math.abs(p % len)];
     }
   }
 
@@ -128,10 +136,13 @@ public class CyclicSequence<T> implements Iterable<T>, Iterator<T> {
     return elements.length;
   }
 
+  /**
+   * @return an iterator starting at the first element of the sequence, the iterator will not throw {@link ConcurrentModificationException}
+   */
   @Override
   @SuppressWarnings("unchecked")
   public Iterator<T> iterator() {
-    return Arrays.<T>asList((T[]) elements).iterator();
+    return Arrays.asList((T[]) elements).iterator();
   }
 }
 
