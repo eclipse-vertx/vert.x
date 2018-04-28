@@ -266,17 +266,17 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     HandlerHolder<T> holder = new HandlerHolder<>(metrics, registration, replyHandler, localOnly, context);
 
     CyclicSequence<HandlerHolder> handlers = new CyclicSequence<HandlerHolder>().add(holder);
-    CyclicSequence<HandlerHolder> newHandlers = handlerMap.merge(
+    CyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
       address,
       handlers,
-      (oldHandlers, current) -> oldHandlers.add(current.first()));
+      (old, prev) -> old.add(prev.first()));
 
     if (hasContext) {
       HandlerEntry entry = new HandlerEntry<>(address, registration);
       context.addCloseHook(entry);
     }
 
-    boolean newAddress = handlers == newHandlers;
+    boolean newAddress = handlers == actualHandlers;
     return new LocalRegistrationResult<>(holder, newAddress);
   }
 
