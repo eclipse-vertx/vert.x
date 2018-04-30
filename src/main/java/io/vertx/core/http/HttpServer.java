@@ -19,6 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -137,6 +138,17 @@ public interface HttpServer extends Measured {
   @Fluent
   HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
 
+  /**
+   * Tell the server to start listening on the given address supplying
+   * a handler that will be called when the server is actually
+   * listening (or has failed).
+   *
+   * @param address the address to listen on
+   * @param listenHandler  the listen handler
+   */
+  @Fluent
+  HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler);
+    
   /**
    * Like {@link #listen(int, String)} but the server will listen on host "0.0.0.0" and port specified here ignoring
    * any value in the {@link io.vertx.core.http.HttpServerOptions} that was used when creating the server.

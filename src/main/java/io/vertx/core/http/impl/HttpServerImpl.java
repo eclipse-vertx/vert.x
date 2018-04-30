@@ -219,7 +219,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return listen(port, "0.0.0.0", listenHandler);
   }
 
-  public synchronized HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
+  public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
+    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
+  }
+    
+  public synchronized HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -228,6 +232,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     listenContext = vertx.getOrCreateContext();
     listening = true;
+    String host = address.host() != null ? address.host() : "localhost";
+    int port = address.port();
     serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
     List<HttpVersion> applicationProtocols = options.getAlpnVersions();
     if (listenContext.isWorkerContext()) {
@@ -329,16 +335,20 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         addHandlers(this, listenContext);
         try {
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, SocketAddress.inetSocketAddress(port, host), bootstrap);
+          bindFuture = AsyncResolveConnectHelper.doBind(vertx, address, bootstrap);
           bindFuture.addListener(res -> {
             if (res.failed()) {
               vertx.sharedHttpServers().remove(id);
             } else {
               Channel serverChannel = res.result();
-              HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
+	      if (serverChannel.localAddress() instanceof InetSocketAddress) {
+		HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
+	      } else {
+		HttpServerImpl.this.actualPort = address.port();
+	      }
               serverChannelGroup.add(serverChannel);
               VertxMetrics metrics = vertx.metricsSPI();
-              this.metrics = metrics != null ? metrics.createMetrics(this, new SocketAddressImpl(port, host), options) : null;
+              this.metrics = metrics != null ? metrics.createMetrics(this, address, options) : null;
             }
           });
         } catch (final Throwable t) {
@@ -360,7 +370,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         this.actualPort = shared.actualPort;
         addHandlers(actualServer, listenContext);
         VertxMetrics metrics = vertx.metricsSPI();
-        this.metrics = metrics != null ? metrics.createMetrics(this, new SocketAddressImpl(port, host), options) : null;
+        this.metrics = metrics != null ? metrics.createMetrics(this, address, options) : null;
       }
       actualServer.bindFuture.addListener(future -> {
         if (listenHandler != null) {
