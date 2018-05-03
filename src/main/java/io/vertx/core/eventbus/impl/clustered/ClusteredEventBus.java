@@ -215,7 +215,7 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void removeRegistration(HandlerHolder lastHolder, String address,
+  protected <T> void removeRegistration(HandlerHolder<T> lastHolder, String address,
                                         Handler<AsyncResult<Void>> completionHandler) {
     if (lastHolder != null && subs != null && !lastHolder.isLocalOnly()) {
       ownSubs.remove(address);

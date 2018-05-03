@@ -36,17 +36,18 @@ public class HandlerHolder<T> {
   }
 
   // We use a synchronized block to protect removed as it can be unregistered from a different thread
-  public void setRemoved() {
-    boolean unregisterMetric = false;
+  public boolean setRemoved() {
+    boolean unregistered = false;
     synchronized (this) {
       if (!removed) {
         removed = true;
-        unregisterMetric = true;
+        unregistered = true;
       }
     }
-    if (metrics != null && unregisterMetric) {
+    if (metrics != null && unregistered) {
       metrics.handlerUnregistered(handler.getMetric());
     }
+    return unregistered;
   }
 
   // Because of biased locks the overhead of the synchronized lock should be very low as it's almost always
