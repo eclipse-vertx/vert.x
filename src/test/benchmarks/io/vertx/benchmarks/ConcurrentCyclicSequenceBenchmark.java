@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 
 @State(Scope.Benchmark)
 @Threads(8)
-public class CyclicSequenceBenchmark extends BenchmarkBase {
+public class ConcurrentCyclicSequenceBenchmark extends BenchmarkBase {
 
   private ConcurrentCyclicSequence<String> seq1;
   private ConcurrentCyclicSequence<String> seq2;
