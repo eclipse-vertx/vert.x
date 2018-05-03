@@ -1583,21 +1583,13 @@ Natives provide domain sockets support for `NetServer` and `HttpServer`:
 [source,$lang]
 ----
 {@link examples.CoreExamples#serverWithDomainSockets}
-----`
+----
 
 Or for http:
 [source,$lang]
 ----
-vertx.createHttpServer().requestHandler(req -> {
-  // Handle application
-}).listen(SocketAddress.domainSocketAddress("/var/tmp/http.sock"), ar -> {
-  if (ar.succeeded()) {
-    // Bound to socket
-  } else {
-    ar.cause().printStackTrace();
-  }
-});
-----`
+{@link examples.CoreExamples#httpServerWithDomainSockets}
+----
 
 
 As well as `NetClient`:
