@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
@@ -547,7 +548,8 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * Set the maximum HTTP chunk size
+   * Set the maximum HTTP chunk size that {@link HttpServerRequest#handler(Handler)} will receive
+   *
    * @param maxChunkSize the maximum chunk size
    * @return a reference to this, so the API can be used fluently
    */
@@ -557,8 +559,7 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * Returns the maximum HTTP chunk size
-   * @return the maximum HTTP chunk size
+   * @return the maximum HTTP chunk size that {@link HttpServerRequest#handler(Handler)} will receive
    */
   public int getMaxChunkSize() {
     return maxChunkSize;
