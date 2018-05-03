@@ -379,6 +379,18 @@ public class CoreExamples {
     }).listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"));
   }
 
+  public void httpServerWithDomainSockets(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(req -> {
+      // Handle application
+    }).listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), ar -> {
+      if (ar.succeeded()) {
+        // Bound to socket
+      } else {
+        ar.cause().printStackTrace();
+      }
+    });
+  }
+
   public void clientWithDomainSockets(Vertx vertx) {
     NetClient netClient = vertx.createNetClient();
 

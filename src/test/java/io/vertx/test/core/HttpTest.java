@@ -33,7 +33,9 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -86,7 +88,7 @@ public abstract class HttpTest extends HttpTestBase {
     super.setUp();
     testDir = testFolder.newFolder();
   }
-
+    
   protected HttpServerOptions createBaseServerOptions() {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
   }
@@ -129,6 +131,54 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testListenSocketAddress() {
+    NetClient netClient = vertx.createNetClient();
+    server = vertx.createHttpServer().requestHandler(req -> req.response().end());
+    SocketAddress sockAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    server.listen(sockAddress, onSuccess(server -> {
+      netClient.connect(sockAddress, onSuccess(sock -> {
+        sock.handler(buf -> {
+          assertTrue("Response is not an http 200", buf.toString("UTF-8").startsWith("HTTP/1.1 200 OK"));
+          testComplete();
+        });
+        sock.write("GET / HTTP/1.1\r\n\r\n");
+      }));
+    }));
+
+    try {
+      await();
+    } finally {
+      netClient.close();
+    }
+  }
+
+  @Test
+  public void testListenDomainSocketAddress() throws Exception {
+    Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
+    Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+    NetClient netClient = vx.createNetClient();
+    HttpServer httpserver = vx.createHttpServer().requestHandler(req -> req.response().end());
+    File sockFile = TestUtils.tmpFile("vertx", ".sock");
+    SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
+    httpserver.listen(sockAddress, onSuccess(server -> {
+      netClient.connect(sockAddress, onSuccess(sock -> {
+        sock.handler(buf -> {
+          assertTrue("Response is not an http 200", buf.toString("UTF-8").startsWith("HTTP/1.1 200 OK"));
+          testComplete();
+        });
+        sock.write("GET / HTTP/1.1\r\n\r\n");
+      }));
+    }));
+
+    try {
+      await();
+    } finally {
+      vx.close();
+    }
+  }
+
+    
   @Test
   public void testLowerCaseHeaders() {
     server.requestHandler(req -> {
