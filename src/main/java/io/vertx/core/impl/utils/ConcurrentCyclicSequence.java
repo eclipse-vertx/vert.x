@@ -41,8 +41,9 @@ public class ConcurrentCyclicSequence<T> implements Iterable<T>, Iterator<T> {
   /**
    * Create a new empty sequence.
    */
+  @SafeVarargs
   public ConcurrentCyclicSequence(T... elements) {
-    this(0, elements.clone());
+    this(0, Arrays.copyOf(elements.clone(), elements.length, Object[].class));
   }
 
   private ConcurrentCyclicSequence(int pos, Object[] elements) {
