@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ConcurrentCyclicSequence<T> implements Iterable<T>, Iterator<T> {
 
+  private static final Object[] EMPTY_ARRAY = new Object[0];
+
   private final AtomicInteger pos;
   private final Object[] elements;
 
@@ -35,7 +37,7 @@ public class ConcurrentCyclicSequence<T> implements Iterable<T>, Iterator<T> {
    * Create a new empty sequence.
    */
   public ConcurrentCyclicSequence() {
-    this(0, new Object[0]);
+    this(0, EMPTY_ARRAY);
   }
 
   /**
