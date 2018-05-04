@@ -27,9 +27,13 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -54,6 +58,17 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     }));
     awaitLatch(latch);
     super.tearDown();
+  }
+
+  @Test
+  public void testReadFileInDirThenReadDir() {
+    Buffer buff = vertx.fileSystem().readFileBlocking("webroot/subdir/subfile.html");
+    assertEquals(buff.toString(), "<html><body>subfile</body></html>");
+    Set<String> names = vertx.fileSystem().readDirBlocking("webroot/subdir").stream().map(path -> {
+      int idx = path.lastIndexOf('/');
+      return idx == -1 ? path : path.substring(idx + 1);
+    }).collect(Collectors.toSet());
+    assertEquals(names, new HashSet<>(Arrays.asList("subdir2", "subfile.html")));
   }
 
   @Test
