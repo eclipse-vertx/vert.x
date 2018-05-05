@@ -616,30 +616,34 @@ public class FileSystemImpl implements FileSystem {
       public Void perform() {
         try {
           Path source = vertx.resolveFile(path).toPath();
-          if (recursive) {
-            Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
-              public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-              }
-              public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
-                if (e == null) {
-                  Files.delete(dir);
-                  return FileVisitResult.CONTINUE;
-                } else {
-                  throw e;
-                }
-              }
-            });
-          } else {
-            Files.delete(source);
-          }
+          delete(source, recursive);
         } catch (IOException e) {
           throw new FileSystemException(e);
         }
         return null;
       }
     };
+  }
+
+  public static void delete(Path path, boolean recursive) throws IOException {
+    if (recursive) {
+      Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          Files.delete(file);
+          return FileVisitResult.CONTINUE;
+        }
+        public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
+          if (e == null) {
+            Files.delete(dir);
+            return FileVisitResult.CONTINUE;
+          } else {
+            throw e;
+          }
+        }
+      });
+    } else {
+      Files.delete(path);
+    }
   }
 
   private BlockingAction<Void> mkdirInternal(String path, Handler<AsyncResult<Void>> handler) {

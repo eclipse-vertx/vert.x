@@ -21,7 +21,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.Objects;
 
-import static io.vertx.core.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
+import static io.vertx.core.file.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
 
 /**
  * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.

@@ -38,6 +38,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.impl.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.HttpClient;
@@ -69,6 +70,7 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -180,7 +182,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
-    this.fileResolver = new FileResolver(this, options.isFileResolverCachingEnabled());
+    this.fileResolver = new FileResolver(options.isFileResolverCachingEnabled());
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
@@ -792,7 +794,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @SuppressWarnings("unchecked")
   private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
-    fileResolver.close(res -> {
+    executeBlockingInternal(fut -> {
+      try {
+        fileResolver.close();
+        fut.complete();
+      } catch (IOException e) {
+        fut.tryFail(e);
+      }
+    }, ar -> {
 
       workerPool.close();
       internalBlockingPool.close();

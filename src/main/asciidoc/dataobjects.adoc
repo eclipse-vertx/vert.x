@@ -1137,7 +1137,7 @@ Set to true to enabled network activity logging: Netty's pipeline is configured 
 +++
 |[[maxChunkSize]]`maxChunkSize`|`Number (int)`|
 +++
-Set the maximum HTTP chunk size
+Set the maximum HTTP chunk size that link will receive
 +++
 |[[maxHeaderSize]]`maxHeaderSize`|`Number (int)`|
 +++
