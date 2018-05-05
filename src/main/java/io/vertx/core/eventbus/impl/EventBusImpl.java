@@ -63,7 +63,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public EventBusImpl(VertxInternal vertx) {
     VertxMetrics metrics = vertx.metricsSPI();
     this.vertx = vertx;
-    this.metrics = metrics != null ? metrics.createMetrics(this) : null;
+    this.metrics = metrics != null ? metrics.createEventBusMetrics() : null;
   }
 
   @Override

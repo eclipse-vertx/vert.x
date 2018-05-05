@@ -12,16 +12,12 @@
 package io.vertx.core.metrics.impl;
 
 import io.vertx.core.Verticle;
-import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.ReplyFailure;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -56,37 +52,37 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public EventBusMetrics createMetrics(EventBus eventBus) {
+  public EventBusMetrics createEventBusMetrics() {
     return DummyEventBusMetrics.INSTANCE;
   }
 
   @Override
-  public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
+  public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
     return DummyHttpServerMetrics.INSTANCE;
   }
 
   @Override
-  public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
+  public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
     return DummyHttpClientMetrics.INSTANCE;
   }
 
   @Override
-  public TCPMetrics createMetrics(SocketAddress localAddress, NetServerOptions options) {
+  public TCPMetrics createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
     return DummyTCPMetrics.INSTANCE;
   }
 
   @Override
-  public TCPMetrics createMetrics(NetClientOptions options) {
+  public TCPMetrics createNetClientMetrics(NetClientOptions options) {
     return DummyTCPMetrics.INSTANCE;
   }
 
   @Override
-  public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
+  public DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options) {
     return DummyDatagramMetrics.INSTANCE;
   }
 
   @Override
-  public <P> PoolMetrics<?> createMetrics(P pool, String poolType, String poolName, int maxPoolSize) {
+  public PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
     return DummyWorkerPoolMetrics.INSTANCE;
   }
 

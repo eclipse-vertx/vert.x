@@ -11,7 +11,6 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -22,8 +21,8 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 public class FakeMetricsFactory implements VertxMetricsFactory {
 
   @Override
-  public VertxMetrics metrics(Vertx vertx, VertxOptions options) {
-    return new FakeVertxMetrics(vertx);
+  public VertxMetrics metrics(VertxOptions options) {
+    return new FakeVertxMetrics();
   }
 
 }

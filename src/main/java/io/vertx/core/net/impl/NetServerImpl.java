@@ -229,7 +229,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
               vertx.sharedNetServers().put(id, NetServerImpl.this);
               VertxMetrics metrics = vertx.metricsSPI();
               if (metrics != null) {
-                this.metrics = metrics.createMetrics(new SocketAddressImpl(id.port, id.host), options);
+                this.metrics = metrics.createNetServerMetrics(options, new SocketAddressImpl(id.port, id.host));
               }
             } else {
               vertx.sharedNetServers().remove(id);
@@ -256,7 +256,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         actualServer = shared;
         this.actualPort = shared.actualPort();
         VertxMetrics metrics = vertx.metricsSPI();
-        this.metrics = metrics != null ? metrics.createMetrics(new SocketAddressImpl(id.port, id.host), options) : null;
+        this.metrics = metrics != null ? metrics.createNetServerMetrics(options, new SocketAddressImpl(id.port, id.host)) : null;
         actualServer.handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
       }
 

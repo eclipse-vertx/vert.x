@@ -172,10 +172,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     ExecutorService workerExec = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
         new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime()));
-    PoolMetrics workerPoolMetrics = metrics != null ? metrics.createMetrics(workerExec, "worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
+    PoolMetrics workerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
         new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
-    PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createMetrics(internalBlockingExec, "worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
+    PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
@@ -218,11 +218,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     eventBus.start(ar -> {
       if (ar.succeeded()) {
-        if (metrics != null) {
-          // If the metric provider wants to use the event bus, it cannot use it in its constructor as the event bus
-          // may not be initialized yet. We invokes the eventBusInitialized so it can starts using the event bus.
-          metrics.eventBusInitialized(eventBus);
-        }
         if (resultHandler != null) resultHandler.handle(Future.succeededFuture(this));
       } else {
         log.error("Failed to start event bus", ar.cause());
@@ -437,7 +432,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (factory != null) {
-        VertxMetrics metrics = factory.metrics(this, options);
+        VertxMetrics metrics = factory.metrics(options);
         Objects.requireNonNull(metrics, "The metric instance created from " + factory + " cannot be null");
         return metrics;
       }
@@ -1053,7 +1048,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
     if (sharedWorkerPool == null) {
       ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(name + "-", checker, true, maxExecuteTime));
-      PoolMetrics workerMetrics = metrics != null ? metrics.createMetrics(workerExec, "worker", name, poolSize) : null;
+      PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
       namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {
       sharedWorkerPool.refCount++;

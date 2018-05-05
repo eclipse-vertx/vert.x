@@ -12,7 +12,6 @@
 package io.vertx.test.fakemetrics;
 
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
@@ -31,12 +30,6 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentHashSet<HttpServerMetric> requests = new ConcurrentHashSet<>();
-  public final HttpServer server;
-
-  public FakeHttpServerMetrics(HttpServer server) {
-    super(server);
-    this.server = server;
-  }
 
   public WebSocketMetric getMetric(ServerWebSocket ws) {
     return webSockets.get(ws);

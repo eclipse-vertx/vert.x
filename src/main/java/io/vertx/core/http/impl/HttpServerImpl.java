@@ -222,7 +222,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
     return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
   }
-    
+
   public synchronized HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or websocket handler first");
@@ -348,7 +348,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 	      }
               serverChannelGroup.add(serverChannel);
               VertxMetrics metrics = vertx.metricsSPI();
-              this.metrics = metrics != null ? metrics.createMetrics(this, address, options) : null;
+              this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
             }
           });
         } catch (final Throwable t) {
@@ -370,7 +370,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         this.actualPort = shared.actualPort;
         addHandlers(actualServer, listenContext);
         VertxMetrics metrics = vertx.metricsSPI();
-        this.metrics = metrics != null ? metrics.createMetrics(this, address, options) : null;
+        this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
       }
       actualServer.bindFuture.addListener(future -> {
         if (listenHandler != null) {
