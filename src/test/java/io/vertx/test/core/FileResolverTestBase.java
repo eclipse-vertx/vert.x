@@ -17,7 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.FileResolver;
+import io.vertx.core.file.impl.FileResolver;
 import io.vertx.core.impl.VertxInternal;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,16 +43,12 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    resolver = new FileResolver(vertx);
+    resolver = new FileResolver();
   }
 
   @Override
   protected void tearDown() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    resolver.close(onSuccess(res -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
+    resolver.close();
     super.tearDown();
   }
 
@@ -177,19 +173,13 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testDeleteCacheDir() throws Exception {
-    Vertx vertx2 = vertx();
-    FileResolver resolver2 = new FileResolver(vertx2);
+    FileResolver resolver2 = new FileResolver();
     File file = resolver2.resolveFile(webRoot + "/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
-    resolver2.close(onSuccess(res -> {
-      assertFalse(cacheDir.exists());
-      vertx2.close(res2 -> {
-        testComplete();
-      });
-    }));
-    await();
+    resolver2.close();
+    assertFalse(cacheDir.exists());
   }
 
   @Test
