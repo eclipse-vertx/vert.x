@@ -24,13 +24,12 @@ import java.util.function.Function;
 /**
  * Local maps can be used to share data safely in a single Vert.x instance.
  * <p>
- * The map only allows immutable keys and values in the map, OR certain mutable objects such as {@link io.vertx.core.buffer.Buffer}
- * instances which will be copied when they are added to the map.
+ * By default the map allows immutable keys and values.
+ * Custom keys and values should implement {@link Shareable} interface. The map returns their copies.
  * <p>
  * This ensures there is no shared access to mutable state from different threads (e.g. different event loops) in the
  * Vert.x instance, and means you don't have to protect access to that state using synchronization or locks.
  * <p>
- * Your own objects can be marked as immutable by implementing the {@link Shareable} interface.
  *
  * Since the version 3.4, this class extends the {@link Map} interface. However some methods are only accessible in Java.
  *

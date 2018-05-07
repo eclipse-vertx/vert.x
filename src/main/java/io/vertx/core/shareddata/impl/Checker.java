@@ -32,9 +32,6 @@ public class Checker {
         obj instanceof Byte ||
         obj instanceof Character ||
         obj instanceof byte[] ||
-        obj instanceof Buffer ||
-        obj instanceof JsonObject ||
-        obj instanceof JsonArray ||
         obj instanceof Shareable) {
     } else {
       throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
@@ -42,19 +39,14 @@ public class Checker {
   }
 
   static <T> T copyIfRequired(T obj) {
-    if (obj instanceof JsonObject) {
-      return (T)((JsonObject)obj).copy();
-    } else if (obj instanceof JsonArray) {
-      return (T) ((JsonArray) obj).copy();
-    } else if (obj instanceof byte[]) {
+    if (obj instanceof byte[]) {
       //Copy it
       byte[] bytes = (byte[]) obj;
       byte[] copy = new byte[bytes.length];
       System.arraycopy(bytes, 0, copy, 0, bytes.length);
       return (T) copy;
-    } else if (obj instanceof Buffer) {
-      //Copy it
-      return (T) ((Buffer) obj).copy();
+    } else if (obj instanceof Shareable) {
+      return (T) ((Shareable) obj).copy();
     } else {
       return obj;
     }

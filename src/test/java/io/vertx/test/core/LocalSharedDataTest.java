@@ -15,11 +15,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.LocalMap;
+import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.SharedData;
 import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -326,7 +328,58 @@ public class LocalSharedDataTest extends VertxTestBase {
     assertFalse(containsExact(values, json3));
   }
 
+  @Test
+  public void testCopyOnGet() {
+    testMapOperationResult(LocalMap::get);
+  }
 
+  @Test
+  public void testCopyOnPutIfAbsent() {
+    testMapOperationResult((map, key) -> map.putIfAbsent(key, new ShareableObject("some other test data")));
+  }
+
+  @Test
+  public void testCopyOnRemove() {
+    testMapOperationResult(LocalMap::remove);
+  }
+
+  private void testMapOperationResult(BiFunction<LocalMap<String, ShareableObject>, String, ShareableObject> operation) {
+    final String key = "key";
+    final ShareableObject value = new ShareableObject("some test data");
+    final LocalMap<String, ShareableObject> map = vertx.sharedData().getLocalMap("foo");
+    assertNull(map.put(key, value));
+
+    final ShareableObject result = operation.apply(map, key);
+
+    assertEquals(value, result);
+    assertNotSame(value, result);
+  }
+
+  private static class ShareableObject implements Shareable {
+    private final String data;
+
+    public ShareableObject(String data) {
+      this.data = data;
+    }
+
+    @Override
+    public Shareable copy() {
+      return new ShareableObject(data);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      final ShareableObject another = (ShareableObject) o;
+      return data.equals(another.data);
+    }
+
+    @Override
+    public int hashCode() {
+      return data.hashCode();
+    }
+  }
 
   class SomeOtherClass {
   }
