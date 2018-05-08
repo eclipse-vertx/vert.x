@@ -28,6 +28,7 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.SendContext;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
@@ -55,14 +56,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
-  protected final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
+  protected final ConcurrentMap<String, ConcurrentCyclicSequence<HandlerHolder>> handlerMap = new ConcurrentHashMap<>();
   protected final CodecManager codecManager = new CodecManager();
   protected volatile boolean started;
 
   public EventBusImpl(VertxInternal vertx) {
     VertxMetrics metrics = vertx.metricsSPI();
     this.vertx = vertx;
-    this.metrics = metrics != null ? metrics.createMetrics(this) : null;
+    this.metrics = metrics != null ? metrics.createEventBusMetrics() : null;
   }
 
   @Override
@@ -227,11 +228,12 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return msg;
   }
 
-  protected <T> void addRegistration(String address, HandlerRegistration<T> registration,
+  protected <T> HandlerHolder<T> addRegistration(String address, HandlerRegistration<T> registration,
                                      boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(registration.getHandler(), "handler");
-    boolean newAddress = addLocalRegistration(address, registration, replyHandler, localOnly);
-    addRegistration(newAddress, address, replyHandler, localOnly, registration::setResult);
+    LocalRegistrationResult<T> result = addLocalRegistration(address, registration, replyHandler, localOnly);
+    addRegistration(result.newAddress, address, replyHandler, localOnly, registration::setResult);
+    return result.holder;
   }
 
   protected <T> void addRegistration(boolean newAddress, String address,
@@ -240,8 +242,17 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     completionHandler.handle(Future.succeededFuture());
   }
 
-  protected <T> boolean addLocalRegistration(String address, HandlerRegistration<T> registration,
-                                             boolean replyHandler, boolean localOnly) {
+  private static class LocalRegistrationResult<T> {
+    final HandlerHolder<T> holder;
+    final boolean newAddress;
+    LocalRegistrationResult(HandlerHolder<T> holder, boolean newAddress) {
+      this.holder = holder;
+      this.newAddress = newAddress;
+    }
+  }
+
+  private <T> LocalRegistrationResult<T> addLocalRegistration(String address, HandlerRegistration<T> registration,
+                                                           boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
     Context context = Vertx.currentContext();
@@ -252,63 +263,46 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
     registration.setHandlerContext(context);
 
-    boolean newAddress = false;
+    HandlerHolder<T> holder = new HandlerHolder<>(metrics, registration, replyHandler, localOnly, context);
 
-    HandlerHolder holder = new HandlerHolder<>(metrics, registration, replyHandler, localOnly, context);
-
-    Handlers handlers = handlerMap.get(address);
-    if (handlers == null) {
-      handlers = new Handlers();
-      Handlers prevHandlers = handlerMap.putIfAbsent(address, handlers);
-      if (prevHandlers != null) {
-        handlers = prevHandlers;
-      }
-      newAddress = true;
-    }
-    handlers.list.add(holder);
+    ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
+    ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
+      address,
+      handlers,
+      (old, prev) -> old.add(prev.first()));
 
     if (hasContext) {
       HandlerEntry entry = new HandlerEntry<>(address, registration);
       context.addCloseHook(entry);
     }
 
-    return newAddress;
+    boolean newAddress = handlers == actualHandlers;
+    return new LocalRegistrationResult<>(holder, newAddress);
   }
 
-  protected <T> void removeRegistration(String address, HandlerRegistration<T> handler, Handler<AsyncResult<Void>> completionHandler) {
-    HandlerHolder holder = removeLocalRegistration(address, handler);
-    removeRegistration(holder, address, completionHandler);
+  protected <T> void removeRegistration(HandlerHolder<T> holder, Handler<AsyncResult<Void>> completionHandler) {
+    boolean last = removeLocalRegistration(holder);
+    removeRegistration(last ? holder : null, holder.getHandler().address(), completionHandler);
   }
 
-  protected <T> void removeRegistration(HandlerHolder handlerHolder, String address,
+  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, String address,
                                         Handler<AsyncResult<Void>> completionHandler) {
     callCompletionHandlerAsync(completionHandler);
   }
 
-  protected <T> HandlerHolder removeLocalRegistration(String address, HandlerRegistration<T> handler) {
-    Handlers handlers = handlerMap.get(address);
-    HandlerHolder lastHolder = null;
-    if (handlers != null) {
-      synchronized (handlers) {
-        int size = handlers.list.size();
-        // Requires a list traversal. This is tricky to optimise since we can't use a set since
-        // we need fast ordered traversal for the round robin
-        for (int i = 0; i < size; i++) {
-          HandlerHolder holder = handlers.list.get(i);
-          if (holder.getHandler() == handler) {
-            handlers.list.remove(i);
-            holder.setRemoved();
-            if (handlers.list.isEmpty()) {
-              handlerMap.remove(address);
-              lastHolder = holder;
-            }
-            holder.getContext().removeCloseHook(new HandlerEntry<>(address, holder.getHandler()));
-            break;
-          }
-        }
+  private <T> boolean removeLocalRegistration(HandlerHolder<T> holder) {
+    String address = holder.getHandler().address();
+    boolean last = handlerMap.compute(address, (key, val) -> {
+      if (val == null) {
+        return null;
       }
+      ConcurrentCyclicSequence<HandlerHolder> next = val.remove(holder);
+      return next.size() == 0 ? null : next;
+    }) == null;
+    if (holder.setRemoved()) {
+      holder.getContext().removeCloseHook(new HandlerEntry<>(address, holder.getHandler()));
     }
-    return lastHolder;
+    return last;
   }
 
   protected <T> void sendReply(MessageImpl replyMessage, MessageImpl replierMessage, DeliveryOptions options,
@@ -377,11 +371,11 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   protected <T> boolean deliverMessageLocally(MessageImpl msg) {
     msg.setBus(this);
-    Handlers handlers = handlerMap.get(msg.address());
+    ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
     if (handlers != null) {
       if (msg.isSend()) {
         //Choose one
-        HandlerHolder holder = handlers.choose();
+        HandlerHolder holder = handlers.next();
         if (metrics != null) {
           metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), holder != null ? 1 : 0);
         }
@@ -391,9 +385,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       } else {
         // Publish
         if (metrics != null) {
-          metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), handlers.list.size());
+          metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), handlers.size());
         }
-        for (HandlerHolder holder: handlers.list) {
+        for (HandlerHolder holder: handlers) {
           deliverToHandler(msg, holder);
         }
       }
@@ -509,8 +503,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private void unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
-    for (Handlers handlers: handlerMap.values()) {
-      for (HandlerHolder holder: handlers.list) {
+    for (ConcurrentCyclicSequence<HandlerHolder> handlers: handlerMap.values()) {
+      for (HandlerHolder holder: handlers) {
         holder.getHandler().unregister();
       }
     }

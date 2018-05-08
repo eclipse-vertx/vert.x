@@ -31,6 +31,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.impl.ConnectionBase;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -527,7 +528,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (!closed) {
         closed = true;
         if (!written && exceptionHandler != null) {
-          conn.getContext().runOnContext(v -> exceptionHandler.handle(new VertxException("Connection was closed")));
+          conn.getContext().runOnContext(v -> exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION));
         }
         if (endHandler != null) {
           conn.getContext().runOnContext(endHandler);

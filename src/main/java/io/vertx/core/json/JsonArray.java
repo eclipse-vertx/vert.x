@@ -12,6 +12,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.time.Instant;
@@ -33,7 +34,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonArray implements Iterable<Object>, ClusterSerializable {
+public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareable {
 
   private List<Object> list;
 
@@ -571,6 +572,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    *
    * @return a copy
    */
+  @Override
   public JsonArray copy() {
     List<Object> copiedList = new ArrayList<>(list.size());
     for (Object val: list) {

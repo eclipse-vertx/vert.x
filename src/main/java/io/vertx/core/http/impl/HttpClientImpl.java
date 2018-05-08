@@ -43,7 +43,6 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -114,7 +113,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
-    this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createMetrics(this, options) : null;
+    this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
@@ -154,8 +153,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
     httpCM = new ConnectionManager(this, metrics, options.getProtocolVersion(), maxWeight, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
-    httpCM.start(options.getKeepAliveTimeout() > 0 || options.getHttp2KeepAliveTimeout() > 0);
-    websocketCM.start(options.getKeepAliveTimeout() > 0 || options.getHttp2KeepAliveTimeout() > 0);
+    httpCM.start();
+    websocketCM.start();
   }
 
   HttpClientMetrics metrics() {
@@ -938,13 +937,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return options;
   }
 
-  private void getConnectionForWebsocket(boolean ssl,
+  private void getConnectionForWebsocket(ContextInternal ctx,
+                                         boolean ssl,
                                          int port,
                                          String host,
                                          Handler<Http1xClientConnection> handler,
                                          Handler<Throwable> connectionExceptionHandler) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    websocketCM.getConnection(host, ssl, port, host, ar -> {
+    websocketCM.getConnection(ctx, host, ssl, port, host, ar -> {
       if (ar.succeeded()) {
         HttpClientConnection conn = ar.result();
         conn.getContext().executeFromIO(v -> {
@@ -958,9 +957,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     });
   }
 
-  void getConnectionForRequest(String peerHost, boolean ssl, int port, String host,
+  void getConnectionForRequest(ContextInternal ctx,
+                               String peerHost,
+                               boolean ssl,
+                               int port,
+                               String host,
                                Handler<AsyncResult<HttpClientStream>> handler) {
-    httpCM.getConnection(peerHost, ssl, port, host, ar -> {
+    httpCM.getConnection(ctx, peerHost, ssl, port, host, ar -> {
       if (ar.succeeded()) {
         ar.result().createStream(handler);
       } else {
@@ -1105,7 +1108,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         } else {
           wsConnect = handler;
         }
-        getConnectionForWebsocket(ssl != null ? ssl : options.isSsl(), port, host, conn -> {
+        getConnectionForWebsocket(vertx.getOrCreateContext(), ssl != null ? ssl : options.isSsl(), port, host, conn -> {
           conn.exceptionHandler(connectionExceptionHandler);
           conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
         }, connectionExceptionHandler);

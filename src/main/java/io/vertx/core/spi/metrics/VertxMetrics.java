@@ -14,7 +14,6 @@ package io.vertx.core.spi.metrics;
 import io.vertx.core.Verticle;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
@@ -78,10 +77,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * <p>
    * This method should be called only once.
    *
-   * @param eventBus the Vert.x event bus
    * @return the event bus metrics SPI or {@code null} when metrics are disabled
    */
-  EventBusMetrics createMetrics(EventBus eventBus);
+  EventBusMetrics createEventBusMetrics();
 
   /**
    * Provides the http server metrics SPI when an http server is created.<p/>
@@ -93,23 +91,21 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different {@code HttpServerMetrics}
    * instances.
    *
-   * @param server       the Vert.x http server
+   * @param options      the options used to create the {@link HttpServer}
    * @param localAddress localAddress the local address the net socket is listening on
-   * @param options      the options used to create the {@link io.vertx.core.http.HttpServer}
    * @return the http server metrics SPI or {@code null} when metrics are disabled
    */
-  HttpServerMetrics<?, ?, ?> createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options);
+  HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress);
 
   /**
    * Provides the http client metrics SPI when an http client has been created.<p/>
    * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param client  the Vert.x http client
-   * @param options the options used to create the {@link io.vertx.core.http.HttpClient}
+   * @param options the options used to create the {@link HttpClient}
    * @return the http client metrics SPI or {@code null} when metrics are disabled
    */
-  HttpClientMetrics<?, ?, ?, ?, ?> createMetrics(HttpClient client, HttpClientOptions options);
+  HttpClientMetrics<?, ?, ?, ?, ?> createHttpClientMetrics(HttpClientOptions options);
 
   /**
    * Provides the net server metrics SPI when a net server is created.<p/>
@@ -121,11 +117,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different {@code TCPMetrics}
    * instances.
    *
-   * @param localAddress localAddress the local address the net socket is listening on
    * @param options      the options used to create the {@link NetServer}
+   * @param localAddress localAddress the local address the net socket is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-  TCPMetrics<?> createMetrics(SocketAddress localAddress, NetServerOptions options);
+  TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress);
 
   /**
    * Provides the net client metrics SPI when a net client is created.<p/>
@@ -135,38 +131,25 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link NetClient}
    * @return the net client metrics SPI or {@code null} when metrics are disabled
    */
-  TCPMetrics<?> createMetrics(NetClientOptions options);
+  TCPMetrics<?> createNetClientMetrics(NetClientOptions options);
 
   /**
    * Provides the datagram/udp metrics SPI when a datagram socket is created.<p/>
    * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param socket  the Vert.x datagram socket
-   * @param options the options used to create the {@link io.vertx.core.datagram.DatagramSocket}
+   * @param options the options used to create the {@link DatagramSocket}
    * @return the datagram metrics SPI or {@code null} when metrics are disabled
    */
-  DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options);
-
-  /**
-   * Metrics cannot use the event bus in their constructor as the event bus is not yet initialized. When the event
-   * bus is initialized, this method is called with the event bus instance as parameter. By default, this method does
-   * nothing.
-   *
-   * @param bus the event bus
-   */
-  default void eventBusInitialized(EventBus bus) {
-    // Do nothing by default.
-  }
+  DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options);
 
   /**
    * Provides the pool metrics SPI.
    *
-   * @param pool the pool of resource, it can be used by the metrics implementation to gather extra statistics
    * @param poolType the type of the pool e.g worker, datasource, etc..
    * @param poolName the name of the pool
    * @param maxPoolSize the pool max size, or -1 if the number cannot be determined
    * @return the thread pool metrics SPI or {@code null} when metrics are disabled
    */
-  <P> PoolMetrics<?> createMetrics(P pool, String poolType, String poolName, int maxPoolSize);
+  PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize);
 }

@@ -12,31 +12,18 @@
 package io.vertx.test.fakemetrics;
 
 import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.*;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
-
-  public static AtomicReference<EventBus> eventBus = new AtomicReference<>();
-
-  public FakeVertxMetrics(Vertx vertx) {
-    super(vertx);
-  }
 
   @Override
   public boolean isMetricsEnabled() {
@@ -55,19 +42,19 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   public void timerEnded(long id, boolean cancelled) {
   }
 
-  public EventBusMetrics createMetrics(EventBus eventBus) {
-    return new FakeEventBusMetrics(eventBus);
+  public EventBusMetrics createEventBusMetrics() {
+    return new FakeEventBusMetrics();
   }
 
-  public HttpServerMetrics<?, ?, ?> createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
-    return new FakeHttpServerMetrics(server);
+  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+    return new FakeHttpServerMetrics();
   }
 
-  public HttpClientMetrics<?, ?, ?, ?, Void> createMetrics(HttpClient client, HttpClientOptions options) {
-    return new FakeHttpClientMetrics(client, options.getMetricsName());
+  public HttpClientMetrics<?, ?, ?, ?, Void> createHttpClientMetrics(HttpClientOptions options) {
+    return new FakeHttpClientMetrics(options.getMetricsName());
   }
 
-  public TCPMetrics<?> createMetrics(SocketAddress localAddress, NetServerOptions options) {
+  public TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
     return new TCPMetrics<Object>() {
 
       public Object connected(SocketAddress remoteAddress, String remoteName) {
@@ -95,7 +82,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     };
   }
 
-  public TCPMetrics<?> createMetrics(NetClientOptions options) {
+  public TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
     return new TCPMetrics<Object>() {
 
       public Object connected(SocketAddress remoteAddress, String remoteName) {
@@ -123,12 +110,12 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     };
   }
 
-  public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-    return new FakeDatagramSocketMetrics(socket);
+  public DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options) {
+    return new FakeDatagramSocketMetrics();
   }
 
   @Override
-  public <P> PoolMetrics<?> createMetrics(P pool, String poolType, String poolName, int maxPoolSize) {
+  public PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
     return new FakePoolMetrics(poolName, maxPoolSize);
   }
 
@@ -136,8 +123,4 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return true;
   }
 
-  @Override
-  public void eventBusInitialized(EventBus bus) {
-    this.eventBus.set(bus);
-  }
 }

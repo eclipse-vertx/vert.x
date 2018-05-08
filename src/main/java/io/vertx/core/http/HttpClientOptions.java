@@ -160,6 +160,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
 
+  /**
+   * Default pool cleaner period = 1000 ms (1 second)
+   */
+  public static final int DEFAULT_POOL_CLEANER_PERIOD = 1000;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -170,6 +175,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int http2MultiplexingLimit;
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
+  private int poolCleanerPeriod;
 
   private boolean tryUseCompression;
   private int maxWebsocketFrameSize;
@@ -231,6 +237,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
+    this.poolCleanerPeriod = other.getPoolCleanerPeriod();
   }
 
   /**
@@ -283,6 +290,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
+    poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
   }
 
   @Override
@@ -1041,6 +1049,25 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * @return the connection pool cleaner period in ms.
+   */
+  public int getPoolCleanerPeriod() {
+    return poolCleanerPeriod;
+  }
+
+  /**
+   * Set the connection pool cleaner period in milli seconds, a non positive value disables expiration checks and connections
+   * will remain in the pool until they are closed.
+   *
+   * @param poolCleanerPeriod the pool cleaner period
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setPoolCleanerPeriod(int poolCleanerPeriod) {
+    this.poolCleanerPeriod = poolCleanerPeriod;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -1072,6 +1099,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
     if (keepAliveTimeout != that.keepAliveTimeout) return false;
     if (http2KeepAliveTimeout != that.http2KeepAliveTimeout) return false;
+    if (poolCleanerPeriod != that.poolCleanerPeriod) return false;
 
     return true;
   }
@@ -1102,6 +1130,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + decoderInitialBufferSize;
     result = 31 * result + keepAliveTimeout;
     result = 31 * result + http2KeepAliveTimeout;
+    result = 31 * result + poolCleanerPeriod;
     return result;
   }
 

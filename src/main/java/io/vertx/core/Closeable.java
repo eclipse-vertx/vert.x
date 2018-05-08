@@ -12,9 +12,18 @@
 package io.vertx.core;
 
 /**
+ * A closeable resource.
+ * <p/>
+ * This interface is mostly used for internal resource management of Vert.x.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Closeable {
 
+  /**
+   * Close this resource, the {@code completionHandler} must be notified when the operation has completed.
+   *
+   * @param completionHandler the handler to notify when close has completed
+   */
   void close(Handler<AsyncResult<Void>> completionHandler);
 }

@@ -48,7 +48,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private final boolean localOnly;
   private final Handler<AsyncResult<Message<T>>> asyncResultHandler;
   private long timeoutID = -1;
-  private boolean registered;
+  private HandlerHolder<T> registered;
   private Handler<Message<T>> handler;
   private Context handlerContext;
   private AsyncResult<Void> result;
@@ -141,9 +141,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         }
       };
     }
-    if (registered) {
-      registered = false;
-      eventBus.removeRegistration(address, this, completionHandler);
+    HandlerHolder<T> holder = registered;
+    if (holder != null) {
+      registered = null;
+      eventBus.removeRegistration(holder, completionHandler);
     } else {
       callCompletionHandlerAsync(completionHandler);
     }
@@ -260,10 +261,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   @Override
   public synchronized MessageConsumer<T> handler(Handler<Message<T>> handler) {
     this.handler = handler;
-    if (this.handler != null && !registered) {
-      registered = true;
-      eventBus.addRegistration(address, this, repliedAddress != null, localOnly);
-    } else if (this.handler == null && registered) {
+    if (this.handler != null && registered == null) {
+      registered = eventBus.addRegistration(address, this, repliedAddress != null, localOnly);
+    } else if (this.handler == null && registered != null) {
       // This will set registered to false
       this.unregister();
     }
@@ -277,7 +277,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   @Override
   public synchronized boolean isRegistered() {
-    return registered;
+    return registered != null;
   }
 
   @Override

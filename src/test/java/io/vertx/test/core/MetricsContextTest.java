@@ -64,7 +64,7 @@ public class MetricsContextTest extends VertxTestBase {
   public void testFactory() throws Exception {
     AtomicReference<Thread> metricsThread = new AtomicReference<>();
     AtomicReference<Context> metricsContext = new AtomicReference<>();
-    VertxMetricsFactory factory = (vertx, options) -> {
+    VertxMetricsFactory factory = (options) -> {
       metricsThread.set(Thread.currentThread());
       metricsContext.set(Vertx.currentContext());
       return DummyVertxMetrics.INSTANCE;
@@ -79,7 +79,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicReference<Thread> metricsThread = new AtomicReference<>();
     AtomicReference<Context> metricsContext = new AtomicReference<>();
     Thread testThread = Thread.currentThread();
-    VertxMetricsFactory factory = (vertx, options) -> {
+    VertxMetricsFactory factory = (options) -> {
       metricsThread.set(Thread.currentThread());
       metricsContext.set(Vertx.currentContext());
       return DummyVertxMetrics.INSTANCE;
@@ -112,9 +112,9 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
         return new DummyHttpServerMetrics() {
           @Override
           public Void requestBegin(Void socketMetric, HttpServerRequest request) {
@@ -215,9 +215,9 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
         return new DummyHttpServerMetrics() {
           @Override
           public Void connected(Void socketMetric, ServerWebSocket serverWebSocket) {
@@ -320,9 +320,9 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
+      public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
           @Override
           public Void requestBegin(Void endpointMetric, Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
@@ -429,9 +429,9 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
+      public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
           @Override
           public Void connected(Void endpointMetric, Void socketMetric, WebSocket webSocket) {
@@ -536,9 +536,9 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public TCPMetrics createMetrics(SocketAddress localAddress, NetServerOptions options) {
+      public TCPMetrics createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
         return new DummyTCPMetrics() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -629,9 +629,9 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public TCPMetrics createMetrics(NetClientOptions options) {
+      public TCPMetrics createNetClientMetrics(NetClientOptions options) {
         return new DummyTCPMetrics() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -721,9 +721,9 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     CountDownLatch closeCalled = new CountDownLatch(1);
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
+      public DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options) {
         return new DummyDatagramMetrics() {
           @Override
           public void listening(String localName, SocketAddress localAddress) {
@@ -777,9 +777,9 @@ public class MetricsContextTest extends VertxTestBase {
   @Test
   public void testEventBusLifecycle() {
     AtomicBoolean closeCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public EventBusMetrics createMetrics(EventBus eventBus) {
+      public EventBusMetrics createEventBusMetrics() {
         return new DummyEventBusMetrics() {
           @Override
           public boolean isEnabled() {
@@ -820,9 +820,9 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean unregisteredCalled = new AtomicBoolean();
     AtomicBoolean beginHandleCalled = new AtomicBoolean();
     AtomicBoolean endHandleCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
-      public EventBusMetrics createMetrics(EventBus eventBus) {
+      public EventBusMetrics createEventBusMetrics() {
         return new DummyEventBusMetrics() {
           @Override
           public boolean isEnabled() {
@@ -895,7 +895,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicReference<Context> verticleContext = new AtomicReference<>();
     AtomicBoolean deployedCalled = new AtomicBoolean();
     AtomicBoolean undeployedCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (vertx, options) -> new DummyVertxMetrics() {
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
       public void verticleDeployed(Verticle verticle) {
         deployedCalled.set(true);

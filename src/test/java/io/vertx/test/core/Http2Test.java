@@ -427,7 +427,7 @@ public class Http2Test extends HttpTest {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3));
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       long now = System.currentTimeMillis();
       resp.request().connection().closeHandler(v -> {
@@ -435,8 +435,8 @@ public class Http2Test extends HttpTest {
         int delta = 500;
         int low = 3000 - delta;
         int high = 3000 + delta;
-        assertTrue("Expected actual close timeout to be > " + low, low < timeout);
-        assertTrue("Expected actual close timeout to be < " + high, timeout < high);
+        assertTrue("Expected actual close timeout " + timeout + " to be > " + low, low < timeout);
+        assertTrue("Expected actual close timeout " + timeout + " to be < " + high, timeout < high);
         testComplete();
       });
     });

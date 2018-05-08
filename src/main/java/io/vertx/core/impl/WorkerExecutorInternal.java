@@ -10,13 +10,15 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.Closeable;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 
 /**
  * @author Thomas Segismont
  */
-public interface WorkerExecutorInternal extends WorkerExecutor {
-  // TODO Can we get rid of this?
+public interface WorkerExecutorInternal extends WorkerExecutor, Closeable {
   Vertx vertx();
+
+  WorkerPool getPool();
 }

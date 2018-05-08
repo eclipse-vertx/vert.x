@@ -735,8 +735,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         metrics.requestReset(req.request.metric());
       }
     }
-    Exception cause = new VertxException("Connection was closed");
-    failStreams(cause);
+    failStreams(CLOSED_EXCEPTION);
   }
 
   private void failStreams(Throwable cause) {

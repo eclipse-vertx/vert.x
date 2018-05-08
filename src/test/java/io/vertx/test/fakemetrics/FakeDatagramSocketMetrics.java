@@ -11,7 +11,6 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 
@@ -28,10 +27,6 @@ public class FakeDatagramSocketMetrics extends FakeMetricsBase implements Datagr
   private volatile SocketAddress localAddress;
   private final List<PacketMetric> reads = Collections.synchronizedList(new ArrayList<>());
   private final List<PacketMetric> writes = Collections.synchronizedList(new ArrayList<>());
-
-  public FakeDatagramSocketMetrics(Measured measured) {
-    super(measured);
-  }
 
   public String getLocalName() {
     return localName;

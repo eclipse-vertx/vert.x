@@ -73,13 +73,13 @@ public interface VertxInternal extends Vertx {
   ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool pool, JsonObject config, ClassLoader tccl);
 
   @Override
-  WorkerExecutorImpl createSharedWorkerExecutor(String name);
+  WorkerExecutorInternal createSharedWorkerExecutor(String name);
 
   @Override
-  WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize);
+  WorkerExecutorInternal createSharedWorkerExecutor(String name, int poolSize);
 
   @Override
-  WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
+  WorkerExecutorInternal createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 
   void simulateKill();
 

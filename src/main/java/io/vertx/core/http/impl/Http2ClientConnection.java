@@ -244,7 +244,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (conn.metrics != null) {
           conn.metrics.requestReset(request.metric());
         }
-        handleException(new VertxException("Connection was closed")); // Put that in utility class
+        handleException(CLOSED_EXCEPTION);
       }
     }
 

@@ -178,7 +178,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   private void timeout(long timeoutMs) {
-    handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for host " + host));
+    String msg = "The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for host " + host;
+    // Use a stack-less exception
+    handleException(new TimeoutException(msg) {
+      @Override
+      public synchronized Throwable fillInStackTrace() {
+        return this;
+      }
+    });
   }
 
   synchronized void dataReceived() {

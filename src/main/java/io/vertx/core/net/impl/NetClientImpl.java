@@ -84,7 +84,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
       creatingContext = null;
     }
     VertxMetrics metrics = vertx.metricsSPI();
-    this.metrics = metrics != null ? metrics.createMetrics(options) : null;
+    this.metrics = metrics != null ? metrics.createNetClientMetrics(options) : null;
     logEnabled = options.getLogActivity();
     idleTimeout = options.getIdleTimeout();
   }

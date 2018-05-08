@@ -13,13 +13,12 @@ package io.vertx.core.impl;
 
 import io.vertx.core.spi.metrics.PoolMetrics;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WorkerPool {
+public class WorkerPool {
 
   private final ExecutorService pool;
   private final PoolMetrics metrics;

@@ -4038,7 +4038,7 @@ public class Http1xTest extends HttpTest {
   private void testKeepAliveTimeout(HttpClientOptions options, int numReqs) throws Exception {
     startServer();
     client.close();
-    client = vertx.createHttpClient(options);
+    client = vertx.createHttpClient(options.setPoolCleanerPeriod(1));
     AtomicInteger respCount = new AtomicInteger();
     for (int i = 0;i < numReqs;i++) {
       int current = 1 + i;
@@ -4051,13 +4051,37 @@ public class Http1xTest extends HttpTest {
             int delta = 500;
             int low = 3000 - delta;
             int high = 3000 + delta;
-            assertTrue("Expected actual close timeout to be > " + low, low < timeout);
-            assertTrue("Expected actual close timeout to be < " + high, timeout < high);
+            assertTrue("Expected actual close timeout " + timeout + " to be > " + low, low < timeout);
+            assertTrue("Expected actual close timeout " + timeout + " + to be < " + high, timeout < high);
             testComplete();
           });
         }
       });
     }
+    await();
+  }
+
+  @Test
+  public void testPoolNotExpiring() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+      vertx.setTimer(2000, id -> {
+        req.connection().close();
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPoolCleanerPeriod(0).setKeepAliveTimeout(100));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.endHandler(v1 -> {
+        long now = System.currentTimeMillis();
+        resp.request().connection().closeHandler(v2 -> {
+          long time = System.currentTimeMillis() - now;
+          assertTrue("Was expecting " + time + " to be > 2000", time >= 2000);
+          testComplete();
+        });
+      });
+    });
     await();
   }
 
@@ -4186,5 +4210,29 @@ public class Http1xTest extends HttpTest {
       });
     }
     awaitLatch(latch);
+  }
+
+  @Test
+  public void testConnectionCloseDuringShouldCallHandleExceptionOnlyOnce() throws Exception {
+    server.requestHandler(req -> {
+      vertx.setTimer(500, id -> {
+        req.connection().close();
+      });
+    });
+    AtomicInteger count = new AtomicInteger();
+    startServer();
+    HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> fail());
+    post.setChunked(true);
+    post.write(TestUtils.randomBuffer(10000));
+    CountDownLatch latch = new CountDownLatch(1);
+    post.exceptionHandler(x-> {
+      count.incrementAndGet();
+      vertx.setTimer(10, id -> {
+        latch.countDown();
+      });
+    });
+    // then stall until timeout and the exception handler will be called.
+    awaitLatch(latch);
+    assertEquals(count.get(), 1);
   }
 }

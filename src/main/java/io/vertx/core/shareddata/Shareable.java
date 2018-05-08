@@ -12,13 +12,15 @@
 package io.vertx.core.shareddata;
 
 /**
- * A marker interface which allows you to put arbitrary objects into a {@link io.vertx.core.shareddata.LocalMap}.
+ * An interface which allows you to put arbitrary objects into a {@link io.vertx.core.shareddata.LocalMap}.
  * <p>
- * Normally local maps only allow immutable objects or other copiable objects such as {@link io.vertx.core.buffer.Buffer}
- * instances in order to avoid shared access to mutable state.
+ * Normally local maps only allow immutable or copiable objects in order to avoid shared access to mutable state.
  * <p>
  * However if you have an object that you know is thread-safe you can mark it with this interface and then you
  * will be able to add it to {@link io.vertx.core.shareddata.LocalMap} instances.
+ * <p>
+ * Mutable object that you want to store in a {@link io.vertx.core.shareddata.LocalMap}
+ * should override {@link Shareable#copy()} method.
  * <p>
  * Use this interface with caution.
  * <p>
@@ -26,4 +28,12 @@ package io.vertx.core.shareddata;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Shareable {
+
+  /**
+   * Returns a copy of the object.
+   * Only mutable objects should provide a custom implementation of the method.
+   */
+  default Shareable copy() {
+    return this;
+  }
 }

@@ -17,6 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
@@ -51,14 +52,15 @@ class ConnectionManager {
     this.version = version;
   }
 
-  synchronized void start(boolean checkExpired) {
-    this.timerID = checkExpired ? client.getVertx().setTimer(1, id -> checkExpired()) : -1;
+  synchronized void start() {
+    long period = client.getOptions().getPoolCleanerPeriod();
+    this.timerID = period > 0 ? client.getVertx().setTimer(period, id -> checkExpired(period)) : -1;
   }
 
-  private synchronized void checkExpired() {
+  private synchronized void checkExpired(long period) {
     long timestamp = System.currentTimeMillis();
     endpointMap.values().forEach(e -> e.pool.closeIdle(timestamp));
-    timerID = client.getVertx().setTimer(1, id -> checkExpired());
+    timerID = client.getVertx().setTimer(period, id -> checkExpired(period));
   }
 
   private static final class EndpointKey {
@@ -110,7 +112,7 @@ class ConnectionManager {
     }
   }
 
-  void getConnection(String peerHost, boolean ssl, int port, String host, Handler<AsyncResult<HttpClientConnection>> handler) {
+  void getConnection(ContextInternal ctx, String peerHost, boolean ssl, int port, String host, Handler<AsyncResult<HttpClientConnection>> handler) {
     EndpointKey key = new EndpointKey(ssl, port, peerHost, host);
     while (true) {
       Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
@@ -136,7 +138,7 @@ class ConnectionManager {
         metric = null;
       }
 
-      if (endpoint.pool.getConnection(client.getVertx().getOrCreateContext(), ar -> {
+      if (endpoint.pool.getConnection(ctx, ar -> {
         if (ar.succeeded()) {
 
           HttpClientConnection conn = ar.result();

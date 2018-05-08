@@ -219,7 +219,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return listen(port, "0.0.0.0", listenHandler);
   }
 
-  public synchronized HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
+  public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
+    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
+  }
+
+  public synchronized HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -228,6 +232,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     listenContext = vertx.getOrCreateContext();
     listening = true;
+    String host = address.host() != null ? address.host() : "localhost";
+    int port = address.port();
     serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
     List<HttpVersion> applicationProtocols = options.getAlpnVersions();
     if (listenContext.isWorkerContext()) {
@@ -329,16 +335,20 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         addHandlers(this, listenContext);
         try {
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, SocketAddress.inetSocketAddress(port, host), bootstrap);
+          bindFuture = AsyncResolveConnectHelper.doBind(vertx, address, bootstrap);
           bindFuture.addListener(res -> {
             if (res.failed()) {
               vertx.sharedHttpServers().remove(id);
             } else {
               Channel serverChannel = res.result();
-              HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
+	      if (serverChannel.localAddress() instanceof InetSocketAddress) {
+		HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
+	      } else {
+		HttpServerImpl.this.actualPort = address.port();
+	      }
               serverChannelGroup.add(serverChannel);
               VertxMetrics metrics = vertx.metricsSPI();
-              this.metrics = metrics != null ? metrics.createMetrics(this, new SocketAddressImpl(port, host), options) : null;
+              this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
             }
           });
         } catch (final Throwable t) {
@@ -360,7 +370,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         this.actualPort = shared.actualPort;
         addHandlers(actualServer, listenContext);
         VertxMetrics metrics = vertx.metricsSPI();
-        this.metrics = metrics != null ? metrics.createMetrics(this, new SocketAddressImpl(port, host), options) : null;
+        this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
       }
       actualServer.bindFuture.addListener(future -> {
         if (listenHandler != null) {
@@ -729,52 +739,50 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         conn.handleMessage(request);
       } else {
 
-        wsHandler.context.executeFromIO(v -> {
-          URI theURI;
+        URI theURI;
+        try {
+          theURI = new URI(request.getUri());
+        } catch (URISyntaxException e2) {
+          throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+        }
+
+        if (metrics != null) {
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        }
+        conn.wsHandler(shake, wsHandler.handler);
+
+        Supplier<String> connectRunnable = () -> {
           try {
-            theURI = new URI(request.getUri());
-          } catch (URISyntaxException e2) {
-            throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+            shake.handshake(conn.channel(), request);
+            return shake.selectedSubprotocol();
+          } catch (WebSocketHandshakeException e) {
+            conn.handleException(e);
+            return null;
+          } catch (Exception e) {
+            log.error("Failed to generate shake response", e);
+            return null;
           }
+        };
 
-          if (metrics != null) {
-            conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
+          theURI.getQuery(), new HeadersAdaptor(request.headers()), conn, shake.version() != WebSocketVersion.V00,
+          connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
+        if (METRICS_ENABLED && metrics != null) {
+          ws.setMetric(metrics.connected(conn.metric(), ws));
+        }
+        ws.registerHandler(vertx.eventBus());
+        conn.handleWebsocketConnect(ws);
+        if (!ws.isRejected()) {
+          ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
+          ChannelHandler handler = pipeline.get(HttpChunkContentCompressor.class);
+          if (handler != null) {
+            // remove compressor as its not needed anymore once connection was upgraded to websockets
+            pipeline.remove(handler);
           }
-          conn.wsHandler(shake, wsHandler.handler);
-
-          Supplier<String> connectRunnable = () -> {
-            try {
-              shake.handshake(conn.channel(), request);
-              return shake.selectedSubprotocol();
-            } catch (WebSocketHandshakeException e) {
-              conn.handleException(e);
-              return null;
-            } catch (Exception e) {
-              log.error("Failed to generate shake response", e);
-              return null;
-            }
-          };
-
-          ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
-              theURI.getQuery(), new HeadersAdaptor(request.headers()), conn, shake.version() != WebSocketVersion.V00,
-              connectRunnable, options.getMaxWebsocketFrameSize(), options().getMaxWebsocketMessageSize());
-          if (METRICS_ENABLED && metrics != null) {
-            ws.setMetric(metrics.connected(conn.metric(), ws));
-          }
-          ws.registerHandler(vertx.eventBus());
-          conn.handleWebsocketConnect(ws);
-          if (!ws.isRejected()) {
-            ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
-            ChannelHandler handler = pipeline.get(HttpChunkContentCompressor.class);
-            if (handler != null) {
-              // remove compressor as its not needed anymore once connection was upgraded to websockets
-              pipeline.remove(handler);
-            }
-            ws.connectNow();
-          } else {
-            conn.channel().writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, ws.getRejectedStatus()));
-          }
-        });
+          ws.connectNow();
+        } else {
+          conn.channel().writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, ws.getRejectedStatus()));
+        }
       }
     }
   }

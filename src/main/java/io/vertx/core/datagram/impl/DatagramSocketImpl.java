@@ -75,7 +75,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
       channel.pipeline().addLast("logging", new LoggingHandler());
     }
     VertxMetrics metrics = vertx.metricsSPI();
-    this.metrics = metrics != null ? metrics.createMetrics(this, options) : null;
+    this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;
     this.channel = channel;
     this.context = context;
   }

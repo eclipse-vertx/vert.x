@@ -11,7 +11,6 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
@@ -34,10 +33,6 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   private final Map<String, AtomicInteger> decoded = new ConcurrentHashMap<>();
   private final List<String> replyFailureAddresses = Collections.synchronizedList(new ArrayList<>());
   private final List<ReplyFailure> replyFailures = Collections.synchronizedList(new ArrayList<>());
-
-  public FakeEventBusMetrics(EventBus eventBus) {
-    super(eventBus);
-  }
 
   public Map<String, AtomicInteger> getEncoded() {
     return encoded;

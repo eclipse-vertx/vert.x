@@ -38,6 +38,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.impl.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.HttpClient;
@@ -69,6 +70,7 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -176,17 +178,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     long maxWorkerExecuteTime = maxWorkerExecuteTimeUnit.toNanos(options.getMaxWorkerExecuteTime());
     ExecutorService workerExec = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
         new VertxThreadFactory("vert.x-worker-thread-", checker, true, maxWorkerExecuteTime));
-    PoolMetrics workerPoolMetrics = metrics != null ? metrics.createMetrics(workerExec, "worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
+    PoolMetrics workerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
         new VertxThreadFactory("vert.x-internal-blocking-", checker, true, maxWorkerExecuteTime));
-    PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createMetrics(internalBlockingExec, "worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
+    PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
     defaultWorkerPoolSize = options.getWorkerPoolSize();
-    defaultWorkerMaxExecTime = maxWorkerExecuteTime;
+    defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
-    this.fileResolver = new FileResolver(this, options.isFileResolverCachingEnabled());
+    this.fileResolver = new FileResolver(options.isFileResolverCachingEnabled());
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
@@ -222,11 +224,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     eventBus.start(ar -> {
       if (ar.succeeded()) {
-        if (metrics != null) {
-          // If the metric provider wants to use the event bus, it cannot use it in its constructor as the event bus
-          // may not be initialized yet. We invokes the eventBusInitialized so it can starts using the event bus.
-          metrics.eventBusInitialized(eventBus);
-        }
         if (resultHandler != null) resultHandler.handle(Future.succeededFuture(this));
       } else {
         log.error("Failed to start event bus", ar.cause());
@@ -439,7 +436,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (factory != null) {
-        VertxMetrics metrics = factory.metrics(this, options);
+        VertxMetrics metrics = factory.metrics(options);
         Objects.requireNonNull(metrics, "The metric instance created from " + factory + " cannot be null");
         return metrics;
       }
@@ -796,7 +793,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @SuppressWarnings("unchecked")
   private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
-    fileResolver.close(res -> {
+    executeBlockingInternal(fut -> {
+      try {
+        fileResolver.close();
+        fut.complete();
+      } catch (IOException e) {
+        fut.tryFail(e);
+      }
+    }, ar -> {
 
       workerPool.close();
       internalBlockingPool.close();
@@ -1048,7 +1052,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
     if (sharedWorkerPool == null) {
       ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(name + "-", checker, true, maxExecuteTime));
-      PoolMetrics workerMetrics = metrics != null ? metrics.createMetrics(workerExec, "worker", name, poolSize) : null;
+      PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
       namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {
       sharedWorkerPool.refCount++;
