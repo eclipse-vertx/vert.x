@@ -90,7 +90,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    onError(ctx, cause);
+    super.exceptionCaught(ctx, cause);
     ctx.close();
   }
 
@@ -125,21 +125,21 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   @Override
-  protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
+  protected void onConnectionError(ChannelHandlerContext ctx, boolean outbound, Throwable cause, Http2Exception http2Ex) {
     connection.getContext().executeFromIO(v -> {
       connection.onConnectionError(cause);
     });
     // Default behavior send go away
-    super.onConnectionError(ctx, cause, http2Ex);
+    super.onConnectionError(ctx, outbound, cause, http2Ex);
   }
 
   @Override
-  protected void onStreamError(ChannelHandlerContext ctx, Throwable cause, Http2Exception.StreamException http2Ex) {
+  protected void onStreamError(ChannelHandlerContext ctx, boolean outbound, Throwable cause, Http2Exception.StreamException http2Ex) {
     connection.getContext().executeFromIO(v -> {
       connection.onStreamError(http2Ex.streamId(), http2Ex);
     });
     // Default behavior reset stream
-    super.onStreamError(ctx, cause, http2Ex);
+    super.onStreamError(ctx, outbound, cause, http2Ex);
   }
 
   @Override
@@ -221,13 +221,13 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       try {
         encoder().flowController().writePendingBytes();
       } catch (Http2Exception e) {
-        onError(chctx, e);
+        onError(chctx, true, e);
       }
     }
     chctx.channel().flush();
   }
 
-  ChannelFuture writePing(ByteBuf data) {
+  ChannelFuture writePing(long data) {
     ChannelPromise promise = chctx.newPromise();
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
@@ -240,7 +240,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     return promise;
   }
 
-  private void _writePing(ByteBuf data, ChannelPromise promise) {
+  private void _writePing(long data, ChannelPromise promise) {
     encoder().writePing(chctx, false, data, promise);
     chctx.channel().flush();
   }
@@ -255,7 +255,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         chctx.channel().flush();
       }
     } catch (Http2Exception e) {
-      onError(chctx, e);
+      onError(chctx, true, e);
     }
   }
 
@@ -413,12 +413,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   @Override
-  public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+  public void onPingRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+  public void onPingAckRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
     throw new UnsupportedOperationException();
   }
 

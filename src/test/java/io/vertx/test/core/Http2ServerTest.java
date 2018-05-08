@@ -2830,8 +2830,8 @@ public class Http2ServerTest extends Http2TestBase {
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       request.decoder.frameListener(new Http2EventAdapter() {
         @Override
-        public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
-          Buffer buffer = Buffer.buffer(data.copy());
+        public void onPingRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
+          Buffer buffer = Buffer.buffer().appendLong(data);
           vertx.runOnContext(v -> {
             assertEquals(expected, buffer);
             complete();
@@ -2859,7 +2859,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
-      request.encoder.writePing(request.context, false, expected.getByteBuf(), request.context.newPromise());
+      request.encoder.writePing(request.context, false, expected.getLong(0), request.context.newPromise());
     });
     fut.sync();
     await();
