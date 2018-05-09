@@ -58,6 +58,9 @@ import io.vertx.core.json.JsonArray;
     if (json.getValue("maxWorkerExecuteTime") instanceof Number) {
       obj.setMaxWorkerExecuteTime(((Number)json.getValue("maxWorkerExecuteTime")).longValue());
     }
+    if (json.getValue("maxWorkerExecuteTimeUnit") instanceof String) {
+      obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)json.getValue("maxWorkerExecuteTimeUnit")));
+    }
     if (json.getValue("multiThreaded") instanceof Boolean) {
       obj.setMultiThreaded((Boolean)json.getValue("multiThreaded"));
     }
@@ -92,6 +95,9 @@ import io.vertx.core.json.JsonArray;
       json.put("isolationGroup", obj.getIsolationGroup());
     }
     json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
+    if (obj.getMaxWorkerExecuteTimeUnit() != null) {
+      json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
+    }
     json.put("multiThreaded", obj.isMultiThreaded());
     json.put("worker", obj.isWorker());
     if (obj.getWorkerPoolName() != null) {

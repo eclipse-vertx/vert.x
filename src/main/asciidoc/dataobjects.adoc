@@ -439,6 +439,7 @@ Set the isolation group that will be used when deploying the verticle(s)
 +++
 Sets the value of max worker execute time, in ns.
 +++
+|[[maxWorkerExecuteTimeUnit]]`maxWorkerExecuteTimeUnit`|`link:enums.html#TimeUnit[TimeUnit]`|-
 |[[multiThreaded]]`multiThreaded`|`Boolean`|
 +++
 Set whether the verticle(s) should be deployed as a multi-threaded worker verticle

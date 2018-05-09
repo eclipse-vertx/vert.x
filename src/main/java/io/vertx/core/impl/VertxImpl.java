@@ -186,7 +186,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
     defaultWorkerPoolSize = options.getWorkerPoolSize();
-    defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
+    defaultWorkerMaxExecTime = maxWorkerExecuteTime;
 
     this.fileResolver = new FileResolver(options.isFileResolverCachingEnabled());
     this.addressResolverOptions = options.getAddressResolverOptions();
@@ -387,10 +387,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
+  @Override
   public EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
     return new EventLoopContext(this, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deploymentID, config, tccl);
   }
 
+  @Override
   public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool workerPool, JsonObject config,
                                          ClassLoader tccl) {
     if (workerPool == null) {

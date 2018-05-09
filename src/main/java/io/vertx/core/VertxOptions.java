@@ -131,7 +131,7 @@ public class VertxOptions {
   /**
    * The default value for the time unit
    */
-  private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.NANOSECONDS;
+  public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.NANOSECONDS;
 
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;

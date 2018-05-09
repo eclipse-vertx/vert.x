@@ -17,6 +17,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Options for configuring a verticle deployment.
@@ -45,6 +46,7 @@ public class DeploymentOptions {
   private List<String> extraClasspath;
   private int instances;
   private List<String> isolatedClasses;
+  private TimeUnit maxWorkerExecuteTimeUnit;
 
   /**
    * Default constructor
@@ -59,6 +61,7 @@ public class DeploymentOptions {
     this.workerPoolName = null;
     this.workerPoolSize = VertxOptions.DEFAULT_WORKER_POOL_SIZE;
     this.maxWorkerExecuteTime = VertxOptions.DEFAULT_MAX_WORKER_EXECUTE_TIME;
+    this.maxWorkerExecuteTimeUnit = VertxOptions.DEFAULT_TIME_UNIT;
   }
 
   /**
@@ -78,6 +81,7 @@ public class DeploymentOptions {
     this.workerPoolName = other.workerPoolName;
     setWorkerPoolSize(other.workerPoolSize);
     setMaxWorkerExecuteTime(other.maxWorkerExecuteTime);
+    this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
   }
 
   /**
@@ -349,6 +353,21 @@ public class DeploymentOptions {
       throw new IllegalArgumentException("maxWorkerExecuteTime must be > 0");
     }
     this.maxWorkerExecuteTime = maxWorkerExecuteTime;
+    return this;
+  }
+  /**
+   * @return the time unit of {@code maxWorkerExecuteTime}
+   */
+  public TimeUnit getMaxWorkerExecuteTimeUnit() {
+    return maxWorkerExecuteTimeUnit;
+  }
+  /**
+   * Set the time unit of {@code maxWorkerExecuteTime}
+   * @param maxWorkerExecuteTimeUnit the time unit of {@code maxWorkerExecuteTime}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setMaxWorkerExecuteTimeUnit(TimeUnit maxWorkerExecuteTimeUnit) {
+    this.maxWorkerExecuteTimeUnit = maxWorkerExecuteTimeUnit;
     return this;
   }
 
