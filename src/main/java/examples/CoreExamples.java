@@ -27,6 +27,7 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tim on 08/01/15.
@@ -98,7 +99,7 @@ public class CoreExamples {
     int poolSize = 10;
 
     // 2 minutes
-    long maxExecuteTime = 120000000000L;
+    long maxExecuteTime = TimeUnit.SECONDS.toNanos(2);
 
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
   }

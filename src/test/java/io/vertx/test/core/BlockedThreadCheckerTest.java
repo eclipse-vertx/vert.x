@@ -55,14 +55,17 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
       }
     };
     // set warning threshold to 1s and the exception threshold as well
-    long maxEventLoopExecuteTime = NANOSECONDS.convert(1, SECONDS);
+    long maxEventLoopExecuteTime = 1;
+    TimeUnit maxEventLoopExecuteTimeUnit = SECONDS;
     VertxOptions vertxOptions = new VertxOptions();
     vertxOptions.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
+    vertxOptions.setMaxEventLoopExecuteTimeUnit(maxEventLoopExecuteTimeUnit);
     vertxOptions.setWarningExceptionTime(maxEventLoopExecuteTime);
+    vertxOptions.setWarningExceptionTimeUnit(maxEventLoopExecuteTimeUnit);
     Vertx newVertx = vertx(vertxOptions);
     newVertx.deployVerticle(verticle);
     await();
-    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", maxEventLoopExecuteTime);
+    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", maxEventLoopExecuteTimeUnit.toNanos(maxEventLoopExecuteTime));
   }
 
   @Test
@@ -75,16 +78,19 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
       }
     };
     // set warning threshold to 1s and the exception threshold as well
-    long maxWorkerExecuteTime = NANOSECONDS.convert(1, SECONDS);
+    long maxWorkerExecuteTime = 1;
+    TimeUnit maxWorkerExecuteTimeUnit = SECONDS;
     VertxOptions vertxOptions = new VertxOptions();
     vertxOptions.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
+    vertxOptions.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     vertxOptions.setWarningExceptionTime(maxWorkerExecuteTime);
+    vertxOptions.setWarningExceptionTimeUnit(maxWorkerExecuteTimeUnit);
     Vertx newVertx = vertx(vertxOptions);
     DeploymentOptions deploymentOptions = new DeploymentOptions();
     deploymentOptions.setWorker(true);
     newVertx.deployVerticle(verticle, deploymentOptions);
     await();
-    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTime);
+    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTimeUnit.toNanos(maxWorkerExecuteTime));
   }
 
   @Test
@@ -103,83 +109,8 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
       }
     };
     // set warning threshold to 1s and the exception threshold as well
-    long maxWorkerExecuteTime = NANOSECONDS.convert(1, SECONDS);
-    VertxOptions vertxOptions = new VertxOptions();
-    vertxOptions.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
-    vertxOptions.setWarningExceptionTime(maxWorkerExecuteTime);
-    Vertx newVertx = vertx(vertxOptions);
-    newVertx.deployVerticle(verticle);
-    await();
-    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTime);
-  }
-
-
-  @Test
-  public void testBlockCheckExceptionTimeLimitWithTimeUnit() throws Exception {
-    Verticle verticle = new AbstractVerticle() {
-      @Override
-      public void start() throws InterruptedException {
-        TimeUnit.SECONDS.sleep(2);
-        testComplete();
-      }
-    };
-    // set warning threshold to 1s and the exception threshold as well
-    long maxEventLoopExecuteTime = 1;
-    TimeUnit maxEventLoopExecuteTimeUnit = TimeUnit.SECONDS;
-    VertxOptions vertxOptions = new VertxOptions();
-    vertxOptions.setMaxEventLoopExecuteTimeUnit(maxEventLoopExecuteTimeUnit);
-    vertxOptions.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
-    vertxOptions.setWarningExceptionTimeUnit(maxEventLoopExecuteTimeUnit);
-    vertxOptions.setWarningExceptionTime(maxEventLoopExecuteTime);
-    Vertx newVertx = vertx(vertxOptions);
-    newVertx.deployVerticle(verticle);
-    await();
-    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", maxEventLoopExecuteTimeUnit.toNanos(maxEventLoopExecuteTime));
-  }
-
-  @Test
-  public void testBlockCheckWorkerWithTimeUnit() throws Exception {
-    Verticle verticle = new AbstractVerticle() {
-      @Override
-      public void start() throws InterruptedException {
-        TimeUnit.SECONDS.sleep(2);
-        testComplete();
-      }
-    };
-    // set warning threshold to 1s and the exception threshold as well
     long maxWorkerExecuteTime = 1;
-    TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.SECONDS;
-    VertxOptions vertxOptions = new VertxOptions();
-    vertxOptions.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
-    vertxOptions.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
-    vertxOptions.setWarningExceptionTime(maxWorkerExecuteTime);
-    vertxOptions.setWarningExceptionTimeUnit(maxWorkerExecuteTimeUnit);
-    Vertx newVertx = vertx(vertxOptions);
-    DeploymentOptions deploymentOptions = new DeploymentOptions();
-    deploymentOptions.setWorker(true);
-    newVertx.deployVerticle(verticle, deploymentOptions);
-    await();
-    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTimeUnit.toNanos(maxWorkerExecuteTime));
-  }
-
-  @Test
-  public void testBlockCheckExecuteBlockingWithTimeUnit() throws Exception {
-    Verticle verticle = new AbstractVerticle() {
-      @Override
-      public void start() {
-        vertx.executeBlocking(fut -> {
-          try {
-            TimeUnit.SECONDS.sleep(2);
-          } catch (InterruptedException e) {
-            fail();
-          }
-          testComplete();
-        }, ar -> {});
-      }
-    };
-    // set warning threshold to 1s and the exception threshold as well
-    long maxWorkerExecuteTime = 1;
-    TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.SECONDS;
+    TimeUnit maxWorkerExecuteTimeUnit = SECONDS;
     VertxOptions vertxOptions = new VertxOptions();
     vertxOptions.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     vertxOptions.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
