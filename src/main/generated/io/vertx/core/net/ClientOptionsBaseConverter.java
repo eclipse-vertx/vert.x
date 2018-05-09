@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2014 Red Hat, Inc. and others
- *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
 package io.vertx.core.net;
 
 import io.vertx.core.json.JsonObject;
@@ -21,31 +5,48 @@ import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.net.ClientOptionsBase}.
- *
- * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.ClientOptionsBase} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link "io.vertx.core.net.ClientOptionsBase} original class using Vert.x codegen.
  */
  class ClientOptionsBaseConverter {
 
-   static void fromJson(JsonObject json, ClientOptionsBase obj) {
-    if (json.getValue("connectTimeout") instanceof Number) {
-      obj.setConnectTimeout(((Number)json.getValue("connectTimeout")).intValue());
-    }
-    if (json.getValue("localAddress") instanceof String) {
-      obj.setLocalAddress((String)json.getValue("localAddress"));
-    }
-    if (json.getValue("metricsName") instanceof String) {
-      obj.setMetricsName((String)json.getValue("metricsName"));
-    }
-    if (json.getValue("proxyOptions") instanceof JsonObject) {
-      obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((JsonObject)json.getValue("proxyOptions")));
-    }
-    if (json.getValue("trustAll") instanceof Boolean) {
-      obj.setTrustAll((Boolean)json.getValue("trustAll"));
+   static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, ClientOptionsBase obj) {
+    for (java.util.Map.Entry<String, Object> member : json) {
+      switch (member.getKey()) {
+          case "connectTimeout":
+            if (member.getValue() instanceof Number) {
+              obj.setConnectTimeout(((Number)member.getValue()).intValue());
+            }
+            break;
+          case "localAddress":
+            if (member.getValue() instanceof String) {
+              obj.setLocalAddress((String)member.getValue());
+            }
+            break;
+          case "metricsName":
+            if (member.getValue() instanceof String) {
+              obj.setMetricsName((String)member.getValue());
+            }
+            break;
+          case "proxyOptions":
+            if (member.getValue() instanceof JsonObject) {
+              obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((JsonObject)member.getValue()));
+            }
+            break;
+          case "trustAll":
+            if (member.getValue() instanceof Boolean) {
+              obj.setTrustAll((Boolean)member.getValue());
+            }
+            break;
+      }
     }
   }
 
    static void toJson(ClientOptionsBase obj, JsonObject json) {
-    json.put("connectTimeout", obj.getConnectTimeout());
+    toJson(obj, json.getMap());
+  }
+
+   static void toJson(ClientOptionsBase obj, java.util.Map<String, Object> json) {
+      json.put("connectTimeout", obj.getConnectTimeout());
     if (obj.getLocalAddress() != null) {
       json.put("localAddress", obj.getLocalAddress());
     }
@@ -55,6 +56,6 @@ import io.vertx.core.json.JsonArray;
     if (obj.getProxyOptions() != null) {
       json.put("proxyOptions", obj.getProxyOptions().toJson());
     }
-    json.put("trustAll", obj.isTrustAll());
+      json.put("trustAll", obj.isTrustAll());
   }
 }

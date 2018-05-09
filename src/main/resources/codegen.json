@@ -1,8 +1,0 @@
-{
-  "name": "data_object_converters",
-  "generators": [{
-    "kind": "dataObject",
-    "filename": "(model.isClass() && model.getGenerateConverter()) ? (fqn + 'Converter.java') : null",
-    "templateFilename": "vertx-core/template/dataObjectConverter.templ"
-  }]
-}
