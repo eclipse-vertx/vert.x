@@ -216,9 +216,9 @@ public abstract class ConnectionBase {
       exceptionHandler.handle(t);
     } else {
       if (log.isDebugEnabled()) {
-        log.error(t.getMessage());
-      } else {
         log.error(t.getMessage(), t);
+      } else {
+        log.error(t.getMessage());
       }
     }
   }
