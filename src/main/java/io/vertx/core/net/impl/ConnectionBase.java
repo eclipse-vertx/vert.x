@@ -215,7 +215,11 @@ public abstract class ConnectionBase {
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     } else {
-      log.error("Unhandled exception", t);
+      if (log.isDebugEnabled()) {
+        log.error(t.getMessage());
+      } else {
+        log.error(t.getMessage(), t);
+      }
     }
   }
 
