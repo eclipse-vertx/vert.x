@@ -72,7 +72,6 @@ public class ClusteredEventBus extends EventBusImpl {
   private static final String SUBS_MAP_NAME = "__vertx.subs";
 
   private final ClusterManager clusterManager;
-  private final HAManager haManager;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final Context sendNoContext;
 
@@ -85,14 +84,11 @@ public class ClusteredEventBus extends EventBusImpl {
 
   public ClusteredEventBus(VertxInternal vertx,
                            VertxOptions options,
-                           ClusterManager clusterManager,
-                           HAManager haManager) {
+                           ClusterManager clusterManager) {
     super(vertx);
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
-    this.haManager = haManager;
     this.sendNoContext = vertx.getOrCreateContext();
-    setClusterViewChangedHandler(haManager);
   }
 
   private NetServerOptions getServerOptions() {
@@ -132,6 +128,9 @@ public class ClusteredEventBus extends EventBusImpl {
 
   @Override
   public void start(Handler<AsyncResult<Void>> resultHandler) {
+    // Get the HA manager, it has been constructed but it's not yet initialized
+    HAManager haManager = vertx.haManager();
+    setClusterViewChangedHandler(haManager);
     clusterManager.<String, ClusterNodeInfo>getAsyncMultiMap(SUBS_MAP_NAME, ar2 -> {
       if (ar2.succeeded()) {
         subs = ar2.result();

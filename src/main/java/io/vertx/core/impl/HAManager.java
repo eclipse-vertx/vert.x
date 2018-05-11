@@ -133,11 +133,16 @@ public class HAManager {
     this.quorumSize = enabled ? quorumSize : 0;
     this.group = enabled ? group : "__DISABLED__";
     this.enabled = enabled;
-    this.haInfo = new JsonObject();
-    haInfo.put("verticles", new JsonArray());
-    haInfo.put("group", this.group);
+    this.haInfo = new JsonObject().put("verticles", new JsonArray()).put("group", this.group);
     this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
+  }
+
+  /**
+   * Initialize the ha manager, i.e register the node listener to propagates the node events and
+   * start the quorum timer. The quorum will be checked as well.
+   */
+  void init() {
     synchronized (haInfo) {
       clusterMap.put(nodeID, haInfo.encode());
     }
@@ -146,7 +151,6 @@ public class HAManager {
       public void nodeAdded(String nodeID) {
         HAManager.this.nodeAdded(nodeID);
       }
-
       @Override
       public void nodeLeft(String leftNodeID) {
         HAManager.this.nodeLeft(leftNodeID);
