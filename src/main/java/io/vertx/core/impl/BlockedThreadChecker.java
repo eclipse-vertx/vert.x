@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -31,6 +32,9 @@ public class BlockedThreadChecker {
   private final Map<VertxThread, Object> threads = new WeakHashMap<>();
   private final Timer timer; // Need to use our own timer - can't use event loop for this
 
+  BlockedThreadChecker(long interval, TimeUnit intervalUnit, long warningExceptionTime, TimeUnit warningExceptionTimeUnit) {
+    this(intervalUnit.toNanos(interval), warningExceptionTimeUnit.toNanos(warningExceptionTime));
+  }
   BlockedThreadChecker(long interval, long warningExceptionTime) {
     timer = new Timer("vertx-blocked-thread-checker", true);
     timer.schedule(new TimerTask() {
@@ -42,8 +46,9 @@ public class BlockedThreadChecker {
             long execStart = thread.startTime();
             long dur = now - execStart;
             final long timeLimit = thread.getMaxExecTime();
-            if (execStart != 0 && dur > timeLimit) {
-              final String message = "Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms, time limit is " + (timeLimit / 1000000);
+            final TimeUnit timeUnit = thread.getMaxExecTimeUnit();
+            if (execStart != 0 && dur > timeUnit.toNanos(timeLimit)) {
+              final String message = "Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms, time limit is " + timeLimit + " in " + timeUnit;
               if (dur <= warningExceptionTime) {
                 log.warn(message);
               } else {

@@ -64,7 +64,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       testComplete();
     }));
     await();
-    blockedThreadWarning.expectMessage(poolName, maxWorkerExecuteTime);
+    blockedThreadWarning.expectMessage(poolName, maxWorkerExecuteTime, NANOSECONDS);
   }
 
   @Test
@@ -213,12 +213,15 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testMaxExecuteTime() throws Exception{
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     int poolSize = 5;
-    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName, poolSize, 60, TimeUnit.SECONDS);
+    long maxExecuteTime = 60;
+    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
+    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName, poolSize, maxExecuteTime, maxExecuteTimeUnit);
     worker.executeBlocking(f -> {
       Thread t = Thread.currentThread();
       assertTrue(t instanceof VertxThread);
       VertxThread thread = (VertxThread) t;
-      assertEquals(60000000000L, thread.getMaxExecTime());
+      assertEquals(maxExecuteTime, thread.getMaxExecTime());
+      assertEquals(maxExecuteTimeUnit, thread.getMaxExecTimeUnit());
       f.complete();
     }, res -> {
       testComplete();

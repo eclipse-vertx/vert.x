@@ -42,7 +42,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     };
     vertx.deployVerticle(verticle);
     await();
-    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", VertxOptions.DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME);
+    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", VertxOptions.DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME, VertxOptions.DEFAULT_TIME_UNIT);
   }
 
   @Test
@@ -65,7 +65,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     Vertx newVertx = vertx(vertxOptions);
     newVertx.deployVerticle(verticle);
     await();
-    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", maxEventLoopExecuteTimeUnit.toNanos(maxEventLoopExecuteTime));
+    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", maxEventLoopExecuteTime, maxEventLoopExecuteTimeUnit);
   }
 
   @Test
@@ -90,7 +90,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     deploymentOptions.setWorker(true);
     newVertx.deployVerticle(verticle, deploymentOptions);
     await();
-    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTimeUnit.toNanos(maxWorkerExecuteTime));
+    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTime, maxWorkerExecuteTimeUnit);
   }
 
   @Test
@@ -119,6 +119,6 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     Vertx newVertx = vertx(vertxOptions);
     newVertx.deployVerticle(verticle);
     await();
-    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTimeUnit.toNanos(maxWorkerExecuteTime));
+    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTime, maxWorkerExecuteTimeUnit);
   }
 }

@@ -546,23 +546,25 @@ public interface Vertx extends Measured {
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize);
 
   /**
+   * Like {@link #createSharedWorkerExecutor(String, int, long, TimeUnit)} but with the {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxExecuteTimeUnit}.
+   */
+  WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
+
+  /**
    * Create a named worker executor, the executor should be closed when it's not needed anymore to release
    * resources.<p/>
    *
    * This method can be called mutiple times with the same {@code name}. Executors with the same name will share
-   * the same worker pool. The worker pool size and max execute time are set when the worker pool is created and
+   * the same worker pool. The worker pool size , max execute time and unit of max execute time are set when the worker pool is created and
    * won't change after.<p>
    *
    * The worker pool is released when all the {@link WorkerExecutor} sharing the same name are closed.
    *
    * @param name the name of the worker executor
    * @param poolSize the size of the pool
-   * @param maxExecuteTime the value of max worker execute time, in ns
+   * @param maxExecuteTime the value of max worker execute time
+   * @param maxExecuteTime the value of unit of max worker execute time
    * @return the named worker executor
-   */
-  WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
-  /**
-   * Like {@link #createSharedWorkerExecutor(String, int, long)} but with the given time unit {@code maxExecuteTime}.
    */
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit);
 
