@@ -12,21 +12,21 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, NetClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "hostnameVerificationAlgorithm":
-            if (member.getValue() instanceof String) {
-              obj.setHostnameVerificationAlgorithm((String)member.getValue());
-            }
-            break;
-          case "reconnectAttempts":
-            if (member.getValue() instanceof Number) {
-              obj.setReconnectAttempts(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "reconnectInterval":
-            if (member.getValue() instanceof Number) {
-              obj.setReconnectInterval(((Number)member.getValue()).longValue());
-            }
-            break;
+        case "hostnameVerificationAlgorithm":
+          if (member.getValue() instanceof String) {
+            obj.setHostnameVerificationAlgorithm((String)member.getValue());
+          }
+          break;
+        case "reconnectAttempts":
+          if (member.getValue() instanceof Number) {
+            obj.setReconnectAttempts(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "reconnectInterval":
+          if (member.getValue() instanceof Number) {
+            obj.setReconnectInterval(((Number)member.getValue()).longValue());
+          }
+          break;
       }
     }
   }

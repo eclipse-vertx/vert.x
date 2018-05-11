@@ -12,86 +12,86 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpServerOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "acceptUnmaskedFrames":
-            if (member.getValue() instanceof Boolean) {
-              obj.setAcceptUnmaskedFrames((Boolean)member.getValue());
-            }
-            break;
-          case "alpnVersions":
-           if (member.getValue() instanceof JsonArray) {
-              java.util.ArrayList<io.vertx.core.http.HttpVersion> list =  new java.util.ArrayList<>();
-              ((Iterable<Object>)member.getValue()).forEach( item -> {
-                if (item instanceof String)
-                  list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
-              });
-              obj.setAlpnVersions(list);
-           }
-            break;
-          case "compressionLevel":
-            if (member.getValue() instanceof Number) {
-              obj.setCompressionLevel(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "compressionSupported":
-            if (member.getValue() instanceof Boolean) {
-              obj.setCompressionSupported((Boolean)member.getValue());
-            }
-            break;
-          case "decoderInitialBufferSize":
-            if (member.getValue() instanceof Number) {
-              obj.setDecoderInitialBufferSize(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "decompressionSupported":
-            if (member.getValue() instanceof Boolean) {
-              obj.setDecompressionSupported((Boolean)member.getValue());
-            }
-            break;
-          case "handle100ContinueAutomatically":
-            if (member.getValue() instanceof Boolean) {
-              obj.setHandle100ContinueAutomatically((Boolean)member.getValue());
-            }
-            break;
-          case "http2ConnectionWindowSize":
-            if (member.getValue() instanceof Number) {
-              obj.setHttp2ConnectionWindowSize(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "initialSettings":
-            if (member.getValue() instanceof JsonObject) {
-              obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)member.getValue()));
-            }
-            break;
-          case "maxChunkSize":
-            if (member.getValue() instanceof Number) {
-              obj.setMaxChunkSize(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "maxHeaderSize":
-            if (member.getValue() instanceof Number) {
-              obj.setMaxHeaderSize(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "maxInitialLineLength":
-            if (member.getValue() instanceof Number) {
-              obj.setMaxInitialLineLength(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "maxWebsocketFrameSize":
-            if (member.getValue() instanceof Number) {
-              obj.setMaxWebsocketFrameSize(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "maxWebsocketMessageSize":
-            if (member.getValue() instanceof Number) {
-              obj.setMaxWebsocketMessageSize(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "websocketSubProtocols":
-            if (member.getValue() instanceof String) {
-              obj.setWebsocketSubProtocols((String)member.getValue());
-            }
-            break;
+        case "acceptUnmaskedFrames":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAcceptUnmaskedFrames((Boolean)member.getValue());
+          }
+          break;
+        case "alpnVersions":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<io.vertx.core.http.HttpVersion> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
+            });
+            obj.setAlpnVersions(list);
+         }
+          break;
+        case "compressionLevel":
+          if (member.getValue() instanceof Number) {
+            obj.setCompressionLevel(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "compressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setCompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "decoderInitialBufferSize":
+          if (member.getValue() instanceof Number) {
+            obj.setDecoderInitialBufferSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "decompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setDecompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "handle100ContinueAutomatically":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHandle100ContinueAutomatically((Boolean)member.getValue());
+          }
+          break;
+        case "http2ConnectionWindowSize":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp2ConnectionWindowSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "initialSettings":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)member.getValue()));
+          }
+          break;
+        case "maxChunkSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxChunkSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxHeaderSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxHeaderSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxInitialLineLength":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxInitialLineLength(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxWebsocketFrameSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWebsocketFrameSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxWebsocketMessageSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWebsocketMessageSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "websocketSubProtocols":
+          if (member.getValue() instanceof String) {
+            obj.setWebsocketSubProtocols((String)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -106,7 +106,7 @@ import io.vertx.core.json.JsonArray;
       JsonArray array = new JsonArray();
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
-     }
+    }
       json.put("compressionLevel", obj.getCompressionLevel());
       json.put("compressionSupported", obj.isCompressionSupported());
       json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());

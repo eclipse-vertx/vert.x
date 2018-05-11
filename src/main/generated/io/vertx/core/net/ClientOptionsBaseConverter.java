@@ -12,31 +12,31 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, ClientOptionsBase obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "connectTimeout":
-            if (member.getValue() instanceof Number) {
-              obj.setConnectTimeout(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "localAddress":
-            if (member.getValue() instanceof String) {
-              obj.setLocalAddress((String)member.getValue());
-            }
-            break;
-          case "metricsName":
-            if (member.getValue() instanceof String) {
-              obj.setMetricsName((String)member.getValue());
-            }
-            break;
-          case "proxyOptions":
-            if (member.getValue() instanceof JsonObject) {
-              obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((JsonObject)member.getValue()));
-            }
-            break;
-          case "trustAll":
-            if (member.getValue() instanceof Boolean) {
-              obj.setTrustAll((Boolean)member.getValue());
-            }
-            break;
+        case "connectTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setConnectTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "localAddress":
+          if (member.getValue() instanceof String) {
+            obj.setLocalAddress((String)member.getValue());
+          }
+          break;
+        case "metricsName":
+          if (member.getValue() instanceof String) {
+            obj.setMetricsName((String)member.getValue());
+          }
+          break;
+        case "proxyOptions":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((JsonObject)member.getValue()));
+          }
+          break;
+        case "trustAll":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTrustAll((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }

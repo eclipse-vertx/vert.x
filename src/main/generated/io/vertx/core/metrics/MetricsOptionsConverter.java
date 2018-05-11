@@ -12,11 +12,11 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, MetricsOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "enabled":
-            if (member.getValue() instanceof Boolean) {
-              obj.setEnabled((Boolean)member.getValue());
-            }
-            break;
+        case "enabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setEnabled((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }

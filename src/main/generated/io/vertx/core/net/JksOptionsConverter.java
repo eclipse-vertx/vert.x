@@ -12,21 +12,21 @@ public class JksOptionsConverter {
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, JksOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "password":
-            if (member.getValue() instanceof String) {
-              obj.setPassword((String)member.getValue());
-            }
-            break;
-          case "path":
-            if (member.getValue() instanceof String) {
-              obj.setPath((String)member.getValue());
-            }
-            break;
-          case "value":
-            if (member.getValue() instanceof String) {
-              obj.setValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
-            }
-            break;
+        case "password":
+          if (member.getValue() instanceof String) {
+            obj.setPassword((String)member.getValue());
+          }
+          break;
+        case "path":
+          if (member.getValue() instanceof String) {
+            obj.setPath((String)member.getValue());
+          }
+          break;
+        case "value":
+          if (member.getValue() instanceof String) {
+            obj.setValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+          }
+          break;
       }
     }
   }
