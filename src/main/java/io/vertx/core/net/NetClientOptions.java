@@ -16,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Options for configuring a {@link io.vertx.core.net.NetClient}.
@@ -347,6 +348,11 @@ public class NetClientOptions extends ClientOptionsBase {
   @Override
   public NetClientOptions setLocalAddress(String localAddress) {
     return (NetClientOptions) super.setLocalAddress(localAddress);
+  }
+
+  @Override
+  public NetClientOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
+    return (NetClientOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }
 
   @Override

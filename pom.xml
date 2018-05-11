@@ -315,22 +315,6 @@
               </optionMap>
             </configuration>
           </execution>
-          <execution>
-            <id>generate-test-sources</id>
-            <goals>
-              <goal>process-test</goal>
-            </goals>
-            <phase>generate-test-sources</phase>
-            <configuration>
-              <processors>
-                <processor>io.vertx.codegen.CodeGenProcessor</processor>
-              </processors>
-              <optionMap>
-                <codegen.output>${project.basedir}/src/test</codegen.output>
-                <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
-              </optionMap>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
 
@@ -361,7 +345,6 @@
             <configuration>
               <sources>
                 <source>${project.basedir}/src/test/benchmarks</source>
-                <source>${project.basedir}/src/test/generated</source>
               </sources>
             </configuration>
           </execution>

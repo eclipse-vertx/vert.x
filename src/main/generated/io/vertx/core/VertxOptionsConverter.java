@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2014 Red Hat, Inc. and others
- *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
 package io.vertx.core;
 
 import io.vertx.core.json.JsonObject;
@@ -21,132 +5,165 @@ import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.VertxOptions}.
- *
- * NOTE: This class has been automatically generated from the {@link io.vertx.core.VertxOptions} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link "io.vertx.core.VertxOptions} original class using Vert.x codegen.
  */
  class VertxOptionsConverter {
 
-   static void fromJson(JsonObject json, VertxOptions obj) {
-    if (json.getValue("addressResolverOptions") instanceof JsonObject) {
-      obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((JsonObject)json.getValue("addressResolverOptions")));
-    }
-    if (json.getValue("blockedThreadCheckInterval") instanceof Number) {
-      obj.setBlockedThreadCheckInterval(((Number)json.getValue("blockedThreadCheckInterval")).longValue());
-    }
-    if (json.getValue("clusterHost") instanceof String) {
-      obj.setClusterHost((String)json.getValue("clusterHost"));
-    }
-    if (json.getValue("clusterPingInterval") instanceof Number) {
-      obj.setClusterPingInterval(((Number)json.getValue("clusterPingInterval")).longValue());
-    }
-    if (json.getValue("clusterPingReplyInterval") instanceof Number) {
-      obj.setClusterPingReplyInterval(((Number)json.getValue("clusterPingReplyInterval")).longValue());
-    }
-    if (json.getValue("clusterPort") instanceof Number) {
-      obj.setClusterPort(((Number)json.getValue("clusterPort")).intValue());
-    }
-    if (json.getValue("clusterPublicHost") instanceof String) {
-      obj.setClusterPublicHost((String)json.getValue("clusterPublicHost"));
-    }
-    if (json.getValue("clusterPublicPort") instanceof Number) {
-      obj.setClusterPublicPort(((Number)json.getValue("clusterPublicPort")).intValue());
-    }
-    if (json.getValue("clustered") instanceof Boolean) {
-      obj.setClustered((Boolean)json.getValue("clustered"));
-    }
-    if (json.getValue("eventBusOptions") instanceof JsonObject) {
-      obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((JsonObject)json.getValue("eventBusOptions")));
-    }
-    if (json.getValue("eventLoopPoolSize") instanceof Number) {
-      obj.setEventLoopPoolSize(((Number)json.getValue("eventLoopPoolSize")).intValue());
-    }
-    if (json.getValue("fileResolverCachingEnabled") instanceof Boolean) {
-      obj.setFileResolverCachingEnabled((Boolean)json.getValue("fileResolverCachingEnabled"));
-    }
-    if (json.getValue("haEnabled") instanceof Boolean) {
-      obj.setHAEnabled((Boolean)json.getValue("haEnabled"));
-    }
-    if (json.getValue("haGroup") instanceof String) {
-      obj.setHAGroup((String)json.getValue("haGroup"));
-    }
-    if (json.getValue("internalBlockingPoolSize") instanceof Number) {
-      obj.setInternalBlockingPoolSize(((Number)json.getValue("internalBlockingPoolSize")).intValue());
-    }
-    if (json.getValue("maxEventLoopExecuteTime") instanceof Number) {
-      obj.setMaxEventLoopExecuteTime(((Number)json.getValue("maxEventLoopExecuteTime")).longValue());
-    }
-    if (json.getValue("maxEventLoopExecuteTimeUnit") instanceof String) {
-      obj.setMaxEventLoopExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)json.getValue("maxEventLoopExecuteTimeUnit")));
-    }
-    if (json.getValue("maxWorkerExecuteTime") instanceof Number) {
-      obj.setMaxWorkerExecuteTime(((Number)json.getValue("maxWorkerExecuteTime")).longValue());
-    }
-    if (json.getValue("maxWorkerExecuteTimeUnit") instanceof String) {
-      obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)json.getValue("maxWorkerExecuteTimeUnit")));
-    }
-    if (json.getValue("metricsOptions") instanceof JsonObject) {
-      obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)json.getValue("metricsOptions")));
-    }
-    if (json.getValue("preferNativeTransport") instanceof Boolean) {
-      obj.setPreferNativeTransport((Boolean)json.getValue("preferNativeTransport"));
-    }
-    if (json.getValue("quorumSize") instanceof Number) {
-      obj.setQuorumSize(((Number)json.getValue("quorumSize")).intValue());
-    }
-    if (json.getValue("warningExceptionTime") instanceof Number) {
-      obj.setWarningExceptionTime(((Number)json.getValue("warningExceptionTime")).longValue());
-    }
-    if (json.getValue("warningExceptionTimeUnit") instanceof String) {
-      obj.setWarningExceptionTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)json.getValue("warningExceptionTimeUnit")));
-    }
-    if (json.getValue("workerPoolSize") instanceof Number) {
-      obj.setWorkerPoolSize(((Number)json.getValue("workerPoolSize")).intValue());
+   static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, VertxOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : json) {
+      switch (member.getKey()) {
+          case "addressResolverOptions":
+            if (member.getValue() instanceof JsonObject) {
+              obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((JsonObject)member.getValue()));
+            }
+            break;
+          case "blockedThreadCheckInterval":
+            if (member.getValue() instanceof Number) {
+              obj.setBlockedThreadCheckInterval(((Number)member.getValue()).longValue());
+            }
+            break;
+          case "clusterHost":
+            if (member.getValue() instanceof String) {
+              obj.setClusterHost((String)member.getValue());
+            }
+            break;
+          case "clusterPingInterval":
+            if (member.getValue() instanceof Number) {
+              obj.setClusterPingInterval(((Number)member.getValue()).longValue());
+            }
+            break;
+          case "clusterPingReplyInterval":
+            if (member.getValue() instanceof Number) {
+              obj.setClusterPingReplyInterval(((Number)member.getValue()).longValue());
+            }
+            break;
+          case "clusterPort":
+            if (member.getValue() instanceof Number) {
+              obj.setClusterPort(((Number)member.getValue()).intValue());
+            }
+            break;
+          case "clusterPublicHost":
+            if (member.getValue() instanceof String) {
+              obj.setClusterPublicHost((String)member.getValue());
+            }
+            break;
+          case "clusterPublicPort":
+            if (member.getValue() instanceof Number) {
+              obj.setClusterPublicPort(((Number)member.getValue()).intValue());
+            }
+            break;
+          case "clustered":
+            if (member.getValue() instanceof Boolean) {
+              obj.setClustered((Boolean)member.getValue());
+            }
+            break;
+          case "eventBusOptions":
+            if (member.getValue() instanceof JsonObject) {
+              obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((JsonObject)member.getValue()));
+            }
+            break;
+          case "eventLoopPoolSize":
+            if (member.getValue() instanceof Number) {
+              obj.setEventLoopPoolSize(((Number)member.getValue()).intValue());
+            }
+            break;
+          case "fileResolverCachingEnabled":
+            if (member.getValue() instanceof Boolean) {
+              obj.setFileResolverCachingEnabled((Boolean)member.getValue());
+            }
+            break;
+          case "haEnabled":
+            if (member.getValue() instanceof Boolean) {
+              obj.setHAEnabled((Boolean)member.getValue());
+            }
+            break;
+          case "haGroup":
+            if (member.getValue() instanceof String) {
+              obj.setHAGroup((String)member.getValue());
+            }
+            break;
+          case "internalBlockingPoolSize":
+            if (member.getValue() instanceof Number) {
+              obj.setInternalBlockingPoolSize(((Number)member.getValue()).intValue());
+            }
+            break;
+          case "maxEventLoopExecuteTime":
+            if (member.getValue() instanceof Number) {
+              obj.setMaxEventLoopExecuteTime(((Number)member.getValue()).longValue());
+            }
+            break;
+          case "maxWorkerExecuteTime":
+            if (member.getValue() instanceof Number) {
+              obj.setMaxWorkerExecuteTime(((Number)member.getValue()).longValue());
+            }
+            break;
+          case "metricsOptions":
+            if (member.getValue() instanceof JsonObject) {
+              obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)member.getValue()));
+            }
+            break;
+          case "preferNativeTransport":
+            if (member.getValue() instanceof Boolean) {
+              obj.setPreferNativeTransport((Boolean)member.getValue());
+            }
+            break;
+          case "quorumSize":
+            if (member.getValue() instanceof Number) {
+              obj.setQuorumSize(((Number)member.getValue()).intValue());
+            }
+            break;
+          case "warningExceptionTime":
+            if (member.getValue() instanceof Number) {
+              obj.setWarningExceptionTime(((Number)member.getValue()).longValue());
+            }
+            break;
+          case "workerPoolSize":
+            if (member.getValue() instanceof Number) {
+              obj.setWorkerPoolSize(((Number)member.getValue()).intValue());
+            }
+            break;
+      }
     }
   }
 
    static void toJson(VertxOptions obj, JsonObject json) {
+    toJson(obj, json.getMap());
+  }
+
+   static void toJson(VertxOptions obj, java.util.Map<String, Object> json) {
     if (obj.getAddressResolverOptions() != null) {
       json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
     }
-    json.put("blockedThreadCheckInterval", obj.getBlockedThreadCheckInterval());
+      json.put("blockedThreadCheckInterval", obj.getBlockedThreadCheckInterval());
     if (obj.getClusterHost() != null) {
       json.put("clusterHost", obj.getClusterHost());
     }
-    json.put("clusterPingInterval", obj.getClusterPingInterval());
-    json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());
-    json.put("clusterPort", obj.getClusterPort());
+      json.put("clusterPingInterval", obj.getClusterPingInterval());
+      json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());
+      json.put("clusterPort", obj.getClusterPort());
     if (obj.getClusterPublicHost() != null) {
       json.put("clusterPublicHost", obj.getClusterPublicHost());
     }
-    json.put("clusterPublicPort", obj.getClusterPublicPort());
-    json.put("clustered", obj.isClustered());
+      json.put("clusterPublicPort", obj.getClusterPublicPort());
+      json.put("clustered", obj.isClustered());
     if (obj.getEventBusOptions() != null) {
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }
-    json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
-    json.put("fileResolverCachingEnabled", obj.isFileResolverCachingEnabled());
-    json.put("haEnabled", obj.isHAEnabled());
+      json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
+      json.put("fileResolverCachingEnabled", obj.isFileResolverCachingEnabled());
+      json.put("haEnabled", obj.isHAEnabled());
     if (obj.getHAGroup() != null) {
       json.put("haGroup", obj.getHAGroup());
     }
-    json.put("internalBlockingPoolSize", obj.getInternalBlockingPoolSize());
-    json.put("maxEventLoopExecuteTime", obj.getMaxEventLoopExecuteTime());
-    if (obj.getMaxEventLoopExecuteTimeUnit() != null) {
-      json.put("maxEventLoopExecuteTimeUnit", obj.getMaxEventLoopExecuteTimeUnit().name());
-    }
-    json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
-    if (obj.getMaxWorkerExecuteTimeUnit() != null) {
-      json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
-    }
+      json.put("internalBlockingPoolSize", obj.getInternalBlockingPoolSize());
+      json.put("maxEventLoopExecuteTime", obj.getMaxEventLoopExecuteTime());
+      json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
     if (obj.getMetricsOptions() != null) {
       json.put("metricsOptions", obj.getMetricsOptions().toJson());
     }
-    json.put("preferNativeTransport", obj.getPreferNativeTransport());
-    json.put("quorumSize", obj.getQuorumSize());
-    json.put("warningExceptionTime", obj.getWarningExceptionTime());
-    if (obj.getWarningExceptionTimeUnit() != null) {
-      json.put("warningExceptionTimeUnit", obj.getWarningExceptionTimeUnit().name());
-    }
-    json.put("workerPoolSize", obj.getWorkerPoolSize());
+      json.put("preferNativeTransport", obj.getPreferNativeTransport());
+      json.put("quorumSize", obj.getQuorumSize());
+      json.put("warningExceptionTime", obj.getWarningExceptionTime());
+      json.put("workerPoolSize", obj.getWorkerPoolSize());
   }
 }

@@ -19,6 +19,8 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
+import java.util.Set;
+
 /**
  * Options to configure the event bus.
  *
@@ -416,6 +418,61 @@ public class EventBusOptions extends TCPSSLOptions {
   public EventBusOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;
+  }
+
+  @Override
+  public EventBusOptions setUseAlpn(boolean useAlpn) {
+    return (EventBusOptions) super.setUseAlpn(useAlpn);
+  }
+
+  @Override
+  public EventBusOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    return (EventBusOptions) super.setSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public EventBusOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
+    return (EventBusOptions) super.setJdkSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public EventBusOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
+    return (EventBusOptions) super.setOpenSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public EventBusOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
+    return (EventBusOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
+  }
+
+  @Override
+  public EventBusOptions addEnabledSecureTransportProtocol(String protocol) {
+    return (EventBusOptions) super.addEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
+  public EventBusOptions removeEnabledSecureTransportProtocol(String protocol) {
+    return (EventBusOptions) super.removeEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
+  public EventBusOptions setTcpFastOpen(boolean tcpFastOpen) {
+    return (EventBusOptions) super.setTcpFastOpen(tcpFastOpen);
+  }
+
+  @Override
+  public EventBusOptions setTcpCork(boolean tcpCork) {
+    return (EventBusOptions) super.setTcpCork(tcpCork);
+  }
+
+  @Override
+  public EventBusOptions setTcpQuickAck(boolean tcpQuickAck) {
+    return (EventBusOptions) super.setTcpQuickAck(tcpQuickAck);
+  }
+
+  @Override
+  public EventBusOptions setLogActivity(boolean logEnabled) {
+    return (EventBusOptions) super.setLogActivity(logEnabled);
   }
 
   /**

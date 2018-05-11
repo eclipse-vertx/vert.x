@@ -20,6 +20,7 @@ import io.vertx.core.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -454,6 +455,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   @Override
   public HttpClientOptions setTrustAll(boolean trustAll) {
     super.setTrustAll(trustAll);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
+    super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
     return this;
   }
 
