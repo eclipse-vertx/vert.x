@@ -18,10 +18,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -398,6 +395,11 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return (HttpServerOptions) super.setSslEngineOptions(sslEngineOptions);
+  }
+
+  @Override
+  public HttpServerOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
+    return (HttpServerOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }
 
   /**

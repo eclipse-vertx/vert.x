@@ -16,6 +16,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Set;
+
 /**
  * Options for configuring a {@link io.vertx.core.net.NetServer}.
  *
@@ -273,6 +275,11 @@ public class NetServerOptions extends TCPSSLOptions {
   @Override
   public NetServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     return (NetServerOptions) super.addCrlValue(crlValue);
+  }
+
+  @Override
+  public NetServerOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
+    return (NetServerOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }
 
   /**
