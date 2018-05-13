@@ -109,6 +109,28 @@ public class DNSTest extends VertxTestBase {
   }
 
   @Test
+  public void testResolveANoRecursion() throws Exception {
+    final String ip = "10.0.0.1";
+    
+    FakeDNSServer server = FakeDNSServer.testResolveA(ip);
+    DnsClient dns = prepareDns(server, new DnsClientOptions().setRecursionDesired(false));
+
+    dns.resolveA("vertx.io", onSuccess(result -> {
+      assertFalse(result.isEmpty());
+      assertEquals(1, result.size());
+      assertEquals(ip, result.get(0));
+      DnsMessage msg = server.pollMessage();
+      assertFalse(msg.isRecursionDesired());      
+      ((DnsClientImpl) dns).inProgressQueries(num -> {
+        assertEquals(0, (int)num);
+        testComplete();
+      });
+    }));
+    await();
+    dnsServer.stop();
+  }
+
+  @Test
   public void testResolveAAAA() throws Exception {
     DnsClient dns = prepareDns(FakeDNSServer.testResolveAAAA("::1"));
 
@@ -116,6 +138,23 @@ public class DNSTest extends VertxTestBase {
       assertFalse(result.isEmpty());
       assertEquals(1, result.size());
       assertEquals("0:0:0:0:0:0:0:1", result.get(0));
+      testComplete();
+    }));
+    await();
+    dnsServer.stop();
+  }
+
+  @Test
+  public void testResolveAAAANoRecursion() throws Exception {
+    FakeDNSServer server = FakeDNSServer.testResolveAAAA("::1");
+    DnsClient dns = prepareDns(server, new DnsClientOptions().setRecursionDesired(false));
+
+    dns.resolveAAAA("vertx.io", onSuccess(result -> {
+      assertFalse(result.isEmpty());
+      assertEquals(1, result.size());
+      assertEquals("0:0:0:0:0:0:0:1", result.get(0));
+      DnsMessage msg = server.pollMessage();
+      assertFalse(msg.isRecursionDesired());      
       testComplete();
     }));
     await();
@@ -180,6 +219,26 @@ public class DNSTest extends VertxTestBase {
       String record = result.get(0);
       assertFalse(record.isEmpty());
       assertEquals(cname, record);
+      testComplete();
+    }));
+    await();
+    dnsServer.stop();
+  }
+
+  @Test
+  public void testResolveCNAMENoRecursion() throws Exception {
+    final String cname = "cname.vertx.io";
+    
+    FakeDNSServer server = FakeDNSServer.testResolveCNAME(cname);
+    DnsClient dns = prepareDns(server, new DnsClientOptions().setRecursionDesired(false));
+    dns.resolveCNAME("vertx.io", onSuccess(result -> {
+      assertFalse(result.isEmpty());
+      assertEquals(1, result.size());
+      String record = result.get(0);
+      assertFalse(record.isEmpty());
+      assertEquals(cname, record);
+      DnsMessage msg = server.pollMessage();
+      assertFalse(msg.isRecursionDesired());      
       testComplete();
     }));
     await();
@@ -355,9 +414,14 @@ public class DNSTest extends VertxTestBase {
   }
 
   private DnsClient prepareDns(FakeDNSServer server, long queryTimeout) throws Exception {
+    return prepareDns(server, new DnsClientOptions().setQueryTimeout(queryTimeout));
+  }
+
+  private DnsClient prepareDns(FakeDNSServer server, DnsClientOptions dnsClientOptions) throws Exception {
     dnsServer = server;
     dnsServer.start();
     InetSocketAddress addr = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
-    return vertx.createDnsClient(new DnsClientOptions().setPort(addr.getPort()).setHost(addr.getAddress().getHostAddress()).setQueryTimeout(queryTimeout));
+    return vertx.createDnsClient(dnsClientOptions.setPort(addr.getPort()).setHost(addr.getAddress().getHostAddress()));
   }
+
 }
