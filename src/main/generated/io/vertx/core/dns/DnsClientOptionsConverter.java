@@ -27,6 +27,11 @@ public class DnsClientOptionsConverter {
             obj.setQueryTimeout(((Number)member.getValue()).longValue());
           }
           break;
+        case "recursionDesired":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRecursionDesired((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -39,7 +44,8 @@ public class DnsClientOptionsConverter {
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
-      json.put("port", obj.getPort());
-      json.put("queryTimeout", obj.getQueryTimeout());
+    json.put("port", obj.getPort());
+    json.put("queryTimeout", obj.getQueryTimeout());
+    json.put("recursionDesired", obj.isRecursionDesired());
   }
 }
