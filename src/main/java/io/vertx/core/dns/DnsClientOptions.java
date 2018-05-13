@@ -38,9 +38,15 @@ public class DnsClientOptions {
    */
   public static final long DEFAULT_QUERY_TIMEOUT = 5000;
 
+  /**
+   * The default value for the recursion desired (RD) flag = {@code true}
+   */
+  public static final boolean DEFAULT_RECURSION_DESIRED = true;
+
   private int port = DEFAULT_PORT;
   private String host = DEFAULT_HOST;
   private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
+  private boolean recursionDesired = DEFAULT_RECURSION_DESIRED;
 
   public DnsClientOptions() {
   }
@@ -111,6 +117,26 @@ public class DnsClientOptions {
       throw new IllegalArgumentException("queryTimeout must be > 0");
     }
     this.queryTimeout = queryTimeout;
+    return this;
+  }
+
+  /**
+   * Return whether or not recursion is desired
+   *
+   * @return  the flag
+   */
+  public boolean isRecursionDesired() {
+    return recursionDesired;
+  }
+
+  /**
+   * Set whether or not recursion is desired
+   *
+   * @param recursionDesired the new value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DnsClientOptions setRecursionDesired(boolean recursionDesired) {
+    this.recursionDesired = recursionDesired;
     return this;
   }
 

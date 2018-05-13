@@ -67,8 +67,9 @@ public final class DnsClientImpl implements DnsClient {
   private final ContextInternal actualCtx;
   private final DatagramChannel channel;
   private final long timeoutMillis;
-
-  public DnsClientImpl(VertxInternal vertx, int port, String host, long timeoutMillis) {
+  private final boolean recursionDesired;
+  
+  public DnsClientImpl(VertxInternal vertx, int port, String host, long timeoutMillis, boolean recursionDesired) {
     if (timeoutMillis < 0) {
       throw new IllegalArgumentException("DNS client timeout " + timeoutMillis + " must be > 0");
     }
@@ -81,7 +82,8 @@ public final class DnsClientImpl implements DnsClient {
     this.dnsServer = new InetSocketAddress(host, port);
     this.vertx = vertx;
     this.timeoutMillis = timeoutMillis;
-
+    this.recursionDesired = recursionDesired;
+    
     Transport transport = vertx.transport();
     actualCtx = vertx.getOrCreateContext();
     channel = transport.datagramChannel(InternetProtocolFamily.IPv4);
@@ -255,7 +257,7 @@ public final class DnsClientImpl implements DnsClient {
     long timerID;
 
     public Query(String name, DnsRecordType[] types, Handler<AsyncResult<List<T>>> handler) {
-      this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt()).setRecursionDesired(true);
+      this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt()).setRecursionDesired(recursionDesired);
       for (DnsRecordType type: types) {
         msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
       }
