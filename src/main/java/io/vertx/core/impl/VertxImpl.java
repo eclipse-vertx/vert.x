@@ -401,7 +401,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public DnsClient createDnsClient(int port, String host) {
-    return new DnsClientImpl(this, port, host, DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
+    return new DnsClientImpl(this, port, host, DnsClientOptions.DEFAULT_QUERY_TIMEOUT, DnsClientOptions.DEFAULT_RECURSION_DESIRED);
   }
 
   @Override
@@ -419,7 +419,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       host = address.getAddress().getHostAddress();
       port = address.getPort();
     }
-    return new DnsClientImpl(this, port, host, options.getQueryTimeout());
+    return new DnsClientImpl(this, port, host, options.getQueryTimeout(), options.isRecursionDesired());
   }
 
   private VertxMetrics initialiseMetrics(VertxOptions options) {
