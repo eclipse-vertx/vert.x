@@ -12,21 +12,21 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, GoAway obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "debugData":
-            if (member.getValue() instanceof String) {
-              obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
-            }
-            break;
-          case "errorCode":
-            if (member.getValue() instanceof Number) {
-              obj.setErrorCode(((Number)member.getValue()).longValue());
-            }
-            break;
-          case "lastStreamId":
-            if (member.getValue() instanceof Number) {
-              obj.setLastStreamId(((Number)member.getValue()).intValue());
-            }
-            break;
+        case "debugData":
+          if (member.getValue() instanceof String) {
+            obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+          }
+          break;
+        case "errorCode":
+          if (member.getValue() instanceof Number) {
+            obj.setErrorCode(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "lastStreamId":
+          if (member.getValue() instanceof Number) {
+            obj.setLastStreamId(((Number)member.getValue()).intValue());
+          }
+          break;
       }
     }
   }

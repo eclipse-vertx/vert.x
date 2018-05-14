@@ -98,14 +98,14 @@ import io.vertx.core.json.JsonArray;
       JsonArray array = new JsonArray();
       obj.getExtraClasspath().forEach(item -> array.add(item));
       json.put("extraClasspath", array);
-     }
+    }
       json.put("ha", obj.isHa());
       json.put("instances", obj.getInstances());
     if (obj.getIsolatedClasses() != null) {
       JsonArray array = new JsonArray();
       obj.getIsolatedClasses().forEach(item -> array.add(item));
       json.put("isolatedClasses", array);
-     }
+    }
     if (obj.getIsolationGroup() != null) {
       json.put("isolationGroup", obj.getIsolationGroup());
     }

@@ -12,36 +12,36 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, Http2Settings obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "headerTableSize":
-            if (member.getValue() instanceof Number) {
-              obj.setHeaderTableSize(((Number)member.getValue()).longValue());
-            }
-            break;
-          case "initialWindowSize":
-            if (member.getValue() instanceof Number) {
-              obj.setInitialWindowSize(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "maxConcurrentStreams":
-            if (member.getValue() instanceof Number) {
-              obj.setMaxConcurrentStreams(((Number)member.getValue()).longValue());
-            }
-            break;
-          case "maxFrameSize":
-            if (member.getValue() instanceof Number) {
-              obj.setMaxFrameSize(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "maxHeaderListSize":
-            if (member.getValue() instanceof Number) {
-              obj.setMaxHeaderListSize(((Number)member.getValue()).longValue());
-            }
-            break;
-          case "pushEnabled":
-            if (member.getValue() instanceof Boolean) {
-              obj.setPushEnabled((Boolean)member.getValue());
-            }
-            break;
+        case "headerTableSize":
+          if (member.getValue() instanceof Number) {
+            obj.setHeaderTableSize(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "initialWindowSize":
+          if (member.getValue() instanceof Number) {
+            obj.setInitialWindowSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxConcurrentStreams":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxConcurrentStreams(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "maxFrameSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxFrameSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxHeaderListSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxHeaderListSize(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "pushEnabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPushEnabled((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }

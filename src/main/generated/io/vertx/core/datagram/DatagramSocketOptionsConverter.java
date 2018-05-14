@@ -12,31 +12,31 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DatagramSocketOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "broadcast":
-            if (member.getValue() instanceof Boolean) {
-              obj.setBroadcast((Boolean)member.getValue());
-            }
-            break;
-          case "ipV6":
-            if (member.getValue() instanceof Boolean) {
-              obj.setIpV6((Boolean)member.getValue());
-            }
-            break;
-          case "loopbackModeDisabled":
-            if (member.getValue() instanceof Boolean) {
-              obj.setLoopbackModeDisabled((Boolean)member.getValue());
-            }
-            break;
-          case "multicastNetworkInterface":
-            if (member.getValue() instanceof String) {
-              obj.setMulticastNetworkInterface((String)member.getValue());
-            }
-            break;
-          case "multicastTimeToLive":
-            if (member.getValue() instanceof Number) {
-              obj.setMulticastTimeToLive(((Number)member.getValue()).intValue());
-            }
-            break;
+        case "broadcast":
+          if (member.getValue() instanceof Boolean) {
+            obj.setBroadcast((Boolean)member.getValue());
+          }
+          break;
+        case "ipV6":
+          if (member.getValue() instanceof Boolean) {
+            obj.setIpV6((Boolean)member.getValue());
+          }
+          break;
+        case "loopbackModeDisabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setLoopbackModeDisabled((Boolean)member.getValue());
+          }
+          break;
+        case "multicastNetworkInterface":
+          if (member.getValue() instanceof String) {
+            obj.setMulticastNetworkInterface((String)member.getValue());
+          }
+          break;
+        case "multicastTimeToLive":
+          if (member.getValue() instanceof Number) {
+            obj.setMulticastTimeToLive(((Number)member.getValue()).intValue());
+          }
+          break;
       }
     }
   }

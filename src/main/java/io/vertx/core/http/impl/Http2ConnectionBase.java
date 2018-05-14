@@ -226,20 +226,20 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized void onPingRead(ChannelHandlerContext ctx, ByteBuf data) {
+  public void onPingRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
     Handler<Buffer> handler = pingHandler;
     if (handler != null) {
-      Buffer buff = Buffer.buffer(safeBuffer(data, ctx.alloc()));
+      Buffer buff = Buffer.buffer().appendLong(data);
       context.executeFromIO(v -> handler.handle(buff));
     }
   }
 
   @Override
-  public synchronized void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) {
+  public void onPingAckRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
     Handler<AsyncResult<Buffer>> handler = pongHandlers.poll();
     if (handler != null) {
       context.executeFromIO(v -> {
-        Buffer buff = Buffer.buffer(safeBuffer(data, ctx.alloc()));
+        Buffer buff = Buffer.buffer().appendLong(data);
         handler.handle(Future.succeededFuture(buff));
       });
     }
@@ -438,7 +438,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (data.length() != 8) {
       throw new IllegalArgumentException("Ping data must be exactly 8 bytes");
     }
-    handler.writePing(data.getByteBuf()).addListener(fut -> {
+    handler.writePing(data.getLong(0)).addListener(fut -> {
       if (fut.isSuccess()) {
         pongHandlers.add(pongHandler);
       } else {

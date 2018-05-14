@@ -12,31 +12,31 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, ProxyOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "host":
-            if (member.getValue() instanceof String) {
-              obj.setHost((String)member.getValue());
-            }
-            break;
-          case "password":
-            if (member.getValue() instanceof String) {
-              obj.setPassword((String)member.getValue());
-            }
-            break;
-          case "port":
-            if (member.getValue() instanceof Number) {
-              obj.setPort(((Number)member.getValue()).intValue());
-            }
-            break;
-          case "type":
-            if (member.getValue() instanceof String) {
-              obj.setType(io.vertx.core.net.ProxyType.valueOf((String)member.getValue()));
-            }
-            break;
-          case "username":
-            if (member.getValue() instanceof String) {
-              obj.setUsername((String)member.getValue());
-            }
-            break;
+        case "host":
+          if (member.getValue() instanceof String) {
+            obj.setHost((String)member.getValue());
+          }
+          break;
+        case "password":
+          if (member.getValue() instanceof String) {
+            obj.setPassword((String)member.getValue());
+          }
+          break;
+        case "port":
+          if (member.getValue() instanceof Number) {
+            obj.setPort(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "type":
+          if (member.getValue() instanceof String) {
+            obj.setType(io.vertx.core.net.ProxyType.valueOf((String)member.getValue()));
+          }
+          break;
+        case "username":
+          if (member.getValue() instanceof String) {
+            obj.setUsername((String)member.getValue());
+          }
+          break;
       }
     }
   }

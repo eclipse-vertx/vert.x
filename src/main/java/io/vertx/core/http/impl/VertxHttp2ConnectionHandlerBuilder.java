@@ -134,11 +134,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
         throw new UnsupportedOperationException();
       }
       @Override
-      public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+      public void onPingRead(ChannelHandlerContext channelHandlerContext, long l) throws Http2Exception {
         throw new UnsupportedOperationException();
       }
       @Override
-      public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+      public void onPingAckRead(ChannelHandlerContext channelHandlerContext, long l) throws Http2Exception {
         throw new UnsupportedOperationException();
       }
       @Override

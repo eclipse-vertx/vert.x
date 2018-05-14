@@ -12,26 +12,26 @@ import io.vertx.core.json.JsonArray;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, CopyOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-          case "atomicMove":
-            if (member.getValue() instanceof Boolean) {
-              obj.setAtomicMove((Boolean)member.getValue());
-            }
-            break;
-          case "copyAttributes":
-            if (member.getValue() instanceof Boolean) {
-              obj.setCopyAttributes((Boolean)member.getValue());
-            }
-            break;
-          case "nofollowLinks":
-            if (member.getValue() instanceof Boolean) {
-              obj.setNofollowLinks((Boolean)member.getValue());
-            }
-            break;
-          case "replaceExisting":
-            if (member.getValue() instanceof Boolean) {
-              obj.setReplaceExisting((Boolean)member.getValue());
-            }
-            break;
+        case "atomicMove":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAtomicMove((Boolean)member.getValue());
+          }
+          break;
+        case "copyAttributes":
+          if (member.getValue() instanceof Boolean) {
+            obj.setCopyAttributes((Boolean)member.getValue());
+          }
+          break;
+        case "nofollowLinks":
+          if (member.getValue() instanceof Boolean) {
+            obj.setNofollowLinks((Boolean)member.getValue());
+          }
+          break;
+        case "replaceExisting":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReplaceExisting((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
