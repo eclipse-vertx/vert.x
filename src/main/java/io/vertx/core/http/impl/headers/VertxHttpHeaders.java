@@ -34,14 +34,6 @@ import static io.netty.util.AsciiString.*;
  */
 public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
-  private MultiMap set0(Iterable<Map.Entry<String, String>> map) {
-    clear();
-    for (Map.Entry<String, String> entry: map) {
-      add(entry.getKey(), entry.getValue());
-    }
-    return this;
-  }
-
   @Override
   public MultiMap setAll(MultiMap headers) {
     return set0(headers);
@@ -123,17 +115,6 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     return this;
   }
 
-  private void add0(int h, int i, final CharSequence name, final CharSequence value) {
-    // Update the hash table.
-    VertxHttpHeaders.MapEntry e = entries[i];
-    VertxHttpHeaders.MapEntry newEntry;
-    entries[i] = newEntry = new VertxHttpHeaders.MapEntry(h, name, value);
-    newEntry.next = e;
-
-    // Update the linked list.
-    newEntry.addBefore(head);
-  }
-
   @Override
   public VertxHttpHeaders remove(final String name) {
     Objects.requireNonNull(name, "name");
@@ -143,53 +124,9 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     return this;
   }
 
-  private void remove0(int h, int i, CharSequence name) {
-    VertxHttpHeaders.MapEntry e = entries[i];
-    if (e == null) {
-      return;
-    }
-
-    for (;;) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
-        e.remove();
-        VertxHttpHeaders.MapEntry next = e.next;
-        if (next != null) {
-          entries[i] = next;
-          e = next;
-        } else {
-          entries[i] = null;
-          return;
-        }
-      } else {
-        break;
-      }
-    }
-
-    for (;;) {
-      VertxHttpHeaders.MapEntry next = e.next;
-      if (next == null) {
-        break;
-      }
-      if (next.hash == h && AsciiString.contentEqualsIgnoreCase(name, next.key)) {
-        e.next = next.next;
-        next.remove();
-      } else {
-        e = next;
-      }
-    }
-  }
-
   @Override
   public VertxHttpHeaders set(final String name, final String strVal) {
     return set0(name, strVal);
-  }
-
-  private VertxHttpHeaders set0(final CharSequence name, final CharSequence strVal) {
-    int h = AsciiString.hashCode(name);
-    int i = index(h);
-    remove0(h, i, name);
-    add0(h, i, name, strVal);
-    return this;
   }
 
   @Override
@@ -256,19 +193,6 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   @Override
   public String get(final String name) {
     return get((CharSequence) name);
-  }
-
-  private CharSequence get0(CharSequence name) {
-    int h = AsciiString.hashCode(name);
-    int i = index(h);
-    VertxHttpHeaders.MapEntry e = entries[i];
-    while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
-        return e.getValue();
-      }
-      e = e.next;
-    }
-    return null;
   }
 
   @Override
@@ -531,5 +455,81 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     public String toString() {
       return getKey() + ": " + getValue();
     }
+  }
+
+  private void remove0(int h, int i, CharSequence name) {
+    VertxHttpHeaders.MapEntry e = entries[i];
+    if (e == null) {
+      return;
+    }
+
+    for (;;) {
+      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+        e.remove();
+        VertxHttpHeaders.MapEntry next = e.next;
+        if (next != null) {
+          entries[i] = next;
+          e = next;
+        } else {
+          entries[i] = null;
+          return;
+        }
+      } else {
+        break;
+      }
+    }
+
+    for (;;) {
+      VertxHttpHeaders.MapEntry next = e.next;
+      if (next == null) {
+        break;
+      }
+      if (next.hash == h && AsciiString.contentEqualsIgnoreCase(name, next.key)) {
+        e.next = next.next;
+        next.remove();
+      } else {
+        e = next;
+      }
+    }
+  }
+
+  private void add0(int h, int i, final CharSequence name, final CharSequence value) {
+    // Update the hash table.
+    VertxHttpHeaders.MapEntry e = entries[i];
+    VertxHttpHeaders.MapEntry newEntry;
+    entries[i] = newEntry = new VertxHttpHeaders.MapEntry(h, name, value);
+    newEntry.next = e;
+
+    // Update the linked list.
+    newEntry.addBefore(head);
+  }
+
+  private VertxHttpHeaders set0(final CharSequence name, final CharSequence strVal) {
+    int h = AsciiString.hashCode(name);
+    int i = index(h);
+    remove0(h, i, name);
+    add0(h, i, name, strVal);
+    return this;
+  }
+
+  private CharSequence get0(CharSequence name) {
+    int h = AsciiString.hashCode(name);
+    int i = index(h);
+    VertxHttpHeaders.MapEntry e = entries[i];
+    while (e != null) {
+      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+        return e.getValue();
+      }
+      e = e.next;
+    }
+    return null;
+  }
+
+  private MultiMap set0(Iterable<Map.Entry<String, String>> map) {
+    clear();
+    for (Map.Entry<String, String> entry: map) {
+      add(entry.getKey(), entry.getValue());
+    }
+    return this;
   }
 }
