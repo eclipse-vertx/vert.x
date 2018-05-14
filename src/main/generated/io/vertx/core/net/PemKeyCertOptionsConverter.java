@@ -70,7 +70,7 @@ import io.vertx.core.json.JsonArray;
                 list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
             });
             obj.setKeyValues(list);
-         }
+          }
           break;
       }
     }
