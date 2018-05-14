@@ -87,15 +87,12 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public VertxHttpHeaders add(final String name, final String strVal) {
-    int h = AsciiString.hashCode(name);
-    int i = index(h);
-    add0(h, i, name, strVal);
-    return this;
+  public VertxHttpHeaders add(String name, String strVal) {
+    return add((CharSequence) name, strVal);
   }
 
   @Override
-  public VertxHttpHeaders add(String name, Iterable values) {
+  public VertxHttpHeaders add(CharSequence name, Iterable values) {
     int h = AsciiString.hashCode(name);
     int i = index(h);
     for (Object vstr: values) {
@@ -105,32 +102,29 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public VertxHttpHeaders add(CharSequence name, Iterable values) {
-    String n = name.toString();
-    for (Object seq: values) {
-      add(n, seq.toString());
-    }
-    return this;
+  public VertxHttpHeaders add(String name, Iterable values) {
+    return add((CharSequence) name, values);
   }
 
   @Override
   public MultiMap addAll(MultiMap headers) {
-    for (Map.Entry<String, String> entry: headers.entries()) {
-      add(entry.getKey(), entry.getValue());
-    }
-    return this;
+    return addAll(headers.entries());
   }
 
   @Override
   public MultiMap addAll(Map<String, String> map) {
-    for (Map.Entry<String, String> entry: map.entrySet()) {
+    return addAll(map.entrySet());
+  }
+
+  private MultiMap addAll(Iterable<Map.Entry<String, String>> headers) {
+    for (Map.Entry<String, String> entry: headers) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
   }
 
   @Override
-  public VertxHttpHeaders remove(final String name) {
+  public VertxHttpHeaders remove(CharSequence name) {
     Objects.requireNonNull(name, "name");
     int h = AsciiString.hashCode(name);
     int i = index(h);
@@ -139,27 +133,32 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public VertxHttpHeaders remove(CharSequence name) {
-    return remove(name.toString());
+  public VertxHttpHeaders remove(final String name) {
+    return remove((CharSequence) name);
   }
 
   @Override
-  public VertxHttpHeaders set(final String name, final String strVal) {
-    return set0(name, strVal);
+  public VertxHttpHeaders set(CharSequence name, CharSequence value) {
+    return set0(name, value);
   }
 
   @Override
-  public HttpHeaders set(String name, Object value) {
-    return set0(name, (CharSequence) value);
+  public VertxHttpHeaders set(String name, String value) {
+    return set((CharSequence)name, value);
   }
 
   @Override
-  public MultiMap set(CharSequence name, CharSequence value) {
-    return set(name.toString(), value.toString());
+  public VertxHttpHeaders set(String name, Object value) {
+    return set((CharSequence)name, (CharSequence) value);
   }
 
   @Override
-  public VertxHttpHeaders set(final String name, final Iterable values) {
+  public VertxHttpHeaders set(CharSequence name, Object value) {
+    return set(name, (CharSequence)value);
+  }
+
+  @Override
+  public VertxHttpHeaders set(CharSequence name, Iterable values) {
     Objects.requireNonNull(values, "values");
 
     int h = AsciiString.hashCode(name);
@@ -177,30 +176,8 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public VertxHttpHeaders set(CharSequence name, Iterable values) {
-    remove(name);
-    String n = name.toString();
-    for (Object seq: values) {
-      add(n, seq.toString());
-    }
-    return this;
-  }
-
-  @Override
-  public boolean contains(String name, String value, boolean ignoreCase) {
-    int h = AsciiString.hashCode(name);
-    int i = index(h);
-    VertxHttpHeaders.MapEntry e = entries[i];
-    HashingStrategy<CharSequence> strategy = ignoreCase ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER;
-    while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
-        if (strategy.equals(value, e.getValue())) {
-          return true;
-        }
-      }
-      e = e.next;
-    }
-    return false;
+  public VertxHttpHeaders set(String name, Iterable values) {
+    return set((CharSequence) name, values);
   }
 
   @Override
@@ -221,8 +198,8 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public boolean contains(String name) {
-    return contains((CharSequence) name);
+  public boolean contains(String name, String value, boolean ignoreCase) {
+    return contains((CharSequence) name, value, ignoreCase);
   }
 
   @Override
@@ -231,10 +208,9 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public String get(String name) {
-    return get((CharSequence) name);
+  public boolean contains(String name) {
+    return contains((CharSequence) name);
   }
-
 
   @Override
   public String get(CharSequence name) {
@@ -244,8 +220,8 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public List<String> getAll(final String name) {
-    return getAll((CharSequence) name);
+  public String get(String name) {
+    return get((CharSequence) name);
   }
 
   @Override
@@ -264,6 +240,11 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
       e = e.next;
     }
     return values;
+  }
+
+  @Override
+  public List<String> getAll(String name) {
+    return getAll((CharSequence) name);
   }
 
   @Override
