@@ -58,7 +58,7 @@ import io.vertx.core.json.JsonArray;
               if (item instanceof String)
                 obj.addCrlPath((String)item);
             });
-         }
+          }
           break;
         case "crlValues":
           if (member.getValue() instanceof JsonArray) {
@@ -66,7 +66,7 @@ import io.vertx.core.json.JsonArray;
               if (item instanceof String)
                 obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
             });
-         }
+          }
           break;
         case "enabledCipherSuites":
           if (member.getValue() instanceof JsonArray) {
@@ -74,7 +74,7 @@ import io.vertx.core.json.JsonArray;
               if (item instanceof String)
                 obj.addEnabledCipherSuite((String)item);
             });
-         }
+          }
           break;
         case "enabledSecureTransportProtocols":
           if (member.getValue() instanceof JsonArray) {
@@ -84,7 +84,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setEnabledSecureTransportProtocols(list);
-         }
+          }
           break;
         case "host":
           if (member.getValue() instanceof String) {
@@ -240,18 +240,18 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(EventBusOptions obj, java.util.Map<String, Object> json) {
-      json.put("acceptBacklog", obj.getAcceptBacklog());
+    json.put("acceptBacklog", obj.getAcceptBacklog());
     if (obj.getClientAuth() != null) {
       json.put("clientAuth", obj.getClientAuth().name());
     }
-      json.put("clusterPingInterval", obj.getClusterPingInterval());
-      json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());
+    json.put("clusterPingInterval", obj.getClusterPingInterval());
+    json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());
     if (obj.getClusterPublicHost() != null) {
       json.put("clusterPublicHost", obj.getClusterPublicHost());
     }
-      json.put("clusterPublicPort", obj.getClusterPublicPort());
-      json.put("clustered", obj.isClustered());
-      json.put("connectTimeout", obj.getConnectTimeout());
+    json.put("clusterPublicPort", obj.getClusterPublicPort());
+    json.put("clustered", obj.isClustered());
+    json.put("connectTimeout", obj.getConnectTimeout());
     if (obj.getCrlPaths() != null) {
       JsonArray array = new JsonArray();
       obj.getCrlPaths().forEach(item -> array.add(item));
@@ -275,14 +275,14 @@ import io.vertx.core.json.JsonArray;
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
-      json.put("idleTimeout", obj.getIdleTimeout());
+    json.put("idleTimeout", obj.getIdleTimeout());
     if (obj.getJdkSslEngineOptions() != null) {
       json.put("jdkSslEngineOptions", obj.getJdkSslEngineOptions().toJson());
     }
     if (obj.getKeyStoreOptions() != null) {
       json.put("keyStoreOptions", obj.getKeyStoreOptions().toJson());
     }
-      json.put("logActivity", obj.getLogActivity());
+    json.put("logActivity", obj.getLogActivity());
     if (obj.getOpenSslEngineOptions() != null) {
       json.put("openSslEngineOptions", obj.getOpenSslEngineOptions().toJson());
     }
@@ -298,26 +298,26 @@ import io.vertx.core.json.JsonArray;
     if (obj.getPfxTrustOptions() != null) {
       json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
     }
-      json.put("port", obj.getPort());
-      json.put("receiveBufferSize", obj.getReceiveBufferSize());
-      json.put("reconnectAttempts", obj.getReconnectAttempts());
-      json.put("reconnectInterval", obj.getReconnectInterval());
-      json.put("reuseAddress", obj.isReuseAddress());
-      json.put("reusePort", obj.isReusePort());
-      json.put("sendBufferSize", obj.getSendBufferSize());
-      json.put("soLinger", obj.getSoLinger());
-      json.put("ssl", obj.isSsl());
-      json.put("tcpCork", obj.isTcpCork());
-      json.put("tcpFastOpen", obj.isTcpFastOpen());
-      json.put("tcpKeepAlive", obj.isTcpKeepAlive());
-      json.put("tcpNoDelay", obj.isTcpNoDelay());
-      json.put("tcpQuickAck", obj.isTcpQuickAck());
-      json.put("trafficClass", obj.getTrafficClass());
-      json.put("trustAll", obj.isTrustAll());
+    json.put("port", obj.getPort());
+    json.put("receiveBufferSize", obj.getReceiveBufferSize());
+    json.put("reconnectAttempts", obj.getReconnectAttempts());
+    json.put("reconnectInterval", obj.getReconnectInterval());
+    json.put("reuseAddress", obj.isReuseAddress());
+    json.put("reusePort", obj.isReusePort());
+    json.put("sendBufferSize", obj.getSendBufferSize());
+    json.put("soLinger", obj.getSoLinger());
+    json.put("ssl", obj.isSsl());
+    json.put("tcpCork", obj.isTcpCork());
+    json.put("tcpFastOpen", obj.isTcpFastOpen());
+    json.put("tcpKeepAlive", obj.isTcpKeepAlive());
+    json.put("tcpNoDelay", obj.isTcpNoDelay());
+    json.put("tcpQuickAck", obj.isTcpQuickAck());
+    json.put("trafficClass", obj.getTrafficClass());
+    json.put("trustAll", obj.isTrustAll());
     if (obj.getTrustStoreOptions() != null) {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
-      json.put("useAlpn", obj.isUseAlpn());
-      json.put("usePooledBuffers", obj.isUsePooledBuffers());
+    json.put("useAlpn", obj.isUseAlpn());
+    json.put("usePooledBuffers", obj.isUsePooledBuffers());
   }
 }

@@ -39,7 +39,7 @@ import io.vertx.core.json.JsonArray;
     if (obj.getDebugData() != null) {
       json.put("debugData", java.util.Base64.getEncoder().encodeToString(obj.getDebugData().getBytes()));
     }
-      json.put("errorCode", obj.getErrorCode());
-      json.put("lastStreamId", obj.getLastStreamId());
+    json.put("errorCode", obj.getErrorCode());
+    json.put("lastStreamId", obj.getLastStreamId());
   }
 }

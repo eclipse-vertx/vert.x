@@ -25,7 +25,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setCertPaths(list);
-         }
+          }
           break;
         case "certValue":
           if (member.getValue() instanceof String) {
@@ -40,7 +40,7 @@ import io.vertx.core.json.JsonArray;
                 list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
             });
             obj.setCertValues(list);
-         }
+          }
           break;
         case "keyPath":
           if (member.getValue() instanceof String) {
@@ -55,7 +55,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setKeyPaths(list);
-         }
+          }
           break;
         case "keyValue":
           if (member.getValue() instanceof String) {
@@ -70,7 +70,7 @@ import io.vertx.core.json.JsonArray;
                 list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
             });
             obj.setKeyValues(list);
-         }
+          }
           break;
       }
     }

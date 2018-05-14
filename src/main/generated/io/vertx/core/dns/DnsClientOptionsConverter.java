@@ -39,7 +39,7 @@ public class DnsClientOptionsConverter {
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
-      json.put("port", obj.getPort());
-      json.put("queryTimeout", obj.getQueryTimeout());
+    json.put("port", obj.getPort());
+    json.put("queryTimeout", obj.getQueryTimeout());
   }
 }

@@ -51,11 +51,11 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(Http2Settings obj, java.util.Map<String, Object> json) {
-      json.put("headerTableSize", obj.getHeaderTableSize());
-      json.put("initialWindowSize", obj.getInitialWindowSize());
-      json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
-      json.put("maxFrameSize", obj.getMaxFrameSize());
-      json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
-      json.put("pushEnabled", obj.isPushEnabled());
+    json.put("headerTableSize", obj.getHeaderTableSize());
+    json.put("initialWindowSize", obj.getInitialWindowSize());
+    json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
+    json.put("maxFrameSize", obj.getMaxFrameSize());
+    json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
+    json.put("pushEnabled", obj.isPushEnabled());
   }
 }

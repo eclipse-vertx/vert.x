@@ -75,7 +75,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setSearchDomains(list);
-         }
+          }
           break;
         case "servers":
           if (member.getValue() instanceof JsonArray) {
@@ -85,7 +85,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setServers(list);
-         }
+          }
           break;
       }
     }
@@ -96,21 +96,21 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(AddressResolverOptions obj, java.util.Map<String, Object> json) {
-      json.put("cacheMaxTimeToLive", obj.getCacheMaxTimeToLive());
-      json.put("cacheMinTimeToLive", obj.getCacheMinTimeToLive());
-      json.put("cacheNegativeTimeToLive", obj.getCacheNegativeTimeToLive());
+    json.put("cacheMaxTimeToLive", obj.getCacheMaxTimeToLive());
+    json.put("cacheMinTimeToLive", obj.getCacheMinTimeToLive());
+    json.put("cacheNegativeTimeToLive", obj.getCacheNegativeTimeToLive());
     if (obj.getHostsPath() != null) {
       json.put("hostsPath", obj.getHostsPath());
     }
     if (obj.getHostsValue() != null) {
       json.put("hostsValue", java.util.Base64.getEncoder().encodeToString(obj.getHostsValue().getBytes()));
     }
-      json.put("maxQueries", obj.getMaxQueries());
-      json.put("ndots", obj.getNdots());
-      json.put("optResourceEnabled", obj.isOptResourceEnabled());
-      json.put("queryTimeout", obj.getQueryTimeout());
-      json.put("rdFlag", obj.getRdFlag());
-      json.put("rotateServers", obj.isRotateServers());
+    json.put("maxQueries", obj.getMaxQueries());
+    json.put("ndots", obj.getNdots());
+    json.put("optResourceEnabled", obj.isOptResourceEnabled());
+    json.put("queryTimeout", obj.getQueryTimeout());
+    json.put("rdFlag", obj.getRdFlag());
+    json.put("rotateServers", obj.isRotateServers());
     if (obj.getSearchDomains() != null) {
       JsonArray array = new JsonArray();
       obj.getSearchDomains().forEach(item -> array.add(item));

@@ -46,12 +46,12 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(DatagramSocketOptions obj, java.util.Map<String, Object> json) {
-      json.put("broadcast", obj.isBroadcast());
-      json.put("ipV6", obj.isIpV6());
-      json.put("loopbackModeDisabled", obj.isLoopbackModeDisabled());
+    json.put("broadcast", obj.isBroadcast());
+    json.put("ipV6", obj.isIpV6());
+    json.put("loopbackModeDisabled", obj.isLoopbackModeDisabled());
     if (obj.getMulticastNetworkInterface() != null) {
       json.put("multicastNetworkInterface", obj.getMulticastNetworkInterface());
     }
-      json.put("multicastTimeToLive", obj.getMulticastTimeToLive());
+    json.put("multicastTimeToLive", obj.getMulticastTimeToLive());
   }
 }

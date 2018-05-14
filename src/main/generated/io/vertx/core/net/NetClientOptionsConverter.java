@@ -39,7 +39,7 @@ import io.vertx.core.json.JsonArray;
     if (obj.getHostnameVerificationAlgorithm() != null) {
       json.put("hostnameVerificationAlgorithm", obj.getHostnameVerificationAlgorithm());
     }
-      json.put("reconnectAttempts", obj.getReconnectAttempts());
-      json.put("reconnectInterval", obj.getReconnectInterval());
+    json.put("reconnectAttempts", obj.getReconnectAttempts());
+    json.put("reconnectInterval", obj.getReconnectInterval());
   }
 }

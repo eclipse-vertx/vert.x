@@ -20,7 +20,7 @@ import io.vertx.core.json.JsonArray;
                 list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
             });
             obj.setAlpnVersions(list);
-         }
+          }
           break;
         case "decoderInitialBufferSize":
           if (member.getValue() instanceof Number) {
@@ -171,38 +171,38 @@ import io.vertx.core.json.JsonArray;
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
     }
-      json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
+    json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }
-      json.put("defaultPort", obj.getDefaultPort());
-      json.put("forceSni", obj.isForceSni());
-      json.put("http2ClearTextUpgrade", obj.isHttp2ClearTextUpgrade());
-      json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
-      json.put("http2KeepAliveTimeout", obj.getHttp2KeepAliveTimeout());
-      json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
-      json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
+    json.put("defaultPort", obj.getDefaultPort());
+    json.put("forceSni", obj.isForceSni());
+    json.put("http2ClearTextUpgrade", obj.isHttp2ClearTextUpgrade());
+    json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
+    json.put("http2KeepAliveTimeout", obj.getHttp2KeepAliveTimeout());
+    json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
+    json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
-      json.put("keepAlive", obj.isKeepAlive());
-      json.put("keepAliveTimeout", obj.getKeepAliveTimeout());
-      json.put("maxChunkSize", obj.getMaxChunkSize());
-      json.put("maxHeaderSize", obj.getMaxHeaderSize());
-      json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
-      json.put("maxPoolSize", obj.getMaxPoolSize());
-      json.put("maxRedirects", obj.getMaxRedirects());
-      json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
-      json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
-      json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
-      json.put("pipelining", obj.isPipelining());
-      json.put("pipeliningLimit", obj.getPipeliningLimit());
-      json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());
+    json.put("keepAlive", obj.isKeepAlive());
+    json.put("keepAliveTimeout", obj.getKeepAliveTimeout());
+    json.put("maxChunkSize", obj.getMaxChunkSize());
+    json.put("maxHeaderSize", obj.getMaxHeaderSize());
+    json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
+    json.put("maxPoolSize", obj.getMaxPoolSize());
+    json.put("maxRedirects", obj.getMaxRedirects());
+    json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
+    json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
+    json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
+    json.put("pipelining", obj.isPipelining());
+    json.put("pipeliningLimit", obj.getPipeliningLimit());
+    json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
-      json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
-      json.put("tryUseCompression", obj.isTryUseCompression());
-      json.put("verifyHost", obj.isVerifyHost());
+    json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
+    json.put("tryUseCompression", obj.isTryUseCompression());
+    json.put("verifyHost", obj.isVerifyHost());
   }
 }

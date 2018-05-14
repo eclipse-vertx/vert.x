@@ -51,11 +51,11 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(NetworkOptions obj, java.util.Map<String, Object> json) {
-      json.put("logActivity", obj.getLogActivity());
-      json.put("receiveBufferSize", obj.getReceiveBufferSize());
-      json.put("reuseAddress", obj.isReuseAddress());
-      json.put("reusePort", obj.isReusePort());
-      json.put("sendBufferSize", obj.getSendBufferSize());
-      json.put("trafficClass", obj.getTrafficClass());
+    json.put("logActivity", obj.getLogActivity());
+    json.put("receiveBufferSize", obj.getReceiveBufferSize());
+    json.put("reuseAddress", obj.isReuseAddress());
+    json.put("reusePort", obj.isReusePort());
+    json.put("sendBufferSize", obj.getSendBufferSize());
+    json.put("trafficClass", obj.getTrafficClass());
   }
 }

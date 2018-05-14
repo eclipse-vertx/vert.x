@@ -51,15 +51,15 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(NetServerOptions obj, java.util.Map<String, Object> json) {
-      json.put("acceptBacklog", obj.getAcceptBacklog());
+    json.put("acceptBacklog", obj.getAcceptBacklog());
     if (obj.getClientAuth() != null) {
       json.put("clientAuth", obj.getClientAuth().name());
     }
-      json.put("clientAuthRequired", obj.isClientAuthRequired());
+    json.put("clientAuthRequired", obj.isClientAuthRequired());
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
-      json.put("port", obj.getPort());
-      json.put("sni", obj.isSni());
+    json.put("port", obj.getPort());
+    json.put("sni", obj.isSni());
   }
 }
