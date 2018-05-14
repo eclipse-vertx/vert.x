@@ -78,11 +78,16 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public VertxHttpHeaders add(CharSequence name, Object value) {
+  public VertxHttpHeaders add(CharSequence name, CharSequence value) {
     int h = AsciiString.hashCode(name);
     int i = index(h);
-    add0(h, i, name, (CharSequence) value);
+    add0(h, i, name, value);
     return this;
+  }
+
+  @Override
+  public VertxHttpHeaders add(CharSequence name, Object value) {
+    return add(name, (CharSequence)value);
   }
 
   @Override
@@ -371,11 +376,6 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   @Override
   public boolean contains(CharSequence name) {
     return get0(name) != null;
-  }
-
-  @Override
-  public VertxHttpHeaders add(CharSequence name, CharSequence value) {
-    return add(name.toString(), value.toString());
   }
 
   @Override
