@@ -32,7 +32,7 @@ import static io.netty.util.AsciiString.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
+public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public MultiMap setAll(MultiMap headers) {
