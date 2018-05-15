@@ -221,11 +221,16 @@ public class SharedDataImpl implements SharedData {
 
     @Override
     public void replace(K k, V v, Handler<AsyncResult<V>> resultHandler) {
+      checkType(k);
+      checkType(v);
       delegate.replace(k, v, resultHandler);
     }
 
     @Override
     public void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
+      checkType(k);
+      checkType(oldValue);
+      checkType(newValue);
       delegate.replaceIfPresent(k, oldValue, newValue, resultHandler);
     }
 

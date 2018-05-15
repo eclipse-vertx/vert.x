@@ -23,14 +23,13 @@ import java.util.Set;
 
 
 /**
- *
  * An asynchronous map.
  * <p>
+ * {@link AsyncMap} does <em>not</em> allow {@code null} to be used as a key or value.
+ *
  * @implSpec Implementations of the interface must handle {@link io.vertx.core.shareddata.impl.ClusterSerializable}
- *           implementing objects.
- *
+ * implementing objects.
  * @author <a href="http://tfox.org">Tim Fox</a>
- *
  */
 @VertxGen
 public interface AsyncMap<K, V> {
