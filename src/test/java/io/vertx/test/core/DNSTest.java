@@ -11,6 +11,21 @@
 
 package io.vertx.test.core;
 
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.directory.server.dns.messages.DnsMessage;
+import org.junit.Test;
+
+import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.netty.util.internal.logging.JdkLoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
@@ -24,15 +39,6 @@ import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.test.fakedns.FakeDNSServer;
-import org.apache.directory.server.dns.messages.DnsMessage;
-import org.junit.Test;
-
-import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.function.Function;
-
-import static io.vertx.test.core.TestUtils.assertIllegalStateException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -350,14 +356,62 @@ public class DNSTest extends VertxTestBase {
     dnsServer.stop();
   }
 
-  private DnsClient prepareDns(FakeDNSServer server) throws Exception {
-    return prepareDns(server, 15000);
+  @Test
+  public void testLogActivity() throws Exception {
+    final String cname = "cname.vertx.io";
+    final String ip = "10.0.0.1";
+    
+    // lets use the JDK logging facility, create a parent logger and register our global handler to count log records
+    // this way we are sure that the property works as expected when set to true
+    AtomicInteger logCounter = new AtomicInteger(0);
+    InternalLoggerFactory.setDefaultFactory(JdkLoggerFactory.INSTANCE);
+    Logger nettyNamespaceLogger = Logger.getLogger("io.netty");
+    nettyNamespaceLogger.addHandler(new JdkLogRecordInterceptorHandler(onLogrecord -> {
+    	logCounter.incrementAndGet();
+    }));
+    nettyNamespaceLogger.setLevel(Level.ALL);
+    DnsClient dns = prepareDns(FakeDNSServer.testLookup4CNAME(cname, ip), new DnsClientOptions().setLogActivity(true));
+    dns.lookup4("vertx.io", onSuccess(result -> {
+      assertEquals(ip, result);
+      assertTrue(logCounter.get()>0);
+      testComplete();
+    }));
+    await();
+    dnsServer.stop();
   }
 
-  private DnsClient prepareDns(FakeDNSServer server, long queryTimeout) throws Exception {
+  @Test
+  public void testDoNotLogActivity() throws Exception {
+    final String cname = "cname.vertx.io";
+    final String ip = "10.0.0.1";
+    
+    // lets use the JDK logging facility, create a parent logger and register our global handler to count log records
+    // this way we are sure that the property works as expected when set to false
+    AtomicInteger logCounter = new AtomicInteger(0);
+    InternalLoggerFactory.setDefaultFactory(JdkLoggerFactory.INSTANCE);
+    Logger nettyNamespaceLogger = Logger.getLogger("io.netty");
+    nettyNamespaceLogger.addHandler(new JdkLogRecordInterceptorHandler(onLogrecord -> {
+    	logCounter.incrementAndGet();
+    }));
+    nettyNamespaceLogger.setLevel(Level.ALL);
+    DnsClient dns = prepareDns(FakeDNSServer.testLookup4CNAME(cname, ip), new DnsClientOptions().setLogActivity(false));
+    dns.lookup4("vertx.io", onSuccess(result -> {
+      assertEquals(ip, result);
+      assertTrue(logCounter.get()==0);
+      testComplete();
+    }));
+    await();
+    dnsServer.stop();
+  }
+
+  private DnsClient prepareDns(FakeDNSServer server) throws Exception {
+    return prepareDns(server, new DnsClientOptions().setQueryTimeout(15000));
+  }
+
+  private DnsClient prepareDns(FakeDNSServer server, DnsClientOptions options) throws Exception {
     dnsServer = server;
     dnsServer.start();
     InetSocketAddress addr = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
-    return vertx.createDnsClient(new DnsClientOptions().setPort(addr.getPort()).setHost(addr.getAddress().getHostAddress()).setQueryTimeout(queryTimeout));
+    return vertx.createDnsClient(new DnsClientOptions(options).setPort(addr.getPort()).setHost(addr.getAddress().getHostAddress()));
   }
 }
