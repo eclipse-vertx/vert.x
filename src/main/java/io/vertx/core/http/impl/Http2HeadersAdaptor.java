@@ -101,6 +101,11 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
+  public boolean contains(String name, String value, boolean caseInsensitive) {
+    return headers.contains(toLowerCase(name), value, caseInsensitive);
+  }
+
+  @Override
   public boolean isEmpty() {
     return headers.isEmpty();
   }
@@ -226,6 +231,11 @@ public class Http2HeadersAdaptor implements MultiMap {
   @Override
   public boolean contains(CharSequence name) {
     return headers.contains(toLowerCase(name));
+  }
+
+  @Override
+  public boolean contains(CharSequence name, CharSequence value, boolean caseInsensitive) {
+    return headers.contains(toLowerCase(name), value, caseInsensitive);
   }
 
   @Override
