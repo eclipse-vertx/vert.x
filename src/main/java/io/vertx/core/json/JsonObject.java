@@ -76,6 +76,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Create a JsonObject from the fields of a Java object.
    * Faster than calling `new JsonObject(Json.encode(obj))`.
+   * <p/
+   * Returns {@ode null} when {@code obj} is {@code null}.
    *
    * @param obj
    *          The object to convert to a JsonObject.
@@ -84,7 +86,11 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   @SuppressWarnings("unchecked")
   public static JsonObject mapFrom(Object obj) {
-    return new JsonObject((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
+    if (obj == null) {
+      return null;
+    } else {
+      return new JsonObject((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
+    }
   }
 
   /**
