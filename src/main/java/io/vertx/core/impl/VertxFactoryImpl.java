@@ -27,7 +27,7 @@ public class VertxFactoryImpl implements VertxFactory {
 
   @Override
   public Vertx vertx() {
-    return new VertxImpl();
+    return vertx(new VertxOptions());
   }
 
   @Override
@@ -35,14 +35,14 @@ public class VertxFactoryImpl implements VertxFactory {
     if (options.isClustered()) {
       throw new IllegalArgumentException("Please use Vertx.clusteredVertx() to create a clustered Vert.x instance");
     }
-    return new VertxImpl(options);
+    return VertxImpl.vertx(options);
   }
 
   @Override
   public void clusteredVertx(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
     // We don't require the user to set clustered to true if they use this method
     options.setClustered(true);
-    new VertxImpl(options, resultHandler);
+    VertxImpl.clusteredVertx(options, resultHandler);
   }
 
   @Override

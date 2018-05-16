@@ -412,7 +412,7 @@ public class TestUtils {
     return tmp;
   }
   
-  public static TestLoggerFactory testLogging(Runnable runnable) throws Exception {
+  public static TestLoggerFactory testLogging(Runnable runnable) {
     InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
     TestLoggerFactory factory = new TestLoggerFactory();
     InternalLoggerFactory.setDefaultFactory(factory);

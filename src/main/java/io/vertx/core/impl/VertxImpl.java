@@ -107,6 +107,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
 
+  static VertxImpl vertx(VertxOptions options) {
+    VertxImpl vertx = new VertxImpl(options);
+    vertx.init();
+    return vertx;
+  }
+
+  static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    VertxImpl vertx = new VertxImpl(options);
+    vertx.initClustered(options, resultHandler);
+  }
+
   private final FileSystem fileSystem = getFileSystem();
   private final SharedData sharedData;
   private final VertxMetrics metrics;
@@ -123,11 +134,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final EventLoopGroup eventLoopGroup;
   private final EventLoopGroup acceptorEventLoopGroup;
   private final BlockedThreadChecker checker;
-  private final boolean haEnabled;
   private final AddressResolver addressResolver;
   private final AddressResolverOptions addressResolverOptions;
-  private EventBus eventBus;
-  private HAManager haManager;
+  private final EventBus eventBus;
+  private volatile HAManager haManager;
   private boolean closed;
   private volatile Handler<Throwable> exceptionHandler;
   private final Map<String, SharedWorkerPool> namedWorkerPools;
@@ -136,15 +146,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final CloseHooks closeHooks;
   private final Transport transport;
 
-  VertxImpl() {
-    this(new VertxOptions());
-  }
-
-  VertxImpl(VertxOptions options) {
-    this(options, null);
-  }
-
-  VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+  private VertxImpl(VertxOptions options) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -186,42 +188,42 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
-    this.haEnabled = options.isClustered() && options.isHAEnabled();
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);
-      this.clusterManager.setVertx(this);
-      this.clusterManager.join(ar -> {
-        if (ar.failed()) {
-          log.error("Failed to join cluster", ar.cause());
-          resultHandler.handle(Future.failedFuture(ar.cause()));
-        } else {
-          // Provide a memory barrier as we are setting from a different thread
-          synchronized (VertxImpl.this) {
-            haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(),
-                                      options.getHAGroup(), haEnabled);
-            createAndStartEventBus(options, resultHandler);
-          }
-        }
-      });
+      this.eventBus = new ClusteredEventBus(this, options, clusterManager);
     } else {
       this.clusterManager = null;
-      createAndStartEventBus(options, resultHandler);
+      this.eventBus = new EventBusImpl(this);
     }
     this.sharedData = new SharedDataImpl(this, clusterManager);
   }
 
-  private void createAndStartEventBus(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    if (options.isClustered()) {
-      eventBus = new ClusteredEventBus(this, options, clusterManager, haManager);
-    } else {
-      eventBus = new EventBusImpl(this);
-    }
-    eventBus.start(ar -> {
-      if (ar.succeeded()) {
-        if (resultHandler != null) resultHandler.handle(Future.succeededFuture(this));
+  private void init() {
+    eventBus.start(ar -> {});
+  }
+
+  private void initClustered(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    clusterManager.setVertx(this);
+    clusterManager.join(ar1 -> {
+      if (ar1.failed()) {
+        log.error("Failed to join cluster", ar1.cause());
+        resultHandler.handle(Future.failedFuture(ar1.cause()));
       } else {
-        log.error("Failed to start event bus", ar.cause());
-        if (resultHandler != null) resultHandler.handle(Future.failedFuture(ar.cause()));
+        haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
+        eventBus.start(ar2 -> {
+          AsyncResult<Vertx> res;
+          if (ar2.succeeded()) {
+            // Init the manager (i.e register listener and check the quorum)
+            // after the event bus has been fully started and updated its state
+            // it will have also set the clustered changed view handler on the ha manager
+            haManager.init();
+            res = Future.succeededFuture(this);
+          } else {
+            log.error("Failed to start event bus", ar2.cause());
+            res = Future.failedFuture(ar2.cause());
+          }
+          resultHandler.handle(res);
+        });
       }
     });
   }
@@ -298,13 +300,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public EventBus eventBus() {
-    if (eventBus == null) {
-      // If reading from different thread possibility that it's been set but not visible - so provide
-      // memory barrier
-      synchronized (this) {
-        return eventBus;
-      }
-    }
     return eventBus;
   }
 
@@ -443,31 +438,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private ClusterManager getClusterManager(VertxOptions options) {
-    if (options.isClustered()) {
-      if (options.getClusterManager() != null) {
-        return options.getClusterManager();
-      } else {
-        ClusterManager mgr;
-        String clusterManagerClassName = System.getProperty("vertx.cluster.managerClass");
-        if (clusterManagerClassName != null) {
-          // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
-          try {
-            Class<?> clazz = Class.forName(clusterManagerClassName);
-            mgr = (ClusterManager) clazz.newInstance();
-          } catch (Exception e) {
-            throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
-          }
-        } else {
-          mgr = ServiceHelper.loadFactoryOrNull(ClusterManager.class);
-          if (mgr == null) {
-            throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
-          }
+    ClusterManager mgr = options.getClusterManager();
+    if (mgr == null) {
+      String clusterManagerClassName = System.getProperty("vertx.cluster.managerClass");
+      if (clusterManagerClassName != null) {
+        // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
+        try {
+          Class<?> clazz = Class.forName(clusterManagerClassName);
+          mgr = (ClusterManager) clazz.newInstance();
+        } catch (Exception e) {
+          throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
         }
-        return mgr;
+      } else {
+        mgr = ServiceHelper.loadFactoryOrNull(ClusterManager.class);
+        if (mgr == null) {
+          throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
+        }
       }
-    } else {
-      return null;
     }
+    return mgr;
   }
 
   private long scheduleTimeout(ContextImpl context, Handler<Long> handler, long delay, boolean periodic) {
@@ -834,16 +823,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     });
   }
 
-  private HAManager haManager() {
-    // If reading from different thread possibility that it's been set but not visible - so provide
-    // memory barrier
-    if (haManager == null && haEnabled) {
-      synchronized (this) {
-        return haManager;
-      }
-    } else {
-      return haManager;
-    }
+  public HAManager haManager() {
+    return haManager;
   }
 
   private class InternalTimerHandler implements Handler<Void>, Closeable {

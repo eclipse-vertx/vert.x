@@ -102,6 +102,8 @@ public interface VertxInternal extends Vertx {
 
   ClusterManager getClusterManager();
 
+  HAManager haManager();
+
   /**
    * Resolve an address (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
    *

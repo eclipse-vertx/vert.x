@@ -352,38 +352,31 @@ public class DNSTest extends VertxTestBase {
     dnsServer.stop();
   }
 
+  private TestLoggerFactory testLogging(DnsClientOptions options) {
+    final String ip = "10.0.0.1";
+    return TestUtils.testLogging(() -> {
+	  try {
+		prepareDns(FakeDNSServer.testResolveA(ip), options)
+        .resolveA(ip, fut -> {
+        	testComplete();
+        });
+	    await();
+	  } catch (Exception e) {
+		fail(e);
+	  }
+    });
+  }
+  
   @Test
   public void testLogActivity() throws Exception {
-    final String ip = "10.0.0.1";
-    TestLoggerFactory factory = TestUtils.testLogging(() -> {
-		try {
-			prepareDns(FakeDNSServer.testResolveA(ip), new DnsClientOptions().setLogActivity(true))
-	        .resolveA(ip, fut -> {
-	        	testComplete();
-	        });
-		} catch (Exception e) {
-			fail(e);
-		}
-    });
-    await();
+    TestLoggerFactory factory = testLogging(new DnsClientOptions().setLogActivity(true));
     assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
     dnsServer.stop();
   }
 
   @Test
   public void testDoNotLogActivity() throws Exception {
-    final String ip = "10.0.0.1";
-    TestLoggerFactory factory = TestUtils.testLogging(() -> {
-		try {
-			prepareDns(FakeDNSServer.testResolveA(ip), new DnsClientOptions().setLogActivity(false))
-	        .resolveA(ip, fut -> {
-	        	testComplete();
-	        });
-		} catch (Exception e) {
-			fail(e);
-		}
-    });
-    await();
+    TestLoggerFactory factory = testLogging(new DnsClientOptions().setLogActivity(false));
     assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
     dnsServer.stop();
   }
