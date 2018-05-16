@@ -99,9 +99,10 @@ public class CoreExamples {
     int poolSize = 10;
 
     // 2 minutes
-    long maxExecuteTime = TimeUnit.SECONDS.toNanos(2);
+    long maxExecuteTime = 2;
+    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
 
-    WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
+    WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime, maxExecuteTimeUnit);
   }
 
   BlockingAPI someAPI = new BlockingAPI();
