@@ -201,6 +201,8 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(TimeUnit.MILLISECONDS, options.getMaxWorkerExecuteTimeUnit());
     assertEquals(options, options.setWarningExceptionTimeUnit(TimeUnit.MINUTES));
     assertEquals(TimeUnit.MINUTES, options.getWarningExceptionTimeUnit());
+    assertEquals(options, options.setBlockedThreadCheckIntervalUnit(TimeUnit.MILLISECONDS));
+    assertEquals(TimeUnit.MILLISECONDS, options.getBlockedThreadCheckIntervalUnit());
   }
 
   @Test
@@ -229,6 +231,7 @@ public class VertxOptionsTest extends VertxTestBase {
     TimeUnit maxEventLoopExecuteTimeUnit = TimeUnit.SECONDS;
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     TimeUnit warningExceptionTimeUnit = TimeUnit.MINUTES;
+    TimeUnit blockedThreadCheckIntervalUnit = TimeUnit.MINUTES;
     options.setClusterPort(clusterPort);
     options.setClusterPublicPort(clusterPublicPort);
     options.setEventLoopPoolSize(eventLoopPoolSize);
@@ -252,6 +255,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setMaxEventLoopExecuteTimeUnit(maxEventLoopExecuteTimeUnit);
     options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     options.setWarningExceptionTimeUnit(warningExceptionTimeUnit);
+    options.setBlockedThreadCheckIntervalUnit(blockedThreadCheckIntervalUnit);
 
     options = new VertxOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
@@ -277,6 +281,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxEventLoopExecuteTimeUnit, options.getMaxEventLoopExecuteTimeUnit());
     assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
     assertEquals(warningExceptionTimeUnit, options.getWarningExceptionTimeUnit());
+    assertEquals(blockedThreadCheckIntervalUnit, options.getBlockedThreadCheckIntervalUnit());
   }
 
   @Test
@@ -303,6 +308,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getMaxEventLoopExecuteTimeUnit(), json.getMaxEventLoopExecuteTimeUnit());
     assertEquals(def.getMaxWorkerExecuteTimeUnit(), json.getMaxWorkerExecuteTimeUnit());
     assertEquals(def.getWarningExceptionTimeUnit(), json.getWarningExceptionTimeUnit());
+    assertEquals(def.getBlockedThreadCheckIntervalUnit(), json.getBlockedThreadCheckIntervalUnit());
   }
 
   @Test
@@ -330,6 +336,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(TimeUnit.NANOSECONDS, options.getMaxEventLoopExecuteTimeUnit());
     assertEquals(TimeUnit.NANOSECONDS, options.getMaxWorkerExecuteTimeUnit());
     assertEquals(TimeUnit.NANOSECONDS, options.getWarningExceptionTimeUnit());
+    assertEquals(TimeUnit.MILLISECONDS, options.getBlockedThreadCheckIntervalUnit());
     int clusterPort = TestUtils.randomPortInt();
     int clusterPublicPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
@@ -355,6 +362,7 @@ public class VertxOptionsTest extends VertxTestBase {
     TimeUnit maxEventLoopExecuteTimeUnit = TimeUnit.SECONDS;
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     TimeUnit warningExceptionTimeUnit = TimeUnit.MINUTES;
+    TimeUnit blockedThreadCheckIntervalUnit = TimeUnit.MINUTES;
     options = new VertxOptions(new JsonObject().
         put("clusterPort", clusterPort).
         put("clusterPublicPort", clusterPublicPort).
@@ -380,7 +388,8 @@ public class VertxOptionsTest extends VertxTestBase {
             put("jmxDomain", jmxDomain)).
         put("maxEventLoopExecuteTimeUnit", maxEventLoopExecuteTimeUnit).
         put("maxWorkerExecuteTimeUnit", maxWorkerExecuteTimeUnit).
-        put("warningExceptionTimeUnit", warningExceptionTimeUnit)
+        put("warningExceptionTimeUnit", warningExceptionTimeUnit).
+        put("blockedThreadCheckIntervalUnit", blockedThreadCheckIntervalUnit)
     );
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(clusterPublicPort, options.getClusterPublicPort());
@@ -405,5 +414,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxEventLoopExecuteTimeUnit, options.getMaxEventLoopExecuteTimeUnit());
     assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
     assertEquals(warningExceptionTimeUnit, options.getWarningExceptionTimeUnit());
+    assertEquals(blockedThreadCheckIntervalUnit, options.getBlockedThreadCheckIntervalUnit());
   }
 }

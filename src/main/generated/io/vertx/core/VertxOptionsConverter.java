@@ -22,6 +22,11 @@ import io.vertx.core.json.JsonArray;
             obj.setBlockedThreadCheckInterval(((Number)member.getValue()).longValue());
           }
           break;
+        case "blockedThreadCheckIntervalUnit":
+          if (member.getValue() instanceof String) {
+            obj.setBlockedThreadCheckIntervalUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
         case "clusterHost":
           if (member.getValue() instanceof String) {
             obj.setClusterHost((String)member.getValue());
@@ -150,6 +155,9 @@ import io.vertx.core.json.JsonArray;
       json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
     }
     json.put("blockedThreadCheckInterval", obj.getBlockedThreadCheckInterval());
+    if (obj.getBlockedThreadCheckIntervalUnit() != null) {
+      json.put("blockedThreadCheckIntervalUnit", obj.getBlockedThreadCheckIntervalUnit().name());
+    }
     if (obj.getClusterHost() != null) {
       json.put("clusterHost", obj.getClusterHost());
     }

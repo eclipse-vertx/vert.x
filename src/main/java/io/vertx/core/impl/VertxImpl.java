@@ -161,7 +161,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       transport = Transport.JDK;
     }
     closeHooks = new CloseHooks(log);
-    checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), TimeUnit.NANOSECONDS, options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
+    checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
     eventLoopGroup = transport.eventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
     ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());

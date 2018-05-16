@@ -33,7 +33,7 @@ public class BlockedThreadChecker {
   private final Timer timer; // Need to use our own timer - can't use event loop for this
 
   BlockedThreadChecker(long interval, TimeUnit intervalUnit, long warningExceptionTime, TimeUnit warningExceptionTimeUnit) {
-    this(intervalUnit.toNanos(interval), warningExceptionTimeUnit.toNanos(warningExceptionTime));
+    this(intervalUnit.toMillis(interval), warningExceptionTimeUnit.toNanos(warningExceptionTime));
   }
   BlockedThreadChecker(long interval, long warningExceptionTime) {
     timer = new Timer("vertx-blocked-thread-checker", true);
