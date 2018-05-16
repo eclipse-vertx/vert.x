@@ -74,12 +74,6 @@ public final class DnsClientImpl implements DnsClient {
     Objects.requireNonNull(options, "no null options accepted");
     Objects.requireNonNull(options.getHost(), "no null host accepted");
 
-    if (options.getPort() < 1) {
-        throw new IllegalArgumentException("DNS client port " + options.getPort() + " must be > 0");
-      }
-    if (options.getQueryTimeout() < 0) {
-      throw new IllegalArgumentException("DNS client timeout " + options.getQueryTimeout() + " must be > 0");
-    }
     this.options = new DnsClientOptions(options);
     
     ContextInternal creatingContext = vertx.getContext();

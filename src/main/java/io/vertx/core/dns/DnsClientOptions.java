@@ -77,6 +77,9 @@ public class DnsClientOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public DnsClientOptions setPort(int port) {
+    if (port<1 && port!=DEFAULT_PORT) {
+      throw new IllegalArgumentException("DNS client port " + port + " must be > 0 or equal to DEFAULT_PORT");
+    }
     this.port = port;
     return this;
   }
@@ -122,7 +125,7 @@ public class DnsClientOptions {
   }
 
   /**
-   * @return true when network activity logging is enabled
+   * @return {@code true} when network activity logging is enabled
    */
   public boolean getLogActivity() {
     return logActivity;
