@@ -329,23 +329,23 @@ public class DeploymentOptions {
   }
 
   /**
-   * Get the value of max worker execute time, in ns.
+   * Get the value of max worker execute time, in {@link DeploymentOptions#getMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
    * <p>
    * Vert.x will automatically log a warning if it detects that worker threads haven't returned within this time.
    * <p>
    * This can be used to detect where the user is blocking a worker thread for too long. Although worker threads
    * can be blocked longer than event loop threads, they shouldn't be blocked for long periods of time.
    *
-   * @return The value of max worker execute time, in ns.
+   * @return The value of max worker execute time, the default value of {@link DeploymentOptions#getMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    */
   public long getMaxWorkerExecuteTime() {
     return maxWorkerExecuteTime;
   }
 
   /**
-   * Sets the value of max worker execute time, in ns.
+   * Sets the value of max worker execute time, in {@link DeploymentOptions#getMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
    *
-   * @param maxWorkerExecuteTime the value of max worker execute time, in ns.
+   * @param maxWorkerExecuteTime the value of max worker execute time, in in {@link DeploymentOptions#getMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
