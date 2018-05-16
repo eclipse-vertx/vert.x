@@ -17,6 +17,11 @@ public class DnsClientOptionsConverter {
             obj.setHost((String)member.getValue());
           }
           break;
+        case "logActivity":
+          if (member.getValue() instanceof Boolean) {
+            obj.setLogActivity((Boolean)member.getValue());
+          }
+          break;
         case "port":
           if (member.getValue() instanceof Number) {
             obj.setPort(((Number)member.getValue()).intValue());
@@ -39,6 +44,7 @@ public class DnsClientOptionsConverter {
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
+    json.put("logActivity", obj.getLogActivity());
     json.put("port", obj.getPort());
     json.put("queryTimeout", obj.getQueryTimeout());
   }

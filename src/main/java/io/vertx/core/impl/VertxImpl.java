@@ -396,7 +396,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public DnsClient createDnsClient(int port, String host) {
-    return new DnsClientImpl(this, port, host, DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
+    return createDnsClient(new DnsClientOptions().setHost(host).setPort(port));
   }
 
   @Override
@@ -411,10 +411,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (host == null || port < 0) {
       DnsResolverProvider provider = new DnsResolverProvider(this, addressResolverOptions);
       InetSocketAddress address = provider.nameServerAddresses().get(0);
-      host = address.getAddress().getHostAddress();
-      port = address.getPort();
+      // provide the host and port
+      options = new DnsClientOptions(options)
+      .setHost(address.getAddress().getHostAddress())
+      .setPort(address.getPort());
     }
-    return new DnsClientImpl(this, port, host, options.getQueryTimeout());
+    return new DnsClientImpl(this, options);
   }
 
   private VertxMetrics initialiseMetrics(VertxOptions options) {

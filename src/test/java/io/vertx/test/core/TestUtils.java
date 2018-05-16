@@ -13,9 +13,11 @@ package io.vertx.test.core;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.*;
+import io.vertx.test.netty.TestLoggerFactory;
 
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -409,4 +411,17 @@ public class TestUtils {
     assertTrue(tmp.delete());
     return tmp;
   }
+  
+  public static TestLoggerFactory testLogging(Runnable runnable) {
+    InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
+    TestLoggerFactory factory = new TestLoggerFactory();
+    InternalLoggerFactory.setDefaultFactory(factory);
+    try {
+      runnable.run();
+    } finally {
+      InternalLoggerFactory.setDefaultFactory(prev);
+    }
+    return factory;
+  }
+  
 }
