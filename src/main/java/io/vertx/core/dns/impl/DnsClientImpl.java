@@ -89,7 +89,6 @@ public final class DnsClientImpl implements DnsClient {
 
     Transport transport = vertx.transport();
     actualCtx = vertx.getOrCreateContext();
-//    channel = transport.datagramChannel(InternetProtocolFamily.IPv4);
     channel = transport.datagramChannel(this.dnsServer.getAddress() instanceof Inet4Address ? InternetProtocolFamily.IPv4 : InternetProtocolFamily.IPv6);
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     channel.config().setMaxMessagesPerRead(1);
