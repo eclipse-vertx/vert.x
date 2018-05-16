@@ -400,7 +400,7 @@ public class VertxOptions {
 
   /**
    * Get the value of blocked thread check period, in {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit}.
-   * The value of {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit} is {@link TimeUnit#MILLISECONDS}
+   * The default value of {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit} is {@link TimeUnit#MILLISECONDS}
    * <p>
    * This setting determines how often Vert.x will check whether event loop threads are executing for too long.
    *
@@ -412,7 +412,7 @@ public class VertxOptions {
 
   /**
    * Sets the value of blocked thread check period, in {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit}.
-   * The value of {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit} is {@link TimeUnit#MILLISECONDS}
+   * The default value of {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit} is {@link TimeUnit#MILLISECONDS}
    *
    * @param blockedThreadCheckInterval the value of blocked thread check period, in {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit}.
    * @return a reference to this, so the API can be used fluently
@@ -427,7 +427,7 @@ public class VertxOptions {
 
   /**
    * Get the value of max event loop execute time, in {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit}.
-   * The value of {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
+   * The default value of {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    * <p>
    * Vert.x will automatically log a warning if it detects that event loop threads haven't returned within this time.
    * <p>
@@ -442,7 +442,7 @@ public class VertxOptions {
 
   /**
    * Sets the value of max event loop execute time, in {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit}.
-   * The value of {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
+   * The default value of {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    *
    * @param maxEventLoopExecuteTime the value of max event loop execute time, in {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit}.
    * @return a reference to this, so the API can be used fluently
@@ -457,7 +457,7 @@ public class VertxOptions {
 
   /**
    * Get the value of max worker execute time, in {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
-   * The value of {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
+   * The default value of {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    * <p>
    * Vert.x will automatically log a warning if it detects that worker threads haven't returned within this time.
    * <p>
@@ -472,7 +472,7 @@ public class VertxOptions {
 
   /**
    * Sets the value of max worker execute time, in {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
-   * The value of {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
+   * The default value of {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    *
    * @param maxWorkerExecuteTime the value of max worker execute time, in {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
    * @return a reference to this, so the API can be used fluently
@@ -623,7 +623,7 @@ public class VertxOptions {
 
   /**
    * Get the threshold value above this, the blocked warning contains a stack trace. in {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit}.
-   * The value of {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit} is {@link TimeUnit#NANOSECONDS}
+   * The default value of {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit} is {@link TimeUnit#NANOSECONDS}
    *
    * @return the warning exception time threshold
    */
@@ -633,7 +633,7 @@ public class VertxOptions {
 
   /**
    * Set the threshold value above this, the blocked warning contains a stack trace. in {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit}.
-   * The value of {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit} is {@link TimeUnit#NANOSECONDS}
+   * The default value of {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit} is {@link TimeUnit#NANOSECONDS}
    *
    * @param warningExceptionTime
    * @return a reference to this, so the API can be used fluently
