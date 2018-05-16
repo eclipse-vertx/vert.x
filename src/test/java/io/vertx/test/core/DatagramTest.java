@@ -11,7 +11,6 @@
 package io.vertx.test.core;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
@@ -555,10 +554,7 @@ public class DatagramTest extends VertxTestBase {
   }
 
   private TestLoggerFactory testLogging(DatagramSocketOptions sendOptions, DatagramSocketOptions listenOptions) throws Exception {
-    InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
-    TestLoggerFactory factory = new TestLoggerFactory();
-    InternalLoggerFactory.setDefaultFactory(factory);
-    try {
+    return TestUtils.testLogging(() -> {
       peer1 = vertx.createDatagramSocket(sendOptions);
       peer2 = vertx.createDatagramSocket(listenOptions);
       peer2.exceptionHandler(t -> fail(t.getMessage()));
@@ -572,9 +568,6 @@ public class DatagramTest extends VertxTestBase {
         peer1.send(buffer, 1234, "127.0.0.1", ar2 -> assertTrue(ar2.succeeded()));
       });
       await();
-    } finally {
-      InternalLoggerFactory.setDefaultFactory(prev);
-    }
-    return factory;
+    });
   }
 }

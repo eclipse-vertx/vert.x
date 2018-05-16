@@ -25,7 +25,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -2694,10 +2693,7 @@ public class NetTest extends VertxTestBase {
   }
 
   private TestLoggerFactory testLogging() throws Exception {
-    InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
-    TestLoggerFactory factory = new TestLoggerFactory();
-    InternalLoggerFactory.setDefaultFactory(factory);
-    try {
+	return TestUtils.testLogging(() -> {
       server.connectHandler(so -> {
         so.write("fizzbuzz").end();
       });
@@ -2707,10 +2703,7 @@ public class NetTest extends VertxTestBase {
         }));
       }));
       await();
-    } finally {
-      InternalLoggerFactory.setDefaultFactory(prev);
-    }
-    return factory;
+	}); 
   }
 
   /**

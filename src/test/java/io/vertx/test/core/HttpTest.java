@@ -15,7 +15,6 @@ import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -38,7 +37,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -4024,22 +4022,20 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private TestLoggerFactory testLogging() throws Exception {
-    InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
-    TestLoggerFactory factory = new TestLoggerFactory();
-    InternalLoggerFactory.setDefaultFactory(factory);
-    try {
-      server.requestHandler(req -> {
-        req.response().end();
-      });
-      startServer();
-      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        testComplete();
-      });
-      await();
-    } finally {
-      InternalLoggerFactory.setDefaultFactory(prev);
-    }
-    return factory;
+    return TestUtils.testLogging(() -> {
+   	  try {
+        server.requestHandler(req -> {
+          req.response().end();
+        });
+        startServer();
+        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+          testComplete();
+        });
+        await();
+   	  } catch (Exception e) {
+   	    throw new RuntimeException(e);
+   	  }
+    });
   }
 
   @Test
