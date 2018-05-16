@@ -546,7 +546,7 @@ public interface Vertx extends Measured {
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize);
 
   /**
-   * Like {@link #createSharedWorkerExecutor(String, int, long, TimeUnit)} but with the {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxExecuteTimeUnit}. the default value of {@link VertxOptions#getMaxWorkerExecuteTimeUnit} {@code maxExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
+   * Like {@link #createSharedWorkerExecutor(String, int, long, TimeUnit)} but with the {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxExecuteTimeUnit}. the default value of {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    */
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 
