@@ -388,6 +388,48 @@ public class DNSTest extends VertxTestBase {
     dnsServer.stop();
   }
 
+  @Test
+  public void testRecursionDesired() throws Exception {
+    final String ip = "10.0.0.1";
+    
+    FakeDNSServer server = FakeDNSServer.testResolveA(ip);
+    DnsClient dns = prepareDns(server, new DnsClientOptions().setRecursionDesired(true));
+    dns.resolveA("vertx.io", onSuccess(result -> {
+      assertFalse(result.isEmpty());
+      assertEquals(1, result.size());
+      assertEquals(ip, result.get(0));
+      DnsMessage msg = server.pollMessage();
+      assertTrue(msg.isRecursionDesired());      
+      ((DnsClientImpl) dns).inProgressQueries(num -> {
+        assertEquals(0, (int)num);
+        testComplete();
+      });
+    }));
+    await();
+    dnsServer.stop();
+  }
+
+  @Test
+  public void testRecursionNotDesired() throws Exception {
+    final String ip = "10.0.0.1";
+    
+    FakeDNSServer server = FakeDNSServer.testResolveA(ip);
+    DnsClient dns = prepareDns(server, new DnsClientOptions().setRecursionDesired(false));
+    dns.resolveA("vertx.io", onSuccess(result -> {
+      assertFalse(result.isEmpty());
+      assertEquals(1, result.size());
+      assertEquals(ip, result.get(0));
+      DnsMessage msg = server.pollMessage();
+      assertFalse(msg.isRecursionDesired());      
+      ((DnsClientImpl) dns).inProgressQueries(num -> {
+        assertEquals(0, (int)num);
+        testComplete();
+      });
+    }));
+    await();
+    dnsServer.stop();
+  }
+
   private DnsClient prepareDns(FakeDNSServer server) throws Exception {
     return prepareDns(server, new DnsClientOptions().setQueryTimeout(15000));
   }
