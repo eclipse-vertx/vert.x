@@ -111,6 +111,44 @@ public class DNSTest extends VertxTestBase {
   }
 
   @Test
+  public void testResolveAIpV6Abbr() throws Exception {
+    // use google servers using ipv6 abbrivated format
+    final String ip = "10.0.0.1";
+    // force the fake dns server to Ipv6
+    DnsClient dns = prepareDns(FakeDNSServer.testResolveA(ip).ipAddress("::1"));
+    dns.resolveA("vertx.io", onSuccess(result -> {
+      assertFalse(result.isEmpty());
+      assertEquals(1, result.size());
+      assertEquals(ip, result.get(0));
+      ((DnsClientImpl) dns).inProgressQueries(num -> {
+        assertEquals(0, (int)num);
+        testComplete();
+      });
+    }));
+    await();
+    dnsServer.stop();
+  }
+
+  @Test
+  public void testResolveAIpV6() throws Exception {
+    // use google servers using ipv6 long format
+    final String ip = "10.0.0.1";
+    // force the fake dns server to Ipv6
+    DnsClient dns = prepareDns(FakeDNSServer.testResolveA(ip).ipAddress("::1"));
+    dns.resolveA("vertx.io", onSuccess(result -> {
+      assertFalse(result.isEmpty());
+      assertEquals(1, result.size());
+      assertEquals(ip, result.get(0));
+      ((DnsClientImpl) dns).inProgressQueries(num -> {
+        assertEquals(0, (int)num);
+        testComplete();
+      });
+    }));
+    await();
+    dnsServer.stop();
+  }
+
+  @Test
   public void testResolveAAAA() throws Exception {
     DnsClient dns = prepareDns(FakeDNSServer.testResolveAAAA("::1"));
 
