@@ -92,19 +92,9 @@ import io.vertx.core.json.JsonArray;
             obj.setMaxEventLoopExecuteTime(((Number)member.getValue()).longValue());
           }
           break;
-        case "maxEventLoopExecuteTimeUnit":
-          if (member.getValue() instanceof String) {
-            obj.setMaxEventLoopExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
-          }
-          break;
         case "maxWorkerExecuteTime":
           if (member.getValue() instanceof Number) {
             obj.setMaxWorkerExecuteTime(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "maxWorkerExecuteTimeUnit":
-          if (member.getValue() instanceof String) {
-            obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
         case "metricsOptions":
@@ -127,11 +117,6 @@ import io.vertx.core.json.JsonArray;
             obj.setWarningExceptionTime(((Number)member.getValue()).longValue());
           }
           break;
-        case "warningExceptionTimeUnit":
-          if (member.getValue() instanceof String) {
-            obj.setWarningExceptionTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
-          }
-          break;
         case "workerPoolSize":
           if (member.getValue() instanceof Number) {
             obj.setWorkerPoolSize(((Number)member.getValue()).intValue());
@@ -149,45 +134,36 @@ import io.vertx.core.json.JsonArray;
     if (obj.getAddressResolverOptions() != null) {
       json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
     }
-      json.put("blockedThreadCheckInterval", obj.getBlockedThreadCheckInterval());
+    json.put("blockedThreadCheckInterval", obj.getBlockedThreadCheckInterval());
     if (obj.getClusterHost() != null) {
       json.put("clusterHost", obj.getClusterHost());
     }
-      json.put("clusterPingInterval", obj.getClusterPingInterval());
-      json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());
-      json.put("clusterPort", obj.getClusterPort());
+    json.put("clusterPingInterval", obj.getClusterPingInterval());
+    json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());
+    json.put("clusterPort", obj.getClusterPort());
     if (obj.getClusterPublicHost() != null) {
       json.put("clusterPublicHost", obj.getClusterPublicHost());
     }
-      json.put("clusterPublicPort", obj.getClusterPublicPort());
-      json.put("clustered", obj.isClustered());
+    json.put("clusterPublicPort", obj.getClusterPublicPort());
+    json.put("clustered", obj.isClustered());
     if (obj.getEventBusOptions() != null) {
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }
-      json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
-      json.put("fileResolverCachingEnabled", obj.isFileResolverCachingEnabled());
-      json.put("haEnabled", obj.isHAEnabled());
+    json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
+    json.put("fileResolverCachingEnabled", obj.isFileResolverCachingEnabled());
+    json.put("haEnabled", obj.isHAEnabled());
     if (obj.getHAGroup() != null) {
       json.put("haGroup", obj.getHAGroup());
     }
-      json.put("internalBlockingPoolSize", obj.getInternalBlockingPoolSize());
-      json.put("maxEventLoopExecuteTime", obj.getMaxEventLoopExecuteTime());
-    if (obj.getMaxEventLoopExecuteTimeUnit() != null) {
-      json.put("maxEventLoopExecuteTimeUnit", obj.getMaxEventLoopExecuteTimeUnit().name());
-    }
-      json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
-    if (obj.getMaxWorkerExecuteTimeUnit() != null) {
-      json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
-    }
+    json.put("internalBlockingPoolSize", obj.getInternalBlockingPoolSize());
+    json.put("maxEventLoopExecuteTime", obj.getMaxEventLoopExecuteTime());
+    json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
     if (obj.getMetricsOptions() != null) {
       json.put("metricsOptions", obj.getMetricsOptions().toJson());
     }
-      json.put("preferNativeTransport", obj.getPreferNativeTransport());
-      json.put("quorumSize", obj.getQuorumSize());
-      json.put("warningExceptionTime", obj.getWarningExceptionTime());
-    if (obj.getWarningExceptionTimeUnit() != null) {
-      json.put("warningExceptionTimeUnit", obj.getWarningExceptionTimeUnit().name());
-    }
-      json.put("workerPoolSize", obj.getWorkerPoolSize());
+    json.put("preferNativeTransport", obj.getPreferNativeTransport());
+    json.put("quorumSize", obj.getQuorumSize());
+    json.put("warningExceptionTime", obj.getWarningExceptionTime());
+    json.put("workerPoolSize", obj.getWorkerPoolSize());
   }
 }

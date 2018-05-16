@@ -52,7 +52,7 @@ import io.vertx.core.json.JsonArray;
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }
-      json.put("port", obj.getPort());
+    json.put("port", obj.getPort());
     if (obj.getType() != null) {
       json.put("type", obj.getType().name());
     }

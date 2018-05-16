@@ -25,7 +25,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setChoices(list);
-         }
+          }
           break;
         case "defaultValue":
           if (member.getValue() instanceof String) {
@@ -102,20 +102,20 @@ import io.vertx.core.json.JsonArray;
     if (obj.getDescription() != null) {
       json.put("description", obj.getDescription());
     }
-      json.put("flag", obj.isFlag());
-      json.put("help", obj.isHelp());
-      json.put("hidden", obj.isHidden());
+    json.put("flag", obj.isFlag());
+    json.put("help", obj.isHelp());
+    json.put("hidden", obj.isHidden());
     if (obj.getLongName() != null) {
       json.put("longName", obj.getLongName());
     }
-      json.put("multiValued", obj.isMultiValued());
+    json.put("multiValued", obj.isMultiValued());
     if (obj.getName() != null) {
       json.put("name", obj.getName());
     }
-      json.put("required", obj.isRequired());
+    json.put("required", obj.isRequired());
     if (obj.getShortName() != null) {
       json.put("shortName", obj.getShortName());
     }
-      json.put("singleValued", obj.isSingleValued());
+    json.put("singleValued", obj.isSingleValued());
   }
 }

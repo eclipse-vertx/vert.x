@@ -76,18 +76,18 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(OpenOptions obj, java.util.Map<String, Object> json) {
-      json.put("append", obj.isAppend());
-      json.put("create", obj.isCreate());
-      json.put("createNew", obj.isCreateNew());
-      json.put("deleteOnClose", obj.isDeleteOnClose());
-      json.put("dsync", obj.isDsync());
+    json.put("append", obj.isAppend());
+    json.put("create", obj.isCreate());
+    json.put("createNew", obj.isCreateNew());
+    json.put("deleteOnClose", obj.isDeleteOnClose());
+    json.put("dsync", obj.isDsync());
     if (obj.getPerms() != null) {
       json.put("perms", obj.getPerms());
     }
-      json.put("read", obj.isRead());
-      json.put("sparse", obj.isSparse());
-      json.put("sync", obj.isSync());
-      json.put("truncateExisting", obj.isTruncateExisting());
-      json.put("write", obj.isWrite());
+    json.put("read", obj.isRead());
+    json.put("sparse", obj.isSparse());
+    json.put("sync", obj.isSync());
+    json.put("truncateExisting", obj.isTruncateExisting());
+    json.put("write", obj.isWrite());
   }
 }

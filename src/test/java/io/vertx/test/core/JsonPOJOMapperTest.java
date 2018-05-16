@@ -105,4 +105,10 @@ public class JsonPOJOMapperTest {
     // and that the parsing succeeded (the object is of type byte[] and not null)
     assertNotNull(json.getBinary("base64"));
   }
+
+  @Test
+  public void testNullPOJO() {
+    assertNull(JsonObject.mapFrom(null));
+  }
+
 }

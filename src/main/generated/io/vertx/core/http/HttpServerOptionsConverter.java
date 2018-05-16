@@ -25,7 +25,7 @@ import io.vertx.core.json.JsonArray;
                 list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
             });
             obj.setAlpnVersions(list);
-         }
+          }
           break;
         case "compressionLevel":
           if (member.getValue() instanceof Number) {
@@ -101,26 +101,26 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(HttpServerOptions obj, java.util.Map<String, Object> json) {
-      json.put("acceptUnmaskedFrames", obj.isAcceptUnmaskedFrames());
+    json.put("acceptUnmaskedFrames", obj.isAcceptUnmaskedFrames());
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
     }
-      json.put("compressionLevel", obj.getCompressionLevel());
-      json.put("compressionSupported", obj.isCompressionSupported());
-      json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
-      json.put("decompressionSupported", obj.isDecompressionSupported());
-      json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
-      json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
+    json.put("compressionLevel", obj.getCompressionLevel());
+    json.put("compressionSupported", obj.isCompressionSupported());
+    json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
+    json.put("decompressionSupported", obj.isDecompressionSupported());
+    json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
+    json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
-      json.put("maxChunkSize", obj.getMaxChunkSize());
-      json.put("maxHeaderSize", obj.getMaxHeaderSize());
-      json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
-      json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
-      json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
+    json.put("maxChunkSize", obj.getMaxChunkSize());
+    json.put("maxHeaderSize", obj.getMaxHeaderSize());
+    json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
+    json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
+    json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());
     }

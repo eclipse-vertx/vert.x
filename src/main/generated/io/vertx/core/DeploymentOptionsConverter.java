@@ -25,7 +25,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setExtraClasspath(list);
-         }
+          }
           break;
         case "ha":
           if (member.getValue() instanceof Boolean) {
@@ -45,7 +45,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setIsolatedClasses(list);
-         }
+          }
           break;
         case "isolationGroup":
           if (member.getValue() instanceof String) {
@@ -55,11 +55,6 @@ import io.vertx.core.json.JsonArray;
         case "maxWorkerExecuteTime":
           if (member.getValue() instanceof Number) {
             obj.setMaxWorkerExecuteTime(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "maxWorkerExecuteTimeUnit":
-          if (member.getValue() instanceof String) {
-            obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
         case "multiThreaded":
@@ -99,8 +94,8 @@ import io.vertx.core.json.JsonArray;
       obj.getExtraClasspath().forEach(item -> array.add(item));
       json.put("extraClasspath", array);
     }
-      json.put("ha", obj.isHa());
-      json.put("instances", obj.getInstances());
+    json.put("ha", obj.isHa());
+    json.put("instances", obj.getInstances());
     if (obj.getIsolatedClasses() != null) {
       JsonArray array = new JsonArray();
       obj.getIsolatedClasses().forEach(item -> array.add(item));
@@ -109,15 +104,12 @@ import io.vertx.core.json.JsonArray;
     if (obj.getIsolationGroup() != null) {
       json.put("isolationGroup", obj.getIsolationGroup());
     }
-      json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
-    if (obj.getMaxWorkerExecuteTimeUnit() != null) {
-      json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
-    }
-      json.put("multiThreaded", obj.isMultiThreaded());
-      json.put("worker", obj.isWorker());
+    json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
+    json.put("multiThreaded", obj.isMultiThreaded());
+    json.put("worker", obj.isWorker());
     if (obj.getWorkerPoolName() != null) {
       json.put("workerPoolName", obj.getWorkerPoolName());
     }
-      json.put("workerPoolSize", obj.getWorkerPoolSize());
+    json.put("workerPoolSize", obj.getWorkerPoolSize());
   }
 }

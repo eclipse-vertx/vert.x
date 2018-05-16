@@ -18,7 +18,7 @@ import io.vertx.core.json.JsonArray;
               if (item instanceof String)
                 obj.addCrlPath((String)item);
             });
-         }
+          }
           break;
         case "crlValues":
           if (member.getValue() instanceof JsonArray) {
@@ -26,7 +26,7 @@ import io.vertx.core.json.JsonArray;
               if (item instanceof String)
                 obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
             });
-         }
+          }
           break;
         case "enabledCipherSuites":
           if (member.getValue() instanceof JsonArray) {
@@ -34,7 +34,7 @@ import io.vertx.core.json.JsonArray;
               if (item instanceof String)
                 obj.addEnabledCipherSuite((String)item);
             });
-         }
+          }
           break;
         case "enabledSecureTransportProtocols":
           if (member.getValue() instanceof JsonArray) {
@@ -44,7 +44,7 @@ import io.vertx.core.json.JsonArray;
                 list.add((String)item);
             });
             obj.setEnabledSecureTransportProtocols(list);
-         }
+          }
           break;
         case "idleTimeout":
           if (member.getValue() instanceof Number) {
@@ -165,7 +165,7 @@ import io.vertx.core.json.JsonArray;
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));
       json.put("enabledSecureTransportProtocols", array);
     }
-      json.put("idleTimeout", obj.getIdleTimeout());
+    json.put("idleTimeout", obj.getIdleTimeout());
     if (obj.getJdkSslEngineOptions() != null) {
       json.put("jdkSslEngineOptions", obj.getJdkSslEngineOptions().toJson());
     }
@@ -187,17 +187,17 @@ import io.vertx.core.json.JsonArray;
     if (obj.getPfxTrustOptions() != null) {
       json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
     }
-      json.put("soLinger", obj.getSoLinger());
-      json.put("ssl", obj.isSsl());
-      json.put("tcpCork", obj.isTcpCork());
-      json.put("tcpFastOpen", obj.isTcpFastOpen());
-      json.put("tcpKeepAlive", obj.isTcpKeepAlive());
-      json.put("tcpNoDelay", obj.isTcpNoDelay());
-      json.put("tcpQuickAck", obj.isTcpQuickAck());
+    json.put("soLinger", obj.getSoLinger());
+    json.put("ssl", obj.isSsl());
+    json.put("tcpCork", obj.isTcpCork());
+    json.put("tcpFastOpen", obj.isTcpFastOpen());
+    json.put("tcpKeepAlive", obj.isTcpKeepAlive());
+    json.put("tcpNoDelay", obj.isTcpNoDelay());
+    json.put("tcpQuickAck", obj.isTcpQuickAck());
     if (obj.getTrustStoreOptions() != null) {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
-      json.put("useAlpn", obj.isUseAlpn());
-      json.put("usePooledBuffers", obj.isUsePooledBuffers());
+    json.put("useAlpn", obj.isUseAlpn());
+    json.put("usePooledBuffers", obj.isUsePooledBuffers());
   }
 }

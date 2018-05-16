@@ -46,7 +46,7 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(ClientOptionsBase obj, java.util.Map<String, Object> json) {
-      json.put("connectTimeout", obj.getConnectTimeout());
+    json.put("connectTimeout", obj.getConnectTimeout());
     if (obj.getLocalAddress() != null) {
       json.put("localAddress", obj.getLocalAddress());
     }
@@ -56,6 +56,6 @@ import io.vertx.core.json.JsonArray;
     if (obj.getProxyOptions() != null) {
       json.put("proxyOptions", obj.getProxyOptions().toJson());
     }
-      json.put("trustAll", obj.isTrustAll());
+    json.put("trustAll", obj.isTrustAll());
   }
 }

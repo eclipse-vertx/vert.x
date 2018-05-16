@@ -18,7 +18,7 @@ import io.vertx.core.json.JsonArray;
               if (item instanceof String)
                 obj.addCertPath((String)item);
             });
-         }
+          }
           break;
         case "certValues":
           if (member.getValue() instanceof JsonArray) {
@@ -26,7 +26,7 @@ import io.vertx.core.json.JsonArray;
               if (item instanceof String)
                 obj.addCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
             });
-         }
+          }
           break;
       }
     }

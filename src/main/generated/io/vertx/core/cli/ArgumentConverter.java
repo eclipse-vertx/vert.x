@@ -65,9 +65,9 @@ import io.vertx.core.json.JsonArray;
     if (obj.getDescription() != null) {
       json.put("description", obj.getDescription());
     }
-      json.put("hidden", obj.isHidden());
-      json.put("index", obj.getIndex());
-      json.put("multiValued", obj.isMultiValued());
-      json.put("required", obj.isRequired());
+    json.put("hidden", obj.isHidden());
+    json.put("index", obj.getIndex());
+    json.put("multiValued", obj.isMultiValued());
+    json.put("required", obj.isRequired());
   }
 }

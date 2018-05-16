@@ -41,9 +41,9 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(CopyOptions obj, java.util.Map<String, Object> json) {
-      json.put("atomicMove", obj.isAtomicMove());
-      json.put("copyAttributes", obj.isCopyAttributes());
-      json.put("nofollowLinks", obj.isNofollowLinks());
-      json.put("replaceExisting", obj.isReplaceExisting());
+    json.put("atomicMove", obj.isAtomicMove());
+    json.put("copyAttributes", obj.isCopyAttributes());
+    json.put("nofollowLinks", obj.isNofollowLinks());
+    json.put("replaceExisting", obj.isReplaceExisting());
   }
 }
