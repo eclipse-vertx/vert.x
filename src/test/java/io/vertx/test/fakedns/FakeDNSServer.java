@@ -59,7 +59,9 @@ public final class FakeDNSServer extends DnsServer {
   }
 
   public static final int PORT = 53530;
+  public static final String IP_ADDRESS = "127.0.0.1";
 
+  private String ipAddress = IP_ADDRESS;
   private int port = PORT;
   private final RecordStore store;
   private DatagramAcceptor acceptor;
@@ -75,6 +77,11 @@ public final class FakeDNSServer extends DnsServer {
 
   public InetSocketAddress localAddress() {
     return (InetSocketAddress) getTransports()[0].getAcceptor().getLocalAddress();
+  }
+
+  public FakeDNSServer ipAddress(String ipAddress) {
+    this.ipAddress = ipAddress;
+    return this;
   }
 
   public FakeDNSServer port(int p) {
@@ -325,7 +332,7 @@ public final class FakeDNSServer extends DnsServer {
 
   @Override
   public void start() throws IOException {
-    UdpTransport transport = new UdpTransport("127.0.0.1", port);
+    UdpTransport transport = new UdpTransport(ipAddress, port);
     setTransports( transport );
 
     acceptor = transport.getAcceptor();
