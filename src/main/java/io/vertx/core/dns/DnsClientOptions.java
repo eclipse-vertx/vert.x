@@ -43,11 +43,17 @@ public class DnsClientOptions {
    */
   public static final boolean DEFAULT_LOG_ENABLED = false;
 
+  /**
+  * The default value for the recursion desired flag (RD) = {@code true}
+  */
+  public static final boolean DEFAULT_RECURSION_DESIRED = true;
+  
   private int port = DEFAULT_PORT;
   private String host = DEFAULT_HOST;
   private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
   private boolean logActivity = DEFAULT_LOG_ENABLED;
-
+  private boolean recursionDesired = DEFAULT_RECURSION_DESIRED;
+  
   public DnsClientOptions() {
   }
 
@@ -60,6 +66,7 @@ public class DnsClientOptions {
     host = other.host;
     queryTimeout = other.queryTimeout;
     logActivity = other.logActivity;
+    recursionDesired = other.recursionDesired;
   }
 
   /**
@@ -142,6 +149,26 @@ public class DnsClientOptions {
     return this;
   }
 
+  /**
+   * Return whether or not recursion is desired
+   *
+   * @return {@code true} when recursion is desired
+   */
+  public boolean isRecursionDesired() {
+    return recursionDesired;
+  }
+  
+  /**
+   * Set whether or not recursion is desired
+   *
+   * @param recursionDesired the new value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DnsClientOptions setRecursionDesired(boolean recursionDesired) {
+    this.recursionDesired = recursionDesired;
+    return this;
+  }
+  
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     DnsClientOptionsConverter.toJson(this, json);
