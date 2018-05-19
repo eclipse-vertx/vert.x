@@ -36,6 +36,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private final ArrayDeque<Buffer> pending = new ArrayDeque<>(8);
   private boolean paused;
   private boolean ended;
+  private boolean sentCheck;
   private MultiMap trailers;
   private boolean writable;
 
@@ -64,7 +65,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
           return true;
         } else {
           pending.add(data);
-          checkNextTick(null);
+          checkNextTick();
         }
       } else {
         pending.add(data);
@@ -97,18 +98,26 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   /**
    * Check if paused buffers must be handled to the reader, this must be called from event loop.
    */
-  private void checkNextTick(Void v) {
-    synchronized (conn) {
-      if (!paused) {
-        Buffer buf = pending.poll();
-        conn.handler.consume(stream, buf.length());
-        handleData(buf);
-        if (pending.size() > 0) {
-          vertx.runOnContext(this::checkNextTick);
-        } else if (ended) {
-          handleEnd(trailers);
+  private void checkNextTick() {
+    if (!paused && pending.size() > 0 && !sentCheck) {
+      sentCheck = true;
+      context.runOnContext(v1 -> {
+        synchronized (conn) {
+          sentCheck = false;
+          if (!paused) {
+            Buffer buf = pending.poll();
+            conn.handler.consume(stream, buf.length());
+            handleData(buf);
+            if (pending.isEmpty()) {
+              if (ended) {
+                handleEnd(trailers);
+              }
+            } else {
+              checkNextTick();
+            }
+          }
         }
-      }
+      });
     }
   }
 
@@ -122,7 +131,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   public void doResume() {
     paused = false;
-    context.runOnContext(this::checkNextTick);
+    checkNextTick();
   }
 
   boolean isNotWritable() {
