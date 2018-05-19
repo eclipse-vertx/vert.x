@@ -424,17 +424,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void handleClosed() {
-    Handler<Void> endHandler;
     synchronized (conn) {
       cleanupHandlers();
-      endHandler = this.endHandler;
-      Handler<Void> closeHandler = this.closeHandler;
+      if (endHandler != null) {
+        conn.getContext().runOnContext(endHandler);
+      }
       if (closeHandler != null) {
         conn.getContext().runOnContext(closeHandler);
       }
-    }
-    if (endHandler != null) {
-      endHandler.handle(null);
     }
   }
 
