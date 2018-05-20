@@ -1005,7 +1005,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     void release() {
       synchronized (VertxImpl.this) {
         if (--refCount == 0) {
-          releaseWorkerExecutor(name);
+          namedWorkerPools.remove(name);
           super.close();
         }
       }
@@ -1044,13 +1044,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       sharedWorkerPool.refCount++;
     }
     ContextImpl context = getOrCreateContext();
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, sharedWorkerPool, true);
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool);
     context.addCloseHook(namedExec);
     return namedExec;
-  }
-
-  synchronized void releaseWorkerExecutor(String name) {
-    namedWorkerPools.remove(name);
   }
 
   @Override
