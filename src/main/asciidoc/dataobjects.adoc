@@ -439,6 +439,7 @@ Set the isolation group that will be used when deploying the verticle(s)
 +++
 Sets the value of max worker execute time, in ns.
 +++
+|[[maxWorkerExecuteTimeUnit]]`maxWorkerExecuteTimeUnit`|`link:enums.html#TimeUnit[TimeUnit]`|-
 |[[multiThreaded]]`multiThreaded`|`Boolean`|
 +++
 Set whether the verticle(s) should be deployed as a multi-threaded worker verticle
@@ -2289,9 +2290,17 @@ Set the value of internal blocking pool size
 +++
 Sets the value of max event loop execute time, in ns.
 +++
+|[[maxEventLoopExecuteTimeUnit]]`maxEventLoopExecuteTimeUnit`|`link:enums.html#TimeUnit[TimeUnit]`|
++++
+Set the time unit of <code>maxEventLoopExecuteTime</code>
++++
 |[[maxWorkerExecuteTime]]`maxWorkerExecuteTime`|`Number (long)`|
 +++
 Sets the value of max worker execute time, in ns.
++++
+|[[maxWorkerExecuteTimeUnit]]`maxWorkerExecuteTimeUnit`|`link:enums.html#TimeUnit[TimeUnit]`|
++++
+Set the time unit of <code>maxWorkerExecuteTime</code>
 +++
 |[[metricsOptions]]`metricsOptions`|`link:dataobjects.html#MetricsOptions[MetricsOptions]`|
 +++
@@ -2308,6 +2317,10 @@ Set the quorum size to be used when HA is enabled.
 |[[warningExceptionTime]]`warningExceptionTime`|`Number (long)`|
 +++
 Set the threshold value above this, the blocked warning contains a stack trace.
++++
+|[[warningExceptionTimeUnit]]`warningExceptionTimeUnit`|`link:enums.html#TimeUnit[TimeUnit]`|
++++
+Set the time unit of <code>warningExceptionTime</code>
 +++
 |[[workerPoolSize]]`workerPoolSize`|`Number (int)`|
 +++

@@ -20,6 +20,7 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.file.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
 
@@ -127,6 +128,15 @@ public class VertxOptions {
    * contains a stack trace
    */
   private static final long DEFAULT_WARNING_EXCEPTION_TIME = 5L * 1000 * 1000000;
+  /**
+   * The default value for the time unit
+   */
+  public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.NANOSECONDS;
+
+  /**
+   * The default value of blocked thread check interval unit
+   */
+  public static final TimeUnit DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL_UNIT = TimeUnit.MILLISECONDS;
 
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
@@ -144,6 +154,10 @@ public class VertxOptions {
   private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
   private boolean fileResolverCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
   private boolean preferNativeTransport = DEFAULT_PREFER_NATIVE_TRANSPORT;
+  private TimeUnit maxEventLoopExecuteTimeUnit = DEFAULT_TIME_UNIT;
+  private TimeUnit maxWorkerExecuteTimeUnit = DEFAULT_TIME_UNIT;
+  private TimeUnit warningExceptionTimeUnit = DEFAULT_TIME_UNIT;
+  private TimeUnit blockedThreadCheckIntervalUnit = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL_UNIT;
 
   /**
    * Default constructor
@@ -172,6 +186,10 @@ public class VertxOptions {
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions() : null;
     this.fileResolverCachingEnabled = other.fileResolverCachingEnabled;
+    this.maxEventLoopExecuteTimeUnit = other.maxEventLoopExecuteTimeUnit;
+    this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
+    this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
+    this.blockedThreadCheckIntervalUnit = other.blockedThreadCheckIntervalUnit;
   }
 
   /**
@@ -381,20 +399,22 @@ public class VertxOptions {
   }
 
   /**
-   * Get the value of blocked thread check period, in ms.
+   * Get the value of blocked thread check period, in {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit}.
+   * The default value of {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit} is {@link TimeUnit#MILLISECONDS}
    * <p>
    * This setting determines how often Vert.x will check whether event loop threads are executing for too long.
    *
-   * @return the value of blocked thread check period, in ms.
+   * @return the value of blocked thread check period, in {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit}.
    */
   public long getBlockedThreadCheckInterval() {
     return blockedThreadCheckInterval;
   }
 
   /**
-   * Sets the value of blocked thread check period, in ms.
+   * Sets the value of blocked thread check period, in {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit}.
+   * The default value of {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit} is {@link TimeUnit#MILLISECONDS}
    *
-   * @param blockedThreadCheckInterval the value of blocked thread check period, in ms.
+   * @param blockedThreadCheckInterval the value of blocked thread check period, in {@link VertxOptions#setBlockedThreadCheckIntervalUnit} {@code blockedThreadCheckIntervalUnit}.
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setBlockedThreadCheckInterval(long blockedThreadCheckInterval) {
@@ -406,23 +426,25 @@ public class VertxOptions {
   }
 
   /**
-   * Get the value of max event loop execute time, in ns.
+   * Get the value of max event loop execute time, in {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit}.
+   * The default value of {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    * <p>
    * Vert.x will automatically log a warning if it detects that event loop threads haven't returned within this time.
    * <p>
    * This can be used to detect where the user is blocking an event loop thread, contrary to the Golden Rule of the
    * holy Event Loop.
    *
-   * @return the value of max event loop execute time, in ns.
+   * @return the value of max event loop execute time, in {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit}.
    */
   public long getMaxEventLoopExecuteTime() {
     return maxEventLoopExecuteTime;
   }
 
   /**
-   * Sets the value of max event loop execute time, in ns.
+   * Sets the value of max event loop execute time, in {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit}.
+   * The default value of {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    *
-   * @param maxEventLoopExecuteTime the value of max event loop execute time, in ns.
+   * @param maxEventLoopExecuteTime the value of max event loop execute time, in {@link VertxOptions#setMaxEventLoopExecuteTimeUnit} {@code maxEventLoopExecuteTimeUnit}.
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setMaxEventLoopExecuteTime(long maxEventLoopExecuteTime) {
@@ -434,23 +456,25 @@ public class VertxOptions {
   }
 
   /**
-   * Get the value of max worker execute time, in ns.
+   * Get the value of max worker execute time, in {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
+   * The default value of {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    * <p>
    * Vert.x will automatically log a warning if it detects that worker threads haven't returned within this time.
    * <p>
    * This can be used to detect where the user is blocking a worker thread for too long. Although worker threads
    * can be blocked longer than event loop threads, they shouldn't be blocked for long periods of time.
    *
-   * @return The value of max worker execute time, in ns.
+   * @return The value of max worker execute time, in {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
    */
   public long getMaxWorkerExecuteTime() {
     return maxWorkerExecuteTime;
   }
 
   /**
-   * Sets the value of max worker execute time, in ns.
+   * Sets the value of max worker execute time, in {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
+   * The default value of {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    *
-   * @param maxWorkerExecuteTime the value of max worker execute time, in ns.
+   * @param maxWorkerExecuteTime the value of max worker execute time, in {@link VertxOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit}.
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
@@ -598,7 +622,8 @@ public class VertxOptions {
   }
 
   /**
-   * Get the threshold value above this, the blocked warning contains a stack trace.
+   * Get the threshold value above this, the blocked warning contains a stack trace. in {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit}.
+   * The default value of {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit} is {@link TimeUnit#NANOSECONDS}
    *
    * @return the warning exception time threshold
    */
@@ -607,7 +632,8 @@ public class VertxOptions {
   }
 
   /**
-   * Set the threshold value above this, the blocked warning contains a stack trace.
+   * Set the threshold value above this, the blocked warning contains a stack trace. in {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit}.
+   * The default value of {@link VertxOptions#setWarningExceptionTimeUnit} {@code warningExceptionTimeUnit} is {@link TimeUnit#NANOSECONDS}
    *
    * @param warningExceptionTime
    * @return a reference to this, so the API can be used fluently
@@ -693,6 +719,67 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * @return the time unit of {@code maxEventLoopExecuteTime}
+   */
+  public TimeUnit getMaxEventLoopExecuteTimeUnit() {
+    return maxEventLoopExecuteTimeUnit;
+  }
+  /**
+   * Set the time unit of {@code maxEventLoopExecuteTime}
+   * @param maxEventLoopExecuteTimeUnit the time unit of {@code maxEventLoopExecuteTime}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setMaxEventLoopExecuteTimeUnit(TimeUnit maxEventLoopExecuteTimeUnit) {
+    this.maxEventLoopExecuteTimeUnit = maxEventLoopExecuteTimeUnit;
+    return this;
+  }
+  /**
+   * @return the time unit of {@code maxWorkerExecuteTime}
+   */
+  public TimeUnit getMaxWorkerExecuteTimeUnit() {
+    return maxWorkerExecuteTimeUnit;
+  }
+  /**
+   * Set the time unit of {@code maxWorkerExecuteTime}
+   * @param maxWorkerExecuteTimeUnit the time unit of {@code maxWorkerExecuteTime}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setMaxWorkerExecuteTimeUnit(TimeUnit maxWorkerExecuteTimeUnit) {
+    this.maxWorkerExecuteTimeUnit = maxWorkerExecuteTimeUnit;
+    return this;
+  }
+  /**
+   * @return the time unit of {@code warningExceptionTime}
+   */
+  public TimeUnit getWarningExceptionTimeUnit() {
+    return warningExceptionTimeUnit;
+  }
+  /**
+   * Set the time unit of {@code warningExceptionTime}
+   * @param warningExceptionTimeUnit the time unit of {@code warningExceptionTime}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setWarningExceptionTimeUnit(TimeUnit warningExceptionTimeUnit) {
+    this.warningExceptionTimeUnit = warningExceptionTimeUnit;
+    return this;
+  }
+  /**
+   * @return the time unit of {@code blockedThreadCheckInterval}
+   */
+  public TimeUnit getBlockedThreadCheckIntervalUnit() {
+    return blockedThreadCheckIntervalUnit;
+  }
+  /**
+   * Set the time unit of {@code blockedThreadCheckInterval}
+   * @param blockedThreadCheckIntervalUnit the time unit of {@code warningExceptionTime}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setBlockedThreadCheckIntervalUnit(TimeUnit blockedThreadCheckIntervalUnit) {
+    this.blockedThreadCheckIntervalUnit = blockedThreadCheckIntervalUnit;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -704,11 +791,15 @@ public class VertxOptions {
     if (workerPoolSize != that.workerPoolSize) return false;
     if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
     if (blockedThreadCheckInterval != that.blockedThreadCheckInterval) return false;
+    if (blockedThreadCheckIntervalUnit != that.blockedThreadCheckIntervalUnit) return false;
     if (maxEventLoopExecuteTime != that.maxEventLoopExecuteTime) return false;
+    if (maxEventLoopExecuteTimeUnit != that.maxEventLoopExecuteTimeUnit) return false;
     if (maxWorkerExecuteTime != that.maxWorkerExecuteTime) return false;
+    if (maxWorkerExecuteTimeUnit != that.maxWorkerExecuteTimeUnit) return false;
     if (haEnabled != that.haEnabled) return false;
     if (quorumSize != that.quorumSize) return false;
     if (warningExceptionTime != that.warningExceptionTime) return false;
+    if (warningExceptionTimeUnit != that.warningExceptionTimeUnit) return false;
     if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
@@ -739,6 +830,10 @@ public class VertxOptions {
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
     result = 31 * result + (addressResolverOptions != null ? addressResolverOptions.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
+    result = 31 * result + (maxEventLoopExecuteTimeUnit != null ? maxEventLoopExecuteTimeUnit.hashCode() : 0);
+    result = 31 * result + (maxWorkerExecuteTimeUnit != null ? maxWorkerExecuteTimeUnit.hashCode() : 0);
+    result = 31 * result + (warningExceptionTimeUnit != null ? warningExceptionTimeUnit.hashCode() : 0);
+    result = 31 * result + (blockedThreadCheckIntervalUnit != null ? blockedThreadCheckIntervalUnit.hashCode() : 0);
     return result;
   }
 
@@ -748,8 +843,11 @@ public class VertxOptions {
         "eventLoopPoolSize=" + eventLoopPoolSize +
         ", workerPoolSize=" + workerPoolSize +
         ", internalBlockingPoolSize=" + internalBlockingPoolSize +
+        ", blockedThreadCheckIntervalUnit=" + blockedThreadCheckIntervalUnit +
         ", blockedThreadCheckInterval=" + blockedThreadCheckInterval +
+        ", maxEventLoopExecuteTimeUnit=" + maxEventLoopExecuteTimeUnit +
         ", maxEventLoopExecuteTime=" + maxEventLoopExecuteTime +
+        ", maxWorkerExecuteTimeUnit=" + maxWorkerExecuteTimeUnit +
         ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
         ", clusterManager=" + clusterManager +
         ", haEnabled=" + haEnabled +
@@ -761,6 +859,7 @@ public class VertxOptions {
         ", addressResolver=" + addressResolverOptions.toJson() +
         ", addressResolver=" + addressResolverOptions.toJson() +
         ", eventbus=" + eventBusOptions.toJson() +
+        ", warningExceptionTimeUnit=" + warningExceptionTimeUnit +
         ", warningExceptionTime=" + warningExceptionTime +
         '}';
   }

@@ -24,6 +24,6 @@ public class VertxExecutorService extends ThreadPoolExecutor {
     super(maxThreads, maxThreads,
         0L, TimeUnit.MILLISECONDS,
         new LinkedBlockingQueue<>(),
-        new VertxThreadFactory(prefix, new BlockedThreadChecker(10000, 10000), false, 10000));
+        new VertxThreadFactory(prefix, new BlockedThreadChecker(10000, TimeUnit.NANOSECONDS, 10000, TimeUnit.NANOSECONDS), false, 10000, TimeUnit.NANOSECONDS));
   }
 }

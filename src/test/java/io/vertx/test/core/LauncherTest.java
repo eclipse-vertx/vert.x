@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class LauncherTest extends VertxTestBase {
 
@@ -423,6 +424,7 @@ public class LauncherTest extends VertxTestBase {
     System.setProperty(RunCommand.VERTX_OPTIONS_PROP_PREFIX + "maxEventLoopExecuteTime", "123767667");
     System.setProperty(RunCommand.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
     System.setProperty(RunCommand.VERTX_OPTIONS_PROP_PREFIX + "haGroup", "somegroup");
+    System.setProperty(RunCommand.VERTX_OPTIONS_PROP_PREFIX + "maxEventLoopExecuteTimeUnit", "SECONDS");
 
     MyLauncher launcher = new MyLauncher();
     String[] args;
@@ -440,6 +442,7 @@ public class LauncherTest extends VertxTestBase {
     assertEquals(123767667L, opts.getMaxEventLoopExecuteTime());
     assertEquals(true, opts.getMetricsOptions().isEnabled());
     assertEquals("somegroup", opts.getHAGroup());
+    assertEquals(TimeUnit.SECONDS, opts.getMaxEventLoopExecuteTimeUnit());
 
   }
 

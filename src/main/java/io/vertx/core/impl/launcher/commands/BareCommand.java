@@ -276,6 +276,8 @@ public class BareCommand extends ClasspathHandler {
             arg = Long.valueOf(propVal);
           } else if (argType.equals(boolean.class)) {
             arg = Boolean.valueOf(propVal);
+          } else if (argType.isEnum()){
+            arg = Enum.valueOf((Class<? extends Enum>)argType, propVal);
           } else {
             log.warn("Invalid type for setter: " + argType);
             continue;

@@ -13,6 +13,8 @@ package io.vertx.core.impl;
 
 import io.netty.util.concurrent.FastThreadLocalThread;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -20,13 +22,15 @@ public final class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
   private final long maxExecTime;
+  private final TimeUnit maxExecTimeUnit;
   private long execStart;
   private ContextImpl context;
 
-  public VertxThread(Runnable target, String name, boolean worker, long maxExecTime) {
+  public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     super(target, name);
     this.worker = worker;
     this.maxExecTime = maxExecTime;
+    this.maxExecTimeUnit = maxExecTimeUnit;
   }
 
   ContextImpl getContext() {
@@ -55,5 +59,9 @@ public final class VertxThread extends FastThreadLocalThread {
 
   public long getMaxExecTime() {
     return maxExecTime;
+  }
+
+  public TimeUnit getMaxExecTimeUnit() {
+    return maxExecTimeUnit;
   }
 }

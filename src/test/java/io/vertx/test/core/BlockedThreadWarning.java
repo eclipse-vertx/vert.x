@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.*;
@@ -34,11 +35,13 @@ public class BlockedThreadWarning implements TestRule {
   private boolean doTest;
   private String poolName;
   private long maxExecuteTime;
+  private TimeUnit maxExecuteTimeUnit;
 
-  public synchronized void expectMessage(String poolName, long maxExecuteTime) {
+  public synchronized void expectMessage(String poolName, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     doTest = true;
     this.poolName = poolName;
     this.maxExecuteTime = maxExecuteTime;
+    this.maxExecuteTimeUnit = maxExecuteTimeUnit;
   }
 
   @Override
@@ -59,7 +62,7 @@ public class BlockedThreadWarning implements TestRule {
     List<String> logs = getLogs(description.getTestClass().getSimpleName(), description.getMethodName());
     assertThat(logs, hasItem(allOf(
       containsString(" has been blocked for "),
-      containsString(" time limit is " + MILLISECONDS.convert(maxExecuteTime, NANOSECONDS)),
+      containsString(" time limit is " + maxExecuteTime + " in " + maxExecuteTimeUnit),
       containsString("Thread[" + poolName + "-"))
     ));
   }
