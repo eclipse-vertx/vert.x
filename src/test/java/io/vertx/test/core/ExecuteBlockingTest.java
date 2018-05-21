@@ -12,9 +12,13 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Context;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -160,5 +164,42 @@ public class ExecuteBlockingTest extends VertxTestBase {
     long now = System.currentTimeMillis();
     long leeway = 1000;
     assertTrue(now - start < pause + leeway);
+  }
+
+  @Test
+  public void testWorkerPoolQueueCapacityFail() {
+    VertxOptions options = new VertxOptions().setWorkerPoolQueueCapacity(3).setWorkerPoolSize(2);
+    Vertx vertx = null;
+    try {
+      vertx = Vertx.vertx(options);
+
+      boolean exceptionHit = false;
+
+      for (int i = 0; i < 10; i++) {
+        try {
+          vertx.executeBlocking(
+            future -> {
+              try {
+                Thread.sleep(TimeUnit.MINUTES.toMillis(10), 0);
+              } catch (InterruptedException e) {
+                future.fail(e);
+              }
+            },
+            result -> {
+            });
+        } catch (Throwable t) {
+          assertTrue(t instanceof RejectedExecutionException);
+          exceptionHit = true;
+        }
+      }
+
+      assertTrue("No exception encountered", exceptionHit);
+
+    } finally {
+      if (vertx != null) {
+        vertx.close();
+      }
+    }
+
   }
 }
