@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
 import io.netty.util.HashingStrategy;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.impl.HttpUtils;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   private final VertxHttpHeaders.MapEntry[] entries = new VertxHttpHeaders.MapEntry[16];
-  private final VertxHttpHeaders.MapEntry head = new VertxHttpHeaders.MapEntry(-1, null, null);
+  private final VertxHttpHeaders.MapEntry head = new VertxHttpHeaders.MapEntry();
 
   public VertxHttpHeaders() {
     head.before = head.after = head;
@@ -397,6 +398,12 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     VertxHttpHeaders.MapEntry next;
     VertxHttpHeaders.MapEntry before, after;
 
+    MapEntry() {
+      this.hash = -1;
+      this.key = null;
+      this.value = null;
+    }
+
     MapEntry(int hash, CharSequence key, CharSequence value) {
       this.hash = hash;
       this.key = key;
@@ -476,6 +483,12 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   private void add0(int h, int i, final CharSequence name, final CharSequence value) {
+    if (!(name instanceof AsciiString)) {
+      HttpUtils.validateHeader(name);
+    }
+    if (!(value instanceof AsciiString)) {
+      HttpUtils.validateHeader(value);
+    }
     // Update the hash table.
     VertxHttpHeaders.MapEntry e = entries[i];
     VertxHttpHeaders.MapEntry newEntry;
