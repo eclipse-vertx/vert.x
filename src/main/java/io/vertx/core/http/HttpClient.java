@@ -1422,6 +1422,13 @@ public interface HttpClient extends Measured {
   HttpClient redirectHandler(Function<HttpClientResponse, Future<HttpClientRequest>> handler);
 
   /**
+   * Set connection exception handler
+   * @param handler - handler to be called if a connection exception is raised
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClient connectionExceptionHandler(Handler<Throwable> handler);
+  /**
    * @return the current redirect handler.
    */
   @GenIgnore
