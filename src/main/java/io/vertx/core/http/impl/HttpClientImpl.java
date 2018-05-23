@@ -106,7 +106,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final boolean keepAlive;
   private final boolean pipelining;
   private volatile boolean closed;
-  private volatile Handler<Throwable> connectionExceptionHandler;
+  private volatile Handler<Throwable> exceptionHandler;
   private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
@@ -938,13 +938,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClient connectionExceptionHandler(Handler<Throwable> connectionExceptionHandler) {
-    this.connectionExceptionHandler = connectionExceptionHandler;
+  public HttpClient exceptionHandler(Handler<Throwable> connectionExceptionHandler) {
+    this.exceptionHandler = connectionExceptionHandler;
     return this;
   }
 
-  public Handler<Throwable> connectionExceptionHandler() {
-    return this.connectionExceptionHandler;
+  public Handler<Throwable> exceptionHandler() {
+    return this.exceptionHandler;
   }
 
   @Override
@@ -1054,10 +1054,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     if (headers != null) {
       req.headers().setAll(headers);
     }
-    if(req.connection() != null) {
-      req.connection().exceptionHandler(this.connectionExceptionHandler);
-    }
-
     return req;
   }
 

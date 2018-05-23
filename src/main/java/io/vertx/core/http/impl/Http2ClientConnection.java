@@ -38,7 +38,7 @@ import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
+public class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
 
   private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;

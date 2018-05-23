@@ -440,26 +440,28 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private synchronized void connect(Handler<HttpVersion> headersHandler) {
-    if (!connecting) {
+    if (connecting) {
+      return;
+    }
 
-      if (method == HttpMethod.OTHER && rawMethod == null) {
-        throw new IllegalStateException("You must provide a rawMethod when using an HttpMethod.OTHER method");
-      }
+    if (method == HttpMethod.OTHER && rawMethod == null) {
+      throw new IllegalStateException("You must provide a rawMethod when using an HttpMethod.OTHER method");
+    }
 
-      String peerHost;
-      if (hostHeader != null) {
-        int idx = hostHeader.lastIndexOf(':');
-        if (idx != -1) {
-          peerHost = hostHeader.substring(0, idx);
-        } else {
-          peerHost = hostHeader;
-        }
+    String peerHost;
+    if (hostHeader != null) {
+      int idx = hostHeader.lastIndexOf(':');
+      if (idx != -1) {
+        peerHost = hostHeader.substring(0, idx);
       } else {
-        peerHost = host;
+        peerHost = hostHeader;
       }
+    } else {
+      peerHost = host;
+    }
 
-      // Capture some stuff
-      Handler<HttpConnection> h1 = connectionHandler;
+    // Capture some stuff
+    Handler<HttpConnection> h1 = connectionHandler;
       Handler<HttpConnection> h2 = client.connectionHandler();
       Handler<HttpConnection> initializer;
       if (h1 != null) {
@@ -474,38 +476,41 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         initializer = h2;
       }
-      ContextInternal connectCtx = vertx.getOrCreateContext();
+    ContextInternal connectCtx = vertx.getOrCreateContext();
 
-      // We defer actual connection until the first part of body is written or end is called
-      // This gives the user an opportunity to set an exception handler before connecting so
-      // they can capture any exceptions on connection
-      connecting = true;
-      client.getConnectionForRequest(connectCtx, peerHost, ssl, port, host, ar1 -> {
-        if (ar1.succeeded()) {
-          HttpClientStream stream = ar1.result();
-          ContextInternal ctx = (ContextInternal) stream.getContext();
-          if (stream.id() == 1 && initializer != null) {
-            ctx.executeFromIO(v -> {
-              initializer.handle(stream.connection());
-            });
-          }
-          // No need to synchronize as the thread is the same that set exceptionOccurred to true
-          // exceptionOccurred=true getting the connection => it's a TimeoutException
-          if (exceptionOccurred != null || reset != null) {
-            stream.reset(0);
-          } else {
-            ctx.executeFromIO(v -> {
-              connected(headersHandler, stream);
-            });
-          }
-        } else {
-          connectCtx.executeFromIO(v -> {
-            handleException(ar1.cause());
+    // We defer actual connection until the first part of body is written or end is called
+    // This gives the user an opportunity to set an exception handler before connecting so
+    // they can capture any exceptions on connection
+    connecting = true;
+    client.getConnectionForRequest(connectCtx, peerHost, ssl, port, host, ar1 -> {
+      if (ar1.succeeded()) {
+        HttpClientStream stream = ar1.result();
+        ContextInternal ctx = (ContextInternal) stream.getContext();
+        if(stream.connection() != null) {
+          stream.connection().exceptionHandler(client.exceptionHandler());
+        }
+        if (stream.id() == 1 && initializer != null) {
+          ctx.executeFromIO(v -> {
+            initializer.handle(stream.connection());
           });
         }
-      });
-    }
+        // No need to synchronize as the thread is the same that set exceptionOccurred to true
+        // exceptionOccurred=true getting the connection => it's a TimeoutException
+        if (exceptionOccurred != null || reset != null) {
+          stream.reset(0);
+        } else {
+          ctx.executeFromIO(v -> {
+            connected(headersHandler, stream);
+          });
+        }
+      } else {
+        connectCtx.executeFromIO(v -> {
+          handleException(ar1.cause());
+        });
+      }
+    });
   }
+
 
   private void connected(Handler<HttpVersion> headersHandler, HttpClientStream stream) {
     synchronized (this) {
@@ -542,7 +547,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
       }
       this.connecting = false;
-      this.stream = stream;
     }
     if (headersHandler != null) {
       headersHandler.handle(stream.version());

@@ -157,7 +157,7 @@ public abstract class ConnectionBase {
     return this;
   }
 
-  protected synchronized Handler<Throwable> exceptionHandler() {
+  public synchronized Handler<Throwable> exceptionHandler() {
     return exceptionHandler;
   }
 

@@ -3915,6 +3915,63 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testSetExceptionHandler() throws Exception {
+    Handler<Throwable> connectionHandler = event -> {};
+    client.exceptionHandler(connectionHandler);
+
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", response -> {
+      HttpConnection connection = response.request().connection();
+      if(connection instanceof Http1xClientConnection) {
+        assertEquals(connectionHandler, ((Http1xClientConnection)connection).exceptionHandler());
+        complete();
+      }
+      else if(connection instanceof Http2ClientConnection) {
+        assertEquals(connectionHandler, ((Http2ClientConnection)connection).exceptionHandler());
+        complete();
+      }
+      else {
+        fail();
+      }
+    });
+
+    server.requestHandler(clientRequest -> clientRequest.response().end());
+    startServer(server);
+    request.end();
+    await();
+  }
+
+  @Test
+  public void testConnectionExceptionHandler() throws Exception {
+    Throwable connectionException = new Throwable();
+    Handler<Throwable> connectionHandler = throwable -> {
+      assertEquals(connectionException, throwable);
+      complete();
+    };
+
+    client.exceptionHandler(connectionHandler);
+
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", response -> {
+    });
+
+    request.connectionHandler(connection -> {
+      if(connection instanceof  Http1xClientConnection) {
+        ((Http1xClientConnection) connection).exceptionHandler().handle(connectionException);
+      }
+      else if(connection instanceof Http2ClientConnection) {
+        ((Http2ClientConnection) connection).exceptionHandler().handle(connectionException);
+      }
+      else {
+        fail();
+      }
+    });
+
+    server.requestHandler(clientRequest -> clientRequest.response().end());
+    startServer(server);
+    request.end();
+    await();
+  }
+
+  @Test
   public void testFollowRedirectWithCustomHandler() throws Exception {
     String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
     waitFor(2);
