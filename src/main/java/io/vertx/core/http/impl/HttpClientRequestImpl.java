@@ -17,13 +17,13 @@ import io.netty.buffer.Unpooled;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -68,7 +68,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private int pendingMaxSize = -1;
   private int followRedirects;
   private long written;
-  private CaseInsensitiveHeaders headers;
+  private VertxHttpHeaders headers;
 
   private HttpClientStream stream;
   private boolean connecting;
@@ -183,7 +183,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized MultiMap headers() {
     if (headers == null) {
-      headers = new CaseInsensitiveHeaders();
+      headers = new VertxHttpHeaders();
     }
     return headers;
   }

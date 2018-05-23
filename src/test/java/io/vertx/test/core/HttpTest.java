@@ -49,12 +49,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -64,6 +59,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -86,7 +82,7 @@ public abstract class HttpTest extends HttpTestBase {
     super.setUp();
     testDir = testFolder.newFolder();
   }
-    
+
   protected HttpServerOptions createBaseServerOptions() {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
   }
@@ -176,7 +172,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-    
+
   @Test
   public void testLowerCaseHeaders() {
     server.requestHandler(req -> {
@@ -4270,6 +4266,78 @@ public abstract class HttpTest extends HttpTestBase {
       headers.add(entry.getKey(), entry.getValue());
     }
     return headers;
+  }
+
+  @Test
+  public void testHttpClientRequestHeadersDontContainCROrLF() throws Exception {
+    server.requestHandler(req -> {
+      req.headers().forEach(header -> {
+        String name = header.getKey();
+        switch (name.toLowerCase()) {
+          case "host":
+          case ":method":
+          case ":path":
+          case ":scheme":
+          case ":authority":
+            break;
+          default:
+            fail("Unexpected header " + name);
+        }
+      });
+      testComplete();
+    });
+    startServer();
+    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {});
+    List<BiConsumer<String, String>> list = Arrays.asList(
+      req::putHeader,
+      req.headers()::set,
+      req.headers()::add
+    );
+    list.forEach(cs -> {
+      try {
+        req.putHeader("header-name: header-value\r\nanother-header", "another-value");
+        fail();
+      } catch (IllegalArgumentException e) {
+      }
+    });
+    assertEquals(0, req.headers().size());
+    req.end();
+    await();
+  }
+
+  @Test
+  public void testHttpServerResponseHeadersDontContainCROrLF() throws Exception {
+    server.requestHandler(req -> {
+      List<BiConsumer<String, String>> list = Arrays.asList(
+        req.response()::putHeader,
+        req.response().headers()::set,
+        req.response().headers()::add
+      );
+      list.forEach(cs -> {
+        try {
+          cs.accept("header-name: header-value\r\nanother-header", "another-value");
+          fail();
+        } catch (IllegalArgumentException e) {
+        }
+      });
+      assertEquals(Collections.emptySet(), req.response().headers().names());
+      req.response().end();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.headers().forEach(header -> {
+        String name = header.getKey();
+        switch (name.toLowerCase()) {
+          case ":status":
+          case "content-length":
+            break;
+          default:
+            fail("Unexpected header " + name);
+        }
+      });
+      testComplete();
+    });
+    await();
   }
 
   /*

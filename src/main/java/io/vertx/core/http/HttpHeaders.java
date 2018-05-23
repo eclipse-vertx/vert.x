@@ -11,6 +11,9 @@
 
 package io.vertx.core.http;
 
+import io.netty.util.AsciiString;
+import io.vertx.core.http.impl.HttpUtils;
+
 /**
  * Contains often used Header names.
  * <p>
@@ -324,7 +327,8 @@ public final class HttpHeaders {
    * for multiple responses or requests.
    */
   public static CharSequence createOptimized(String value) {
-    return io.netty.handler.codec.http.HttpHeaders.newEntity(value);
+    HttpUtils.validateHeader(value);
+    return new AsciiString(value);
   }
 
   private HttpHeaders() {
