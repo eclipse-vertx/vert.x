@@ -134,12 +134,14 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap add(String name, String value) {
+    HttpUtils.validateHeader(name, value);
     headers.add(toLowerCase(name), value);
     return this;
   }
 
   @Override
   public MultiMap add(String name, Iterable<String> values) {
+    HttpUtils.validateHeader(name, values);
     headers.add(toLowerCase(name), values);
     return this;
   }
@@ -162,12 +164,14 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap set(String name, String value) {
+    HttpUtils.validateHeader(name, value);
     headers.set(toLowerCase(name), value);
     return this;
   }
 
   @Override
   public MultiMap set(String name, Iterable<String> values) {
+    HttpUtils.validateHeader(name, values);
     headers.set(toLowerCase(name), values);
     return this;
   }
@@ -230,24 +234,28 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap add(CharSequence name, CharSequence value) {
+    HttpUtils.validateHeader(name, value);
     headers.add(toLowerCase(name), value);
     return this;
   }
 
   @Override
   public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+    HttpUtils.validateHeader(name, values);
     headers.add(toLowerCase(name), values);
     return this;
   }
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
+    HttpUtils.validateHeader(name, value);
     headers.set(toLowerCase(name), value);
     return this;
   }
 
   @Override
   public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+    HttpUtils.validateHeader(name, values);
     headers.set(toLowerCase(name), values);
     return this;
   }

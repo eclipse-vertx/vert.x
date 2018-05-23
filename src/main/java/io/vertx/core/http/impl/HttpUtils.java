@@ -531,4 +531,23 @@ public final class HttpUtils {
     }
     return -1;
   }
+
+  public static void validateHeader(CharSequence name, CharSequence value) {
+    validateHeader(name);
+    validateHeader(value);
+  }
+
+  public static void validateHeader(CharSequence name, Iterable<? extends CharSequence> values) {
+    validateHeader(name);
+    values.forEach(HttpUtils::validateHeader);
+  }
+
+  public static void validateHeader(CharSequence value) {
+    for (int i = 0;i < value.length();i++) {
+      char c = value.charAt(i);
+      if (c == '\r' || c == '\n') {
+        throw new IllegalArgumentException("Illegal header character: " + ((int)c));
+      }
+    }
+  }
 }
