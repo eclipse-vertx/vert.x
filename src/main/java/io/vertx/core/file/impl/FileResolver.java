@@ -131,20 +131,20 @@ public class FileResolver {
         if (parentFileName != null) {
           URL directoryContents = cl.getResource(parentFileName);
           if (directoryContents != null) {
-            unpackUrlResource(directoryContents, parentFileName, cl);
+            unpackUrlResource(directoryContents, parentFileName, cl, true);
           }
         }
 
         URL url = cl.getResource(fileName);
         if (url != null) {
-          return unpackUrlResource(url, fileName, cl);
+          return unpackUrlResource(url, fileName, cl, false);
         }
       }
     }
     return file;
   }
 
-  private File unpackUrlResource(URL url, String fileName, ClassLoader cl) {
+  private File unpackUrlResource(URL url, String fileName, ClassLoader cl, boolean isDir) {
     String prot = url.getProtocol();
     switch (prot) {
       case "file":
@@ -154,7 +154,7 @@ public class FileResolver {
       case "bundle": // Apache Felix, Knopflerfish
       case "bundleentry": // Equinox
       case "bundleresource": // Equinox
-        return unpackFromBundleURL(url);
+        return unpackFromBundleURL(url, isDir);
       default:
         throw new IllegalStateException("Invalid url protocol: " + prot);
     }
@@ -272,11 +272,11 @@ public class FileResolver {
    * @param url      the url
    * @return the extracted file
    */
-  private synchronized File unpackFromBundleURL(URL url) {
+  private synchronized File unpackFromBundleURL(URL url, boolean isDir) {
     try {
       File file = new File(cacheDir, url.getHost() + File.separator + url.getFile());
       file.getParentFile().mkdirs();
-      if (url.toExternalForm().endsWith("/")) {
+      if (url.toExternalForm().endsWith("/")  || isDir) {
         // Directory
         file.mkdirs();
       } else {
