@@ -15,12 +15,13 @@ import io.netty.channel.Channel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.RecyclableConnection;
 import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpClientConnection extends HttpConnection {
+public interface HttpClientConnection extends HttpConnection, RecyclableConnection {
 
   Channel channel();
 

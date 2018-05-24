@@ -60,7 +60,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
-  private final ConnectionListener<HttpClientConnection> listener;
+  private ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
   private final HttpClientOptions options;
   private final boolean ssl;
@@ -111,6 +111,16 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   ConnectionListener<HttpClientConnection> listener() {
     return listener;
+  }
+
+  @Override
+  public void clean() {
+    this.listener = null;
+  }
+
+  @Override
+  public void setConnectionListener(ConnectionListener connectionListener) {
+    this.listener = connectionListener;
   }
 
   private static class StreamImpl implements HttpClientStream {

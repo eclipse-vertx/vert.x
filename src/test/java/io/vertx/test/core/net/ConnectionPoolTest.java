@@ -11,22 +11,31 @@
 
 package io.vertx.test.core.net;
 
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.junit.Test;
+
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.impl.pool.*;
+import io.vertx.core.http.RecyclableConnection;
+import io.vertx.core.http.impl.pool.ConnectResult;
+import io.vertx.core.http.impl.pool.ConnectionListener;
+import io.vertx.core.http.impl.pool.ConnectionProvider;
+import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
-import org.junit.Test;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -728,7 +737,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       }
     }
   */
-  class FakeConnection {
+  class FakeConnection implements RecyclableConnection {
 
     private static final int DISCONNECTED = 0;
     private static final int CONNECTING = 1;
@@ -736,7 +745,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     private static final int CLOSED = 3;
 
     private final ContextInternal context;
-    private final ConnectionListener<FakeConnection> listener;
+    private ConnectionListener<FakeConnection> listener;
     private final Future<ConnectResult<FakeConnection>> future;
     private final Channel channel = new EmbeddedChannel();
 
@@ -812,6 +821,16 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     void fail(Throwable err) {
       context.nettyEventLoop().execute(() -> future.tryFail(err));
+    }
+
+    @Override
+    public void clean() {
+      this.listener = null;
+    }
+
+    @Override
+    public void setConnectionListener(ConnectionListener connectionListener) {
+      this.listener = connectionListener;
     }
   }
 
