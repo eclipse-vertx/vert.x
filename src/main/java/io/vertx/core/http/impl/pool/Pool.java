@@ -15,6 +15,7 @@ import io.netty.channel.Channel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.RecyclableConnection;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
@@ -66,7 +67,7 @@ import java.util.function.BiConsumer;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Pool<C> {
+public class Pool<C extends RecyclableConnection> {
 
   /**
    * Pool state associated with a connection.
@@ -187,6 +188,7 @@ public class Pool<C> {
         available.poll();
       }
       ContextInternal ctx = conn.context;
+      conn.connection.setConnectionListener(createConnectionListener(waiter, conn));
       ctx.nettyEventLoop().execute(() -> {
         synchronized (Pool.this) {
           waitersCount--;
@@ -237,9 +239,8 @@ public class Pool<C> {
     }
   }
 
-  private void createConnection(Waiter<C> waiter) {
-    Holder<C> holder  = new Holder<>();
-    ConnectionListener<C> listener = new ConnectionListener<C>() {
+  private ConnectionListener createConnectionListener(Waiter<C> waiter, Holder<C> holder) {
+    return new ConnectionListener() {
       @Override
       public void onConcurrencyChange(long concurrency) {
         synchronized (Pool.this) {
@@ -281,6 +282,11 @@ public class Pool<C> {
         }
       }
     };
+  }
+
+  private void createConnection(Waiter<C> waiter) {
+    Holder<C> holder  = new Holder<>();
+    ConnectionListener<C> listener = createConnectionListener(waiter, holder);
     connector.connect(listener, waiter.context, ar -> {
       if (ar.succeeded()) {
         ConnectResult<C> result = ar.result();
@@ -320,8 +326,13 @@ public class Pool<C> {
 
   private synchronized void recycle(Holder<C> holder, int capacity, long timestamp) {
     recycleConnection(holder, capacity, timestamp);
+    resetConnection(holder);
     checkPending();
     checkClose();
+  }
+
+  private synchronized void resetConnection(Holder<C> holder) {
+    holder.connection.clean();
   }
 
   private synchronized void closed(Holder<C> holder) {

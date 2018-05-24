@@ -61,6 +61,15 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     current.close();
   }
 
+  @Override
+  public void clean() {
+  }
+
+  @Override
+  public void setConnectionListener(ConnectionListener connectionListener) {
+
+  }
+
   /**
    * The first stream that will send the request using HTTP/1, upgrades the connection when the protocol
    * switches and receives the response with HTTP/2 frames.
