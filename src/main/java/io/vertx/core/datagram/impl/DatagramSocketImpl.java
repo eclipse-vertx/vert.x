@@ -18,6 +18,7 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.NetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -231,19 +232,16 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
     Objects.requireNonNull(packet, "no null packet accepted");
     Objects.requireNonNull(host, "no null host accepted");
-    InetSocketAddress addr = InetSocketAddress.createUnresolved(host, port);
-    if (addr.isUnresolved()) {
-      context.owner().resolveAddress(host, res -> {
-        if (res.succeeded()) {
-          doSend(packet, new InetSocketAddress(res.result(), port), handler);
-        } else {
-          handler.handle(Future.failedFuture(res.cause()));
-        }
-      });
-    } else {
-      // If it's immediately resolved it means it was just an IP address so no need to async resolve
-      doSend(packet, addr, handler);
+    if (port < 0 || port > 65535) {
+      throw new IllegalArgumentException("port out of range:" + port);
     }
+    context.owner().resolveAddress(host, res -> {
+      if (res.succeeded()) {
+        doSend(packet, new InetSocketAddress(res.result(), port), handler);
+      } else {
+        handler.handle(Future.failedFuture(res.cause()));
+      }
+    });
     if (metrics != null) {
       metrics.bytesWritten(null, new SocketAddressImpl(port, host), packet.length());
     }
