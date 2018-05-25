@@ -167,33 +167,37 @@ public class ExecuteBlockingTest extends VertxTestBase {
   }
 
   @Test
-  public void testWorkerPoolQueueCapacityFail() {
-    VertxOptions options = new VertxOptions().setWorkerPoolQueueCapacity(3).setWorkerPoolSize(2);
+  public void testWorkerPoolQueueCapacityFail() throws Exception {
+    int workerPoolCapacity = 3;
+    int workerPoolSize = 2;
+    VertxOptions options = new VertxOptions()
+      .setWorkerPoolQueueCapacity(workerPoolCapacity).setWorkerPoolSize(workerPoolSize);
     Vertx vertx = null;
     try {
       vertx = Vertx.vertx(options);
 
-      boolean exceptionHit = false;
+      int numExecBlocking = 10;
+      int numExpectedRejection = numExecBlocking - workerPoolCapacity * workerPoolSize;
+      CountDownLatch latch = new CountDownLatch(numExpectedRejection);
 
-      for (int i = 0; i < 10; i++) {
-        try {
-          vertx.executeBlocking(
-            future -> {
-              try {
-                Thread.sleep(TimeUnit.MINUTES.toMillis(10), 0);
-              } catch (InterruptedException e) {
-                future.fail(e);
-              }
-            },
-            result -> {
-            });
-        } catch (Throwable t) {
-          assertTrue(t instanceof RejectedExecutionException);
-          exceptionHit = true;
-        }
+      for (int i = 0; i < numExecBlocking; i++) {
+        vertx.executeBlocking(
+          future -> {
+            try {
+              Thread.sleep(TimeUnit.MINUTES.toMillis(10), 0);
+            } catch (InterruptedException e) {
+              future.fail(e);
+            }
+          },
+          result -> {
+            assertTrue(result.failed());
+            if (result.cause() instanceof RejectedExecutionException) {
+              latch.countDown();
+            }
+          });
       }
 
-      assertTrue("No exception encountered", exceptionHit);
+      awaitLatch(latch);
 
     } finally {
       if (vertx != null) {
