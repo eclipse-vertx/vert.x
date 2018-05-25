@@ -237,9 +237,8 @@ public class Pool<C> {
     }
   }
 
-  private void createConnection(Waiter<C> waiter) {
-    Holder<C> holder  = new Holder<>();
-    ConnectionListener<C> listener = new ConnectionListener<C>() {
+  private ConnectionListener<C> createListener(Holder<C> holder) {
+    return new ConnectionListener<C>() {
       @Override
       public void onConcurrencyChange(long concurrency) {
         synchronized (Pool.this) {
@@ -259,6 +258,7 @@ public class Pool<C> {
           }
         }
       }
+
       @Override
       public void onRecycle(long expirationTimestamp) {
         if (expirationTimestamp < 0L) {
@@ -271,6 +271,7 @@ public class Pool<C> {
           recycle(holder, 1, expirationTimestamp);
         }
       }
+
       @Override
       public void onDiscard() {
         synchronized (Pool.this) {
@@ -281,6 +282,11 @@ public class Pool<C> {
         }
       }
     };
+  }
+
+  private void createConnection(Waiter<C> waiter) {
+    Holder<C> holder  = new Holder<>();
+    ConnectionListener<C> listener = createListener(holder);
     connector.connect(listener, waiter.context, ar -> {
       if (ar.succeeded()) {
         ConnectResult<C> result = ar.result();
