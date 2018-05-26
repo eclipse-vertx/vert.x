@@ -1,0 +1,18 @@
+[ ca ]
+default_ca             = CA_default
+
+[ CA_default ]
+copy_extensions        = copy
+
+[ req ]
+distinguished_name     = req_dn
+x509_extensions	       = req_ext_host5
+
+[ req_dn ]
+CN                     = Common Name
+
+[ req_ext_host5 ]
+subjectAltName         = @alt_names_host5
+
+[ alt_names_host5 ]
+DNS.1                  = *.host5.com
