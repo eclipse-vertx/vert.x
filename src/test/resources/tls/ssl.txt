@@ -236,8 +236,11 @@ keytool -genkey -alias test-host1 -keyalg RSA -keystore sni-keystore.jks -keysiz
 keytool -genkey -alias test-host2 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=host2.com -keypass wibble -storepass wibble
 keytool -genkey -alias test-host3 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN=*.host3.com -keypass wibble -storepass wibble
 keytool -genkey -alias test-host4 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host4.com certificate" -ext san=dns:host4.com,dns:www.host4.com -keypass wibble -storepass wibble
-# note this can only by done using the KeyStore Explorer GUI (because of https://bugs.openjdk.java.net/browse/JDK-8007706)
-keytool -genkey -alias test-host5 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host5.com" -ext san=dns:*.host5.com -keypass wibble -storepass wibble
+# note: creating wildcard san certificate with openssl due to bug in keytool (https://bugs.openjdk.java.net/browse/JDK-8007706)
+# keytool -genkey -alias test-host5 -keyalg RSA -keystore sni-keystore.jks -keysize 2048 -validity 1095 -dname CN="host5.com" -ext san=dns:*.host5.com -keypass wibble -storepass wibble
+openssl req -x509 -config openssl-host5.cnf -out host5.pem -new -newkey rsa:2048 -subj "/CN=host5.com" -days +1095 -keyout host5-key.pem -passout pass:wibble
+openssl pkcs12 -export -name test-host5 -in host5.pem -inkey host5-key.pem -out host5.p12 -passin pass:wibble -passout pass:wibble
+keytool -importkeystore -destkeystore sni-keystore.jks -deststorepass wibble -srckeystore host5.p12 -srcstoretype pkcs12 -srcstorepass wibble -alias test-host5
 
 3) Extract the cerfificate for the host1-host5 domains
 
