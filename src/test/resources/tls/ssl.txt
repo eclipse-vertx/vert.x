@@ -122,7 +122,7 @@ openssl req -new -sha256 -subj "/CN=Intermediate CA" -key int-ca/ca-key.pem -pas
 
 3) Sign the int CA cert with the root CA and convert it to the X.509 format
 
-openssl ca -config openssl.cnf -batch -name CA_root -keyfile root-ca/ca-key.pem -passin pass:wibble -cert root-ca/ca-cert.pem -in int-ca/ca-csr.pem | openssl x509 -out int-ca/ca-cert-root-ca.pem -outform PEM
+openssl ca -config openssl.cnf -batch -name CA_root -extensions cacert_ext -keyfile root-ca/ca-key.pem -passin pass:wibble -cert root-ca/ca-cert.pem -in int-ca/ca-csr.pem | openssl x509 -out int-ca/ca-cert-root-ca.pem -outform PEM
 
 3) Sign the server cert with the intermediate CA and convert it to the X.509 format
 

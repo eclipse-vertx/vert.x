@@ -39,6 +39,9 @@ organizationalUnitName  = optional
 commonName              = optional
 emailAddress            = optional
 
+[ cacert_ext ]
+basicConstraints = CA:TRUE
+
 [ req_ext ]
 subjectAltName    = @alt_names
 [ alt_names ]
