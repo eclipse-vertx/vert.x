@@ -63,7 +63,7 @@ keytool -certreq -alias test-store -file server-csr.pem -keystore server-keystor
 2) Create a root CA database
 
 mkdir root-ca
-openssl req -x509 -newkey rsa:2048 -subj "/CN=localhost" -keyout root-ca/ca-key.pem -passout pass:wibble -out root-ca/ca-cert.pem
+openssl req -x509 -newkey rsa:2048 -subj "/CN=Root CA" -keyout root-ca/ca-key.pem -passout pass:wibble -out root-ca/ca-cert.pem
 touch root-ca/index.txt
 echo 01 > root-ca/serial
 echo 1000 > root-ca/crlnumber
@@ -110,7 +110,7 @@ keytool -importkeystore -srckeystore client-truststore-root-ca.jks -srcstorepass
 1) Create an intermediate CA database
 
 mkdir int-ca
-openssl req -x509 -newkey rsa:2048 -subj "/CN=localhost" -keyout int-ca/ca-key.pem -passout pass:wibble -out int-ca/ca-cert.pem
+openssl req -x509 -newkey rsa:2048 -subj "/CN=Intermediate CA" -keyout int-ca/ca-key.pem -passout pass:wibble -out int-ca/ca-cert.pem
 touch int-ca/index.txt
 echo 01 > int-ca/serial
 echo 1000 > int-ca/crlnumber
@@ -118,7 +118,7 @@ echo "unique_subject = no" > int-ca/index.txt.attr
 
 2) Generate a Certificate Signing Request for the intermediate CA cert
 
-openssl req -new -sha256 -subj "/CN=localhost" -key int-ca/ca-key.pem -passin pass:wibble -out int-ca/ca-csr.pem
+openssl req -new -sha256 -subj "/CN=Intermediate CA" -key int-ca/ca-key.pem -passin pass:wibble -out int-ca/ca-csr.pem
 
 3) Sign the int CA cert with the root CA and convert it to the X.509 format
 
@@ -140,15 +140,15 @@ cat server-cert-int-ca.pem int-ca/ca-cert-root-ca.pem >server-cert-ca-chain.pem
 
 1) Create a private key + certificate for the client in a new key store:
 
-keytool -genkey -alias test-store -keyalg RSA -keystore client-keystore.jks -keysize 2048 -validity 1095 -dname CN=localhost -keypass wibble -storepass wibble
+keytool -genkey -alias test-store -keyalg RSA -keystore client-keystore.jks -keysize 2048 -validity 1095 -dname CN=client -keypass wibble -storepass wibble
 
 2) Export the cert from the store
 
-keytool -export -alias test-store -file localhost.crt -keystore client-keystore.jks -keypass wibble -storepass wibble
+keytool -export -alias test-store -file client-self-signed.crt -keystore client-keystore.jks -keypass wibble -storepass wibble
 
 3) Import the cert into a new trust-store for the server
 
-keytool -import -noprompt -trustcacerts -alias test-store -file localhost.crt -keystore server-truststore.jks -keypass wibble -storepass wibble
+keytool -import -noprompt -trustcacerts -alias test-store -file client-self-signed.crt -keystore server-truststore.jks -keypass wibble -storepass wibble
 
 
 ## Self signed client-server PKCS12
@@ -182,7 +182,7 @@ openssl pkcs12 -in client-keystore.p12 -passin pass:wibble -nokeys -out client-c
 1) Create a other CA database
 
 mkdir other-ca
-openssl req -x509 -newkey rsa:2048 -subj "/CN=localhost" -keyout other-ca/ca-key.pem -passout pass:wibble -out other-ca/ca-cert.pem
+openssl req -x509 -newkey rsa:2048 -subj "/CN=Other CA" -keyout other-ca/ca-key.pem -passout pass:wibble -out other-ca/ca-cert.pem
 touch other-ca/index.txt
 echo 01 > other-ca/serial
 echo 1000 > other-ca/crlnumber
