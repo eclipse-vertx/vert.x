@@ -96,9 +96,9 @@ keytool -importkeystore -destkeystore server-keystore-root-ca.jks -srckeystore s
 keytool -import -noprompt -trustcacerts -alias test-store -file root-ca/ca-cert.pem -keystore client-truststore-root-ca.jks -keypass wibble -storepass wibble
 
 
-# PKCS#12 trust store containing the  root CA
+# PKCS#12 trust store containing the root CA
 
-1) Convert the JKS trust-store containg the root CA certificate to the PKCS#12 format
+1) Convert the JKS trust-store contain the root CA certificate to the PKCS#12 format
 
 keytool -importkeystore -srckeystore client-truststore-root-ca.jks -srcstorepass wibble -destkeystore client-truststore-root-ca.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
 
