@@ -194,7 +194,7 @@ openssl ca -config openssl.cnf -batch -name CA_other -keyfile other-ca/ca-key.pe
 
 
 
-# PEM signed by root CA client-server (not sure this is useful)
+# PEM signed by root CA client-server (to verify CA signed client cases)
 
 1) Generate a Certificate Signing Request for the client cert
 
@@ -204,6 +204,28 @@ keytool -certreq -alias test-store -file client-csr.pem -keystore client-keystor
 
 openssl ca -config openssl.cnf -batch -name CA_root -keyfile root-ca/ca-key.pem -passin pass:wibble -cert root-ca/ca-cert.pem -in client-csr.pem | openssl x509 -out client-cert-root-ca.pem -outform PEM
 
+3) Create certificate bundle and import it to keystore
+
+cat client-cert-root-ca.pem root-ca/ca-cert.pem >client-cert-root-ca-chain.pem
+openssl pkcs12 -export -name test-store -in client-cert-root-ca-chain.pem -inkey client-key.pem -out client-keystore-root-ca.p12 -password pass:wibble
+keytool -importkeystore -destkeystore client-keystore-root-ca.jks -srckeystore client-keystore-root-ca.p12 -srcstorepass wibble -srcstoretype pkcs12 -alias test-store -keypass wibble -storepass wibble
+
+
+# PEM signed by other CA client-server (to verify unknown client cases)
+
+1) Generate a Certificate Signing Request for the client cert
+
+keytool -certreq -alias test-store -file client-csr.pem -keystore client-keystore.jks -keypass wibble -storepass wibble
+
+2) Sign the client cert with the intermediate CA and convert it to the X.509 format
+
+openssl ca -config openssl.cnf -batch -name CA_int -keyfile other-ca/ca-key.pem -passin pass:wibble -cert other-ca/ca-cert.pem -in client-csr.pem | openssl x509 -out client-cert-other-ca.pem -outform PEM
+
+3) Create certificate bundle and import it to keystore
+
+cat client-cert-other-ca.pem other-ca/ca-cert.pem >client-cert-other-ca-chain.pem
+openssl pkcs12 -export -name test-store -in client-cert-other-ca-chain.pem -inkey client-key.pem -out client-keystore-other-ca.p12 -password pass:wibble
+keytool -importkeystore -destkeystore client-keystore-other-ca.jks -srckeystore client-keystore-other-ca.p12 -srcstorepass wibble -srcstoretype pkcs12 -alias test-store -keypass wibble -storepass wibble
 
 
 # Certificate Revocation List
