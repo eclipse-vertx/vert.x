@@ -61,7 +61,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     Buffer buff = vertx.fileSystem().readFileBlocking("webroot/subdir/subfile.html");
     assertEquals(buff.toString(), "<html><body>subfile</body></html>");
     Set<String> names = vertx.fileSystem().readDirBlocking("webroot/subdir").stream().map(path -> {
-      int idx = path.lastIndexOf('/');
+      int idx = path.lastIndexOf(File.separator);
       return idx == -1 ? path : path.substring(idx + 1);
     }).collect(Collectors.toSet());
     assertEquals(names, new HashSet<>(Arrays.asList("subdir2", "subfile.html")));
