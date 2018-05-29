@@ -1647,6 +1647,7 @@ public class Http1xTest extends HttpTest {
       assertTrue(connectedServers.contains(server));
     }
     assertEquals(numServers, requestCount.size());
+    assertEquals(requestCount.values().stream().mapToInt(i -> i).sum(), numRequests);
     for (int cnt : requestCount.values()) {
       assertEquals(numRequests / numServers, cnt);
     }
