@@ -11,6 +11,8 @@
 
 package io.vertx.core.impl.launcher.commands;
 
+import io.vertx.core.impl.Utils;
+
 import java.util.List;
 
 /**
@@ -87,8 +89,12 @@ public class ExecUtils {
         throw new IllegalArgumentException(
             "Can't handle single and double quotes in same argument");
       }
-      return buf.append(SINGLE_QUOTE).append(cleanedArgument).append(
+      if (Utils.isWindows()) {
+        return buf.append(DOUBLE_QUOTE).append(cleanedArgument.replace("\"", "\\\"")).append(DOUBLE_QUOTE).toString();
+      } else {
+        return buf.append(SINGLE_QUOTE).append(cleanedArgument).append(
           SINGLE_QUOTE).toString();
+      }
     } else if (cleanedArgument.contains(SINGLE_QUOTE)
         || cleanedArgument.contains(" ")) {
       return buf.append(DOUBLE_QUOTE).append(cleanedArgument).append(
