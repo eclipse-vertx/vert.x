@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -69,7 +68,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
         waitForShutdown();
 
-        waitUntil(() -> {
+        assertWaitUntil(() -> {
             output.reset();
             cli.dispatch(new String[]{"list"});
             return !output.toString().contains(id);
@@ -106,7 +105,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
         waitForShutdown();
 
-        waitUntil(() -> {
+        assertWaitUntil(() -> {
             output.reset();
             cli.dispatch(new String[]{"list"});
             return !output.toString().contains(id);
@@ -145,7 +144,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
         waitForShutdown();
 
-        waitUntil(() -> {
+        assertWaitUntil(() -> {
             output.reset();
             cli.dispatch(new String[]{"list"});
             return !output.toString().contains(id);
@@ -155,7 +154,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
     }
 
     private void waitForShutdown() {
-        waitUntil(() -> {
+        assertWaitUntil(() -> {
             try {
                 getHttpCode();
             } catch (IOException e) {
@@ -166,7 +165,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
     }
 
     private void waitForStartup() {
-        waitUntil(() -> {
+        assertWaitUntil(() -> {
             try {
                 return getHttpCode() == 200;
             } catch (IOException e) {
@@ -203,7 +202,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
         waitForShutdown();
 
-        waitUntil(() -> {
+        assertWaitUntil(() -> {
             output.reset();
             cli.dispatch(new String[]{"list"});
             return !output.toString().contains(id);
@@ -240,7 +239,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
         waitForShutdown();
 
-        waitUntil(() -> {
+        assertWaitUntil(() -> {
             output.reset();
             cli.dispatch(new String[]{"list"});
             return !output.toString().contains(id);
@@ -277,7 +276,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
         waitForShutdown();
 
-        waitUntil(() -> {
+        assertWaitUntil(() -> {
             output.reset();
             cli.dispatch(new String[]{"list"});
             return !output.toString().contains(id);
