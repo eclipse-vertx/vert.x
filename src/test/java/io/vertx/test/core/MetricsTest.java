@@ -54,7 +54,6 @@ import io.vertx.test.fakemetrics.SocketMetric;
 import io.vertx.test.fakemetrics.WebSocketMetric;
 import org.junit.Test;
 
-import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -752,13 +751,13 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testHttpConnect1() throws Exception {
-    testHttpConnect("localhost", socketMetric -> assertEquals("localhost", socketMetric.remoteName));
+  public void testHttpConnect1() {
+    testHttpConnect(TestUtils.loopbackAddress(), socketMetric -> assertEquals(TestUtils.loopbackAddress(), socketMetric.remoteName));
   }
 
   @Test
-  public void testHttpConnect2() throws Exception {
-    testHttpConnect(InetAddress.getLocalHost().getHostAddress(), socketMetric -> assertEquals(socketMetric.remoteAddress.host(), socketMetric.remoteName));
+  public void testHttpConnect2() {
+    testHttpConnect(TestUtils.loopbackAddress(), socketMetric -> assertEquals(socketMetric.remoteAddress.host(), socketMetric.remoteName));
   }
 
   private void testHttpConnect(String host, Consumer<SocketMetric> checker) {
