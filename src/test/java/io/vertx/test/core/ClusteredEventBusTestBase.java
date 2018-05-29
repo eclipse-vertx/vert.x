@@ -11,16 +11,19 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 
 /**
@@ -182,4 +185,89 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     await();
   }
 
+  @Test
+  public void testSendWhileUnsubscribing() throws Exception {
+    startNodes(2);
+
+    AtomicBoolean unregistered = new AtomicBoolean();
+
+    Verticle sender = new AbstractVerticle() {
+
+      @Override
+      public void start() throws Exception {
+        getVertx().runOnContext(v -> sendMsg());
+      }
+
+      private void sendMsg() {
+        if (!unregistered.get()) {
+          getVertx().eventBus().send("whatever", "marseille");
+          vertx.setTimer(1, id -> {
+            sendMsg();
+          });
+        } else {
+          getVertx().eventBus().send("whatever", "marseille", ar -> {
+            Throwable cause = ar.cause();
+            assertThat(cause, instanceOf(ReplyException.class));
+            ReplyException replyException = (ReplyException) cause;
+            assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
+            testComplete();
+          });
+        }
+      }
+    };
+
+    Verticle receiver = new AbstractVerticle() {
+      boolean unregisterCalled;
+
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        EventBus eventBus = getVertx().eventBus();
+        MessageConsumer<String> consumer = eventBus.consumer("whatever");
+        consumer.handler(m -> {
+          if (!unregisterCalled) {
+            consumer.unregister(v -> unregistered.set(true));
+            unregisterCalled = true;
+          }
+          m.reply("ok");
+        }).completionHandler(startFuture);
+      }
+    };
+
+    CountDownLatch deployLatch = new CountDownLatch(1);
+    vertices[0].exceptionHandler(this::fail).deployVerticle(receiver, onSuccess(receiverId -> {
+      vertices[1].exceptionHandler(this::fail).deployVerticle(sender, onSuccess(senderId -> {
+        deployLatch.countDown();
+      }));
+    }));
+    awaitLatch(deployLatch);
+
+    await();
+
+    CountDownLatch closeLatch = new CountDownLatch(2);
+    vertices[0].close(v -> closeLatch.countDown());
+    vertices[1].close(v -> closeLatch.countDown());
+    awaitLatch(closeLatch);
+  }
+
+  @Test
+  public void testMessageBodyInterceptor() throws Exception {
+    String content = TestUtils.randomUnicodeString(13);
+    startNodes(2);
+    waitFor(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    vertices[0].eventBus().registerCodec(new StringLengthCodec()).<Integer>consumer("whatever", msg -> {
+      assertEquals(content.length(), (int) msg.body());
+      complete();
+    }).completionHandler(ar -> latch.countDown());
+    awaitLatch(latch);
+    StringLengthCodec codec = new StringLengthCodec();
+    vertices[1].eventBus().registerCodec(codec).addInterceptor(sc -> {
+      if ("whatever".equals(sc.message().address())) {
+        assertEquals(content, sc.sentBody());
+        complete();
+      }
+      sc.next();
+    }).send("whatever", content, new DeliveryOptions().setCodecName(codec.name()));
+    await();
+  }
 }
