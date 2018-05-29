@@ -466,14 +466,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
     await();
   }
 
-  private long burnCpu() {
-    long res = 1;
-    for (int i = 2; i <= 2000; i++) {
-      res = res * i;
-    }
-    return res;
-  }
-
   @Test
   public void testSendWhileUnsubscribing() throws Exception {
     startNodes(2);
@@ -490,8 +482,9 @@ public abstract class EventBusTestBase extends VertxTestBase {
       private void sendMsg() {
         if (!unregistered.get()) {
           getVertx().eventBus().send("whatever", "marseille");
-          burnCpu();
-          getVertx().runOnContext(v -> sendMsg());
+          vertx.setTimer(1, id -> {
+            sendMsg();
+          });
         } else {
           getVertx().eventBus().send("whatever", "marseille", ar -> {
             Throwable cause = ar.cause();
