@@ -212,7 +212,7 @@ public class WatcherTest extends CommandTestBase {
 
     if (ExecUtils.isWindows()) {
       // undeployment followed by redeployment. Windows is not case sensitive
-      assertWaitUntil(() -> undeploy.get() == 1 && deploy.get() == 2);
+      assertWaitUntil(() -> undeploy.get() == 1 && deploy.get() == 2, "expected undeploy " + undeploy.get() + " == 1 and deploy " + deploy.get() + " == 2");
     } else {
       // It depends on the file system, we can't really test anything in a reliable way.
     }

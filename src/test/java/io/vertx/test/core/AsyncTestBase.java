@@ -602,6 +602,12 @@ public class AsyncTestBase {
     }
   }
 
+  public static void assertWaitUntil(BooleanSupplier supplier, long timeout, String reason) {
+    if (!waitUntil(supplier, timeout)) {
+      throw new IllegalStateException("Timed out: " + reason);
+    }
+  }
+
   public static boolean waitUntil(BooleanSupplier supplier, long timeout) {
     long start = System.currentTimeMillis();
     while (true) {

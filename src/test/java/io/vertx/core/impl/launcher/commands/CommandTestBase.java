@@ -94,7 +94,11 @@ public class CommandTestBase {
   }
 
   protected void assertWaitUntil(BooleanSupplier supplier) {
-    assertWaitUntil(supplier, 20000);
+    AsyncTestBase.assertWaitUntil(supplier, 20000);
+  }
+
+  protected void assertWaitUntil(BooleanSupplier supplier, String reason) {
+    AsyncTestBase.assertWaitUntil(supplier, 20000, reason);
   }
 
   protected void assertWaitUntil(BooleanSupplier supplier, long timeout) {
