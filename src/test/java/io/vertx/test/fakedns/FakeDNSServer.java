@@ -11,6 +11,7 @@
 
 package io.vertx.test.fakedns;
 
+import org.apache.directory.server.dns.DnsException;
 import org.apache.directory.server.dns.DnsServer;
 import org.apache.directory.server.dns.io.encoder.DnsMessageEncoder;
 import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
@@ -63,12 +64,16 @@ public final class FakeDNSServer extends DnsServer {
 
   private String ipAddress = IP_ADDRESS;
   private int port = PORT;
-  private final RecordStore store;
+  private volatile RecordStore store;
   private DatagramAcceptor acceptor;
   private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
 
-  public FakeDNSServer(RecordStore store) {
+  public FakeDNSServer() {
+  }
+
+  public FakeDNSServer store(RecordStore store) {
     this.store = store;
+    return this;
   }
 
   public synchronized DnsMessage pollMessage() {
@@ -89,16 +94,16 @@ public final class FakeDNSServer extends DnsServer {
     return this;
   }
 
-  public static FakeDNSServer testResolveA(final String ipAddress) {
+  public FakeDNSServer testResolveA(final String ipAddress) {
     return testResolveA(Collections.singletonMap("dns.vertx.io", ipAddress));
   }
 
-  public static FakeDNSServer testResolveA(Map<String, String> entries) {
-    return new FakeDNSServer(A_store(entries));
+  public FakeDNSServer testResolveA(Map<String, String> entries) {
+    return store(A_store(entries));
   }
 
-  public static FakeDNSServer testResolveAAAA(final String ipAddress) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testResolveAAAA(final String ipAddress) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -116,8 +121,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testResolveMX(final int prio, final String mxRecord) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testResolveMX(final int prio, final String mxRecord) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -135,8 +140,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testResolveTXT(final String txt) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testResolveTXT(final String txt) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -153,8 +158,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testResolveNS(final String ns) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testResolveNS(final String ns) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -171,8 +176,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testResolveCNAME(final String cname) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testResolveCNAME(final String cname) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -189,8 +194,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testResolvePTR(final String ptr) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testResolvePTR(final String ptr) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -207,8 +212,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testResolveSRV(final int priority, final int weight, final int port, final String target) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testResolveSRV(final int priority, final int weight, final int port, final String target) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -228,8 +233,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testLookup4(final String ip) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testLookup4(final String ip) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -247,8 +252,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testLookup6() {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testLookup6() {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -266,12 +271,12 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testLookup(final String ip) {
+  public FakeDNSServer testLookup(final String ip) {
     return testLookup4(ip);
   }
 
-  public static FakeDNSServer testLookupNonExisting() {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testLookupNonExisting() {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         return null;
@@ -279,8 +284,8 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testReverseLookup(final String ptr) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testReverseLookup(final String ptr) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
         Set<ResourceRecord> set = new HashSet<>();
@@ -297,12 +302,12 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
-  public static FakeDNSServer testResolveASameServer(final String ipAddress) {
-    return new FakeDNSServer(A_store(Collections.singletonMap("vertx.io", ipAddress)));
+  public FakeDNSServer testResolveASameServer(final String ipAddress) {
+    return store(A_store(Collections.singletonMap("vertx.io", ipAddress)));
   }
 
-  public static FakeDNSServer testLookup4CNAME(final String cname, final String ip) {
-    return new FakeDNSServer(new RecordStore() {
+  public FakeDNSServer testLookup4CNAME(final String cname, final String ip) {
+    return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord)
           throws org.apache.directory.server.dns.DnsException {
@@ -337,7 +342,17 @@ public final class FakeDNSServer extends DnsServer {
 
     acceptor = transport.getAcceptor();
 
-    acceptor.setHandler(new DnsProtocolHandler(this, store) {
+    acceptor.setHandler(new DnsProtocolHandler(this, new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord question) throws DnsException {
+        RecordStore actual = store;
+        if (actual == null) {
+          return Collections.emptySet();
+        } else {
+          return actual.getRecords(question);
+        }
+      }
+    }) {
       @Override
       public void sessionCreated(IoSession session) throws Exception {
         // Use our own codec to support AAAA testing

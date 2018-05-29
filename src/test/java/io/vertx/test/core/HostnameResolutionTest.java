@@ -58,7 +58,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
-    dnsServer = FakeDNSServer.testResolveASameServer("127.0.0.1");
+    dnsServer = new FakeDNSServer().testResolveASameServer("127.0.0.1");
     dnsServer.start();
     dnsServerAddress = dnsServer.localAddress();
     super.setUp();
@@ -66,9 +66,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    if (dnsServer.isStarted()) {
-      dnsServer.stop();
-    }
+    dnsServer.stop();
     super.tearDown();
   }
 
@@ -397,10 +395,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     InetAddress localhost = InetAddress.getByName("localhost");
 
     // Set a dns resolver that won't resolve localhost
-    dnsServer.stop();
-    dnsServer = FakeDNSServer.testResolveASameServer("127.0.0.1");
-    dnsServer.start();
-    dnsServerAddress = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
+    dnsServer.testResolveASameServer("127.0.0.1");
 
     // Test using the resolver API
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
@@ -493,9 +488,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     records.put("host7.sub.sub.foo.com", addr_host7_sub_sub_foo_com);
     records.put("host7.sub.sub", addr_host7_sub_sub);
 
-    dnsServer.stop();
-    dnsServer = FakeDNSServer.testResolveA(records);
-    dnsServer.start();
+    dnsServer.testResolveA(records);
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
@@ -586,9 +579,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     records.put("host3.bar.com", "127.0.0.3");
     records.put("host3.foo.com", "127.0.0.4");
 
-    dnsServer.stop();
-    dnsServer = FakeDNSServer.testResolveA(records);
-    dnsServer.start();
+    dnsServer.testResolveA(records);
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
@@ -638,9 +629,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     records.put("host2.sub.foo.com", "127.0.0.2");
     records.put("host2.sub", "127.0.0.3");
 
-    dnsServer.stop();
-    dnsServer = FakeDNSServer.testResolveA(records);
-    dnsServer.start();
+    dnsServer.testResolveA(records);
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
@@ -672,9 +661,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     records.put("host1", "127.0.0.2");
     records.put("host1.foo.com", "127.0.0.3");
 
-    dnsServer.stop();
-    dnsServer = FakeDNSServer.testResolveA(records);
-    dnsServer.start();
+    dnsServer.testResolveA(records);
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
@@ -704,9 +691,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   public void testNetSearchDomain() throws Exception {
     Map<String, String> records = new HashMap<>();
     records.put("host1.foo.com", "127.0.0.1");
-    dnsServer.stop();
-    dnsServer = FakeDNSServer.testResolveA(records);
-    dnsServer.start();
+    dnsServer.testResolveA(records);
     vertx.close();
     vertx = vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
@@ -805,7 +790,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     List<FakeDNSServer> dnsServers = new ArrayList<>();
     try {
       for (int index = 1; index <= num; index++) {
-        FakeDNSServer server = new FakeDNSServer(FakeDNSServer.A_store(Collections.singletonMap("vertx.io", "127.0.0." + index)));
+        FakeDNSServer server = new FakeDNSServer().store(FakeDNSServer.A_store(Collections.singletonMap("vertx.io", "127.0.0." + index)));
         server.port(FakeDNSServer.PORT + index);
         server.start();
         dnsServers.add(server);
@@ -847,7 +832,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testServerFailover() throws Exception {
-    FakeDNSServer server = new FakeDNSServer(FakeDNSServer.A_store(Collections.singletonMap("vertx.io", "127.0.0.1"))).port(FakeDNSServer.PORT + 2);
+    FakeDNSServer server = new FakeDNSServer().store(FakeDNSServer.A_store(Collections.singletonMap("vertx.io", "127.0.0.1"))).port(FakeDNSServer.PORT + 2);
     try {
       AddressResolverOptions options = new AddressResolverOptions();
       options.setOptResourceEnabled(false);
