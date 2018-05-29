@@ -42,7 +42,7 @@ public class WatcherAbsolutePathTest extends WatcherTest {
             root.getAbsolutePath() + File.separator + "**" + File.separator + "*.txt",
             root.getAbsolutePath() + File.separator + "windows\\*.win",
             root.getAbsolutePath() + File.separator + "unix/*.nix",
-            "FOO.bar")), next -> {
+            root.getAbsolutePath() + File.separator + "FOO.bar")), next -> {
       deploy.incrementAndGet();
       if (next != null) {
         next.handle(null);
