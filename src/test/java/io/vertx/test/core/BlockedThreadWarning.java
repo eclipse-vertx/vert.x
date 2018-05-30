@@ -11,6 +11,7 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.impl.BlockedThreadChecker;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -19,11 +20,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
-import static java.util.concurrent.TimeUnit.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
@@ -36,6 +40,7 @@ public class BlockedThreadWarning implements TestRule {
   private String poolName;
   private long maxExecuteTime;
   private TimeUnit maxExecuteTimeUnit;
+  private List<String> logs = new ArrayList<>();
 
   public synchronized void expectMessage(String poolName, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     doTest = true;
@@ -49,38 +54,36 @@ public class BlockedThreadWarning implements TestRule {
     return new Statement() {
       @Override
       public void evaluate() throws Throwable {
-        base.evaluate();
-        doTest(description);
+        logs.clear();
+        Logger logger = Logger.getLogger(BlockedThreadChecker.class.getName());
+        Handler handler = new Handler() {
+          public void publish(LogRecord record) {
+            synchronized (BlockedThreadWarning.this) {
+              logs.add(record.getMessage());
+            }
+          }
+          public void flush() { }
+          public void close() throws SecurityException { }
+        };
+        logger.addHandler(handler);
+        try {
+          base.evaluate();
+          doTest();
+        } finally {
+          logger.removeHandler(handler);
+        }
       }
     };
   }
 
-  private synchronized void doTest(Description description) throws IOException {
+  private synchronized void doTest() {
     if (!doTest) {
       return;
     }
-    List<String> logs = getLogs(description.getTestClass().getSimpleName(), description.getMethodName());
     assertThat(logs, hasItem(allOf(
       containsString(" has been blocked for "),
       containsString(" time limit is " + maxExecuteTimeUnit.toMillis(maxExecuteTime) + " ms"),
       containsString("Thread[" + poolName + "-"))
     ));
-  }
-
-  private List<String> getLogs(String testClass, String methodName) throws IOException {
-    String startingTestMessage = "Starting test: " + testClass + "#" + methodName;
-    List<String> logs = new ArrayList<>();
-    AtomicBoolean reachedTest = new AtomicBoolean();
-    Files.lines(Paths.get(System.getProperty("java.io.tmpdir"), "vertx.log"))
-      .forEach(line -> {
-        if (!reachedTest.get()) {
-          if (line.contains(startingTestMessage)) {
-            reachedTest.set(true);
-          }
-        } else {
-          logs.add(line);
-        }
-      });
-    return logs;
   }
 }

@@ -15,13 +15,9 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Verticle;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.json.JsonArray;
@@ -29,10 +25,7 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-
-import static org.hamcrest.CoreMatchers.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -463,99 +456,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
       fut.complete();
     }, false, null);
 
-    await();
-  }
-
-  private long burnCpu() {
-    long res = 1;
-    for (int i = 2; i <= 2000; i++) {
-      res = res * i;
-    }
-    return res;
-  }
-
-  @Test
-  public void testSendWhileUnsubscribing() throws Exception {
-    startNodes(2);
-
-    AtomicBoolean unregistered = new AtomicBoolean();
-
-    Verticle sender = new AbstractVerticle() {
-
-      @Override
-      public void start() throws Exception {
-        getVertx().runOnContext(v -> sendMsg());
-      }
-
-      private void sendMsg() {
-        if (!unregistered.get()) {
-          getVertx().eventBus().send("whatever", "marseille");
-          burnCpu();
-          getVertx().runOnContext(v -> sendMsg());
-        } else {
-          getVertx().eventBus().send("whatever", "marseille", ar -> {
-            Throwable cause = ar.cause();
-            assertThat(cause, instanceOf(ReplyException.class));
-            ReplyException replyException = (ReplyException) cause;
-            assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
-            testComplete();
-          });
-        }
-      }
-    };
-
-    Verticle receiver = new AbstractVerticle() {
-      boolean unregisterCalled;
-
-      @Override
-      public void start(Future<Void> startFuture) throws Exception {
-        EventBus eventBus = getVertx().eventBus();
-        MessageConsumer<String> consumer = eventBus.consumer("whatever");
-        consumer.handler(m -> {
-          if (!unregisterCalled) {
-            consumer.unregister(v -> unregistered.set(true));
-            unregisterCalled = true;
-          }
-          m.reply("ok");
-        }).completionHandler(startFuture);
-      }
-    };
-
-    CountDownLatch deployLatch = new CountDownLatch(1);
-    vertices[0].exceptionHandler(this::fail).deployVerticle(receiver, onSuccess(receiverId -> {
-      vertices[1].exceptionHandler(this::fail).deployVerticle(sender, onSuccess(senderId -> {
-        deployLatch.countDown();
-      }));
-    }));
-    awaitLatch(deployLatch);
-
-    await();
-
-    CountDownLatch closeLatch = new CountDownLatch(2);
-    vertices[0].close(v -> closeLatch.countDown());
-    vertices[1].close(v -> closeLatch.countDown());
-    awaitLatch(closeLatch);
-  }
-
-  @Test
-  public void testMessageBodyInterceptor() throws Exception {
-    String content = TestUtils.randomUnicodeString(13);
-    startNodes(2);
-    waitFor(2);
-    CountDownLatch latch = new CountDownLatch(1);
-    vertices[0].eventBus().registerCodec(new StringLengthCodec()).<Integer>consumer("whatever", msg -> {
-      assertEquals(content.length(), (int) msg.body());
-      complete();
-    }).completionHandler(ar -> latch.countDown());
-    awaitLatch(latch);
-    StringLengthCodec codec = new StringLengthCodec();
-    vertices[1].eventBus().registerCodec(codec).addInterceptor(sc -> {
-      if ("whatever".equals(sc.message().address())) {
-        assertEquals(content, sc.sentBody());
-        complete();
-      }
-      sc.next();
-    }).send("whatever", content, new DeliveryOptions().setCodecName(codec.name()));
     await();
   }
 

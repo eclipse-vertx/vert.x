@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RedeployTest extends CommandTestBase {
 
   private void waitForTermination() {
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         RunCommandTest.getHttpCode();
         return false;
@@ -63,7 +63,7 @@ public class RedeployTest extends CommandTestBase {
         HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
         "--launcher-class=" + Launcher.class.getName()
     });
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200;
       } catch (IOException e) {
@@ -80,7 +80,7 @@ public class RedeployTest extends CommandTestBase {
         "--launcher-class=" + Launcher.class.getName(),
         "--conf", "{\"random\":" + random + "}"
     });
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200;
       } catch (IOException e) {
@@ -101,7 +101,7 @@ public class RedeployTest extends CommandTestBase {
         "--launcher-class=" + Launcher.class.getName(),
         "--conf={\"random\":" + random + "}"
     });
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200;
       } catch (IOException e) {
@@ -121,7 +121,7 @@ public class RedeployTest extends CommandTestBase {
         "--launcher-class=" + Launcher.class.getName(),
         "--conf", new File("src/test/resources/conf.json").getAbsolutePath()
     });
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200;
       } catch (IOException e) {
@@ -141,7 +141,7 @@ public class RedeployTest extends CommandTestBase {
         "--launcher-class=" + Launcher.class.getName(),
         "--conf=" + new File("src/test/resources/conf.json").getAbsolutePath()
     });
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200;
       } catch (IOException e) {
@@ -162,7 +162,7 @@ public class RedeployTest extends CommandTestBase {
         "--cluster",
         ExecUtils.isWindows() ? "--redeploy-termination-period=3000" : ""
     });
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200;
       } catch (IOException e) {
@@ -179,7 +179,7 @@ public class RedeployTest extends CommandTestBase {
         "--launcher-class=" + Launcher.class.getName(),
         ExecUtils.isWindows() ? "--redeploy-termination-period=3000" : ""
     });
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200;
       } catch (IOException e) {
@@ -194,7 +194,7 @@ public class RedeployTest extends CommandTestBase {
     }
     file.createNewFile();
 
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200 && start1 != RunCommandTest.getContent().getLong("startTime");
       } catch (IOException e) {
@@ -211,7 +211,7 @@ public class RedeployTest extends CommandTestBase {
         "--launcher-class=" + Launcher.class.getName(),
         ExecUtils.isWindows() ? "--redeploy-termination-period=3000" : ""
     });
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200;
       } catch (IOException e) {
@@ -226,7 +226,7 @@ public class RedeployTest extends CommandTestBase {
     }
     file.createNewFile();
 
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return RunCommandTest.getHttpCode() == 200 && start1 != RunCommandTest.getContent().getLong("startTime");
       } catch (IOException e) {

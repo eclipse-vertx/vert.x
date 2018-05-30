@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -68,7 +67,7 @@ public class ClasspathHandlerTest extends CommandTestBase {
     run.setMainVerticle(VERTICLE);
     run.setInstances(1);
     run.run();
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return getHttpCode() == 200;
       } catch (IOException e) {
@@ -85,7 +84,7 @@ public class ClasspathHandlerTest extends CommandTestBase {
     bare.setQuorum(1);
     bare.run();
 
-    waitUntil(() ->  bare.vertx != null);
+    assertWaitUntil(() ->  bare.vertx != null);
 
     // Do reproduce the verticle fail-over, set the TCCL
     final ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
@@ -96,7 +95,7 @@ public class ClasspathHandlerTest extends CommandTestBase {
       Thread.currentThread().setContextClassLoader(originalClassloader);
     }
 
-    waitUntil(() -> {
+    assertWaitUntil(() -> {
       try {
         return getHttpCode() == 200;
       } catch (IOException e) {

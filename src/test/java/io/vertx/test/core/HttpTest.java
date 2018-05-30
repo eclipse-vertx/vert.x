@@ -47,7 +47,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -3384,7 +3383,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientLocalAddress() throws Exception {
-    String expectedAddress = InetAddress.getLocalHost().getHostAddress();
+    String expectedAddress = TestUtils.loopbackAddress();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setLocalAddress(expectedAddress));
     server.requestHandler(req -> {

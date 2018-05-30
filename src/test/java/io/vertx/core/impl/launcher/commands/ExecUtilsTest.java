@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl.launcher.commands;
 
+import io.vertx.core.impl.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,11 +64,18 @@ public class ExecUtilsTest {
     ExecUtils.addArgument(args, "'wrapped_in_single_quotes'");
     ExecUtils.addArgument(args, "\"wrapped_in_double_quotes\"");
 
-    assertThat(args).contains("hello", "-foo", "--bar", "--baz=hello",
-        "\"with spaces\"",
-        "\"with'single'_quotes\"",  "'with\"double\"quotes'",
-        "'with \"double\" quotes and spaces'", "\"with 'single' quotes and spaces\"",
-        "wrapped_in_single_quotes", "wrapped_in_double_quotes");
+    assertThat(args).contains(
+      "hello",
+      "-foo",
+      "--bar",
+      "--baz=hello",
+      "\"with spaces\"",
+      "\"with'single'_quotes\"",
+      Utils.isWindows() ? "\"with\\\"double\\\"quotes\"" : "'with\"double\"quotes'",
+      Utils.isWindows() ? "\"with \\\"double\\\" quotes and spaces\"" : "'with \"double\" quotes and spaces'",
+      "\"with 'single' quotes and spaces\"",
+      "wrapped_in_single_quotes",
+      "wrapped_in_double_quotes");
   }
 
   @Test
