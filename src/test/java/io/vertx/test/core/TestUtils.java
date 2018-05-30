@@ -13,6 +13,8 @@ package io.vertx.test.core;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.netty.util.NetUtil;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.*;
@@ -22,6 +24,7 @@ import javax.naming.ldap.Rdn;
 import javax.security.cert.X509Certificate;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.Random;
@@ -399,6 +402,13 @@ public class TestUtils {
       }
     }
     return null;
+  }
+
+  /**
+   * @return the loopback address for testing
+   */
+  public static String loopbackAddress() {
+    return NetUtil.LOCALHOST4.getHostAddress();
   }
 
   /**

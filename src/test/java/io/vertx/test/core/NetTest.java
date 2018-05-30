@@ -85,7 +85,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -3041,8 +3040,8 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testClientLocalAddress() throws Exception {
-    String expectedAddress = InetAddress.getLocalHost().getHostAddress();
+  public void testClientLocalAddress() {
+    String expectedAddress = TestUtils.loopbackAddress();
     NetClientOptions clientOptions = new NetClientOptions().setLocalAddress(expectedAddress);
     client.close();
     client = vertx.createNetClient(clientOptions);

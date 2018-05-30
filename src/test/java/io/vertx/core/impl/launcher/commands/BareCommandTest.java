@@ -35,9 +35,9 @@ public class BareCommandTest extends CommandTestBase {
 
   }
 
-  protected void waitUntil(BooleanSupplier supplier) {
+  protected void assertWaitUntil(BooleanSupplier supplier) {
     // Extend to 20 seconds for CI
-    waitUntil(supplier, 20000);
+    assertWaitUntil(supplier, 20000);
   }
 
   public void assertThatVertxInstanceHasBeenCreated() {
@@ -54,7 +54,7 @@ public class BareCommandTest extends CommandTestBase {
 
     cli.dispatch(new String[]{"bare"});
 
-    waitUntil(() -> error.toString().contains("A quorum has been obtained."));
+    assertWaitUntil(() -> error.toString().contains("A quorum has been obtained."));
     assertThatVertxInstanceHasBeenCreated();
     stop();
 
@@ -70,7 +70,7 @@ public class BareCommandTest extends CommandTestBase {
     cli.dispatch(new String[]{"-ha"});
 
 
-    waitUntil(() -> error.toString().contains("A quorum has been obtained."));
+    assertWaitUntil(() -> error.toString().contains("A quorum has been obtained."));
     stop();
 
     assertThat(error.toString())
@@ -85,7 +85,7 @@ public class BareCommandTest extends CommandTestBase {
 
     cli.dispatch(new String[]{"bare", "-cluster-host", "127.0.0.1"});
 
-    waitUntil(() -> error.toString().contains("A quorum has been obtained."));
+    assertWaitUntil(() -> error.toString().contains("A quorum has been obtained."));
     assertThatVertxInstanceHasBeenCreated();
     stop();
     assertThat(error.toString())
@@ -100,7 +100,7 @@ public class BareCommandTest extends CommandTestBase {
     cli.dispatch(new String[]{"-ha", "-cluster-host", "127.0.0.1"});
 
 
-    waitUntil(() -> error.toString().contains("A quorum has been obtained."));
+    assertWaitUntil(() -> error.toString().contains("A quorum has been obtained."));
     stop();
 
     assertThat(error.toString())

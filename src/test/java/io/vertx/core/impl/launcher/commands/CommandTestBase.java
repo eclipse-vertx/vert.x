@@ -14,6 +14,7 @@ package io.vertx.core.impl.launcher.commands;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.logging.JULLogDelegateFactory;
+import io.vertx.test.core.AsyncTestBase;
 import org.junit.After;
 import org.junit.Before;
 
@@ -92,26 +93,16 @@ public class CommandTestBase {
     }
   }
 
-  protected void waitUntil(BooleanSupplier supplier) {
-    waitUntil(supplier, 20000);
+  protected void assertWaitUntil(BooleanSupplier supplier) {
+    AsyncTestBase.assertWaitUntil(supplier, 20000);
   }
 
-  protected void waitUntil(BooleanSupplier supplier, long timeout) {
-    long start = System.currentTimeMillis();
-    while (true) {
-      if (supplier.getAsBoolean()) {
-        break;
-      }
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException ignore) {
-        Thread.currentThread().interrupt();
-      }
-      long now = System.currentTimeMillis();
-      if (now - start > timeout) {
-        throw new IllegalStateException("Timed out");
-      }
-    }
+  protected void assertWaitUntil(BooleanSupplier supplier, String reason) {
+    AsyncTestBase.assertWaitUntil(supplier, 20000, reason);
+  }
+
+  protected void assertWaitUntil(BooleanSupplier supplier, long timeout) {
+    AsyncTestBase.assertWaitUntil(supplier, timeout);
   }
 
   protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
