@@ -32,7 +32,7 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
     return new FakeClusterManager();
   }
 
-  protected final int numNodes = 2;
+  protected final int numNodes = 3;
 
   public void setUp() throws Exception {
     super.setUp();
