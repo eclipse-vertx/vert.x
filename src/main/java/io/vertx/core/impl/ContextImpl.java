@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
@@ -246,9 +247,10 @@ abstract class ContextImpl implements ContextInternal {
   }
 
   <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
-      Handler<AsyncResult<T>> resultHandler,
-      Executor exec, TaskQueue queue, PoolMetrics metrics) {
+                           Handler<AsyncResult<T>> resultHandler,
+                           ExecutorService exec, TaskQueue queue, PoolMetrics metrics) {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
+    final Future<T> res = Future.future();
     try {
       Runnable command = () -> {
         VertxThread current = (VertxThread) Thread.currentThread();
@@ -259,7 +261,6 @@ abstract class ContextImpl implements ContextInternal {
         if (!DISABLE_TIMINGS) {
           current.executeStart();
         }
-        Future<T> res = Future.future();
         try {
           ContextImpl.setContext(this);
           blockingCodeHandler.handle(res);
@@ -287,7 +288,16 @@ abstract class ContextImpl implements ContextInternal {
       if (metrics != null) {
         metrics.rejected(queueMetric);
       }
-      throw e;
+      //If the pool is shutdown throw exception outside the handler
+      //otherwise propagate the exception into the result handler
+      if (exec.isShutdown()) {
+        throw e;
+      } else {
+        res.tryFail(e);
+        if (resultHandler != null) {
+          runOnContext(v -> res.setHandler(resultHandler));
+        }
+      }
     }
   }
 

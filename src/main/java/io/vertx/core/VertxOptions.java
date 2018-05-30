@@ -38,6 +38,11 @@ public class VertxOptions {
   public static final int DEFAULT_EVENT_LOOP_POOL_SIZE = 2 * CpuCoreSensor.availableProcessors();
 
   /**
+   * The default capacity for the queue into the worker pool executor service
+   */
+  public static final int DEFAULT_WORKER_POOL_QUEUE_CAPACITY = Integer.MAX_VALUE;
+
+  /**
    * The default number of threads in the worker pool = 20
    */
   public static final int DEFAULT_WORKER_POOL_SIZE = 20;
@@ -151,6 +156,7 @@ public class VertxOptions {
 
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
+  private int workerPoolQueueCapacity = DEFAULT_WORKER_POOL_QUEUE_CAPACITY;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
   private long blockedThreadCheckInterval = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL;
   private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
@@ -184,6 +190,7 @@ public class VertxOptions {
   public VertxOptions(VertxOptions other) {
     this.eventLoopPoolSize = other.getEventLoopPoolSize();
     this.workerPoolSize = other.getWorkerPoolSize();
+    this.workerPoolQueueCapacity = other.getWorkerPoolQueueCapacity();
     this.blockedThreadCheckInterval = other.getBlockedThreadCheckInterval();
     this.maxEventLoopExecuteTime = other.getMaxEventLoopExecuteTime();
     this.maxWorkerExecuteTime = other.getMaxWorkerExecuteTime();
@@ -260,6 +267,30 @@ public class VertxOptions {
     this.workerPoolSize = workerPoolSize;
     return this;
   }
+
+  /**
+   * Get the capacity of the queue in front of the worker pool.
+   * Tasks for the worker pool will queue up to this number after which tasks will be rejected.
+   *
+   * @return the capacity of the worker pool queue
+   */
+  public int getWorkerPoolQueueCapacity() {
+    return workerPoolQueueCapacity;
+  }
+
+  /**
+   * Set the capacity of the worker pool used by the Vert.x instance
+   * @param workerPoolQueueCapacity the capacity of the queue
+   * @return a reference to this, so this API can be used fluently
+   */
+  public VertxOptions setWorkerPoolQueueCapacity(int workerPoolQueueCapacity) {
+    if (workerPoolQueueCapacity < 1) {
+      throw new IllegalArgumentException("workerPoolQueueCapacity must be > 0");
+    }
+    this.workerPoolQueueCapacity = workerPoolQueueCapacity;
+    return this;
+  }
+
 
   /**
    * Is the Vert.x instance clustered?
@@ -818,6 +849,7 @@ public class VertxOptions {
 
     if (eventLoopPoolSize != that.eventLoopPoolSize) return false;
     if (workerPoolSize != that.workerPoolSize) return false;
+    if (workerPoolQueueCapacity != that.workerPoolQueueCapacity) return false;
     if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
     if (blockedThreadCheckInterval != that.blockedThreadCheckInterval) return false;
     if (blockedThreadCheckIntervalUnit != that.blockedThreadCheckIntervalUnit) return false;
@@ -845,6 +877,7 @@ public class VertxOptions {
   public int hashCode() {
     int result = eventLoopPoolSize;
     result = 31 * result + workerPoolSize;
+    result = 31 * result + workerPoolQueueCapacity;
     result = 31 * result + internalBlockingPoolSize;
     result = 31 * result + (int) (blockedThreadCheckInterval ^ (blockedThreadCheckInterval >>> 32));
     result = 31 * result + (int) (maxEventLoopExecuteTime ^ (maxEventLoopExecuteTime >>> 32));
@@ -871,6 +904,7 @@ public class VertxOptions {
     return "VertxOptions{" +
         "eventLoopPoolSize=" + eventLoopPoolSize +
         ", workerPoolSize=" + workerPoolSize +
+        ", workerPoolQueueCapacity=" + workerPoolQueueCapacity +
         ", internalBlockingPoolSize=" + internalBlockingPoolSize +
         ", blockedThreadCheckIntervalUnit=" + blockedThreadCheckIntervalUnit +
         ", blockedThreadCheckInterval=" + blockedThreadCheckInterval +

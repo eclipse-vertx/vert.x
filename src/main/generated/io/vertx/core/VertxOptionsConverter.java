@@ -137,6 +137,11 @@ import io.vertx.core.json.JsonArray;
             obj.setWarningExceptionTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
+        case "workerPoolQueueCapacity":
+          if (member.getValue() instanceof Number) {
+            obj.setWorkerPoolQueueCapacity(((Number)member.getValue()).intValue());
+          }
+          break;
         case "workerPoolSize":
           if (member.getValue() instanceof Number) {
             obj.setWorkerPoolSize(((Number)member.getValue()).intValue());
@@ -196,6 +201,7 @@ import io.vertx.core.json.JsonArray;
     if (obj.getWarningExceptionTimeUnit() != null) {
       json.put("warningExceptionTimeUnit", obj.getWarningExceptionTimeUnit().name());
     }
+    json.put("workerPoolQueueCapacity", obj.getWorkerPoolQueueCapacity());
     json.put("workerPoolSize", obj.getWorkerPoolSize());
   }
 }

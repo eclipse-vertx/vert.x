@@ -12,9 +12,13 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Context;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -160,5 +164,46 @@ public class ExecuteBlockingTest extends VertxTestBase {
     long now = System.currentTimeMillis();
     long leeway = 1000;
     assertTrue(now - start < pause + leeway);
+  }
+
+  @Test
+  public void testWorkerPoolQueueCapacityFail() throws Exception {
+    int workerPoolCapacity = 3;
+    int workerPoolSize = 2;
+    VertxOptions options = new VertxOptions()
+      .setWorkerPoolQueueCapacity(workerPoolCapacity).setWorkerPoolSize(workerPoolSize);
+    Vertx vertx = null;
+    try {
+      vertx = Vertx.vertx(options);
+
+      int numExecBlocking = 10;
+      int numExpectedRejection = numExecBlocking - workerPoolCapacity * workerPoolSize;
+      CountDownLatch latch = new CountDownLatch(numExpectedRejection);
+
+      for (int i = 0; i < numExecBlocking; i++) {
+        vertx.executeBlocking(
+          future -> {
+            try {
+              Thread.sleep(TimeUnit.MINUTES.toMillis(10), 0);
+            } catch (InterruptedException e) {
+              future.fail(e);
+            }
+          },
+          result -> {
+            assertTrue(result.failed());
+            if (result.cause() instanceof RejectedExecutionException) {
+              latch.countDown();
+            }
+          });
+      }
+
+      awaitLatch(latch);
+
+    } finally {
+      if (vertx != null) {
+        vertx.close();
+      }
+    }
+
   }
 }

@@ -49,6 +49,15 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setWorkerPoolQueueCapacity(rand));
+    assertEquals(rand, options.getWorkerPoolQueueCapacity());
+    try {
+      options.setWorkerPoolQueueCapacity(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
     assertEquals(20, options.getInternalBlockingPoolSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setInternalBlockingPoolSize(rand));
@@ -214,6 +223,7 @@ public class VertxOptionsTest extends VertxTestBase {
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
     int internalBlockingPoolSize = TestUtils.randomPositiveInt();
     int workerPoolSize = TestUtils.randomPositiveInt();
+    int workerPoolQueueCapacity = TestUtils.randomPositiveInt();
     int blockedThreadCheckInterval = TestUtils.randomPositiveInt();
     String clusterHost = TestUtils.randomAlphaString(100);
     String clusterPublicHost = TestUtils.randomAlphaString(100);
@@ -237,6 +247,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setEventLoopPoolSize(eventLoopPoolSize);
     options.setInternalBlockingPoolSize(internalBlockingPoolSize);
     options.setWorkerPoolSize(workerPoolSize);
+    options.setWorkerPoolQueueCapacity(workerPoolQueueCapacity);
     options.setBlockedThreadCheckInterval(blockedThreadCheckInterval);
     options.setClusterHost(clusterHost);
     options.setClusterPublicHost(clusterPublicHost);
@@ -265,6 +276,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
     assertEquals(internalBlockingPoolSize, options.getInternalBlockingPoolSize());
     assertEquals(workerPoolSize, options.getWorkerPoolSize());
+    assertEquals(workerPoolQueueCapacity, options.getWorkerPoolQueueCapacity());
     assertEquals(blockedThreadCheckInterval, options.getBlockedThreadCheckInterval());
     assertEquals(clusterHost, options.getClusterHost());
     assertEquals(clusterPublicHost, options.getClusterPublicHost());
@@ -290,6 +302,7 @@ public class VertxOptionsTest extends VertxTestBase {
     VertxOptions json = new VertxOptions(new JsonObject());
     assertEquals(def.getEventLoopPoolSize(), json.getEventLoopPoolSize());
     assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
+    assertEquals(def.getWorkerPoolQueueCapacity(), json.getWorkerPoolQueueCapacity());
     assertEquals(def.isClustered(), json.isClustered());
     assertEquals(def.getClusterHost(), json.getClusterHost());
     assertEquals(def.getClusterPublicHost(), json.getClusterPublicHost());
@@ -322,6 +335,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(2 * Runtime.getRuntime().availableProcessors(), options.getEventLoopPoolSize());
     assertEquals(20, options.getInternalBlockingPoolSize());
     assertEquals(20, options.getWorkerPoolSize());
+    assertEquals(Integer.MAX_VALUE, options.getWorkerPoolQueueCapacity());
     assertEquals(1000, options.getBlockedThreadCheckInterval());
     assertEquals("localhost", options.getClusterHost());
     assertNull(options.getClusterPublicHost());
@@ -342,6 +356,7 @@ public class VertxOptionsTest extends VertxTestBase {
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
     int internalBlockingPoolSize = TestUtils.randomPositiveInt();
     int workerPoolSize = TestUtils.randomPositiveInt();
+    int workerPoolQueueCapacity = TestUtils.randomPositiveInt();
     int blockedThreadCheckInterval = TestUtils.randomPositiveInt();
     String clusterHost = TestUtils.randomAlphaString(100);
     String clusterPublicHost = TestUtils.randomAlphaString(100);
@@ -369,6 +384,7 @@ public class VertxOptionsTest extends VertxTestBase {
         put("eventLoopPoolSize", eventLoopPoolSize).
         put("internalBlockingPoolSize", internalBlockingPoolSize).
         put("workerPoolSize", workerPoolSize).
+        put("workerPoolQueueCapacity", workerPoolQueueCapacity).
         put("blockedThreadCheckInterval", blockedThreadCheckInterval).
         put("clusterHost", clusterHost).
         put("clusterPublicHost", clusterPublicHost).
@@ -399,6 +415,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
     assertEquals(internalBlockingPoolSize, options.getInternalBlockingPoolSize());
     assertEquals(workerPoolSize, options.getWorkerPoolSize());
+    assertEquals(workerPoolQueueCapacity, options.getWorkerPoolQueueCapacity());
     assertEquals(blockedThreadCheckInterval, options.getBlockedThreadCheckInterval());
     assertEquals(clusterHost, options.getClusterHost());
     assertEquals(null, options.getClusterManager());
