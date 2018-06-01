@@ -460,6 +460,7 @@ public class DeploymentManager {
                         ClassLoader tccl, Verticle... verticles) {
     JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
     String poolName = options.getWorkerPoolName();
+    Handler<AsyncResult<String>> doneHandler = vertx.captureContinuation(completionHandler);
 
     Deployment parent = parentContext.getDeployment();
     DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
@@ -476,7 +477,7 @@ public class DeploymentManager {
       }
       context.setDeployment(deployment);
       deployment.addVerticle(new VerticleHolder(verticle, context));
-      context.runOnContext(v -> {
+      context.executeAsync(v -> {
         try {
           verticle.init(vertx, context);
           Future<Void> startFuture = Future.future();
@@ -498,15 +499,15 @@ public class DeploymentManager {
               }
               deployments.put(deploymentID, deployment);
               if (deployCount.incrementAndGet() == verticles.length) {
-                reportSuccess(deploymentID, callingContext, completionHandler);
+                reportSuccess(deploymentID, callingContext, doneHandler);
               }
             } else if (failureReported.compareAndSet(false, true)) {
-              deployment.rollback(callingContext, completionHandler, context, ar.cause());
+              deployment.rollback(callingContext, doneHandler, context, ar.cause());
             }
           });
         } catch (Throwable t) {
           if (failureReported.compareAndSet(false, true))
-            deployment.rollback(callingContext, completionHandler, context, t);
+            deployment.rollback(callingContext, doneHandler, context, t);
         }
       });
     }
@@ -595,17 +596,18 @@ public class DeploymentManager {
     }
 
     public synchronized void doUndeploy(ContextInternal undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
+      Handler<AsyncResult<Void>> doneHandler = vertx.captureContinuation(completionHandler);
       if (status == ST_UNDEPLOYED) {
-        reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, completionHandler);
+        reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, doneHandler);
         return;
       }
       if (!children.isEmpty()) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(undeployingContext, ar -> {
           if (ar.failed()) {
-            reportFailure(ar.cause(), undeployingContext, completionHandler);
+            reportFailure(ar.cause(), undeployingContext, doneHandler);
           } else {
-            doUndeploy(undeployingContext, completionHandler);
+            doUndeploy(undeployingContext, doneHandler);
           }
         });
       } else {
@@ -614,7 +616,7 @@ public class DeploymentManager {
         int numToUndeploy = verticles.size();
         for (VerticleHolder verticleHolder: verticles) {
           ContextImpl context = verticleHolder.context;
-          context.runOnContext(v -> {
+          context.executeAsync(v -> {
             Future<Void> stopFuture = Future.future();
             AtomicBoolean failureReported = new AtomicBoolean();
             stopFuture.setHandler(ar -> {
@@ -629,10 +631,10 @@ public class DeploymentManager {
                   log.error("Failed to run close hook", ar2.cause());
                 }
                 if (ar.succeeded() && undeployCount.incrementAndGet() == numToUndeploy) {
-                  reportSuccess(null, undeployingContext, completionHandler);
+                  reportSuccess(null, undeployingContext, doneHandler);
                 } else if (ar.failed() && !failureReported.get()) {
                   failureReported.set(true);
-                  reportFailure(ar.cause(), undeployingContext, completionHandler);
+                  reportFailure(ar.cause(), undeployingContext, doneHandler);
                 }
               });
             });
