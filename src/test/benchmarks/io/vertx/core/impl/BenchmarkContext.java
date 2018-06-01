@@ -30,7 +30,7 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  protected void executeAsync(Handler<Void> task) {
+  public void executeAsync(Handler<Void> task) {
     executeTask(null, task, true);
   }
 

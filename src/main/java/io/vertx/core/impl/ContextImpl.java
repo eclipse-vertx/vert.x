@@ -133,7 +133,7 @@ abstract class ContextImpl implements ContextInternal {
     VertxThreadFactory.unsetContext(this);
   }
 
-  protected abstract void executeAsync(Handler<Void> task);
+  public abstract void executeAsync(Handler<Void> task);
 
   @Override
   public abstract boolean isEventLoopContext();

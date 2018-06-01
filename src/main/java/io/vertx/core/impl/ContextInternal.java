@@ -70,6 +70,15 @@ public interface ContextInternal extends Context {
   VertxInternal owner();
 
   /**
+   * Execute a task on this context.
+   * <p/>
+   * No instrumentation of the task is performed.
+   *
+   * @param task the task to execute
+   */
+  void executeAsync(Handler<Void> task);
+
+  /**
    * Like {@link #executeFromIO(Object, Handler)} but with no argument.
    */
   void executeFromIO(Handler<Void> task);

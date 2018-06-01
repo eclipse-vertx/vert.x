@@ -27,6 +27,7 @@ import io.vertx.core.eventbus.MessageProducer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.SendContext;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.logging.Logger;
@@ -255,7 +256,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                                                            boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
-    Context context = Vertx.currentContext();
+    ContextInternal context = (ContextInternal) Vertx.currentContext();
     boolean hasContext = context != null;
     if (!hasContext) {
       // Embedded
@@ -327,7 +328,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     deliverMessageLocally(sendContext);
   }
 
-  protected <T> Handler<Message<T>> convertHandler(Handler<AsyncResult<Message<T>>> handler) {
+  private <T> Handler<Message<T>> convertHandler(Handler<AsyncResult<Message<T>>> handler) {
     return reply -> {
       Future<Message<T>> result;
       if (reply.body() instanceof ReplyException) {
@@ -417,7 +418,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       long timeout = options.getSendTimeout();
       String replyAddress = generateReplyAddress();
       message.setReplyAddress(replyAddress);
-      Handler<Message<T>> simpleReplyHandler = convertHandler(replyHandler);
+      Handler<Message<T>> simpleReplyHandler = vertx.captureContinuation(convertHandler(replyHandler));
       HandlerRegistration<T> registration =
         new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, replyHandler, timeout);
       registration.handler(simpleReplyHandler);
@@ -519,7 +520,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       metrics.scheduleMessage(holder.getHandler().getMetric(), msg.isLocal());
     }
 
-    holder.getContext().runOnContext((v) -> {
+    holder.getContext().executeAsync((v) -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
       try {

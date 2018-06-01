@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Context;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
 /**
@@ -20,14 +21,14 @@ import io.vertx.core.spi.metrics.EventBusMetrics;
 public class HandlerHolder<T> {
 
   private final EventBusMetrics metrics;
-  private final Context context;
+  private final ContextInternal context;
   private final HandlerRegistration<T> handler;
   private final boolean replyHandler;
   private final boolean localOnly;
   private boolean removed;
 
   public HandlerHolder(EventBusMetrics metrics, HandlerRegistration<T> handler, boolean replyHandler, boolean localOnly,
-                       Context context) {
+                       ContextInternal context) {
     this.metrics = metrics;
     this.context = context;
     this.handler = handler;
@@ -70,7 +71,7 @@ public class HandlerHolder<T> {
     return handler != null ? handler.hashCode() : 0;
   }
 
-  public Context getContext() {
+  public ContextInternal getContext() {
     return context;
   }
 
