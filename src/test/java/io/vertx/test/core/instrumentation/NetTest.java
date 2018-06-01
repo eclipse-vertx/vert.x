@@ -18,7 +18,7 @@ import org.junit.Test;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
-public class NetInstrumentationTest extends InstrumentationTestBase {
+public class NetTest extends InstrumentationTestBase {
 
   @Test
   public void testNetServer() throws Exception {

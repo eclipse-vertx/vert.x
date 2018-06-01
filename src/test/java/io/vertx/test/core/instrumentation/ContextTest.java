@@ -17,7 +17,7 @@ import org.junit.Test;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class VertxInstrumentationTest extends InstrumentationTestBase {
+public class ContextTest extends InstrumentationTestBase {
 
   @Test
   public void testRunOnContext() throws Exception {

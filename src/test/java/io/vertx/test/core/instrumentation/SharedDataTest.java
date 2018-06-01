@@ -12,7 +12,7 @@ package io.vertx.test.core.instrumentation;
 
 import org.junit.Test;
 
-public class SharedDataInstrumentationTest extends InstrumentationTestBase {
+public class SharedDataTest extends InstrumentationTestBase {
 
   @Test
   public void testClusteredAsyncMap() {

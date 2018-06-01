@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class HttpInstrumentationTest extends InstrumentationTestBase {
+public class HttpTest extends InstrumentationTestBase {
 
   @Test
   public void testHttpServerListen() {
