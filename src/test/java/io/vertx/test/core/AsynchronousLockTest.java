@@ -19,6 +19,7 @@ import io.vertx.core.shareddata.SharedData;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.test.core.TestUtils.*;
@@ -83,6 +84,32 @@ public class AsynchronousLockTest extends VertxTestBase {
           });
         });
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testAcquireDifferentLocksOnSameEventLoop() {
+    Vertx vertx = getVertx();
+    Context context = vertx.getOrCreateContext();
+    SharedData sharedData = vertx.sharedData();
+    AtomicInteger stage = new AtomicInteger();
+    context.runOnContext(v -> {
+      sharedData.getLock("foo", onSuccess(foo -> {
+        assertTrue(stage.compareAndSet(0, 1));
+        // Create another lock request
+        sharedData.getLock("foo", onSuccess(foo1 -> {
+          assertEquals(2, stage.get());
+          foo1.release();
+          testComplete();
+        }));
+        // Should not be blocked by second request for lock "foo"
+        sharedData.getLock("bar", onSuccess(bar -> {
+          assertTrue(stage.compareAndSet(1, 2));
+          foo.release();
+          bar.release();
+        }));
+      }));
     });
     await();
   }
@@ -179,5 +206,4 @@ public class AsynchronousLockTest extends VertxTestBase {
     });
     await();
   }
-
 }
