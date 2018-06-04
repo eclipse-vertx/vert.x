@@ -8,7 +8,7 @@ project descriptor to access the Vert.x Core API:
 <dependency>
   <groupId>io.vertx</groupId>
   <artifactId>vertx-core</artifactId>
-  <version>3.5.2.CR3</version>
+  <version>3.5.2</version>
 </dependency>
 ----
 
@@ -17,6 +17,6 @@ project descriptor to access the Vert.x Core API:
 [source,groovy,subs="+attributes"]
 ----
 dependencies {
-  compile 'io.vertx:vertx-core:3.5.2.CR3'
+  compile 'io.vertx:vertx-core:3.5.2'
 }
 ----
