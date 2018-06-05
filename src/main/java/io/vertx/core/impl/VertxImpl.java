@@ -13,6 +13,8 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultithreadEventLoopGroup;
+import io.netty.channel.SingleThreadEventLoop;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -58,9 +60,9 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
-import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -152,6 +154,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
+
+    metrics = initialiseMetrics(options);
+
     if (options.getPreferNativeTransport()) {
       Transport nativeTransport = Transport.nativeTransport();
       if (nativeTransport != null && nativeTransport.isAvailable()) {
@@ -166,12 +171,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
     eventLoopGroup = transport.eventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
+    if (metrics != null && eventLoopGroup instanceof MultithreadEventLoopGroup) {
+      initEventLoopMetrics(transport, "eventloop", options.getEventLoopPoolSize(), metrics, (MultithreadEventLoopGroup) eventLoopGroup);
+    }
     ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
-    acceptorEventLoopGroup = transport.eventLoopGroup(1, acceptorEventLoopThreadFactory, 100);
-
-    metrics = initialiseMetrics(options);
+    acceptorEventLoopGroup = transport.eventLoopGroup( 1, acceptorEventLoopThreadFactory, 100);
+    if (metrics != null && acceptorEventLoopGroup instanceof MultithreadEventLoopGroup) {
+      initEventLoopMetrics(transport, "acceptor-eventloop", 1, metrics, (MultithreadEventLoopGroup) acceptorEventLoopGroup);
+    }
 
     ExecutorService workerExec = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
         new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
@@ -202,6 +211,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private void init() {
     eventBus.start(ar -> {});
+  }
+
+  private static void initEventLoopMetrics(final Transport transport, final String name, final int nThreads, final VertxMetrics metrics, final MultithreadEventLoopGroup eventLoopGroup) {
+    metrics.eventLoopGroupCreated(transport.getClass(), name, eventLoopGroup);
+    for (int i = 0; i < nThreads; i++) {
+      final EventLoop eventLoop = eventLoopGroup.next();
+      if (!(eventLoop instanceof SingleThreadEventLoop)) {
+        break;
+      }
+      metrics.eventLoopCreated(transport.getClass(), name, eventLoopGroup, (SingleThreadEventLoop)eventLoop);
+    }
   }
 
   private void initClustered(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {

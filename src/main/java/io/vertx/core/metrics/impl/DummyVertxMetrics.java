@@ -11,6 +11,8 @@
 
 package io.vertx.core.metrics.impl;
 
+import io.netty.channel.MultithreadEventLoopGroup;
+import io.netty.channel.SingleThreadEventLoop;
 import io.vertx.core.Verticle;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -23,10 +25,17 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.spi.metrics.*;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.metrics.DatagramSocketMetrics;
+import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -54,6 +63,16 @@ public class DummyVertxMetrics implements VertxMetrics {
   @Override
   public EventBusMetrics createEventBusMetrics() {
     return DummyEventBusMetrics.INSTANCE;
+  }
+
+  @Override
+  public void eventLoopGroupCreated(final Class<? extends Transport> transport, final String name, final MultithreadEventLoopGroup eventLoopGroup) {
+
+  }
+
+  @Override
+  public void eventLoopCreated(final Class<? extends Transport> transport, final String name, final MultithreadEventLoopGroup eventLoopGroup, final SingleThreadEventLoop eventLoop) {
+
   }
 
   @Override
