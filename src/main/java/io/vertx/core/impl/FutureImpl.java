@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
+
   private boolean failed;
   private boolean succeeded;
   private Handler<AsyncResult<T>> handler;
@@ -69,8 +70,10 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   public Future<T> setHandler(Handler<AsyncResult<T>> handler) {
     boolean callHandler;
     synchronized (this) {
-      this.handler = handler;
       callHandler = isComplete();
+      if (!callHandler) {
+        this.handler = handler;
+      }
     }
     if (callHandler) {
       handler.handle(this);
@@ -116,6 +119,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
       this.result = result;
       succeeded = true;
       h = handler;
+      handler = null;
     }
     if (h != null) {
       h.handle(this);
@@ -160,6 +164,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
       this.throwable = cause != null ? cause : new NoStackTraceThrowable(null);
       failed = true;
       h = handler;
+      handler = null;
     }
     if (h != null) {
       h.handle(this);
