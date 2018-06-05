@@ -18,6 +18,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1246,6 +1247,24 @@ public class FutureTest extends VertxTestBase {
     f = Future.future();
     f.fail("abc");
     assertEquals("Future{cause=abc}", f.toString());
+  }
+
+  @Test
+  public void testReleaseHandlerAfterCompletion() throws Exception {
+    Future<String> f = Future.future();
+    Field handlerField = f.getClass().getDeclaredField("handler");
+    handlerField.setAccessible(true);
+    f.setHandler(ar -> {});
+    f.complete();
+    assertNull(handlerField.get(f));
+    f.setHandler(ar -> {});
+    assertNull(handlerField.get(f));
+    f = Future.future();
+    f.setHandler(ar -> {});
+    f.fail("abc");
+    assertNull(handlerField.get(f));
+    f.setHandler(ar -> {});
+    assertNull(handlerField.get(f));
   }
 
   private void testOtherwiseEmpty(AsyncResult<String> res, Future<String> f) {
