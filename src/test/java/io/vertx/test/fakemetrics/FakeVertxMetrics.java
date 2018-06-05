@@ -11,6 +11,8 @@
 
 package io.vertx.test.fakemetrics;
 
+import io.netty.channel.MultithreadEventLoopGroup;
+import io.netty.channel.SingleThreadEventLoop;
 import io.vertx.core.Verticle;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpClientOptions;
@@ -18,12 +20,29 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.metrics.*;
+import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.metrics.DatagramSocketMetrics;
+import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
+
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
+
+  public static CopyOnWriteArrayList<FakeEventLoopGroupMetrics> eventLoopGroups = new CopyOnWriteArrayList<>();
+  public static CopyOnWriteArrayList<FakeEventLoopMetrics> eventLoops = new CopyOnWriteArrayList<>();
+
+  public static void reset() {
+    eventLoopGroups.clear();
+    eventLoops.clear();
+  }
 
   @Override
   public boolean isMetricsEnabled() {
@@ -44,6 +63,16 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
   public EventBusMetrics createEventBusMetrics() {
     return new FakeEventBusMetrics();
+  }
+
+  @Override
+  public void eventLoopCreated(final Class<? extends Transport> transport, final String name, final MultithreadEventLoopGroup eventLoopGroup, final SingleThreadEventLoop eventLoop) {
+    eventLoops.add(new FakeEventLoopMetrics(transport, name, eventLoopGroup, eventLoop));
+  }
+
+  @Override
+  public void eventLoopGroupCreated(final Class<? extends Transport> transport, final String name, final MultithreadEventLoopGroup eventLoopGroup) {
+    eventLoopGroups.add(new FakeEventLoopGroupMetrics(transport, name, eventLoopGroup));
   }
 
   public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {

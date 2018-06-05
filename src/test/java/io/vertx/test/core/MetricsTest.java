@@ -22,16 +22,25 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.test.fakemetrics.*;
 import org.junit.Test;
 
-import java.util.*;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
 
@@ -61,6 +70,7 @@ public class MetricsTest extends VertxTestBase {
       });
       awaitLatch(latch);
     }
+    FakeVertxMetrics.reset();
     super.tearDown();
   }
 
@@ -1101,4 +1111,64 @@ public class MetricsTest extends VertxTestBase {
       future.complete(null);
     };
   }
+
+  @Test
+  public void testEventLoopGroupMetrics() {
+    final List<FakeEventLoopGroupMetrics> metrics = FakeVertxMetrics.eventLoopGroups;
+    assertNotNull(metrics);
+    assertEquals(2, metrics.size());
+
+    final Optional<FakeEventLoopGroupMetrics> eventLoop = metrics.stream()
+      .filter(metric -> "eventloop".equals(metric.getName()))
+      .findFirst();
+    assertTrue(eventLoop.isPresent());
+    assertFieldsNotNull(eventLoop.get());
+
+    final Optional<FakeEventLoopGroupMetrics> acceptorEventLoop = metrics.stream()
+      .filter(metric -> "acceptor-eventloop".equals(metric.getName()))
+      .findFirst();
+    assertTrue(acceptorEventLoop.isPresent());
+    assertFieldsNotNull(acceptorEventLoop.get());
+  }
+
+  private void assertFieldsNotNull(final FakeEventLoopGroupMetrics fakeEventLoopGroupMetrics) {
+    assertNotNull(fakeEventLoopGroupMetrics.getEventLoopGroup());
+    assertNotNull(fakeEventLoopGroupMetrics.getTransport());
+    assertEquals(fakeEventLoopGroupMetrics.getTransport(), Transport.class);
+  }
+
+  @Test
+  public void testEventLoopMetrics() {
+    final List<FakeEventLoopMetrics> metrics = FakeVertxMetrics.eventLoops;
+    assertNotNull(metrics);
+    assertTrue(!metrics.isEmpty());
+
+    final List<FakeEventLoopMetrics> eventLoops = metrics.stream()
+      .filter(metric -> "eventloop".equals(metric.getName()))
+      .collect(Collectors.toList());
+    assertTrue(!eventLoops.isEmpty());
+    assertFieldsNotNull(eventLoops);
+
+    final List<FakeEventLoopMetrics> accessorEventLoop = metrics.stream()
+      .filter(metric -> "acceptor-eventloop".equals(metric.getName()))
+      .collect(Collectors.toList());
+    assertEquals(1, accessorEventLoop.size());
+    assertFieldsNotNull(accessorEventLoop);
+  }
+
+  private void assertFieldsNotNull(final List<FakeEventLoopMetrics> eventLoopsMetrics) {
+    eventLoopsMetrics.stream()
+      .forEach(eventLoop -> {
+        assertNotNull(eventLoop);
+        assertNotNull(eventLoop.getEventLoop());
+        assertNotNull(eventLoop.getEventLoopGroup());
+        assertNotNull(eventLoop.getName());
+        assertNotNull(eventLoop.getTransport());
+        assertEquals(eventLoop.getTransport(), Transport.class);
+
+      });
+
+  }
+
+
 }

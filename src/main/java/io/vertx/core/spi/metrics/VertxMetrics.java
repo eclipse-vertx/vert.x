@@ -11,6 +11,8 @@
 
 package io.vertx.core.spi.metrics;
 
+import io.netty.channel.MultithreadEventLoopGroup;
+import io.netty.channel.SingleThreadEventLoop;
 import io.vertx.core.Verticle;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -19,7 +21,12 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.*;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.transport.Transport;
 
 /**
  * The main Vert.x metrics SPI which Vert.x will use internally. This interface serves two purposes, one
@@ -170,4 +177,31 @@ public interface VertxMetrics extends Metrics, Measured {
   default PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
     return null;
   }
+
+  /**
+   * Called when a new EventLoop is created, allows access to the pendingTasks() in the given
+   * event loop.
+   *
+   * Will only be called for {@link Transport} and none of the native transport implementations.
+   *
+   * @param transport the transport implementation used for this event loop.
+   * @param name  the name for this eventloop
+   * @param eventLoopGroup the group this event loop belongs to
+   * @param eventLoop the newly created event loop.
+   */
+  default void eventLoopCreated(Class<? extends Transport> transport, String name, MultithreadEventLoopGroup eventLoopGroup, SingleThreadEventLoop eventLoop) {
+
+  }
+
+  /**
+   * Called when a new EventLoopGroup is created, allows access to the executorCount.
+   *
+   * @param transport the transport implementation used for this event loop.
+   * @param name the name for this event loop group
+   * @param eventLoopGroup the newly created event loop group.
+   */
+  default void eventLoopGroupCreated(Class<? extends Transport> transport, String name, MultithreadEventLoopGroup eventLoopGroup) {
+
+  }
+
 }
