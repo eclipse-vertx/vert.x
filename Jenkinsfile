@@ -1,4 +1,4 @@
-library "vertx-ci-workflow@master"
+library "vertx-shared-library@master"
 pipeline {
   agent any
   tools {
