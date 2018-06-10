@@ -71,6 +71,12 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     this.metrics = client.metrics();
     this.sslHelper = client.getSslHelper();
     this.version = version;
+    // this is actually normal (although it sounds weird)
+    // the pool uses a weight mechanism to keep track of the max number of connections
+    // for instance when http2Size = 2 and http1Size= 5 then maxWeight = 10
+    // which means that the pool can contain
+    // - maxWeight / http1Weight = 5 HTTP/1.1 connections
+    // - maxWeight / http2Weight = 2 HTTP/2 connections
     this.http1Weight = client.getOptions().getHttp2MaxPoolSize();
     this.http2Weight = client.getOptions().getMaxPoolSize();
     this.weight = version == HttpVersion.HTTP_2 ? http2Weight : http1Weight;

@@ -45,10 +45,9 @@ import java.util.function.BiConsumer;
  * can mix connections with different concurrency (HTTP/1 and HTTP/2) and this flexibility is necessary.
  *
  * When a connection is created an {@link #initialWeight} is added to the current weight.
- * When the channel is connected the {@link ConnectionListener#onConnectSuccess} callback
- * provides the initial weight returned by the connect method and the actual connection weight so it can be used to
- * correct the current weight. When the channel fails to connect the {@link ConnectionListener#onConnectFailure} failure
- * provides the initial weight so it can be used to correct the current weight.
+ * When the channel is connected the {@link ConnectResult} callback value provides actual connection weight so it
+ * can be used to correct the pool weight. When the channel fails to connect the initial weight is used
+ * to correct the pool weight.
  *
  * When a connection is recycled and reaches its full capacity (i.e {@code Holder#concurrency == Holder#capacity},
  * the behavior depends on the {@link ConnectionListener#onRecycle(long)} event that releases this connection.
