@@ -62,4 +62,5 @@ import io.vertx.core.json.JsonArray;
     json.put("port", obj.getPort());
     json.put("sni", obj.isSni());
   }
+
 }

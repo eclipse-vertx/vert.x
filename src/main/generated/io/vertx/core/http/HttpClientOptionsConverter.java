@@ -205,4 +205,5 @@ import io.vertx.core.json.JsonArray;
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
   }
+
 }

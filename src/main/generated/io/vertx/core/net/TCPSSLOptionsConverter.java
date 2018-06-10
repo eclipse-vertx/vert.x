@@ -200,4 +200,5 @@ import io.vertx.core.json.JsonArray;
     json.put("useAlpn", obj.isUseAlpn());
     json.put("usePooledBuffers", obj.isUsePooledBuffers());
   }
+
 }

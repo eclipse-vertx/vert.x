@@ -118,4 +118,5 @@ import io.vertx.core.json.JsonArray;
     }
     json.put("singleValued", obj.isSingleValued());
   }
+
 }

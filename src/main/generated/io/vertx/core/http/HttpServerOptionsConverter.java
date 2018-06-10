@@ -125,4 +125,5 @@ import io.vertx.core.json.JsonArray;
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());
     }
   }
+
 }

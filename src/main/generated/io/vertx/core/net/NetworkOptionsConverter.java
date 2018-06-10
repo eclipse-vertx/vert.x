@@ -58,4 +58,5 @@ import io.vertx.core.json.JsonArray;
     json.put("sendBufferSize", obj.getSendBufferSize());
     json.put("trafficClass", obj.getTrafficClass());
   }
+
 }

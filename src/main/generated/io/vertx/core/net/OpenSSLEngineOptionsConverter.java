@@ -28,4 +28,5 @@ import io.vertx.core.json.JsonArray;
    static void toJson(OpenSSLEngineOptions obj, java.util.Map<String, Object> json) {
     json.put("sessionCacheEnabled", obj.isSessionCacheEnabled());
   }
+
 }

@@ -90,4 +90,5 @@ import io.vertx.core.json.JsonArray;
     json.put("truncateExisting", obj.isTruncateExisting());
     json.put("write", obj.isWrite());
   }
+
 }

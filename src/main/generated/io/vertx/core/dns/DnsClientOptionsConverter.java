@@ -54,4 +54,5 @@ public class DnsClientOptionsConverter {
     json.put("queryTimeout", obj.getQueryTimeout());
     json.put("recursionDesired", obj.isRecursionDesired());
   }
+
 }

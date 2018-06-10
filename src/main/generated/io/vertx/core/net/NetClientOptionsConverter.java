@@ -42,4 +42,5 @@ import io.vertx.core.json.JsonArray;
     json.put("reconnectAttempts", obj.getReconnectAttempts());
     json.put("reconnectInterval", obj.getReconnectInterval());
   }
+
 }

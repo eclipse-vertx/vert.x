@@ -58,4 +58,5 @@ import io.vertx.core.json.JsonArray;
     json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
     json.put("pushEnabled", obj.isPushEnabled());
   }
+
 }

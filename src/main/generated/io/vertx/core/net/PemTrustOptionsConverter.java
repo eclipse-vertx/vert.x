@@ -48,4 +48,5 @@ import io.vertx.core.json.JsonArray;
       json.put("certValues", array);
     }
   }
+
 }

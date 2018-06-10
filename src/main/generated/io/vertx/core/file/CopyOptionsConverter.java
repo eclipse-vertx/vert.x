@@ -46,4 +46,5 @@ import io.vertx.core.json.JsonArray;
     json.put("nofollowLinks", obj.isNofollowLinks());
     json.put("replaceExisting", obj.isReplaceExisting());
   }
+
 }

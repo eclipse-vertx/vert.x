@@ -42,4 +42,5 @@ import io.vertx.core.json.JsonArray;
     json.put("errorCode", obj.getErrorCode());
     json.put("lastStreamId", obj.getLastStreamId());
   }
+
 }

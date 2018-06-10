@@ -46,4 +46,5 @@ import io.vertx.core.json.JsonArray;
       json.put("value", java.util.Base64.getEncoder().encodeToString(obj.getValue().getBytes()));
     }
   }
+
 }

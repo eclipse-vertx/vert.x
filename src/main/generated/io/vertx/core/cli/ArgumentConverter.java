@@ -70,4 +70,5 @@ import io.vertx.core.json.JsonArray;
     json.put("multiValued", obj.isMultiValued());
     json.put("required", obj.isRequired());
   }
+
 }

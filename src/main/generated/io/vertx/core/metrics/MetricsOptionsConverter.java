@@ -28,4 +28,5 @@ import io.vertx.core.json.JsonArray;
    static void toJson(MetricsOptions obj, java.util.Map<String, Object> json) {
     json.put("enabled", obj.isEnabled());
   }
+
 }
