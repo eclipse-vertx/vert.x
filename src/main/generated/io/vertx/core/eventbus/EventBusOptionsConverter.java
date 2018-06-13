@@ -96,6 +96,11 @@ import io.vertx.core.json.JsonArray;
             obj.setIdleTimeout(((Number)member.getValue()).intValue());
           }
           break;
+        case "idleTimeoutUnit":
+          if (member.getValue() instanceof String) {
+            obj.setIdleTimeoutUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
         case "jdkSslEngineOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setJdkSslEngineOptions(new io.vertx.core.net.JdkSSLEngineOptions((JsonObject)member.getValue()));
@@ -276,6 +281,9 @@ import io.vertx.core.json.JsonArray;
       json.put("host", obj.getHost());
     }
     json.put("idleTimeout", obj.getIdleTimeout());
+    if (obj.getIdleTimeoutUnit() != null) {
+      json.put("idleTimeoutUnit", obj.getIdleTimeoutUnit().name());
+    }
     if (obj.getJdkSslEngineOptions() != null) {
       json.put("jdkSslEngineOptions", obj.getJdkSslEngineOptions().toJson());
     }

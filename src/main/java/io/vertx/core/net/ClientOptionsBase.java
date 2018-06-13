@@ -16,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for Client options
@@ -224,6 +225,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   @Override
   public ClientOptionsBase setIdleTimeout(int idleTimeout) {
     return (ClientOptionsBase) super.setIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public ClientOptionsBase setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
+    return (ClientOptionsBase) super.setIdleTimeoutUnit(idleTimeoutUnit);
   }
 
   @Override
