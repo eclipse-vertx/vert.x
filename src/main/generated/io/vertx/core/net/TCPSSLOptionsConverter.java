@@ -52,6 +52,11 @@ import java.util.Objects;
             obj.setIdleTimeout(((Number)member.getValue()).intValue());
           }
           break;
+        case "idleTimeoutUnit":
+          if (member.getValue() instanceof String) {
+            obj.setIdleTimeoutUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
         case "jdkSslEngineOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setJdkSslEngineOptions(new io.vertx.core.net.JdkSSLEngineOptions((JsonObject)member.getValue()));
@@ -167,6 +172,9 @@ import java.util.Objects;
       json.put("enabledSecureTransportProtocols", array);
     }
     json.put("idleTimeout", obj.getIdleTimeout());
+    if (obj.getIdleTimeoutUnit() != null) {
+      json.put("idleTimeoutUnit", obj.getIdleTimeoutUnit().name());
+    }
     if (obj.getJdkSslEngineOptions() != null) {
       json.put("jdkSslEngineOptions", obj.getJdkSslEngineOptions().toJson());
     }
