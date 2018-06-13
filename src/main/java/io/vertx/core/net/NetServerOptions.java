@@ -17,6 +17,7 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Options for configuring a {@link io.vertx.core.net.NetServer}.
@@ -160,6 +161,12 @@ public class NetServerOptions extends TCPSSLOptions {
   @Override
   public NetServerOptions setIdleTimeout(int idleTimeout) {
     super.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public NetServerOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
+    super.setIdleTimeoutUnit(idleTimeoutUnit);
     return this;
   }
 

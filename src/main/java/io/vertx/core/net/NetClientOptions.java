@@ -17,6 +17,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Options for configuring a {@link io.vertx.core.net.NetClient}.
@@ -140,6 +141,12 @@ public class NetClientOptions extends ClientOptionsBase {
   @Override
   public NetClientOptions setIdleTimeout(int idleTimeout) {
     super.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public NetClientOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
+    super.setIdleTimeoutUnit(idleTimeoutUnit);
     return this;
   }
 

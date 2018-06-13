@@ -293,7 +293,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 } else {
                   IdleStateHandler idle;
                   if (options.getIdleTimeout() > 0) {
-                    pipeline.addLast("idle", idle = new IdleStateHandler(0, 0, options.getIdleTimeout()));
+                    pipeline.addLast("idle", idle = new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
                   } else {
                     idle = null;
                   }
@@ -443,7 +443,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
     if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
     if (!DISABLE_H2C) {
       pipeline.addLast("h2c", new Http2UpgradeHandler());
@@ -495,7 +495,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private void configureHttp2(ChannelPipeline pipeline) {
     if (options.getIdleTimeout() > 0) {
-      pipeline.addBefore("handler", "idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+      pipeline.addBefore("handler", "idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
   }
 

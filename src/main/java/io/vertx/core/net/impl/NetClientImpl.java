@@ -38,6 +38,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -49,6 +50,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
   protected final int idleTimeout;
+  private final TimeUnit idleTimeoutUnit;
   protected final boolean logEnabled;
 
   private final VertxInternal vertx;
@@ -87,6 +89,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     this.metrics = metrics != null ? metrics.createNetClientMetrics(options) : null;
     logEnabled = options.getLogActivity();
     idleTimeout = options.getIdleTimeout();
+    idleTimeoutUnit = options.getIdleTimeoutUnit();
   }
 
   protected void initChannel(ChannelPipeline pipeline) {
@@ -98,7 +101,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
     if (idleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, idleTimeout));
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, idleTimeout, idleTimeoutUnit));
     }
   }
 
