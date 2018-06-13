@@ -19,6 +19,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -250,6 +251,12 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setIdleTimeout(int idleTimeout) {
     super.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
+    super.setIdleTimeoutUnit(idleTimeoutUnit);
     return this;
   }
 

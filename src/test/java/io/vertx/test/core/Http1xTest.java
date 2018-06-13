@@ -131,8 +131,11 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.isUsePooledBuffers());
 
     assertEquals(0, options.getIdleTimeout());
+    assertEquals(TimeUnit.SECONDS, options.getIdleTimeoutUnit());
     assertEquals(options, options.setIdleTimeout(10));
+    assertEquals(options, options.setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
     assertEquals(10, options.getIdleTimeout());
+    assertEquals(TimeUnit.MILLISECONDS, options.getIdleTimeoutUnit());
     assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
     assertFalse(options.isSsl());

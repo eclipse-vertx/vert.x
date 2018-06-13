@@ -197,7 +197,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
     if (client.getOptions().getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
   }
 
@@ -216,7 +216,8 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       pipeline.addLast("inflater", new HttpContentDecompressor(true));
     }
     if (client.getOptions().getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, client.getOptions().getIdleTimeout()));
+      HttpClientOptions options = client.getOptions();
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
   }
 

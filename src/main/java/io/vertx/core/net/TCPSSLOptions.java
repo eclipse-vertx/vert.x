@@ -17,6 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class. TCP and SSL related options
@@ -57,6 +58,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final int DEFAULT_IDLE_TIMEOUT = 0;
 
   /**
+   * Default idle time unit = SECONDS
+   */
+  public static final TimeUnit DEFAULT_IDLE_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
+
+  /**
    * Default use alpn = false
    */
   public static final boolean DEFAULT_USE_ALPN = false;
@@ -95,6 +101,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private int soLinger;
   private boolean usePooledBuffers;
   private int idleTimeout;
+  private TimeUnit idleTimeoutUnit;
   private boolean ssl;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
@@ -128,6 +135,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.soLinger = other.getSoLinger();
     this.usePooledBuffers = other.isUsePooledBuffers();
     this.idleTimeout = other.getIdleTimeout();
+    this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     this.ssl = other.isSsl();
     this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
     this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
@@ -170,6 +178,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     soLinger = DEFAULT_SO_LINGER;
     usePooledBuffers = DEFAULT_USE_POOLED_BUFFERS;
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
+    idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     ssl = DEFAULT_SSL;
     enabledCipherSuites = new LinkedHashSet<>();
     crlPaths = new ArrayList<>();
@@ -260,8 +269,10 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * Set the idle timeout, in seconds. zero means don't timeout.
+   * Set the idle timeout, default time unit is seconds. Zero means don't timeout.
    * This determines if a connection will timeout and be closed if no data is received within the timeout.
+   *
+   * If you want change default time unit, use {@link #setIdleTimeoutUnit(TimeUnit)}
    *
    * @param idleTimeout  the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
@@ -275,10 +286,28 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return  the idle timeout, in seconds
+   * @return the idle timeout, in time unit specified by {@link #getIdleTimeoutUnit()}.
    */
   public int getIdleTimeout() {
     return idleTimeout;
+  }
+
+  /**
+   * Set the idle timeout unit. If not specified, default is seconds.
+   *
+   * @param idleTimeoutUnit specify time unit.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
+    this.idleTimeoutUnit = idleTimeoutUnit;
+    return this;
+  }
+
+  /**
+   * @return the idle timeout unit.
+   */
+  public TimeUnit getIdleTimeoutUnit() {
+    return idleTimeoutUnit;
   }
 
   /**
@@ -694,6 +723,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     TCPSSLOptions that = (TCPSSLOptions) o;
 
     if (idleTimeout != that.idleTimeout) return false;
+    if (idleTimeoutUnit != null ? !idleTimeoutUnit.equals(that.idleTimeoutUnit) : that.idleTimeoutUnit != null) return false;
     if (soLinger != that.soLinger) return false;
     if (ssl != that.ssl) return false;
     if (tcpKeepAlive != that.tcpKeepAlive) return false;
@@ -726,6 +756,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + soLinger;
     result = 31 * result + (usePooledBuffers ? 1 : 0);
     result = 31 * result + idleTimeout;
+    result = 31 * result + (idleTimeoutUnit != null ? idleTimeoutUnit.hashCode() : 0);
     result = 31 * result + (ssl ? 1 : 0);
     result = 31 * result + (keyCertOptions != null ? keyCertOptions.hashCode() : 0);
     result = 31 * result + (trustOptions != null ? trustOptions.hashCode() : 0);
