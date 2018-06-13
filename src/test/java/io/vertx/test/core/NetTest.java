@@ -1152,7 +1152,10 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testServerIdleTimeout() {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setIdleTimeout(1));
+    NetServerOptions netServerOptions = new NetServerOptions();
+    netServerOptions.setIdleTimeout(1000);
+    netServerOptions.setIdleTimeoutUnit(TimeUnit.MILLISECONDS);
+    server = vertx.createNetServer(netServerOptions);
     server.connectHandler(s -> {}).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       client.connect(testAddress, res -> {
@@ -1167,7 +1170,10 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testClientIdleTimeout() {
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setIdleTimeout(1));
+    NetClientOptions netClientOptions = new NetClientOptions();
+    netClientOptions.setIdleTimeout(1000);
+    netClientOptions.setIdleTimeoutUnit(TimeUnit.MILLISECONDS);
+    client = vertx.createNetClient(netClientOptions);
 
     server.connectHandler(s -> {
     }).listen(testAddress, ar -> {
@@ -1178,8 +1184,6 @@ public class NetTest extends VertxTestBase {
         socket.closeHandler(v -> testComplete());
       });
     });
-
-
     await();
   }
 
