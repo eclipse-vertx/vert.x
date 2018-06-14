@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
@@ -109,7 +110,8 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
           if (!closeFrameSent) {
             // Echo back close frame and close the connection once it was written.
             // This is specified in the WebSockets RFC 6455 Section  5.4.1
-            chctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
+            CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
+            chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
             closeFrameSent = true;
           }
           break;

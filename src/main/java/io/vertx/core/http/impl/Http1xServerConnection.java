@@ -291,8 +291,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
 
       @Override
       protected void handleMessage(NetSocketImpl connection, Object msg) {
-        ByteBuf buf = (ByteBuf) msg;
-        connection.handleMessageReceived(buf);
+        connection.handleMessageReceived(msg);
       }
     }.removeHandler(sock -> connectionMap.remove(chctx.channel())));
 

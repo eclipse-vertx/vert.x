@@ -352,8 +352,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           }
           @Override
           protected void handleMessage(NetSocketImpl connection, Object msg) {
-            ByteBuf buf = (ByteBuf) msg;
-            connection.handleMessageReceived(buf);
+            connection.handleMessageReceived(msg);
           }
         }.removeHandler(sock -> conn.listener.onDiscard()));
 
