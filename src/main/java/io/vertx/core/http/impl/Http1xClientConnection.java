@@ -355,8 +355,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           }
           @Override
           protected void handleMessage(NetSocketImpl connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
-            ByteBuf buf = (ByteBuf) msg;
-            connection.handleMessageReceived(buf);
+            connection.handleMessageReceived(msg);
           }
         }.removeHandler(sock -> conn.listener.onDiscard()));
 
