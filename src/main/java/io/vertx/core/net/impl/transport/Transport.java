@@ -199,7 +199,6 @@ public class Transport {
   }
 
   public void configure(ClientOptionsBase options, Bootstrap bootstrap) {
-    BiConsumer<ChannelOption<Object>, Object> setter = bootstrap::option;
     if (options.getLocalAddress() != null) {
       bootstrap.localAddress(options.getLocalAddress(), 0);
     }
@@ -224,7 +223,6 @@ public class Transport {
   }
 
   public void configure(NetServerOptions options, ServerBootstrap bootstrap) {
-    BiConsumer<ChannelOption<Object>, Object> setter = bootstrap::childOption;
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
       bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
@@ -234,7 +232,7 @@ public class Transport {
       bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
     }
     if (options.getSoLinger() != -1) {
-      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+      bootstrap.childOption(ChannelOption.SO_LINGER, options.getSoLinger());
     }
     if (options.getTrafficClass() != -1) {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
