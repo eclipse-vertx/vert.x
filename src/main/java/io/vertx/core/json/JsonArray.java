@@ -524,7 +524,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    */
   @Override
   public Iterator<Object> iterator() {
-    return new Iter(list.iterator());
+    return new Iter<>(list.iterator());
   }
 
   /**
@@ -595,8 +595,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    *
    * @return a Stream
    */
-  public Stream<Object> stream() {
-    return asStream(iterator());
+  public <T> Stream<T> stream() {
+    return asStream(new Iter<>(list.iterator()));
   }
 
   @Override
@@ -696,7 +696,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     list = Json.CODEC.fromBuffer(buf, List.class);
   }
 
-  private static class Iter implements Iterator<Object> {
+  private static class Iter<T> implements Iterator<T> {
 
     final Iterator<Object> listIter;
 
@@ -710,8 +710,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     }
 
     @Override
-    public Object next() {
-      return wrapJsonValue(listIter.next());
+    public T next() {
+      return (T) wrapJsonValue(listIter.next());
     }
 
     @Override
