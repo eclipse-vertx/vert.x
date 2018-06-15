@@ -2,7 +2,6 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import java.util.Objects;
 
 /**
  * Converter for {@link io.vertx.core.http.GoAway}.
@@ -43,5 +42,4 @@ import java.util.Objects;
     json.put("errorCode", obj.getErrorCode());
     json.put("lastStreamId", obj.getLastStreamId());
   }
-
 }

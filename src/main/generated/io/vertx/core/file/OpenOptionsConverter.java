@@ -2,7 +2,6 @@ package io.vertx.core.file;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import java.util.Objects;
 
 /**
  * Converter for {@link io.vertx.core.file.OpenOptions}.
@@ -91,5 +90,4 @@ import java.util.Objects;
     json.put("truncateExisting", obj.isTruncateExisting());
     json.put("write", obj.isWrite());
   }
-
 }

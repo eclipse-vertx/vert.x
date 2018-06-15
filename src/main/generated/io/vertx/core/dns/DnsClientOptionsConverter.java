@@ -2,7 +2,6 @@ package io.vertx.core.dns;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import java.util.Objects;
 
 /**
  * Converter for {@link io.vertx.core.dns.DnsClientOptions}.
@@ -55,5 +54,4 @@ public class DnsClientOptionsConverter {
     json.put("queryTimeout", obj.getQueryTimeout());
     json.put("recursionDesired", obj.isRecursionDesired());
   }
-
 }

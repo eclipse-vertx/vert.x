@@ -2,7 +2,6 @@ package io.vertx.core.metrics;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import java.util.Objects;
 
 /**
  * Converter for {@link io.vertx.core.metrics.MetricsOptions}.
@@ -29,5 +28,4 @@ import java.util.Objects;
    static void toJson(MetricsOptions obj, java.util.Map<String, Object> json) {
     json.put("enabled", obj.isEnabled());
   }
-
 }

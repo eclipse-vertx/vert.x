@@ -2,7 +2,6 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import java.util.Objects;
 
 /**
  * Converter for {@link io.vertx.core.http.HttpClientOptions}.
@@ -206,5 +205,4 @@ import java.util.Objects;
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
   }
-
 }

@@ -2,7 +2,6 @@ package io.vertx.core.cli;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import java.util.Objects;
 
 /**
  * Converter for {@link io.vertx.core.cli.Argument}.
@@ -71,5 +70,4 @@ import java.util.Objects;
     json.put("multiValued", obj.isMultiValued());
     json.put("required", obj.isRequired());
   }
-
 }
