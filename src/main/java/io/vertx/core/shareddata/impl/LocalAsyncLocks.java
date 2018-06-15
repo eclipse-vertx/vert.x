@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
@@ -32,103 +33,93 @@ import static java.util.stream.Collectors.*;
 public class LocalAsyncLocks {
 
   // Immutable
-  private class AsyncLock implements Lock {
+  private static class WaitersList {
 
-    final String name;
     final List<LockWaiter> waiters;
 
-    AsyncLock(String name, LockWaiter waiter) {
-      this.name = name;
-      waiters = Collections.singletonList(waiter);
-    }
-
-    AsyncLock(String name, List<LockWaiter> waiters) {
-      this.name = name;
+    WaitersList(List<LockWaiter> waiters) {
       this.waiters = waiters;
     }
 
-    boolean firstWaiter() {
-      return waiters.size() == 1;
+    int size() {
+      return waiters.size();
     }
 
-    AsyncLock addWaiter(LockWaiter waiter) {
-      return new AsyncLock(name, Stream.concat(waiters.stream(), Stream.of(waiter)).collect(toList()));
+    LockWaiter first() {
+      return waiters.get(0);
     }
 
-    AsyncLock forNextWaiter() {
+    WaitersList add(LockWaiter waiter) {
+      return new WaitersList(Stream.concat(waiters.stream(), Stream.of(waiter)).collect(toList()));
+    }
+
+    WaitersList removeStale() {
       if (waiters.size() > 1) {
-        List<LockWaiter> lockWaiters = waiters.stream().skip(1).filter(LockWaiter::notTimedOut).collect(toList());
+        List<LockWaiter> lockWaiters = this.waiters.stream().skip(1).filter(LockWaiter::isWaiting).collect(toList());
         if (!lockWaiters.isEmpty()) {
-          return new AsyncLock(name, lockWaiters);
+          return new WaitersList(lockWaiters);
         }
       }
       return null;
     }
-
-    void acquire() {
-      LockWaiter waiter = waiters.get(0);
-      if (!waiter.acquire(this)) {
-        release();
-      }
-    }
-
-    @Override
-    public void release() {
-      AsyncLock asyncLock = localLocks.compute(name, (name, lock) -> lock == null ? null : lock.forNextWaiter());
-      if (asyncLock != null) {
-        asyncLock.acquire();
-      }
-    }
   }
 
-  private static class LockWaiter {
-    final Context context;
-    final Handler<AsyncResult<Lock>> handler;
-    final Long timerId;
-    volatile boolean timedOut;
-    volatile boolean acquired;
+  private enum Status {WAITING, ACQUIRED, TIMED_OUT}
 
-    LockWaiter(Context context, Handler<AsyncResult<Lock>> handler, long timeout) {
+  private class LockWaiter {
+
+    final Context context;
+    final String lockName;
+    final Handler<AsyncResult<Lock>> handler;
+    final AtomicReference<Status> status;
+    final Long timerId;
+
+    LockWaiter(Context context, String lockName, long timeout, Handler<AsyncResult<Lock>> handler) {
       this.context = context;
+      this.lockName = lockName;
       this.handler = handler;
+      status = new AtomicReference<>(Status.WAITING);
       timerId = timeout != Long.MAX_VALUE ? context.owner().setTimer(timeout, tid -> timeout()) : null;
     }
 
+    boolean isWaiting() {
+      return status.get() == Status.WAITING;
+    }
+
     void timeout() {
-      if (!acquired) {
-        timedOut = true;
-        context.runOnContext(v -> handler.handle(Future.failedFuture(new VertxException("Timed out waiting to get lock"))));
+      if (status.compareAndSet(Status.WAITING, Status.TIMED_OUT)) {
+        handler.handle(Future.failedFuture(new VertxException("Timed out waiting to get lock")));
       }
     }
 
-    boolean acquire(AsyncLock lock) {
-      if (!timedOut) {
+    void acquireLock() {
+      if (status.compareAndSet(Status.WAITING, Status.ACQUIRED)) {
         if (timerId != null) {
           context.owner().cancelTimer(timerId);
         }
-        acquired = true;
-        context.runOnContext(v -> handler.handle(Future.succeededFuture(lock)));
+        context.runOnContext(v -> handler.handle(Future.succeededFuture(() -> nextWaiter(lockName))));
+      } else {
+        context.runOnContext(v -> nextWaiter(lockName));
       }
-      return acquired;
-    }
-
-    boolean notTimedOut() {
-      return !timedOut;
     }
   }
 
-  private final ConcurrentMap<String, AsyncLock> localLocks = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, WaitersList> waitersMap = new ConcurrentHashMap<>();
 
   public void acquire(Context context, String name, long timeout, Handler<AsyncResult<Lock>> handler) {
-    LockWaiter lockWaiter = new LockWaiter(context, handler, timeout);
-    AsyncLock asyncLock = localLocks.compute(name, (lockName, lock) -> {
-      if (lock == null) {
-        return new AsyncLock(lockName, lockWaiter);
-      }
-      return lock.addWaiter(lockWaiter);
+    LockWaiter lockWaiter = new LockWaiter(context, name, timeout, handler);
+    WaitersList waiters = waitersMap.compute(name, (s, list) -> {
+      return list == null ? new WaitersList(Collections.singletonList(lockWaiter)) : list.add(lockWaiter);
     });
-    if (asyncLock.firstWaiter()) {
-      asyncLock.acquire();
+    if (waiters.size() == 1) {
+      waiters.first().acquireLock();
+    }
+  }
+
+  private void nextWaiter(String lockName) {
+    WaitersList waiters = waitersMap.compute(lockName, (s, list) -> list == null ? null : list.removeStale());
+    if (waiters != null) {
+      waiters.first().acquireLock();
     }
   }
 }
