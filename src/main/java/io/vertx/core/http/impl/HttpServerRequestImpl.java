@@ -11,13 +11,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
@@ -30,19 +24,24 @@ import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.HttpFrame;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.Metrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -60,8 +59,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
   private final Http1xServerConnection conn;
-  private final HttpRequest request;
-  private final HttpServerResponse response;
+  private final DefaultHttpRequest request;
 
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
@@ -69,6 +67,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private String uri;
   private String path;
   private String query;
+
+  private HttpServerResponseImpl response;
+  private HttpServerRequestImpl next;
+  private Object metric;
 
   private Handler<Buffer> dataHandler;
   private Handler<Throwable> exceptionHandler;
@@ -86,13 +88,115 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private boolean ended;
   private long bytesRead;
 
+  private Deque<Buffer> pending;
+  private boolean paused;
+  private boolean sentCheck;
 
-  HttpServerRequestImpl(Http1xServerConnection conn,
-                        HttpRequest request,
-                        HttpServerResponse response) {
+  HttpServerRequestImpl(Http1xServerConnection conn, DefaultHttpRequest request) {
     this.conn = conn;
     this.request = request;
-    this.response = response;
+  }
+
+  private void checkNextTick() {
+    if (!paused) {
+      if (pending != null && pending.size() > 0) {
+        if (!sentCheck) {
+          sentCheck = true;
+          conn.getContext().runOnContext(v -> {
+            synchronized (conn) {
+              sentCheck = false;
+              if (!paused) {
+                // The only place we poll the pending queue, so we are sure that pending.size() > 0
+                // since we got there because queueing was true
+                Buffer msg = pending.poll();
+                // Process message, it might pause the connection
+                handleData(msg);
+                // Check next tick in case we still have pending messages and the connection is not paused
+                checkNextTick();
+              }
+            }
+          });
+        }
+      } else {
+        if (ended) {
+          doEnd();
+        } else {
+          // We only resume the connection when the request is not yet ended
+          conn.doResume();
+        }
+      }
+    }
+  }
+
+  private void enqueueData(Buffer chunk) {
+    // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+    if (pending == null) {
+      pending = new ArrayDeque<>(8);
+    }
+    pending.add(chunk);
+    if (pending.size() == 5) {
+      // We pause the channel too, to prevent the queue growing too large, but we don't do this
+      // until the queue reaches a certain size, to avoid pausing it too often
+
+      // We only pause when we are actively called by the connection
+      conn.doPause();
+    }
+  }
+
+  void handleContent(Buffer buffer) {
+    if (paused || (pending != null && pending.size() > 0)) {
+      enqueueData(buffer);
+    } else {
+      handleData(buffer);
+    }
+  }
+
+  void handleBegin() {
+    if (Metrics.METRICS_ENABLED) {
+      reportRequestBegin();
+    }
+    response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), conn, request);
+    if (conn.handle100ContinueAutomatically) {
+      check100();
+    }
+    conn.requestHandler.handle(this);
+  }
+
+  void appendRequest(HttpServerRequestImpl next) {
+    HttpServerRequestImpl current = this;
+    while (current.next != null) {
+      current = current.next;
+    }
+    current.next = next;
+  }
+
+  HttpServerRequestImpl nextRequest() {
+    return next;
+  }
+
+  void handlePipelined() {
+    paused = false;
+    boolean end = ended;
+    ended = false;
+    handleBegin();
+    ended = end;
+    checkNextTick();
+  }
+
+  private void reportRequestBegin() {
+    if (conn.metrics != null) {
+      metric = conn.metrics.requestBegin(conn.metric(), this);
+    }
+  }
+
+  private void check100() {
+    if (HttpUtil.is100ContinueExpected(request)) {
+      conn.write100Continue();
+    }
+  }
+
+  Object metric() {
+    return metric;
   }
 
   @Override
@@ -169,7 +273,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerResponse response() {
+  public HttpServerResponseImpl response() {
     return response;
   }
 
@@ -226,8 +330,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      if (!ended) {
-        conn.pause();
+      if (!isEnded()) {
+        paused = true;
       }
       return this;
     }
@@ -236,8 +340,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest resume() {
     synchronized (conn) {
-      if (!ended) {
-        conn.resume();
+      if (!isEnded()) {
+        paused = false;
+        checkNextTick();
       }
       return this;
     }
@@ -365,7 +470,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public boolean isEnded() {
     synchronized (conn) {
-      return ended;
+      return response != null && ended && (pending == null || pending.isEmpty());
     }
   }
 
@@ -379,7 +484,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return conn;
   }
 
-  void handleData(Buffer data) {
+  private void handleData(Buffer data) {
     synchronized (conn) {
       bytesRead += data.length();
       if (decoder != null) {
@@ -398,42 +503,66 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   void handleEnd() {
     synchronized (conn) {
       ended = true;
-      if (decoder != null) {
-        try {
-          decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-          while (decoder.hasNext()) {
-            InterfaceHttpData data = decoder.next();
-            if (data instanceof Attribute) {
-              Attribute attr = (Attribute) data;
-              try {
-                attributes().add(attr.getName(), attr.getValue());
-              } catch (Exception e) {
-                // Will never happen, anyway handle it somehow just in case
-                handleException(e);
-              }
-            }
+      if (isEnded()) {
+        doEnd();
+      }
+    }
+  }
+
+  private void doEnd() {
+    if (decoder != null) {
+      endDecode();
+    }
+    // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
+  }
+
+  private void endDecode() {
+    try {
+      decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+      while (decoder.hasNext()) {
+        InterfaceHttpData data = decoder.next();
+        if (data instanceof Attribute) {
+          Attribute attr = (Attribute) data;
+          try {
+            attributes().add(attr.getName(), attr.getValue());
+          } catch (Exception e) {
+            // Will never happen, anyway handle it somehow just in case
+            handleException(e);
           }
-        } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
-          handleException(e);
-        } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
-          // ignore this as it is expected
-        } finally {
-          decoder.destroy();
         }
       }
-      // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
-      if (endHandler != null) {
-        endHandler.handle(null);
-      }
+    } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+      handleException(e);
+    } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
+      // ignore this as it is expected
+    } finally {
+      decoder.destroy();
     }
   }
 
   void handleException(Throwable t) {
     synchronized (conn) {
-      Handler<Throwable> handler = this.exceptionHandler;
-      if (handler != null) {
-        conn.getContext().runOnContext(v -> handler.handle(t));
+      if (!isEnded()) {
+        Handler<Throwable> handler = this.exceptionHandler;
+        if (handler != null) {
+          conn.getContext().runOnContext(v -> handler.handle(t));
+        }
       }
+      if (!response.ended()) {
+        if (METRICS_ENABLED) {
+          reportRequestReset();
+        }
+        response.handleException(t);
+      }
+    }
+  }
+
+  private void reportRequestReset() {
+    if (conn.metrics != null) {
+      conn.metrics.requestReset(metric);
     }
   }
 
@@ -443,7 +572,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   private void checkEnded() {
-    if (ended) {
+    if (isEnded()) {
       throw new IllegalStateException("Request has already been read");
     }
   }

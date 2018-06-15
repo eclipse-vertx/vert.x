@@ -4275,4 +4275,156 @@ public class Http1xTest extends HttpTest {
     awaitLatch(latch);
     assertEquals(count.get(), 1);
   }
+
+  @Test
+  public void testDeferredRequestEnd() throws Exception {
+    server.requestHandler(req -> {
+      req.pause();
+      req.bodyHandler(body -> {
+        assertTrue(req.isEnded());
+        req.response().end(body);
+      });
+      vertx.setTimer(10, v -> {
+        assertFalse(req.isEnded());
+        req.resume();
+      });
+    });
+    startServer();
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      resp.bodyHandler(body -> {
+        assertEquals(expected, body);
+        testComplete();
+      });
+    }).end(expected);
+    await();
+  }
+
+  @Test
+  public void testPipelinedWithResponseSent() throws Exception {
+    int numReq = 10;
+    waitFor(numReq * 2);
+    AtomicInteger inflight = new AtomicInteger();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      int val = count.getAndIncrement();
+      assertEquals(val + 1, inflight.incrementAndGet());
+      req.pause();
+      req.response().end("" + val);
+      req.bodyHandler(body -> {
+        if (inflight.decrementAndGet() == 0) {
+          assertEquals(numReq, count.get());
+        }
+        complete();
+      });
+      vertx.setTimer(1000, v -> {
+        req.resume();
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    for (int i = 0;i < numReq;i++) {
+      String expected = "" + i;
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+        resp.bodyHandler(body -> {
+          assertEquals(expected, body.toString());
+          complete();
+        });
+      }).end(Buffer.buffer(TestUtils.randomAlphaString(1024)));
+    }
+    await();
+  }
+
+  @Test
+  public void testPipelinedWithPendingResponse() throws Exception {
+    int numReq = 10;
+    waitFor(numReq);
+    AtomicInteger inflight = new AtomicInteger();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      int val = count.getAndIncrement();
+      assertEquals(0, inflight.getAndIncrement());
+      vertx.setTimer(100, v -> {
+        inflight.decrementAndGet();
+        req.response().end("" + val);
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    for (int i = 0;i < numReq;i++) {
+      String expected = "" + i;
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+        resp.bodyHandler(body -> {
+          assertEquals(expected, body.toString());
+          complete();
+        });
+      }).end(TestUtils.randomAlphaString(1024));
+    }
+    await();
+  }
+
+  @Test
+  public void testPipelinedPostRequestStartedByResponseSent() throws Exception {
+    String chunk1 = TestUtils.randomAlphaString(1024);
+    String chunk2 = TestUtils.randomAlphaString(1024);
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (count.getAndIncrement()) {
+        case 0:
+          req.pause();
+          vertx.setTimer(500, id -> {
+            req.resume();
+          });
+          req.endHandler(v -> {
+            req.response().end();
+          });
+          break;
+        case 1:
+          latch.countDown();
+          req.bodyHandler(body -> {
+            assertEquals(chunk1 + chunk2, body.toString());
+            req.response().end();
+          });
+          break;
+      }
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    }).end(TestUtils.randomAlphaString(1024));
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    }).setChunked(true).write(chunk1);
+    awaitLatch(latch);
+    req.end(chunk2);
+    await();
+  }
+
+  @Test
+  public void testPipelinedGetRequestStartedByResponseSent() throws Exception {
+    server.requestHandler(req -> {
+      if (req.method() == HttpMethod.POST) {
+        req.pause();
+        vertx.setTimer(100, id -> {
+          req.resume();
+        });
+      }
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    }).end(TestUtils.randomAlphaString(1024));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    });
+    await();
+  }
 }

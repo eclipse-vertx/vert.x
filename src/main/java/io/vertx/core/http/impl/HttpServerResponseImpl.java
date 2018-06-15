@@ -77,7 +77,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private String statusMessage;
   private long bytesWritten;
 
-  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, HttpRequest request) {
+  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, DefaultHttpRequest request) {
     this.vertx = vertx;
     this.conn = conn;
     this.version = request.getProtocolVersion();
@@ -517,25 +517,27 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   void handleException(Throwable t) {
     synchronized (conn) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(t);
+      if (t == Http1xServerConnection.CLOSED_EXCEPTION) {
+        handleClosed();
+      } else {
+        if (exceptionHandler != null) {
+          exceptionHandler.handle(t);
+        }
       }
     }
   }
 
-  void handleClosed() {
-    synchronized (conn) {
-      if (!closed) {
-        closed = true;
-        if (!written && exceptionHandler != null) {
-          conn.getContext().runOnContext(v -> exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION));
-        }
-        if (endHandler != null) {
-          conn.getContext().runOnContext(endHandler);
-        }
-        if (closeHandler != null) {
-          conn.getContext().runOnContext(closeHandler);
-        }
+  private void handleClosed() {
+    if (!closed) {
+      closed = true;
+      if (!written && exceptionHandler != null) {
+        conn.getContext().runOnContext(v -> exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION));
+      }
+      if (endHandler != null) {
+        conn.getContext().runOnContext(endHandler);
+      }
+      if (closeHandler != null) {
+        conn.getContext().runOnContext(closeHandler);
       }
     }
   }
