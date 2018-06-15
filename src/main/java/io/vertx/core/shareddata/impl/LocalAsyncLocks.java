@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -97,9 +98,25 @@ public class LocalAsyncLocks {
         if (timerId != null) {
           context.owner().cancelTimer(timerId);
         }
-        context.runOnContext(v -> handler.handle(Future.succeededFuture(() -> nextWaiter(lockName))));
+        context.runOnContext(v -> handler.handle(Future.succeededFuture(new AsyncLock(lockName))));
       } else {
         context.runOnContext(v -> nextWaiter(lockName));
+      }
+    }
+  }
+
+  private class AsyncLock implements Lock {
+    final String lockName;
+    final AtomicBoolean invoked = new AtomicBoolean();
+
+    AsyncLock(String lockName) {
+      this.lockName = lockName;
+    }
+
+    @Override
+    public void release() {
+      if (invoked.compareAndSet(false, true)) {
+        nextWaiter(lockName);
       }
     }
   }
