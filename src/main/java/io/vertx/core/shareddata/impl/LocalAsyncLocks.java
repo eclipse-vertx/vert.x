@@ -18,13 +18,13 @@ import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.shareddata.Lock;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
 
@@ -51,7 +51,10 @@ public class LocalAsyncLocks {
     }
 
     WaitersList add(LockWaiter waiter) {
-      return new WaitersList(Stream.concat(waiters.stream(), Stream.of(waiter)).collect(toList()));
+      List<LockWaiter> list = new ArrayList<>(waiters.size() + 1);
+      list.addAll(waiters);
+      list.add(waiter);
+      return new WaitersList(list);
     }
 
     WaitersList removeStale() {
