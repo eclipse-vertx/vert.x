@@ -5,14 +5,14 @@ The {@link io.vertx.core.eventbus.EventBus event bus} is the *nervous system* of
 
 There is a single event bus instance for every Vert.x instance and it is obtained using the method {@link io.vertx.core.Vertx#eventBus}.
 
-The event bus allows different parts of your application to communicate with each other irrespective of what language they are written in,
+The event bus allows different parts of your application to communicate with each other, irrespective of what language they are written in,
 and whether they're in the same Vert.x instance, or in a different Vert.x instance.
 
-It can even be bridged to allow client side JavaScript running in a browser to communicate on the same event bus.
+It can even be bridged to allow client-side JavaScript running in a browser to communicate on the same event bus.
 
 The event bus forms a distributed peer-to-peer messaging system spanning multiple server nodes and multiple browsers.
 
-The event bus supports publish/subscribe, point to point, and request-response messaging.
+The event bus supports publish/subscribe, point-to-point, and request-response messaging.
 
 The event bus API is very simple. It basically involves registering handlers, unregistering handlers and
 sending and publishing messages.
@@ -26,13 +26,13 @@ First some theory:
 Messages are sent on the event bus to an *address*.
 
 Vert.x doesn't bother with any fancy addressing schemes. In Vert.x an address is simply a string.
-Any string is valid. However it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace.
+Any string is valid. However it is wise to use some kind of scheme, _e.g._ using periods to demarcate a namespace.
 
 Some examples of valid addresses are +europe.news.feed1+, +acme.games.pacman+, +sausages+, and +X+.
 
 ==== Handlers
 
-Messages are received in handlers. You register a handler at an address.
+Messages are received by handlers. You register a handler at an address.
 
 Many different handlers can be registered at the same address.
 
@@ -47,30 +47,30 @@ to all handlers that are registered at that address.
 
 This is the familiar *publish/subscribe* messaging pattern.
 
-==== Point to point and Request-Response messaging
+==== Point-to-point and Request-Response messaging
 
-The event bus also supports *point to point* messaging.
+The event bus also supports *point-to-point* messaging.
 
-Messages are sent to an address. Vert.x will then route it to just one of the handlers registered at that address.
+Messages are sent to an address. Vert.x will then route them to just one of the handlers registered at that address.
 
 If there is more than one handler registered at the address,
 one will be chosen using a non-strict round-robin algorithm.
 
-With point to point messaging, an optional reply handler can be specified when sending the message.
+With point-to-point messaging, an optional reply handler can be specified when sending the message.
 
 When a message is received by a recipient, and has been handled, the recipient can optionally decide to reply to
-the message. If they do so the reply handler will be called.
+the message. If they do so, the reply handler will be called.
 
-When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum,
-and allows a dialog to be set-up between two different verticles.
+When the reply is received back by the sender, it too can be replied to. This can be repeated _ad infinitum_,
+and allows a dialog to be set up between two different verticles.
 
 This is a common messaging pattern called the *request-response* pattern.
 
 ==== Best-effort delivery
 
-Vert.x does it's best to deliver messages and won't consciously throw them away. This is called *best-effort* delivery.
+Vert.x does its best to deliver messages and won't consciously throw them away. This is called *best-effort* delivery.
 
-However, in case of failure of all or parts of the event bus, there is a possibility messages will be lost.
+However, in case of failure of all or parts of the event bus, there is a possibility messages might be lost.
 
 If your application cares about lost messages, you should code your handlers to be idempotent, and your senders
 to retry after recovery.
@@ -88,11 +88,11 @@ _lingua franca_ for Vert.x.
 However you are not forced to use JSON if you don't want to.
 
 The event bus is very flexible and also supports sending arbitrary objects over the event bus.
-You do this by defining a {@link io.vertx.core.eventbus.MessageCodec codec} for the objects you want to send.
+You can do this by defining a {@link io.vertx.core.eventbus.MessageCodec codec} for the objects you want to send.
 
 === The Event Bus API
 
-Let's jump into the API
+Let's jump into the API.
 
 ==== Getting the event bus
 
@@ -117,12 +117,12 @@ Here's an example:
 
 When a message arrives for your handler, your handler will be called, passing in the {@link io.vertx.core.eventbus.Message message}.
 
-The object returned from call to +consumer()+ is an instance of {@link io.vertx.core.eventbus.MessageConsumer}
+The object returned from call to +consumer()+ is an instance of {@link io.vertx.core.eventbus.MessageConsumer}.
 
 This object can subsequently be used to unregister the handler, or use the handler as a stream.
 
 Alternatively you can use {@link io.vertx.core.eventbus.EventBus#consumer(String,io.vertx.core.Handler)} to
-to return a +MessageConsumer+ with no handler set, and then set the handler on that. For example:
+return a +MessageConsumer+ with no handler set, and then set the handler on that. For example:
 
 [source,$lang]
 ----
@@ -144,8 +144,8 @@ on the +MessageConsumer+ object.
 
 To unregister a handler, call {@link io.vertx.core.eventbus.MessageConsumer#unregister}.
 
-If you are on a clustered event bus, un-registering can take some time to propagate across the nodes, if you want to
-be notified when this is complete use {@link io.vertx.core.eventbus.MessageConsumer#unregister(io.vertx.core.Handler)}.
+If you are on a clustered event bus, un-registering can take some time to propagate across the nodes.  If you want to
+be notified when this is complete, use {@link io.vertx.core.eventbus.MessageConsumer#unregister(io.vertx.core.Handler)}.
 
 [source,$lang]
 ----
@@ -167,9 +167,9 @@ That message will then be delivered to all handlers registered against the addre
 ==== Sending messages
 
 Sending a message will result in only one handler registered at the address receiving the message.
-This is the point to point messaging pattern. The handler is chosen in a non-strict round-robin fashion.
+This is the point-to-point messaging pattern. The handler is chosen in a non-strict round-robin fashion.
 
-You can send a message with {@link io.vertx.core.eventbus.EventBus#send}
+You can send a message with {@link io.vertx.core.eventbus.EventBus#send}.
 
 [source,$lang]
 ----
@@ -197,7 +197,7 @@ When using {@link io.vertx.core.eventbus.EventBus#send} the event bus attempts t
 
 In some cases it's useful for the sender to know when the consumer has received the message and "processed" it.
 
-To acknowledge that the message has been processed the consumer can reply to the message by calling {@link io.vertx.core.eventbus.Message#reply}.
+To acknowledge that the message has been processed, the consumer can reply to the message by calling {@link io.vertx.core.eventbus.Message#reply}.
 
 When this happens it causes a reply to be sent back to the sender and the reply handler is invoked with the reply.
 
@@ -219,7 +219,7 @@ The sender:
 
 The reply can contain a message body which can contain useful information.
 
-What the "processing" actually means is application defined and depends entirely on what the message consumer does
+What the "processing" actually means is application-defined and depends entirely on what the message consumer does
 and is not something that the Vert.x event bus itself knows or cares about.
 
 Some examples:
@@ -233,7 +233,7 @@ so it can be deleted from the database
 
 ==== Sending with timeouts
 
-When sending a message with a reply handler you can specify a timeout in the {@link io.vertx.core.eventbus.DeliveryOptions}.
+When sending a message with a reply handler, you can specify a timeout in the {@link io.vertx.core.eventbus.DeliveryOptions}.
 
 If a reply is not received within that time, the reply handler will be called with a failure.
 
@@ -246,14 +246,14 @@ Message sends can fail for other reasons, including:
 * There are no handlers available to send the message to
 * The recipient has explicitly failed the message using {@link io.vertx.core.eventbus.Message#fail}
 
-In all cases the reply handler will be called with the specific failure.
+In all cases, the reply handler will be called with the specific failure.
 
 include::override/eventbus.adoc[]
 
 ==== Clustered Event Bus
 
 The event bus doesn't just exist in a single Vert.x instance. By clustering different Vert.x instances together on
-your network they can form a single, distributed, event bus.
+your network they can form a single, distributed event bus.
 
 ==== Clustering programmatically
 
@@ -282,7 +282,7 @@ when the verticle is undeployed.
 == Configuring the event bus
 
 The event bus can be configured. It is particularly useful when the event bus is clustered. Under the hood
-the event bus uses TCP connections to send and receive message, so the
+the event bus uses TCP connections to send and receive messages, so the
 {@link io.vertx.core.eventbus.EventBusOptions} let you configure all aspects of these TCP connections. As
 the event bus acts as a server and client, the configuration is close to
 {@link io.vertx.core.net.NetClientOptions} and {@link io.vertx.core.net.NetServerOptions}.
