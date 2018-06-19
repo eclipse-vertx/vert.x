@@ -92,7 +92,7 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
 
   @Override
   public HttpMethod getMethod() {
-    return request.getMethod();
+    return request.method();
   }
 
   @Override
@@ -102,7 +102,7 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
 
   @Override
   public String getUri() {
-    return request.getUri();
+    return request.uri();
   }
 
   @Override
@@ -122,7 +122,7 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
 
   @Override
   public HttpVersion getProtocolVersion() {
-    return request.getProtocolVersion();
+    return request.protocolVersion();
   }
 
   @Override
@@ -142,7 +142,7 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
 
   @Override
   public DecoderResult getDecoderResult() {
-    return request.getDecoderResult();
+    return request.decoderResult();
   }
 
   @Override

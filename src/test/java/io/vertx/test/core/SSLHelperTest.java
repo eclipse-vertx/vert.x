@@ -54,7 +54,7 @@ public class SSLHelperTest extends VertxTestBase {
 
   @Test
   public void testUseOpenSSLCiphersWhenNotSpecified() throws Exception {
-    Set<String> expected = OpenSsl.availableCipherSuites();
+    Set<String> expected = OpenSsl.availableOpenSslCipherSuites();
     SSLHelper helper = new SSLHelper(
         new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()),
         Cert.CLIENT_PEM.get(),

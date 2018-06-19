@@ -162,7 +162,7 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
     @Override
     public <T> boolean hasAttr(AttributeKey<T> attributeKey) {
-      return ctx.hasAttr(attributeKey);
+      return ctx.channel().hasAttr(attributeKey);
     }
 
     @Override
@@ -376,7 +376,7 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
     @Override
     public <T> Attribute<T> attr(AttributeKey<T> key) {
-      return ctx.attr(key);
+      return ctx.channel().attr(key);
     }
   }
 

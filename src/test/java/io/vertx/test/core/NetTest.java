@@ -41,7 +41,8 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -678,6 +679,7 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void testDefaultServerOptionsJson() {
     NetServerOptions def = new NetServerOptions();
     NetServerOptions json = new NetServerOptions(new JsonObject());

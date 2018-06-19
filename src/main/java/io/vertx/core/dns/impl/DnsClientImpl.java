@@ -15,6 +15,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
+import io.netty.channel.MaxMessagesRecvByteBufAllocator;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
@@ -75,7 +76,7 @@ public final class DnsClientImpl implements DnsClient {
     Objects.requireNonNull(options.getHost(), "no null host accepted");
 
     this.options = new DnsClientOptions(options);
-    
+
     ContextInternal creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DnsClient in a multi-threaded worker verticle");
@@ -91,7 +92,8 @@ public final class DnsClientImpl implements DnsClient {
     actualCtx = vertx.getOrCreateContext();
     channel = transport.datagramChannel(this.dnsServer.getAddress() instanceof Inet4Address ? InternetProtocolFamily.IPv4 : InternetProtocolFamily.IPv6);
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
-    channel.config().setMaxMessagesPerRead(1);
+    MaxMessagesRecvByteBufAllocator bufAllocator = channel.config().getRecvByteBufAllocator();
+    bufAllocator.maxMessagesPerRead(1);
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     actualCtx.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {

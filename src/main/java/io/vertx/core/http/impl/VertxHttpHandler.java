@@ -18,7 +18,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxHandler;
@@ -41,7 +47,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
         ByteBuf newBuf = safeBuffer(content, allocator);
         if (msg instanceof LastHttpContent) {
           LastHttpContent last = (LastHttpContent) msg;
-          return new AssembledLastHttpContent(newBuf, last.trailingHeaders(), last.getDecoderResult());
+          return new AssembledLastHttpContent(newBuf, last.trailingHeaders(), last.decoderResult());
         } else {
           return new DefaultHttpContent(newBuf);
         }
