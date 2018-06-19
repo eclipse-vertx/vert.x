@@ -12,6 +12,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
@@ -20,13 +22,8 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveHeaders;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.HttpFrame;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -41,6 +38,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
+import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
@@ -202,7 +201,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public io.vertx.core.http.HttpVersion version() {
     if (version == null) {
-      io.netty.handler.codec.http.HttpVersion nettyVersion = request.getProtocolVersion();
+      io.netty.handler.codec.http.HttpVersion nettyVersion = request.protocolVersion();
       if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
         version = HttpVersion.HTTP_1_0;
       } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
@@ -438,12 +437,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         if (decoder == null) {
           String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
           if (contentType != null) {
-            HttpMethod method = request.getMethod();
-            String lowerCaseContentType = contentType.toLowerCase();
-            boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
-            if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
-              (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
-                || method.equals(HttpMethod.DELETE))) {
+            HttpMethod method = request.method();
+            if (isValidMultipartContentType(contentType) && isValidMultipartMethod(method)) {
               decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.vertx(), this, () -> uploadHandler), request);
             }
           }
@@ -453,6 +448,16 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       }
       return this;
     }
+  }
+
+  private boolean isValidMultipartContentType(String contentType) {
+    return MULTIPART_FORM_DATA.regionMatches(true, 0, contentType, 0, MULTIPART_FORM_DATA.length())
+      || APPLICATION_X_WWW_FORM_URLENCODED.regionMatches(true, 0, contentType, 0, APPLICATION_X_WWW_FORM_URLENCODED.length());
+  }
+
+  private boolean isValidMultipartMethod(HttpMethod method) {
+    return method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
+      || method.equals(HttpMethod.DELETE);
   }
 
   @Override

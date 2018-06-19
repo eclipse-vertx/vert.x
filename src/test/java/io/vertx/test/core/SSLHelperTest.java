@@ -28,11 +28,7 @@ import org.junit.Test;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSessionContext;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -54,7 +50,7 @@ public class SSLHelperTest extends VertxTestBase {
 
   @Test
   public void testUseOpenSSLCiphersWhenNotSpecified() throws Exception {
-    Set<String> expected = OpenSsl.availableCipherSuites();
+    Set<String> expected = OpenSsl.availableOpenSslCipherSuites();
     SSLHelper helper = new SSLHelper(
         new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()),
         Cert.CLIENT_PEM.get(),

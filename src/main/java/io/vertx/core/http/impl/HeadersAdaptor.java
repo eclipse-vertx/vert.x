@@ -122,7 +122,7 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public Iterator<Map.Entry<String, String>> iterator() {
-    return headers.iterator();
+    return headers.iteratorAsString();
   }
 
   @Override

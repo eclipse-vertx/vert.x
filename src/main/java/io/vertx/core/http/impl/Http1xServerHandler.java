@@ -84,7 +84,7 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
       return null;
     }
 
-    if (request.getMethod() != HttpMethod.GET) {
+    if (request.method() != HttpMethod.GET) {
       HttpServerImpl.sendError(null, METHOD_NOT_ALLOWED, ch);
       return null;
     }
