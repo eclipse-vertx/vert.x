@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.Json;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -23,13 +23,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.*;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -123,9 +119,43 @@ public class JsonMapperTest extends VertxTestBase {
     assertEquals(original.value, ((Map)(incorrect.get(0))).get("value"));
   }
 
+  @Test
+  public void testInstantDecoding() {
+    Pojo original = new Pojo();
+    original.instant = Instant.from(ISO_INSTANT.parse("2018-06-20T07:25:38.397Z"));
+    Pojo decoded = Json.decodeValue("{\"instant\":\"2018-06-20T07:25:38.397Z\"}", Pojo.class);
+    assertEquals(original.instant, decoded.instant);
+  }
+
+  @Test
+  public void testNullInstantDecoding() {
+    Pojo original = new Pojo();
+    Pojo decoded = Json.decodeValue("{\"instant\":null}", Pojo.class);
+    assertEquals(original.instant, decoded.instant);
+  }
+
+  @Test
+  public void testBytesDecoding() {
+    Pojo original = new Pojo();
+    original.bytes = TestUtils.randomByteArray(12);
+    Pojo decoded = Json.decodeValue("{\"bytes\":\"" + Base64.getEncoder().encodeToString(original.bytes) + "\"}", Pojo.class);
+    assertArrayEquals(original.bytes, decoded.bytes);
+  }
+
+  @Test
+  public void testNullBytesDecoding() {
+    Pojo original = new Pojo();
+    Pojo decoded = Json.decodeValue("{\"bytes\":null}", Pojo.class);
+    assertEquals(original.bytes, decoded.bytes);
+  }
+
   private static class Pojo {
     @JsonProperty
     String value;
+    @JsonProperty
+    Instant instant;
+    @JsonProperty
+    byte[] bytes;
   }
 
   private static final TypeReference<Integer> INTEGER_TYPE_REF = new TypeReference<Integer>() {};

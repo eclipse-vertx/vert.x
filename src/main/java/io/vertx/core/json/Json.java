@@ -13,16 +13,18 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 
-import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Iterator;
@@ -54,7 +56,9 @@ public class Json {
     module.addSerializer(JsonArray.class, new JsonArraySerializer());
     // he have 2 extensions: RFC-7493
     module.addSerializer(Instant.class, new InstantSerializer());
+    module.addDeserializer(Instant.class, new InstantDeserializer());
     module.addSerializer(byte[].class, new ByteArraySerializer());
+    module.addDeserializer(byte[].class, new ByteArrayDeserializer());
 
     mapper.registerModule(module);
     prettyMapper.registerModule(module);
@@ -239,12 +243,36 @@ public class Json {
     }
   }
 
+  private static class InstantDeserializer extends JsonDeserializer<Instant> {
+    @Override
+    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+      String text = p.getText();
+      try {
+        return Instant.from(ISO_INSTANT.parse(text));
+      } catch (DateTimeException e) {
+        throw new InvalidFormatException(p, "Expected an ISO 8601 formatted date time", text, Instant.class);
+      }
+    }
+  }
+
   private static class ByteArraySerializer extends JsonSerializer<byte[]> {
-    private final Base64.Encoder BASE64 = Base64.getEncoder();
 
     @Override
     public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeString(BASE64.encodeToString(value));
+      jgen.writeString(Base64.getEncoder().encodeToString(value));
+    }
+  }
+
+  private static class ByteArrayDeserializer extends JsonDeserializer<byte[]> {
+
+    @Override
+    public byte[] deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+      String text = p.getText();
+      try {
+        return Base64.getDecoder().decode(text);
+      } catch (IllegalArgumentException e) {
+        throw new InvalidFormatException(p, "Expected a base64 encoded byte array", text, Instant.class);
+      }
     }
   }
 }
