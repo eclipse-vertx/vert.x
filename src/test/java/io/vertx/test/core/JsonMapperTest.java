@@ -22,13 +22,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static java.time.format.DateTimeFormatter.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -122,9 +121,26 @@ public class JsonMapperTest extends VertxTestBase {
     assertEquals(original.value, ((Map)(incorrect.get(0))).get("value"));
   }
 
+  @Test
+  public void testInstantDecoding() {
+    Pojo original = new Pojo();
+    original.now = Instant.from(ISO_INSTANT.parse("2018-06-20T07:25:38.397Z"));
+    Pojo decoded = Json.decodeValue("{\"now\":\"2018-06-20T07:25:38.397Z\"}", Pojo.class);
+    assertEquals(original.now, decoded.now);
+  }
+
+  @Test
+  public void testNullInstantDecoding() {
+    Pojo original = new Pojo();
+    Pojo decodedPojo = Json.decodeValue("{\"now\":null}", Pojo.class);
+    assertEquals(original.now, decodedPojo.now);
+  }
+
   private static class Pojo {
     @JsonProperty
     String value;
+    @JsonProperty
+    Instant now;
   }
 
   private static final TypeReference<Integer> INTEGER_TYPE_REF = new TypeReference<Integer>() {};

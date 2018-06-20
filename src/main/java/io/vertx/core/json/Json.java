@@ -14,12 +14,16 @@ package io.vertx.core.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 
-import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -31,7 +35,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -55,6 +59,8 @@ public class Json {
     // he have 2 extensions: RFC-7493
     module.addSerializer(Instant.class, new InstantSerializer());
     module.addSerializer(byte[].class, new ByteArraySerializer());
+
+    module.addDeserializer(Instant.class, new InstantDeserializer());
 
     mapper.registerModule(module);
     prettyMapper.registerModule(module);
@@ -245,6 +251,13 @@ public class Json {
     @Override
     public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
       jgen.writeString(BASE64.encodeToString(value));
+    }
+  }
+
+  private static class InstantDeserializer extends JsonDeserializer<Instant> {
+    @Override
+    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      return Instant.from(ISO_INSTANT.parse(p.getText()));
     }
   }
 }
