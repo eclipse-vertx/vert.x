@@ -15,7 +15,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
 import io.vertx.core.shareddata.Lock;
 
 import java.util.ArrayList;
@@ -54,7 +53,7 @@ public class LocalAsyncLocks {
 
     void timeout() {
       if (status.compareAndSet(Status.WAITING, Status.TIMED_OUT)) {
-        handler.handle(Future.failedFuture(new VertxException("Timed out waiting to get lock")));
+        handler.handle(Future.failedFuture("Timed out waiting to get lock"));
       }
     }
 
