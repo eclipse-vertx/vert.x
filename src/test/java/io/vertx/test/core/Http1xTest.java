@@ -2631,22 +2631,24 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testHandleInvalid204Response() throws Exception {
     int numReq = 3;
-    waitFor(3);
+    waitFor(numReq);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setKeepAlive(true).setMaxPoolSize(1));
-    List<HttpServerRequest> received = new ArrayList<>();
     server.requestHandler(r -> {
       // Generate an invalid response for the pipe-lined
       r.response().setChunked(true).setStatusCode(204).end();
     }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
       for (int i = 0;i < numReq;i++) {
         HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+        AtomicInteger count = new AtomicInteger();
         post.handler(r -> {
           r.endHandler(v2 -> {
             complete();
           });
         }).exceptionHandler(err -> {
-          complete();
+          if (count.incrementAndGet() == 1) {
+            complete();
+          }
         }).end();
       }
     }));
