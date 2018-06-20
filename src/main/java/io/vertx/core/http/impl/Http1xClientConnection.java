@@ -371,9 +371,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       }
       if (resp.status().code() != 100 && request.method() != io.vertx.core.http.HttpMethod.CONNECT) {
         // See https://tools.ietf.org/html/rfc7230#section-6.3
-        String responseConnectionHeader = resp.headers().get(HttpHeaders.Names.CONNECTION);
+        String responseConnectionHeader = resp.headers().get(HttpHeaderNames.CONNECTION);
         io.netty.handler.codec.http.HttpVersion protocolVersion = resp.protocolVersion();
-        String requestConnectionHeader = request.headers().get(HttpHeaders.Names.CONNECTION);
+        String requestConnectionHeader = request.headers().get(HttpHeaderNames.CONNECTION);
         // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
         if (HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(responseConnectionHeader) || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(requestConnectionHeader)) {
           // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent

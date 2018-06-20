@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
@@ -435,7 +434,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       checkEnded();
       if (expect) {
         if (decoder == null) {
-          String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+          String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
           if (contentType != null) {
             HttpMethod method = request.method();
             if (isValidMultipartContentType(contentType) && isValidMultipartMethod(method)) {

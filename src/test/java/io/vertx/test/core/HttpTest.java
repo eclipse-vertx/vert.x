@@ -17,20 +17,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
@@ -41,20 +31,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -64,7 +44,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.*;
-import static java.util.Collections.*;
+import static java.util.Collections.singletonList;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -3817,7 +3797,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testFoo(String location, String expected) throws Exception {
     int status = 301;
-    Map<String, String> headers = Collections.singletonMap("Location", location);
+    Map<String, String> headers = Collections.singletonMap(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
     String baseURI = "https://localhost:8080";
     class MockReq implements HttpClientRequest {
