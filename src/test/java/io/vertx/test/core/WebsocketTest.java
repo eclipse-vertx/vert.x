@@ -504,7 +504,6 @@ public class WebsocketTest extends VertxTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
-          exceptionHandler(t -> fail(t.getMessage())).
           handler(ws -> {
             ws.handler(buff -> {
               assertEquals(message, buff.toString("UTF-8"));
@@ -713,28 +712,32 @@ public class WebsocketTest extends VertxTestBase {
       assertEquals("upgrade", ws.headers().get("Connection"));
       AtomicInteger count = new AtomicInteger();
       ws.frameHandler(frame -> {
-        if (count.get() == 0) {
-          if (binary) {
-            assertTrue(frame.isBinary());
-            assertFalse(frame.isText());
+        if (frame.isClose()) {
+          testComplete();
+        } else {
+          if (count.get() == 0) {
+            if (binary) {
+              assertTrue(frame.isBinary());
+              assertFalse(frame.isText());
+            } else {
+              assertFalse(frame.isBinary());
+              assertTrue(frame.isText());
+            }
+            assertFalse(frame.isContinuation());
           } else {
             assertFalse(frame.isBinary());
-            assertTrue(frame.isText());
+            assertFalse(frame.isText());
+            assertTrue(frame.isContinuation());
           }
-          assertFalse(frame.isContinuation());
-        } else {
-          assertFalse(frame.isBinary());
-          assertFalse(frame.isText());
-          assertTrue(frame.isContinuation());
-        }
-        if (count.get() == frames - 1) {
-          assertTrue(frame.isFinal());
-        } else {
-          assertFalse(frame.isFinal());
-        }
-        ws.writeFrame(frame);
-        if (count.incrementAndGet() == frames) {
-          count.set(0);
+          if (count.get() == frames - 1) {
+            assertTrue(frame.isFinal());
+          } else {
+            assertFalse(frame.isFinal());
+          }
+          ws.writeFrame(frame);
+          if (count.incrementAndGet() == frames) {
+            count.set(0);
+          }
         }
       });
     });
@@ -763,7 +766,7 @@ public class WebsocketTest extends VertxTestBase {
               for (Buffer rec : received) {
                 assertEquals(rec, sent.get(pos++));
               }
-              testComplete();
+              ws.close();
             }
           });
 
@@ -813,6 +816,7 @@ public class WebsocketTest extends VertxTestBase {
 
   private void testWriteFinalFrame(boolean binary) throws Exception {
 
+    waitFor(2);
     String text = TestUtils.randomUnicodeString(100);
     Buffer data = TestUtils.randomBuffer(100);
 
@@ -831,11 +835,15 @@ public class WebsocketTest extends VertxTestBase {
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws ->
       ws.frameHandler(frame -> {
-        frameConsumer.accept(frame);
-        if (binary) {
-          ws.writeFinalBinaryFrame(frame.binaryData());
+        if (frame.isClose()) {
+          complete();
         } else {
-          ws.writeFinalTextFrame(frame.textData());
+          frameConsumer.accept(frame);
+          if (binary) {
+            ws.writeFinalBinaryFrame(frame.binaryData());
+          } else {
+            ws.writeFinalTextFrame(frame.textData());
+          }
         }
       })
     );
@@ -843,8 +851,12 @@ public class WebsocketTest extends VertxTestBase {
     server.listen(onSuccess(s ->
       client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         ws.frameHandler(frame -> {
-          frameConsumer.accept(frame);
-          testComplete();
+          if (frame.isClose()) {
+            complete();
+          } else {
+            frameConsumer.accept(frame);
+            ws.close();
+          }
         });
 
         if (binary) {
