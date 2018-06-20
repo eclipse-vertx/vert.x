@@ -4042,16 +4042,19 @@ public abstract class HttpTest extends HttpTestBase {
         .end("long response with mismatched encoding causes connection leaks");
     });
     startServer();
+    AtomicInteger exceptionCount = new AtomicInteger();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setTryUseCompression(true));
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       resp.exceptionHandler(err -> {
-        if (err instanceof Http2Exception) {
-          complete();
-          // Connection is not closed for HTTP/2 only the streams so we need to force it
-          resp.request().connection().close();
-        } else if (err instanceof DecompressionException) {
-          complete();
+        if (exceptionCount.incrementAndGet() == 1) {
+          if (err instanceof Http2Exception) {
+            complete();
+            // Connection is not closed for HTTP/2 only the streams so we need to force it
+            resp.request().connection().close();
+          } else if (err instanceof DecompressionException) {
+            complete();
+          }
         }
       });
     }).connectionHandler(conn -> {
