@@ -463,7 +463,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       }
       Throwable cause = result.cause();
       super.handleException(cause);
-      stream.handleException(cause);
+      if (stream != null) {
+        stream.handleException(cause);
+      }
       // Close the connection as Netty's HttpResponseDecoder will not try further processing
       // see https://github.com/netty/netty/issues/3362
       close();
