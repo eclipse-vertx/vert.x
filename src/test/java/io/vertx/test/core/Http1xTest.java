@@ -3049,7 +3049,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testRandomPorts() throws Exception {
     int numServers = 10;
-    Set<Integer> ports = new HashSet<>();
+    Set<Integer> ports = Collections.synchronizedSet(new HashSet<>());
     AtomicInteger count = new AtomicInteger();
     for (int i = 0;i < numServers;i++) {
       vertx.createHttpServer().requestHandler(req -> {
