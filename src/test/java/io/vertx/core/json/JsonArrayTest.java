@@ -19,18 +19,11 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -240,8 +233,9 @@ public class JsonArrayTest {
   public void testGetBinary() {
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonArray.add(bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, jsonArray.getBinary(0)));
-    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode(jsonArray.getString(0))));
+    assertArrayEquals(bytes, jsonArray.getBinary(0));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(0));
+    assertArrayEquals(bytes, Base64.getDecoder().decode(jsonArray.getString(0)));
     try {
       jsonArray.getBinary(-1);
       fail();
@@ -270,6 +264,7 @@ public class JsonArrayTest {
     Instant now = Instant.now();
     jsonArray.add(now);
     assertEquals(now, jsonArray.getInstant(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
     assertEquals(now, Instant.from(ISO_INSTANT.parse(jsonArray.getString(0))));
     try {
       jsonArray.getInstant(-1);
@@ -278,7 +273,19 @@ public class JsonArrayTest {
       // OK
     }
     try {
+      jsonArray.getValue(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
       jsonArray.getInstant(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getValue(1);
       fail();
     } catch (IndexOutOfBoundsException e) {
       // OK
@@ -292,6 +299,7 @@ public class JsonArrayTest {
     }
     jsonArray.addNull();
     assertNull(jsonArray.getInstant(2));
+    assertNull(jsonArray.getValue(2));
   }
 
   @Test
@@ -374,10 +382,11 @@ public class JsonArrayTest {
     assertEquals(arr, jsonArray.getValue(8));
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonArray.add(bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String) jsonArray.getValue(9))));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(9));
     Instant now = Instant.now();
     jsonArray.add(now);
     assertEquals(now, jsonArray.getInstant(10));
+    assertEquals(now.toString(), jsonArray.getValue(10));
     jsonArray.addNull();
     assertNull(jsonArray.getValue(11));
     try {
@@ -542,7 +551,8 @@ public class JsonArrayTest {
   public void testAddBinary() {
     byte[] bytes = TestUtils.randomByteArray(10);
     assertSame(jsonArray, jsonArray.add(bytes));
-    assertTrue(TestUtils.byteArraysEqual(bytes, jsonArray.getBinary(0)));
+    assertArrayEquals(bytes, jsonArray.getBinary(0));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(0));
     try {
       jsonArray.add((byte[])null);
       fail();
@@ -556,6 +566,7 @@ public class JsonArrayTest {
     Instant now = Instant.now();
     assertSame(jsonArray, jsonArray.add(now));
     assertEquals(now, jsonArray.getInstant(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
     try {
       jsonArray.add((Instant)null);
       fail();
@@ -586,8 +597,10 @@ public class JsonArrayTest {
     assertEquals(Float.valueOf(1.23f), jsonArray.getFloat(3));
     assertEquals(Double.valueOf(1.23d), jsonArray.getDouble(4));
     assertEquals(true, jsonArray.getBoolean(5));
-    assertTrue(TestUtils.byteArraysEqual(bytes, jsonArray.getBinary(6)));
+    assertArrayEquals(bytes, jsonArray.getBinary(6));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(6));
     assertEquals(now, jsonArray.getInstant(7));
+    assertEquals(now.toString(), jsonArray.getValue(7));
     assertEquals(obj, jsonArray.getJsonObject(8));
     assertEquals(arr, jsonArray.getJsonArray(9));
     try {
@@ -872,8 +885,10 @@ public class JsonArrayTest {
     assertEquals(Float.valueOf(1.23f), arr.getFloat(3));
     assertEquals(Double.valueOf(2.34d), arr.getDouble(4));
     assertEquals(true, arr.getBoolean(5));
-    assertTrue(TestUtils.byteArraysEqual(bytes, arr.getBinary(6)));
+    assertArrayEquals(bytes, arr.getBinary(6));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), arr.getValue(6));
     assertEquals(now, arr.getInstant(7));
+    assertEquals(now.toString(), arr.getValue(7));
     assertTrue(arr.hasNull(8));
     JsonObject obj = arr.getJsonObject(9);
     assertEquals("bar", obj.getString("foo"));
