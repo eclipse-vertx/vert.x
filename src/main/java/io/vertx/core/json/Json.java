@@ -14,12 +14,7 @@ package io.vertx.core.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
@@ -35,7 +30,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.time.format.DateTimeFormatter.*;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
