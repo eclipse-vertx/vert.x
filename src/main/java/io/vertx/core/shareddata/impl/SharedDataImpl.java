@@ -41,14 +41,15 @@ public class SharedDataImpl implements SharedData {
 
   private final VertxInternal vertx;
   private final ClusterManager clusterManager;
+  private final LocalAsyncLocks localAsyncLocks;
   private final ConcurrentMap<String, LocalAsyncMapImpl<?, ?>> localAsyncMaps = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, AsynchronousLock> localLocks = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Counter> localCounters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, LocalMap<?, ?>> localMaps = new ConcurrentHashMap<>();
 
   public SharedDataImpl(VertxInternal vertx, ClusterManager clusterManager) {
     this.vertx = vertx;
     this.clusterManager = clusterManager;
+    localAsyncLocks = clusterManager == null ? new LocalAsyncLocks() : null;
   }
 
   @Override
@@ -132,8 +133,7 @@ public class SharedDataImpl implements SharedData {
   }
 
   private void getLocalLock(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-    AsynchronousLock lock = localLocks.computeIfAbsent(name, n -> new AsynchronousLock(vertx));
-    lock.acquire(timeout, resultHandler);
+    localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout, resultHandler);
   }
 
   private void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {

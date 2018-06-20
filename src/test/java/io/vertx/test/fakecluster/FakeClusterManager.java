@@ -23,7 +23,7 @@ import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.shareddata.impl.AsynchronousCounter;
-import io.vertx.core.shareddata.impl.AsynchronousLock;
+import io.vertx.core.shareddata.impl.LocalAsyncLocks;
 import io.vertx.core.shareddata.impl.LocalAsyncMapImpl;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
@@ -50,7 +50,7 @@ public class FakeClusterManager implements ClusterManager {
   private static ConcurrentMap<String, LocalAsyncMapImpl> asyncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, ConcurrentMap> asyncMultiMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
-  private static ConcurrentMap<String, AsynchronousLock> locks = new ConcurrentHashMap<>();
+  private static LocalAsyncLocks localAsyncLocks = new LocalAsyncLocks();
   private static ConcurrentMap<String, AtomicLong> counters = new ConcurrentHashMap<>();
 
   private String nodeID;
@@ -149,13 +149,7 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-    AsynchronousLock lock = new AsynchronousLock(vertx);
-    AsynchronousLock prev = locks.putIfAbsent(name, lock);
-    if (prev != null) {
-      lock = prev;
-    }
-    FakeLock flock = new FakeLock(lock);
-    flock.acquire(timeout, resultHandler);
+    localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout, resultHandler);
   }
 
   @Override
@@ -225,28 +219,9 @@ public class FakeClusterManager implements ClusterManager {
     nodes.clear();
     asyncMaps.clear();
     asyncMultiMaps.clear();
-    locks.clear();
+    localAsyncLocks = new LocalAsyncLocks();
     counters.clear();
     syncMaps.clear();
-  }
-
-  private class FakeLock implements Lock {
-
-    private final AsynchronousLock delegate;
-
-    public FakeLock(AsynchronousLock delegate) {
-      this.delegate = delegate;
-    }
-
-    public void acquire(long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-      Context context = vertx.getOrCreateContext();
-      delegate.doAcquire(context, timeout, resultHandler);
-    }
-
-    @Override
-    public void release() {
-      delegate.release();
-    }
   }
 
   private class FakeAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
