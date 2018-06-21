@@ -169,7 +169,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     HttpServerRequestImpl request = pendingResponse;
     pendingResponse = null;
     HttpServerRequestImpl next = request.nextRequest();
-    if (request.isEnded() && next != null) {
+    if (next != null) {
       // Handle pipelined request
       handleNext(next);
     }
