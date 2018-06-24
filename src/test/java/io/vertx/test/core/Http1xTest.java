@@ -1808,7 +1808,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testHttp10NonKeepAliveConnectionClosed() throws Exception {
+  public void testHttp10RequestNonKeepAliveConnectionClosed() throws Exception {
     client.close();
 
     server.requestHandler(req -> {
@@ -1829,6 +1829,40 @@ public class Http1xTest extends HttpTest {
       req.end();
     }));
 
+    await();
+  }
+
+  @Test
+  public void testHttp10ResponseNonKeepAliveConnectionClosed() throws Exception {
+    waitFor(3);
+    server.close();
+    NetServer server = vertx.createNetServer().connectHandler(so -> {
+      StringBuilder request = new StringBuilder();
+      so.handler(buff -> {
+        request.append(buff);
+        if (request.toString().endsWith("\r\n\r\n")) {
+          request.setLength(0);
+          so.write("" +
+            "HTTP/1.0 200 OK\r\n" +
+            "Content-Length: 0\r\n" +
+            "\r\n");
+          so.close();
+        }
+      });
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
+      client.close();
+      client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setMaxPoolSize(1));
+      for (int i = 0;i < 3;i++) {
+        client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+          resp.endHandler(v2 -> {
+            complete();
+          });
+        }).exceptionHandler(err -> {
+          fail();
+        }).end();
+      }
+    }));
     await();
   }
 
