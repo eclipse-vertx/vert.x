@@ -482,6 +482,7 @@ public class JsonObjectTest {
     Instant now = Instant.now();
     jsonObject.put("foo", now);
     assertEquals(now, jsonObject.getInstant("foo"));
+    assertEquals(now.toString(), jsonObject.getValue("foo"));
 
     // Can also get as string:
     String val = jsonObject.getString("foo");
@@ -499,7 +500,9 @@ public class JsonObjectTest {
 
     jsonObject.putNull("foo");
     assertNull(jsonObject.getInstant("foo"));
+    assertNull(jsonObject.getValue("foo"));
     assertNull(jsonObject.getInstant("absent"));
+    assertNull(jsonObject.getValue("absent"));
     try {
       jsonObject.getInstant(null);
       fail();
@@ -507,7 +510,19 @@ public class JsonObjectTest {
       // OK
     }
     try {
+      jsonObject.getValue(null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
       jsonObject.getInstant(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null, null);
       fail();
     } catch (NullPointerException e) {
       // OK
@@ -549,7 +564,9 @@ public class JsonObjectTest {
     Instant later = now.plus(1, ChronoUnit.DAYS);
     jsonObject.put("foo", now);
     assertEquals(now, jsonObject.getInstant("foo", later));
+    assertEquals(now.toString(), jsonObject.getValue("foo", later));
     assertEquals(now, jsonObject.getInstant("foo", null));
+    assertEquals(now.toString(), jsonObject.getValue("foo", null));
 
     jsonObject.put("foo", 123);
     try {
@@ -562,10 +579,19 @@ public class JsonObjectTest {
     jsonObject.putNull("foo");
     assertNull(jsonObject.getInstant("foo", later));
     assertEquals(later, jsonObject.getInstant("absent", later));
+    assertEquals(later, jsonObject.getValue("absent", later));
     assertNull(jsonObject.getInstant("foo", null));
+    assertNull(jsonObject.getValue("foo", null));
     assertNull(jsonObject.getInstant("absent", null));
+    assertNull(jsonObject.getValue("absent", null));
     try {
       jsonObject.getInstant(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null, null);
       fail();
     } catch (NullPointerException e) {
       // OK
@@ -1041,11 +1067,15 @@ public class JsonObjectTest {
 
     assertSame(jsonObject, jsonObject.put("foo", bin1));
     assertEquals(bin1, jsonObject.getInstant("foo"));
+    assertEquals(bin1.toString(), jsonObject.getValue("foo"));
     jsonObject.put("quux", bin2);
     assertEquals(bin2, jsonObject.getInstant("quux"));
+    assertEquals(bin2.toString(), jsonObject.getValue("quux"));
     assertEquals(bin1, jsonObject.getInstant("foo"));
+    assertEquals(bin1.toString(), jsonObject.getValue("foo"));
     jsonObject.put("foo", bin3);
     assertEquals(bin3, jsonObject.getInstant("foo"));
+    assertEquals(bin3.toString(), jsonObject.getValue("foo"));
 
     jsonObject.put("foo", (Instant) null);
     assertTrue(jsonObject.containsKey("foo"));
@@ -1095,6 +1125,7 @@ public class JsonObjectTest {
     assertEquals(Double.valueOf(1.23d), jsonObject.getDouble("double"));
     assertTrue(TestUtils.byteArraysEqual(bytes, jsonObject.getBinary("binary")));
     assertEquals(now, jsonObject.getInstant("instant"));
+    assertEquals(now.toString(), jsonObject.getValue("instant"));
     assertEquals(obj, jsonObject.getJsonObject("obj"));
     assertEquals(arr, jsonObject.getJsonArray("arr"));
     try {
@@ -1248,6 +1279,7 @@ public class JsonObjectTest {
     assertTrue(obj.getBoolean("myboolean"));
     assertTrue(TestUtils.byteArraysEqual(bytes, obj.getBinary("mybinary")));
     assertEquals(now, obj.getInstant("myinstant"));
+    assertEquals(now.toString(), obj.getValue("myinstant"));
     assertTrue(obj.containsKey("mynull"));
     JsonObject nestedObj = obj.getJsonObject("myobj");
     assertEquals("bar", nestedObj.getString("foo"));

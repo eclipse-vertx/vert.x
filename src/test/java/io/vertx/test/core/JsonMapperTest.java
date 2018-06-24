@@ -132,8 +132,8 @@ public class JsonMapperTest extends VertxTestBase {
   @Test
   public void testNullInstantDecoding() {
     Pojo original = new Pojo();
-    Pojo decodedPojo = Json.decodeValue("{\"now\":null}", Pojo.class);
-    assertEquals(original.now, decodedPojo.now);
+    Pojo decoded = Json.decodeValue("{\"now\":null}", Pojo.class);
+    assertEquals(original.now, decoded.now);
   }
 
   private static class Pojo {

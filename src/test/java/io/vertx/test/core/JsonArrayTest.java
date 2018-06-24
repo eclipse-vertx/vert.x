@@ -272,6 +272,7 @@ public class JsonArrayTest {
     Instant now = Instant.now();
     jsonArray.add(now);
     assertEquals(now, jsonArray.getInstant(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
     assertEquals(now, Instant.from(ISO_INSTANT.parse(jsonArray.getString(0))));
     try {
       jsonArray.getInstant(-1);
@@ -280,7 +281,19 @@ public class JsonArrayTest {
       // OK
     }
     try {
+      jsonArray.getValue(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
       jsonArray.getInstant(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getValue(1);
       fail();
     } catch (IndexOutOfBoundsException e) {
       // OK
@@ -294,6 +307,7 @@ public class JsonArrayTest {
     }
     jsonArray.addNull();
     assertNull(jsonArray.getInstant(2));
+    assertNull(jsonArray.getValue(2));
   }
 
   @Test
@@ -380,6 +394,7 @@ public class JsonArrayTest {
     Instant now = Instant.now();
     jsonArray.add(now);
     assertEquals(now, jsonArray.getInstant(10));
+    assertEquals(now.toString(), jsonArray.getValue(10));
     jsonArray.addNull();
     assertNull(jsonArray.getValue(11));
     try {
@@ -558,6 +573,7 @@ public class JsonArrayTest {
     Instant now = Instant.now();
     assertSame(jsonArray, jsonArray.add(now));
     assertEquals(now, jsonArray.getInstant(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
     try {
       jsonArray.add((Instant)null);
       fail();
@@ -590,6 +606,7 @@ public class JsonArrayTest {
     assertEquals(true, jsonArray.getBoolean(5));
     assertTrue(TestUtils.byteArraysEqual(bytes, jsonArray.getBinary(6)));
     assertEquals(now, jsonArray.getInstant(7));
+    assertEquals(now.toString(), jsonArray.getValue(7));
     assertEquals(obj, jsonArray.getJsonObject(8));
     assertEquals(arr, jsonArray.getJsonArray(9));
     try {
@@ -876,6 +893,7 @@ public class JsonArrayTest {
     assertEquals(true, arr.getBoolean(5));
     assertTrue(TestUtils.byteArraysEqual(bytes, arr.getBinary(6)));
     assertEquals(now, arr.getInstant(7));
+    assertEquals(now.toString(), arr.getValue(7));
     assertTrue(arr.hasNull(8));
     JsonObject obj = arr.getJsonObject(9);
     assertEquals("bar", obj.getString("foo"));
