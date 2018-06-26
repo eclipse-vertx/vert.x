@@ -260,7 +260,7 @@ public class ClusteredEventBus extends EventBusImpl {
   @Override
   protected String generateReplyAddress() {
     // The address is a cryptographically secure id that can't be guessed
-    return UUID.randomUUID().toString();
+    return "__vertx.reply." + UUID.randomUUID().toString();
   }
 
   @Override

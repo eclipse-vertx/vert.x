@@ -84,7 +84,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
                        SSLHelper helper, TCPMetrics metrics) {
     super(vertx, channel, context);
     this.helper = helper;
-    this.writeHandlerID = UUID.randomUUID().toString();
+    this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
   }

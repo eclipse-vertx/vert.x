@@ -407,7 +407,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   protected String generateReplyAddress() {
-    return Long.toString(replySequence.incrementAndGet());
+    return "__vertx.reply." + Long.toString(replySequence.incrementAndGet());
   }
 
   private <T> HandlerRegistration<T> createReplyHandlerRegistration(MessageImpl message,
