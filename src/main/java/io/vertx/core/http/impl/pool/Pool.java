@@ -186,10 +186,8 @@ public class Pool<C> {
         available.poll();
       }
       ContextInternal ctx = conn.context;
+      waitersCount--;
       ctx.nettyEventLoop().execute(() -> {
-        synchronized (Pool.this) {
-          waitersCount--;
-        }
         waiter.handler.handle(Future.succeededFuture(conn.connection));
       });
       return true;
