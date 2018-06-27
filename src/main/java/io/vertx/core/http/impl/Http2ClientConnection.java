@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -210,7 +209,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (trailers == null) {
         trailers = new CaseInsensitiveHeaders();
       }
-      response.handleEnd(null, trailers);
+      response.handleEnd(trailers);
     }
 
     @Override
@@ -259,7 +258,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleCustomFrame(int type, int flags, Buffer buff) {
-      response.handleUnknowFrame(new HttpFrameImpl(type, flags, buff));
+      response.handleUnknownFrame(new HttpFrameImpl(type, flags, buff));
     }
 
     void handleHeaders(Http2Headers headers, boolean end) {
