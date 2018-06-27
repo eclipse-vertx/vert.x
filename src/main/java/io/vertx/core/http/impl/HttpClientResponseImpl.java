@@ -47,10 +47,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<HttpFrame> customFrameHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
-  private boolean hasPausedEnd;
-  private boolean paused;
-  private Buffer pausedLastChunk;
-  private MultiMap pausedTrailers;
   private NetSocket netSocket;
 
   // Track for metrics
@@ -161,25 +157,14 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public HttpClientResponse pause() {
-    synchronized (conn) {
-      if (!paused) {
-        paused = true;
-        stream.doPause();
-      }
-      return this;
-    }
+    stream.doPause();
+    return this;
   }
 
   @Override
   public HttpClientResponse resume() {
-    synchronized (conn) {
-      if (paused) {
-        paused = false;
-        doResume();
-        stream.doResume();
-      }
-      return this;
-    }
+    stream.doResume();
+    return this;
   }
 
   @Override
@@ -198,18 +183,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  private void doResume() {
-    if (hasPausedEnd) {
-      final Buffer theChunk = pausedLastChunk;
-      final MultiMap theTrailer = pausedTrailers;
-      stream.getContext().runOnContext(v -> handleEnd(theChunk, theTrailer));
-      hasPausedEnd = false;
-      pausedTrailers = null;
-      pausedLastChunk = null;
-    }
-  }
-
-  void handleUnknowFrame(HttpFrame frame) {
+  void handleUnknownFrame(HttpFrame frame) {
     synchronized (conn) {
       if (customFrameHandler != null) {
         try {
@@ -235,25 +209,16 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleEnd(Buffer lastChunk, MultiMap trailers) {
+  void handleEnd(MultiMap trailers) {
     synchronized (conn) {
       stream.reportBytesRead(bytesRead);
       bytesRead = 0;
-      if (paused) {
-        pausedLastChunk = lastChunk;
-        hasPausedEnd = true;
-        pausedTrailers = trailers;
-      } else {
-        if (lastChunk != null) {
-          handleChunk(lastChunk);
-        }
-        this.trailers = trailers;
-        if (endHandler != null) {
-          try {
-            endHandler.handle(null);
-          } catch (Throwable t) {
-            handleException(t);
-          }
+      this.trailers = trailers;
+      if (endHandler != null) {
+        try {
+          endHandler.handle(null);
+        } catch (Throwable t) {
+          handleException(t);
         }
       }
     }

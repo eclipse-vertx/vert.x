@@ -134,7 +134,9 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   /**
    * Get a net socket for the underlying connection of this request.
    * <p>
-   * USE THIS WITH CAUTION! Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
+   * USE THIS WITH CAUTION! Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol.
+   * <p>
+   * HTTP/1.1 pipe-lined requests cannot support net socket upgrade.
    * <p>
    * One valid use-case for calling this is to receive the {@link io.vertx.core.net.NetSocket} after a HTTP CONNECT was issued to the
    * remote peer and it responded with a status code of 200.

@@ -1869,7 +1869,7 @@ public class Http1xTest extends HttpTest {
       req.response().headers().set("HTTP/1.1", "101 Upgrade");
       req.bodyHandler(data -> {
         assertEquals(toSend, data);
-        req.response().end();
+        req.response().end("somecontent");
       });
     });
 
@@ -4434,6 +4434,35 @@ public class Http1xTest extends HttpTest {
     }).end(TestUtils.randomAlphaString(1024));
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testHttpClientResponseBufferedWithPausedEnd() throws Exception {
+    AtomicInteger i = new AtomicInteger();
+    server.requestHandler(req -> {
+      req.response().end("HelloWorld" + i.incrementAndGet());
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setKeepAlive(true));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp1 -> {
+      // Response is paused but request is put back in the pool since the HTTP response fully arrived
+      // but the response it's not yet delivered to the application as we pause the response
+      resp1.pause();
+      // Do a request on the same connection
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp2 -> {
+        resp2.bodyHandler(body2 -> {
+          // When the response arrives -> resume the first request
+          assertEquals("HelloWorld2", body2.toString());
+          resp1.bodyHandler(body1 -> {
+            assertEquals("HelloWorld1", body1.toString());
+            testComplete();
+          });
+          resp1.resume();
+        });
+      });
     });
     await();
   }
