@@ -106,6 +106,22 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     }
   }
 
+  @Override
+  public void activate(HttpClientConnection conn) {
+    if (options.getIdleTimeout() > 0) {
+      ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
+      pipeline.addBefore("handler", "idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+    }
+  }
+
+  @Override
+  public void deactivate(HttpClientConnection conn) {
+    if (options.getIdleTimeout() > 0) {
+      ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
+      pipeline.remove("idle");
+    }
+  }
+
   private void doConnect(
     ConnectionListener<HttpClientConnection> listener,
     ContextInternal context,
@@ -196,9 +212,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
-    }
+    // No specific options
   }
 
   private void applyHttp1xConnectionOptions(ChannelPipeline pipeline) {
@@ -214,9 +228,6 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       options.getDecoderInitialBufferSize()));
     if (options.isTryUseCompression()) {
       pipeline.addLast("inflater", new HttpContentDecompressor(true));
-    }
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
   }
 
@@ -266,10 +277,10 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                               Channel ch,
                               Future<ConnectResult<HttpClientConnection>> future) {
     try {
-      VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, metric, listener, context, (conn, concurrency) -> {
+      VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metric, listener, context, (conn, concurrency) -> {
         future.complete(new ConnectResult<>(conn, concurrency, ch, context, http2Weight));
       });
-      ch.pipeline().addLast(handler);
+      ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
       connectFailed(ch, listener, e, future);

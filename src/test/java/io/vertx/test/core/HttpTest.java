@@ -4322,6 +4322,33 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testDisableKeepAliveTimeoutInPool() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions()
+      .setIdleTimeout(1)
+      .setMaxPoolSize(1)
+      .setKeepAliveTimeout(10)
+    );
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.endHandler(v1 -> {
+        AtomicBoolean closed = new AtomicBoolean();
+        resp.request().connection().closeHandler(v2 -> {
+          closed.set(true);
+        });
+        vertx.setTimer(2000, id -> {
+          assertFalse(closed.get());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
   /*
   @Test
   public void testReset() throws Exception {

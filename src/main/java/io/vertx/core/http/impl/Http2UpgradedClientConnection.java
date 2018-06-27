@@ -52,6 +52,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
+  public ChannelHandlerContext channelHandlerContext() {
+    return current.channelHandlerContext();
+  }
+
+  @Override
   public Channel channel() {
     return current.channel();
   }
