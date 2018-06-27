@@ -338,11 +338,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               vertx.sharedHttpServers().remove(id);
             } else {
               Channel serverChannel = res.result();
-	      if (serverChannel.localAddress() instanceof InetSocketAddress) {
-		HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
-	      } else {
-		HttpServerImpl.this.actualPort = address.port();
-	      }
+              if (serverChannel.localAddress() instanceof InetSocketAddress) {
+                HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
+              } else {
+                HttpServerImpl.this.actualPort = address.port();
+              }
               serverChannelGroup.add(serverChannel);
               VertxMetrics metrics = vertx.metricsSPI();
               this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
