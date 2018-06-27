@@ -15,17 +15,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -77,10 +75,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private String statusMessage;
   private long bytesWritten;
 
-  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, HttpRequest request) {
+  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, DefaultHttpRequest request) {
     this.vertx = vertx;
     this.conn = conn;
-    this.version = request.getProtocolVersion();
+    this.version = request.protocolVersion();
     this.headers = new VertxHttpHeaders();
     this.status = HttpResponseStatus.OK;
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
@@ -517,25 +515,27 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   void handleException(Throwable t) {
     synchronized (conn) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(t);
+      if (t == Http1xServerConnection.CLOSED_EXCEPTION) {
+        handleClosed();
+      } else {
+        if (exceptionHandler != null) {
+          exceptionHandler.handle(t);
+        }
       }
     }
   }
 
-  void handleClosed() {
-    synchronized (conn) {
-      if (!closed) {
-        closed = true;
-        if (!written && exceptionHandler != null) {
-          conn.getContext().runOnContext(v -> exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION));
-        }
-        if (endHandler != null) {
-          conn.getContext().runOnContext(endHandler);
-        }
-        if (closeHandler != null) {
-          conn.getContext().runOnContext(closeHandler);
-        }
+  private void handleClosed() {
+    if (!closed) {
+      closed = true;
+      if (!written && exceptionHandler != null) {
+        conn.getContext().runOnContext(v -> exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION));
+      }
+      if (endHandler != null) {
+        conn.getContext().runOnContext(endHandler);
+      }
+      if (closeHandler != null) {
+        conn.getContext().runOnContext(closeHandler);
       }
     }
   }

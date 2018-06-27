@@ -11,35 +11,16 @@
 
 package io.vertx.core.dns.impl;
 
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoop;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.handler.codec.dns.DatagramDnsQuery;
-import io.netty.handler.codec.dns.DatagramDnsQueryEncoder;
-import io.netty.handler.codec.dns.DatagramDnsResponseDecoder;
-import io.netty.handler.codec.dns.DefaultDnsQuestion;
-import io.netty.handler.codec.dns.DnsRecord;
-import io.netty.handler.codec.dns.DnsRecordType;
-import io.netty.handler.codec.dns.DnsResponse;
-import io.netty.handler.codec.dns.DnsSection;
+import io.netty.handler.codec.dns.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
-import io.vertx.core.dns.DnsClient;
-import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.dns.DnsException;
+import io.vertx.core.*;
+import io.vertx.core.dns.*;
 import io.vertx.core.dns.DnsResponseCode;
-import io.vertx.core.dns.MxRecord;
-import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.dns.impl.decoder.RecordDecoder;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -75,7 +56,7 @@ public final class DnsClientImpl implements DnsClient {
     Objects.requireNonNull(options.getHost(), "no null host accepted");
 
     this.options = new DnsClientOptions(options);
-    
+
     ContextInternal creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DnsClient in a multi-threaded worker verticle");
@@ -91,7 +72,8 @@ public final class DnsClientImpl implements DnsClient {
     actualCtx = vertx.getOrCreateContext();
     channel = transport.datagramChannel(this.dnsServer.getAddress() instanceof Inet4Address ? InternetProtocolFamily.IPv4 : InternetProtocolFamily.IPv6);
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
-    channel.config().setMaxMessagesPerRead(1);
+    MaxMessagesRecvByteBufAllocator bufAllocator = channel.config().getRecvByteBufAllocator();
+    bufAllocator.maxMessagesPerRead(1);
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     actualCtx.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {

@@ -14,7 +14,6 @@ package io.vertx.test.core;
 import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -22,23 +21,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.NetworkOptions;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
 import org.junit.Test;
@@ -918,6 +901,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void testDefaultServerOptionsJson() {
     HttpServerOptions def = new HttpServerOptions();
     HttpServerOptions json = new HttpServerOptions(new JsonObject());
@@ -4274,5 +4258,183 @@ public class Http1xTest extends HttpTest {
     // then stall until timeout and the exception handler will be called.
     awaitLatch(latch);
     assertEquals(count.get(), 1);
+  }
+
+  @Test
+  public void testDeferredRequestEnd() throws Exception {
+    server.requestHandler(req -> {
+      req.pause();
+      req.bodyHandler(body -> {
+        assertTrue(req.isEnded());
+        req.response().end(body);
+      });
+      vertx.setTimer(10, v -> {
+        assertFalse(req.isEnded());
+        req.resume();
+      });
+    });
+    startServer();
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      resp.bodyHandler(body -> {
+        assertEquals(expected, body);
+        testComplete();
+      });
+    }).end(expected);
+    await();
+  }
+
+  @Test
+  public void testPipelinedWithResponseSent() throws Exception {
+    int numReq = 10;
+    waitFor(numReq * 2);
+    AtomicInteger inflight = new AtomicInteger();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      int val = count.getAndIncrement();
+      assertEquals(val + 1, inflight.incrementAndGet());
+      req.pause();
+      req.response().end("" + val);
+      req.bodyHandler(body -> {
+        if (inflight.decrementAndGet() == 0) {
+          assertEquals(numReq, count.get());
+        }
+        complete();
+      });
+      vertx.setTimer(1000, v -> {
+        req.resume();
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    for (int i = 0;i < numReq;i++) {
+      String expected = "" + i;
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+        resp.bodyHandler(body -> {
+          assertEquals(expected, body.toString());
+          complete();
+        });
+      }).end(Buffer.buffer(TestUtils.randomAlphaString(1024)));
+    }
+    await();
+  }
+
+  @Test
+  public void testPipelinedWithPendingResponse() throws Exception {
+    int numReq = 10;
+    waitFor(numReq);
+    AtomicInteger inflight = new AtomicInteger();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      int val = count.getAndIncrement();
+      assertEquals(0, inflight.getAndIncrement());
+      vertx.setTimer(100, v -> {
+        inflight.decrementAndGet();
+        req.response().end("" + val);
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    for (int i = 0;i < numReq;i++) {
+      String expected = "" + i;
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+        resp.bodyHandler(body -> {
+          assertEquals(expected, body.toString());
+          complete();
+        });
+      }).end(TestUtils.randomAlphaString(1024));
+    }
+    await();
+  }
+
+  @Test
+  public void testPipelinedPostRequestStartedByResponseSent() throws Exception {
+    String chunk1 = TestUtils.randomAlphaString(1024);
+    String chunk2 = TestUtils.randomAlphaString(1024);
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (count.getAndIncrement()) {
+        case 0:
+          req.pause();
+          vertx.setTimer(500, id -> {
+            req.resume();
+          });
+          req.endHandler(v -> {
+            req.response().end();
+          });
+          break;
+        case 1:
+          latch.countDown();
+          req.bodyHandler(body -> {
+            assertEquals(chunk1 + chunk2, body.toString());
+            req.response().end();
+          });
+          break;
+      }
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    }).end(TestUtils.randomAlphaString(1024));
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    }).setChunked(true).write(chunk1);
+    awaitLatch(latch);
+    req.end(chunk2);
+    await();
+  }
+
+  @Test
+  public void testBeginPipelinedRequestByResponseSentOnRequestCompletion() throws Exception {
+    server.requestHandler(req -> {
+      if (req.method() == HttpMethod.POST) {
+        req.pause();
+        vertx.setTimer(100, id -> {
+          req.resume();
+        });
+      }
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    }).end(TestUtils.randomAlphaString(1024));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testBeginPipelinedRequestByResponseSentBeforeRequestCompletion() throws Exception {
+    server.requestHandler(req -> {
+      if (req.method() == HttpMethod.POST) {
+        req.pause();
+        vertx.setTimer(100, id1 -> {
+          req.response().end();
+          vertx.setTimer(100, id2 -> {
+            req.resume();
+          });
+        });
+      } else if (req.method() == HttpMethod.GET) {
+        req.response().end();
+      }
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    }).end(TestUtils.randomAlphaString(1024));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    });
+    await();
   }
 }

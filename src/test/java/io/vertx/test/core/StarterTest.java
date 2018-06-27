@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@SuppressWarnings("deprecation")
 public class StarterTest extends VertxTestBase {
 
   Vertx vertx;

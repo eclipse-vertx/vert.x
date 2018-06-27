@@ -12,18 +12,8 @@
 package io.vertx.core.net.impl;
 
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelProgressivePromise;
-import io.netty.channel.ChannelPromise;
+import io.netty.buffer.*;
+import io.netty.channel.*;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
@@ -162,7 +152,7 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
     @Override
     public <T> boolean hasAttr(AttributeKey<T> attributeKey) {
-      return ctx.hasAttr(attributeKey);
+      return ctx.channel().hasAttr(attributeKey);
     }
 
     @Override
@@ -376,7 +366,7 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
     @Override
     public <T> Attribute<T> attr(AttributeKey<T> key) {
-      return ctx.attr(key);
+      return ctx.channel().attr(key);
     }
   }
 

@@ -58,9 +58,9 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
       ctx,
       holder.context,
       serverOrigin,
+      holder.handler,
       metrics);
     setConnection(conn);
-    conn.requestHandlers(holder.handler);
     if (metrics != null) {
       holder.context.executeFromIO(v -> {
         conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
@@ -84,7 +84,7 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
       return null;
     }
 
-    if (request.getMethod() != HttpMethod.GET) {
+    if (request.method() != HttpMethod.GET) {
       HttpServerImpl.sendError(null, METHOD_NOT_ALLOWED, ch);
       return null;
     }

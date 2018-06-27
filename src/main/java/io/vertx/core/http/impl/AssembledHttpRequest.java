@@ -14,12 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.UnsupportedMessageTypeException;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 
 
 /**
@@ -92,7 +87,7 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
 
   @Override
   public HttpMethod getMethod() {
-    return request.getMethod();
+    return request.method();
   }
 
   @Override
@@ -102,7 +97,7 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
 
   @Override
   public String getUri() {
-    return request.getUri();
+    return request.uri();
   }
 
   @Override
@@ -122,7 +117,7 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
 
   @Override
   public HttpVersion getProtocolVersion() {
-    return request.getProtocolVersion();
+    return request.protocolVersion();
   }
 
   @Override
@@ -142,7 +137,7 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
 
   @Override
   public DecoderResult getDecoderResult() {
-    return request.getDecoderResult();
+    return request.decoderResult();
   }
 
   @Override

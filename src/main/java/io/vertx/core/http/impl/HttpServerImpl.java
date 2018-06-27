@@ -14,32 +14,15 @@ package io.vertx.core.http.impl;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.codec.http2.*;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -53,12 +36,8 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
@@ -85,7 +64,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.*;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
@@ -643,7 +622,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;
 
-        if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
+        if (log.isTraceEnabled()) log.trace("Server received request: " + request.uri());
 
         if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
 
@@ -657,7 +636,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             return;
           }
 
-          if (request.getMethod() != HttpMethod.GET) {
+          if (request.method() != HttpMethod.GET) {
             handshakeErrorStatus = METHOD_NOT_ALLOWED;
             sendError(null, METHOD_NOT_ALLOWED, ch);
             return;
@@ -667,7 +646,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             if (request instanceof FullHttpRequest) {
               handshake(conn, (FullHttpRequest) request);
             } else {
-              wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
+              wsRequest = new DefaultFullHttpRequest(request.protocolVersion(), request.method(), request.uri());
               wsRequest.headers().set(request.headers());
             }
           }
@@ -739,9 +718,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         URI theURI;
         try {
-          theURI = new URI(request.getUri());
+          theURI = new URI(request.uri());
         } catch (URISyntaxException e2) {
-          throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+          throw new IllegalArgumentException("Invalid uri " + request.uri()); //Should never happen
         }
 
         if (metrics != null) {
@@ -793,9 +772,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     if (err != null) {
       resp.content().writeBytes(err.toString().getBytes(CharsetUtil.UTF_8));
-      HttpHeaders.setContentLength(resp, err.length());
+      HttpUtil.setContentLength(resp, err.length());
     } else {
-      HttpHeaders.setContentLength(resp, 0);
+      HttpUtil.setContentLength(resp, 0);
     }
 
     ch.writeAndFlush(resp);
@@ -808,9 +787,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     } else {
       prefix = "wss://";
     }
-    URI uri = new URI(req.getUri());
+    URI uri = new URI(req.uri());
     String path = uri.getRawPath();
-    String loc =  prefix + HttpHeaders.getHost(req) + path;
+    String loc = prefix + req.headers().get(HttpHeaderNames.HOST) + path;
     String query = uri.getRawQuery();
     if (query != null) {
       loc += "?" + query;
