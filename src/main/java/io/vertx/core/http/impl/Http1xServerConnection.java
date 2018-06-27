@@ -59,9 +59,22 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 /**
  *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
+ * </p>
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
+ * </p>
+ * The connection maintains two fields for tracking requests:
+ * <ul>
+ *   <li>{@link #requestInProgress} is the request currently receiving messages, the field is set when
+ *   a {@link HttpRequest} message is received and unset when {@link LastHttpContent} is received. Intermediate
+ *   {@link HttpContent} messages are processed by the request.</li>
+ *   <li>{@link #responseInProgress} is the request for which the response is currently being sent. This field
+ *   is set when it is {@code null} and the {@link #requestInProgress} field if set, or when there is a pipelined
+ *   request waiting its turn for writing the response</li>
+ * </ul>
+ * <p/>
+ * When a request is received, it is also the current response if there is no response in progress, otherwise it is
+ * queued and will become the response in progress when the current response in progress ends.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -78,8 +91,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private long bytesRead;
   private long bytesWritten;
 
-  private HttpServerRequestImpl pendingRequest;  // tail
-  private HttpServerRequestImpl pendingResponse; // head
+  private HttpServerRequestImpl requestInProgress;
+  private HttpServerRequestImpl responseInProgress;
   private boolean channelPaused;
 
   final Handler<HttpServerRequest> requestHandler;
@@ -96,7 +109,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
                                 HttpHandlers handlers,
                                 HttpServerMetrics metrics) {
     super(vertx, channel, context);
-    this.requestHandler = handlers.requestHandler();
+    this.requestHandler = requestHandler(handlers);
     this.serverOrigin = serverOrigin;
     this.options = options;
     this.sslHelper = sslHelper;
@@ -118,14 +131,14 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
         return;
       }
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request);
-      pendingRequest = req;
-      if (pendingResponse == null) {
-        pendingResponse = pendingRequest;
+      requestInProgress = req;
+      if (responseInProgress == null) {
+        responseInProgress = requestInProgress;
         req.handleBegin();
       } else {
         // Deferred until the current response completion
         req.pause();
-        pendingResponse.appendRequest(req);
+        responseInProgress.appendRequest(req);
       }
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       handleEnd();
@@ -146,7 +159,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (METRICS_ENABLED) {
       reportBytesRead(buffer);
     }
-    pendingRequest.handleContent(buffer);
+    requestInProgress.handleContent(buffer);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       handleEnd();
@@ -157,8 +170,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (METRICS_ENABLED) {
       reportRequestComplete();
     }
-    HttpServerRequestImpl request = pendingRequest;
-    pendingRequest = null;
+    HttpServerRequestImpl request = requestInProgress;
+    requestInProgress = null;
     request.handleEnd();
   }
 
@@ -166,8 +179,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (METRICS_ENABLED) {
       reportResponseComplete();
     }
-    HttpServerRequestImpl request = pendingResponse;
-    pendingResponse = null;
+    HttpServerRequestImpl request = responseInProgress;
+    responseInProgress = null;
     HttpServerRequestImpl next = request.nextRequest();
     if (next != null) {
       // Handle pipelined request
@@ -176,8 +189,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   }
 
   private void handleNext(HttpServerRequestImpl request) {
-    pendingResponse = request;
-    getContext().runOnContext(v -> pendingResponse.handlePipelined());
+    responseInProgress = request;
+    getContext().runOnContext(v -> responseInProgress.handlePipelined());
   }
 
   private void handleOther(Object msg) {
@@ -233,10 +246,10 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (metrics != null) {
       reportBytesWritten(bytesWritten);
       if (requestFailed) {
-        metrics.requestReset(pendingResponse.metric());
+        metrics.requestReset(responseInProgress.metric());
         requestFailed = false;
       } else {
-        metrics.responseEnd(pendingResponse.metric(), pendingResponse.response());
+        metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
       }
       bytesWritten = 0;
     }
@@ -341,8 +354,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   @Override
   public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
-      if (pendingResponse != null) {
-        pendingResponse.response().handleDrained();
+      if (responseInProgress != null) {
+        responseInProgress.response().handleDrained();
       } else if (ws != null) {
         ws.writable();
       }
@@ -389,8 +402,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (ws != null) {
       ws.handleClosed();
     }
-    if (pendingResponse != null) {
-      pendingResponse.handleException(CLOSED_EXCEPTION);
+    if (responseInProgress != null) {
+      responseInProgress.handleException(CLOSED_EXCEPTION);
     }
     super.handleClosed();
   }
@@ -401,8 +414,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (METRICS_ENABLED && metrics != null) {
       requestFailed = true;
     }
-    if (pendingResponse != null) {
-      pendingResponse.handleException(t);
+    if (responseInProgress != null) {
+      responseInProgress.handleException(t);
     }
     if (ws != null) {
       ws.handleException(t);
@@ -430,8 +443,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       HttpVersion version;
       if (obj instanceof HttpRequest) {
         version = ((HttpRequest) obj).protocolVersion();
-      } else if (pendingRequest != null) {
-        version = pendingRequest.version() == io.vertx.core.http.HttpVersion.HTTP_1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+      } else if (requestInProgress != null) {
+        version = requestInProgress.version() == io.vertx.core.http.HttpVersion.HTTP_1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
       } else {
         version = HttpVersion.HTTP_1_1;
       }
@@ -469,6 +482,25 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       return file.endOffset() - file.startOffset();
     } else {
       return -1;
+    }
+  }
+
+  private static Handler<HttpServerRequest> requestHandler(HttpHandlers handler) {
+    if (handler.connectionHandler != null) {
+      class Adapter implements Handler<HttpServerRequest> {
+        private boolean isFirst = true;
+        @Override
+        public void handle(HttpServerRequest request) {
+          if (isFirst) {
+            isFirst = false;
+            handler.connectionHandler.handle(request.connection());
+          }
+          handler.requestHandler.handle(request);
+        }
+      }
+      return new Adapter();
+    } else {
+      return handler.requestHandler;
     }
   }
 }

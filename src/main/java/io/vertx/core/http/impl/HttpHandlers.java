@@ -41,25 +41,6 @@ public class HttpHandlers {
     this.exceptionHandler = exceptionHandler;
   }
 
-  Handler<HttpServerRequest> requestHandler() {
-    if (connectionHandler != null) {
-      class Adapter implements Handler<HttpServerRequest> {
-        private boolean isFirst = true;
-        @Override
-        public void handle(HttpServerRequest request) {
-          if (isFirst) {
-            isFirst = false;
-            connectionHandler.handle(request.connection());
-          }
-          requestHandler.handle(request);
-        }
-      }
-      return new Adapter();
-    } else {
-      return requestHandler;
-    }
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
