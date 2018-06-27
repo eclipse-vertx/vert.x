@@ -343,14 +343,19 @@ public class ConnectionPoolTest extends VertxTestBase {
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
+    assertFalse(conn.isActive());
     conn.connect();
     assertWaitUntil(waiter1::isSuccess);
+    assertTrue(conn.isActive());
     conn.recycle(false);
+    assertFalse(conn.isActive());
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
     assertWaitUntil(waiter2::isSuccess);
+    assertTrue(conn.isActive());
     waiter2.assertSuccess(conn);
     conn.recycle(true);
+    assertTrue(conn.isActive());
     assertEquals(0, mgr.size());
   }
 
@@ -743,11 +748,16 @@ public class ConnectionPoolTest extends VertxTestBase {
     private long inflight;
     private long concurrency = 1;
     private int status = DISCONNECTED;
+    private boolean active;
 
     FakeConnection(ContextImpl context, ConnectionListener<FakeConnection> listener, Future<ConnectResult<FakeConnection>> future) {
       this.context = context;
       this.listener = listener;
       this.future = future;
+    }
+
+    synchronized boolean isActive() {
+      return active;
     }
 
     synchronized void close() {
@@ -770,6 +780,16 @@ public class ConnectionPoolTest extends VertxTestBase {
       inflight -= 1;
       listener.onRecycle(timestamp);
       return inflight;
+    }
+
+    synchronized void activate() {
+      assertFalse(active);
+      active = true;
+    }
+
+    synchronized void deactivate() {
+      assertTrue(active);
+      active = false;
     }
 
     synchronized FakeConnection concurrency(long value) {
@@ -822,6 +842,15 @@ public class ConnectionPoolTest extends VertxTestBase {
       conn.listener.onDiscard();
     }
 
+    @Override
+    public void activate(FakeConnection conn) {
+      conn.activate();
+    }
+
+    @Override
+    public void deactivate(FakeConnection conn) {
+      conn.deactivate();
+    }
   }
 
   class FakeConnectionProvider extends FakeConnectionProviderBase {

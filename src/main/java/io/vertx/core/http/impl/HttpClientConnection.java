@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
@@ -23,6 +24,8 @@ import io.vertx.core.impl.ContextImpl;
 interface HttpClientConnection extends HttpConnection {
 
   Channel channel();
+
+  ChannelHandlerContext channelHandlerContext();
 
   void close();
 

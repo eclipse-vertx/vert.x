@@ -109,6 +109,11 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     this.keepAliveTimeout = options.getKeepAliveTimeout();
   }
 
+  @Override
+  public ChannelHandlerContext channelHandlerContext() {
+    return chctx;
+  }
+
   Object endpointMetric() {
     return endpointMetric;
   }

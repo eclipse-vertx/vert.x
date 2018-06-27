@@ -182,15 +182,17 @@ public class Pool<C> {
   private boolean acquireConnection(Waiter<C> waiter) {
     if (available.size() > 0) {
       Holder<C> conn = available.peek();
-      if (--conn.capacity == 0) {
+      long capacity = conn.capacity--;
+      if (capacity == 1) {
         conn.expirationTimestamp = -1L;
         available.poll();
       }
       ContextImpl ctx = conn.context;
+      waitersCount--;
+      if (capacity == conn.concurrency) {
+        connector.activate(conn.connection);
+      }
       ctx.nettyEventLoop().execute(() -> {
-        synchronized (Pool.this) {
-          waitersCount--;
-        }
         waiter.handler.handle(Future.succeededFuture(conn.connection));
       });
       return true;
@@ -306,6 +308,7 @@ public class Pool<C> {
           if (holder.capacity > 0) {
             available.add(holder);
           }
+          connector.activate(holder.connection);
         }
         waiter.handler.handle(Future.succeededFuture(holder.connection));
         synchronized (Pool.this) {
@@ -369,6 +372,9 @@ public class Pool<C> {
       }
       conn.expirationTimestamp = timestamp;
       conn.capacity = newCapacity;
+      if (newCapacity == conn.concurrency) {
+        connector.deactivate(conn.connection);
+      }
     }
   }
 

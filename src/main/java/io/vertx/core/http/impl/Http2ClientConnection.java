@@ -61,6 +61,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
+  public ChannelHandlerContext channelHandlerContext() {
+    return chctx;
+  }
+
+  @Override
   public synchronized boolean checkInitialized() {
     boolean ret = initialized;
     initialized = true;
