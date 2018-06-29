@@ -983,11 +983,14 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 if (handler.getValue() instanceof Http2ConnectionHandler) {
                   // Continue
                 } else {
-                  iterator.remove();
+                  pipeline.remove(handler.getKey());
                 }
               }
               configureHttp2(pipeline);
             }
+          } else {
+            // We might have left over buffer sent when removing the HTTP decoder that needs to be propagated to the HTTP handler
+            super.channelRead(ctx, msg);
           }
         }
       }

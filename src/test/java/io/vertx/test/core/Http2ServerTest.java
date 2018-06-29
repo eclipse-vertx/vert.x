@@ -2621,20 +2621,35 @@ public class Http2ServerTest extends Http2TestBase {
         setUseAlpn(false).
         setSsl(false).
         setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10000)));
+    doRequest(method, expected, conn -> clientConnectionCount.incrementAndGet(),
+      Future.<HttpClientResponse>future().setHandler(onSuccess(resp -> {
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+        // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
+        assertEquals(1, serverConnectionCount.get());
+        assertEquals(1, clientConnectionCount.get());
+        doRequest(method, expected, null, Future.<HttpClientResponse>future().setHandler(onSuccess(resp2 -> {
+          testComplete();
+        })));
+      })));
+    await();
+  }
+
+  private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Future<HttpClientResponse> fut) {
     HttpClientRequest req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       assertEquals(HttpVersion.HTTP_2, resp.version());
       // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
-      assertEquals(1, serverConnectionCount.get());
-      assertEquals(1, clientConnectionCount.get());
-      testComplete();
-    }).connectionHandler(conn -> clientConnectionCount.incrementAndGet())
-      .exceptionHandler(this::fail);
+      // assertEquals(1, serverConnectionCount.get());
+      // assertEquals(1, clientConnectionCount.get());
+      fut.tryComplete(resp);
+    });
+    if (connHandler != null) {
+      req.connectionHandler(connHandler);
+    }
     if (expected.length() > 0) {
       req.end(expected);
     } else {
       req.end();
     }
-    await();
   }
 
   @Test
