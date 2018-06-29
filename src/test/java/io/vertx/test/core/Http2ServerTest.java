@@ -2641,7 +2641,7 @@ public class Http2ServerTest extends Http2TestBase {
       // assertEquals(1, serverConnectionCount.get());
       // assertEquals(1, clientConnectionCount.get());
       fut.tryComplete(resp);
-    }).exceptionHandler(fut::tryFail);
+    });
     if (connHandler != null) {
       req.connectionHandler(connHandler);
     }
