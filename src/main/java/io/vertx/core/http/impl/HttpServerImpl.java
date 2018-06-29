@@ -972,7 +972,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 if (handler.getValue() instanceof Http2ConnectionHandler) {
                   // Continue
                 } else {
-                  iterator.remove();
+                  pipeline.remove(handler.getKey());
                 }
               }
               configureHttp2(pipeline);
