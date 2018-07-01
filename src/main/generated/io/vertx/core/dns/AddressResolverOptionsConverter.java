@@ -5,7 +5,7 @@ import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.dns.AddressResolverOptions}.
- * NOTE: This class has been automatically generated from the {@link "io.vertx.core.dns.AddressResolverOptions} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.core.dns.AddressResolverOptions} original class using Vert.x codegen.
  */
  class AddressResolverOptionsConverter {
 

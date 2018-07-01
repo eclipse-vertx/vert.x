@@ -5,7 +5,7 @@ import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.net.JksOptions}.
- * NOTE: This class has been automatically generated from the {@link "io.vertx.core.net.JksOptions} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.JksOptions} original class using Vert.x codegen.
  */
 public class JksOptionsConverter {
 

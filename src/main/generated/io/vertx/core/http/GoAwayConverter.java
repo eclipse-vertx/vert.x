@@ -5,7 +5,7 @@ import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.http.GoAway}.
- * NOTE: This class has been automatically generated from the {@link "io.vertx.core.http.GoAway} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.GoAway} original class using Vert.x codegen.
  */
  class GoAwayConverter {
 
