@@ -22,8 +22,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
@@ -61,7 +59,7 @@ public class EventLoopGroupTest extends VertxTestBase {
     awaitLatch(latch);
     ServerBootstrap bs = new ServerBootstrap();
     bs.group(context.nettyEventLoop());
-    bs.channelFactory(((VertxInternal)vertx).transport().serverChannelType(false)) ;
+    bs.channelFactory(((VertxInternal)vertx).transport().serverChannelFactory(false)) ;
     bs.option(ChannelOption.SO_BACKLOG, 100);
     bs.childHandler(new ChannelInitializer<SocketChannel>() {
       @Override

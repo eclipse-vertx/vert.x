@@ -302,6 +302,10 @@ public class FileResolver {
     if (cl == null) {
       cl = getClass().getClassLoader();
     }
+    // when running on substratevm (graal) the access to class loaders
+    // is very limited and might be only available from compile time
+    // known classes. (Object is always known, so we do a final attempt
+    // to get it here).
     if (cl == null) {
       cl = Object.class.getClassLoader();
     }
