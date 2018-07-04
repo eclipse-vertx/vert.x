@@ -13,7 +13,6 @@ package io.vertx.core.file.impl;
 
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.file.impl.FileSystemImpl;
 
 import java.io.Closeable;
 import java.io.File;
@@ -154,6 +153,7 @@ public class FileResolver {
       case "bundle": // Apache Felix, Knopflerfish
       case "bundleentry": // Equinox
       case "bundleresource": // Equinox
+      case "resource":  // substratevm (graal native image)
         return unpackFromBundleURL(url, isDir);
       default:
         throw new IllegalStateException("Invalid url protocol: " + prot);
@@ -301,6 +301,9 @@ public class FileResolver {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) {
       cl = getClass().getClassLoader();
+    }
+    if (cl == null) {
+      cl = Object.class.getClassLoader();
     }
     return cl;
   }
