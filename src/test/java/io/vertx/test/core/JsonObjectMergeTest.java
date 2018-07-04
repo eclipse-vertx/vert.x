@@ -28,6 +28,9 @@ public class JsonObjectMergeTest {
     json.mergeIn(sample);
   }
 
+  /**
+   * Sample model
+   */
   class Sample {
     private String id;
     private String name;
