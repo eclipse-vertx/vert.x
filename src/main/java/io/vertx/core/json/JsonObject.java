@@ -15,6 +15,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -754,6 +755,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
           return newVal;
         });
       }
+    }
+    return this;
+  }
+
+  /**
+   * Merge in already created object
+   * Copy properties from json to object
+   *
+   * @param object
+   * @return a reference to this, so the API can be used fluently
+   */
+  public <T> JsonObject mergeIn(T object) {
+    try {
+      Json.mapper.readerForUpdating(object).readValue(this.encode());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
     return this;
   }
