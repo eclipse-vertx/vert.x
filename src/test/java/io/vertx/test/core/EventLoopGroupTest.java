@@ -61,7 +61,7 @@ public class EventLoopGroupTest extends VertxTestBase {
     awaitLatch(latch);
     ServerBootstrap bs = new ServerBootstrap();
     bs.group(context.nettyEventLoop());
-    bs.channel(((VertxInternal)vertx).transport().serverChannelType(false)) ;
+    bs.channelFactory(((VertxInternal)vertx).transport().serverChannelType(false)) ;
     bs.option(ChannelOption.SO_BACKLOG, 100);
     bs.childHandler(new ChannelInitializer<SocketChannel>() {
       @Override

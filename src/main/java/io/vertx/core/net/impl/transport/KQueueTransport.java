@@ -12,13 +12,9 @@
 package io.vertx.core.net.impl.transport;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
+import io.netty.channel.*;
 import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.kqueue.KQueue;
-import io.netty.channel.kqueue.KQueueChannelOption;
 import io.netty.channel.kqueue.KQueueDatagramChannel;
 import io.netty.channel.kqueue.KQueueDomainSocketChannel;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
@@ -27,7 +23,6 @@ import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.vertx.core.net.NetServerOptions;
 
@@ -84,20 +79,20 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public Class<? extends Channel> channelType(boolean domain) {
+  public ChannelFactory<? extends Channel> channelType(boolean domain) {
     if (domain) {
-      return KQueueDomainSocketChannel.class;
+      return KQueueDomainSocketChannel::new;
     } else {
-      return KQueueSocketChannel.class;
+      return KQueueSocketChannel::new;
     }
   }
 
   @Override
-  public Class<? extends ServerChannel> serverChannelType(boolean domain) {
+  public ChannelFactory<? extends ServerChannel> serverChannelType(boolean domain) {
     if (domain) {
-      return KQueueServerDomainSocketChannel.class;
+      return KQueueServerDomainSocketChannel::new;
     } else {
-      return KQueueServerSocketChannel.class;
+      return KQueueServerSocketChannel::new;
     }
   }
 
