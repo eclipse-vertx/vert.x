@@ -6,7 +6,6 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- *
  * @author <a href="https://github.com/mystdeim">Roman Novikov</a>
  */
 public class JsonObjectMergeTest {
