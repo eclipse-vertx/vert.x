@@ -15,7 +15,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
@@ -311,7 +310,7 @@ public class HostnameResolutionTest extends VertxTestBase {
       AtomicReference<Thread> channelThread = new AtomicReference<>();
       CountDownLatch connectLatch = new CountDownLatch(1);
       Bootstrap bootstrap = new Bootstrap();
-      bootstrap.channelFactory(((VertxInternal)vertx).transport().channelType(false));
+      bootstrap.channelFactory(((VertxInternal)vertx).transport().channelFactory(false));
       bootstrap.group(vertx.nettyEventLoopGroup());
       bootstrap.resolver(((VertxInternal) vertx).nettyAddressResolverGroup());
       bootstrap.handler(new ChannelInitializer<Channel>() {

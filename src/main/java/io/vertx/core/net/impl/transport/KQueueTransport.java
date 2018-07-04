@@ -79,7 +79,7 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public ChannelFactory<? extends Channel> channelType(boolean domain) {
+  public ChannelFactory<? extends Channel> channelFactory(boolean domain) {
     if (domain) {
       return KQueueDomainSocketChannel::new;
     } else {
@@ -88,7 +88,7 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public ChannelFactory<? extends ServerChannel> serverChannelType(boolean domain) {
+  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
     if (domain) {
       return KQueueServerDomainSocketChannel::new;
     } else {

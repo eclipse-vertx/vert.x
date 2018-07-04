@@ -105,7 +105,7 @@ class EpollTransport extends Transport {
   }
 
   @Override
-  public ChannelFactory<? extends Channel> channelType(boolean domain) {
+  public ChannelFactory<? extends Channel> channelFactory(boolean domain) {
     if (domain) {
       return EpollDomainSocketChannel::new;
     } else {
@@ -113,7 +113,7 @@ class EpollTransport extends Transport {
     }
   }
 
-  public ChannelFactory<? extends ServerChannel> serverChannelType(boolean domain) {
+  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
     if (domain) {
       return EpollServerDomainSocketChannel::new;
     }
