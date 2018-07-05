@@ -12,6 +12,7 @@
 package io.vertx.core.shareddata;
 
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -22,14 +23,13 @@ import java.util.Set;
 
 
 /**
- *
  * An asynchronous map.
  * <p>
+ * {@link AsyncMap} does <em>not</em> allow {@code null} to be used as a key or value.
+ *
  * @implSpec Implementations of the interface must handle {@link io.vertx.core.shareddata.impl.ClusterSerializable}
- *           implementing objects.
- *
+ * implementing objects.
  * @author <a href="http://tfox.org">Tim Fox</a>
- *
  */
 @VertxGen
 public interface AsyncMap<K, V> {
@@ -40,7 +40,7 @@ public interface AsyncMap<K, V> {
    * @param k  the key
    * @param resultHandler - this will be called some time later with the async result.
    */
-  void get(K k, Handler<AsyncResult<V>> resultHandler);
+  void get(K k, Handler<AsyncResult<@Nullable V>> resultHandler);
 
   /**
    * Put a value in the map, asynchronously.
@@ -70,7 +70,7 @@ public interface AsyncMap<K, V> {
    * @param v  the value
    * @param completionHandler  the handler
    */
-  void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler);
+  void putIfAbsent(K k, V v, Handler<AsyncResult<@Nullable V>> completionHandler);
 
   /**
    * Link {@link #putIfAbsent} but specifying a time to live for the entry. Entry will expire and get evicted
@@ -81,7 +81,7 @@ public interface AsyncMap<K, V> {
    * @param ttl  The time to live (in ms) for the entry
    * @param completionHandler  the handler
    */
-  void putIfAbsent(K k, V v, long ttl, Handler<AsyncResult<V>> completionHandler);
+  void putIfAbsent(K k, V v, long ttl, Handler<AsyncResult<@Nullable V>> completionHandler);
 
   /**
    * Remove a value from the map, asynchronously.
@@ -89,7 +89,7 @@ public interface AsyncMap<K, V> {
    * @param k  the key
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
-  void remove(K k, Handler<AsyncResult<V>> resultHandler);
+  void remove(K k, Handler<AsyncResult<@Nullable V>> resultHandler);
 
   /**
    * Remove a value from the map, only if entry already exists with same value.
@@ -108,7 +108,7 @@ public interface AsyncMap<K, V> {
    * @param v  the new value
    * @param resultHandler  the result handler will be passed the previous value
    */
-  void replace(K k, V v, Handler<AsyncResult<V>> resultHandler);
+  void replace(K k, V v, Handler<AsyncResult<@Nullable V>> resultHandler);
 
   /**
    * Replace the entry only if it is currently mapped to a specific value
