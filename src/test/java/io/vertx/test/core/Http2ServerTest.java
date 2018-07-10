@@ -2603,6 +2603,7 @@ public class Http2ServerTest extends Http2TestBase {
       .setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)))
       .connectionHandler(conn -> serverConnectionCount.incrementAndGet());
     server.requestHandler(req -> {
+      assertEquals("http", req.scheme());
       assertEquals(method, req.method());
       assertEquals(HttpVersion.HTTP_2, req.version());
       assertEquals(10000, req.connection().remoteSettings().getMaxConcurrentStreams());
