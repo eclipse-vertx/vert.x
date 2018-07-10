@@ -29,7 +29,6 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsciiString;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
@@ -1597,7 +1596,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testIdleTimeoutClearText() throws Exception {
+  public void testIdleTimeoutClearTextUpgrade() throws Exception {
     testIdleTimeout(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST),
         clientOptions.setDefaultPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(true));
   }
@@ -1677,6 +1676,38 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     req.end();
+    await();
+  }
+
+  @Test
+  public void testDisableIdleTimeoutClearTextUpgrade() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(8080)
+      .setHost("localhost"));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setIdleTimeout(2)
+      .setProtocolVersion(HttpVersion.HTTP_2)
+      .setDefaultPort(8080)
+      .setDefaultHost("localhost"));
+    client.get("/somepath", resp1 -> {
+      resp1.exceptionHandler(this::fail);
+      resp1.endHandler(v1 -> {
+        vertx.setTimer(10, id1 -> {
+          client.get("/somepath", resp2 -> {
+            resp2.exceptionHandler(this::fail);
+            resp2.endHandler(v2 -> {
+              testComplete();
+            });
+          }).exceptionHandler(this::fail).end();
+        });
+      });
+    }).exceptionHandler(this::fail).end();
     await();
   }
 
