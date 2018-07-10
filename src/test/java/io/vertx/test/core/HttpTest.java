@@ -4323,7 +4323,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testDisableKeepAliveTimeoutInPool() throws Exception {
+  public void testDisableIdleTimeoutInPool() throws Exception {
     server.requestHandler(req -> {
       req.response().end();
     });

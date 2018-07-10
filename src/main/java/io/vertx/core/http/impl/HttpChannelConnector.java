@@ -110,7 +110,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   public void activate(HttpClientConnection conn) {
     if (options.getIdleTimeout() > 0) {
       ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
-      pipeline.addBefore("handler", "idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+      pipeline.addFirst("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
   }
 
