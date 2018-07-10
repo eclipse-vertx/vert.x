@@ -322,7 +322,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         h.authority(hostHeader);
       } else {
         h.path(uri);
-        h.scheme("https");
+        h.scheme(conn.isSSL() ? "https" : "http");
         if (hostHeader != null) {
           h.authority(hostHeader);
         }
