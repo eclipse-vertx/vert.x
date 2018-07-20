@@ -15,7 +15,6 @@ package io.vertx.test.core;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;

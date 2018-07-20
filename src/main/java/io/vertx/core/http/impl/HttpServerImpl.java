@@ -715,7 +715,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               // This is specified in the WebSockets RFC 6455 Section  5.4.1
               CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(wsFrame.closeStatusCode(), wsFrame.closeReason());
               //TODO check if .replace(wsFrame.getBinaryData()) is really needed
-              ch.writeAndFlush(closeFrame.replace(wsFrame.getBinaryData())).addListener(ChannelFutureListener.CLOSE);
+              ch.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
               closeFrameSent = true;
             }
             conn.handleMessage(msg);

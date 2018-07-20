@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
@@ -1099,7 +1100,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       if (this.handler == null && handler != null) {
         this.handler = handler;
         checkClosed();
-        ContextInternal context = vertx.getOrCreateContext();
         Handler<Throwable> connectionExceptionHandler;
         if (exceptionHandler == null) {
           connectionExceptionHandler = log::error;
