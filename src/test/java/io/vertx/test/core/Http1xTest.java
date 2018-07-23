@@ -4466,4 +4466,21 @@ public class Http1xTest extends HttpTest {
     });
     await();
   }
+
+  @Test
+  public void testHttpClientResumeConnectionOnResponseOnLastMessage() throws Exception {
+    server.requestHandler(req -> req.response().end("ok"));
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setMaxPoolSize(1));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp1 -> {
+      resp1.pause();
+      // The connection resume is asynchronous and the end message will be received before connection resume happens
+      resp1.resume();
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp2 -> {
+        testComplete();
+      });
+    });
+    await();
+  }
 }

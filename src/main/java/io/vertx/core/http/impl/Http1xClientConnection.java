@@ -487,9 +487,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         }
         responseEnded = true;
         conn.close |= !conn.options.isKeepAlive();
-        if (paused) {
-          conn.doResume();
-        }
+        conn.doResume();
         return requestEnded;
       }
     }
