@@ -839,12 +839,6 @@ Set the trust options in jks format, aka Java truststore
 |[[tryUseCompression]]`@tryUseCompression`|`Boolean`|+++
 Set whether compression is enabled
 +++
-|[[tryUsePerFrameWebsocketCompression]]`@tryUsePerFrameWebsocketCompression`|`Boolean`|+++
-Set option to offer Deflate Frame websocket compression
-+++
-|[[tryUsePerMessageWebsocketCompression]]`@tryUsePerMessageWebsocketCompression`|`Boolean`|+++
-Set option to offer Permessage Deflate websocket compression
-+++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
@@ -853,15 +847,6 @@ Set whether Netty pooled buffers are enabled
 +++
 |[[verifyHost]]`@verifyHost`|`Boolean`|+++
 Set whether hostname verification is enabled
-+++
-|[[websocketCompressionAllowClientNoContext]]`@websocketCompressionAllowClientNoContext`|`Boolean`|+++
-Set the websocket compression allow client no context option
-+++
-|[[websocketCompressionLevel]]`@websocketCompressionLevel`|`Number (int)`|+++
-Set websocket compression level
-+++
-|[[websocketCompressionRequestServerNoContext]]`@websocketCompressionRequestServerNoContext`|`Boolean`|+++
-Set the websocket compression server no context option
 +++
 |===
 
@@ -993,12 +978,6 @@ Set the key/cert store options in pem format.
 |[[pemTrustOptions]]`@pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|+++
 Set the trust options in pem format
 +++
-|[[perFrameWebsocketCompressionSupported]]`@perFrameWebsocketCompressionSupported`|`Boolean`|+++
-Enable or disable support for WebSocket Defalte Frame compression
-+++
-|[[perMessageWebsocketCompressionSupported]]`@perMessageWebsocketCompressionSupported`|`Boolean`|+++
-Enable or disable support for WebSocket Permessage Deflate compression
-+++
 |[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
 Set the key/cert options in pfx format.
 +++
@@ -1057,15 +1036,6 @@ Set the ALPN usage.
 +++
 |[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
 Set whether Netty pooled buffers are enabled
-+++
-|[[websocketAllowServerNoContext]]`@websocketAllowServerNoContext`|`Boolean`|+++
-Set the WebSocket Allow Server No Context option
-+++
-|[[websocketCompressionLevel]]`@websocketCompressionLevel`|`Number (int)`|+++
-Set the WebSocket compression level
-+++
-|[[websocketPreferredClientNoContext]]`@websocketPreferredClientNoContext`|`Boolean`|+++
-Set the WebSocket Preferred Client No Context setting
 +++
 |[[websocketSubProtocols]]`@websocketSubProtocols`|`String`|+++
 Set the websocket subprotocols supported by the server.
@@ -1955,6 +1925,9 @@ Set the number of event loop threads to be used by the Vert.x instance.
 +++
 |[[fileResolverCachingEnabled]]`@fileResolverCachingEnabled`|`Boolean`|+++
 Set wether the Vert.x file resolver uses caching for classpath resources.
++++
+|[[fileResolverFileClassPathResolvingEnabled]]`@fileResolverFileClassPathResolvingEnabled`|`Boolean`|+++
+Set wether the Vert.x file resolver uses file class path resolving for classpath resources.
 +++
 |[[haEnabled]]`@haEnabled`|`Boolean`|+++
 Set whether HA will be enabled on the Vert.x instance.
