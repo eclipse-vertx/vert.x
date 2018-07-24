@@ -224,6 +224,7 @@ public class VertxOptionsTest extends VertxTestBase {
     Random rand = new Random();
     boolean haEnabled = rand.nextBoolean();
     boolean fileResolverCachingEnabled = rand.nextBoolean();
+    boolean fileClassPathResolvingEnabled = rand.nextBoolean();
     boolean metricsEnabled = rand.nextBoolean();
     int quorumSize = 51214;
     String haGroup = TestUtils.randomAlphaString(100);
@@ -246,6 +247,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     options.setHAEnabled(haEnabled);
     options.setFileResolverCachingEnabled(fileResolverCachingEnabled);
+    options.setFileResolverFileClassPathResolvingEnabled(fileClassPathResolvingEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
     options.setMetricsOptions(
@@ -272,6 +274,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(fileResolverCachingEnabled, options.isFileResolverCachingEnabled());
+    assertEquals(fileClassPathResolvingEnabled, options.isFileResolverFileClassPathResolvingEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
     MetricsOptions metricsOptions = options.getMetricsOptions();
