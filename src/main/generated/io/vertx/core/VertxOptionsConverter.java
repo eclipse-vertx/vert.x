@@ -79,6 +79,11 @@ import java.time.format.DateTimeFormatter;
             obj.setFileResolverCachingEnabled((Boolean)member.getValue());
           }
           break;
+        case "fileResolverFileClassPathResolvingEnabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setFileResolverFileClassPathResolvingEnabled((Boolean)member.getValue());
+          }
+          break;
         case "haEnabled":
           if (member.getValue() instanceof Boolean) {
             obj.setHAEnabled((Boolean)member.getValue());
@@ -176,6 +181,7 @@ import java.time.format.DateTimeFormatter;
     }
     json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
     json.put("fileResolverCachingEnabled", obj.isFileResolverCachingEnabled());
+    json.put("fileResolverFileClassPathResolvingEnabled", obj.isFileResolverFileClassPathResolvingEnabled());
     json.put("haEnabled", obj.isHAEnabled());
     if (obj.getHAGroup() != null) {
       json.put("haGroup", obj.getHAGroup());
