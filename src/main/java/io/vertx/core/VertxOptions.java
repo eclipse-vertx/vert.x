@@ -22,6 +22,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static io.vertx.core.file.impl.FileResolver.DISABLE_CP_RESOLVING_PROP_NAME;
 import static io.vertx.core.file.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
 
 /**
@@ -133,6 +134,11 @@ public class VertxOptions {
   public static final boolean DEFAULT_FILE_CACHING_ENABLED = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
 
   /**
+   * The default value for file resolver file class path resolving enabled = the value of the system property "vertx.disableFileCPResolving" or true
+   */
+  public static final boolean DEFAULT_FILE_CLASS_PATH_RESOLVING_ENABLED = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
+
+  /**
    * The default value for preferring native transport = false
    */
   public static final boolean DEFAULT_PREFER_NATIVE_TRANSPORT = false;
@@ -164,6 +170,7 @@ public class VertxOptions {
   private EventBusOptions eventBusOptions = new EventBusOptions();
   private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
   private boolean fileResolverCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
+  private boolean fileResolverFileClassPathResolvingEnabled = DEFAULT_FILE_CLASS_PATH_RESOLVING_ENABLED;
   private boolean preferNativeTransport = DEFAULT_PREFER_NATIVE_TRANSPORT;
   private TimeUnit maxEventLoopExecuteTimeUnit = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME_UNIT;
   private TimeUnit maxWorkerExecuteTimeUnit = DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
@@ -197,6 +204,7 @@ public class VertxOptions {
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions() : null;
     this.fileResolverCachingEnabled = other.fileResolverCachingEnabled;
+    this.fileResolverFileClassPathResolvingEnabled = other.fileResolverFileClassPathResolvingEnabled;
     this.maxEventLoopExecuteTimeUnit = other.maxEventLoopExecuteTimeUnit;
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
@@ -709,6 +717,13 @@ public class VertxOptions {
   }
 
   /**
+   * @return whether the file resolver uses file class path resolving
+   */
+  public boolean isFileResolverFileClassPathResolvingEnabled() {
+    return fileResolverFileClassPathResolvingEnabled;
+  }
+
+  /**
    * Set wether the Vert.x file resolver uses caching for classpath resources.
    *
    * @param fileResolverCachingEnabled true when the file resolver caches resources
@@ -716,6 +731,17 @@ public class VertxOptions {
    */
   public VertxOptions setFileResolverCachingEnabled(boolean fileResolverCachingEnabled) {
     this.fileResolverCachingEnabled = fileResolverCachingEnabled;
+    return this;
+  }
+
+  /**
+   * Set wether the Vert.x file resolver uses file class path resolving for classpath resources.
+   *
+   * @param fileResolverFileClassPathResolvingEnabled true when the file resolver resolves class path files
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setFileResolverFileClassPathResolvingEnabled(boolean fileResolverFileClassPathResolvingEnabled) {
+    this.fileResolverFileClassPathResolvingEnabled = fileResolverFileClassPathResolvingEnabled;
     return this;
   }
 
@@ -837,6 +863,7 @@ public class VertxOptions {
     if (addressResolverOptions != null ? !addressResolverOptions.equals(that.addressResolverOptions) : that.addressResolverOptions != null)
       return false;
     if (fileResolverCachingEnabled != that.fileResolverCachingEnabled) return false;
+    if (fileResolverFileClassPathResolvingEnabled != that.fileResolverFileClassPathResolvingEnabled) return false;
     if (preferNativeTransport != that.preferNativeTransport) return false;
     return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
   }
@@ -852,6 +879,7 @@ public class VertxOptions {
     result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);
     result = 31 * result + (haEnabled ? 1 : 0);
     result = 31 * result + (fileResolverCachingEnabled ? 1 : 0);
+    result = 31 * result + (fileResolverFileClassPathResolvingEnabled ? 1 : 0);
     result = 31 * result + (preferNativeTransport ? 1 : 0);
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
@@ -881,6 +909,7 @@ public class VertxOptions {
         ", clusterManager=" + clusterManager +
         ", haEnabled=" + haEnabled +
         ", fileCachingEnabled=" + fileResolverCachingEnabled +
+        ", fileClassPathResolvingEnabled=" + fileResolverFileClassPathResolvingEnabled +
         ", preferNativeTransport=" + preferNativeTransport +
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
