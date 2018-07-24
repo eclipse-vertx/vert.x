@@ -70,7 +70,7 @@ public class FileResolver {
   }
 
   public FileResolver(boolean enableCaching) {
-    this(enableCaching, true);
+    this(enableCaching, VertxOptions.DEFAULT_FILE_CLASS_PATH_RESOLVING_ENABLED);
   }
 
   public FileResolver(boolean enableCaching, boolean enableFileClassPathResolving) {
