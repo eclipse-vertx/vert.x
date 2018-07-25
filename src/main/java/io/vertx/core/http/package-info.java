@@ -401,7 +401,7 @@
  *
  * ==== Writing HTTP responses
  *
- * To write data to an HTTP response, you use one the {@link io.vertx.core.http.HttpServerResponse#write} operations.
+ * To write data to an HTTP response, you use one of the {@link io.vertx.core.http.HttpServerResponse#write} operations.
  *
  * These can be invoked multiple times before the response is ended. They can be invoked in a few ways:
  *
@@ -432,7 +432,7 @@
  * If you are just writing a single string or buffer to the HTTP response you can write it and end the response in a
  * single call to the {@link io.vertx.core.http.HttpServerResponse#end(String)}
  *
- * The first call to write results in the response header being being written to the response. Consequently, if you are
+ * The first call to write results in the response header being written to the response. Consequently, if you are
  * not using HTTP chunking then you must set the `Content-Length` header before writing to the response, since it will
  * be too late otherwise. If you are using HTTP chunking you do not have to worry.
  *
