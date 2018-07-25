@@ -12,18 +12,15 @@
 package io.vertx.core.net.impl.transport;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
-import io.netty.channel.epoll.EpollChannelOption;
-import io.netty.channel.kqueue.KQueue;
-import io.netty.channel.kqueue.KQueueDatagramChannel;
-import io.netty.channel.kqueue.KQueueDomainSocketChannel;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.kqueue.KQueueServerDomainSocketChannel;
-import io.netty.channel.kqueue.KQueueServerSocketChannel;
-import io.netty.channel.kqueue.KQueueSocketChannel;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFactory;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
+import io.netty.channel.kqueue.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
+import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.NetServerOptions;
 
 import java.net.InetSocketAddress;
@@ -98,7 +95,13 @@ class KQueueTransport extends Transport {
 
   @Override
   public void configure(NetServerOptions options, ServerBootstrap bootstrap) {
-    bootstrap.option(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
+    bootstrap.option(KQueueChannelOption.SO_REUSEPORT, options.isReusePort());
     super.configure(options, bootstrap);
+  }
+
+  @Override
+  public void configure(DatagramChannel channel, DatagramSocketOptions options) {
+    channel.config().setOption(KQueueChannelOption.SO_REUSEPORT, options.isReusePort());
+    super.configure(channel, options);
   }
 }

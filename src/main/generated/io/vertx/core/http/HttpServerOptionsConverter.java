@@ -2,6 +2,8 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Converter for {@link io.vertx.core.http.HttpServerOptions}.
@@ -87,6 +89,31 @@ import io.vertx.core.json.JsonArray;
             obj.setMaxWebsocketMessageSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "perFrameWebsocketCompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPerFrameWebsocketCompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "perMessageWebsocketCompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPerMessageWebsocketCompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "websocketAllowServerNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebsocketAllowServerNoContext((Boolean)member.getValue());
+          }
+          break;
+        case "websocketCompressionLevel":
+          if (member.getValue() instanceof Number) {
+            obj.setWebsocketCompressionLevel(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "websocketPreferredClientNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebsocketPreferredClientNoContext((Boolean)member.getValue());
+          }
+          break;
         case "websocketSubProtocols":
           if (member.getValue() instanceof String) {
             obj.setWebsocketSubProtocols((String)member.getValue());
@@ -121,6 +148,8 @@ import io.vertx.core.json.JsonArray;
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
+    json.put("websocketAllowServerNoContext", obj.getWebsocketAllowServerNoContext());
+    json.put("websocketPreferredClientNoContext", obj.getWebsocketPreferredClientNoContext());
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());
     }
