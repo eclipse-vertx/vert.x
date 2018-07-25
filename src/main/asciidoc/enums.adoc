@@ -14,17 +14,14 @@
 [frame="topbot"]
 |===
 ^|Name | Description
-|[[NONE]]`NONE`|
-+++
+|[[NONE]]`NONE`|+++
 No client authentication is requested or required.
 +++
-|[[REQUEST]]`REQUEST`|
-+++
+|[[REQUEST]]`REQUEST`|+++
 Accept authentication if presented by client. If this option is set and the client chooses
  not to provide authentication information about itself, the negotiations will continue.
 +++
-|[[REQUIRED]]`REQUIRED`|
-+++
+|[[REQUIRED]]`REQUIRED`|+++
 Require client to present authentication, if not presented then negotiations will be declined.
 +++
 |===
@@ -43,64 +40,49 @@ Require client to present authentication, if not presented then negotiations wil
 [frame="topbot"]
 |===
 ^|Name | Description
-|[[NOERROR]]`NOERROR`|
-+++
+|[[NOERROR]]`NOERROR`|+++
 ID 0, no error
 +++
-|[[FORMERROR]]`FORMERROR`|
-+++
+|[[FORMERROR]]`FORMERROR`|+++
 ID 1, format error
 +++
-|[[SERVFAIL]]`SERVFAIL`|
-+++
+|[[SERVFAIL]]`SERVFAIL`|+++
 ID 2, server failure
 +++
-|[[NXDOMAIN]]`NXDOMAIN`|
-+++
+|[[NXDOMAIN]]`NXDOMAIN`|+++
 ID 3, name error
 +++
-|[[NOTIMPL]]`NOTIMPL`|
-+++
+|[[NOTIMPL]]`NOTIMPL`|+++
 ID 4, not implemented
 +++
-|[[REFUSED]]`REFUSED`|
-+++
+|[[REFUSED]]`REFUSED`|+++
 ID 5, operation refused
 +++
-|[[YXDOMAIN]]`YXDOMAIN`|
-+++
+|[[YXDOMAIN]]`YXDOMAIN`|+++
 ID 6, domain name should not exist
 +++
-|[[YXRRSET]]`YXRRSET`|
-+++
+|[[YXRRSET]]`YXRRSET`|+++
 ID 7, resource record set should not exist
 +++
-|[[NXRRSET]]`NXRRSET`|
-+++
+|[[NXRRSET]]`NXRRSET`|+++
 ID 8, rrset does not exist
 +++
-|[[NOTAUTH]]`NOTAUTH`|
-+++
+|[[NOTAUTH]]`NOTAUTH`|+++
 ID 9, not authoritative for zone
 +++
-|[[NOTZONE]]`NOTZONE`|
-+++
+|[[NOTZONE]]`NOTZONE`|+++
 ID 10, name not in zone
 +++
-|[[BADVERS]]`BADVERS`|
-+++
+|[[BADVERS]]`BADVERS`|+++
 ID 11, bad extension mechanism for version
 +++
-|[[BADSIG]]`BADSIG`|
-+++
+|[[BADSIG]]`BADSIG`|+++
 ID 12, bad signature
 +++
-|[[BADKEY]]`BADKEY`|
-+++
+|[[BADKEY]]`BADKEY`|+++
 ID 13, bad key
 +++
-|[[BADTIME]]`BADTIME`|
-+++
+|[[BADTIME]]`BADTIME`|+++
 ID 14, bad timestamp
 +++
 |===
@@ -158,24 +140,19 @@ ID 14, bad timestamp
 [frame="topbot"]
 |===
 ^|Name | Description
-|[[START_OBJECT]]`START_OBJECT`|
-+++
+|[[START_OBJECT]]`START_OBJECT`|+++
 Signals the start of a JSON object.
 +++
-|[[END_OBJECT]]`END_OBJECT`|
-+++
+|[[END_OBJECT]]`END_OBJECT`|+++
 Signals the end of a JSON object.
 +++
-|[[START_ARRAY]]`START_ARRAY`|
-+++
+|[[START_ARRAY]]`START_ARRAY`|+++
 Signals the start of a JSON array.
 +++
-|[[END_ARRAY]]`END_ARRAY`|
-+++
+|[[END_ARRAY]]`END_ARRAY`|+++
 Signals the end of a JSON array.
 +++
-|[[VALUE]]`VALUE`|
-+++
+|[[VALUE]]`VALUE`|+++
 Signals a JSON value.
 +++
 |===
@@ -192,16 +169,13 @@ Signals a JSON value.
 [frame="topbot"]
 |===
 ^|Name | Description
-|[[HTTP]]`HTTP`|
-+++
+|[[HTTP]]`HTTP`|+++
 HTTP CONNECT ssl proxy
 +++
-|[[SOCKS4]]`SOCKS4`|
-+++
+|[[SOCKS4]]`SOCKS4`|+++
 SOCKS4/4a tcp proxy
 +++
-|[[SOCKS5]]`SOCKS5`|
-+++
+|[[SOCKS5]]`SOCKS5`|+++
 SOCSK5 tcp proxy
 +++
 |===
@@ -218,16 +192,13 @@ SOCSK5 tcp proxy
 [frame="topbot"]
 |===
 ^|Name | Description
-|[[TIMEOUT]]`TIMEOUT`|
-+++
+|[[TIMEOUT]]`TIMEOUT`|+++
 The message send failed because no reply was received before the timeout time.
 +++
-|[[NO_HANDLERS]]`NO_HANDLERS`|
-+++
+|[[NO_HANDLERS]]`NO_HANDLERS`|+++
 The message send failed because no handlers were available to handle the message.
 +++
-|[[RECIPIENT_FAILURE]]`RECIPIENT_FAILURE`|
-+++
+|[[RECIPIENT_FAILURE]]`RECIPIENT_FAILURE`|+++
 The message send failed because the recipient actively sent back a failure (rejected the message)
 +++
 |===
