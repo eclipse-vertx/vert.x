@@ -12,6 +12,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.VertxOptions;
+import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -356,6 +357,7 @@ public class VertxOptionsTest extends VertxTestBase {
     boolean fileResolverCachingEnabled = rand.nextBoolean();
     int quorumSize = TestUtils.randomShort() + 1;
     String haGroup = TestUtils.randomAlphaString(100);
+    boolean classPathResolvingEnabled = rand.nextBoolean();
     boolean metricsEnabled = rand.nextBoolean();
     boolean jmxEnabled = rand.nextBoolean();
     String jmxDomain = TestUtils.randomAlphaString(100);
@@ -382,6 +384,9 @@ public class VertxOptionsTest extends VertxTestBase {
         put("quorumSize", quorumSize).
         put("haGroup", haGroup).
         put("warningExceptionTime", warningExceptionTime).
+        put("fileSystemOptions", new JsonObject().
+            put("classPathResolvingEnabled", classPathResolvingEnabled).
+            put("fileResolverCachingEnabled", fileResolverCachingEnabled)).
         put("metricsOptions", new JsonObject().
             put("enabled", metricsEnabled).
             put("jmxEnabled", jmxEnabled).
@@ -408,6 +413,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(fileResolverCachingEnabled, options.isFileResolverCachingEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
+    FileSystemOptions fileSystemOptions = options.getFileSystemOptions();
+    assertEquals(classPathResolvingEnabled, fileSystemOptions.isClassPathResolvingEnabled());
+    assertEquals(fileResolverCachingEnabled, fileSystemOptions.isFileResolverCachingEnabled());
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
     assertEquals(warningExceptionTime, options.getWarningExceptionTime());

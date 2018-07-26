@@ -564,6 +564,24 @@ Set whether Netty pooled buffers are enabled
 +++
 |===
 
+[[FileSystemOptions]]
+== FileSystemOptions
+
+++++
+ Vert.x file system base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
+
+++++
+'''
+
+[cols=">25%,75%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[classPathResolvingEnabled]]`@classPathResolvingEnabled`|`Boolean`|-
+|[[fileResolverCachingEnabled]]`@fileResolverCachingEnabled`|`Boolean`|-
+|===
+
 [[GoAway]]
 == GoAway
 
@@ -1955,6 +1973,9 @@ Set the number of event loop threads to be used by the Vert.x instance.
 +++
 |[[fileResolverCachingEnabled]]`@fileResolverCachingEnabled`|`Boolean`|+++
 Set wether the Vert.x file resolver uses caching for classpath resources.
++++
+|[[fileSystemOptions]]`@fileSystemOptions`|`link:dataobjects.html#FileSystemOptions[FileSystemOptions]`|+++
+Set the file system options
 +++
 |[[haEnabled]]`@haEnabled`|`Boolean`|+++
 Set whether HA will be enabled on the Vert.x instance.
