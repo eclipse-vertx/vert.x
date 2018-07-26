@@ -55,7 +55,6 @@ public class FileResolver {
   private static final String DEFAULT_CACHE_DIR_BASE = ".vertx";
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
-  private static final boolean ENABLE_CP_RESOLVING = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
   private static final String CACHE_DIR_BASE = System.getProperty(CACHE_DIR_BASE_PROP_NAME, DEFAULT_CACHE_DIR_BASE);
   private static final String JAR_URL_SEP = "!/";
   private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
@@ -64,20 +63,26 @@ public class FileResolver {
   private File cacheDir;
   private Thread shutdownHook;
   private final boolean enableCaching;
+  private final boolean enableFileClassPathResolving;
 
   public FileResolver() {
-    this(VertxOptions.DEFAULT_FILE_CACHING_ENABLED);
+    this(VertxOptions.DEFAULT_FILE_CACHING_ENABLED, VertxOptions.DEFAULT_FILE_CLASS_PATH_RESOLVING_ENABLED);
   }
 
   public FileResolver(boolean enableCaching) {
+    this(enableCaching, VertxOptions.DEFAULT_FILE_CLASS_PATH_RESOLVING_ENABLED);
+  }
+
+  public FileResolver(boolean enableCaching, boolean enableFileClassPathResolving) {
     this.enableCaching = enableCaching;
+    this.enableFileClassPathResolving = enableFileClassPathResolving;
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
       cwd = new File(cwdOverride).getAbsoluteFile();
     } else {
       cwd = null;
     }
-    if (ENABLE_CP_RESOLVING) {
+    if (this.enableFileClassPathResolving) {
       setupCacheDir();
     }
   }
@@ -104,7 +109,7 @@ public class FileResolver {
     if (cwd != null && !file.isAbsolute()) {
       file = new File(cwd, fileName);
     }
-    if (!ENABLE_CP_RESOLVING) {
+    if (!this.enableFileClassPathResolving) {
       return file;
     }
     // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
