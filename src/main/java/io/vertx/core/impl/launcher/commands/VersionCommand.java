@@ -51,7 +51,7 @@ public class VersionCommand extends DefaultCommand {
     if (version != null) {
       return version;
     }
-    try (InputStream is = VersionCommand.class.getClassLoader().getResourceAsStream("vertx-version.txt")) {
+    try (InputStream is = VersionCommand.class.getClassLoader().getResourceAsStream("META-INF/vertx/vertx-version.txt")) {
       if (is == null) {
         throw new IllegalStateException("Cannot find vertx-version.txt on classpath");
       }

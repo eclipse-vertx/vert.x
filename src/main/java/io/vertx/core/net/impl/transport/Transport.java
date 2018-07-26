@@ -13,11 +13,7 @@ package io.vertx.core.net.impl.transport;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.ServerChannel;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
@@ -34,7 +30,6 @@ import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.BiConsumer;
 
 /**
  * The transport used by a {@link io.vertx.core.Vertx} instance.
@@ -151,22 +146,22 @@ public class Transport {
    * @return the type for channel
    * @param domain whether to create a unix domain channel or a socket channel
    */
-  public Class<? extends Channel> channelType(boolean domain) {
+  public ChannelFactory<? extends Channel> channelFactory(boolean domain) {
     if (domain) {
       throw new IllegalArgumentException();
     }
-    return NioSocketChannel.class;
+    return NioSocketChannel::new;
   }
 
   /**
    * @return the type for server channel
    * @param domain whether to create a server unix domain channel or a regular server socket channel
    */
-  public Class<? extends ServerChannel> serverChannelType(boolean domain) {
+  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
     if (domain) {
       throw new IllegalArgumentException();
     }
-    return NioServerSocketChannel.class;
+    return NioServerSocketChannel::new;
   }
 
   public void configure(DatagramChannel channel, DatagramSocketOptions options) {

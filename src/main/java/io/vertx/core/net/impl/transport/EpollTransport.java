@@ -13,10 +13,7 @@ package io.vertx.core.net.impl.transport;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
+import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.epoll.EpollDatagramChannel;
@@ -108,19 +105,19 @@ class EpollTransport extends Transport {
   }
 
   @Override
-  public Class<? extends Channel> channelType(boolean domain) {
+  public ChannelFactory<? extends Channel> channelFactory(boolean domain) {
     if (domain) {
-      return EpollDomainSocketChannel.class;
+      return EpollDomainSocketChannel::new;
     } else {
-      return EpollSocketChannel.class;
+      return EpollSocketChannel::new;
     }
   }
 
-  public Class<? extends ServerChannel> serverChannelType(boolean domain) {
+  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
     if (domain) {
-      return EpollServerDomainSocketChannel.class;
+      return EpollServerDomainSocketChannel::new;
     }
-    return EpollServerSocketChannel.class;
+    return EpollServerSocketChannel::new;
   }
 
   @Override

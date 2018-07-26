@@ -53,7 +53,7 @@ public class LauncherTest extends VertxTestBase {
     TestVerticle.conf = null;
 
     // Read the expected version from the vertx=version.txt
-    final URL resource = this.getClass().getClassLoader().getResource("vertx-version.txt");
+    final URL resource = this.getClass().getClassLoader().getResource("META-INF/vertx/vertx-version.txt");
     if (resource == null) {
       throw new IllegalStateException("Cannot find the vertx-version.txt");
     } else {

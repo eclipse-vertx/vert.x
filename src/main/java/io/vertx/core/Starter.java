@@ -458,7 +458,7 @@ public class Starter {
   }
 
   public String getVersion() {
-    try (InputStream is = getClass().getClassLoader().getResourceAsStream("vertx-version.txt")) {
+    try (InputStream is = getClass().getClassLoader().getResourceAsStream("META-INF/vertx/vertx-version.txt")) {
       if (is == null) {
         throw new IllegalStateException("Cannot find vertx-version.txt on classpath");
       }

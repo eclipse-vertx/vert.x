@@ -66,7 +66,7 @@ public class AsyncResolveConnectHelper {
   public static AsyncResolveConnectHelper doBind(VertxInternal vertx, SocketAddress socketAddress,
                                                  ServerBootstrap bootstrap) {
     AsyncResolveConnectHelper asyncResolveConnectHelper = new AsyncResolveConnectHelper();
-    bootstrap.channel(vertx.transport().serverChannelType(socketAddress.path() != null));
+    bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.path() != null));
     if (socketAddress.path() != null) {
       java.net.SocketAddress converted = vertx.transport().convert(socketAddress, true);
       ChannelFuture future = bootstrap.bind(converted);

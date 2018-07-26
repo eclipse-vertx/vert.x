@@ -129,7 +129,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
-    bootstrap.channel(client.getVertx().transport().channelType(false));
+    bootstrap.channelFactory(client.getVertx().transport().channelFactory(false));
 
     applyConnectionOptions(bootstrap);
 
