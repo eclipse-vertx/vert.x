@@ -62,6 +62,10 @@ public interface SharedData {
 
   /**
    * Get an asynchronous lock with the specified name. The lock will be passed to the handler when it is available.
+   * <p>
+   *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
+   *   even from a single thread, can happen in non-sequential order.
+   * </p>
    *
    * @param name  the name of the lock
    * @param resultHandler  the handler
@@ -70,7 +74,12 @@ public interface SharedData {
 
   /**
    * Like {@link #getLock(String, Handler)} but specifying a timeout. If the lock is not obtained within the timeout
-   * a failure will be sent to the handler
+   * a failure will be sent to the handler.
+   * <p>
+   *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
+   *   even from a single thread, can happen in non-sequential order.
+   * </p>
+   *
    * @param name  the name of the lock
    * @param timeout  the timeout in ms
    * @param resultHandler  the handler
