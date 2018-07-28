@@ -424,4 +424,15 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(warningExceptionTimeUnit, options.getWarningExceptionTimeUnit());
     assertEquals(blockedThreadCheckIntervalUnit, options.getBlockedThreadCheckIntervalUnit());
   }
+
+  @Test
+  public void testNullFileSystemOptions() {
+    VertxOptions options = new VertxOptions().setFileSystemOptions(null);
+    try {
+      options.isFileResolverCachingEnabled();
+      options.setFileResolverCachingEnabled(true);
+    } catch (NullPointerException e) {
+      fail("Should handle null FileSystemOptions");
+    }
+  }
 }

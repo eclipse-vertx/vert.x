@@ -23,6 +23,8 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static io.vertx.core.file.FileSystemOptions.DEFAULT_FILE_CACHING_ENABLED;
+
 /**
  * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.
  *
@@ -714,19 +716,32 @@ public class VertxOptions {
   }
 
   /**
-   * @return wether the file resolver uses caching
+   *
+   * Deprecated. Use FileSystemOptions instead.
+   *
+   * @return whether the file resolver uses caching
    */
+  @Deprecated
   public boolean isFileResolverCachingEnabled() {
+    if (fileSystemOptions == null) {
+      return DEFAULT_FILE_CACHING_ENABLED;
+    }
     return fileSystemOptions.isFileResolverCachingEnabled();
   }
 
   /**
-   * Set wether the Vert.x file resolver uses caching for classpath resources.
+   * Set whether the Vert.x file resolver uses caching for classpath resources.
+   *
+   * Deprecated. Use FileSystemOptions instead.
    *
    * @param fileResolverCachingEnabled true when the file resolver caches resources
    * @return a reference to this, so the API can be used fluently
    */
+  @Deprecated
   public VertxOptions setFileResolverCachingEnabled(boolean fileResolverCachingEnabled) {
+    if (fileSystemOptions == null) {
+      fileSystemOptions = new FileSystemOptions();
+    }
     this.fileSystemOptions.setFileResolverCachingEnabled(fileResolverCachingEnabled);
     return this;
   }
