@@ -142,18 +142,21 @@ the filesystem is served directly from the filesystem. The original content
 is served even if the classpath resource changes (e.g. in a development
 system).
 
-This caching behaviour can be set on the {@link io.vertx.core.VertxOptions#setFileResolverCachingEnabled(boolean)}
+This caching behaviour can be set on the {@link io.vertx.core.file.FileSystemOptions#setFileResolverCachingEnabled(boolean)}
 option. The default value of this option is `true` unless the system property `vertx.disableFileCaching` is
 defined.
 
 The path where the files are cached is `.vertx` by default and can be customized by setting the system
 property `vertx.cacheDirBase`.
 
-The whole classpath resolving feature can be disabled by setting the system
+The whole classpath resolving feature can be disabled system-wide by setting the system
 property `vertx.disableFileCPResolving` to `true`.
 
-NOTE: these system properties are evaluated once when the the `io.vertx.core.impl.FileResolver` class is loaded, so
+NOTE: these system properties are evaluated once when the the `io.vertx.core.file.FileSystemOptions` class is loaded, so
 these properties should be set before loading this class or as a JVM system property when launching it.
+
+If you want to disable classpath resolving for a particular application but keep it enabled by default system-wide,
+you can do so via the {@link io.vertx.core.file.FileSystemOptions#setClassPathResolvingEnabled(boolean)} option.
 
 ==== Closing an AsyncFile
 
