@@ -23,8 +23,7 @@ import io.vertx.core.MultiMap;
  * <p>
  * Messages have a {@link #body}, which can be null, and also {@link #headers}, which can be empty.
  * <p>
- * If the message was sent specifying a reply handler it will also have a {@link #replyAddress}. In that case the message
- * can be replied to using that reply address, or, more simply by just using {@link #reply}.
+ * If the message was sent specifying a reply handler, it can be replied to using {@link #reply}.
  * <p>
  * If you want to notify the sender that processing failed, then {@link #fail} can be called.
  *
