@@ -64,7 +64,8 @@ public class FileResolver {
   private final File cwd;
   private File cacheDir;
   private Thread shutdownHook;
-  private final FileSystemOptions fileSystemOptions;
+  private final boolean enableCaching;
+  private final boolean enableCpResolving;
 
   public FileResolver() {
     this(new FileSystemOptions());
@@ -75,14 +76,15 @@ public class FileResolver {
   }
 
   public FileResolver(FileSystemOptions fileSystemOptions) {
-    this.fileSystemOptions = fileSystemOptions;
+    this.enableCaching = fileSystemOptions.isFileResolverCachingEnabled();
+    this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
       cwd = new File(cwdOverride).getAbsoluteFile();
     } else {
       cwd = null;
     }
-    if (fileSystemOptions.isClassPathResolvingEnabled()) {
+    if (this.enableCpResolving) {
       setupCacheDir();
     }
   }
@@ -109,7 +111,7 @@ public class FileResolver {
     if (cwd != null && !file.isAbsolute()) {
       file = new File(cwd, fileName);
     }
-    if (!fileSystemOptions.isClassPathResolvingEnabled()) {
+    if (!this.enableCpResolving) {
       return file;
     }
     // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
@@ -118,7 +120,7 @@ public class FileResolver {
       if (!file.exists()) {
         // Look for it in local file cache
         File cacheFile = new File(cacheDir, fileName);
-        if (fileSystemOptions.isFileResolverCachingEnabled() && cacheFile.exists()) {
+        if (this.enableCaching && cacheFile.exists()) {
           return cacheFile;
         }
         // Look for file on classpath
@@ -178,7 +180,7 @@ public class FileResolver {
     if (!isDirectory) {
       cacheFile.getParentFile().mkdirs();
       try {
-        if (fileSystemOptions.isFileResolverCachingEnabled()) {
+        if (this.enableCaching) {
           Files.copy(resource.toPath(), cacheFile.toPath());
         } else {
           Files.copy(resource.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -240,7 +242,7 @@ public class FileResolver {
           } else {
             file.getParentFile().mkdirs();
             try (InputStream is = zip.getInputStream(entry)) {
-              if (fileSystemOptions.isFileResolverCachingEnabled()) {
+              if (this.enableCaching) {
                 Files.copy(is, file.toPath());
               } else {
                 Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -287,7 +289,7 @@ public class FileResolver {
       } else {
         file.getParentFile().mkdirs();
         try (InputStream is = url.openStream()) {
-          if (fileSystemOptions.isFileResolverCachingEnabled()) {
+          if (this.enableCaching) {
             Files.copy(is, file.toPath());
           } else {
             Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
