@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,47 +11,19 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.WorkerExecutor;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyFailure;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.PoolMetrics;
-import io.vertx.test.fakemetrics.EndpointMetric;
-import io.vertx.test.fakemetrics.FakeDatagramSocketMetrics;
-import io.vertx.test.fakemetrics.FakeEventBusMetrics;
-import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
-import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
-import io.vertx.test.fakemetrics.FakeMetricsBase;
-import io.vertx.test.fakemetrics.FakeMetricsFactory;
-import io.vertx.test.fakemetrics.FakePoolMetrics;
-import io.vertx.test.fakemetrics.HandlerMetric;
-import io.vertx.test.fakemetrics.HttpClientMetric;
-import io.vertx.test.fakemetrics.HttpServerMetric;
-import io.vertx.test.fakemetrics.PacketMetric;
-import io.vertx.test.fakemetrics.ReceivedMessage;
-import io.vertx.test.fakemetrics.SentMessage;
-import io.vertx.test.fakemetrics.SocketMetric;
-import io.vertx.test.fakemetrics.WebSocketMetric;
+import io.vertx.test.fakemetrics.*;
 import org.junit.Test;
 
 import java.util.*;
@@ -61,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static org.hamcrest.core.Is.*;
+import static org.hamcrest.core.Is.is;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -936,11 +908,11 @@ public class MetricsTest extends VertxTestBase {
         if (metrics.numberOfRunningTasks() > 0) {
           hadRunning.set(true);
         }
-        fut.complete();
-      }, ar -> {
         if (metrics.numberOfWaitingTasks() > 0) {
           hadWaitingQueue.set(true);
         }
+        fut.complete();
+      }, ar -> {
         if (metrics.numberOfIdleThreads() > 0) {
           hadIdle.set(true);
         }
