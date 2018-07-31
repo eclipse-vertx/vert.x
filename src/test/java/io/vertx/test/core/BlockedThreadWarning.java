@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,20 +16,15 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Thomas Segismont
@@ -40,7 +35,7 @@ public class BlockedThreadWarning implements TestRule {
   private String poolName;
   private long maxExecuteTime;
   private TimeUnit maxExecuteTimeUnit;
-  private List<String> logs = new ArrayList<>();
+  private List<String> logs = new ArrayList<>(); // guarded by this
 
   public synchronized void expectMessage(String poolName, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     doTest = true;
@@ -54,7 +49,9 @@ public class BlockedThreadWarning implements TestRule {
     return new Statement() {
       @Override
       public void evaluate() throws Throwable {
-        logs.clear();
+        synchronized (BlockedThreadWarning.this) {
+          logs.clear();
+        }
         Logger logger = Logger.getLogger(BlockedThreadChecker.class.getName());
         Handler handler = new Handler() {
           public void publish(LogRecord record) {

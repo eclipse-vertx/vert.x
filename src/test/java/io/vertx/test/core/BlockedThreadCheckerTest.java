@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,17 +11,13 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
@@ -50,7 +46,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     Verticle verticle = new AbstractVerticle() {
       @Override
       public void start() throws InterruptedException {
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         testComplete();
       }
     };
@@ -73,7 +69,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     Verticle verticle = new AbstractVerticle() {
       @Override
       public void start() throws InterruptedException {
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         testComplete();
       }
     };
@@ -100,7 +96,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
       public void start() throws InterruptedException {
         vertx.executeBlocking(fut -> {
           try {
-            Thread.sleep(2000);
+            Thread.sleep(3000);
           } catch (InterruptedException e) {
             fail();
           }
