@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -37,9 +37,15 @@ public class DeliveryOptions {
    */
   public static final long DEFAULT_TIMEOUT = 30 * 1000;
 
+  /**
+   * Whether the message should be delivered to local consumers only by default = false.
+   */
+  public static final boolean DEFAULT_LOCAL_ONLY = false;
+
   private long timeout = DEFAULT_TIMEOUT;
   private String codecName;
   private MultiMap headers;
+  private boolean localOnly = DEFAULT_LOCAL_ONLY;
 
   /**
    * Default constructor
@@ -56,6 +62,7 @@ public class DeliveryOptions {
     this.timeout = other.getSendTimeout();
     this.codecName = other.getCodecName();
     this.headers = other.getHeaders();
+    this.localOnly = other.localOnly;
   }
 
   /**
@@ -76,6 +83,7 @@ public class DeliveryOptions {
         headers.set(entry.getKey(), (String)entry.getValue());
       }
     }
+    this.localOnly = json.getBoolean("localOnly", DEFAULT_LOCAL_ONLY);
   }
 
   /**
@@ -92,6 +100,7 @@ public class DeliveryOptions {
       headers.entries().forEach(entry -> hJson.put(entry.getKey(), entry.getValue()));
       json.put("headers", hJson);
     }
+    json.put("localOnly", localOnly);
     return json;
   }
 
@@ -187,5 +196,26 @@ public class DeliveryOptions {
     if (headers == null) {
       headers = new CaseInsensitiveHeaders();
     }
+  }
+
+  /**
+   * @return whether the message should be delivered to local consumers only
+   */
+  public boolean isLocalOnly() {
+    return localOnly;
+  }
+
+  /**
+   * Whether a message should be delivered to local consumers only. Defaults to {@code false}.
+   *
+   * <p>
+   * <strong>This option is effective in clustered mode only and does not apply to reply messages</strong>.
+   *
+   * @param localOnly {@code true} to deliver to local consumers only, {@code false} otherwise
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeliveryOptions setLocalOnly(boolean localOnly) {
+    this.localOnly = localOnly;
+    return this;
   }
 }
