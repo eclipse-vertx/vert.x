@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Red Hat, Inc. and others
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,22 +11,18 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 
@@ -289,4 +285,47 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     await();
   }
 
+  @Test
+  public void testSendLocalOnly() {
+    testDeliveryOptionsLocalOnly(true);
+  }
+
+  @Test
+  public void testPublishLocalOnly() {
+    testDeliveryOptionsLocalOnly(false);
+  }
+
+  private void testDeliveryOptionsLocalOnly(boolean send) {
+    startNodes(2);
+    AtomicLong localConsumer0 = new AtomicLong();
+    vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> {
+      localConsumer0.incrementAndGet();
+      complete();
+    });
+    AtomicLong consumer1 = new AtomicLong();
+    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
+      consumer1.incrementAndGet();
+    });
+    waitFor(30);
+    for (int i = 0; i < 30; i++) {
+      if (send) {
+        vertices[0].eventBus().send(ADDRESS1, "msg", new DeliveryOptions().setLocalOnly(true));
+      } else {
+        vertices[0].eventBus().publish(ADDRESS1, "msg", new DeliveryOptions().setLocalOnly(true));
+      }
+    }
+    await();
+    assertEquals(30, localConsumer0.get());
+    assertEquals(0, consumer1.get());
+  }
+
+  @Test
+  public void testLocalOnlyDoesNotApplyToReplies() {
+    startNodes(2);
+    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
+      msg.reply("pong", new DeliveryOptions().setLocalOnly(true));
+    });
+    vertices[0].eventBus().send(ADDRESS1, "ping", new DeliveryOptions().setSendTimeout(500), onSuccess(msg -> testComplete()));
+    await();
+  }
 }
