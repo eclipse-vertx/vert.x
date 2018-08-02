@@ -186,7 +186,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
     defaultWorkerMaxExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
 
-    this.fileResolver = new FileResolver(options.isFileResolverCachingEnabled());
+    this.fileResolver = new FileResolver(options.getFileSystemOptions());
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.deploymentManager = new DeploymentManager(this);

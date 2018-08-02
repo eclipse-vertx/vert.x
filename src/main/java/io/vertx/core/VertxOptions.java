@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,6 +14,7 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.eventbus.EventBusOptions;
+import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
@@ -22,7 +23,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static io.vertx.core.file.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
+import static io.vertx.core.file.FileSystemOptions.DEFAULT_FILE_CACHING_ENABLED;
 
 /**
  * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.
@@ -128,11 +129,6 @@ public class VertxOptions {
   public static final boolean DEFAULT_HA_ENABLED = false;
 
   /**
-   * The default value for file resolver caching enabled = the value of the system property "vertx.disableFileCaching" or true
-   */
-  public static final boolean DEFAULT_FILE_CACHING_ENABLED = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
-
-  /**
    * The default value for preferring native transport = false
    */
   public static final boolean DEFAULT_PREFER_NATIVE_TRANSPORT = false;
@@ -160,10 +156,10 @@ public class VertxOptions {
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
   private MetricsOptions metricsOptions = new MetricsOptions();
+  private FileSystemOptions fileSystemOptions = new FileSystemOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
   private EventBusOptions eventBusOptions = new EventBusOptions();
   private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
-  private boolean fileResolverCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
   private boolean preferNativeTransport = DEFAULT_PREFER_NATIVE_TRANSPORT;
   private TimeUnit maxEventLoopExecuteTimeUnit = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME_UNIT;
   private TimeUnit maxWorkerExecuteTimeUnit = DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
@@ -193,10 +189,10 @@ public class VertxOptions {
     this.quorumSize = other.getQuorumSize();
     this.haGroup = other.getHAGroup();
     this.metricsOptions = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
+    this.fileSystemOptions = other.getFileSystemOptions() != null ? new FileSystemOptions(other.getFileSystemOptions()) : null;
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions() : null;
-    this.fileResolverCachingEnabled = other.fileResolverCachingEnabled;
     this.maxEventLoopExecuteTimeUnit = other.maxEventLoopExecuteTimeUnit;
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
@@ -628,6 +624,13 @@ public class VertxOptions {
   }
 
   /**
+   * @return the file system options
+   */
+  public FileSystemOptions getFileSystemOptions() {
+    return fileSystemOptions;
+  }
+
+  /**
    * Set the metrics options
    *
    * @param metrics the options
@@ -635,6 +638,17 @@ public class VertxOptions {
    */
   public VertxOptions setMetricsOptions(MetricsOptions metrics) {
     this.metricsOptions = metrics;
+    return this;
+  }
+
+  /**
+   * Set the file system options
+   *
+   * @param fileSystemOptions the options
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setFileSystemOptions(FileSystemOptions fileSystemOptions) {
+    this.fileSystemOptions = fileSystemOptions;
     return this;
   }
 
@@ -702,20 +716,33 @@ public class VertxOptions {
   }
 
   /**
-   * @return wether the file resolver uses caching
+   *
+   * Deprecated. Use FileSystemOptions instead.
+   *
+   * @return whether the file resolver uses caching
    */
+  @Deprecated
   public boolean isFileResolverCachingEnabled() {
-    return fileResolverCachingEnabled;
+    if (fileSystemOptions == null) {
+      return DEFAULT_FILE_CACHING_ENABLED;
+    }
+    return fileSystemOptions.isFileResolverCachingEnabled();
   }
 
   /**
-   * Set wether the Vert.x file resolver uses caching for classpath resources.
+   * Set whether the Vert.x file resolver uses caching for classpath resources.
+   *
+   * Deprecated. Use FileSystemOptions instead.
    *
    * @param fileResolverCachingEnabled true when the file resolver caches resources
    * @return a reference to this, so the API can be used fluently
    */
+  @Deprecated
   public VertxOptions setFileResolverCachingEnabled(boolean fileResolverCachingEnabled) {
-    this.fileResolverCachingEnabled = fileResolverCachingEnabled;
+    if (fileSystemOptions == null) {
+      fileSystemOptions = new FileSystemOptions();
+    }
+    this.fileSystemOptions.setFileResolverCachingEnabled(fileResolverCachingEnabled);
     return this;
   }
 
@@ -836,8 +863,10 @@ public class VertxOptions {
       return false;
     if (addressResolverOptions != null ? !addressResolverOptions.equals(that.addressResolverOptions) : that.addressResolverOptions != null)
       return false;
-    if (fileResolverCachingEnabled != that.fileResolverCachingEnabled) return false;
     if (preferNativeTransport != that.preferNativeTransport) return false;
+    if (fileSystemOptions != null ? !fileSystemOptions.equals(that.fileSystemOptions) : that.fileSystemOptions != null) {
+      return false;
+    }
     return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
   }
 
@@ -851,11 +880,11 @@ public class VertxOptions {
     result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
     result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);
     result = 31 * result + (haEnabled ? 1 : 0);
-    result = 31 * result + (fileResolverCachingEnabled ? 1 : 0);
     result = 31 * result + (preferNativeTransport ? 1 : 0);
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
     result = 31 * result + (metricsOptions != null ? metricsOptions.hashCode() : 0);
+    result = 31 * result + (fileSystemOptions != null ? fileSystemOptions.hashCode() : 0);
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
     result = 31 * result + (addressResolverOptions != null ? addressResolverOptions.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
@@ -880,11 +909,11 @@ public class VertxOptions {
         ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
         ", clusterManager=" + clusterManager +
         ", haEnabled=" + haEnabled +
-        ", fileCachingEnabled=" + fileResolverCachingEnabled +
         ", preferNativeTransport=" + preferNativeTransport +
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
         ", metrics=" + metricsOptions +
+        ", fileSystemOptions=" + fileSystemOptions +
         ", addressResolver=" + addressResolverOptions.toJson() +
         ", addressResolver=" + addressResolverOptions.toJson() +
         ", eventbus=" + eventBusOptions.toJson() +
