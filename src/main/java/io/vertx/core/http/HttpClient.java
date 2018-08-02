@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -1415,7 +1416,7 @@ public interface HttpClient extends Measured {
   /**
    * @return the current redirect handler.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore
   Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler();
 
   /**

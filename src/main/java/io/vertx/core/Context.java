@@ -12,6 +12,7 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.ContextInternal;
@@ -226,7 +227,7 @@ public interface Context {
   /**
    * @return the current exception handler of this context
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore
   @Nullable
   Handler<Throwable> exceptionHandler();
 

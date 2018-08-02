@@ -11,6 +11,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -45,7 +46,7 @@ public interface NetServer extends Measured {
    */
   NetServer connectHandler(@Nullable Handler<NetSocket> handler);
 
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore
   Handler<NetSocket> connectHandler();
 
   /**
@@ -146,6 +147,7 @@ public interface NetServer extends Measured {
    * @param handler the handler to set
    * @return a reference to this, so the API can be used fluently
    */
+  @GenIgnore
   @Fluent
   NetServer exceptionHandler(Handler<Throwable> handler);
 

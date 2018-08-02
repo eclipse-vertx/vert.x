@@ -327,6 +327,12 @@ Add a message header.
  Message headers can be sent with any message and will be accessible with link
  at the recipient.
 +++
+|[[localOnly]]`@localOnly`|`Boolean`|+++
+Whether a message should be delivered to local consumers only. Defaults to <code>false</code>.
+
+ <p>
+ <strong>This option is effective in clustered mode only and does not apply to reply messages</strong>.
++++
 |[[sendTimeout]]`@sendTimeout`|`Number (long)`|+++
 Set the send timeout.
 +++

@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -55,7 +56,7 @@ public interface HttpServer extends Measured {
   /**
    * @return  the request handler
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore
   Handler<HttpServerRequest> requestHandler();
 
   /**
@@ -97,7 +98,7 @@ public interface HttpServer extends Measured {
   /**
    * @return the websocketHandler
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore
   Handler<ServerWebSocket> websocketHandler();
 
   /**

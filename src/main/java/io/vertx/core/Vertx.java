@@ -582,7 +582,7 @@ public interface Vertx extends Measured {
   /**
    * @return the current default exception handler
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore
   @Nullable Handler<Throwable> exceptionHandler();
 
   VertxFactory factory = ServiceHelper.loadFactory(VertxFactory.class);
