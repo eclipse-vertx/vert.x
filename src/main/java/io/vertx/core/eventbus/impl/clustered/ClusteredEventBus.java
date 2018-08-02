@@ -116,9 +116,9 @@ public class ClusteredEventBus extends EventBusImpl {
     // Get the HA manager, it has been constructed but it's not yet initialized
     HAManager haManager = vertx.haManager();
     setClusterViewChangedHandler(haManager);
-    clusterManager.<String, ClusterNodeInfo>getAsyncMultiMap(SUBS_MAP_NAME, ar2 -> {
-      if (ar2.succeeded()) {
-        subs = ar2.result();
+    clusterManager.<String, ClusterNodeInfo>getAsyncMultiMap(SUBS_MAP_NAME, ar1 -> {
+      if (ar1.succeeded()) {
+        subs = ar1.result();
         server = vertx.createNetServer(getServerOptions());
 
         server.connectHandler(getServerHandler());
@@ -128,25 +128,23 @@ public class ClusteredEventBus extends EventBusImpl {
             String serverHost = getClusterPublicHost(options);
             serverID = new ServerID(serverPort, serverHost);
             nodeInfo = new ClusterNodeInfo(clusterManager.getNodeID(), serverID);
-            haManager.addDataToAHAInfo(SERVER_ID_HA_KEY, new JsonObject().put("host", serverID.host).put("port", serverID.port));
-            if (resultHandler != null) {
-              started = true;
-              resultHandler.handle(Future.succeededFuture());
-            }
+            vertx.executeBlocking(fut -> {
+              haManager.addDataToAHAInfo(SERVER_ID_HA_KEY, new JsonObject().put("host", serverID.host).put("port", serverID.port));
+              fut.complete();
+            }, false, ar2 -> {
+              if (ar2.succeeded()) {
+                started = true;
+                resultHandler.handle(Future.succeededFuture());
+              } else {
+                resultHandler.handle(Future.failedFuture(ar2.cause()));
+              }
+            });
           } else {
-            if (resultHandler != null) {
-              resultHandler.handle(Future.failedFuture(asyncResult.cause()));
-            } else {
-              log.error(asyncResult.cause());
-            }
+            resultHandler.handle(Future.failedFuture(asyncResult.cause()));
           }
         });
       } else {
-        if (resultHandler != null) {
-          resultHandler.handle(Future.failedFuture(ar2.cause()));
-        } else {
-          log.error(ar2.cause());
-        }
+        resultHandler.handle(Future.failedFuture(ar1.cause()));
       }
     });
   }
