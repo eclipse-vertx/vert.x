@@ -11,7 +11,6 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -46,7 +45,7 @@ public interface NetServer extends Measured {
    */
   NetServer connectHandler(@Nullable Handler<NetSocket> handler);
 
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   Handler<NetSocket> connectHandler();
 
   /**

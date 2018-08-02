@@ -11,7 +11,6 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;

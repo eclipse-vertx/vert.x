@@ -12,8 +12,6 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -57,7 +55,7 @@ public interface HttpServer extends Measured {
   /**
    * @return  the request handler
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   Handler<HttpServerRequest> requestHandler();
 
   /**
@@ -99,7 +97,7 @@ public interface HttpServer extends Measured {
   /**
    * @return the websocketHandler
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   Handler<ServerWebSocket> websocketHandler();
 
   /**
@@ -148,7 +146,7 @@ public interface HttpServer extends Measured {
    */
   @Fluent
   HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler);
-    
+
   /**
    * Like {@link #listen(int, String)} but the server will listen on host "0.0.0.0" and port specified here ignoring
    * any value in the {@link io.vertx.core.http.HttpServerOptions} that was used when creating the server.

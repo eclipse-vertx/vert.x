@@ -11,11 +11,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -258,7 +254,7 @@ public interface HttpConnection {
    *         not SSL.
    * @see javax.net.ssl.SSLSession
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   SSLSession sslSession();
 
   /**
@@ -272,7 +268,7 @@ public interface HttpConnection {
    * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    * @see #sslSession()
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
   /**

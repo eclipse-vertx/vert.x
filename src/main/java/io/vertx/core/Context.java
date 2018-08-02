@@ -12,7 +12,6 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.ContextInternal;
@@ -227,14 +226,14 @@ public interface Context {
   /**
    * @return the current exception handler of this context
    */
+  @SuppressWarnings("codegen-allow-any-java-type")
   @Nullable
-  @GenIgnore
   Handler<Throwable> exceptionHandler();
 
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   void addCloseHook(Closeable hook);
 
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   void removeCloseHook(Closeable hook);
 
 }

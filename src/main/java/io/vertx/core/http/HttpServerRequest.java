@@ -11,14 +11,10 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
@@ -140,7 +136,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param headerName  the header name
    * @return the header value
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   String getHeader(CharSequence headerName);
 
   /**
@@ -176,7 +172,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    *         not SSL.
    * @see javax.net.ssl.SSLSession
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   SSLSession sslSession();
 
   /**
@@ -190,7 +186,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    * @see #sslSession()
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
   /**

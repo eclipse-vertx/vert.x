@@ -13,7 +13,6 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
@@ -129,19 +128,22 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Like {@link #putHeader(String, String)} but using CharSequence
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
+  @Fluent
   HttpServerResponse putHeader(CharSequence name, CharSequence value);
 
   /**
    * Like {@link #putHeader(String, String)} but providing multiple values via a String Iterable
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
+  @Fluent
   HttpServerResponse putHeader(String name, Iterable<String> values);
 
   /**
    * Like {@link #putHeader(String, Iterable)} but with CharSequence Iterable
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
+  @Fluent
   HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values);
 
   /**
@@ -163,19 +165,22 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Like {@link #putTrailer(String, String)} but using CharSequence
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
+  @Fluent
   HttpServerResponse putTrailer(CharSequence name, CharSequence value);
 
   /**
    * Like {@link #putTrailer(String, String)} but providing multiple values via a String Iterable
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
+  @Fluent
   HttpServerResponse putTrailer(String name, Iterable<String> values);
 
   /**
    * Like {@link #putTrailer(String, Iterable)} but with CharSequence Iterable
    */
-  @GenIgnore
+  @SuppressWarnings("codegen-allow-any-java-type")
+  @Fluent
   HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value);
 
   /**
