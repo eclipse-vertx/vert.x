@@ -428,11 +428,7 @@ public class VertxOptionsTest extends VertxTestBase {
   @Test
   public void testNullFileSystemOptions() {
     VertxOptions options = new VertxOptions().setFileSystemOptions(null);
-    try {
-      options.isFileResolverCachingEnabled();
-      options.setFileResolverCachingEnabled(true);
-    } catch (NullPointerException e) {
-      fail("Should handle null FileSystemOptions");
-    }
+    options.isFileResolverCachingEnabled();
+    options.setFileResolverCachingEnabled(true);
   }
 }
