@@ -44,7 +44,7 @@ public interface ReadStream<T> extends StreamBase {
   ReadStream<T> handler(@Nullable Handler<T> handler);
 
   /**
-   * Pause the {@code ReadSupport}. While it's paused, no data will be sent to the {@code dataHandler}
+   * Pause the {@code ReadStream}. While it's paused, no data will be sent to the data {@code handler}
    *
    * @return a reference to this, so the API can be used fluently
    */
@@ -52,7 +52,7 @@ public interface ReadStream<T> extends StreamBase {
   ReadStream<T> pause();
 
   /**
-   * Resume reading. If the {@code ReadSupport} has been paused, reading will recommence on it.
+   * Resume reading. If the {@code ReadStream} has been paused, reading will recommence on it.
    *
    * @return a reference to this, so the API can be used fluently
    */
