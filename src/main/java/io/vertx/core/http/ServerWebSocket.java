@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
@@ -140,6 +141,6 @@ public interface ServerWebSocket extends WebSocketBase {
    * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    * @see #sslSession()
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 }

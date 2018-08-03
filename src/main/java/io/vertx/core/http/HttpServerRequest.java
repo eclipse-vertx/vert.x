@@ -186,7 +186,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    * @see #sslSession()
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
   /**
