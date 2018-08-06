@@ -36,6 +36,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.queue.Queue;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,11 +69,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final SSLHelper helper;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
-  private Handler<Object> messageHandler = NULL_MSG_HANDLER;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private Buffer pendingData;
-  private boolean paused = false;
+  private Queue<Object> pending;
   private MessageConsumer registration;
 
   public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextInternal context,
@@ -87,6 +86,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
+    pending = Queue.queue(context, 0);
+    pending.writableHandler(v -> doResume());
+    pending.handler(NULL_MSG_HANDLER);
   }
 
   synchronized void registerEventBusHandler() {
@@ -163,32 +165,28 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
     if (handler != null) {
-      messageHandler = handler;
+      pending.handler(handler);
     } else {
-      messageHandler = NULL_MSG_HANDLER;
+      pending.handler(NULL_MSG_HANDLER);
     }
     return this;
   }
 
   @Override
   public synchronized NetSocket pause() {
-    if (!paused) {
-      paused = true;
-      doPause();
-    }
+    pending.pause();
+    return this;
+  }
+
+  @Override
+  public NetSocket fetch(long amount) {
+    pending.take(amount);
     return this;
   }
 
   @Override
   public synchronized NetSocket resume() {
-    if (paused) {
-      paused = false;
-      if (pendingData != null) {
-        // Send empty buffer to trigger sending of pending data
-        context.runOnContext(v -> handleMessageReceived(Unpooled.EMPTY_BUFFER));
-      }
-      doResume();
-    }
+    pending.resume();
     return this;
   }
 
@@ -346,19 +344,19 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   public synchronized void handleMessageReceived(Object msg) {
     checkContext();
-    if (messageHandler != null) {
-      messageHandler.handle(msg);
+    if (!pending.add(msg)) {
+      doPause();
     }
   }
 
   private class DataMessageHandler implements Handler<Object> {
 
-    private final ByteBufAllocator allocator;
     private final Handler<Buffer> dataHandler;
+    private final ByteBufAllocator allocator;
 
-    public DataMessageHandler(ByteBufAllocator allocator, Handler<Buffer> dataHandler) {
-      this.dataHandler = dataHandler;
+    DataMessageHandler(ByteBufAllocator allocator, Handler<Buffer> dataHandler) {
       this.allocator = allocator;
+      this.dataHandler = dataHandler;
     }
 
     @Override
@@ -368,18 +366,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         byteBuf = VertxHandler.safeBuffer(byteBuf, allocator);
         Buffer data = Buffer.buffer(byteBuf);
         reportBytesRead(data.length());
-        if (paused) {
-          if (pendingData == null) {
-            pendingData = data.copy();
-          } else {
-            pendingData.appendBuffer(data);
-          }
-          return;
-        }
-        if (pendingData != null) {
-          data = pendingData.appendBuffer(data);
-          pendingData = null;
-        }
         dataHandler.handle(data);
       }
     }

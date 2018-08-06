@@ -38,6 +38,9 @@ import java.util.List;
 public interface HttpClientResponse extends ReadStream<Buffer> {
 
   @Override
+  HttpClientResponse fetch(long amount);
+
+  @Override
   HttpClientResponse resume();
 
   @Override

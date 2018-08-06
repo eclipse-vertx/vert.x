@@ -40,6 +40,9 @@ public interface TimeoutStream extends ReadStream<Long> {
   TimeoutStream resume();
 
   @Override
+  TimeoutStream fetch(long amount);
+
+  @Override
   TimeoutStream endHandler(Handler<Void> endHandler);
 
   /**

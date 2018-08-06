@@ -36,6 +36,9 @@ public interface WebSocket extends WebSocketBase {
   WebSocket resume();
 
   @Override
+  WebSocket fetch(long amount);
+
+  @Override
   WebSocket endHandler(Handler<Void> endHandler);
 
   @Override

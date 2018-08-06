@@ -52,6 +52,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   HttpServerRequest resume();
 
   @Override
+  HttpServerRequest fetch(long amount);
+
+  @Override
   HttpServerRequest endHandler(Handler<Void> endHandler);
 
   /**

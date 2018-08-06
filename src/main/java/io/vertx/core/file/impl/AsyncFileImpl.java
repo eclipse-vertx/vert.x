@@ -13,7 +13,6 @@ package io.vertx.core.file.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -25,6 +24,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.queue.Queue;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -68,11 +68,9 @@ public class AsyncFileImpl implements AsyncFile {
   private int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
   private int lwm = maxWrites / 2;
   private int readBufferSize = DEFAULT_READ_BUFFER_SIZE;
-  private boolean paused;
-  private Handler<Buffer> dataHandler;
+  private Queue<Buffer> queue;
   private Handler<Void> endHandler;
   private long readPos;
-  private boolean readInProgress;
 
   AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextInternal context) {
     if (!options.isRead() && !options.isWrite()) {
@@ -102,6 +100,11 @@ public class AsyncFileImpl implements AsyncFile {
       throw new FileSystemException(e);
     }
     this.context = context;
+    this.queue = Queue.queue(context, 0);
+
+    queue.writableHandler(v -> {
+      doRead();
+    });
   }
 
   @Override
@@ -129,6 +132,12 @@ public class AsyncFileImpl implements AsyncFile {
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
     doRead(buffer, offset, bb, position, handler);
+    return this;
+  }
+
+  @Override
+  public AsyncFile fetch(long amount) {
+    queue.take(amount);
     return this;
   }
 
@@ -222,9 +231,14 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public synchronized AsyncFile handler(Handler<Buffer> handler) {
     check();
-    this.dataHandler = handler;
-    if (dataHandler != null && !paused && !closed) {
+    if (closed) {
+      return this;
+    }
+    queue.handler(handler);
+    if (handler != null) {
       doRead();
+    } else {
+      queue.clear();
     }
     return this;
   }
@@ -239,18 +253,15 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public synchronized AsyncFile pause() {
     check();
-    paused = true;
+    queue.pause();
     return this;
   }
 
   @Override
   public synchronized AsyncFile resume() {
     check();
-    if (paused && !closed) {
-      paused = false;
-      if (dataHandler != null) {
-        doRead();
-      }
+    if (!closed) {
+      queue.resume();
     }
     return this;
   }
@@ -318,44 +329,33 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private synchronized void doRead() {
-    if (!readInProgress) {
-      readInProgress = true;
-      Buffer buff = Buffer.buffer(readBufferSize);
-      read(buff, 0, readPos, readBufferSize, ar -> {
-        if (ar.succeeded()) {
-          readInProgress = false;
-          Buffer buffer = ar.result();
-          if (buffer.length() == 0) {
-            // Empty buffer represents end of file
-            handleEnd();
-          } else {
-            readPos += buffer.length();
-            handleData(buffer);
-            if (!paused && dataHandler != null) {
-              doRead();
-            }
-          }
+    Buffer buff = Buffer.buffer(readBufferSize);
+    read(buff, 0, readPos, readBufferSize, ar -> {
+      if (ar.succeeded()) {
+        Buffer buffer = ar.result();
+        if (buffer.length() == 0) {
+          // Empty buffer represents end of file
+          handleEnd();
         } else {
-          handleException(ar.cause());
+          readPos += buffer.length();
+          if (queue.add(buffer)) {
+            doRead();
+          }
         }
-      });
-    }
-  }
-
-  private synchronized void handleData(Buffer buffer) {
-    if (dataHandler != null) {
-      checkContext();
-      dataHandler.handle(buffer);
-    }
+      } else {
+        handleException(ar.cause());
+      }
+    });
   }
 
   private synchronized void handleEnd() {
-    dataHandler = null;
+    queue.handler(null);
     if (endHandler != null) {
       checkContext();
       endHandler.handle(null);
     }
   }
+
 
   private synchronized void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
