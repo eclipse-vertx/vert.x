@@ -400,11 +400,13 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with no headers.
    */
+  @Fluent
   HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler);
 
   /**
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
    */
+  @Fluent
   HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
 
   /**
