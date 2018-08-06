@@ -31,6 +31,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -72,6 +73,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private long bytesWritten;
   private int numPush;
   private boolean inHandler;
+  private NetSocket netSocket;
 
   public Http2ServerResponseImpl(Http2ServerConnection conn, VertxHttp2Stream stream, Object metric, boolean push, String contentEncoding, String host) {
 
@@ -368,10 +370,18 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     end((ByteBuf) null);
   }
 
-  void toNetSocket() {
+  NetSocket netSocket() {
     checkEnded();
-    checkSendHeaders(false);
-    handleEnded(false);
+    if (netSocket == null) {
+      statusCode = 200;
+      if (!checkSendHeaders(false)) {
+        throw new IllegalStateException("Response for CONNECT already sent");
+      }
+      ctx.flush();
+      handleEnded(false);
+      netSocket = conn.toNetSocket(stream);
+    }
+    return netSocket;
   }
 
   private void end(ByteBuf chunk) {

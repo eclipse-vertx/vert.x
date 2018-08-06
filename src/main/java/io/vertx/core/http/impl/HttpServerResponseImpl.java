@@ -29,6 +29,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.io.File;
@@ -74,6 +75,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
   private long bytesWritten;
+  private NetSocket netSocket;
 
   HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, DefaultHttpRequest request) {
     this.vertx = vertx;
@@ -589,6 +591,23 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       return this;
     }
+  }
+
+  NetSocket netSocket(boolean isConnect) {
+    checkValid();
+    if (netSocket == null) {
+      if (isConnect) {
+        if (headWritten) {
+          throw new IllegalStateException("Response for CONNECT already sent");
+        }
+        status = HttpResponseStatus.OK;
+        prepareHeaders(-1);
+        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
+      }
+      written = true;
+      netSocket = conn.createNetSocket();
+    }
+    return netSocket;
   }
 
   @Override

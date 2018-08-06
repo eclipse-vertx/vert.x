@@ -344,7 +344,12 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       protected void handleMessage(NetSocketImpl connection, Object msg) {
         connection.handleMessageReceived(msg);
       }
-    }.removeHandler(sock -> connectionMap.remove(chctx.channel())));
+    }.removeHandler(sock -> {
+      if (metrics != null) {
+        metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
+      }
+      connectionMap.remove(chctx.channel());
+    }));
 
     // check if the encoder can be removed yet or not.
     chctx.pipeline().remove("httpEncoder");

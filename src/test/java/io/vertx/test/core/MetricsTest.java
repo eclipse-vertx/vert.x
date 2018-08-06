@@ -741,9 +741,8 @@ public class MetricsTest extends VertxTestBase {
       assertNotNull(serverMetric);
       req.response().setStatusCode(200);
       req.response().setStatusMessage("Connection established");
-      req.response().end();
       NetSocket so = req.netSocket();
-      so.handler(req.netSocket()::write);
+      so.handler(so::write);
       so.closeHandler(v -> {
         assertNull(metrics.getMetric(req));
         assertFalse(serverMetric.socket.connected.get());

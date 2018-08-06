@@ -22,9 +22,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HeadersAdaptor;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
+import io.vertx.core.streams.Pump;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -4346,6 +4345,100 @@ public abstract class HttpTest extends HttpTestBase {
         });
       });
     });
+    await();
+  }
+
+  @Test
+  public void testHttpConnect() {
+    Buffer buffer = TestUtils.randomBuffer(128);
+    Buffer received = Buffer.buffer();
+    CompletableFuture<Void> closeSocket = new CompletableFuture<>();
+    vertx.createNetServer(new NetServerOptions().setPort(1235)).connectHandler(socket -> {
+      socket.handler(socket::write);
+      closeSocket.thenAccept(v -> {
+        socket.close();
+      });
+    }).listen(onSuccess(netServer -> {
+      server.requestHandler(req -> {
+        vertx.createNetClient(new NetClientOptions()).connect(netServer.actualPort(), "localhost", onSuccess(dst -> {
+
+          req.response().setStatusCode(200);
+          req.response().setStatusMessage("Connection established");
+
+          // Now create a NetSocket
+          NetSocket src = req.netSocket();
+
+          // Create pumps which echo stuff
+          Pump.pump(src, dst).start();
+          Pump.pump(dst, src).start();
+          dst.closeHandler(v -> {
+            src.close();
+          });
+        }));
+      });
+      server.listen(onSuccess(s -> {
+        client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+          assertEquals(200, resp.statusCode());
+          NetSocket socket = resp.netSocket();
+          socket.handler(buff -> {
+            received.appendBuffer(buff);
+            if (received.length() == buffer.length()) {
+              closeSocket.complete(null);
+            }
+          });
+          socket.closeHandler(v -> {
+            assertEquals(buffer, received);
+            testComplete();
+          });
+          socket.write(buffer);
+        }).sendHead();
+      }));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttpInvalidConnectResponseEnded() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().end();
+      try {
+        req.netSocket();
+        fail();
+      } catch (IllegalStateException e) {
+        complete();
+      }
+    });
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(200, resp.statusCode());
+        complete();
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttpInvalidConnectResponseChunked() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write("some-chunk");
+      try {
+        req.netSocket();
+        fail();
+      } catch (IllegalStateException e) {
+        complete();
+      }
+    });
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(200, resp.statusCode());
+        complete();
+      }).end();
+    }));
+
     await();
   }
 

@@ -120,7 +120,6 @@ public class HttpProxy extends TestProxyBase {
           netClient.connect(port, host, result -> {
             if (result.succeeded()) {
               NetSocket clientSocket = result.result();
-              serverSocket.write("HTTP/1.0 200 Connection established\n\n");
               serverSocket.closeHandler(v -> clientSocket.close());
               clientSocket.closeHandler(v -> serverSocket.close());
               Pump.pump(serverSocket, clientSocket).start();

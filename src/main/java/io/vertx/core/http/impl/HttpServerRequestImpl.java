@@ -78,7 +78,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private MultiMap headers;
   private String absoluteURI;
 
-  private NetSocket netSocket;
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
   private MultiMap attributes;
@@ -396,10 +395,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public NetSocket netSocket() {
-    if (netSocket == null) {
-      netSocket = conn.createNetSocket();
+    synchronized (conn) {
+      return response.netSocket(method() == io.vertx.core.http.HttpMethod.CONNECT);
     }
-    return netSocket;
   }
 
   @Override

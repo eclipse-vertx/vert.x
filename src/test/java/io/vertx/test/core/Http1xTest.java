@@ -1888,45 +1888,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testHttpConnect() {
-    Buffer buffer = TestUtils.randomBuffer(128);
-    Buffer received = Buffer.buffer();
-    vertx.createNetServer(new NetServerOptions().setPort(1235)).connectHandler(socket -> {
-      socket.handler(socket::write);
-    }).listen(onSuccess(netServer -> {
-      server.requestHandler(req -> {
-        vertx.createNetClient(new NetClientOptions()).connect(netServer.actualPort(), "localhost", onSuccess(socket -> {
-          req.response().setStatusCode(200);
-          req.response().setStatusMessage("Connection established");
-          req.response().end();
-
-          // Create pumps which echo stuff
-          Pump.pump(req.netSocket(), socket).start();
-          Pump.pump(socket, req.netSocket()).start();
-          req.netSocket().closeHandler(v -> socket.close());
-        }));
-      });
-      server.listen(onSuccess(s -> {
-        client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-          assertEquals(200, resp.statusCode());
-          NetSocket socket = resp.netSocket();
-          socket.handler(buff -> {
-            received.appendBuffer(buff);
-            if (received.length() == buffer.length()) {
-              netServer.close();
-              assertEquals(buffer, received);
-              testComplete();
-            }
-          });
-          socket.write(buffer);
-        }).end();
-      }));
-    }));
-
-    await();
-  }
-
-  @Test
   public void testRequestsTimeoutInQueue() {
 
     server.requestHandler(req -> {

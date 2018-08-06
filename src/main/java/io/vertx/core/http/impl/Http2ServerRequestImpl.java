@@ -80,9 +80,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private Handler<Throwable> exceptionHandler;
   private Handler<HttpFrame> customFrameHandler;
 
-  private NetSocket netSocket;
-
-
   public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable) {
     super(conn, stream, writable);
@@ -409,12 +406,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   public NetSocket netSocket() {
     synchronized (conn) {
-      checkEnded();
-      if (netSocket == null) {
-        response.toNetSocket();
-        netSocket = conn.toNetSocket(this);
-      }
-      return netSocket;
+      return response.netSocket();
     }
   }
 

@@ -214,14 +214,35 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
 
   /**
    * Get a net socket for the underlying connection of this request.
-   * <p>
-   * USE THIS WITH CAUTION!
-   * <p>
-   * Once you have called this method, you must handle writing to the connection yourself using the net socket,
-   * the server request instance will no longer be usable as normal.
-   * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol.
+   * <p/>
+   * This method must be called before the server response is ended.
+   * <p/>
+   * With {@code CONNECT} requests, a {@code 200} response is sent with no {@code content-length} header set
+   * before returning the socket.
+   * <p/>
+   * <pre>
+   * server.requestHandler(req -> {
+   *   if (req.method() == HttpMethod.CONNECT) {
+   *     // Send a 200 response to accept the connect
+   *     NetSocket socket = req.netSocket();
+   *     socket.handler(buff -> {
+   *       socket.write(buff);
+   *     });
+   *   }
+   *   ...
+   * });
+   * </pre>
+   * <p/>
+   * For other HTTP/1 requests once you have called this method, you must handle writing to the connection yourself using
+   * the net socket, the server request instance will no longer be usable as normal. USE THIS WITH CAUTION! Writing to the socket directly if you don't know what you're
+   * doing can easily break the HTTP protocol.
+   * <p/>
+   * With HTTP/2, a {@code 200} response is always sent with no {@code content-length} header set before returning the socket
+   * like in the {@code CONNECT} case above.
+   * <p/>
    *
    * @return the net socket
+   * @throws IllegalStateException when the socket can't be created
    */
   @CacheReturn
   NetSocket netSocket();

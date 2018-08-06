@@ -278,7 +278,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                     }
                   } else {
                     HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
-                    handler.context.executeFromIO(v -> handler.handler.exceptionHandler.handle(future.cause()));
+                    handler.context.executeFromIO(v -> {
+                      handler.handler.exceptionHandler.handle(future.cause());
+                    });
                   }
                 });
               } else {
