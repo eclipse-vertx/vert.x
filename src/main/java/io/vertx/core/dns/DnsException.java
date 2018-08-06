@@ -11,6 +11,7 @@
 
 package io.vertx.core.dns;
 
+import io.vertx.core.impl.NoStackTraceThrowable;
 import java.util.Objects;
 
 /**
@@ -19,11 +20,13 @@ import java.util.Objects;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class DnsException extends Exception {
+public final class DnsException extends NoStackTraceThrowable {
 
+  private static final String ERROR_MESSAGE_PREFIX = "DNS query error occurred: ";
   private DnsResponseCode code;
 
   public DnsException(DnsResponseCode code) {
+    super(ERROR_MESSAGE_PREFIX + code);
     Objects.requireNonNull(code, "code");
     this.code = code;
   }
