@@ -57,7 +57,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private Handler<Message<T>> discardHandler;
   private int maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
   private final Queue<Message<T>> pending = new ArrayDeque<>(8);
-  private boolean paused;
+  private long demand = Long.MAX_VALUE;
   private Object metric;
 
   public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
@@ -179,7 +179,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   public void handle(Message<T> message) {
     Handler<Message<T>> theHandler;
     synchronized (this) {
-      if (paused) {
+      if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {
@@ -236,13 +236,16 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   private synchronized void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!pending.isEmpty()) {
+    if (!pending.isEmpty() && demand > 0L) {
       handlerContext.runOnContext(v -> {
         Message<T> message;
         Handler<Message<T>> theHandler;
         synchronized (HandlerRegistration.this) {
-          if (paused || (message = pending.poll()) == null) {
+          if (demand == 0L || (message = pending.poll()) == null) {
             return;
+          }
+          if (demand != Long.MAX_VALUE) {
+            demand--;
           }
           theHandler = handler;
         }
@@ -282,16 +285,25 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   @Override
   public synchronized MessageConsumer<T> pause() {
-    if (!paused) {
-      paused = true;
-    }
+    demand = 0L;
     return this;
   }
 
   @Override
   public synchronized MessageConsumer<T> resume() {
-    if (paused) {
-      paused = false;
+    return fetch(Long.MAX_VALUE);
+  }
+
+  @Override
+  public MessageConsumer<T> fetch(long amount) {
+    if (amount < 0) {
+      throw new IllegalArgumentException();
+    }
+    demand += amount;
+    if (demand < 0L) {
+      demand = Long.MAX_VALUE;
+    }
+    if (demand > 0L) {
       checkNextTick();
     }
     return this;

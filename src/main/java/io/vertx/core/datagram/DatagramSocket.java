@@ -209,6 +209,9 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   DatagramSocket resume();
 
   @Override
+  DatagramSocket fetch(long amount);
+
+  @Override
   DatagramSocket endHandler(Handler<Void> endHandler);
 
   @Override

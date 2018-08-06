@@ -13,9 +13,11 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.concurrent.TimeoutException;
 
@@ -40,6 +42,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long lastDataReceived;
   protected Throwable exceptionOccurred;
   private Object metric;
+  private boolean paused;
+  private HttpClientResponseImpl response;
 
   HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port, String uri) {
     this.client = client;
@@ -135,6 +139,29 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handleResponse(HttpClientResponseImpl resp) {
+    synchronized (this) {
+      response = resp;
+    }
+    checkHandleResponse();
+  }
+
+  private void checkHandleResponse() {
+    HttpClientResponseImpl resp;
+    synchronized (this) {
+      if (response != null) {
+        if (paused) {
+          return;
+        }
+        resp = response;
+        response = null;
+      } else {
+        return;
+      }
+    }
+    doHandleResponse(resp);
+  }
+
+  private synchronized void doHandleResponse(HttpClientResponseImpl resp) {
     long timeoutMS;
     synchronized (this) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
@@ -192,5 +219,35 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     if (currentTimeoutTimerId != -1) {
       lastDataReceived = System.currentTimeMillis();
     }
+  }
+
+  @Override
+  public HttpClientRequest pause() {
+    paused = true;
+    return this;
+  }
+
+  @Override
+  public HttpClientRequest resume() {
+    synchronized (this) {
+      if (paused) {
+        paused = false;
+      } else {
+        return this;
+      }
+    }
+    checkHandleResponse();
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest fetch(long amount) {
+    if (amount < 0L) {
+      throw new IllegalArgumentException();
+    }
+    if (amount > 0L) {
+      resume();
+    }
+    return this;
   }
 }

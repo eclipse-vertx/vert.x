@@ -49,6 +49,7 @@ interface HttpClientStream {
   boolean isNotWritable();
   void doPause();
   void doResume();
+  void doFetch(long amount);
 
   void reset(long code);
   void beginRequest(HttpClientRequestImpl req);

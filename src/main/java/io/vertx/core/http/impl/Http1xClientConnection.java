@@ -41,12 +41,13 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.queue.Queue;
 
 import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Map;
-import java.util.Queue;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -169,8 +170,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     private boolean requestEnded;
     private boolean responseEnded;
     private boolean reset;
-    private Buffer pausedChunk;
-    private boolean paused;
+    private Queue<Buffer> queue;
     private MultiMap trailers;
     private StreamImpl next;
 
@@ -178,6 +178,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       this.conn = conn;
       this.fut = Future.<HttpClientStream>future().setHandler(handler);
       this.id = id;
+      this.queue = Queue.queue(conn.context, 0);
     }
 
     private void append(StreamImpl s) {
@@ -277,27 +278,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       conn.writeToChannel(request);
     }
 
-    private void handleChunk(Buffer buff) {
-      HttpClientResponseImpl r;
-      synchronized (conn) {
-        if (paused) {
-          if (pausedChunk == null) {
-            pausedChunk = buff.copy();
-          } else {
-            pausedChunk.appendBuffer(buff);
-          }
-          return;
-        } else {
-          if (pausedChunk != null) {
-            buff = pausedChunk.appendBuffer(buff);
-            pausedChunk = null;
-          }
-        }
-        r = response;
-      }
-      if (r != null) {
-        r.handleChunk(buff);
-      }
+    private boolean handleChunk(Buffer buff) {
+      return queue.add(buff);
     }
 
     @Override
@@ -330,47 +312,17 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public void doPause() {
-      synchronized (conn) {
-        if (paused) {
-          return;
-        }
-        paused = true;
-        conn.doPause();
-      }
+      queue.pause();
+    }
+
+    @Override
+    public void doFetch(long amount) {
+      queue.take(amount);
     }
 
     @Override
     public void doResume() {
-      synchronized (conn) {
-        if (!paused) {
-          return;
-        }
-        paused = false;
-      }
-      conn.getContext().runOnContext(v -> {
-        HttpClientResponseImpl resp;
-        Buffer chunk;
-        MultiMap mm;
-        synchronized (conn) {
-          if (paused) {
-            return;
-          }
-          if (conn.responseInProgress == this) {
-            conn.doResume();
-          }
-          if (pausedChunk == null) {
-            return;
-          }
-          chunk = pausedChunk;
-          resp = response;
-          mm = responseEnded ? trailers : null;
-          pausedChunk = null;
-        }
-        resp.handleChunk(chunk);
-        if (mm != null) {
-          resp.handleEnd(mm);
-        }
-      });
+      queue.resume();
     }
 
     @Override
@@ -472,7 +424,19 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           }
         }
       }
-      return response = new HttpClientResponseImpl(request, version, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
+      response = new HttpClientResponseImpl(request, version, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
+      queue.handler(buf -> response.handleChunk(buf));
+      queue.emptyHandler(v -> {
+        if (responseEnded) {
+          response.handleEnd(trailers);
+        }
+      });
+      queue.writableHandler(v -> {
+        if (!responseEnded) {
+          conn.doResume();
+        }
+      });
+      return response;
     }
 
     private boolean endResponse(LastHttpContent trailer) {
@@ -487,10 +451,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           }
         }
         trailers = new HeadersAdaptor(trailer.trailingHeaders());
-        if (pausedChunk == null) {
-          if (response != null) {
-            response.handleEnd(trailers);
-          }
+        boolean paused = queue.isPaused();
+        if (queue.isEmpty()) {
+          response.handleEnd(trailers);
         }
         responseEnded = true;
         conn.close |= !conn.options.isKeepAlive();
@@ -585,7 +548,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       resp = responseInProgress;
     }
     if (resp != null) {
-      resp.handleChunk(buff);
+      if (!resp.handleChunk(buff)) {
+        doPause();
+      }
     }
   }
 
@@ -689,7 +654,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     private final boolean supportsContinuation;
     private final Handler<WebSocket> wsConnect;
     private final ContextInternal context;
-    private final Queue<Object> buffered = new ArrayDeque<>();
+    private final Deque<Object> buffered = new ArrayDeque<>();
     private FullHttpResponse response;
     private boolean handshaking = true;
 
@@ -733,7 +698,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
               try {
                 handshakeComplete(ctx, response);
                 chctx.pipeline().remove(HandshakeInboundHandler.this);
-                for (; ; ) {
+                for (;;) {
                   Object m = buffered.poll();
                   if (m == null) {
                     break;
