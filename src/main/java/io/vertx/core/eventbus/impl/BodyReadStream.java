@@ -52,6 +52,12 @@ public class BodyReadStream<T> implements ReadStream<T> {
   }
 
   @Override
+  public ReadStream<T> fetch(long amount) {
+    delegate.fetch(amount);
+    return this;
+  }
+
+  @Override
   public ReadStream<T> resume() {
     delegate.resume();
     return this;

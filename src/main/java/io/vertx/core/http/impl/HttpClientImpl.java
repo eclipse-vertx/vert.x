@@ -1137,6 +1137,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     public ReadStream<WebSocket> resume() {
       return this;
     }
+
+    @Override
+    public ReadStream<WebSocket> fetch(long amount) {
+      return this;
+    }
   }
 
   @Override

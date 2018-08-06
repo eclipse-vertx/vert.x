@@ -25,11 +25,15 @@ import org.junit.internal.ArrayComparisonFailure;
 import org.junit.rules.TestName;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -594,6 +598,10 @@ public class AsyncTestBase {
 
   public static void waitUntil(BooleanSupplier supplier) {
     waitUntil(supplier, 10000);
+  }
+
+  public static <T> void waitUntilEquals(T value, Supplier<T> supplier) {
+    waitUntil(() -> Objects.equals(value, supplier.get()), 10000);
   }
 
   public static void assertWaitUntil(BooleanSupplier supplier, long timeout) {

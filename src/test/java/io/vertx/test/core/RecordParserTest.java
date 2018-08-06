@@ -17,18 +17,13 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -296,6 +291,10 @@ public class RecordParserTest {
         return this;
       }
       @Override
+      public ReadStream<Buffer> fetch(long amount) {
+        throw new UnsupportedOperationException();
+      }
+      @Override
       public ReadStream<Buffer> pause() {
         paused.set(true);
         return this;
@@ -314,15 +313,16 @@ public class RecordParserTest {
     RecordParser parser = RecordParser.newDelimited("\r\n", original);
     AtomicInteger ends = new AtomicInteger();
     parser.endHandler(v -> ends.incrementAndGet());
-    List<String> records = new ArrayList<>();
+    Deque<String> records = new ArrayDeque<>();
     parser.handler(record -> records.add(record.toString()));
     assertFalse(paused.get());
-    parser.pause();
-    assertTrue(paused.get());
-    parser.resume();
-    assertFalse(paused.get());
     eventHandler.get().handle(Buffer.buffer("first\r\nsecond\r\nthird"));
-    assertEquals(Arrays.asList("first", "second"), records);
+    assertEquals("first", records.poll());
+    assertEquals("second", records.poll());
+    assertNull(records.poll());
+    eventHandler.get().handle(Buffer.buffer("\r\n"));
+    assertEquals("third", records.poll());
+    assertNull(records.poll());
     assertEquals(0, ends.get());
     Throwable cause = new Throwable();
     exceptionHandler.get().handle(cause);
@@ -330,8 +330,22 @@ public class RecordParserTest {
     parser.exceptionHandler(failures::add);
     exceptionHandler.get().handle(cause);
     assertEquals(Collections.singletonList(cause), failures);
+
+    assertFalse(paused.get());
+    parser.pause();
+    assertFalse(paused.get());
+    int count = 0;
+    do {
+      eventHandler.get().handle(Buffer.buffer("item-" + count++ + "\r\n"));
+    } while (!paused.get());
+    assertNull(records.poll());
+    parser.resume();
+    for (int i = 0;i < count;i++) {
+      assertEquals("item-" + i, records.poll());
+    }
+    assertNull(records.poll());
+
     endHandler.get().handle(null);
-    assertEquals(Arrays.asList("first", "second"), records);
     assertEquals(1, ends.get());
   }
 }

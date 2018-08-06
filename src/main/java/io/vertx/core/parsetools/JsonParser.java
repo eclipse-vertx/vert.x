@@ -106,6 +106,9 @@ public interface JsonParser extends Handler<Buffer>, ReadStream<JsonEvent> {
   @Override
   JsonParser resume();
 
+  @Override
+  JsonParser fetch(long amount);
+
   @Fluent
   JsonParser endHandler(Handler<Void> endHandler);
 
