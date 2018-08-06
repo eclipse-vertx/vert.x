@@ -1212,8 +1212,71 @@ public class FileSystemTest extends VertxTestBase {
     await();
   }
 
+  enum ReadStrategy {
+
+    NONE {
+      @Override void init(ReadStream<Buffer> stream) { }
+      @Override void handle(ReadStream<Buffer> stream) { }
+    },
+
+    FLOWING {
+      @Override
+      void init(ReadStream<Buffer> stream) {
+        flowing.set(true);
+      }
+
+      @Override
+      void handle(ReadStream<Buffer> stream) {
+        assert flowing.getAndSet(false);
+        stream.pause();
+        Vertx.currentContext().owner().setTimer(1, id -> {
+          assert !flowing.getAndSet(true);
+          stream.resume();
+        });
+      }
+    },
+
+    FETCH {
+      @Override
+      void init(ReadStream<Buffer> stream) {
+        fetching.set(true);
+        stream.pause();
+        stream.fetch(1);
+      }
+      @Override
+      void handle(ReadStream<Buffer> stream) {
+        assert fetching.getAndSet(false);
+        Vertx.currentContext().owner().setTimer(1, id -> {
+          assert !fetching.getAndSet(true);
+          stream.fetch(1);
+        });
+      }
+    };
+
+    final static AtomicBoolean flowing = new AtomicBoolean();
+    final static AtomicBoolean fetching = new AtomicBoolean();
+
+    abstract void init(ReadStream<Buffer> stream);
+    abstract void handle(ReadStream<Buffer> stream);
+
+  }
+
   @Test
   public void testReadStream() throws Exception {
+    testReadStream(ReadStrategy.NONE);
+  }
+
+  @Test
+  public void testReadStreamFlowing() throws Exception {
+    testReadStream(ReadStrategy.FLOWING);
+  }
+
+  @Test
+  public void testReadStreamFetch() throws Exception {
+    testReadStream(ReadStrategy.FETCH);
+  }
+
+  private void testReadStream(ReadStrategy strategy) throws Exception {
     String fileName = "some-file.dat";
     int chunkSize = 1000;
     int chunks = 10;
@@ -1222,8 +1285,12 @@ public class FileSystemTest extends VertxTestBase {
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         ReadStream<Buffer> rs = ar.result();
+        strategy.init(rs);
         Buffer buff = Buffer.buffer();
-        rs.handler(buff::appendBuffer);
+        rs.handler(chunk -> {
+          buff.appendBuffer(chunk);
+          strategy.handle(rs);
+        });
         rs.exceptionHandler(t -> fail(t.getMessage()));
         rs.endHandler(v -> {
           ar.result().close(ar2 -> {

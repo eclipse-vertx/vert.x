@@ -68,6 +68,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.streams.ReadStream;
 
 import java.io.File;
 import java.io.IOException;
@@ -914,20 +915,22 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private final long delay;
     private final boolean periodic;
 
-    private boolean paused;
     private Long id;
     private Handler<Long> handler;
     private Handler<Void> endHandler;
+    private long demand;
 
     public TimeoutStreamImpl(long delay, boolean periodic) {
       this.delay = delay;
       this.periodic = periodic;
+      this.demand = Long.MAX_VALUE;
     }
 
     @Override
     public synchronized void handle(Long event) {
       try {
-        if (!paused) {
+        if (demand > 0) {
+          demand--;
           handler.handle(event);
         }
       } finally {
@@ -935,6 +938,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
           endHandler.handle(null);
         }
       }
+    }
+
+    @Override
+    public synchronized TimeoutStream fetch(long amount) {
+      demand += amount;
+      if (demand < 0) {
+        demand = Long.MAX_VALUE;
+      }
+      return this;
     }
 
     @Override
@@ -965,13 +977,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     @Override
     public synchronized TimeoutStream pause() {
-      this.paused = true;
+      demand = 0;
       return this;
     }
 
     @Override
     public synchronized TimeoutStream resume() {
-      this.paused = false;
+      demand = Long.MAX_VALUE;
       return this;
     }
 

@@ -18,6 +18,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -45,6 +46,9 @@ public interface ServerWebSocket extends WebSocketBase {
 
   @Override
   ServerWebSocket resume();
+
+  @Override
+  ServerWebSocket fetch(long amount);
 
   @Override
   ServerWebSocket endHandler(Handler<Void> endHandler);

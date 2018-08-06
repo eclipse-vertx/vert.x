@@ -215,6 +215,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     }
 
     @Override
+    public void doFetch(long amount) {
+      stream.doFetch(amount);
+    }
+
+    @Override
     public void reset(long code) {
       stream.reset(code);
     }

@@ -19,6 +19,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -164,6 +165,12 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientResponse resume() {
     stream.doResume();
+    return this;
+  }
+
+  @Override
+  public HttpClientResponse fetch(long amount) {
+    stream.doFetch(amount);
     return this;
   }
 

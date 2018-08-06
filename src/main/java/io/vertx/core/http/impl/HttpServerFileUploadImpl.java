@@ -18,7 +18,9 @@ import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.queue.Queue;
 import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.ReadStream;
 
 import java.nio.charset.Charset;
 
@@ -41,14 +43,12 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   private final String contentTransferEncoding;
   private final Charset charset;
 
-  private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private AsyncFile file;
   private Handler<Throwable> exceptionHandler;
 
   private long size;
-  private boolean paused;
-  private Buffer pauseBuff;
+  private Queue<Buffer> pending;
   private boolean complete;
   private boolean lazyCalculateSize;
 
@@ -63,6 +63,12 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
+    this.pending = Queue.<Buffer>queue()
+      .emptyHandler(v -> {
+        if (complete) {
+          handleComplete();
+        }
+      });
     if (size == 0) {
       lazyCalculateSize = true;
     }
@@ -99,31 +105,26 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public synchronized HttpServerFileUpload handler(Handler<Buffer> handler) {
-    this.dataHandler = handler;
+  public HttpServerFileUpload handler(Handler<Buffer> handler) {
+    pending.handler(handler);
     return this;
   }
 
   @Override
-  public synchronized HttpServerFileUpload pause() {
-    req.pause();
-    paused = true;
+  public HttpServerFileUpload pause() {
+    pending.pause();
     return this;
   }
 
   @Override
-  public synchronized HttpServerFileUpload resume() {
-    if (paused) {
-      req.resume();
-      paused = false;
-      if (pauseBuff != null) {
-        doReceiveData(pauseBuff);
-        pauseBuff = null;
-      }
-      if (complete) {
-        handleComplete();
-      }
-    }
+  public HttpServerFileUpload fetch(long amount) {
+    pending.resume();
+    return this;
+  }
+
+  @Override
+  public HttpServerFileUpload resume() {
+    pending.resume();
     return this;
   }
 
@@ -171,23 +172,16 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   synchronized void doReceiveData(Buffer data) {
-    if (!paused) {
-      if (dataHandler != null) {
-        dataHandler.handle(data);
-      }
-    } else {
-      if (pauseBuff == null) {
-        pauseBuff = Buffer.buffer();
-      }
-      pauseBuff.appendBuffer(data);
+    if (!pending.add(data)) {
+      req.pause();
     }
   }
 
   synchronized void complete() {
-    if (paused) {
-      complete = true;
-    } else {
+    if (pending.isEmpty()) {
       handleComplete();
+    } else {
+      complete = true;
     }
   }
 
