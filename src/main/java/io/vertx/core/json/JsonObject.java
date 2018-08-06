@@ -43,6 +43,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Create an instance from a string of JSON
    *
    * @param json  the string of JSON
+   * @throws DecodeException if the String is not valid JSON
    */
   public JsonObject(String json) {
     fromJson(json);
@@ -68,6 +69,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Create an instance from a buffer.
    *
    * @param buf  the buffer to create the instance from.
+   * @throws DecodeException if the {@link Buffer} contains invalid JSON
    */
   public JsonObject(Buffer buf) {
     fromBuffer(buf);
