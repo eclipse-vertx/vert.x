@@ -51,6 +51,9 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket resume();
 
   @Override
+  NetSocket fetch(long amount);
+
+  @Override
   NetSocket endHandler(Handler<Void> endHandler);
 
   @Override

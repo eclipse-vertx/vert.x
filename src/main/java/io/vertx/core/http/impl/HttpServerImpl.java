@@ -20,7 +20,6 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpRequestDecoder;
@@ -247,7 +246,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
             protected void initChannel(Channel ch) throws Exception {
-              if (requestStream.isPaused() || wsStream.isPaused()) {
+              if (!requestStream.accept() || !wsStream.accept()) {
                 ch.close();
                 return;
               }
@@ -862,7 +861,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private class HttpStreamHandler<C extends ReadStream<Buffer>> implements ReadStream<C> {
 
     private Handler<C> handler;
-    private boolean paused;
+    private long demand = Long.MAX_VALUE;
     private Handler<Void> endHandler;
 
     Handler<C> handler() {
@@ -871,9 +870,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
-    boolean isPaused() {
+    boolean accept() {
       synchronized (HttpServerImpl.this) {
-        return paused;
+        boolean accept = demand > 0L;
+        if (accept && demand != Long.MAX_VALUE) {
+          demand--;
+        }
+        return accept;
       }
     }
 
@@ -897,19 +900,26 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     public ReadStream pause() {
       synchronized (HttpServerImpl.this) {
-        if (!paused) {
-          paused = true;
-        }
+        demand = 0L;
         return this;
       }
     }
 
     @Override
+    public ReadStream fetch(long amount) {
+      if (amount > 0L) {
+        demand += amount;
+        if (demand < 0L) {
+          demand = Long.MAX_VALUE;
+        }
+      }
+      return this;
+    }
+
+    @Override
     public ReadStream resume() {
       synchronized (HttpServerImpl.this) {
-        if (paused) {
-          paused = false;
-        }
+        demand = Long.MAX_VALUE;
         return this;
       }
     }
