@@ -45,6 +45,9 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
   MessageConsumer<T> resume();
 
   @Override
+  MessageConsumer<T> fetch(long amount);
+
+  @Override
   MessageConsumer<T> endHandler(Handler<Void> endHandler);
 
   /**

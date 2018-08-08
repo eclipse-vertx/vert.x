@@ -135,6 +135,12 @@ public class PumpTest {
       return this;
     }
 
+    @Override
+    public ReadStream<T> fetch(long amount) {
+      // Pump only use request/pause
+      throw new UnsupportedOperationException();
+    }
+
     public FakeReadStream pause(Handler<Void> doneHandler) {
       pause();
       doneHandler.handle(null);

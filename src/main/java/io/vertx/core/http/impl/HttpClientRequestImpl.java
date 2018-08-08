@@ -29,6 +29,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
 import java.util.Objects;
@@ -101,16 +102,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     } else {
       respHandler = null;
     }
-    return this;
-  }
-
-  @Override
-  public HttpClientRequest pause() {
-    return this;
-  }
-
-  @Override
-  public HttpClientRequest resume() {
     return this;
   }
 
@@ -556,6 +547,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           @Override
           public HttpClientResponse handler(Handler<Buffer> handler) {
             resp.handler(handler);
+            return this;
+          }
+
+          @Override
+          public HttpClientResponse fetch(long amount) {
+            resp.fetch(amount);
             return this;
           }
 

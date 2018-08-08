@@ -226,6 +226,14 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   @Override
+  public HttpServerRequest fetch(long amount) {
+    synchronized (conn) {
+      doFetch(amount);
+    }
+    return this;
+  }
+
+  @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
