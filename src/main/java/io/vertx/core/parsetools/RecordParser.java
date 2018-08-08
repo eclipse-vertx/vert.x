@@ -209,6 +209,9 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
   RecordParser pause();
 
   @Override
+  RecordParser fetch(long amount);
+
+  @Override
   RecordParser resume();
 
   @Override

@@ -23,11 +23,11 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.queue.Queue;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -46,13 +46,13 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final String binaryHandlerID;
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
+  private final Queue<Buffer> pending;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
   private Object metric;
   private Handler<WebSocketFrameInternal> frameHandler;
   private Handler<Buffer> pongHandler;
-  private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
@@ -69,6 +69,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.conn = conn;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
+    this.pending = Queue.<Buffer>queue(conn.getContext());
+
+    pending.writableHandler(v -> {
+      conn.doResume();
+    });
   }
 
   void registerHandler(EventBus eventBus) {
@@ -260,8 +265,16 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void checkClosed() {
-    if (closed) {
-      throw new IllegalStateException("WebSocket is closed");
+    synchronized (conn) {
+      if (closed) {
+        throw new IllegalStateException("WebSocket is closed");
+      }
+    }
+  }
+
+  boolean isClosed() {
+    synchronized (conn) {
+      return closed;
     }
   }
 
@@ -269,8 +282,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     synchronized (conn) {
       if (frame.type() != FrameType.CLOSE) {
         conn.reportBytesRead(frame.length());
-        if (dataHandler != null) {
-          dataHandler.handle(frame.binaryData());
+        if (!pending.add(frame.binaryData())) {
+          conn.doPause();
         }
       }
       switch(frame.type()) {
@@ -467,7 +480,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       if (handler != null) {
         checkClosed();
       }
-      this.dataHandler = handler;
+      pending.handler(handler);
       return (S) this;
     }
   }
@@ -514,20 +527,26 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public S pause() {
-    synchronized (conn) {
-      checkClosed();
-      conn.doPause();
-      return (S) this;
+    if (!isClosed()) {
+      pending.pause();
     }
+    return (S) this;
   }
 
   @Override
   public S resume() {
-    synchronized (conn) {
-      checkClosed();
-      conn.doResume();
-      return (S) this;
+    if (!isClosed()) {
+      pending.resume();
     }
+    return (S) this;
+  }
+
+  @Override
+  public S fetch(long amount) {
+    if (!isClosed()) {
+      pending.take(amount);
+    }
+    return (S) this;
   }
 
   @Override

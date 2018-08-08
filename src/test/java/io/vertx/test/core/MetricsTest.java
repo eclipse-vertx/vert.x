@@ -958,31 +958,34 @@ public class MetricsTest extends VertxTestBase {
 
     int count = 100;
 
+    AtomicInteger msg = new AtomicInteger();
+
     Verticle worker = new AbstractVerticle() {
       @Override
       public void start(Future<Void> done) throws Exception {
         vertx.eventBus().localConsumer("message", d -> {
-              try {
-                Thread.sleep(10);
+            msg.incrementAndGet();
+            try {
+              Thread.sleep(10);
 
-                if (metrics.numberOfWaitingTasks() > 0) {
-                  hadWaitingQueue.set(true);
-                }
-                if (metrics.numberOfIdleThreads() > 0) {
-                  hadIdle.set(true);
-                }
-                if (metrics.numberOfRunningTasks() > 0) {
-                  hadRunning.set(true);
-                }
-
-                if (counter.incrementAndGet() == count) {
-                  testComplete();
-                }
-
-              } catch (InterruptedException e) {
-                Thread.currentThread().isInterrupted();
+              if (metrics.numberOfWaitingTasks() > 0) {
+                hadWaitingQueue.set(true);
               }
+              if (metrics.numberOfIdleThreads() > 0) {
+                hadIdle.set(true);
+              }
+              if (metrics.numberOfRunningTasks() > 0) {
+                hadRunning.set(true);
+              }
+
+              if (counter.incrementAndGet() == count) {
+                testComplete();
+              }
+
+            } catch (InterruptedException e) {
+              Thread.currentThread().isInterrupted();
             }
+          }
         );
         done.complete();
       }
@@ -995,8 +998,9 @@ public class MetricsTest extends VertxTestBase {
       }
     });
 
-    await();
-    waitUntil(() -> count + 1 == metrics.numberOfCompletedTasks());
+    assertWaitUntil(() -> count + 1 == metrics.numberOfCompletedTasks());
+
+
 
     // The verticle deployment is also executed on the worker thread pool
     assertEquals(count + 1, metrics.numberOfSubmittedTask());

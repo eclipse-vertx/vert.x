@@ -13,19 +13,21 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-
-import java.util.ArrayDeque;
+import io.vertx.core.queue.Queue;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
+
+  private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
 
   protected final C conn;
   protected final VertxInternal vertx;
@@ -33,10 +35,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final ChannelHandlerContext handlerContext;
   protected final Http2Stream stream;
 
-  private final ArrayDeque<Buffer> pending = new ArrayDeque<>(8);
-  private boolean paused;
-  private boolean ended;
-  private boolean sentCheck;
+  private Queue<Buffer> pending;
+  private int pendingBytes;
   private MultiMap trailers;
   private boolean writable;
 
@@ -47,31 +47,38 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.stream = stream;
     this.context = conn.getContext();
     this.writable = writable;
+    this.pending = Queue.queue(context, 5);
+
+    pending.writableHandler(v -> {
+      int numBytes = pendingBytes;
+      pendingBytes = 0;
+      conn.handler.consume(stream, numBytes);
+    });
+
+    pending.handler(this::handleData);
+    pending.emptyHandler(v -> {
+      if (trailers != null) {
+        handleEnd(trailers);
+      }
+    });
+
+    pending.resume();
   }
 
   void onResetRead(long code) {
     synchronized (conn) {
-      paused = false;
-      pending.clear();
+      // paused = false;
+      // pending.clear();
       handleReset(code);
     }
   }
 
   boolean onDataRead(Buffer data) {
-    synchronized (conn) {
-      if (!paused) {
-        if (pending.isEmpty()) {
-          handleData(data);
-          return true;
-        } else {
-          pending.add(data);
-          checkNextTick();
-        }
-      } else {
-        pending.add(data);
-      }
-      return false;
+    boolean read = pending.add(data);
+    if (!read) {
+      pendingBytes += data.length();
     }
+    return read;
   }
 
   void onWritabilityChanged() {
@@ -82,42 +89,15 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onEnd() {
-    onEnd(null);
+    onEnd(EMPTY);
   }
 
   void onEnd(MultiMap map) {
     synchronized (conn) {
       trailers = map;
-      ended = true;
       if (pending.isEmpty()) {
         handleEnd(trailers);
       }
-    }
-  }
-
-  /**
-   * Check if paused buffers must be handled to the reader, this must be called from event loop.
-   */
-  private void checkNextTick() {
-    if (!paused && pending.size() > 0 && !sentCheck) {
-      sentCheck = true;
-      context.runOnContext(v1 -> {
-        synchronized (conn) {
-          sentCheck = false;
-          if (!paused) {
-            Buffer buf = pending.poll();
-            conn.handler.consume(stream, buf.length());
-            handleData(buf);
-            if (pending.isEmpty()) {
-              if (ended) {
-                handleEnd(trailers);
-              }
-            } else {
-              checkNextTick();
-            }
-          }
-        }
-      });
     }
   }
 
@@ -126,12 +106,15 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   public void doPause() {
-    paused = true;
+    pending.pause();
   }
 
   public void doResume() {
-    paused = false;
-    checkNextTick();
+    pending.resume();
+  }
+
+  public void doFetch(long amount) {
+    pending.take(amount);
   }
 
   boolean isNotWritable() {

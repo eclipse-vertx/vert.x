@@ -56,6 +56,9 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Override
   AsyncFile exceptionHandler(Handler<Throwable> handler);
 
+  @Override
+  AsyncFile fetch(long amount);
+
   /**
    * Close the file, see {@link #close()}.
    */

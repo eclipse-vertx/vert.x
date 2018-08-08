@@ -33,6 +33,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.metrics.*;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 import java.net.InetAddress;
@@ -59,6 +60,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
+  private long demand;
 
   private DatagramSocketImpl(VertxInternal vertx, DatagramSocketOptions options) {
     Transport transport = vertx.transport();
@@ -79,6 +81,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;
     this.channel = channel;
     this.context = context;
+    this.demand = Long.MAX_VALUE;
   }
 
   private void init() {
@@ -216,14 +219,37 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @SuppressWarnings("unchecked")
-  public DatagramSocket pause() {
-    channel.config().setAutoRead(false);
+  public synchronized DatagramSocket pause() {
+    if (demand > 0L) {
+      demand = 0L;
+      channel.config().setAutoRead(false);
+    }
     return this;
   }
 
   @SuppressWarnings("unchecked")
-  public DatagramSocket resume() {
-    channel.config().setAutoRead(true);
+  public synchronized DatagramSocket resume() {
+    if (demand == 0L) {
+      demand = Long.MAX_VALUE;
+      channel.config().setAutoRead(true);
+    }
+    return this;
+  }
+
+  @Override
+  public synchronized DatagramSocket fetch(long amount) {
+    if (amount < 0L) {
+      throw new IllegalArgumentException("Illegal fetch " + amount);
+    }
+    if (amount > 0L) {
+      if (demand == 0L) {
+        channel.config().setAutoRead(true);
+      }
+      demand += amount;
+      if (demand < 0L) {
+        demand = Long.MAX_VALUE;
+      }
+    }
     return this;
   }
 
@@ -370,8 +396,13 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         if (metrics != null) {
           metrics.bytesRead(null, packet.sender(), packet.data().length());
         }
-        if (packetHandler != null) {
-          packetHandler.handle(packet);
+        if (demand > 0L) {
+          if (demand != Long.MAX_VALUE) {
+            demand--;
+          }
+          if (packetHandler != null) {
+            packetHandler.handle(packet);
+          }
         }
       }
     }
