@@ -127,6 +127,11 @@ public final class HttpHeaders {
   public static final CharSequence CONTENT_BASE = createOptimized(HttpHeaderNames.CONTENT_BASE.toString());
 
   /**
+   * Content-Disposition header name
+   */
+  public static final CharSequence CONTENT_DISPOSITION = createOptimized(HttpHeaderNames.CONTENT_DISPOSITION.toString());
+  
+  /**
    * Content-Encoding header name
    */
   public static final CharSequence CONTENT_ENCODING = createOptimized(HttpHeaderNames.CONTENT_ENCODING.toString());
