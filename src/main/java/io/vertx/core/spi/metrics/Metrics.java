@@ -30,12 +30,15 @@ public interface Metrics {
    * @deprecated the SPI metrics should instead return a {@code null} object to signal that metrics is not provided
    */
   @Deprecated
-  boolean isEnabled();
+  default boolean isEnabled() {
+    return true;
+  }
 
   /**
    * Used to close out the metrics, for example when an http server/client has been closed.<p/>
    *
    * No specific thread and context can be expected when this method is called.
    */
-  void close();
+  default void close() {
+  }
 }

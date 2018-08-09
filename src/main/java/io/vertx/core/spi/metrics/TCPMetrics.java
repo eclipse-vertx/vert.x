@@ -45,7 +45,9 @@ public interface TCPMetrics<S> extends NetworkMetrics<S> {
    * @param remoteName the remote name of the client
    * @return the socket metric
    */
-  S connected(SocketAddress remoteAddress, String remoteName);
+  default S connected(SocketAddress remoteAddress, String remoteName) {
+    return null;
+  }
 
   /**
    * Called when a client has disconnected, which is applicable for TCP connections.
@@ -53,6 +55,7 @@ public interface TCPMetrics<S> extends NetworkMetrics<S> {
    * @param socketMetric the socket metric
    * @param remoteAddress the remote address of the client
    */
-  void disconnected(S socketMetric, SocketAddress remoteAddress);
+  default void disconnected(S socketMetric, SocketAddress remoteAddress) {
+  }
 
 }

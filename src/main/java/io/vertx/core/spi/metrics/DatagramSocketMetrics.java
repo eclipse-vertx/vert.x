@@ -41,6 +41,7 @@ public interface DatagramSocketMetrics extends NetworkMetrics<Void> {
    * @param localName
    * @param localAddress the local address the net socket is listening on.
    */
-  void listening(String localName, SocketAddress localAddress);
+  default void listening(String localName, SocketAddress localAddress) {
+  }
 
 }

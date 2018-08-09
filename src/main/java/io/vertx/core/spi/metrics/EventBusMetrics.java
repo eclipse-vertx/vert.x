@@ -28,7 +28,9 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param address the address used to register the handler
    * @param repliedAddress null when the handler is not a reply handler, otherwise the address this handler is replying to
    */
-  H handlerRegistered(String address, String repliedAddress);
+  default H handlerRegistered(String address, String repliedAddress) {
+    return null;
+  }
 
   /**
    * Called when a handler has been unregistered from the event bus.<p/>
@@ -37,7 +39,8 @@ public interface EventBusMetrics<H> extends Metrics {
    *
    * @param handler the unregistered handler
    */
-  void handlerUnregistered(H handler);
+  default void handlerUnregistered(H handler) {
+  }
 
   /**
    * Schedule a message for processing.<p/>
@@ -47,7 +50,8 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param handler the handler processing the message
    * @param local when the scheduled message is local
    */
-  void scheduleMessage(H handler, boolean local);
+  default void scheduleMessage(H handler, boolean local) {
+  }
 
   /**
    * Called when an handler begin to process a message.<p/>
@@ -65,7 +69,8 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param handler the handler processing the message
    * @param local when the handled message is local
    */
-  void beginHandleMessage(H handler, boolean local);
+  default void beginHandleMessage(H handler, boolean local) {
+  }
 
   /**
    * Called when an handler finish to process a message.<p/>
@@ -83,7 +88,8 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param handler the handler processing the message
    * @param failure an optional failure thrown by handler
    */
-  void endHandleMessage(H handler, Throwable failure);
+  default void endHandleMessage(H handler, Throwable failure) {
+  }
 
   /**
    * Called when a message has been sent or published.<p/>
@@ -95,7 +101,8 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param local the message is processed locally
    * @param remote the message is sent on the cluster
    */
-  void messageSent(String address, boolean publish, boolean local, boolean remote);
+  default void messageSent(String address, boolean publish, boolean local, boolean remote) {
+  }
 
   /**
    * Called when a message is received.<p/>
@@ -107,7 +114,8 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param local true when the message is received locally
    * @param handlers the number of handlers that process the message
    */
-  void messageReceived(String address, boolean publish, boolean local, int handlers);
+  default void messageReceived(String address, boolean publish, boolean local, int handlers) {
+  }
 
   /**
    * A message has been sent over the network.<p/>
@@ -117,7 +125,8 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param address the message address
    * @param numberOfBytes the number of bytes written
    */
-  void messageWritten(String address, int numberOfBytes);
+  default void messageWritten(String address, int numberOfBytes) {
+  }
 
   /**
    * A message has been received from the network.<p/>
@@ -127,7 +136,8 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param address the message address
    * @param numberOfBytes the number of bytes read
    */
-  void messageRead(String address, int numberOfBytes);
+  default void messageRead(String address, int numberOfBytes) {
+  }
 
   /**
    * Called whenever the event bus delivers a reply failure to the sender/publisher, the
@@ -138,5 +148,6 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param address the address
    * @param failure the {@link io.vertx.core.eventbus.ReplyFailure}
    */
-  void replyFailure(String address, ReplyFailure failure);
+  default void replyFailure(String address, ReplyFailure failure) {
+  }
 }

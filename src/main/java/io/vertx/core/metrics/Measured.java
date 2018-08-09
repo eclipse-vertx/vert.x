@@ -22,8 +22,13 @@ public interface Measured {
   /**
    * Whether the metrics are enabled for this measured object
    *
-   * @return true if the metrics are enabled
+   * @implSpec
+   * The default implementation returns {@code false}
+   *
+   * @return {@code true} if metrics are enabled
    */
-  boolean isMetricsEnabled();
+  default boolean isMetricsEnabled() {
+    return false;
+  }
 
 }

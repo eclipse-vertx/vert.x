@@ -39,7 +39,8 @@ public interface VertxMetrics extends Metrics, Measured {
    *
    * @param verticle the verticle which was deployed
    */
-  void verticleDeployed(Verticle verticle);
+  default void verticleDeployed(Verticle verticle) {
+  }
 
   /**
    * Called when a verticle is undeployed in Vert.x .<p/>
@@ -49,7 +50,8 @@ public interface VertxMetrics extends Metrics, Measured {
    *
    * @param verticle the verticle which was undeployed
    */
-  void verticleUndeployed(Verticle verticle);
+  default void verticleUndeployed(Verticle verticle) {
+  }
 
   /**
    * Called when a timer is created
@@ -58,7 +60,8 @@ public interface VertxMetrics extends Metrics, Measured {
    *
    * @param id the id of the timer
    */
-  void timerCreated(long id);
+  default void timerCreated(long id) {
+  }
 
   /**
    * Called when a timer has ended (setTimer) or has been cancelled.<p/>
@@ -68,7 +71,8 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param id        the id of the timer
    * @param cancelled if the timer was cancelled by the user
    */
-  void timerEnded(long id, boolean cancelled);
+  default void timerEnded(long id, boolean cancelled) {
+  }
 
   /**
    * Provides the event bus metrics SPI when the event bus is created.<p/>
@@ -79,7 +83,9 @@ public interface VertxMetrics extends Metrics, Measured {
    *
    * @return the event bus metrics SPI or {@code null} when metrics are disabled
    */
-  EventBusMetrics createEventBusMetrics();
+  default EventBusMetrics createEventBusMetrics() {
+    return null;
+  }
 
   /**
    * Provides the http server metrics SPI when an http server is created.<p/>
@@ -95,7 +101,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the http server metrics SPI or {@code null} when metrics are disabled
    */
-  HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress);
+  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+    return null;
+  }
 
   /**
    * Provides the http client metrics SPI when an http client has been created.<p/>
@@ -105,7 +113,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link HttpClient}
    * @return the http client metrics SPI or {@code null} when metrics are disabled
    */
-  HttpClientMetrics<?, ?, ?, ?, ?> createHttpClientMetrics(HttpClientOptions options);
+  default HttpClientMetrics<?, ?, ?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
+    return null;
+  }
 
   /**
    * Provides the net server metrics SPI when a net server is created.<p/>
@@ -121,7 +131,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-  TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress);
+  default TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+    return null;
+  }
 
   /**
    * Provides the net client metrics SPI when a net client is created.<p/>
@@ -131,7 +143,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link NetClient}
    * @return the net client metrics SPI or {@code null} when metrics are disabled
    */
-  TCPMetrics<?> createNetClientMetrics(NetClientOptions options);
+  default TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
+    return null;
+  }
 
   /**
    * Provides the datagram/udp metrics SPI when a datagram socket is created.<p/>
@@ -141,7 +155,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link DatagramSocket}
    * @return the datagram metrics SPI or {@code null} when metrics are disabled
    */
-  DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options);
+  default DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options) {
+    return null;
+  }
 
   /**
    * Provides the pool metrics SPI.
@@ -151,5 +167,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param maxPoolSize the pool max size, or -1 if the number cannot be determined
    * @return the thread pool metrics SPI or {@code null} when metrics are disabled
    */
-  PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize);
+  default PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
+    return null;
+  }
 }
