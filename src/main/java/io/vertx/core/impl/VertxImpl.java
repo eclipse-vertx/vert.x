@@ -536,12 +536,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     closeHooks.run(ar -> {
       deploymentManager.undeployAll(ar1 -> {
-        this.executeBlocking(fut -> {
-          if (haManager() != null) {
-            haManager().stop();
-          }
-          fut.complete();
-        }, false, ar2 -> {
+        HAManager haManager = haManager();
+        Future<Void> haFuture = Future.future();
+        if (haManager != null) {
+          this.executeBlocking(fut -> {
+            haManager.stop();
+            fut.complete();
+          }, false, haFuture);
+        } else {
+          haFuture.complete();
+        }
+        haFuture.setHandler(ar2 -> {
           addressResolver.close(ar3 -> {
             eventBus.close(ar4 -> {
               closeClusterManager(ar5 -> {
@@ -683,18 +688,21 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
-    this.executeBlocking(fut -> {
-      if (haManager() != null && haManager().isEnabled()) {
-        haManager().removeFromHA(deploymentID);
-      }
-      fut.complete();
-    }, false, ar -> {
-      if (ar.succeeded()) {
-        deploymentManager.undeployVerticle(deploymentID, completionHandler);
-      } else {
-        completionHandler.handle(Future.failedFuture(ar.cause()));
-      }
-    });
+    HAManager haManager = haManager();
+    Future<Void> haFuture = Future.future();
+    if (haManager != null && haManager.isEnabled()) {
+      this.executeBlocking(fut -> {
+        haManager.removeFromHA(deploymentID);
+        fut.complete();
+      }, false, haFuture);
+    } else {
+      haFuture.complete();
+    }
+    haFuture.compose(v -> {
+      Future<Void> deploymentFuture = Future.future();
+      deploymentManager.undeployVerticle(deploymentID, deploymentFuture);
+      return deploymentFuture;
+    }).setHandler(completionHandler);
   }
 
   @Override
