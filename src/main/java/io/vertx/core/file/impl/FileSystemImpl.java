@@ -57,7 +57,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- *
  * This class is thread-safe
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -353,6 +352,40 @@ public class FileSystemImpl implements FileSystem {
     return fsPropsInternal(path, null).perform();
   }
 
+
+  @Override
+  public FileSystem createTempDirectory(String prefix, Handler<AsyncResult<String>> handler) {
+    createTempDirectoryInternal(null, prefix, null, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempDirectoryBlocking(String prefix) {
+    return createTempDirectoryInternal(null, prefix, null, null).perform();
+  }
+
+  @Override
+  public FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler) {
+    createTempDirectoryInternal(null, prefix, perms, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempDirectoryBlocking(String prefix, String perms) {
+    return createTempDirectoryInternal(null, prefix, perms, null).perform();
+  }
+
+  @Override
+  public FileSystem createTempDirectory(String dir, String prefix, String perms, Handler<AsyncResult<String>> handler) {
+    createTempDirectoryInternal(dir, prefix, perms, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempDirectoryBlocking(String dir, String prefix, String perms) {
+    return createTempDirectoryInternal(dir, prefix, perms, null).perform();
+  }
+
   private BlockingAction<Void> copyInternal(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(from);
     Objects.requireNonNull(to);
@@ -632,6 +665,7 @@ public class FileSystemImpl implements FileSystem {
           Files.delete(file);
           return FileVisitResult.CONTINUE;
         }
+
         public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
           if (e == null) {
             Files.delete(dir);
@@ -682,6 +716,34 @@ public class FileSystemImpl implements FileSystem {
           throw new FileSystemException(e);
         }
         return null;
+      }
+    };
+  }
+
+  protected BlockingAction<String> createTempDirectoryInternal(String path, String prefix, String perms, Handler<AsyncResult<String>> handler) {
+    FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+    return new BlockingAction<String>(handler) {
+      public String perform() {
+        try {
+          Path tmpDir;
+          if (path != null) {
+            Path dir = vertx.resolveFile(path).toPath();
+            if (attrs != null) {
+              tmpDir = Files.createTempDirectory(dir, prefix, attrs);
+            } else {
+              tmpDir = Files.createTempDirectory(dir, prefix);
+            }
+          } else {
+            if (attrs != null) {
+              tmpDir = Files.createTempDirectory(prefix, attrs);
+            } else {
+              tmpDir = Files.createTempDirectory(prefix);
+            }
+          }
+          return tmpDir.toFile().getCanonicalPath();
+        } catch (IOException e) {
+          throw new FileSystemException(e);
+        }
       }
     };
   }
@@ -802,10 +864,31 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
+  protected BlockingAction<String> createTempFileInternal(String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
+    FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+    return new BlockingAction<String>(handler) {
+      public String perform() {
+        try {
+          Path tmpFile;
+          if (attrs != null) {
+            tmpFile = Files.createTempFile(prefix, suffix, attrs);
+          } else {
+            tmpFile = Files.createTempFile(prefix, suffix);
+          }
+          return tmpFile.toFile().getCanonicalPath();
+        } catch (IOException e) {
+          throw new FileSystemException(e);
+        }
+      }
+    };
+  }
+
+
   private BlockingAction<Boolean> existsInternal(String path, Handler<AsyncResult<Boolean>> handler) {
     Objects.requireNonNull(path);
     return new BlockingAction<Boolean>(handler) {
       File file = vertx.resolveFile(path);
+
       public Boolean perform() {
         return file.exists();
       }
@@ -830,12 +913,14 @@ public class FileSystemImpl implements FileSystem {
   protected abstract class BlockingAction<T> implements Handler<Future<T>> {
 
     private final Handler<AsyncResult<T>> handler;
+
     protected final ContextInternal context;
 
     public BlockingAction(Handler<AsyncResult<T>> handler) {
       this.handler = handler;
       this.context = vertx.getOrCreateContext();
     }
+
     /**
      * Run the blocking action using a thread from the worker pool.
      */
