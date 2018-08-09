@@ -77,6 +77,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public synchronized Handler<HttpClientResponse> handler() {
+    return respHandler;
+  }
+
+  @Override
   public HttpConnection connection() {
     return conn;
   }

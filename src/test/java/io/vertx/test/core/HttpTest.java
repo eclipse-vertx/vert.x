@@ -3805,6 +3805,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest setWriteQueueMaxSize(int maxSize) { throw new UnsupportedOperationException(); }
       public HttpClientRequest drainHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest handler(Handler<HttpClientResponse> handler) { throw new UnsupportedOperationException(); }
+      public Handler<HttpClientResponse> handler() { throw new UnsupportedOperationException(); }
       public HttpClientRequest pause() { throw new UnsupportedOperationException(); }
       public HttpClientRequest resume() { throw new UnsupportedOperationException(); }
       public HttpClientRequest endHandler(Handler<Void> endHandler) { throw new UnsupportedOperationException(); }

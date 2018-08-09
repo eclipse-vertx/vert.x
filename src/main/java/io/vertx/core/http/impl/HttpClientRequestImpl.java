@@ -105,6 +105,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
+  public synchronized Handler<HttpClientResponse> handler() {
+    return respHandler;
+  }
+
+  @Override
   public HttpClientRequest pause() {
     return this;
   }
