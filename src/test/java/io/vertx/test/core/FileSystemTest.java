@@ -17,13 +17,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
-import io.vertx.core.file.CopyOptions;
-import io.vertx.core.file.FileProps;
+import io.vertx.core.file.*;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.FileSystemException;
-import io.vertx.core.file.FileSystemProps;
-import io.vertx.core.file.OpenOptions;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
@@ -38,19 +34,8 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.GroupPrincipal;
-import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -61,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.test.core.TestUtils.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -87,116 +72,79 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testIllegalArguments() throws Exception {
-    assertNullPointerException(() -> vertx.fileSystem().copy(null, "ignored", h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().copy("ignored", null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().copy(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().copy("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().copyBlocking(null, "ignored"));
     assertNullPointerException(() -> vertx.fileSystem().copyBlocking("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().copyRecursive(null, "ignored", true, h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().copyRecursive("ignored", null, true, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursive(null, "ignored", true, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursive("ignored", null, true, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().copyRecursiveBlocking(null, "ignored", true));
     assertNullPointerException(() -> vertx.fileSystem().copyRecursiveBlocking("ignored", null, true));
-    assertNullPointerException(() -> vertx.fileSystem().move(null, "ignored", h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().move("ignored", null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().move(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().move("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().moveBlocking(null, "ignored"));
     assertNullPointerException(() -> vertx.fileSystem().moveBlocking("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().truncate(null, 0, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().truncate(null, 0, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().truncateBlocking(null, 0));
-    assertNullPointerException(() -> vertx.fileSystem().chmod(null, "ignored", h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().chmod("ignored", null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().chmod(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().chmod("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().chmodBlocking(null, "ignored"));
     assertNullPointerException(() -> vertx.fileSystem().chmodBlocking("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().chmodRecursive(null, "ignored", "ignored", h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().chmodRecursive("ignored", null, "ignored", h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().chmodRecursive(null, "ignored", "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().chmodRecursive("ignored", null, "ignored", h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().chmodRecursiveBlocking(null, "ignored", "ignored"));
     assertNullPointerException(() -> vertx.fileSystem().chmodRecursiveBlocking("ignored", null, "ignored"));
-    assertNullPointerException(() -> vertx.fileSystem().chown(null, "ignored", "ignored", h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().chown(null, "ignored", "ignored", h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().chownBlocking(null, "ignored", "ignored"));
-    assertNullPointerException(() -> vertx.fileSystem().props(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().props(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().propsBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().lprops(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().lprops(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().lpropsBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().link(null, "ignored", h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().link("ignored", null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().link(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().link("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().linkBlocking(null, "ignored"));
     assertNullPointerException(() -> vertx.fileSystem().linkBlocking("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().symlink(null, "ignored", h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().symlink("ignored", null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().symlink(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().symlink("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().symlinkBlocking(null, "ignored"));
     assertNullPointerException(() -> vertx.fileSystem().symlinkBlocking("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().unlink(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().unlink(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().unlinkBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().readSymlink(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().readSymlink(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().readSymlinkBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().delete(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().delete(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().deleteBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().deleteRecursive(null, true, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().deleteRecursive(null, true, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().deleteRecursiveBlocking(null, true));
-    assertNullPointerException(() -> vertx.fileSystem().mkdir(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().mkdir(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().mkdirBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().mkdir(null, "ignored", h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().mkdir(null, "ignored", h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().mkdirBlocking(null, "ignored"));
-    assertNullPointerException(() -> vertx.fileSystem().mkdirs(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().mkdirs(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().mkdirsBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().mkdirs(null, "ignored", h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().mkdirs(null, "ignored", h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().mkdirsBlocking(null, "ignored"));
-    assertNullPointerException(() -> vertx.fileSystem().readDir(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().readDir(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().readDirBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().readDir(null, "ignored", h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().readDir(null, "ignored", h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().readDirBlocking(null, "ignored"));
-    assertNullPointerException(() -> vertx.fileSystem().readFile(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().readFile(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().readFileBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().writeFile(null, Buffer.buffer(), h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().writeFile("ignored", null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().writeFile(null, Buffer.buffer(), h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().writeFile("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().writeFileBlocking(null, Buffer.buffer()));
     assertNullPointerException(() -> vertx.fileSystem().writeFileBlocking("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().open(null, new OpenOptions(), h -> {
-    }));
-    assertNullPointerException(() -> vertx.fileSystem().open("ignored", null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().open(null, new OpenOptions(), h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().open("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().openBlocking(null, new OpenOptions()));
     assertNullPointerException(() -> vertx.fileSystem().openBlocking("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().createFile(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().createFile(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().createFileBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().createFile(null, "ignored", h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().createFile(null, "ignored", h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().createFileBlocking(null, "ignored"));
-    assertNullPointerException(() -> vertx.fileSystem().exists(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().exists(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().existsBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().fsProps(null, h -> {
-    }));
+    assertNullPointerException(() -> vertx.fileSystem().fsProps(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().fsPropsBlocking(null));
 
     String fileName = "some-file.dat";
@@ -206,22 +154,16 @@ public class FileSystemTest extends VertxTestBase {
     assertIllegalArgumentException(() -> asyncFile.setWriteQueueMaxSize(1));
     assertIllegalArgumentException(() -> asyncFile.setWriteQueueMaxSize(0));
     assertIllegalArgumentException(() -> asyncFile.setWriteQueueMaxSize(-1));
-    assertNullPointerException(() -> asyncFile.write(null, 0, h -> {
-    }));
+    assertNullPointerException(() -> asyncFile.write(null, 0, h -> {}));
     assertNullPointerException(() -> asyncFile.write(Buffer.buffer(), 0, null));
-    assertIllegalArgumentException(() -> asyncFile.write(Buffer.buffer(), -1, h -> {
-    }));
+    assertIllegalArgumentException(() -> asyncFile.write(Buffer.buffer(), -1, h -> {}));
 
-    assertNullPointerException(() -> asyncFile.read(null, 0, 0, 0, h -> {
-    }));
+    assertNullPointerException(() -> asyncFile.read(null, 0, 0, 0, h -> {}));
     assertNullPointerException(() -> asyncFile.read(Buffer.buffer(), 0, 0, 0, null));
 
-    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), -1, 0, 0, h -> {
-    }));
-    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), 0, -1, 0, h -> {
-    }));
-    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), 0, 0, -1, h -> {
-    }));
+    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), -1, 0, 0, h -> {}));
+    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), 0, -1, 0, h -> {}));
+    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), 0, 0, -1, h -> {}));
   }
 
   @Test
@@ -229,7 +171,7 @@ public class FileSystemTest extends VertxTestBase {
     String source = "foo.txt";
     String target = "bar.txt";
     createFileWithJunk(source, 100);
-    testCopy(source, target, false, true, v -> {
+    testCopy(source, target, false, true, v-> {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
     });
@@ -945,7 +887,7 @@ public class FileSystemTest extends VertxTestBase {
     testReadDir(dirName, null, true, fileNames -> {
       assertEquals(numFiles, fileNames.size());
       Set<String> fset = new HashSet<String>();
-      for (String fileName : fileNames) {
+      for (String fileName: fileNames) {
         fset.add(fileName);
       }
       File dir = new File(testDir + pathSep + dirName);
@@ -977,7 +919,7 @@ public class FileSystemTest extends VertxTestBase {
     testReadDir(dirName, "foo.+", true, fileNames -> {
       assertEquals(numFiles, fileNames.size());
       Set<String> fset = new HashSet<>();
-      for (String fileName : fileNames) {
+      for (String fileName: fileNames) {
         fset.add(fileName);
       }
       File dir = new File(testDir + pathSep + dirName);
@@ -1670,7 +1612,7 @@ public class FileSystemTest extends VertxTestBase {
     Path path = Paths.get(file.getCanonicalPath());
     Files.write(path, bytes);
 
-    setPerms(path, DEFAULT_FILE_PERMS);
+    setPerms( path, DEFAULT_FILE_PERMS );
   }
 
   private void deleteDir(File dir) {
@@ -1693,7 +1635,7 @@ public class FileSystemTest extends VertxTestBase {
     File dir = new File(testDir + pathSep + dirName);
     dir.mkdir();
 
-    setPerms(Paths.get(dir.getCanonicalPath()), DEFAULT_DIR_PERMS);
+    setPerms( Paths.get( dir.getCanonicalPath() ), DEFAULT_DIR_PERMS );
   }
 
   private long fileLength(String fileName) {
@@ -1704,8 +1646,9 @@ public class FileSystemTest extends VertxTestBase {
   private void setPerms(Path path, String perms) {
     if (Utils.isWindows() == false) {
       try {
-        Files.setPosixFilePermissions(path, PosixFilePermissions.fromString(perms));
-      } catch (IOException e) {
+        Files.setPosixFilePermissions( path, PosixFilePermissions.fromString(perms) );
+      }
+      catch(IOException e) {
         throw new RuntimeException(e.getMessage());
       }
     }
@@ -1716,7 +1659,7 @@ public class FileSystemTest extends VertxTestBase {
       Set<PosixFilePermission> perms = Files.getPosixFilePermissions(Paths.get(testDir + pathSep + fileName));
       return PosixFilePermissions.toString(perms);
     } catch (Exception e) {
-      throw new RuntimeException(e.getMessage(), e);
+      throw new RuntimeException(e.getMessage());
     }
   }
 
@@ -1945,7 +1888,6 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testCreateTempDirectoryWithDirectory() {
-    Assume.assumeFalse(Utils.isWindows());
     FileSystem fs = vertx.fileSystem();
     fs.createTempDirectory(testDir, "project", null, onSuccess(tempDirectory -> {
       Path path = Paths.get(tempDirectory);
@@ -1958,11 +1900,83 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testCreateTempDirectoryWithDirectoryBlocking() {
-    Assume.assumeFalse(Utils.isWindows());
     FileSystem fs = vertx.fileSystem();
     String tempDirectory = fs.createTempDirectoryBlocking(testDir, "project", null);
     Path path = Paths.get(tempDirectory);
     assertTrue(Files.exists(Paths.get(tempDirectory)));
     assertTrue(path.startsWith(testDir));
+  }
+
+
+  @Test
+  public void testCreateTempFile() {
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempFile("project", ".tmp", onSuccess(tempFile -> {
+      assertNotNull(tempFile);
+      assertTrue(Files.exists(Paths.get(tempFile)));
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testCreateTempFileBlocking() {
+    FileSystem fs = vertx.fileSystem();
+    String tempFile = fs.createTempFileBlocking("project", ".tmp");
+    assertNotNull(tempFile);
+    assertTrue(Files.exists(Paths.get(tempFile)));
+  }
+
+  @Test
+  public void testCreateTempFileWithDirectory() {
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempFile(testDir, "project", ".tmp", null, onSuccess(tempFile -> {
+      assertNotNull(tempFile);
+      Path path = Paths.get(tempFile);
+      assertTrue(Files.exists(path));
+      assertTrue(path.startsWith(testDir));
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testCreateTempFileWithDirectoryBlocking() {
+    FileSystem fs = vertx.fileSystem();
+    String tempFile = fs.createTempFileBlocking(testDir, "project", ".tmp", null);
+    assertNotNull(tempFile);
+    Path path = Paths.get(tempFile);
+    assertTrue(Files.exists(path));
+    assertTrue(path.startsWith(testDir));
+  }
+
+  @Test
+  public void testCreateTempFileWithPerms() {
+    Assume.assumeFalse(Utils.isWindows());
+
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempFile("project", ".tmp", DEFAULT_FILE_PERMS, onSuccess(tempFile -> {
+      Path path = Paths.get(tempFile);
+      assertTrue(Files.exists(path));
+      try {
+        String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
+        assertEquals(perms, DEFAULT_FILE_PERMS);
+      } catch (IOException e) {
+        fail(e);
+      }
+    }));
+  }
+
+
+  @Test
+  public void testCreateTempFileWithPermsBlocking() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+
+    FileSystem fs = vertx.fileSystem();
+    String tempFile = fs.createTempFileBlocking("project", ".tmp", DEFAULT_FILE_PERMS);
+    Path path = Paths.get(tempFile);
+    assertTrue(Files.exists(path));
+    String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
+    assertEquals(perms, DEFAULT_FILE_PERMS);
   }
 }
