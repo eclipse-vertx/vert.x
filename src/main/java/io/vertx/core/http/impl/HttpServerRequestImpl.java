@@ -152,7 +152,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     if (Metrics.METRICS_ENABLED) {
       reportRequestBegin();
     }
-    response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), conn, request);
+    response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }

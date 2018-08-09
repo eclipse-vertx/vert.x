@@ -31,6 +31,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.spi.metrics.Metrics;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -59,6 +60,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private final HttpVersion version;
   private final boolean keepAlive;
   private final boolean head;
+  private final Object requestMetric;
 
   private boolean headWritten;
   private boolean written;
@@ -77,12 +79,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private long bytesWritten;
   private NetSocket netSocket;
 
-  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, DefaultHttpRequest request) {
+  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, DefaultHttpRequest request, Object requestMetric) {
     this.vertx = vertx;
     this.conn = conn;
     this.version = request.protocolVersion();
     this.headers = new VertxHttpHeaders();
     this.status = HttpResponseStatus.OK;
+    this.requestMetric = requestMetric;
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
@@ -568,7 +571,16 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (headersEndHandler != null) {
       headersEndHandler.handle(null);
     }
+    if (Metrics.METRICS_ENABLED) {
+      reportResponseBegin();
+    }
     headWritten = true;
+  }
+
+  private void reportResponseBegin() {
+    if (conn.metrics != null) {
+      conn.metrics.responseBegin(requestMetric, this);
+    }
   }
 
   private HttpServerResponseImpl write(ByteBuf chunk) {

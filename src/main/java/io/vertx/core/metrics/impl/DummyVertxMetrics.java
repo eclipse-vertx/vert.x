@@ -169,6 +169,10 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
+    public void responseBegin(Void requestMetric, HttpServerResponse response) {
+    }
+
+    @Override
     public Void responsePushed(Void socketMetric, HttpMethod method, String uri, HttpServerResponse response) {
       return null;
     }

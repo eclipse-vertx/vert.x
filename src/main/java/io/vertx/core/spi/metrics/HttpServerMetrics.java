@@ -56,6 +56,14 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
   void requestReset(R requestMetric);
 
   /**
+   * Called when an http server response begins.
+   *
+   * @param requestMetric the request metric
+   * @param response the http server request
+   */
+  void responseBegin(R requestMetric, HttpServerResponse response);
+
+  /**
    * Called when an http server response is pushed.
    *
    * @param socketMetric the socket metric

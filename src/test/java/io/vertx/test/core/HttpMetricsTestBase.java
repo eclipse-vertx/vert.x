@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpMetricsTestBase extends HttpTestBase {
+public abstract class HttpMetricsTestBase extends HttpTestBase {
 
   private final HttpVersion protocol;
 
@@ -75,6 +75,7 @@ public class HttpMetricsTestBase extends HttpTestBase {
       serverMetric.set(serverMetrics.getMetric(req));
       assertNotNull(serverMetric.get());
       assertNotNull(serverMetric.get().socket);
+      assertNull(serverMetric.get().response.get());
       assertTrue(serverMetric.get().socket.connected.get());
       req.bodyHandler(buff -> {
         assertEquals(contentLength, buff.length());
@@ -88,6 +89,7 @@ public class HttpMetricsTestBase extends HttpTestBase {
             vertx.cancelTimer(timerID);
           } else {
             resp.write(chunk);
+            assertSame(serverMetric.get().response.get(), resp);
           }
         });
       });

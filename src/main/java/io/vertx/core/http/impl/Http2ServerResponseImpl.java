@@ -34,6 +34,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.Metrics;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -394,6 +395,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (!headWritten) {
       if (headersEndHandler != null) {
         headersEndHandler.handle(null);
+      }
+      if (Metrics.METRICS_ENABLED && metric != null) {
+        conn.metrics().responseBegin(metric, this);
       }
       headWritten = true;
       headers.status(Integer.toString(statusCode));

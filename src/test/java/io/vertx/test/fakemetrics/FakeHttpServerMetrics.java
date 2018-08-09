@@ -65,6 +65,11 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   }
 
   @Override
+  public void responseBegin(HttpServerMetric requestMetric, HttpServerResponse response) {
+    requestMetric.response.set(response);
+  }
+
+  @Override
   public void responseEnd(HttpServerMetric requestMetric, HttpServerResponse response) {
     requests.remove(requestMetric);
   }
