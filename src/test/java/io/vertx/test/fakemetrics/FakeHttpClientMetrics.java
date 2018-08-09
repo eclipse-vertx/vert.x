@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.junit.Assert.assertNotNull;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -127,6 +129,7 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
 
   @Override
   public void responseBegin(HttpClientMetric requestMetric, HttpClientResponse response) {
+    assertNotNull(response);
     requestMetric.responseBegin.incrementAndGet();
   }
 

@@ -447,6 +447,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       } else {
         throw new IllegalStateException("Unsupported HTTP version: " + resp.protocolVersion());
       }
+      response = new HttpClientResponseImpl(request, version, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
       if (conn.metrics != null) {
         conn.metrics.responseBegin(request.metric(), response);
       }
@@ -472,7 +473,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           }
         }
       }
-      return response = new HttpClientResponseImpl(request, version, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
+      return response;
     }
 
     private boolean endResponse(LastHttpContent trailer) {
