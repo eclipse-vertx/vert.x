@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -22,20 +22,15 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  *
@@ -103,7 +98,6 @@ public class HAManager {
 
   private static final Logger log = LoggerFactory.getLogger(HAManager.class);
 
-  private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
   private static final long QUORUM_CHECK_PERIOD = 1000;
 
   private final VertxInternal vertx;
@@ -125,16 +119,16 @@ public class HAManager {
   private volatile boolean killed;
   private Consumer<Set<String>> clusterViewChangedHandler;
 
-  public HAManager(VertxInternal vertx, DeploymentManager deploymentManager,
-                   ClusterManager clusterManager, int quorumSize, String group, boolean enabled) {
+  public HAManager(VertxInternal vertx, DeploymentManager deploymentManager, ClusterManager clusterManager,
+                   Map<String, String> clusterMap, int quorumSize, String group, boolean enabled) {
     this.vertx = vertx;
     this.deploymentManager = deploymentManager;
     this.clusterManager = clusterManager;
+    this.clusterMap = clusterMap;
     this.quorumSize = enabled ? quorumSize : 0;
     this.group = enabled ? group : "__DISABLED__";
     this.enabled = enabled;
     this.haInfo = new JsonObject().put("verticles", new JsonArray()).put("group", this.group);
-    this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
   }
 
@@ -204,7 +198,6 @@ public class HAManager {
   public void stop() {
     if (!stopped) {
       if (clusterManager.isActive()) {
-
         clusterMap.remove(nodeID);
       }
       vertx.cancelTimer(quorumTimerID);
@@ -271,16 +264,23 @@ public class HAManager {
 
   private void doDeployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
                                 final Handler<AsyncResult<String>> doneHandler) {
-    final Handler<AsyncResult<String>> wrappedHandler = asyncResult -> {
-      if (asyncResult.succeeded()) {
-        // Tell the other nodes of the cluster about the verticle for HA purposes
-        addToHA(asyncResult.result(), verticleName, deploymentOptions);
-      }
-      if (doneHandler != null) {
-        doneHandler.handle(asyncResult);
-      } else if (asyncResult.failed()) {
-        log.error("Failed to deploy verticle", asyncResult.cause());
-      }
+    final Handler<AsyncResult<String>> wrappedHandler = ar1 -> {
+      vertx.<String>executeBlocking(fut -> {
+        if (ar1.succeeded()) {
+          // Tell the other nodes of the cluster about the verticle for HA purposes
+          String deploymentID = ar1.result();
+          addToHA(deploymentID, verticleName, deploymentOptions);
+          fut.complete(deploymentID);
+        } else {
+          fut.fail(ar1.cause());
+        }
+      }, false, ar2 -> {
+        if (doneHandler != null) {
+          doneHandler.handle(ar2);
+        } else if (ar2.failed()) {
+          log.error("Failed to deploy verticle", ar2.cause());
+        }
+      });
     };
     deploymentManager.deployVerticle(verticleName, deploymentOptions, wrappedHandler);
   }
