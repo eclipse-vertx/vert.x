@@ -268,13 +268,14 @@ public class VerticleFactoryTest extends VertxTestBase {
       }
     }; ;
     vertx.registerVerticleFactory(fact);
-    vertx.runOnContext(v -> {
-      vertx.deployVerticle("resolve:someid", onFailure(err -> {
-        // Expected since we deploy a non multi-threaded worker verticle
-        assertEquals(IllegalArgumentException.class, err.getClass());
-        testComplete();
-      }));
-    });
+    // Without completion handler
+    vertx.deployVerticle("resolve:someid");
+    // With completion handler
+    vertx.deployVerticle("resolve:someid", onFailure(err -> {
+      // Expected since we deploy a non multi-threaded worker verticle
+      assertEquals(IllegalArgumentException.class, err.getClass());
+      testComplete();
+    }));
     await();
   }
 
