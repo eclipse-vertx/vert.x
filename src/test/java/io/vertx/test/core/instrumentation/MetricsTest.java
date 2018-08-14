@@ -10,7 +10,6 @@
  */package io.vertx.test.core.instrumentation;
 
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.metrics.MetricsOptions;
@@ -21,98 +20,53 @@ import io.vertx.core.spi.instrumentation.InstrumentationFactory;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.instrumentation.tracer.Scope;
+import io.vertx.test.core.instrumentation.tracer.Span;
+import io.vertx.test.core.instrumentation.tracer.Tracer;
+import java.util.List;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class MetricsTest extends VertxTestBase {
 
-  static class Span {
-
-    final int traceId;
-    final int parentId;
-    final int id;
-    private int nextChildId = 0;
-
-    private Span(int traceId, int parentId, int id) {
-      this.traceId = traceId;
-      this.parentId = parentId;
-      this.id = id;
-    }
-
-    synchronized Span createChild() {
-      return new Span(traceId, id, nextChildId++);
-    }
-
-    void encode(MultiMap map) {
-      map.set("span-trace-id", "" + traceId);
-      map.set("span-parent-id", "" + parentId);
-      map.set("span-id", "" + id);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      Span span = (Span) obj;
-      return span.traceId == traceId && span.parentId == parentId && span.id == id;
-    }
-
-    @Override
-    public String toString() {
-      return "Span[traceId=" + traceId + ",parentId=" + parentId + ",id=" + id + "]";
-    }
-
-    static Span decode(MultiMap map) {
-      String traceId = map.get("span-trace-id");
-      String spanId = map.get("span-id");
-      if (traceId != null && spanId != null) {
-        String spanParentId = map.get("span-parent-id");
-        if (spanParentId != null) {
-          return new Span(Integer.parseInt(traceId), Integer.parseInt(spanParentId), Integer.parseInt(spanId));
-        } else {
-          return new Span(Integer.parseInt(traceId), 0, Integer.parseInt(spanId));
-        }
-      }
-      return null;
-    }
-  }
 
   private List<Span> log = Collections.synchronizedList(new ArrayList<>());
 
-  private ThreadLocal<Span> currentSpan = new ThreadLocal<>();
-
   class Capture<T> implements Handler<T> {
 
+    final Tracer tracer;
     final Span span;
     final Handler<T> handler;
 
-
-    Capture(Span span, Handler<T> handler) {
-      this.span = span;
+    Capture(Tracer tracer, Handler<T> handler) {
+      this.tracer = tracer;
+      this.span = tracer.activeSpan();
       this.handler = handler;
     }
 
     @Override
     public void handle(T event) {
-      currentSpan.set(span);
+      Scope scope = tracer.activate(span);
       try {
         handler.handle(event);
       } finally {
-        currentSpan.set(null);
+        scope.close();
       }
     }
   }
+
+  private Tracer tracer = new Tracer();
 
   @Override
   public void setUp() throws Exception {
     InstrumentationFactory.setInstrumentation(new Instrumentation() {
       @Override
       public <T> Handler<T> captureContinuation(Handler<T> handler) {
-        Span current = currentSpan.get();
-        if (current != null) {
-          return new Capture<>(current, handler);
+        if (tracer.activeSpan() != null) {
+          return new Capture<>(tracer, handler);
         } else {
           return handler;
         }
@@ -135,16 +89,28 @@ public class MetricsTest extends VertxTestBase {
           return new HttpServerMetrics<Span, Void, Void>() {
             @Override
             public Span requestBegin(Void socketMetric, HttpServerRequest request) {
-              Span span = Span.decode(request.headers());
-              if (span != null) {
-                currentSpan.set(span);
-              } else {
-                currentSpan.set(null);
+              // Just for test purposes
+              // there should not be any active scope here
+              // the previous processing should close all scopes
+              if (tracer.activeSpan() != null) {
+                throw new RuntimeException();
               }
-              return span;
+
+              Span serverSpan = null;
+              Span parent = tracer.decode(request.headers());
+              if (parent != null) {
+                serverSpan = tracer.createChild(parent);
+              } else {
+                serverSpan = tracer.newTrace();
+              }
+              // TODO here it feels a bit weird, we create a scope but we do not close it in the responseBegin! a possible leak
+              // maybe pass a scope and close it in responseBegin
+              Scope scope = tracer.activate(serverSpan);
+              return serverSpan;
             }
             @Override
             public void responseBegin(Span span, HttpServerResponse response) {
+              span.finish();
               if (span != null) {
                 log.add(span);
               }
@@ -157,18 +123,16 @@ public class MetricsTest extends VertxTestBase {
             @Override
             public Span requestBegin(Void endpointMetric, Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
               // A bit hackish ?
-              Span span = null;
-              Handler<HttpClientResponse> handler = request.handler();
-              if (handler instanceof Capture) {
-                span = ((Capture)handler).span.createChild();
-              }
-              if (span != null) {
-                span.encode(request.headers());
-              }
+              Handler handler = request.handler();
+              Span span = handler instanceof Capture ?
+                tracer.createChild(((Capture)handler).span) :
+                tracer.newTrace() ;
+              tracer.encode(span, request.headers());
               return span;
             }
             @Override
             public void responseBegin(Span requestMetric, HttpClientResponse response) {
+              requestMetric.finish();
             }
           };
         }
@@ -187,8 +151,6 @@ public class MetricsTest extends VertxTestBase {
               req.response().end();
             });
           });
-          // Mess up with counter
-          currentSpan.set(null);
           break;
         }
         case "/2": {
@@ -205,16 +167,25 @@ public class MetricsTest extends VertxTestBase {
     awaitLatch(latch);
     HttpClientRequest req = client.get(8080, "localhost", "/1", resp -> {
       assertEquals(200, resp.statusCode());
+      List<Span> finishedSpans = tracer.getFinishedSpans();
+      // client request to /1, server request /1, client request /2, server request /2
+      assertEquals(4, finishedSpans.size());
+      assertOneTrace(finishedSpans);
       assertEquals(2, log.size());
-      assertEquals(new Span(0, 0, 0), log.get(0));
-      assertEquals(new Span(0, -1, 0), log.get(1));
+      assertEquals(tracer.createSpan(0, 0, 0), log.get(0));
+      assertEquals(tracer.createSpan(0, -1, 0), log.get(1));
 
       testComplete();
     });
-    new Span(0, -1, 0).encode(req.headers());
     req.end();
     await();
   }
 
+
+  void assertOneTrace(List<Span> spans) {
+    for (int i = 1; i < spans.size(); i++) {
+      assertEquals(spans.get(i - 1).traceId, spans.get(i).traceId);
+    }
+  }
 
 }
