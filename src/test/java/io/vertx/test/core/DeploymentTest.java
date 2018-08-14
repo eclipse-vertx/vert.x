@@ -34,13 +34,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  *
@@ -1381,34 +1376,64 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testDeploySupplier() throws Exception {
     JsonObject config = generateJSONObject();
-    Set<MyVerticle> myVerticles = new HashSet<>();
-    vertx.deployVerticle(() -> {
+    Set<MyVerticle> myVerticles = Collections.synchronizedSet(new HashSet<>());
+    Supplier<Verticle> supplier = () -> {
       MyVerticle myVerticle = new MyVerticle();
       myVerticles.add(myVerticle);
       return myVerticle;
-    }, new DeploymentOptions().setInstances(4).setConfig(config), onSuccess(deploymentId -> {
+    };
+    DeploymentOptions options = new DeploymentOptions().setInstances(4).setConfig(config);
+    Consumer<String> check = deploymentId -> {
       myVerticles.forEach(myVerticle -> {
         assertEquals(deploymentId, myVerticle.deploymentID);
         assertEquals(config, myVerticle.config);
         assertTrue(myVerticle.startCalled);
       });
+    };
+
+    // Without completion handler
+    vertx.deployVerticle(supplier, options);
+    assertWaitUntil(() -> vertx.deploymentIDs().size() == 1);
+    String id = vertx.deploymentIDs().iterator().next();
+    check.accept(id);
+    myVerticles.clear();
+    vertx.undeploy(id);
+    assertWaitUntil(() -> vertx.deploymentIDs().size() == 0);
+
+    // With completion handler
+    vertx.deployVerticle(supplier, options, onSuccess(deploymentId -> {
+      check.accept(deploymentId);
       testComplete();
     }));
     await();
   }
 
   @Test
-  public void testDeploySupplierNull() throws Exception {
-    vertx.deployVerticle(() -> null, new DeploymentOptions(), onFailure(t -> {
+  public void testDeploySupplierNull() {
+    Supplier<Verticle> supplier = () -> null;
+    DeploymentOptions options = new DeploymentOptions();
+    // Without completion handler
+    vertx.deployVerticle(supplier, options);
+    assertEquals(Collections.emptySet(), vertx.deploymentIDs());
+    // With completion handler
+    vertx.deployVerticle(supplier, options, onFailure(t -> {
+      assertEquals(Collections.emptySet(), vertx.deploymentIDs());
       testComplete();
     }));
     await();
   }
 
   @Test
-  public void testDeploySupplierDuplicate() throws Exception {
+  public void testDeploySupplierDuplicate() {
     MyVerticle myVerticle = new MyVerticle();
-    vertx.deployVerticle(() -> myVerticle, new DeploymentOptions().setInstances(2), onFailure(t -> {
+    Supplier<Verticle> supplier = () -> myVerticle;
+    DeploymentOptions options = new DeploymentOptions().setInstances(2);
+    // Without completion handler
+    vertx.deployVerticle(supplier, options);
+    assertEquals(Collections.emptySet(), vertx.deploymentIDs());
+    // With completion handler
+    vertx.deployVerticle(supplier, options, onFailure(t -> {
+      assertEquals(Collections.emptySet(), vertx.deploymentIDs());
       assertFalse(myVerticle.startCalled);
       testComplete();
     }));
@@ -1416,17 +1441,23 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testDeploySupplierThrowsException() throws Exception {
-    vertx.deployVerticle(() -> {
+  public void testDeploySupplierThrowsException() {
+    Supplier<Verticle> supplier = () -> {
       throw new RuntimeException("boum");
-    }, new DeploymentOptions().setInstances(2), onFailure(t -> {
+    };
+    // Without completion handler
+    vertx.deployVerticle(supplier, new DeploymentOptions());
+    assertEquals(Collections.emptySet(), vertx.deploymentIDs());
+    // With completion handler
+    vertx.deployVerticle(supplier, new DeploymentOptions().setInstances(2), onFailure(t -> {
+      assertEquals(Collections.emptySet(), vertx.deploymentIDs());
       testComplete();
     }));
     await();
   }
 
   @Test
-  public void testDeployClass() throws Exception {
+  public void testDeployClass() {
     JsonObject config = generateJSONObject();
     vertx.deployVerticle(ReferenceSavingMyVerticle.class, new DeploymentOptions().setInstances(4).setConfig(config), onSuccess(deploymentId -> {
       ReferenceSavingMyVerticle.myVerticles.forEach(myVerticle -> {

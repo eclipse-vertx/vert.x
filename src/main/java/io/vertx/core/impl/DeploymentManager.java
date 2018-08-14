@@ -102,17 +102,23 @@ public class DeploymentManager {
       try {
         verticle = verticleSupplier.get();
       } catch (Exception e) {
-        completionHandler.handle(Future.failedFuture(e));
+        if (completionHandler != null) {
+          completionHandler.handle(Future.failedFuture(e));
+        }
         return;
       }
       if (verticle == null) {
-        completionHandler.handle(Future.failedFuture("Supplied verticle is null"));
+        if (completionHandler != null) {
+          completionHandler.handle(Future.failedFuture("Supplied verticle is null"));
+        }
         return;
       }
       verticles.add(verticle);
     }
     if (verticles.size() != nbInstances) {
-      completionHandler.handle(Future.failedFuture("Same verticle supplied more than once"));
+      if (completionHandler != null) {
+        completionHandler.handle(Future.failedFuture("Same verticle supplied more than once"));
+      }
       return;
     }
     Verticle[] verticlesArray = verticles.toArray(new Verticle[verticles.size()]);
@@ -176,7 +182,9 @@ public class DeploymentManager {
             try {
               deployVerticle(resolvedName, options, completionHandler);
             } catch (Exception e) {
-              completionHandler.handle(Future.failedFuture(e));
+              if (completionHandler != null) {
+                completionHandler.handle(Future.failedFuture(e));
+              }
             }
             return;
           } else {
