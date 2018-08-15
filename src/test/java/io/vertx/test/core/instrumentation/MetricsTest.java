@@ -161,7 +161,10 @@ public class MetricsTest extends VertxTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
+    Span rootSpan = tracer.newTrace();
+    tracer.activate(rootSpan);
     HttpClientRequest req = client.get(8080, "localhost", "/1", resp -> {
+      assertEquals(rootSpan, tracer.activeSpan());
       assertEquals(200, resp.statusCode());
       List<Span> finishedSpans = tracer.getFinishedSpans();
       // client request to /1, server request /1, client request /2, server request /2
@@ -171,6 +174,7 @@ public class MetricsTest extends VertxTestBase {
     });
     req.end();
     await();
+    assertEquals(rootSpan, tracer.activeSpan());
   }
 
 
