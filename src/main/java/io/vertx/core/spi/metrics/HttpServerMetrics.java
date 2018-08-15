@@ -49,6 +49,9 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
     return null;
   }
 
+  default void afterRequestBegin(R span) {
+  }
+
   /**
    * Called when the http server request couldn't complete successfully, for instance the connection
    * was closed before the response was sent.

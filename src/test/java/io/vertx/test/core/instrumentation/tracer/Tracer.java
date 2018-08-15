@@ -43,7 +43,11 @@ public class Tracer {
   }
 
   public Scope activate(Span span) {
-    return new Scope(this, span);
+    Scope toRestore = currentSpan.get();
+    Scope active = new Scope(this, span, toRestore);
+    currentSpan.set(active);
+    span.currentScope = active;
+    return active;
   }
 
   public void encode(Span span, MultiMap map) {

@@ -109,6 +109,12 @@ public class MetricsTest extends VertxTestBase {
               return serverSpan;
             }
             @Override
+            public void afterRequestBegin(Span span) {
+              if (tracer.activeSpan() == span) {
+                span.scope().close();
+              }
+            }
+            @Override
             public void responseBegin(Span span, HttpServerResponse response) {
               span.finish();
               if (span != null) {
@@ -172,8 +178,6 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(4, finishedSpans.size());
       assertOneTrace(finishedSpans);
       assertEquals(2, log.size());
-      assertEquals(tracer.createSpan(0, 0, 0), log.get(0));
-      assertEquals(tracer.createSpan(0, -1, 0), log.get(1));
 
       testComplete();
     });

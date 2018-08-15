@@ -21,6 +21,7 @@ public class Span {
   public final int parentId;
   public final int id;
   final Tracer tracer;
+  Scope currentScope;
   private AtomicBoolean finished = new AtomicBoolean();
 
   Span(Tracer tracer, int traceId, int parentId, int id) {
@@ -28,6 +29,10 @@ public class Span {
     this.traceId = traceId;
     this.parentId = parentId;
     this.id = id;
+  }
+
+  public Scope scope() {
+    return currentScope;
   }
 
   public void finish() {

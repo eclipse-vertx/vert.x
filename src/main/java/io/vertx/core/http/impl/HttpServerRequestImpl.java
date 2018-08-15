@@ -157,6 +157,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       check100();
     }
     conn.requestHandler.handle(this);
+    if (Metrics.METRICS_ENABLED) {
+      reportAfterRequestBegin();
+    }
   }
 
   void appendRequest(HttpServerRequestImpl next) {
@@ -183,6 +186,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private void reportRequestBegin() {
     if (conn.metrics != null) {
       metric = conn.metrics.requestBegin(conn.metric(), this);
+    }
+  }
+
+  private void reportAfterRequestBegin() {
+    if (conn.metrics != null) {
+      conn.metrics.afterRequestBegin(metric);
     }
   }
 

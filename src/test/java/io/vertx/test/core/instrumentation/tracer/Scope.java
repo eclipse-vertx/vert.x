@@ -19,10 +19,10 @@ public class Scope {
   private Scope toRestore;
   private Tracer tracer;
 
-  public Scope(Tracer tracer, Span span) {
+  public Scope(Tracer tracer, Span span, Scope toRestore) {
     this.tracer = tracer;
     this.wrapped = span;
-    this.toRestore = tracer.currentSpan.get();
+    this.toRestore = toRestore;
   }
 
   public Span span() {
@@ -33,6 +33,7 @@ public class Scope {
     if (tracer.currentSpan.get() != this) {
       throw new RuntimeException("Closing scope which is not active");
     }
+    wrapped.currentScope = null;
     tracer.currentSpan.set(toRestore);
   }
 }
