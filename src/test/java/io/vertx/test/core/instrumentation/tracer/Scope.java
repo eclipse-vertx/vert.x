@@ -33,7 +33,6 @@ public class Scope {
     if (tracer.currentSpan.get() != this) {
       throw new RuntimeException("Closing scope which is not active");
     }
-    wrapped.currentScope = null;
     tracer.currentSpan.set(toRestore);
   }
 }

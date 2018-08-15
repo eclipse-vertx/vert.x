@@ -46,7 +46,6 @@ public class Tracer {
     Scope toRestore = currentSpan.get();
     Scope active = new Scope(this, span, toRestore);
     currentSpan.set(active);
-    span.currentScope = active;
     return active;
   }
 

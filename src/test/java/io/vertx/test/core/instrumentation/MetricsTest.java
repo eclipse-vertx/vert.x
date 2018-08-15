@@ -33,8 +33,6 @@ import java.util.concurrent.CountDownLatch;
 public class MetricsTest extends VertxTestBase {
 
 
-  private List<Span> log = Collections.synchronizedList(new ArrayList<>());
-
   class Capture<T> implements Handler<T> {
 
     final Tracer tracer;
@@ -80,15 +78,24 @@ public class MetricsTest extends VertxTestBase {
     super.setUp();
   }
 
+  static class TracingContext {
+    Span span;
+    Scope scope;
+    public TracingContext(Span span, Scope scope) {
+      this.span = span;
+      this.scope = scope;
+    }
+  }
+
   @Override
   protected VertxOptions getOptions() {
     return super.getOptions()
       .setMetricsOptions(new MetricsOptions().setFactory(options -> new DummyVertxMetrics() {
         @Override
-        public HttpServerMetrics<Span, Void, Void> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
-          return new HttpServerMetrics<Span, Void, Void>() {
+        public HttpServerMetrics<TracingContext, Void, Void> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+          return new HttpServerMetrics<TracingContext, Void, Void>() {
             @Override
-            public Span requestBegin(Void socketMetric, HttpServerRequest request) {
+            public TracingContext requestBegin(Void socketMetric, HttpServerRequest request) {
               // Just for test purposes
               // there should not be any active scope here
               // the previous processing should close all scopes
@@ -106,20 +113,17 @@ public class MetricsTest extends VertxTestBase {
               // TODO here it feels a bit weird, we create a scope but we do not close it in the responseBegin! a possible leak
               // maybe pass a scope and close it in responseBegin
               Scope scope = tracer.activate(serverSpan);
-              return serverSpan;
+              return new TracingContext(serverSpan, scope);
             }
             @Override
-            public void afterRequestBegin(Span span) {
-              if (tracer.activeSpan() == span) {
-                span.scope().close();
-              }
+            public void afterRequestBegin(TracingContext ctx) {
+              Scope scope = ctx.scope;
+              ctx.scope = null;
+              scope.close();
             }
             @Override
-            public void responseBegin(Span span, HttpServerResponse response) {
-              span.finish();
-              if (span != null) {
-                log.add(span);
-              }
+            public void responseBegin(TracingContext ctx, HttpServerResponse response) {
+              ctx.span.finish();
             }
           };
         }
@@ -177,8 +181,6 @@ public class MetricsTest extends VertxTestBase {
       // client request to /1, server request /1, client request /2, server request /2
       assertEquals(4, finishedSpans.size());
       assertOneTrace(finishedSpans);
-      assertEquals(2, log.size());
-
       testComplete();
     });
     req.end();
