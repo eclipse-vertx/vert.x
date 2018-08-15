@@ -148,18 +148,23 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  void handleBegin() {
-    if (Metrics.METRICS_ENABLED) {
-      reportRequestBegin();
+  void handleBeginMetrics() {
+    reportRequestBegin();
+    try {
+      handleBegin();
+    } finally {
+      if (Metrics.METRICS_ENABLED) {
+        reportAfterRequestBegin();
+      }
     }
+  }
+
+  void handleBegin() {
     response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
     conn.requestHandler.handle(this);
-    if (Metrics.METRICS_ENABLED) {
-      reportAfterRequestBegin();
-    }
   }
 
   void appendRequest(HttpServerRequestImpl next) {
@@ -178,7 +183,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     paused = false;
     boolean end = ended;
     ended = false;
-    handleBegin();
+    if (METRICS_ENABLED) {
+      handleBeginMetrics();
+    } else {
+      handleBegin();
+    }
     ended = end;
     checkNextTick();
   }

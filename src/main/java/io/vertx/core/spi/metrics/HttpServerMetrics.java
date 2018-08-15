@@ -49,7 +49,12 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
     return null;
   }
 
-  default void afterRequestBegin(R span) {
+  /**
+   * Called after the http server request handler has been called.
+   *
+   * @param requestMetric the request metric
+   */
+  default void afterRequestBegin(R requestMetric) {
   }
 
   /**
@@ -59,7 +64,6 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    * @param requestMetric the request metric
    */
   default void requestReset(R requestMetric) {
-
   }
 
   /**
