@@ -26,8 +26,6 @@ import io.vertx.test.core.instrumentation.tracer.Tracer;
 import java.util.List;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
 public class MetricsTest extends VertxTestBase {
@@ -78,24 +76,15 @@ public class MetricsTest extends VertxTestBase {
     super.setUp();
   }
 
-  static class TracingContext {
-    Span span;
-    Scope scope;
-    public TracingContext(Span span, Scope scope) {
-      this.span = span;
-      this.scope = scope;
-    }
-  }
-
   @Override
   protected VertxOptions getOptions() {
     return super.getOptions()
       .setMetricsOptions(new MetricsOptions().setFactory(options -> new DummyVertxMetrics() {
         @Override
-        public HttpServerMetrics<TracingContext, Void, Void> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
-          return new HttpServerMetrics<TracingContext, Void, Void>() {
+        public HttpServerMetrics<Scope, Void, Void> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+          return new HttpServerMetrics<Scope, Void, Void>() {
             @Override
-            public TracingContext requestBegin(Void socketMetric, HttpServerRequest request) {
+            public Scope requestBegin(Void socketMetric, HttpServerRequest request) {
               // Just for test purposes
               // there should not be any active scope here
               // the previous processing should close all scopes
@@ -112,18 +101,15 @@ public class MetricsTest extends VertxTestBase {
               }
               // TODO here it feels a bit weird, we create a scope but we do not close it in the responseBegin! a possible leak
               // maybe pass a scope and close it in responseBegin
-              Scope scope = tracer.activate(serverSpan);
-              return new TracingContext(serverSpan, scope);
+              return tracer.activate(serverSpan);
             }
             @Override
-            public void afterRequestBegin(TracingContext ctx) {
-              Scope scope = ctx.scope;
-              ctx.scope = null;
+            public void afterRequestBegin(Scope scope) {
               scope.close();
             }
             @Override
-            public void responseBegin(TracingContext ctx, HttpServerResponse response) {
-              ctx.span.finish();
+            public void responseBegin(Scope scope, HttpServerResponse response) {
+              scope.span().finish();
             }
           };
         }
