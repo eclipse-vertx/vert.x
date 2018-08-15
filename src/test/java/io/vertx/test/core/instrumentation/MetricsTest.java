@@ -140,6 +140,7 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     HttpClient client = vertx.createHttpClient();
     vertx.createHttpServer().requestHandler(req -> {
+      assertNotNull(tracer.activeSpan());
       switch (req.path()) {
         case "/1": {
           vertx.setTimer(10, id -> {
