@@ -11,6 +11,10 @@
 
 package io.vertx.test.core.instrumentation.tracer;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -22,12 +26,21 @@ public class Span {
   public final int id;
   final Tracer tracer;
   private AtomicBoolean finished = new AtomicBoolean();
+  private final Map<String, String> tags = new ConcurrentHashMap<>();
 
   Span(Tracer tracer, int traceId, int parentId, int id) {
     this.tracer = tracer;
     this.traceId = traceId;
     this.parentId = parentId;
     this.id = id;
+  }
+
+  public Map<String, String> getTags() {
+    return Collections.unmodifiableMap(tags);
+  }
+
+  public void addTag(String key, String value) {
+    tags.put(key, value);
   }
 
   public void finish() {
