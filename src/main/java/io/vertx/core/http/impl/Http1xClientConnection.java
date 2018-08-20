@@ -394,10 +394,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       HttpVersion version;
       if (resp.protocolVersion() == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
         version = io.vertx.core.http.HttpVersion.HTTP_1_0;
-      } else if (resp.protocolVersion() == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
-        version = io.vertx.core.http.HttpVersion.HTTP_1_1;
       } else {
-        throw new IllegalStateException("Unsupported HTTP version: " + resp.protocolVersion());
+        version = io.vertx.core.http.HttpVersion.HTTP_1_1;
       }
       response = new HttpClientResponseImpl(request, version, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
       if (conn.metrics != null) {
@@ -451,7 +449,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           }
         }
         trailers = new HeadersAdaptor(trailer.trailingHeaders());
-        boolean paused = queue.isPaused();
         if (queue.isEmpty()) {
           response.handleEnd(trailers);
         }
@@ -491,21 +488,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   }
 
   void handleMessage(HttpObject obj) {
-    DecoderResult result = obj.decoderResult();
-    if (result.isFailure()) {
-      StreamImpl stream;
-      synchronized (this) {
-        stream = responseInProgress;
-      }
-      Throwable cause = result.cause();
-      super.handleException(cause);
-      if (stream != null) {
-        stream.handleException(cause);
-      }
-      // Close the connection as Netty's HttpResponseDecoder will not try further processing
-      // see https://github.com/netty/netty/issues/3362
-      close();
-    } else if (obj instanceof HttpResponse) {
+    if (obj instanceof HttpResponse) {
       handleResponseBegin((HttpResponse) obj);
     } else if (obj instanceof HttpContent) {
       HttpContent chunk = (HttpContent) obj;

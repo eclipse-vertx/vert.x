@@ -13,7 +13,9 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.vertx.core.http.HttpVersion;
@@ -87,9 +89,28 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
     super.channelInactive(chctx);
   }
 
+  private Throwable validateMessage(Object msg) {
+    if (msg instanceof HttpObject) {
+      HttpObject obj = (HttpObject) msg;
+      DecoderResult result = obj.decoderResult();
+      if (result.isFailure()) {
+        return result.cause();
+      } else if (obj instanceof HttpResponse) {
+        io.netty.handler.codec.http.HttpVersion version = ((HttpResponse) obj).protocolVersion();
+        if (version != io.netty.handler.codec.http.HttpVersion.HTTP_1_0 && version != io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
+          return new IllegalStateException("Unsupported HTTP version: " + version);
+        }
+      }
+    }
+    return null;
+  }
+
   @Override
   protected void handleMessage(Http1xClientConnection conn, Object msg) {
-    if (msg instanceof HttpObject) {
+    Throwable error = validateMessage(msg);
+    if (error != null) {
+      fail(error);
+    } else if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
       conn.handleMessage(obj);
     } else if (msg instanceof WebSocketFrameInternal) {

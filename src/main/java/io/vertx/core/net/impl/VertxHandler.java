@@ -26,7 +26,9 @@ import io.vertx.core.impl.ContextInternal;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+
+  private static final Handler<Object> NULL_HANDLER = m -> { };
 
   private C conn;
   private Handler<Void> endReadAndFlush;
@@ -49,6 +51,17 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
       conn.startRead();
       handleMessage(conn, m);
     };
+  }
+
+  /**
+   * Fail the connection, the {@code error} will be sent to the pipeline and the connection will
+   * stop processing any further message.
+   *
+   * @param error the {@code Throwable} to propagate
+   */
+  public void fail(Throwable error) {
+    messageHandler = NULL_HANDLER;
+    conn.chctx.pipeline().fireExceptionCaught(error);
   }
 
   /**

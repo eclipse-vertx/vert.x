@@ -458,14 +458,10 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       ChannelPromise fut = chctx.newPromise();
       writeToChannel(resp, fut);
       fut.addListener(res -> {
-        if (res.isSuccess()) {
-          // That will close the connection as it is considered as unusable
-          chctx.pipeline().fireExceptionCaught(result.cause());
-        }
+        handler().fail(result.cause());
       });
     } else {
-      // That will close the connection as it is considered as unusable
-      chctx.pipeline().fireExceptionCaught(result.cause());
+      handler().fail(result.cause());
     }
   }
 

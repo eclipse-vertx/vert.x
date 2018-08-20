@@ -1710,11 +1710,14 @@ public class Http1xTest extends HttpTest {
     });
     startServer();
     HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Should not be called"));
+    AtomicBoolean a = new AtomicBoolean();
     req.exceptionHandler(err -> {
-      assertTrue("message " + err.getMessage() + " should contain HTTP/1.2", err.getMessage().contains("HTTP/1.2"));
-      req.connection().closeHandler(v -> {
-        testComplete();
-      });
+      if (a.compareAndSet(false, true)) {
+        assertTrue("message " + err.getMessage() + " should contain HTTP/1.2", err.getMessage().contains("HTTP/1.2"));
+        req.connection().closeHandler(v -> {
+          testComplete();
+        });
+      }
     }).putHeader("connection", "close").end();
     await();
   }
@@ -2592,13 +2595,10 @@ public class Http1xTest extends HttpTest {
 
       AtomicBoolean fail2 = new AtomicBoolean();
       HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-        resp.bodyHandler(buff -> {
-          assertEquals("okusa", buff.toString());
-          testComplete();
-        });
+        fail();
       }).exceptionHandler(err -> {
         if (fail2.compareAndSet(false, true)) {
-          assertEquals(VertxException.class, err.getClass()); // Closed
+          assertEquals(IllegalArgumentException.class, err.getClass()); // Closed
           complete();
         }
       });
