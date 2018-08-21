@@ -260,12 +260,16 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public void doPause() {
-      conn.doPause();
+      if (!responseEnded) {
+        conn.doPause();
+      }
     }
 
     @Override
     public void doResume() {
-      conn.doResume();
+      if (!responseEnded) {
+        conn.doResume();
+      }
     }
 
     @Override
@@ -420,8 +424,11 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           response.handleEnd(last, new HeadersAdaptor(trailer.trailingHeaders()));
         }
 
-        // Also we keep the connection open for an HTTP CONNECT
+        // Mark as ended
         responseEnded = true;
+        conn.doResume();
+
+        // Also we keep the connection open for an HTTP CONNECT
         if (!conn.options.isKeepAlive()) {
           close = true;
         }
