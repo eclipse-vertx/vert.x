@@ -378,18 +378,18 @@ public class QueueTest extends VertxTestBase {
     });
     assertTrue(queue.add("0"));
     waitUntilEquals(1, itemCount::get);
-    waitUntilEquals(1, emptyCount::get);
     queue.pause();
     assertTrue(queue.add("1"));
     assertTrue(queue.add("2"));
     assertTrue(queue.add("3"));
     assertEquals(1, itemCount.get());
+    assertFalse(queue.isEmpty());
     for (int i = 0;i < 3;i++) {
-      assertEquals(1, emptyCount.get());
+      assertEquals(0, emptyCount.get());
       queue.take(1);
       waitUntilEquals(2 + i, itemCount::get);
     }
-    waitUntilEquals(2, emptyCount::get);
+    waitUntilEquals(1, emptyCount::get);
   }
 
   @Test

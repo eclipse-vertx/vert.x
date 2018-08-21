@@ -94,7 +94,9 @@ public class BufferedQueue<T> implements Queue<T> {
       if (drain) {
         drain();
       } else {
-        stopEmitting();
+        synchronized (this) {
+          emitting = false;
+        }
       }
     } else {
       context.runOnContext(v -> {
