@@ -4095,6 +4095,45 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPausedHttpClientResponseUnpauseTheConnectionAtRequestEnd() throws Exception {
+    testHttpClientResponsePause(resp -> {
+      resp.handler(buff -> {
+        // Pausing the request here should have no effect since it's the last chunk
+        assertEquals("ok", buff.toString());
+        resp.pause();
+      });
+    });
+  }
+
+  @Test
+  public void testHttpClientResponsePauseIsIgnoredAtRequestEnd() throws Exception {
+    testHttpClientResponsePause(resp -> {
+      resp.endHandler(v -> {
+        // Pausing the request in end handler should be a no-op
+        resp.pause();
+      });
+    });
+  }
+
+  private void testHttpClientResponsePause(Handler<HttpClientResponse> h) throws Exception {
+    server.requestHandler(req -> req.response().end("ok"));
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setKeepAlive(true));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp1 -> {
+      h.handle(resp1);
+      vertx.setTimer(10, timerId -> {
+        // The connection should be resumed as it's ended
+        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp2 -> {
+          assertSame(resp1.request().connection(), resp2.request().connection());
+          resp2.endHandler(v -> testComplete());
+        });
+      });
+    });
+    await();
+  }
+
+  @Test
   public void testPoolLIFOPolicy() throws Exception {
     List<HttpServerRequest> requests = new ArrayList<>();
     server.requestHandler(req -> {
