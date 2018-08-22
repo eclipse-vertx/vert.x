@@ -48,6 +48,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -126,7 +127,26 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     upgraded = true;
 
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics);
+    AtomicBoolean paused = new AtomicBoolean(false);
+    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics) {
+      {
+        super.pause();
+      }
+      @Override
+      public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
+        return super.handler(dataHandler);
+      }
+      @Override
+      public synchronized NetSocket pause() {
+        paused.set(true);
+        return super.pause();
+      }
+      @Override
+      public synchronized NetSocket resume() {
+        paused.set(false);
+        return super.resume();
+      }
+    };
     socket.metric(metric());
 
     // Flush out all pending data
@@ -138,7 +158,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     if (inflater != null) {
       pipeline.remove(inflater);
     }
-    pipeline.remove("codec");
     pipeline.replace("handler", "handler",  new VertxNetHandler(socket) {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
@@ -156,6 +175,20 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         connection.handleMessageReceived(msg);
       }
     }.removeHandler(sock -> listener.onDiscard()));
+
+    // Removing this codec might fire pending buffers in the HTTP decoder
+    // this happens when the channel reads the HTTP response and the following data in a single buffer
+    pipeline.remove("codec");
+
+    // Async check to deliver the pending messages
+    // because the netSocket access in HttpClientResponse is synchronous
+    // we need to pause the NetSocket to avoid losing or reordering buffers
+    // and then asynchronously un-pause it unless it was actually paused by the application
+    context.runOnContext(v -> {
+      if (!paused.get()) {
+        socket.resume();
+      }
+    });
 
     return socket;
   }

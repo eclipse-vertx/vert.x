@@ -4405,6 +4405,44 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testAccessNetSocketPendingResponseDataPaused() {
+    testAccessNetSocketPendingResponseData(true);
+  }
+
+  @Test
+  public void testAccessNetSocketPendingResponseDataNotPaused() {
+    testAccessNetSocketPendingResponseData(false);
+  }
+
+  private void testAccessNetSocketPendingResponseData(boolean pause) {
+    server.requestHandler(req -> {
+      NetSocket so = req.netSocket();
+      so.write("hello");
+    });
+
+    server.listen(onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        NetSocket so = resp.netSocket();
+        assertNotNull(so);
+        so.handler(buff -> {
+          // With HTTP/1.1 the buffer is received immediately but delivered asynchronously
+          assertEquals("hello", buff.toString());
+          testComplete();
+        });
+        if (pause) {
+          so.pause();
+          vertx.setTimer(100, id -> {
+            so.resume();
+          });
+        }
+      });
+      req.sendHead();
+    }));
+
+    await();
+  }
+
+  @Test
   public void testHttpInvalidConnectResponseEnded() {
     waitFor(2);
     server.requestHandler(req -> {
