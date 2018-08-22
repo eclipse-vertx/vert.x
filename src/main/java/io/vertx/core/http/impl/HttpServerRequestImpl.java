@@ -56,7 +56,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
   private final Http1xServerConnection conn;
-  private final DefaultHttpRequest request;
+  final DefaultHttpRequest request;
 
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
@@ -408,7 +408,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public ServerWebSocket upgrade() {
-    return conn.upgrade(this, request);
+    ServerWebSocketImpl ws = conn.createWebSocket(this);
+    ws.connectNow();
+    return ws;
   }
 
   @Override

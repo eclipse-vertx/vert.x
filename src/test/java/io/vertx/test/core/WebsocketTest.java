@@ -668,7 +668,9 @@ public class WebsocketTest extends VertxTestBase {
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
       assertEquals("upgrade", ws.headers().get("Connection"));
-      ws.handler(data -> ws.write(data));
+      ws.handler(data -> {
+        ws.write(data);
+      });
     });
 
     server.listen(ar -> {
