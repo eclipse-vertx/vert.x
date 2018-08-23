@@ -391,6 +391,10 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
       }
     }
 
+    public void handleMessage(Object msg) {
+      handlePacket((io.vertx.core.datagram.DatagramPacket) msg);
+    }
+
     void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
       synchronized (DatagramSocketImpl.this) {
         if (metrics != null) {

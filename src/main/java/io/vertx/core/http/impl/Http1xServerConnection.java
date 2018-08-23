@@ -117,7 +117,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     return metrics;
   }
 
-  synchronized void handleMessage(Object msg) {
+  public synchronized void handleMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
       if (request.decoderResult() != DecoderResult.SUCCESS) {
@@ -402,11 +402,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
           return;
         }
         super.channelRead(chctx, msg);
-      }
-
-      @Override
-      protected void handleMessage(NetSocketImpl connection, Object msg) {
-        connection.handleMessageReceived(msg);
       }
     }.removeHandler(sock -> {
       if (metrics != null) {

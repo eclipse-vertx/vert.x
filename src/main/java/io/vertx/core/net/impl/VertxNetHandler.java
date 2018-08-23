@@ -11,18 +11,15 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
-import java.util.Map;
 import java.util.function.Function;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxNetHandler extends VertxHandler<NetSocketImpl> {
+public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
   private final Function<ChannelHandlerContext, NetSocketImpl> connectionFactory;
 

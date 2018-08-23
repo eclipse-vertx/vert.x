@@ -44,13 +44,10 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   protected void setConnection(C connection) {
     conn = connection;
     endReadAndFlush = v -> conn.endReadAndFlush();
+    messageHandler = ((ConnectionBase)conn)::handleRead; // Dubious cast to make compiler happy
     if (addHandler != null) {
       addHandler.handle(connection);
     }
-    messageHandler = m -> {
-      conn.startRead();
-      handleMessage(conn, m);
-    };
   }
 
   /**
@@ -168,10 +165,8 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     ctx.fireUserEventTriggered(evt);
   }
 
-  protected abstract void handleMessage(C connection, Object msg);
-
   /**
-   * Decode the message before passing it to the channel
+   * Decode the message before passing it to the channel.
    *
    * @param msg the message to decode
    * @return the decoded message

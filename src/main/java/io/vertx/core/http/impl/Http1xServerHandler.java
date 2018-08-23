@@ -54,9 +54,4 @@ public class Http1xServerHandler extends VertxHttpHandler<Http1xServerConnection
       });
     }
   }
-
-  @Override
-  protected void handleMessage(Http1xServerConnection conn, Object msg) {
-    conn.handleMessage(msg);
-  }
 }

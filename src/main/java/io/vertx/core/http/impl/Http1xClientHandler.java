@@ -81,9 +81,4 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
     }
     super.channelInactive(chctx);
   }
-
-  @Override
-  protected void handleMessage(Http1xClientConnection conn, Object msg) {
-    conn.handleMessage(msg);
-  }
 }

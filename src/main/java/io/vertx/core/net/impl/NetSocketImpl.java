@@ -342,7 +342,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     }
   }
 
-  public synchronized void handleMessageReceived(Object msg) {
+  public synchronized void handleMessage(Object msg) {
     checkContext();
     if (!pending.add(msg)) {
       doPause();

@@ -92,7 +92,7 @@ public abstract class ConnectionBase {
     return (VertxHandler) chctx.handler();
   }
 
-  public synchronized final void startRead() {
+  private synchronized void startRead() {
     checkContext();
     read = true;
   }
@@ -185,7 +185,7 @@ public abstract class ConnectionBase {
     config.setWriteBufferWaterMark(new WriteBufferWaterMark(size / 2, size));
   }
 
-  protected void checkContext() {
+  protected final void checkContext() {
     // Sanity check
     if (context != vertx.getContext()) {
       throw new IllegalStateException("Wrong context!");
@@ -357,5 +357,13 @@ public abstract class ConnectionBase {
     InetSocketAddress addr = (InetSocketAddress) chctx.channel().localAddress();
     if (addr == null) return null;
     return new SocketAddressImpl(addr);
+  }
+
+  final void handleRead(Object msg) {
+    startRead();
+    handleMessage(msg);
+  }
+
+  public void handleMessage(Object msg) {
   }
 }

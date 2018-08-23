@@ -168,10 +168,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         }
         super.channelRead(chctx, msg);
       }
-      @Override
-      protected void handleMessage(NetSocketImpl connection, Object msg) {
-        connection.handleMessageReceived(msg);
-      }
     }.removeHandler(sock -> listener.onDiscard()));
 
     // Removing this codec might fire pending buffers in the HTTP decoder
@@ -534,7 +530,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     return null;
   }
 
-  protected void handleMessage(Object msg) {
+  public void handleMessage(Object msg) {
     Throwable error = validateMessage(msg);
     if (error != null) {
       fail(error);
