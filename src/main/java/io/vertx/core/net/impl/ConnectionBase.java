@@ -78,16 +78,6 @@ public abstract class ConnectionBase {
     handler().fail(error);
   }
 
-  /**
-   * Encode to message before writing to the channel
-   *
-   * @param obj the object to encode
-   * @return the encoded message
-   */
-  protected Object encode(Object obj) {
-    return obj;
-  }
-
   public VertxHandler handler() {
     return (VertxHandler) chctx.handler();
   }
@@ -108,7 +98,6 @@ public abstract class ConnectionBase {
   }
 
   private void write(Object msg, ChannelPromise promise) {
-    msg = encode(msg);
     if (read || writeInProgress > 0) {
       needsFlush = true;
       chctx.write(msg, promise);

@@ -35,9 +35,4 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     setConnection(connectionFactory.apply(ctx));
   }
-
-  @Override
-  protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
-    return msg;
-  }
 }

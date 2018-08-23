@@ -33,17 +33,4 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl.Connec
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     setConnection(socket.createConnection(ctx));
   }
-
-  @Override
-  protected Object decode(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (msg instanceof DatagramPacket) {
-      DatagramPacket packet = (DatagramPacket) msg;
-      ByteBuf content = packet.content();
-      if (content.isDirect())  {
-        content = safeBuffer(content, allocator);
-      }
-      return new DatagramPacketImpl(packet.sender(), Buffer.buffer(content));
-    }
-    return msg;
-  }
 }

@@ -27,7 +27,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -149,7 +148,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       handleError(content);
       return;
     }
-    Buffer buffer = Buffer.buffer(content.content());
+    Buffer buffer = Buffer.buffer(VertxHttpHandler.safeBuffer(content.content(), chctx.alloc()));
     if (METRICS_ENABLED) {
       reportBytesRead(buffer);
     }
@@ -188,8 +187,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   }
 
   private void handleOther(Object msg) {
-    if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+    if (msg instanceof WebSocketFrame) {
+      WebSocketFrameInternal frame = decodeFrame((WebSocketFrame) msg);
       switch (frame.type()) {
         case PING:
           // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
@@ -530,7 +529,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     } else if (obj instanceof HttpContent) {
       return ((HttpContent) obj).content().readableBytes();
     } else if (obj instanceof WebSocketFrame) {
-      return ((WebSocketFrameInternal) obj).length();
+      return ((WebSocketFrame) obj).content().readableBytes();
     } else if (obj instanceof FileRegion) {
       return ((FileRegion) obj).count();
     } else if (obj instanceof ChunkedFile) {

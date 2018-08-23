@@ -34,7 +34,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
-import static io.vertx.core.http.impl.Http2ConnectionBase.safeBuffer;
+import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -45,16 +45,7 @@ abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.c
     super(vertx, chctx, context);
   }
 
-  @Override
-  protected Object encode(Object obj) {
-    if (obj instanceof WebSocketFrameInternal) {
-      return encodeFrame(obj);
-    }
-    return obj;
-  }
-
-  private WebSocketFrame encodeFrame(Object obj) {
-    WebSocketFrameImpl frame = (WebSocketFrameImpl) obj;
+  WebSocketFrame encodeFrame(WebSocketFrameImpl frame) {
     ByteBuf buf = frame.getBinaryData();
     if (buf != Unpooled.EMPTY_BUFFER) {
       buf = safeBuffer(buf, chctx.alloc());
@@ -73,8 +64,30 @@ abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.c
       case PING:
         return new PingWebSocketFrame(buf);
       default:
-        throw new IllegalStateException("Unsupported websocket msg " + obj);
+        throw new IllegalStateException("Unsupported websocket msg " + frame);
     }
+  }
+
+  WebSocketFrameInternal decodeFrame(WebSocketFrame msg) {
+    ByteBuf payload = safeBuffer(msg, chctx.alloc());
+    boolean isFinal = msg.isFinalFragment();
+    FrameType frameType;
+    if (msg instanceof BinaryWebSocketFrame) {
+      frameType = FrameType.BINARY;
+    } else if (msg instanceof CloseWebSocketFrame) {
+      frameType = FrameType.CLOSE;
+    } else if (msg instanceof PingWebSocketFrame) {
+      frameType = FrameType.PING;
+    } else if (msg instanceof PongWebSocketFrame) {
+      frameType = FrameType.PONG;
+    } else if (msg instanceof TextWebSocketFrame) {
+      frameType = FrameType.TEXT;
+    } else if (msg instanceof ContinuationWebSocketFrame) {
+      frameType = FrameType.CONTINUATION;
+    } else {
+      throw new IllegalStateException("Unsupported websocket msg " + msg);
+    }
+    return new WebSocketFrameImpl(frameType, payload, isFinal);
   }
 
   abstract public void closeWithPayload(ByteBuf byteBuf);

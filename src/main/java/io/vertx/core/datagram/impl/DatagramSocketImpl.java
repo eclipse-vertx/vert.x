@@ -11,6 +11,7 @@
 
 package io.vertx.core.datagram.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
@@ -25,6 +26,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.http.impl.VertxHttpHandler;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -392,7 +394,14 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     }
 
     public void handleMessage(Object msg) {
-      handlePacket((io.vertx.core.datagram.DatagramPacket) msg);
+      if (msg instanceof DatagramPacket) {
+        DatagramPacket packet = (DatagramPacket) msg;
+        ByteBuf content = packet.content();
+        if (content.isDirect())  {
+          content = VertxHttpHandler.safeBuffer(content, chctx.alloc());
+        }
+        handlePacket(new DatagramPacketImpl(packet.sender(), Buffer.buffer(content)));
+      }
     }
 
     void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {

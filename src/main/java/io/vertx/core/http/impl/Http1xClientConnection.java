@@ -18,6 +18,7 @@ import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandler;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
@@ -537,8 +538,8 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     } else if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
       handleHttpMessage(obj);
-    } else if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+    } else if (msg instanceof WebSocketFrame) {
+      WebSocketFrameInternal frame = decodeFrame((WebSocketFrame) msg);
       switch (frame.type()) {
         case BINARY:
         case CONTINUATION:
@@ -568,13 +569,13 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
-  void handleHttpMessage(HttpObject obj) {
+  private void handleHttpMessage(HttpObject obj) {
     if (obj instanceof HttpResponse) {
       handleResponseBegin((HttpResponse) obj);
     } else if (obj instanceof HttpContent) {
       HttpContent chunk = (HttpContent) obj;
       if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.content().slice());
+        Buffer buff = Buffer.buffer(VertxHttpHandler.safeBuffer(chunk.content(), chctx.alloc()));
         handleResponseChunk(buff);
       }
       if (chunk instanceof LastHttpContent) {
