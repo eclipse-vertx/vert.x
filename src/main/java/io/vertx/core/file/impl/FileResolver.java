@@ -272,6 +272,18 @@ public class FileResolver {
   }
 
   /**
+   * It is possible to determine if a resource from a bundle is a directory based on whether or not the ClassLoader
+   * returns null for a path (which does not already contain a trailing '/') *and* that path with an added trailing '/'
+   *
+   * @param url      the url
+   * @return if the bundle resource represented by the bundle URL is a directory
+   */
+  private boolean isBundleUrlDirectory(URL url) {
+    return url.toExternalForm().endsWith("/") ||
+      getClassLoader().getResource(url.getPath().substring(1) + "/") != null;
+  }
+
+  /**
    * bundle:// urls are used by OSGi implementations to refer to a file contained in a bundle, or in a fragment. There
    * is not much we can do to get the file from it, except reading it from the url. This method copies the files by
    * reading it from the url.
@@ -283,7 +295,7 @@ public class FileResolver {
     try {
       File file = new File(cacheDir, url.getHost() + File.separator + url.getFile());
       file.getParentFile().mkdirs();
-      if (url.toExternalForm().endsWith("/")  || isDir) {
+      if ((getClassLoader() != null && isBundleUrlDirectory(url))  || isDir) {
         // Directory
         file.mkdirs();
       } else {
