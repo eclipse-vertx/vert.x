@@ -295,7 +295,7 @@ public class FileResolver {
     try {
       File file = new File(cacheDir, url.getHost() + File.separator + url.getFile());
       file.getParentFile().mkdirs();
-      if (isBundleUrlDirectory(url)  || isDir) {
+      if ((getClassLoader() != null && isBundleUrlDirectory(url))  || isDir) {
         // Directory
         file.mkdirs();
       } else {
