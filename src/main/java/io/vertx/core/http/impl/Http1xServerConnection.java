@@ -518,10 +518,10 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       ChannelPromise fut = chctx.newPromise();
       writeToChannel(resp, fut);
       fut.addListener(res -> {
-        handler().fail(result.cause());
+        fail(result.cause());
       });
     } else {
-      handler().fail(result.cause());
+      fail(result.cause());
     }
   }
 

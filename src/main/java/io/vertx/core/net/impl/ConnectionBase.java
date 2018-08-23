@@ -69,6 +69,16 @@ public abstract class ConnectionBase {
   }
 
   /**
+   * Fail the connection, the {@code error} will be sent to the pipeline and the connection will
+   * stop processing any further message.
+   *
+   * @param error the {@code Throwable} to propagate
+   */
+  public void fail(Throwable error) {
+    handler().fail(error);
+  }
+
+  /**
    * Encode to message before writing to the channel
    *
    * @param obj the object to encode

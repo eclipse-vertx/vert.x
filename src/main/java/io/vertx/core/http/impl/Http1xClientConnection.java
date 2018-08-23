@@ -12,10 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.http.*;
@@ -77,6 +74,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   private WebSocketClientHandshaker handshaker;
   private WebSocketImpl ws;
+  private boolean closeFrameSent;
 
   private StreamImpl requestInProgress;                          // The request being sent
   private StreamImpl responseInProgress;                         // The request waiting for a response
@@ -520,7 +518,61 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
-  void handleMessage(HttpObject obj) {
+  private Throwable validateMessage(Object msg) {
+    if (msg instanceof HttpObject) {
+      HttpObject obj = (HttpObject) msg;
+      DecoderResult result = obj.decoderResult();
+      if (result.isFailure()) {
+        return result.cause();
+      } else if (obj instanceof HttpResponse) {
+        io.netty.handler.codec.http.HttpVersion version = ((HttpResponse) obj).protocolVersion();
+        if (version != io.netty.handler.codec.http.HttpVersion.HTTP_1_0 && version != io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
+          return new IllegalStateException("Unsupported HTTP version: " + version);
+        }
+      }
+    }
+    return null;
+  }
+
+  protected void handleMessage(Object msg) {
+    Throwable error = validateMessage(msg);
+    if (error != null) {
+      fail(error);
+    } else if (msg instanceof HttpObject) {
+      HttpObject obj = (HttpObject) msg;
+      handleHttpMessage(obj);
+    } else if (msg instanceof WebSocketFrameInternal) {
+      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+      switch (frame.type()) {
+        case BINARY:
+        case CONTINUATION:
+        case TEXT:
+        case PONG:
+          handleWsFrame(frame);
+          break;
+        case PING:
+          // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+          chctx.writeAndFlush(new PongWebSocketFrame(frame.getBinaryData().copy()));
+          break;
+        case CLOSE:
+          handleWsFrame(frame);
+          if (!closeFrameSent) {
+            // Echo back close frame and close the connection once it was written.
+            // This is specified in the WebSockets RFC 6455 Section  5.4.1
+            CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
+            chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
+            closeFrameSent = true;
+          }
+          break;
+        default:
+          throw new IllegalStateException("Invalid type: " + frame.type());
+      }
+    } else {
+      throw new IllegalStateException("Invalid object " + msg);
+    }
+  }
+
+  void handleHttpMessage(HttpObject obj) {
     if (obj instanceof HttpResponse) {
       handleResponseBegin((HttpResponse) obj);
     } else if (obj instanceof HttpContent) {

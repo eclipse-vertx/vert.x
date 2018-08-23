@@ -59,7 +59,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
    *
    * @param error the {@code Throwable} to propagate
    */
-  public void fail(Throwable error) {
+  void fail(Throwable error) {
     messageHandler = NULL_HANDLER;
     conn.chctx.pipeline().fireExceptionCaught(error);
   }
