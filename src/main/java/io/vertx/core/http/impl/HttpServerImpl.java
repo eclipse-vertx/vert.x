@@ -421,11 +421,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (!DISABLE_H2C) {
       pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, httpHandlerMgr));
     }
-    Http1xServerHandler handler;
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
       // some casting and a header check
-      handler = new Http1xServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     } else {
       holder = new HandlerHolder<>(holder.context, new HttpHandlers(
         new WebSocketRequestHandler(metrics, holder.handler),
@@ -433,8 +431,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         holder.handler.connectionHandler,
         holder.handler.exceptionHandler));
       initializeWebsocketExtensions (pipeline);
-      handler = new WebSocketServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     }
+    Http1xServerHandler handler = new Http1xServerHandler(sslHelper, options, serverOrigin, holder, metrics);
     handler.addHandler(conn -> {
       connectionMap.put(pipeline.channel(), conn);
     });

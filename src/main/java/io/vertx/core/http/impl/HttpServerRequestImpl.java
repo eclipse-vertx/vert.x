@@ -56,8 +56,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
   private final Http1xServerConnection conn;
-  final DefaultHttpRequest request;
 
+  private DefaultHttpRequest request;
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
   private String rawMethod;
@@ -90,6 +90,18 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   HttpServerRequestImpl(Http1xServerConnection conn, DefaultHttpRequest request) {
     this.conn = conn;
     this.request = request;
+  }
+
+  DefaultHttpRequest getRequest() {
+    synchronized (conn) {
+      return request;
+    }
+  }
+
+  void setRequest(DefaultHttpRequest request) {
+    synchronized (conn) {
+      this.request = request;
+    }
   }
 
   private Queue<Buffer> pendingQueue() {

@@ -302,10 +302,10 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (ws != null) {
       return ws;
     }
-    if (!(request.request instanceof FullHttpRequest)) {
+    if (!(request.getRequest() instanceof FullHttpRequest)) {
       throw new IllegalStateException();
     }
-    FullHttpRequest nettyReq = (FullHttpRequest) request.request;
+    FullHttpRequest nettyReq = (FullHttpRequest) request.getRequest();
     WebSocketServerHandshaker handshaker = createHandshaker(nettyReq);
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
