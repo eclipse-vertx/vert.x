@@ -32,6 +32,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1401,9 +1402,9 @@ public class DeploymentTest extends VertxTestBase {
     };
 
     // Without completion handler
-    vertx.deployVerticle(supplier, options);
-    assertWaitUntil(() -> vertx.deploymentIDs().size() == 1);
-    String id = vertx.deploymentIDs().iterator().next();
+    CompletableFuture<String> deployedLatch = new CompletableFuture<>();
+    vertx.deployVerticle(supplier, options, onSuccess(id -> deployedLatch.complete(id)));
+    String id = deployedLatch.get(10, TimeUnit.SECONDS);
     check.accept(id);
     myVerticles.clear();
     vertx.undeploy(id);
