@@ -468,6 +468,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
     return (Future<T>) AsyncResult.super.otherwiseEmpty();
   }
 
+  @GenIgnore
   FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 
 }

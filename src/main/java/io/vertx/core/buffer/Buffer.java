@@ -14,6 +14,7 @@ package io.vertx.core.buffer;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.json.JsonArray;
@@ -698,6 +699,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
   @SuppressWarnings("codegen-allow-any-java-type")
   ByteBuf getByteBuf();
 
+  @GenIgnore
   BufferFactory factory = ServiceHelper.loadFactory(BufferFactory.class);
 
 }
