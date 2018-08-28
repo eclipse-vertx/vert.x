@@ -211,8 +211,8 @@ public class FileSystemTest extends VertxTestBase {
     String target = "some-other-dir";
     mkDir(source);
     testCopy(source, target, false, true, v -> {
-     assertTrue(fileExists(source));
-     assertTrue(fileExists(target));
+      assertTrue(fileExists(source));
+      assertTrue(fileExists(target));
     });
     await();
   }
@@ -1907,5 +1907,143 @@ public class FileSystemTest extends VertxTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testCreateTempDirectory() {
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempDirectory("project", onSuccess(tempDirectory -> {
+      assertNotNull(tempDirectory);
+      assertTrue(Files.exists(Paths.get(tempDirectory)));
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testCreateTempDirectoryBlocking() {
+    FileSystem fs = vertx.fileSystem();
+    String tempDirectory = fs.createTempDirectoryBlocking("project");
+    assertTrue(Files.exists(Paths.get(tempDirectory)));
+  }
+
+  @Test
+  public void testCreateTempDirectoryWithPerms() {
+    Assume.assumeFalse(Utils.isWindows());
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempDirectory("project", DEFAULT_DIR_PERMS, onSuccess(tempDirectory -> {
+      try {
+        String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(Paths.get(tempDirectory)));
+        assertEquals(perms, DEFAULT_DIR_PERMS);
+      } catch (IOException e) {
+        fail(e);
+      }
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testCreateTempDirectoryWithPermsBlocking() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+
+    FileSystem fs = vertx.fileSystem();
+    String tempDirectory = fs.createTempDirectoryBlocking("project", DEFAULT_DIR_PERMS);
+    String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(Paths.get(tempDirectory)));
+    assertEquals(perms, DEFAULT_DIR_PERMS);
+  }
+
+  @Test
+  public void testCreateTempDirectoryWithDirectory() {
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempDirectory(testDir, "project", null, onSuccess(tempDirectory -> {
+      Path path = Paths.get(tempDirectory);
+      assertTrue(Files.exists(path));
+      assertTrue(path.startsWith(testDir));
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testCreateTempDirectoryWithDirectoryBlocking() {
+    FileSystem fs = vertx.fileSystem();
+    String tempDirectory = fs.createTempDirectoryBlocking(testDir, "project", null);
+    Path path = Paths.get(tempDirectory);
+    assertTrue(Files.exists(Paths.get(tempDirectory)));
+    assertTrue(path.startsWith(testDir));
+  }
+
+
+  @Test
+  public void testCreateTempFile() {
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempFile("project", ".tmp", onSuccess(tempFile -> {
+      assertNotNull(tempFile);
+      assertTrue(Files.exists(Paths.get(tempFile)));
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testCreateTempFileBlocking() {
+    FileSystem fs = vertx.fileSystem();
+    String tempFile = fs.createTempFileBlocking("project", ".tmp");
+    assertNotNull(tempFile);
+    assertTrue(Files.exists(Paths.get(tempFile)));
+  }
+
+  @Test
+  public void testCreateTempFileWithDirectory() {
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempFile(testDir, "project", ".tmp", null, onSuccess(tempFile -> {
+      assertNotNull(tempFile);
+      Path path = Paths.get(tempFile);
+      assertTrue(Files.exists(path));
+      assertTrue(path.startsWith(testDir));
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testCreateTempFileWithDirectoryBlocking() {
+    FileSystem fs = vertx.fileSystem();
+    String tempFile = fs.createTempFileBlocking(testDir, "project", ".tmp", null);
+    assertNotNull(tempFile);
+    Path path = Paths.get(tempFile);
+    assertTrue(Files.exists(path));
+    assertTrue(path.startsWith(testDir));
+  }
+
+  @Test
+  public void testCreateTempFileWithPerms() {
+    Assume.assumeFalse(Utils.isWindows());
+
+    FileSystem fs = vertx.fileSystem();
+    fs.createTempFile("project", ".tmp", DEFAULT_FILE_PERMS, onSuccess(tempFile -> {
+      Path path = Paths.get(tempFile);
+      assertTrue(Files.exists(path));
+      try {
+        String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
+        assertEquals(perms, DEFAULT_FILE_PERMS);
+      } catch (IOException e) {
+        fail(e);
+      }
+    }));
+  }
+
+
+  @Test
+  public void testCreateTempFileWithPermsBlocking() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+
+    FileSystem fs = vertx.fileSystem();
+    String tempFile = fs.createTempFileBlocking("project", ".tmp", DEFAULT_FILE_PERMS);
+    Path path = Paths.get(tempFile);
+    assertTrue(Files.exists(path));
+    String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
+    assertEquals(perms, DEFAULT_FILE_PERMS);
   }
 }

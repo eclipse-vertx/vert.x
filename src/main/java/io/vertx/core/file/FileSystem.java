@@ -579,4 +579,169 @@ public interface FileSystem {
    */
   FileSystemProps fsPropsBlocking(String path) ;
 
+  /**
+   * Creates a new directory in the default temporary-file directory, using the given
+   * prefix to generate its name, asynchronously.
+   *
+   * <p>
+   * As with the {@code File.createTempFile} methods, this method is only
+   * part of a temporary-file facility.A {@link Runtime#addShutdownHook shutdown-hook},
+   * or the {@link java.io.File#deleteOnExit} mechanism may be used to delete the directory automatically.
+   * </p>
+   *
+   * @param prefix  the prefix string to be used in generating the directory's name;
+   *                may be {@code null}
+   * @param handler the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  FileSystem createTempDirectory(String prefix, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Blocking version of {@link #createTempDirectory(String, Handler)}
+   */
+  String createTempDirectoryBlocking(String prefix);
+
+  /**
+   * Creates a new directory in the default temporary-file directory, using the given
+   * prefix to generate its name, asynchronously.
+   * <p>
+   * The new directory will be created with permissions as specified by {@code perms}.
+   * </p>
+   * The permission String takes the form rwxr-x--- as specified
+   * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.
+   *
+   * <p>
+   * As with the {@code File.createTempFile} methods, this method is only
+   * part of a temporary-file facility.A {@link Runtime#addShutdownHook shutdown-hook},
+   * or the {@link java.io.File#deleteOnExit} mechanism may be used to delete the directory automatically.
+   * </p>
+   *
+   * @param prefix  the prefix string to be used in generating the directory's name;
+   *                may be {@code null}
+   * @param perms   the permissions string
+   * @param handler the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Blocking version of {@link #createTempDirectory(String, String, Handler)}
+   */
+  String createTempDirectoryBlocking(String prefix, String perms);
+
+  /**
+   * Creates a new directory in the directory provided by the path {@code path}, using the given
+   * prefix to generate its name, asynchronously.
+   * <p>
+   * The new directory will be created with permissions as specified by {@code perms}.
+   * </p>
+   * The permission String takes the form rwxr-x--- as specified
+   * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.
+   *
+   * <p>
+   * As with the {@code File.createTempFile} methods, this method is only
+   * part of a temporary-file facility.A {@link Runtime#addShutdownHook shutdown-hook},
+   * or the {@link java.io.File#deleteOnExit} mechanism may be used to delete the directory automatically.
+   * </p>
+   *
+   * @param dir     the path to directory in which to create the directory
+   * @param prefix  the prefix string to be used in generating the directory's name;
+   *                may be {@code null}
+   * @param perms   the permissions string
+   * @param handler the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  FileSystem createTempDirectory(String dir, String prefix, String perms, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Blocking version of {@link #createTempDirectory(String, String, String, Handler)}
+   */
+  String createTempDirectoryBlocking(String dir, String prefix, String perms);
+
+
+  /**
+   * Creates a new file in the default temporary-file directory, using the given
+   * prefix and suffix to generate its name, asynchronously.
+   *
+   * <p>
+   * As with the {@code File.createTempFile} methods, this method is only
+   * part of a temporary-file facility.A {@link Runtime#addShutdownHook shutdown-hook},
+   * or the {@link java.io.File#deleteOnExit} mechanism may be used to delete the directory automatically.
+   * </p>
+   *
+   * @param prefix  the prefix string to be used in generating the directory's name;
+   *                may be {@code null}
+   * @param suffix  the suffix string to be used in generating the file's name;
+   *                may be {@code null}, in which case "{@code .tmp}" is used
+   * @param handler the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  FileSystem createTempFile(String prefix, String suffix, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Blocking version of {@link #createTempFile(String, String, Handler)}
+   */
+  String createTempFileBlocking(String prefix, String suffix);
+
+  /**
+   * Creates a new file in the directory provided by the path {@code dir}, using the given
+   * prefix and suffix to generate its name, asynchronously.
+   *
+   * <p>
+   * As with the {@code File.createTempFile} methods, this method is only
+   * part of a temporary-file facility.A {@link Runtime#addShutdownHook shutdown-hook},
+   * or the {@link java.io.File#deleteOnExit} mechanism may be used to delete the directory automatically.
+   * </p>
+   *
+   * @param prefix  the prefix string to be used in generating the directory's name;
+   *                may be {@code null}
+   * @param suffix  the suffix string to be used in generating the file's name;
+   *                may be {@code null}, in which case "{@code .tmp}" is used
+   * @param handler the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  FileSystem createTempFile(String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Blocking version of {@link #createTempFile(String, String, String, Handler)}
+   */
+  String createTempFileBlocking(String prefix, String suffix, String perms);
+
+  /**
+   * Creates a new file in the directory provided by the path {@code dir}, using the given
+   * prefix and suffix to generate its name, asynchronously.
+   * <p>
+   * The new directory will be created with permissions as specified by {@code perms}.
+   * </p>
+   * The permission String takes the form rwxr-x--- as specified
+   * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.
+   *
+   * <p>
+   * As with the {@code File.createTempFile} methods, this method is only
+   * part of a temporary-file facility.A {@link Runtime#addShutdownHook shutdown-hook},
+   * or the {@link java.io.File#deleteOnExit} mechanism may be used to delete the directory automatically.
+   * </p>
+   *
+   * @param dir     the path to directory in which to create the directory
+   * @param prefix  the prefix string to be used in generating the directory's name;
+   *                may be {@code null}
+   * @param suffix  the suffix string to be used in generating the file's name;
+   *                may be {@code null}, in which case "{@code .tmp}" is used
+   * @param perms   the permissions string
+   * @param handler the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  FileSystem createTempFile(String dir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Blocking version of {@link #createTempFile(String, String, String, String, Handler)}
+   */
+  String createTempFileBlocking(String dir, String prefix, String suffix, String perms);
+
 }
