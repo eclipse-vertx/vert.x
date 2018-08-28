@@ -542,7 +542,7 @@ public class QueueTest extends VertxTestBase {
       }
     });
     queue.addAll(Arrays.asList(0, 1, 2, 3));
-    waitUntilEquals(Arrays.asList(0, 1, 2, 3, 4, 5), () -> consumed);
+    waitUntilEquals(Arrays.asList(0, 1, 2, 3, 4, 5), () -> new ArrayList<>(consumed));
   }
 
   @Test
@@ -586,7 +586,7 @@ public class QueueTest extends VertxTestBase {
     queue.pause();
     queue.addAll(Arrays.asList(0, 1, 2, 3));
     queue.resume();
-    waitUntilEquals(Collections.singletonList(0), () -> consumed);
+    waitUntilEquals(Collections.singletonList(0), () -> new ArrayList<>(consumed));
     waitUntilEquals(1, resumes::get);
   }
 
@@ -617,7 +617,7 @@ public class QueueTest extends VertxTestBase {
     queue.pause();
     queue.addAll(Arrays.asList(0, 1, 2, 3));
     queue.resume();
-    waitUntilEquals(Arrays.asList(0, 1, 2), () -> consumed);
+    waitUntilEquals(Arrays.asList(0, 1, 2), () -> new ArrayList<>(consumed));
     waitUntilEquals(1, resumes::get);
   }
 
@@ -645,7 +645,7 @@ public class QueueTest extends VertxTestBase {
     queue.pause();
     queue.addAll(Arrays.asList(0, 1, 2, 3));
     queue.resume();
-    waitUntilEquals(Collections.singletonList(0), () -> consumed);
+    waitUntilEquals(Collections.singletonList(0), () -> new ArrayList<>(consumed));
     // We get a resume but it's a side effect of clearing the queue
     waitUntilEquals(1, resumes::get);
   }
