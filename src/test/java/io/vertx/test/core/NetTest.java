@@ -1667,7 +1667,7 @@ public class NetTest extends VertxTestBase {
   // To get this to reliably pass with a lot of connections.
   public void testSharedServersRoundRobin() throws Exception {
 
-    int numServers = 5;
+    int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numConnections = numServers * 20;
 
     List<NetServer> servers = new ArrayList<>();

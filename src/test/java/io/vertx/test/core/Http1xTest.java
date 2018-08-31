@@ -35,7 +35,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -1583,7 +1585,7 @@ public class Http1xTest extends HttpTest {
     client.close();
     server.close();
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false));
-    int numServers = 5;
+    int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numRequests = numServers * 100;
 
     List<HttpServer> servers = new ArrayList<>();
@@ -1635,9 +1637,9 @@ public class Http1xTest extends HttpTest {
     }
     assertEquals(numServers, requestCount.size());
     assertEquals(requestCount.values().stream().mapToInt(i -> i).sum(), numRequests);
-    for (int cnt : requestCount.values()) {
-      assertEquals(numRequests / numServers, cnt);
-    }
+    assertEquals(IntStream.range(0, requestCount.size())
+      .mapToObj(i -> numRequests / numServers)
+      .collect(Collectors.toList()), new ArrayList<>(requestCount.values()));
     assertEquals(numServers, contexts.size());
 
     CountDownLatch closeLatch = new CountDownLatch(numServers);

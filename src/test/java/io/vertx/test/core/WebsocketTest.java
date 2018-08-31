@@ -517,7 +517,7 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   public void testSharedServersRoundRobin() throws Exception {
 
-    int numServers = 5;
+    int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numConnections = numServers * 100;
 
     List<HttpServer> servers = new ArrayList<>();
