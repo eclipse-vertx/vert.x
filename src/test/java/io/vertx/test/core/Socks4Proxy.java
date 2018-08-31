@@ -23,6 +23,9 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 /**
  * SOCKS4 Proxy
  * <p>
@@ -56,11 +59,9 @@ public class Socks4Proxy extends TestProxyBase {
    *
    * @param vertx
    *          Vertx instance to use for creating the server and client
-   * @param finishedHandler
-   *          will be called when the start has started
    */
   @Override
-  public void start(Vertx vertx, Handler<Void> finishedHandler) {
+  public Socks4Proxy start(Vertx vertx) throws Exception {
     NetServerOptions options = new NetServerOptions();
     options.setHost("localhost").setPort(PORT);
     server = vertx.createNetServer(options);
@@ -120,10 +121,17 @@ public class Socks4Proxy extends TestProxyBase {
         }
       });
     });
-    server.listen(result -> {
-      log.debug("socks4a server started");
-      finishedHandler.handle(null);
+    CompletableFuture<Void> fut = new CompletableFuture<>();
+    server.listen(ar -> {
+      if (ar.succeeded()) {
+        fut.complete(null);
+      } else {
+        fut.completeExceptionally(ar.cause());
+      }
     });
+    fut.get(10, TimeUnit.SECONDS);
+    log.debug("socks4a server started");
+    return this;
   }
 
   private String getString(Buffer buffer) {

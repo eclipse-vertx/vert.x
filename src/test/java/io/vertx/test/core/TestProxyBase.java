@@ -62,7 +62,7 @@ public abstract class TestProxyBase {
 
   public abstract int getPort();
 
-  public abstract void start(Vertx vertx, Handler<Void> finishedHandler);
+  public abstract TestProxyBase start(Vertx vertx) throws Exception;
   public abstract void stop();
 
 }

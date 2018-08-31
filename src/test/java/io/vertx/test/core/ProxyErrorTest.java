@@ -71,12 +71,10 @@ public class ProxyErrorTest extends VertxTestBase {
 
   // we don't start http/https servers, due to the error, they will not be queried
 
-  private void startProxy(int error, String username) throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(1);
+  private void startProxy(int error, String username) throws Exception {
     proxy = new HttpProxy(username);
     proxy.setError(error);
-    proxy.start(vertx, v -> latch.countDown());
-    latch.await();
+    proxy.start(vertx);
   }
 
   @Test

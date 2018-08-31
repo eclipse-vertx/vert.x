@@ -23,6 +23,9 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 /**
  * SOCKS5 Proxy
  * <p>
@@ -63,11 +66,9 @@ public class SocksProxy extends TestProxyBase {
    *
    * @param vertx
    *          Vertx instance to use for creating the server and client
-   * @param finishedHandler
-   *          will be called when the start has started
    */
   @Override
-  public void start(Vertx vertx, Handler<Void> finishedHandler) {
+  public SocksProxy start(Vertx vertx) throws Exception {
     NetServerOptions options = new NetServerOptions();
     options.setHost("localhost").setPort(PORT);
     server = vertx.createNetServer(options);
@@ -92,10 +93,10 @@ public class SocksProxy extends TestProxyBase {
               throw new IllegalStateException("format error in client request (attribute type ipv4), got " + toHex(buffer2));
             }
             host = buffer2.getUnsignedByte(4) + "." +
-              buffer2.getUnsignedByte(5) + "." + 
-              buffer2.getUnsignedByte(6) + "." + 
+              buffer2.getUnsignedByte(5) + "." +
+              buffer2.getUnsignedByte(6) + "." +
               buffer2.getUnsignedByte(7);
-            port = buffer2.getUnsignedShort(8);  
+            port = buffer2.getUnsignedShort(8);
           } else if(addressType == 3) {
             int stringLen = buffer2.getUnsignedByte(4);
             log.debug("string len " + stringLen);
@@ -103,7 +104,7 @@ public class SocksProxy extends TestProxyBase {
               throw new IllegalStateException("format error in client request (attribute type domain name), got " + toHex(buffer2));
             }
             host = buffer2.getString(5, 5 + stringLen);
-            port = buffer2.getUnsignedShort(5 + stringLen);  
+            port = buffer2.getUnsignedShort(5 + stringLen);
           } else {
             throw new IllegalStateException("expected address type ip (v4) or name, got " + addressType);
           }
@@ -167,10 +168,17 @@ public class SocksProxy extends TestProxyBase {
         }
       });
     });
-    server.listen(result -> {
-      log.debug("socks5 server started");
-      finishedHandler.handle(null);
+    CompletableFuture<Void> fut = new CompletableFuture<>();
+    server.listen(ar -> {
+      if (ar.succeeded()) {
+        fut.complete(null);
+      } else {
+        fut.completeExceptionally(ar.cause());
+      }
     });
+    fut.get(10, TimeUnit.SECONDS);
+    log.debug("socks5 server started");
+    return this;
   }
 
   private String toHex(Buffer buffer) {

@@ -13,6 +13,8 @@ package io.vertx.test.core;
 
 import java.net.UnknownHostException;
 import java.util.Base64;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -69,11 +71,9 @@ public class HttpProxy extends TestProxyBase {
    *
    * @param vertx
    *          Vertx instance to use for creating the server and client
-   * @param finishedHandler
-   *          will be called when the server has started
    */
   @Override
-  public void start(Vertx vertx, Handler<Void> finishedHandler) {
+  public HttpProxy start(Vertx vertx) throws Exception {
     HttpServerOptions options = new HttpServerOptions();
     options.setHost("localhost").setPort(PORT);
     server = vertx.createHttpServer(options);
@@ -164,9 +164,16 @@ public class HttpProxy extends TestProxyBase {
         request.response().setStatusCode(405).end("method not supported");
       }
     });
-    server.listen(server -> {
-      finishedHandler.handle(null);
+    CompletableFuture<Void> fut = new CompletableFuture<>();
+    server.listen(ar -> {
+      if (ar.succeeded()) {
+        fut.complete(null);
+      } else {
+        fut.completeExceptionally(ar.cause());
+      }
     });
+    fut.get(10, TimeUnit.SECONDS);
+    return this;
   }
 
   /**
