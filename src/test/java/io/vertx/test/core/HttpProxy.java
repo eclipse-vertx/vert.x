@@ -114,11 +114,11 @@ public class HttpProxy extends TestProxyBase {
             request.response().setStatusCode(403).end("access to port denied");
             return;
           }
-          NetSocket serverSocket = request.netSocket();
           NetClientOptions netOptions = new NetClientOptions();
           NetClient netClient = vertx.createNetClient(netOptions);
           netClient.connect(port, host, result -> {
             if (result.succeeded()) {
+              NetSocket serverSocket = request.netSocket();
               NetSocket clientSocket = result.result();
               serverSocket.closeHandler(v -> clientSocket.close());
               clientSocket.closeHandler(v -> serverSocket.close());
