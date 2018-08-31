@@ -3793,12 +3793,12 @@ public class Http1xTest extends HttpTest {
     final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(1000000));
     server.requestHandler(req -> {
       try {
-        req.response().sendFile(f.getAbsolutePath(), event -> {
-          if (event.failed()) {
+        req.response().sendFile(f.getAbsolutePath(), ar -> {
+          if (ar.failed()) {
             // Broken pipe
             testComplete();
           } else {
-            fail("It should not reach this point");
+            fail(new Exception("It should not reach this point", ar.cause()));
           }
         });
       } catch (Exception e) {
