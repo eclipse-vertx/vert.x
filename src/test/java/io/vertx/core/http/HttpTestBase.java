@@ -13,6 +13,10 @@ package io.vertx.core.http;
 
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.ProxyType;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.SocksProxy;
@@ -100,5 +104,17 @@ public class HttpTestBase extends VertxTestBase {
       proxy = new SocksProxy(username);
     }
     proxy.start(vertx);
+  }
+
+  protected void startNetServer(NetServer server) throws InterruptedException {
+    startNetServer(vertx.getOrCreateContext(), server);
+  }
+
+  protected void startNetServer(Context context, NetServer server) throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    context.runOnContext(v -> {
+      server.listen(onSuccess(s -> latch.countDown()));
+    });
+    awaitLatch(latch);
   }
 }
