@@ -1110,29 +1110,48 @@ public class Http1xTest extends HttpTest {
     awaitLatch(firstCloseLatch);
 
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setMaxPoolSize(1));
-    AtomicInteger connectCount = new AtomicInteger(0);
+    AtomicInteger requestCount = new AtomicInteger(0);
     // We need a net server because we need to intercept the socket connection, not just full http requests
     NetServer server = vertx.createNetServer(new NetServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
     server.connectHandler(socket -> {
-      connectCount.incrementAndGet();
-      // Delay and write a proper http response
-      vertx.setTimer(responseDelay, time -> socket.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"));
+      Buffer content = Buffer.buffer();
+      AtomicBoolean closed = new AtomicBoolean();
+      socket.closeHandler(v -> closed.set(true));
+      socket.handler(buff -> {
+        content.appendBuffer(buff);
+        if (buff.toString().endsWith("\r\n\r\n")) {
+          // Delay and write a proper http response
+          vertx.setTimer(responseDelay, time -> {
+            if (!closed.get()) {
+              requestCount.incrementAndGet();
+              socket.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK");
+            }
+          });
+        }
+      });
     });
 
     CountDownLatch latch = new CountDownLatch(requests);
 
     server.listen(onSuccess(s -> {
       for(int count = 0; count < requests; count++) {
-        HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-          resp.bodyHandler(buff -> {
-            assertEquals("OK", buff.toString());
-            latch.countDown();
+
+        HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
+        if (count % 2 == 0) {
+          req.handler(resp -> {
+            resp.bodyHandler(buff -> {
+              assertEquals("OK", buff.toString());
+              latch.countDown();
+            });
           });
-        });
-        // Odd requests get a timeout less than the responseDelay, since we have a pool size of one and a delay all but
-        // the first request should end up in the wait queue, the odd numbered requests should time out so we should get
-        // (requests + 1 / 2) connect attempts
-        if (count % 2 == 1) {
+          req.exceptionHandler(this::fail);
+        } else {
+          // Odd requests get a timeout less than the responseDelay, since we have a pool size of one and a delay all but
+          // the first request should end up in the wait queue, the odd numbered requests should time out so we should get
+          // (requests + 1 / 2) connect attempts
+          req.handler(resp -> {
+            fail("Was not expecting a response");
+          });
           req.setTimeout(responseDelay / 2);
           req.exceptionHandler(ex -> {
             latch.countDown();
@@ -1144,7 +1163,7 @@ public class Http1xTest extends HttpTest {
 
     awaitLatch(latch);
 
-    assertEquals("Incorrect number of connect attempts.", (requests + 1) / 2, connectCount.get());
+    assertEquals("Incorrect number of connect attempts.", (requests + 1) / 2, requestCount.get());
     server.close();
   }
 
