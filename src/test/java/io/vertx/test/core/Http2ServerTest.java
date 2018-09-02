@@ -340,10 +340,11 @@ public class Http2ServerTest extends Http2TestBase {
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       request.decoder.frameListener(new Http2FrameAdapter() {
         AtomicInteger count = new AtomicInteger();
+        Context context = vertx.getOrCreateContext();
 
         @Override
         public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings newSettings) throws Http2Exception {
-          vertx.runOnContext(v -> {
+          context.runOnContext(v -> {
             switch (count.getAndIncrement()) {
               case 0:
                 // Initial settings
