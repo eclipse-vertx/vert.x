@@ -14,6 +14,9 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
 /**
  * Configures a {@link TCPSSLOptions} to use the JDK ssl engine implementation.
  *
@@ -31,11 +34,18 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
     if (jdkAlpnAvailable == null) {
       boolean available = false;
       try {
-        // Always use bootstrap class loader.
-        JdkSSLEngineOptions.class.getClassLoader().loadClass("sun.security.ssl.ALPNExtension");
+        // Public method on SSLEngine
+        SSLEngine.class.getDeclaredMethod("getApplicationProtocol");
         available = true;
-      } catch (Exception ignore) {
-        // alpn-boot was not loaded.
+      } catch (Exception ignore1) {
+        // JDK provides ALPN
+        try {
+          // Always use bootstrap class loader.
+          JdkSSLEngineOptions.class.getClassLoader().loadClass("sun.security.ssl.ALPNExtension");
+           available = true;
+        } catch (Exception ignore2) {
+          // alpn-boot was not loaded.
+        }
       } finally {
         jdkAlpnAvailable = available;
       }
