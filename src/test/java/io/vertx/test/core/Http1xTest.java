@@ -3809,7 +3809,8 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testSendFileFailsWhenClientClosesConnection() throws Exception {
-    final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(1000000));
+    // 10 megs
+    final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(10 * 1024 * 1024));
     server.requestHandler(req -> {
       try {
         req.response().sendFile(f.getAbsolutePath(), ar -> {
@@ -3817,7 +3818,7 @@ public class Http1xTest extends HttpTest {
             // Broken pipe
             testComplete();
           } else {
-            fail(new Exception("It should not reach this point: " + ar.cause().getMessage(), ar.cause()));
+            fail(new Exception("It should not reach this point"));
           }
         });
       } catch (Exception e) {
