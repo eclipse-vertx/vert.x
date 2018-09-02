@@ -296,6 +296,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   private void testDeliveryOptionsLocalOnly(boolean send) {
+    waitFor(30);
     startNodes(2);
     AtomicLong localConsumer0 = new AtomicLong();
     vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> {
@@ -305,15 +306,15 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     AtomicLong consumer1 = new AtomicLong();
     vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
       consumer1.incrementAndGet();
-    });
-    waitFor(30);
-    for (int i = 0; i < 30; i++) {
-      if (send) {
-        vertices[0].eventBus().send(ADDRESS1, "msg", new DeliveryOptions().setLocalOnly(true));
-      } else {
-        vertices[0].eventBus().publish(ADDRESS1, "msg", new DeliveryOptions().setLocalOnly(true));
+    }).completionHandler(onSuccess(v -> {
+      for (int i = 0; i < 30; i++) {
+        if (send) {
+          vertices[0].eventBus().send(ADDRESS1, "msg", new DeliveryOptions().setLocalOnly(true));
+        } else {
+          vertices[0].eventBus().publish(ADDRESS1, "msg", new DeliveryOptions().setLocalOnly(true));
+        }
       }
-    }
+    }));
     await();
     assertEquals(30, localConsumer0.get());
     assertEquals(0, consumer1.get());
@@ -324,8 +325,9 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(2);
     vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
       msg.reply("pong", new DeliveryOptions().setLocalOnly(true));
-    });
-    vertices[0].eventBus().send(ADDRESS1, "ping", new DeliveryOptions().setSendTimeout(500), onSuccess(msg -> testComplete()));
+    }).completionHandler(onSuccess(v -> {
+      vertices[0].eventBus().send(ADDRESS1, "ping", new DeliveryOptions().setSendTimeout(500), onSuccess(msg -> testComplete()));
+    }));
     await();
   }
 }
