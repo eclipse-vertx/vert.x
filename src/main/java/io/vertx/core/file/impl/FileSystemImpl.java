@@ -774,7 +774,7 @@ public class FileSystemImpl implements FileSystem {
               tmpDir = Files.createTempDirectory(prefix);
             }
           }
-          return tmpDir.toFile().getCanonicalPath();
+          return tmpDir.toFile().getAbsolutePath();
         } catch (IOException e) {
           throw new FileSystemException(e);
         }
@@ -802,7 +802,7 @@ public class FileSystemImpl implements FileSystem {
               tmpFile = Files.createTempFile(prefix, suffix);
             }
           }
-          return tmpFile.toFile().getCanonicalPath();
+          return tmpFile.toFile().getAbsolutePath();
         } catch (IOException e) {
           throw new FileSystemException(e);
         }
