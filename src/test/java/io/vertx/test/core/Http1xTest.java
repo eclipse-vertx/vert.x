@@ -3817,7 +3817,7 @@ public class Http1xTest extends HttpTest {
             // Broken pipe
             testComplete();
           } else {
-            fail(new Exception("It should not reach this point", ar.cause()));
+            fail(new Exception("It should not reach this point: " + ar.cause().getMessage(), ar.cause()));
           }
         });
       } catch (Exception e) {
