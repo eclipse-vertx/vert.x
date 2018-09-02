@@ -408,19 +408,20 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         settingsUpdate.remove(key);
       }
     }
+    Runnable pending = () -> {
+      localSettings.putAll(settingsUpdate);
+      if (completionHandler != null) {
+        completionContext.runOnContext(v -> {
+          completionHandler.handle(Future.succeededFuture());
+        });
+      }
+    };
+    updateSettingsHandlers.add(pending);
     handler.writeSettings(settingsUpdate).addListener(fut -> {
-      if (fut.isSuccess()) {
+      if (!fut.isSuccess()) {
         synchronized (Http2ConnectionBase.this) {
-          updateSettingsHandlers.add(() -> {
-            localSettings.putAll(settingsUpdate);
-            if (completionHandler != null) {
-              completionContext.runOnContext(v -> {
-                completionHandler.handle(Future.succeededFuture());
-              });
-            }
-          });
+          updateSettingsHandlers.remove(pending);
         }
-      } else {
         if (completionHandler != null) {
           completionContext.runOnContext(v -> {
             completionHandler.handle(Future.failedFuture(fut.cause()));
