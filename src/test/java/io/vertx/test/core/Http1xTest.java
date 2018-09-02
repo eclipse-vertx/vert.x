@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -4071,8 +4072,10 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testPoolNotExpiring() throws Exception {
+    AtomicLong now = new AtomicLong();
     server.requestHandler(req -> {
       req.response().end();
+      now.set(System.currentTimeMillis());
       vertx.setTimer(2000, id -> {
         req.connection().close();
       });
@@ -4082,9 +4085,8 @@ public class Http1xTest extends HttpTest {
     client = vertx.createHttpClient(new HttpClientOptions().setPoolCleanerPeriod(0).setKeepAliveTimeout(100));
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       resp.endHandler(v1 -> {
-        long now = System.currentTimeMillis();
         resp.request().connection().closeHandler(v2 -> {
-          long time = System.currentTimeMillis() - now;
+          long time = System.currentTimeMillis() - now.get();
           assertTrue("Was expecting " + time + " to be > 2000", time >= 2000);
           testComplete();
         });
