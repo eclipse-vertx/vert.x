@@ -50,7 +50,7 @@ public class CLIConfiguratorTest {
     CLI command = CLIConfigurator.define(HelloClI.class);
     StringBuilder builder = new StringBuilder();
     command.usage(builder);
-    assertThat(builder)
+    assertThat(builder.toString())
         .containsIgnoringCase("Usage: hello -n <name>")
         .containsIgnoringCase("A command saying hello.")
         .containsIgnoringCase("A simple cli to wish you a good day. Pass your name with `--name`")

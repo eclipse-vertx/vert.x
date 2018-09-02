@@ -54,7 +54,7 @@ public class DefaultCLITest {
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test [-f]")
         .contains("Options and Arguments")
         .contains(" -f   turn on/off");
@@ -66,7 +66,7 @@ public class DefaultCLITest {
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test")
         .doesNotContain("Options").doesNotContain("Arguments");
   }
@@ -79,7 +79,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test [--flag]")
         .contains(" --flag   turn on/off");
   }
@@ -92,7 +92,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test [-f]")
         .contains(" -f,--flag   turn on/off");
   }
@@ -105,7 +105,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test [-f <value>]")
         .contains(" -f,--file <value>   a file");
   }
@@ -118,7 +118,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test [-f <value>]")
         .contains(" -f <value>   a file");
   }
@@ -131,7 +131,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test [--file <value>]")
         .contains(" --file <value>   a file");
   }
@@ -145,7 +145,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test -f <value> foo")
         .contains(" -f,--file <value>   a file")
     .contains("<foo>               foo");
@@ -162,7 +162,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test -f <value> foo value bar")
         .contains(" -f,--file <value>   a file")
         .contains("<foo>               foo")
@@ -181,7 +181,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test -f <value> foo value")
         .contains(" -f,--file <value>   a file")
         .contains("<foo>               foo")
@@ -197,7 +197,7 @@ public class DefaultCLITest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("test [foo]");
   }
 
