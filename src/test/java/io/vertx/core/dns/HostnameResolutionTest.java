@@ -583,6 +583,8 @@ public class HostnameResolutionTest extends VertxTestBase {
     dnsServer.testResolveA(records);
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
+            setHostsValue(Buffer.buffer()).
+            setNdots(1).
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
             setOptResourceEnabled(false).
             addSearchDomain("foo.com").
@@ -696,6 +698,8 @@ public class HostnameResolutionTest extends VertxTestBase {
     vertx.close();
     vertx = vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
+            setHostsValue(Buffer.buffer()).
+            setNdots(1).
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
             setOptResourceEnabled(false).
             addSearchDomain("foo.com")
