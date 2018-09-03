@@ -46,3 +46,5 @@ for ALPN, native and logging
 ```
 
 Open _target/docs/vertx-core/java/index.html_ with your browser
+
+
