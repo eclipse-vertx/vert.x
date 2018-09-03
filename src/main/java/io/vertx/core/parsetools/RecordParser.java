@@ -193,6 +193,16 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
   void fixedSizeMode(int size);
 
   /**
+   * Set the maximum allowed size for a record when using the delimited mode.
+   * The delimiter itself does not count for the record size.
+   * <p>
+   * If a record is longer than specified, a RecordTooLongException will be thrown.
+   *
+   * @param size the maximum record size
+   */
+  void maxRecordSize(int size);
+
+  /**
    * This method is called to provide the parser with data.
    *
    * @param buffer  a chunk of data

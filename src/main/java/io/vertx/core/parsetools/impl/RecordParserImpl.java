@@ -15,6 +15,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
+import io.vertx.core.parsetools.RecordTooLongException;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.Objects;
@@ -34,6 +35,8 @@ public class RecordParserImpl implements RecordParser {
   private boolean delimited;
   private byte[] delim;
   private int recordSize;
+  private int maxRecordSize;
+  private boolean discarding;
   private Handler<Buffer> output;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
@@ -152,12 +155,33 @@ public class RecordParserImpl implements RecordParser {
     reset = true;
   }
 
+  /**
+   * Set the maximum allowed size for a record when using the delimited mode.
+   * The delimiter itself does not count for the record size.
+   * <p>
+   * If a record is longer than specified, a RecordTooLongException will be thrown.
+   *
+   * @param size the maximum record size
+   */
+  public void maxRecordSize(int size) {
+    Arguments.require(size > 0, "Size must be > 0");
+    maxRecordSize = size;
+  }
+
   private void handleParsing() {
     int len = buff.length();
     do {
       reset = false;
       if (delimited) {
-        parseDelimited();
+        boolean success = parseDelimited();
+        if (!success) {
+          RecordTooLongException ex = new RecordTooLongException("The current record is too long");
+          if (exceptionHandler != null) {
+            exceptionHandler.handle(ex);
+          } else {
+            throw ex;
+          }
+        }
       } else {
         parseFixed();
       }
@@ -174,8 +198,9 @@ public class RecordParserImpl implements RecordParser {
     start = 0;
   }
 
-  private void parseDelimited() {
+  private boolean parseDelimited() {
     int len = buff.length();
+    boolean ok = true;
     for (; pos < len && !reset; pos++) {
       if (buff.getByte(pos) == delim[delimPos]) {
         delimPos++;
@@ -183,15 +208,24 @@ public class RecordParserImpl implements RecordParser {
           Buffer ret = buff.getBuffer(start, pos - delim.length + 1);
           start = pos + 1;
           delimPos = 0;
-          output.handle(ret);
+          if (!discarding) {
+            output.handle(ret);
+          } else {
+            discarding = false; //discarded record
+          }
         }
       } else {
         if (delimPos > 0) {
           pos -= delimPos;
           delimPos = 0;
         }
+        if (maxRecordSize > 0 && !discarding && pos - start + 1 > maxRecordSize) {
+            discarding = true;
+            ok = false;
+        }
       }
     }
+    return ok;
   }
 
   private void parseFixed() {
