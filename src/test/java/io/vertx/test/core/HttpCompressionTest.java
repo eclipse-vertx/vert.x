@@ -74,6 +74,7 @@ public class HttpCompressionTest extends HttpTestBase {
     startServer(serverWithMaxCompressionLevel);
     clientraw.get(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
       resp -> {
+        assertEquals(HttpHeaders.IDENTITY.toString(), resp.headers().get(HttpHeaders.CONTENT_ENCODING));
         resp.bodyHandler(responseBuffer -> {
           String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
           assertEquals(COMPRESS_TEST_STRING, responseBody);
