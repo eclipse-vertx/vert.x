@@ -27,6 +27,14 @@ import io.vertx.core.json.JsonArray;
  class ProxyOptionsConverter {
 
    static void fromJson(JsonObject json, ProxyOptions obj) {
+    if (json.getValue("excludedHosts") instanceof JsonArray) {
+      java.util.LinkedHashSet<java.lang.String> list = new java.util.LinkedHashSet<>();
+      json.getJsonArray("excludedHosts").forEach( item -> {
+        if (item instanceof String)
+          list.add((String)item);
+      });
+      obj.setExcludedHosts(list);
+    }
     if (json.getValue("host") instanceof String) {
       obj.setHost((String)json.getValue("host"));
     }
@@ -45,6 +53,11 @@ import io.vertx.core.json.JsonArray;
   }
 
    static void toJson(ProxyOptions obj, JsonObject json) {
+    if (obj.getExcludedHosts() != null) {
+      JsonArray array = new JsonArray();
+      obj.getExcludedHosts().forEach(item -> array.add(item));
+      json.put("excludedHosts", array);
+    }
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }

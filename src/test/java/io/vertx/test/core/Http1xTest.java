@@ -2956,6 +2956,32 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testHttpHostExclusionOfProxyRequest() throws Exception {
+    startProxy(null, ProxyType.HTTP);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).addExcludedHost("localhost").setHost("google.com").setPort(proxy.getPort())));
+
+    HttpClientRequest clientReq = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+
+    //because we excluded localhost from proxying logic, it will not reach google.com but localhost.
+    server.listen(onSuccess(s -> {
+      clientReq.handler(resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+      clientReq.exceptionHandler(this::fail);
+      clientReq.end();
+    }));
+
+    await();
+  }
+
+  @Test
   public void testHttpProxyRequestOverrideClientSsl() throws Exception {
     startProxy(null, ProxyType.HTTP);
     client.close();

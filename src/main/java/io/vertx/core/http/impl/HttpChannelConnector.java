@@ -27,6 +27,7 @@ import io.vertx.core.http.impl.pool.ConnectResult;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.http.impl.pool.ConnectionProvider;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
@@ -116,6 +117,13 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     }
   }
 
+  private boolean isExcluded(ProxyOptions options, String targetProxy) {
+    if(options.getExcludedHosts() == null || options.getExcludedHosts().isEmpty()) {
+      return false;
+    }
+    return options.getExcludedHosts().contains(targetProxy);
+  }
+
   private void doConnect(
     ConnectionListener<HttpClientConnection> listener,
     ContextImpl context,
@@ -129,7 +137,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
     ChannelProvider channelProvider;
     // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
-    if (options.getProxyOptions() == null || !ssl && options.getProxyOptions().getType()== ProxyType.HTTP ) {
+    if (options.getProxyOptions() == null || !ssl && options.getProxyOptions().getType() == ProxyType.HTTP || isExcluded(options.getProxyOptions(), host)) {
       channelProvider = ChannelProvider.INSTANCE;
     } else {
       channelProvider = ProxyChannelProvider.INSTANCE;

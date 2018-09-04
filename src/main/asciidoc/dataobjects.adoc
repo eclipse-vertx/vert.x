@@ -2032,6 +2032,10 @@ Set the store as a buffer
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[excludedHosts]]`excludedHosts`|`Array of String`|
++++
+Set list of excluded hosts.
++++
 |[[host]]`host`|`String`|
 +++
 Set proxy host.

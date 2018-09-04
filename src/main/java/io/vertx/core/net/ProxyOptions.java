@@ -11,7 +11,7 @@
 
 package io.vertx.core.net;
 
-import java.util.Objects;
+import java.util.*;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
@@ -46,6 +46,7 @@ public class ProxyOptions {
   private String username;
   private String password;
   private ProxyType type;
+  private Set<String> exludedHosts;
 
   /**
    * Default constructor.
@@ -54,6 +55,7 @@ public class ProxyOptions {
     host = DEFAULT_HOST;
     port = DEFAULT_PORT;
     type = DEFAULT_TYPE;
+    exludedHosts = new HashSet<>(0);
   }
 
   /**
@@ -67,6 +69,7 @@ public class ProxyOptions {
     username = other.getUsername();
     password = other.getPassword();
     type = other.getType();
+    exludedHosts = other.getExcludedHosts();
   }
 
   /**
@@ -199,6 +202,39 @@ public class ProxyOptions {
     return this;
   }
 
+  /**
+   * Set list of excluded hosts.
+   *
+   * @param excludedHosts list of hosts to exclude from proxy logic
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ProxyOptions setExcludedHosts(final Set<String> excludedHosts) {
+    Objects.requireNonNull(excludedHosts, "Excluded host cannot be null");
+    this.exludedHosts = excludedHosts;
+    return this;
+  }
+
+  /**
+   * Add host to existing excludedHost list.
+   *
+   * @param excludedHost host excluded from proxy logic
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ProxyOptions addExcludedHost(final String excludedHost) {
+    Objects.requireNonNull(excludedHost, "Excluded host cannot be null");
+    this.exludedHosts.add(excludedHost);
+    return this;
+  }
+
+  /**
+   * Get excluded hosts.
+   *
+   * @return list of hosts that should not be proxied.
+   */
+  public Set<String> getExcludedHosts() {
+    return exludedHosts;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -212,6 +248,7 @@ public class ProxyOptions {
     if (port != that.port) return false;
     if (!Objects.equals(password, that.password)) return false;
     if (!Objects.equals(username, that.username)) return false;
+    if (!Objects.equals(exludedHosts, that.exludedHosts)) return false;
 
     return true;
   }
@@ -224,6 +261,7 @@ public class ProxyOptions {
     result = 31 * result + port;
     result = 31 * result + (password != null ? password.hashCode() : 0);
     result = 31 * result + (username != null ? username.hashCode() : 0);
+    result = 31 * result + exludedHosts.hashCode();
     return result;
   }
 }

@@ -1005,7 +1005,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
     checkClosed();
     HttpClientRequest req;
-    boolean useProxy = !useSSL && proxyType == ProxyType.HTTP;
+    boolean useProxy = useProxy(useSSL, options.getProxyOptions(), host);
     if (useProxy) {
       final int defaultPort = protocol.equals("ftp") ? 21 : 80;
       final String addPort = (port != -1 && port != defaultPort) ? (":" + port) : "";
@@ -1028,6 +1028,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       req.headers().setAll(headers);
     }
     return req;
+  }
+
+  private boolean useProxy(boolean isSsl, ProxyOptions proxyOptions, String targetHost) {
+    if(!isSsl && proxyType == ProxyType.HTTP) {
+      if(proxyOptions.getExcludedHosts().isEmpty()) {
+        return true;
+      } else {
+        return !proxyOptions.getExcludedHosts().contains(targetHost);
+      }
+    }
+    return false;
   }
 
   private synchronized void checkClosed() {
