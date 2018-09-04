@@ -26,6 +26,7 @@ import io.vertx.core.streams.Pump;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -3947,6 +3948,7 @@ public abstract class HttpTest extends HttpTestBase {
     startNetServer(netServer);
     request.end();
     await();
+    netServer.close();
   }
 
   @Test
