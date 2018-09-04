@@ -598,6 +598,21 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testGetOrCreateJsonObject() {
+    assertNull(jsonObject.getJsonObject("blah"));
+    assertNotNull(jsonObject.getOrCreateJsonObject("blah").put("foo", "bar"));
+    assertEquals("bar", jsonObject.getJsonObject("blah").getString("foo"));
+
+    jsonObject.put("test", "occupied");
+    try {
+      jsonObject.getOrCreateJsonArray("test");
+      fail();
+    } catch (ClassCastException e) {
+      // OK
+    }
+  }
+
+  @Test
   public void testGetJsonObjectDefault() {
     JsonObject obj = new JsonObject().put("blah", "wibble");
     JsonObject def = new JsonObject().put("eek", "quuz");
@@ -647,6 +662,21 @@ public class JsonObjectTest {
       jsonObject.getJsonArray(null);
       fail();
     } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testGetOrCreateJsonArray() {
+    assertNull(jsonObject.getJsonObject("blah"));
+    assertNotNull(jsonObject.getOrCreateJsonArray("blah").add(0));
+    assertEquals(0, (int) jsonObject.getJsonArray("blah").getInteger(0));
+
+    jsonObject.put("test", "occupied");
+    try {
+      jsonObject.getOrCreateJsonArray("test");
+      fail();
+    } catch (ClassCastException e) {
       // OK
     }
   }

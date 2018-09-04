@@ -295,6 +295,40 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Like {@link #getJsonArray(String)} but immediately associates a new JsonArray to the key if the key has no value.
+   *
+   * @param key the key to return the value for
+   * @return the JsonArray associated with the given key
+   * @throws java.lang.ClassCastException if the value is not a JsonArray
+     */
+  public JsonArray getOrCreateJsonArray(String key) {
+    if (containsKey(key)) {
+      return getJsonArray(key);
+    } else {
+      JsonArray newArray = new JsonArray();
+      put(key, newArray);
+      return newArray;
+    }
+  }
+
+  /**
+   * Like {@link #getJsonObject(String)} but immediately associates a new JsonObject to the key if the key has no value.
+   *
+   * @param key the key to return the value for
+   * @return the JsonObject associated with the given key
+   * @throws java.lang.ClassCastException if the value is not a JsonObject
+   */
+  public JsonObject getOrCreateJsonObject(String key) {
+    if (containsKey(key)) {
+      return getJsonObject(key);
+    } else {
+      JsonObject newObject = new JsonObject();
+      put(key, newObject);
+      return newObject;
+    }
+  }
+
+  /**
    * Like {@link #getString(String)} but specifying a default value to return if there is no entry.
    *
    * @param key  the key to lookup
