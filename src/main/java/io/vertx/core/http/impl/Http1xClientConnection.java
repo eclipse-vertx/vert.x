@@ -850,7 +850,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   }
 
   private void failStreams(Throwable cause) {
-    StreamImpl stream;
     for (StreamImpl r = responseInProgress;r != null;r = r.next) {
       r.handleException(cause);
     }
@@ -862,9 +861,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     if (ws != null) {
       ws.handleException(e);
     } else {
-      for (StreamImpl r = responseInProgress;r != null;r = r.next) {
-        r.handleException(e);
-      }
+      failStreams(e);
     }
   }
 
