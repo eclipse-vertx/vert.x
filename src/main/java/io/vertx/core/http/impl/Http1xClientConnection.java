@@ -859,8 +859,12 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   @Override
   protected synchronized void handleException(Throwable e) {
     super.handleException(e);
-    for (StreamImpl r = responseInProgress;r != null;r = r.next) {
-      r.handleException(e);
+    if (ws != null) {
+      ws.handleException(e);
+    } else {
+      for (StreamImpl r = responseInProgress;r != null;r = r.next) {
+        r.handleException(e);
+      }
     }
   }
 
