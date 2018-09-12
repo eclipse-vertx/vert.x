@@ -241,7 +241,7 @@
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>
             <excludes>
-              <exclude>io/vertx/test/it/**</exclude>
+              <exclude>io/vertx/it/**</exclude>
             </excludes>
           </configuration>
         </plugin>
@@ -365,7 +365,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/SSLEngineTest.java</include>
+                <include>io/vertx/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
@@ -384,7 +384,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/SSLEngineTest.java</include>
+                <include>io/vertx/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
@@ -402,7 +402,7 @@
             <configuration>
               <argLine>${jetty.alpnAgent.argLine}</argLine>
               <includes>
-                <include>io/vertx/test/it/SSLEngineTest.java</include>
+                <include>io/vertx/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>true</vertx-test-alpn-jdk>
@@ -423,7 +423,7 @@
             <configuration>
               <argLine>${jetty.alpnAgent.argLine}</argLine>
               <includes>
-                <include>io/vertx/test/it/SSLEngineTest.java</include>
+                <include>io/vertx/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>true</vertx-test-alpn-jdk>
@@ -440,7 +440,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/TransportTest.java</include>
+                <include>io/vertx/it/TransportTest.java</include>
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
@@ -456,7 +456,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/SLF4JLogDelegateTest.java</include>
+                <include>io/vertx/it/SLF4JLogDelegateTest.java</include>
               </includes>
             </configuration>
           </execution>
@@ -468,7 +468,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/JULLogDelegateTest.java</include>
+                <include>io/vertx/it/JULLogDelegateTest.java</include>
               </includes>
             </configuration>
           </execution>
@@ -480,7 +480,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/Log4J2LogDelegateTest.java</include>
+                <include>io/vertx/it/Log4J2LogDelegateTest.java</include>
               </includes>
             </configuration>
           </execution>
@@ -496,7 +496,7 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/test/it/NettyCompatTest.java</include>
+                <include>io/vertx/it/NettyCompatTest.java</include>
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-common</classpathDependencyExclude>
