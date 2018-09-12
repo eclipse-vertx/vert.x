@@ -933,12 +933,12 @@ public class Http2ClientTest extends Http2TestBase {
           assertEquals(2, serverStatus.getAndIncrement());
         });
         conn.closeHandler(v -> {
-          assertEquals(3, serverStatus.getAndIncrement());
+          assertEquals(4, serverStatus.getAndIncrement());
         });
       }
     });
     server.requestHandler(req -> {
-      assertEquals(5, serverStatus.getAndIncrement());
+      assertEquals(3, serverStatus.getAndIncrement());
       req.response().end("" + serverStatus.get());
     });
     startServer();
@@ -956,7 +956,10 @@ public class Http2ClientTest extends Http2TestBase {
       }
     });
     req1.exceptionHandler(err -> complete());
-    req1.handler(resp -> fail("Was not expecting the response to complete"));
+    req1.handler(resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    });
     req1.end();
     await();
   }
