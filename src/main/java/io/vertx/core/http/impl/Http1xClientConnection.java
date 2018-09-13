@@ -106,6 +106,7 @@ public class Http1xClientConnection extends Http1xConnectionBase implements Http
     this.version = version;
     this.endpointMetric = endpointMetric;
     this.keepAliveTimeout = options.getKeepAliveTimeout();
+    this.exceptionHandler(client.exceptionHandler());
   }
 
   Object endpointMetric() {

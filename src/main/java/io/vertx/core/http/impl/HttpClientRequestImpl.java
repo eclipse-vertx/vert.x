@@ -484,9 +484,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (ar1.succeeded()) {
           HttpClientStream stream = ar1.result();
           ContextInternal ctx = (ContextInternal) stream.getContext();
-          if (stream.connection() != null) {
-            stream.connection().exceptionHandler(client.exceptionHandler());
-          }
           if (stream.id() == 1 && initializer != null) {
             ctx.executeFromIO(v -> {
               initializer.handle(stream.connection());

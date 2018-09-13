@@ -56,6 +56,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.queueMetric = queueMetric;
     this.client = client;
     this.listener = listener;
+    this.exceptionHandler(client.exceptionHandler());
   }
 
   @Override
