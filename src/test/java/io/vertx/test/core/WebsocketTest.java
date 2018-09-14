@@ -25,21 +25,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.WebsocketRejectedException;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.FrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -1562,6 +1548,21 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
+  private void handshake(HttpClientRequest request, Handler<NetSocket> handler) {
+    request
+      .putHeader("Upgrade", "websocket")
+      .putHeader("Connection", "Upgrade")
+      .putHeader("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
+      .putHeader("Sec-WebSocket-Protocol", "chat")
+      .putHeader("Sec-WebSocket-Version", "13")
+      .putHeader("Origin", "http://example.com");
+    request.handler(resp -> {
+      assertEquals(101, resp.statusCode());
+      handler.handle(resp.netSocket());
+    });
+    request.end();
+  }
+
   @Test
   public void testRaceConditionWithWebsocketClientEventLoop() {
     testRaceConditionWithWebsocketClient(vertx.getOrCreateContext());
@@ -2252,33 +2253,26 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
       client = vertx.createHttpClient();
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-        .putHeader("Upgrade", "websocket")
-        .putHeader("Connection", "Upgrade")
-        .putHeader("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
-        .putHeader("Sec-WebSocket-Protocol", "chat")
-        .putHeader("Sec-WebSocket-Version", "13")
-        .putHeader("Origin", "http://example.com")
-        .handler(resp -> {
-          assertEquals(101, resp.statusCode());
-          NetSocketInternal so = (NetSocketInternal) resp.netSocket();
-          so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
-          so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
-          int status = 4000 + TestUtils.randomPositiveInt() % 100;
-          String reason = TestUtils.randomAlphaString(10);
-          so.writeMessage(new CloseWebSocketFrame(status, reason));
-          Deque<Object> received = new ArrayDeque<>();
-          so.messageHandler(received::add);
-          so.closeHandler(v2 -> {
-            assertEquals(1, received.size());
-            Object msg = received.getFirst();
-            assertEquals(msg.getClass(), CloseWebSocketFrame.class);
-            CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-            assertEquals(status, frame.statusCode());
-            assertEquals(reason, frame.reasonText());
-            complete();
-          });
-        }).end();
+      HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+      handshake(request, res -> {
+        NetSocketInternal so = (NetSocketInternal) res;
+        so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
+        so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
+        int status = 4000 + TestUtils.randomPositiveInt() % 100;
+        String reason = TestUtils.randomAlphaString(10);
+        so.writeMessage(new CloseWebSocketFrame(status, reason));
+        Deque<Object> received = new ArrayDeque<>();
+        so.messageHandler(received::add);
+        so.closeHandler(v2 -> {
+          assertEquals(1, received.size());
+          Object msg = received.getFirst();
+          assertEquals(msg.getClass(), CloseWebSocketFrame.class);
+          CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
+          assertEquals(status, frame.statusCode());
+          assertEquals(reason, frame.reasonText());
+          complete();
+        });
+      });
     }));
     await();
   }
@@ -2316,6 +2310,53 @@ public class WebsocketTest extends VertxTestBase {
         });
       });
     }));
+    await();
+  }
+
+  @Test
+  public void testReportProtocolViolationOnClient() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
+      NetSocket sock = getUpgradedNetSocket(req, "/some/path");
+      // Let's write an invalid frame
+      Buffer buff = Buffer.buffer();
+      buff.appendByte((byte)(0x8)).appendByte((byte)0); // Violates protocol with V13 (final control frame)
+      sock.write(buff);
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", null, WebsocketVersion.V13).
+        handler(ws -> {
+          AtomicReference<Throwable> failure = new AtomicReference<>();
+          ws.closeHandler(v -> {
+            assertNotNull(failure.get());
+            testComplete();
+          });
+          ws.exceptionHandler(failure::set);
+        });
+    });
+    await();
+  }
+
+  @Test
+  public void testReportProtocolViolationOnServer() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      AtomicReference<Throwable> failure = new AtomicReference<>();
+      ws.closeHandler(v -> {
+        assertNotNull(failure.get());
+        testComplete();
+      });
+      ws.exceptionHandler(failure::set);
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/some/path");
+      handshake(request, sock -> {
+        // Let's write an invalid frame
+        Buffer buff = Buffer.buffer();
+        buff.appendByte((byte)(0x8)).appendByte((byte)0); // Violates protocol with V13 (final control frame)
+        sock.write(buff);
+      });
+    });
     await();
   }
 }

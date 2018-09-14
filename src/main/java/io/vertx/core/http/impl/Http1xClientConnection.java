@@ -756,7 +756,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   protected synchronized void handleException(Throwable e) {
     super.handleException(e);
     retryPending();
-    if (currentRequest != null) {
+    if (ws != null) {
+      ws.handleException(e);
+    } else if (currentRequest != null) {
       currentRequest.request.handleException(e);
     } else {
       StreamImpl req = inflight.poll();
