@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/eclipse-vertx/vert.x.svg?branch=master)](https://travis-ci.org/eclipse-vertx/vert.x)
+
 ## Vert.x Core
 
 This is the repository for Vert.x core.
