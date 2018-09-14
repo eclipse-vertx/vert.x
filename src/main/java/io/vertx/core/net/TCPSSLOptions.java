@@ -369,6 +369,16 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Set options in pkcs#11 format, aka Java keystore.
+   * @param options the key store in pkcs#11 format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setPkcs11KeyOptions(Pkcs11Options options) {
+    this.keyCertOptions = options;
+    return this;
+  }
+
+  /**
    * Get the key/cert options in pfx format.
    *
    * @return the key/cert options in pfx format.

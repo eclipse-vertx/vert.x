@@ -18,6 +18,7 @@ import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.Pkcs11Options;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
@@ -81,6 +82,10 @@ public class KeyStoreHelper {
         return null;
       }
       return new KeyStoreHelper(loadJKSOrPKCS12("JKS", jks.getPassword(), value), jks.getPassword());
+    } else if (options instanceof Pkcs11Options) {
+      KeyStore ks = KeyStore.getInstance("PKCS11");
+      ks.load(null, null);
+      return new KeyStoreHelper(ks, null);
     } else if (options instanceof PfxOptions) {
       PfxOptions pkcs12 = (PfxOptions) options;
       Supplier<Buffer> value;

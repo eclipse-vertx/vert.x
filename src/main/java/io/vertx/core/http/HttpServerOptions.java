@@ -325,6 +325,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setPkcs11KeyOptions(Pkcs11Options options) {
+    super.setPkcs11KeyOptions(options);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions setPfxKeyCertOptions(PfxOptions options) {
     return (HttpServerOptions) super.setPfxKeyCertOptions(options);
   }
