@@ -2073,8 +2073,9 @@ public class Http1xTest extends HttpTest {
         assertEquals(200, resp.statusCode());
         contexts.add(((VertxInternal) vertx).getContext());
         if (cnt.incrementAndGet() == numReqs) {
+          int size = contexts.size();
           // Some connections might get closed if response comes back quick enough hence the >=
-          assertTrue(contexts.size() >= numConns);
+          assertTrue("Expected " + size + " >= " + numConns, size >= numConns);
           latch2.countDown();
         }
       }).exceptionHandler(this::fail).end();
