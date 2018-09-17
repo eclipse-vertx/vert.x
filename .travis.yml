@@ -11,11 +11,14 @@ branches:
 matrix:
   include:
     - jdk: oraclejdk8
-    - jdk: oraclejdk8
+    - if: type != pull_request
+      jdk: oraclejdk8
       env: TEST_PROFILE="-PtestNativeTransport"
-    - jdk: oraclejdk8
+    - if: type != pull_request
+      jdk: oraclejdk8
       env: TEST_PROFILE="-PtestDomainSockets"
-    - jdk: openjdk11
+    - if: type != pull_request
+      jdk: openjdk11
 notifications:
   email:
     recipients:
