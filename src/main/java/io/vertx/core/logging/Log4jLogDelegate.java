@@ -28,6 +28,11 @@ public class Log4jLogDelegate implements LogDelegate {
     logger = org.apache.log4j.Logger.getLogger(name);
   }
 
+  @Override
+  public boolean isWarnEnabled() {
+    return logger.isEnabledFor(Level.WARN);
+  }
+
   public boolean isInfoEnabled() {
     return logger.isInfoEnabled();
   }

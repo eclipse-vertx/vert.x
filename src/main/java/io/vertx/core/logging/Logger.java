@@ -40,6 +40,10 @@ public class Logger {
     this.delegate = delegate;
   }
 
+  public boolean isWarnEnabled() {
+    return delegate.isWarnEnabled();
+  }
+
   public boolean isInfoEnabled() {
     return delegate.isInfoEnabled();
   }
