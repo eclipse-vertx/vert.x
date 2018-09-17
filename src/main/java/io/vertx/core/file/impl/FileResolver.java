@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static io.vertx.core.net.URIDecoder.*;
+import static io.vertx.core.net.impl.URIDecoder.*;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not

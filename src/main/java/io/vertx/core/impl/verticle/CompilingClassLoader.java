@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.vertx.core.net.URIDecoder.decodeURIComponent;
+import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
 
 /**
  *
