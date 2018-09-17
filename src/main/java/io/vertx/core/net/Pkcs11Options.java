@@ -1,6 +1,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.json.JsonObject;
 
 /**
  * The store can either be loaded by Vert.x:
@@ -47,6 +48,27 @@ public class Pkcs11Options implements KeyCertOptions, TrustOptions, Cloneable {
   public Pkcs11Options(Pkcs11Options other) {
     super();
     this.password = other.getPassword();
+  }
+
+  /**
+   * Create options from JSON
+   *
+   * @param json the JSON
+   */
+  public Pkcs11Options(JsonObject json) {
+    super();
+    Pkcs11OptionsConverter.fromJson(json, this);
+  }
+
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    Pkcs11OptionsConverter.toJson(this, json);
+    return json;
   }
 
   /**
