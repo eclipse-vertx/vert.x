@@ -330,3 +330,50 @@ rm host2-keystore.p12
 rm host3-keystore.p12
 rm host4-keystore.p12
 rm host5-keystore.p12
+
+# Self signed PKCS11
+
+1) Download, install and configure softhsm2
+
+SoftHSM is an implementation of a cryptographic store accessible through a PKCS#11 interface.
+
+https://www.opendnssec.org/softhsm/
+
+  1) Location of the configuration file :
+
+  export SOFTHSM2_CONF=/home/user/softhsm2.conf
+
+  2) Initialize Soft Token
+
+  Use either softhsm-util or the PKCS#11 interface. The SO PIN can e.g. be used to re-initialize the token and the user PIN is handed out to the application so it can interact with the token.
+
+  softhsm2-util --init-token --slot 0 --label "vertx-token" --pin vertx --so-pin vertx
+
+2) Create pkcs11.cfg file
+
+name = SoftHSM2
+library = /usr/local/lib/softhsm/libsofthsm2.so
+slotListIndex = 0
+
+3) Generate a Key Pair
+
+keytool -genkeypair -alias vertx-pkcs11 -keyalg RSA -keystore NONE -storetype PKCS11 -providerClass sun.security.pkcs11.SunPKCS11 -providerArg /opt/bar/cfg/pkcs11.cfg
+
+4) Verify
+
+Use keytool :
+
+keytool -keystore NONE -storetype PKCS11 -providerClass sun.security.pkcs11.SunPKCS11 -providerArg /opt/bar/cfg/pkcs11.cfg -list
+
+or http://www.pkcs11admin.net
+
+5) Configure your server
+    1) Create a file java.security.pkcs11 (same content of $JAVA_HOME/lib/security/java.security) or override $JAVA_HOME/lib/security/java.security and add this line:
+
+    security.provider.6=sun.security.pkcs11.SunPKCS11 /opt/bar/cfg/pkcs11.cfg
+
+    2) If your are created java.security.pkcs11, configure your JVM:
+
+    -Djava.security.properties=/opt/bar/cfg/java.security.pkcs11
+
+6) Start your server

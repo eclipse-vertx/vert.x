@@ -83,9 +83,11 @@ public class KeyStoreHelper {
       }
       return new KeyStoreHelper(loadJKSOrPKCS12("JKS", jks.getPassword(), value), jks.getPassword());
     } else if (options instanceof Pkcs11Options) {
+      Pkcs11Options pkcs11 = (Pkcs11Options) options;
+      String password = pkcs11.getPassword();
       KeyStore ks = KeyStore.getInstance("PKCS11");
-      ks.load(null, null);
-      return new KeyStoreHelper(ks, null);
+      ks.load(null, password != null ? password.toCharArray() : null);
+      return new KeyStoreHelper(ks, password);
     } else if (options instanceof PfxOptions) {
       PfxOptions pkcs12 = (PfxOptions) options;
       Supplier<Buffer> value;

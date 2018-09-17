@@ -6,7 +6,9 @@ import io.vertx.codegen.annotations.DataObject;
  * The store can either be loaded by Vert.x:
  * <p>
  * HttpServerOptions options = new HttpServerOptions().setSsl(true);
- * options.setPkcs11KeyOptions(new Pkcs11Options());
+ * options.setPkcs11KeyOptions(new Pkcs11Options().setPassword("vertx"));
+ * <p>
+ * Password is optional.
  * <p>
  * Configuration:
  * <p>
@@ -14,7 +16,7 @@ import io.vertx.codegen.annotations.DataObject;
  * or create a new Java Security properties file (ex: java.security.pkcs11).
  * <p>
  * Add this line:
- * security.provider.7=sun.security.pkcs11.SunPKCS11 /opt/bar/cfg/pkcs11.cfg
+ * security.provider.6=sun.security.pkcs11.SunPKCS11 /opt/bar/cfg/pkcs11.cfg
  * <p>
  * pkcs11.cfg example:
  * <p>
@@ -28,11 +30,63 @@ import io.vertx.codegen.annotations.DataObject;
 @DataObject(generateConverter = true)
 public class Pkcs11Options implements KeyCertOptions, TrustOptions, Cloneable {
 
+  private String password;
+
   /**
    * Default constructor
    */
   public Pkcs11Options() {
     super();
+  }
+
+  /**
+   * Copy constructor
+   *
+   * @param other the options to copy
+   */
+  public Pkcs11Options(Pkcs11Options other) {
+    super();
+    this.password = other.getPassword();
+  }
+
+  /**
+   * @return the password for the key store
+   */
+  public String getPassword() {
+    return password;
+  }
+
+  /**
+   * Set the password for the key store
+   *
+   * @param password the password
+   * @return a reference to this, so the API can be used fluently
+   */
+  public Pkcs11Options setPassword(String password) {
+    this.password = password;
+    return this;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Pkcs11Options)) {
+      return false;
+    }
+
+    Pkcs11Options that = (Pkcs11Options) o;
+
+    return password != null ? password.equals(that.password) : that.password == null;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = 1;
+    result += 31 * result + (password != null ? password.hashCode() : 0);
+
+    return result;
   }
 
   @Override
