@@ -34,6 +34,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -277,7 +279,10 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     void complete() {
       synchronized (Http2ServerConnection.this) {
-        response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, method, uri, true, contentEncoding);
+        response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, method, true, contentEncoding, null);
+        if (METRICS_ENABLED && metrics != null) {
+          response.metric(metrics.responsePushed(conn.metric(), method, uri, response));
+        }
         completionHandler.complete(response);
       }
     }

@@ -69,14 +69,6 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     head.before = head.after = head;
   }
 
-  public boolean contentLengthSet() {
-    return contains(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
-  }
-
-  public boolean contentTypeSet() {
-    return contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE);
-  }
-
   @Override
   public VertxHttpHeaders add(CharSequence name, CharSequence value) {
     int h = AsciiString.hashCode(name);
@@ -388,7 +380,7 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public MultiMap set(CharSequence name, CharSequence value) {
+  public VertxHttpHeaders set(CharSequence name, CharSequence value) {
     return set(name.toString(), value.toString());
   }
 
@@ -484,7 +476,7 @@ public class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public HttpHeaders setInt(CharSequence name, int value) {
-    throw new UnsupportedOperationException();
+    return set(name, Integer.toString(value));
   }
 
   @Override
