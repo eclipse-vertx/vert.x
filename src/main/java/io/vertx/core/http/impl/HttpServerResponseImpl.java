@@ -70,7 +70,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Void> endHandler;
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
-  private boolean chunked;
   private boolean closed;
   private final VertxHttpHeaders headers;
   private MultiMap trailers;
@@ -137,7 +136,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       checkValid();
       // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
       if (version != HttpVersion.HTTP_1_0) {
-        this.chunked = chunked;
+        headers.set(HttpHeaders.TRANSFER_ENCODING, chunked ? "chunked" : null);
       }
       return this;
     }
@@ -146,7 +145,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public boolean isChunked() {
     synchronized (conn) {
-      return chunked;
+      return HttpHeaders.CHUNKED.equals(headers.get(HttpHeaders.TRANSFER_ENCODING));
     }
   }
 
@@ -446,10 +445,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       long contentLength = Math.min(length, file.length() - offset);
       bytesWritten = contentLength;
-      if (!headers.contentTypeSet()) {
+      if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
         String contentType = MimeMapping.getMimeTypeForFilename(filename);
         if (contentType != null) {
-          putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+          headers.set(HttpHeaders.CONTENT_TYPE, contentType);
         }
       }
       prepareHeaders(bytesWritten);
@@ -560,10 +559,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     } else if (version == HttpVersion.HTTP_1_1 && !keepAlive) {
       headers.set(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
     }
-    if (!head) {
-      if (chunked) {
-        headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
-      } else if (!headers.contentLengthSet() && contentLength >= 0) {
+    if (head || status == HttpResponseStatus.NOT_MODIFIED) {
+      // For HEAD request or NOT_MODIFIED response
+      // don't set automatically the content-length
+      // and remove the transfer-encoding
+      headers.remove(HttpHeaders.TRANSFER_ENCODING);
+    } else {
+      // Set content-length header automatically
+      if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH) && contentLength >= 0) {
         String value = contentLength == 0 ? "0" : String.valueOf(contentLength);
         headers.set(HttpHeaders.CONTENT_LENGTH, value);
       }
@@ -586,7 +589,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private HttpServerResponseImpl write(ByteBuf chunk) {
     synchronized (conn) {
       checkValid();
-      if (!headWritten && !chunked && !headers.contentLengthSet()) {
+      if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         if (version != HttpVersion.HTTP_1_0) {
           throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
             + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
