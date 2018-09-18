@@ -235,6 +235,11 @@
               <vertx.useNativeTransport>${vertx.testNativeTransport}</vertx.useNativeTransport>
               <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
             </systemPropertyVariables>
+            <environmentVariables>
+              <!--mandatory-->
+              <SOFTHSM2_LIB>${basedir}/src/test/resources/tls/SoftHSM2/lib/libsofthsm2.so</SOFTHSM2_LIB>
+              <SOFTHSM2_CONF>${basedir}/target/classes/softhsm2.conf</SOFTHSM2_CONF>
+            </environmentVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
             <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
@@ -616,6 +621,13 @@
         <excludes>
           <exclude>**/vertx-version.txt</exclude>
         </excludes>
+      </resource>
+      <resource>
+        <directory>src/test/resources/tls/SoftHSM2/etc</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/softhsm2.conf</include>
+        </includes>
       </resource>
     </resources>
   </build>
