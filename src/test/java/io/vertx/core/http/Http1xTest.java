@@ -3835,66 +3835,55 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @Test
-  public void testHeadMustNotAutomaticallySetContentHeaders() throws Exception {
-    testHeadAutomaticallySet(MultiMap.caseInsensitiveMultiMap(), respHeaders -> {
-      assertFalse(respHeaders.contains("Content-Length"));
-      assertFalse(respHeaders.contains("Transfer-Encoding"));
-    });
-  }
-
-  @Test
-  public void testHeadMustNotSendBodyWhenContentLengthSet() throws Exception {
-    MultiMap reqHeaders = MultiMap.caseInsensitiveMultiMap();
-    reqHeaders.set("Content-Length", "10");
-    testHeadAutomaticallySet(reqHeaders, respHeaders -> {
-      assertEquals(" 10", respHeaders.get("Content-Length"));
-      assertNull(respHeaders.get("Transfer-Encoding"));
-    });
-  }
-
-  @Test
-  public void testHeadMustNotSendBodyWhenTransferEncodingSet() throws Exception {
-    MultiMap reqHeaders = MultiMap.caseInsensitiveMultiMap();
-    reqHeaders.set("Transfer-Encoding", "chunked");
-    testHeadAutomaticallySet(reqHeaders, respHeaders -> {
-      assertNull(respHeaders.get("Content-Length"));
-      assertEquals(" chunked", respHeaders.get("Transfer-Encoding"));
-    });
-  }
-
-  private void testHeadAutomaticallySet(MultiMap reqHeaders, Consumer<MultiMap> headersChecker) throws Exception {
+  // Use a raw socket to check the body response is effectively empty (it could be an empty chunk)
+  protected MultiMap checkEmptyHttpResponse(HttpMethod method, int sc, MultiMap reqHeaders) throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
+      resp.setStatusCode(sc);
       resp.headers().addAll(reqHeaders);
       resp.end();
     });
     startServer();
     NetClient client = vertx.createNetClient();
-    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, onSuccess(so -> {
-      so.write(
-          "HEAD / HTTP/1.1\r\n" +
-          "Connection: close\r\n" +
-          "\r\n");
-      Buffer buff = Buffer.buffer();
-      so.handler(buff::appendBuffer);
-      so.endHandler(v -> {
-        String content = buff.toString();
-        int idx = content.indexOf("\r\n\r\n");
-        LinkedList<String> records = new LinkedList<String>(Arrays.asList(content.substring(0, idx).split("\\r\\n")));
-        assertEquals("HTTP/1.1 200 OK", records.removeFirst());
-        assertEquals("", content.substring(idx + 4));
-        MultiMap respHeaders = MultiMap.caseInsensitiveMultiMap();
-        records.forEach(record -> {
-          int index = record.indexOf(":");
-          String value = record.substring(0, index);
-          respHeaders.add(value, record.substring(index + 1));
-        });
-        headersChecker.accept(respHeaders);
-        testComplete();
+    try {
+      CompletableFuture<MultiMap> result = new CompletableFuture<>();
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, ar -> {
+        if (ar.succeeded()) {
+          NetSocket so = ar.result();
+          so.write(
+            method.name() + " / HTTP/1.1\r\n" +
+              "Connection: close\r\n" +
+              "\r\n");
+          Buffer body = Buffer.buffer();
+          so.exceptionHandler(result::completeExceptionally);
+          so.handler(body::appendBuffer);
+          so.endHandler(v -> {
+            String content = body.toString();
+            int idx = content.indexOf("\r\n\r\n");
+            if (idx == content.length() - 4) {
+              LinkedList<String> records = new LinkedList<>(Arrays.asList(content.substring(0, idx).split("\\r\\n")));
+              String statusLine = records.removeFirst();
+              assertEquals("HTTP/1.1 " + sc, statusLine.substring(0, statusLine.indexOf(' ', 9)));
+              assertEquals("", content.substring(idx + 4));
+              MultiMap respHeaders = MultiMap.caseInsensitiveMultiMap();
+              records.forEach(record -> {
+                int index = record.indexOf(":");
+                String value = record.substring(0, index);
+                respHeaders.add(value.trim(), record.substring(index + 1).trim());
+              });
+              result.complete(respHeaders);
+            } else {
+              result.completeExceptionally(new Exception());
+            }
+          });
+        } else {
+          result.completeExceptionally(ar.cause());
+        }
       });
-    }));
-    await();
+      return result.get(20, TimeUnit.SECONDS);
+    } finally {
+      client.close();
+    }
   }
 
   @Test

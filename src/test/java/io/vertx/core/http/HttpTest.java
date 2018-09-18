@@ -2320,7 +2320,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testHeadNoBody() {
+  public void testHeadCanSetContentLength() {
     server.requestHandler(req -> {
       assertEquals(HttpMethod.HEAD, req.method());
       // Head never contains a body but it can contain a Content-Length header
@@ -2331,7 +2331,158 @@ public abstract class HttpTest extends HttpTestBase {
 
     server.listen(onSuccess(s -> {
       client.request(HttpMethod.HEAD, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        assertEquals(41, Integer.parseInt(resp.headers().get("Content-Length")));
+        assertEquals("41", resp.headers().get("Content-Length"));
+        resp.endHandler(v -> testComplete());
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHeadDoesNotSetAutomaticallySetContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, MultiMap.caseInsensitiveMultiMap());
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testHeadAllowsContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, MultiMap.caseInsensitiveMultiMap().set("content-length", "34"));
+    assertEquals("34", respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testHeadRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNoContentRemovesContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, MultiMap.caseInsensitiveMultiMap().set("content-length", "34"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNoContentRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testResetContentSetsContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 205, MultiMap.caseInsensitiveMultiMap());
+    assertEquals("0", respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testResetContentRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 205, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
+    assertEquals("0", respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNotModifiedDoesNotSetAutomaticallySetContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, MultiMap.caseInsensitiveMultiMap());
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNotModifiedAllowsContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, MultiMap.caseInsensitiveMultiMap().set("content-length", "34"));
+    assertEquals("34", respHeaders.get("Content-Length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNotModifiedRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void test1xxRemovesContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, MultiMap.caseInsensitiveMultiMap().set("content-length", "34"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void test1xxRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  protected MultiMap checkEmptyHttpResponse(HttpMethod method, int sc, MultiMap reqHeaders) throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setStatusCode(sc);
+      resp.headers().addAll(reqHeaders);
+      resp.end();
+    });
+    startServer();
+    try {
+      CompletableFuture<MultiMap> result = new CompletableFuture<>();
+      client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, "/", resp -> {
+        Buffer body = Buffer.buffer();
+        resp.exceptionHandler(result::completeExceptionally);
+        resp.handler(body::appendBuffer);
+        resp.endHandler(v -> {
+          if (body.length() > 0) {
+            result.completeExceptionally(new Exception());
+          } else {
+            result.complete(resp.headers());
+          }
+        });
+      }).setFollowRedirects(false)
+        .exceptionHandler(result::completeExceptionally)
+        .end();
+      return result.get(20, TimeUnit.SECONDS);
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testHeadHasNoContentLengthByDefault() {
+    server.requestHandler(req -> {
+      assertEquals(HttpMethod.HEAD, req.method());
+      // By default HEAD does not have a content-length header
+      req.response().end();
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.HEAD, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertNull(resp.headers().get(HttpHeaders.CONTENT_LENGTH));
+        resp.endHandler(v -> testComplete());
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHeadButCanSetContentLength() {
+    server.requestHandler(req -> {
+      assertEquals(HttpMethod.HEAD, req.method());
+      // By default HEAD does not have a content-length header but it can contain a content-length header
+      // if explicitly set
+      req.response().putHeader(HttpHeaders.CONTENT_LENGTH, "41").end();
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.HEAD, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals("41", resp.headers().get(HttpHeaders.CONTENT_LENGTH));
         resp.endHandler(v -> testComplete());
       }).end();
     }));
