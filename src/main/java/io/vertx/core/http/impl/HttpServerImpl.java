@@ -694,7 +694,23 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else if (msg instanceof HttpContent) {
         if (wsRequest != null) {
-          wsRequest.content().writeBytes(((HttpContent) msg).content());
+          ByteBuf content = wsRequest.content();
+          boolean overflow = content.readableBytes() > 8192;
+          content.writeBytes(((HttpContent) msg).content());
+          if (content.readableBytes() > 8192) {
+            if (!overflow) {
+              FullHttpResponse resp = new DefaultFullHttpResponse(
+                io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
+                HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE
+              );
+              chctx.writeAndFlush(resp);
+              chctx.close();
+            }
+            if (msg instanceof LastHttpContent) {
+              wsRequest = null;
+              return;
+            }
+          }
           if (msg instanceof LastHttpContent) {
             FullHttpRequest req = wsRequest;
             wsRequest = null;

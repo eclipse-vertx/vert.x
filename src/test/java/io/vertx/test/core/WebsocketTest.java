@@ -1057,6 +1057,23 @@ public class WebsocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testRequestEntityTooLarge() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> fail());
+    server.listen(onSuccess(ar -> {
+      client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, resp -> {
+        assertEquals(413, resp.statusCode());
+        resp.request().connection().closeHandler(v -> {
+          testComplete();
+        });
+      }).putHeader("Upgrade", "Websocket")
+        .putHeader("Connection", "Upgrade")
+        .end(TestUtils.randomBuffer(8192 + 1));
+    }));
+    await();
+  }
+
+  @Test
   public void testWriteMessageHybi00() {
     testWriteMessage(256, WebsocketVersion.V00);
   }
