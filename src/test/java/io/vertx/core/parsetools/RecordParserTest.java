@@ -300,59 +300,12 @@ public class RecordParserTest {
     catch (RecordTooLongException ex) { /*OK*/ }
 
 
-    AtomicInteger handled = new AtomicInteger();
-    Handler<Throwable> exHandler = throwable -> handled.incrementAndGet();
+    AtomicBoolean handled = new AtomicBoolean();
+    Handler<Throwable> exHandler = throwable -> handled.set(true);
 
-    doTestDelimitedMaxRecordSize(Buffer.buffer("-ABCDE-042--FFF--"), Buffer.buffer("--"), new Integer[] { 2 },
-      3, exHandler, Buffer.buffer("FFF"));
-    assertEquals(1, handled.get());
-
-
-    handled.set(0);
-    doTestDelimitedMaxRecordSize(Buffer.buffer("ABCDE-42-"), Buffer.buffer("-"), new Integer[] { 10 },
-      4, exHandler, Buffer.buffer("42"));
-    assertEquals(1, handled.get());
-
-
-    handled.set(0);
-    doTestDelimitedMaxRecordSize(Buffer.buffer("ABCDEFGHIJKL-42-43-"), Buffer.buffer("-"), new Integer[] { 5 },
-      4, exHandler, Buffer.buffer("42"), Buffer.buffer("43"));
-    assertEquals(1, handled.get());
-  }
-
-  @Test
-  public void testMixedMaxRecordSize() {
-    List<Buffer> results = new LinkedList<>();
-    Buffer[] expected = new Buffer[] {Buffer.buffer("10"), Buffer.buffer("ABCDEFG"), Buffer.buffer("20"),
-      Buffer.buffer("30"), Buffer.buffer("Z")};
-
-    class MyHandler implements Handler<Buffer> {
-      RecordParser parser = RecordParser.newFixed(2, this);
-      boolean delimited = false;
-
-      public void handle(Buffer buff) {
-        results.add(buff);
-        flip();
-      }
-
-      public void flip() {
-        if (delimited) {
-          parser.fixedSizeMode(2);
-        } else {
-          parser.delimitedMode("-");
-        }
-        delimited = !delimited;
-      }
-    }
-
-    MyHandler handler = new MyHandler();
-    handler.parser.maxRecordSize(10);
-    Handler<Throwable> exHandler = throwable -> handler.flip();
-    handler.parser.exceptionHandler(exHandler);
-    Buffer input = Buffer.buffer("10ABCDEFG-20HIJKLMNOPQZ-30Z-");
-    feedChunks(input, handler.parser, new Integer[] { 5, 2, 3 });
-    checkResults(expected, results.toArray(new Buffer[0]));
-
+    doTestDelimitedMaxRecordSize(Buffer.buffer("ABCD--"), Buffer.buffer("--"), new Integer[] { 2 },
+      3, exHandler, Buffer.buffer("ABCD"));
+    assertTrue(handled.get());
   }
 
   @Test

@@ -37,8 +37,6 @@ public class RecordParserImpl implements RecordParser {
   private byte[] delim;
   private int recordSize;
   private int maxRecordSize;
-  private boolean discarding;
-  private Handler<Buffer> output;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
 
@@ -169,10 +167,12 @@ public class RecordParserImpl implements RecordParser {
    * If a record is longer than specified, a RecordTooLongException will be thrown.
    *
    * @param size the maximum record size
+   * @return  a reference to this, so the API can be used fluently
    */
-  public void maxRecordSize(int size) {
+  public RecordParser maxRecordSize(int size) {
     Arguments.require(size > 0, "Size must be > 0");
     maxRecordSize = size;
+    return this;
   }
 
   private void handleParsing() {
@@ -180,15 +180,7 @@ public class RecordParserImpl implements RecordParser {
     do {
       reset = false;
       if (delimited) {
-        boolean success = parseDelimited();
-        if (!success) {
-          RecordTooLongException ex = new RecordTooLongException("The current record is too long");
-          if (exceptionHandler != null) {
-            exceptionHandler.handle(ex);
-          } else {
-            throw ex;
-          }
-        }
+        parseDelimited();
       } else {
         parseFixed();
       }
@@ -211,9 +203,8 @@ public class RecordParserImpl implements RecordParser {
     }
   }
 
-  private boolean parseDelimited() {
+  private void parseDelimited() {
     int len = buff.length();
-    boolean ok = true;
     for (; pos < len && !reset; pos++) {
       if (buff.getByte(pos) == delim[delimPos]) {
         delimPos++;
@@ -221,24 +212,15 @@ public class RecordParserImpl implements RecordParser {
           Buffer ret = buff.getBuffer(start, pos - delim.length + 1);
           start = pos + 1;
           delimPos = 0;
-          if (!discarding) {
-            handleEvent(ret);
-          } else {
-            discarding = false; //discarded record
-          }
+          handleEvent(ret);
         }
       } else {
         if (delimPos > 0) {
           pos -= delimPos;
           delimPos = 0;
         }
-        if (maxRecordSize > 0 && !discarding && pos - start + 1 > maxRecordSize) {
-            discarding = true;
-            ok = false;
-        }
       }
     }
-    return ok;
   }
 
   private void parseFixed() {
@@ -264,6 +246,14 @@ public class RecordParserImpl implements RecordParser {
       buff.appendBuffer(buffer);
     }
     handleParsing();
+    if (buff != null && maxRecordSize > 0 && buff.length() > maxRecordSize) {
+      RecordTooLongException ex = new RecordTooLongException("The current record is too long");
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(ex);
+      } else {
+        throw ex;
+      }
+    }
   }
 
   private void end() {

@@ -11,6 +11,7 @@
 
 package io.vertx.core.parsetools;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -199,8 +200,10 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * If a record is longer than specified, a RecordTooLongException will be thrown.
    *
    * @param size the maximum record size
+   * @return  a reference to this, so the API can be used fluently
    */
-  void maxRecordSize(int size);
+  @Fluent
+  RecordParser maxRecordSize(int size);
 
   /**
    * This method is called to provide the parser with data.
