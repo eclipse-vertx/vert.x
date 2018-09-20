@@ -17,6 +17,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
@@ -26,6 +27,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
@@ -53,17 +55,18 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private final VertxHttp2Stream stream;
   private final ChannelHandlerContext ctx;
   private final Http2ServerConnection conn;
+  private final boolean head;
   private final boolean push;
-  private final Object metric;
   private final String host;
   private Http2Headers headers = new DefaultHttp2Headers();
+  private Object metric;
   private Http2HeadersAdaptor headersMap;
   private Http2Headers trailers;
   private Http2HeadersAdaptor trailedMap;
   private boolean chunked;
   private boolean headWritten;
   private boolean ended;
-  private int statusCode = 200;
+  private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
@@ -76,12 +79,16 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private boolean inHandler;
   private NetSocket netSocket;
 
-  public Http2ServerResponseImpl(Http2ServerConnection conn, VertxHttp2Stream stream, Object metric, boolean push, String contentEncoding, String host) {
-
-    this.metric = metric;
+  public Http2ServerResponseImpl(Http2ServerConnection conn,
+                                 VertxHttp2Stream stream,
+                                 HttpMethod method,
+                                 boolean push,
+                                 String contentEncoding,
+                                 String host) {
     this.stream = stream;
     this.ctx = conn.handlerContext;
     this.conn = conn;
+    this.head = method == HttpMethod.HEAD;
     this.push = push;
     this.host = host;
 
@@ -90,25 +97,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  public Http2ServerResponseImpl(
-      Http2ServerConnection conn,
-      VertxHttp2Stream stream,
-      HttpMethod method,
-      String path,
-      boolean push,
-      String contentEncoding) {
-    this.stream = stream;
-    this.ctx = conn.handlerContext;
-    this.conn = conn;
-    this.push = push;
-    this.host = null;
-
-    if (contentEncoding != null) {
-      putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
-    }
-
-    HttpServerMetrics metrics = conn.metrics();
-    this.metric = (METRICS_ENABLED && metrics != null) ? metrics.responsePushed(conn.metric(), method, path, this) : null;
+  void metric(Object metric) {
+    this.metric = metric;
   }
 
   synchronized void beginRequest() {
@@ -155,7 +145,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public int getStatusCode() {
     synchronized (conn) {
-      return statusCode;
+      return status.code();
     }
   }
 
@@ -166,7 +156,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     synchronized (conn) {
       checkHeadWritten();
-      this.statusCode = statusCode;
+      this.status = HttpResponseStatus.valueOf(statusCode);
       return this;
     }
   }
@@ -175,7 +165,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public String getStatusMessage() {
     synchronized (conn) {
       if (statusMessage == null) {
-        return HttpResponseStatus.valueOf(statusCode).reasonPhrase();
+        return status.reasonPhrase();
       }
       return statusMessage;
     }
@@ -374,7 +364,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   NetSocket netSocket() {
     checkEnded();
     if (netSocket == null) {
-      statusCode = 200;
+      status = HttpResponseStatus.OK;
       if (!checkSendHeaders(false)) {
         throw new IllegalStateException("Response for CONNECT already sent");
       }
@@ -391,16 +381,29 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
+  private void sanitizeHeaders() {
+    if (head || status == HttpResponseStatus.NOT_MODIFIED) {
+      headers.remove(HttpHeaders.TRANSFER_ENCODING);
+    } else if (status == HttpResponseStatus.RESET_CONTENT) {
+      headers.remove(HttpHeaders.TRANSFER_ENCODING);
+      headers.set(HttpHeaders.CONTENT_LENGTH, "0");
+    } else if (status.codeClass() == HttpStatusClass.INFORMATIONAL || status == HttpResponseStatus.NO_CONTENT) {
+      headers.remove(HttpHeaders.TRANSFER_ENCODING);
+      headers.remove(HttpHeaders.CONTENT_LENGTH);
+    }
+  }
+
   private boolean checkSendHeaders(boolean end) {
     if (!headWritten) {
       if (headersEndHandler != null) {
         headersEndHandler.handle(null);
       }
+      sanitizeHeaders();
       if (Metrics.METRICS_ENABLED && metric != null) {
         conn.metrics().responseBegin(metric, this);
       }
       headWritten = true;
-      headers.status(Integer.toString(statusCode));
+      headers.status(Integer.toString(status.code())); // Could be optimized for usual case ?
       stream.writeHeaders(headers, end);
       if (end) {
         ctx.flush();
@@ -422,7 +425,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         chunk = Unpooled.EMPTY_BUFFER;
       }
       if (end) {
-        if (!headWritten && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
+        if (!headWritten && !head && status != HttpResponseStatus.NOT_MODIFIED && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
           headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
         }
         handleEnded(false);

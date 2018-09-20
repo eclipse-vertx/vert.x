@@ -145,16 +145,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest pause() {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public HttpClientRequest resume() {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public HttpClientRequest endHandler(Handler<Void> endHandler) {
     throw new IllegalStateException();
   }

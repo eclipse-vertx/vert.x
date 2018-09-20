@@ -236,12 +236,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     initChannel(ch.pipeline());
 
-    VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics)) {
-      @Override
-      protected void handleMessage(NetSocketImpl connection, Object msg) {
-        connection.handleMessageReceived(msg);;
-      }
-    };
+    VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics));
     handler.addHandler(sock -> {
       socketMap.put(ch, sock);
       context.executeFromIO(v -> {

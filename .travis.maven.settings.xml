@@ -1,0 +1,50 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <interactiveMode>false</interactiveMode>
+
+  <profiles>
+    <profile>
+      <id>sonatype-repository</id>
+      <repositories>
+        <repository>
+          <id>sonatype-nexus-releases</id>
+          <url>https://oss.sonatype.org/content/repositories/releases</url>
+          <layout>default</layout>
+        </repository>
+        <repository>
+          <id>sonatype-nexus-snapshots</id>
+          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <layout>default</layout>
+          <releases>
+            <enabled>false</enabled>
+          </releases>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>sonatype-repository</activeProfile>
+  </activeProfiles>
+
+  <servers>
+    <server>
+      <id>sonatype-nexus-snapshots</id>
+      <username>${env.SONATYPE_NEXUS_USERNAME}</username>
+      <password>${env.SONATYPE_NEXUS_PASSWORD}</password>
+    </server>
+    <server>
+      <id>sonatype-nexus-staging</id>
+      <username>${env.SONATYPE_NEXUS_USERNAME}</username>
+      <password>${env.SONATYPE_NEXUS_PASSWORD}</password>
+    </server>
+  </servers>
+
+</settings>
+

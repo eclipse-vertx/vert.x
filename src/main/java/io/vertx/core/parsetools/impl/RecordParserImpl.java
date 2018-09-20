@@ -16,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.parsetools.RecordTooLongException;
+import io.vertx.core.queue.Queue;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.Objects;
@@ -42,15 +43,21 @@ public class RecordParserImpl implements RecordParser {
   private Handler<Throwable> exceptionHandler;
 
   private final ReadStream<Buffer> stream;
+  private final Queue<Buffer> pending;
 
   private RecordParserImpl(ReadStream<Buffer> stream, Handler<Buffer> output) {
     this.stream = stream;
-    this.output = output;
+    this.pending = Queue
+      .<Buffer>queue()
+      .handler(output)
+      .writableHandler(v -> {
+        stream.resume();
+      });
   }
 
   public void setOutput(Handler<Buffer> output) {
     Objects.requireNonNull(output, "output");
-    this.output = output;
+    this.pending.handler(output);
   }
 
   /**
@@ -198,6 +205,12 @@ public class RecordParserImpl implements RecordParser {
     start = 0;
   }
 
+  private void handleEvent(Buffer event) {
+    if (!pending.add(event) && stream != null) {
+      stream.pause();
+    }
+  }
+
   private boolean parseDelimited() {
     int len = buff.length();
     boolean ok = true;
@@ -209,7 +222,7 @@ public class RecordParserImpl implements RecordParser {
           start = pos + 1;
           delimPos = 0;
           if (!discarding) {
-            output.handle(ret);
+            handleEvent(ret);
           } else {
             discarding = false; //discarded record
           }
@@ -235,7 +248,7 @@ public class RecordParserImpl implements RecordParser {
       Buffer ret = buff.getBuffer(start, end);
       start = end;
       pos = start - 1;
-      output.handle(ret);
+      handleEvent(ret);
     }
   }
 
@@ -268,7 +281,7 @@ public class RecordParserImpl implements RecordParser {
 
   @Override
   public RecordParser handler(Handler<Buffer> handler) {
-    output = handler;
+    pending.handler(handler);
     if (stream != null) {
       if (handler != null) {
         stream.endHandler(v -> end());
@@ -289,17 +302,19 @@ public class RecordParserImpl implements RecordParser {
 
   @Override
   public RecordParser pause() {
-    if (stream != null) {
-      stream.pause();
-    }
+    pending.pause();
+    return this;
+  }
+
+  @Override
+  public RecordParser fetch(long amount) {
+    pending.take(amount);
     return this;
   }
 
   @Override
   public RecordParser resume() {
-    if (stream != null) {
-      stream.resume();
-    }
+    pending.resume();
     return this;
   }
 

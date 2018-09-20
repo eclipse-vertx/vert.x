@@ -66,7 +66,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private final HandlerManager<Handlers> handlerManager = new HandlerManager<>(availableWorkers);
   private final NetSocketStream connectStream = new NetSocketStream();
   private ChannelGroup serverChannelGroup;
-  private boolean paused;
+  private long demand = Long.MAX_VALUE;
   private volatile boolean listening;
   private Handler<NetSocket> registeredHandler;
   private volatile ServerID id;
@@ -93,16 +93,29 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     }
   }
 
-  protected synchronized void pauseAccepting() {
-    paused = true;
+  private synchronized void pauseAccepting() {
+    demand = 0L;
   }
 
-  protected synchronized void resumeAccepting() {
-    paused = false;
+  private synchronized void resumeAccepting() {
+    demand = Long.MAX_VALUE;
   }
 
-  protected synchronized boolean isPaused() {
-    return paused;
+  private synchronized void fetchAccepting(long amount) {
+    if (amount > 0L) {
+      demand += amount;
+      if (demand < 0L) {
+        demand = Long.MAX_VALUE;
+      }
+    }
+  }
+
+  protected synchronized boolean accept() {
+    boolean accept = demand > 0L;
+    if (accept && demand != Long.MAX_VALUE) {
+      demand--;
+    }
+    return accept;
   }
 
   protected boolean isListening() {
@@ -172,7 +185,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
           protected void initChannel(Channel ch) throws Exception {
-            if (isPaused()) {
+            if (!accept()) {
               ch.close();
               return;
             }
@@ -434,12 +447,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private void connected(HandlerHolder<Handlers> handler, Channel ch) {
     NetServerImpl.this.initChannel(ch.pipeline());
 
-    VertxNetHandler nh = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics)) {
-      @Override
-      protected void handleMessage(NetSocketImpl connection, Object msg) {
-        connection.handleMessageReceived(msg);
-      }
-    };
+    VertxNetHandler nh = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics));
     nh.addHandler(conn -> socketMap.put(ch, conn));
     nh.removeHandler(conn -> socketMap.remove(ch));
     ch.pipeline().addLast("handler", nh);
@@ -485,6 +493,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         */
   private class NetSocketStream implements ReadStream<NetSocket> {
 
+
+
     @Override
     public NetSocketStream handler(Handler<NetSocket> handler) {
       connectHandler(handler);
@@ -500,6 +510,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     @Override
     public NetSocketStream resume() {
       resumeAccepting();
+      return this;
+    }
+
+    @Override
+    public ReadStream<NetSocket> fetch(long amount) {
+      fetchAccepting(amount);
       return this;
     }
 

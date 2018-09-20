@@ -585,5 +585,6 @@ public interface Vertx extends Measured {
   @GenIgnore
   @Nullable Handler<Throwable> exceptionHandler();
 
+  @GenIgnore
   VertxFactory factory = ServiceHelper.loadFactory(VertxFactory.class);
 }

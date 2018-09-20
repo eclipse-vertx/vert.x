@@ -11,10 +11,7 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.*;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,7 +23,33 @@ import io.vertx.core.impl.ContextInternal;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+
+  public static ByteBuf safeBuffer(ByteBufHolder holder, ByteBufAllocator allocator) {
+    return safeBuffer(holder.content(), allocator);
+  }
+
+  public static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
+    if (buf == Unpooled.EMPTY_BUFFER) {
+      return buf;
+    }
+    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
+      try {
+        if (buf.isReadable()) {
+          ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
+          buffer.writeBytes(buf);
+          return buffer;
+        } else {
+          return Unpooled.EMPTY_BUFFER;
+        }
+      } finally {
+        buf.release();
+      }
+    }
+    return buf;
+  }
+
+  private static final Handler<Object> NULL_HANDLER = m -> { };
 
   private C conn;
   private Handler<Void> endReadAndFlush;
@@ -42,13 +65,21 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
   protected void setConnection(C connection) {
     conn = connection;
     endReadAndFlush = v -> conn.endReadAndFlush();
+    messageHandler = ((ConnectionBase)conn)::handleRead; // Dubious cast to make compiler happy
     if (addHandler != null) {
       addHandler.handle(connection);
     }
-    messageHandler = m -> {
-      conn.startRead();
-      handleMessage(conn, m);
-    };
+  }
+
+  /**
+   * Fail the connection, the {@code error} will be sent to the pipeline and the connection will
+   * stop processing any further message.
+   *
+   * @param error the {@code Throwable} to propagate
+   */
+  void fail(Throwable error) {
+    messageHandler = NULL_HANDLER;
+    conn.chctx.pipeline().fireExceptionCaught(error);
   }
 
   /**
@@ -75,26 +106,6 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
 
   public C getConnection() {
     return conn;
-  }
-
-  public static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
-    if (buf == Unpooled.EMPTY_BUFFER) {
-      return buf;
-    }
-    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
-      try {
-        if (buf.isReadable()) {
-          ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
-          buffer.writeBytes(buf);
-          return buffer;
-        } else {
-          return Unpooled.EMPTY_BUFFER;
-        }
-      } finally {
-        buf.release();
-      }
-    }
-    return buf;
   }
 
   @Override
@@ -142,9 +153,8 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    Object message = decode(msg, chctx.alloc());
     ContextInternal ctx = conn.getContext();
-    ctx.executeFromIO(message, messageHandler);
+    ctx.executeFromIO(msg, messageHandler);
   }
 
   @Override
@@ -154,14 +164,4 @@ public abstract class   VertxHandler<C extends ConnectionBase> extends ChannelDu
     }
     ctx.fireUserEventTriggered(evt);
   }
-
-  protected abstract void handleMessage(C connection, Object msg);
-
-  /**
-   * Decode the message before passing it to the channel
-   *
-   * @param msg the message to decode
-   * @return the decoded message
-   */
-  protected abstract Object decode(Object msg, ByteBufAllocator allocator) throws Exception;
 }

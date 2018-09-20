@@ -40,6 +40,9 @@ public interface HttpServerFileUpload extends ReadStream<Buffer> {
   @Override
   HttpServerFileUpload resume();
 
+  @Override
+  HttpServerFileUpload fetch(long amount);
+
   /**
    * Stream the content of this upload to the given file on storage.
    *

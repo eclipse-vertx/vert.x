@@ -53,8 +53,8 @@ public class DefaultParserTest {
 
     StringBuilder usage = new StringBuilder();
     cli.usage(usage);
-    assertThat(usage).startsWith("Usage: test [-f <value>]");
-    assertThat(usage).contains("-f,--file <value>");
+    assertThat(usage.toString()).startsWith("Usage: test [-f <value>]");
+    assertThat(usage.toString()).contains("-f,--file <value>");
   }
 
 
@@ -73,7 +73,7 @@ public class DefaultParserTest {
 
     StringBuilder usage = new StringBuilder();
     cli.usage(usage);
-    assertThat(usage).startsWith("Usage: test [-f <value>]");
+    assertThat(usage.toString()).startsWith("Usage: test [-f <value>]");
   }
 
   @Test
@@ -509,7 +509,7 @@ public class DefaultParserTest {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
-    assertThat(builder).contains("test arg m...");
+    assertThat(builder.toString()).contains("test arg m...");
   }
 
   @Test
@@ -672,7 +672,7 @@ public class DefaultParserTest {
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("[--color {blue, green, red}]") // Usage line
         .contains("  --color {blue, green, red}"); // options
 
@@ -695,7 +695,7 @@ public class DefaultParserTest {
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("[--color {blue, green, red}]") // Usage line
         .contains("  --color {blue, green, red}"); // options
 
@@ -720,7 +720,7 @@ public class DefaultParserTest {
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("[--retention {CLASS, RUNTIME, SOURCE}]") // Usage line
         .contains("  --retention {CLASS, RUNTIME, SOURCE}"); // options
 
@@ -741,7 +741,7 @@ public class DefaultParserTest {
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
-    assertThat(builder)
+    assertThat(builder.toString())
         .contains("[--retention {CLASS, RUNTIME, SOURCE}]") // Usage line
         .contains("  --retention {CLASS, RUNTIME, SOURCE}"); // options
 

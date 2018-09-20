@@ -18,6 +18,8 @@ package io.vertx.core.spi.logging;
  */
 public interface LogDelegate {
 
+  boolean isWarnEnabled();
+
   boolean isInfoEnabled();
 
   boolean isDebugEnabled();

@@ -11,10 +11,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -411,19 +408,20 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         settingsUpdate.remove(key);
       }
     }
+    Runnable pending = () -> {
+      localSettings.putAll(settingsUpdate);
+      if (completionHandler != null) {
+        completionContext.runOnContext(v -> {
+          completionHandler.handle(Future.succeededFuture());
+        });
+      }
+    };
+    updateSettingsHandlers.add(pending);
     handler.writeSettings(settingsUpdate).addListener(fut -> {
-      if (fut.isSuccess()) {
+      if (!fut.isSuccess()) {
         synchronized (Http2ConnectionBase.this) {
-          updateSettingsHandlers.add(() -> {
-            localSettings.putAll(settingsUpdate);
-            if (completionHandler != null) {
-              completionContext.runOnContext(v -> {
-                completionHandler.handle(Future.succeededFuture());
-              });
-            }
-          });
+          updateSettingsHandlers.remove(pending);
         }
-      } else {
         if (completionHandler != null) {
           completionContext.runOnContext(v -> {
             completionHandler.handle(Future.failedFuture(fut.cause()));

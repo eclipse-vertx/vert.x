@@ -37,6 +37,11 @@ public class SLF4JLogDelegate implements LogDelegate {
     this.logger = (Logger) logger;
   }
 
+  @Override
+  public boolean isWarnEnabled() {
+    return logger.isWarnEnabled();
+  }
+
   public boolean isInfoEnabled() {
     return logger.isInfoEnabled();
   }

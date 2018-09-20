@@ -1,0 +1,27 @@
+language: java
+before_install:
+- cp .travis.maven.settings.xml $HOME/.m2/settings.xml
+env: # important!
+script:
+- set -e
+- mvn -q clean verify -B $TEST_PROFILE
+branches:
+  only:
+  - master
+matrix:
+  include:
+    - jdk: oraclejdk8
+    - if: type != pull_request
+      jdk: oraclejdk8
+      env: TEST_PROFILE="-PtestNativeTransport"
+    - if: type != pull_request
+      jdk: oraclejdk8
+      env: TEST_PROFILE="-PtestDomainSockets"
+    - if: type != pull_request
+      jdk: openjdk11
+notifications:
+  email:
+    recipients:
+      - vertx3-ci@googlegroups.com
+    on_success: always
+    on_failure: always

@@ -20,7 +20,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
@@ -28,9 +27,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.NetSocket;
 
-import java.util.List;
 import java.util.Objects;
 
 import static io.vertx.core.http.HttpHeaders.*;
@@ -94,23 +91,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public  synchronized HttpClientRequest handler(Handler<HttpClientResponse> handler) {
+  public synchronized HttpClientRequest handler(Handler<HttpClientResponse> handler) {
     if (handler != null) {
       checkComplete();
-      respHandler = checkConnect(method, handler);
-    } else {
-      respHandler = null;
     }
-    return this;
-  }
-
-  @Override
-  public HttpClientRequest pause() {
-    return this;
-  }
-
-  @Override
-  public HttpClientRequest resume() {
+    respHandler = handler;
     return this;
   }
 
@@ -452,136 +437,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   protected String hostHeader() {
     return hostHeader != null ? hostHeader : super.hostHeader();
-  }
-
-  private Handler<HttpClientResponse> checkConnect(io.vertx.core.http.HttpMethod method, Handler<HttpClientResponse> handler) {
-    if (method == io.vertx.core.http.HttpMethod.CONNECT) {
-      // special handling for CONNECT
-      handler = connectHandler(handler);
-    }
-    return handler;
-  }
-
-  private Handler<HttpClientResponse> connectHandler(Handler<HttpClientResponse> responseHandler) {
-    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
-    return resp -> {
-      HttpClientResponse response;
-      if (resp.statusCode() == 200) {
-        // connect successful force the modification of the ChannelPipeline
-        // beside this also pause the socket for now so the user has a chance to register its dataHandler
-        // after received the NetSocket
-        NetSocket socket = resp.netSocket();
-        socket.pause();
-
-        response = new HttpClientResponse() {
-          private boolean resumed;
-
-          @Override
-          public HttpClientRequest request() {
-            return resp.request();
-          }
-
-          @Override
-          public int statusCode() {
-            return resp.statusCode();
-          }
-
-          @Override
-          public String statusMessage() {
-            return resp.statusMessage();
-          }
-
-          @Override
-          public MultiMap headers() {
-            return resp.headers();
-          }
-
-          @Override
-          public String getHeader(String headerName) {
-            return resp.getHeader(headerName);
-          }
-
-          @Override
-          public String getHeader(CharSequence headerName) {
-            return resp.getHeader(headerName);
-          }
-
-          @Override
-          public String getTrailer(String trailerName) {
-            return resp.getTrailer(trailerName);
-          }
-
-          @Override
-          public MultiMap trailers() {
-            return resp.trailers();
-          }
-
-          @Override
-          public List<String> cookies() {
-            return resp.cookies();
-          }
-
-          @Override
-          public HttpVersion version() {
-            return resp.version();
-          }
-
-          @Override
-          public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) {
-            resp.bodyHandler(bodyHandler);
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) {
-            resp.customFrameHandler(handler);
-            return this;
-          }
-
-          @Override
-          public synchronized NetSocket netSocket() {
-            if (!resumed) {
-              resumed = true;
-              vertx.getContext().runOnContext((v) -> socket.resume()); // resume the socket now as the user had the chance to register a dataHandler
-            }
-            return socket;
-          }
-
-          @Override
-          public HttpClientResponse endHandler(Handler<Void> endHandler) {
-            resp.endHandler(endHandler);
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse handler(Handler<Buffer> handler) {
-            resp.handler(handler);
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse pause() {
-            resp.pause();
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse resume() {
-            resp.resume();
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse exceptionHandler(Handler<Throwable> handler) {
-            resp.exceptionHandler(handler);
-            return this;
-          }
-        };
-      } else {
-        response = resp;
-      }
-      responseHandler.handle(response);
-    };
   }
 
   private synchronized void connect(Handler<HttpVersion> headersHandler) {

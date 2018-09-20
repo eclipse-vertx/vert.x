@@ -353,6 +353,74 @@ public class FileSystemImpl implements FileSystem {
     return fsPropsInternal(path, null).perform();
   }
 
+
+  @Override
+  public FileSystem createTempDirectory(String prefix, Handler<AsyncResult<String>> handler) {
+    createTempDirectoryInternal(null, prefix, null, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempDirectoryBlocking(String prefix) {
+    return createTempDirectoryInternal(null, prefix, null, null).perform();
+  }
+
+  @Override
+  public FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler) {
+    createTempDirectoryInternal(null, prefix, perms, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempDirectoryBlocking(String prefix, String perms) {
+    return createTempDirectoryInternal(null, prefix, perms, null).perform();
+  }
+
+  @Override
+  public FileSystem createTempDirectory(String dir, String prefix, String perms, Handler<AsyncResult<String>> handler) {
+    createTempDirectoryInternal(dir, prefix, perms, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempDirectoryBlocking(String dir, String prefix, String perms) {
+    return createTempDirectoryInternal(dir, prefix, perms, null).perform();
+  }
+
+  @Override
+  public FileSystem createTempFile(String prefix, String suffix, Handler<AsyncResult<String>> handler) {
+    createTempFileInternal(null, prefix, suffix, null, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempFileBlocking(String prefix, String suffix) {
+    return createTempFileInternal(null, prefix, suffix, null, null).perform();
+  }
+
+  @Override
+  public FileSystem createTempFile(String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
+    createTempFileInternal(null, prefix, suffix, perms, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempFileBlocking(String prefix, String suffix, String perms) {
+    return createTempFileInternal(null, prefix, suffix, perms, null).perform();
+  }
+
+
+  @Override
+  public FileSystem createTempFile(String dir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
+    createTempFileInternal(dir, prefix, suffix, perms, handler).run();
+    return this;
+  }
+
+  @Override
+  public String createTempFileBlocking(String dir, String prefix, String suffix, String perms) {
+    return createTempFileInternal(dir, prefix, suffix, perms, null).perform();
+  }
+
   private BlockingAction<Void> copyInternal(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(from);
     Objects.requireNonNull(to);
@@ -682,6 +750,62 @@ public class FileSystemImpl implements FileSystem {
           throw new FileSystemException(e);
         }
         return null;
+      }
+    };
+  }
+
+  protected BlockingAction<String> createTempDirectoryInternal(String parentDir, String prefix, String perms, Handler<AsyncResult<String>> handler) {
+    FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+    return new BlockingAction<String>(handler) {
+      public String perform() {
+        try {
+          Path tmpDir;
+          if (parentDir != null) {
+            Path dir = vertx.resolveFile(parentDir).toPath();
+            if (attrs != null) {
+              tmpDir = Files.createTempDirectory(dir, prefix, attrs);
+            } else {
+              tmpDir = Files.createTempDirectory(dir, prefix);
+            }
+          } else {
+            if (attrs != null) {
+              tmpDir = Files.createTempDirectory(prefix, attrs);
+            } else {
+              tmpDir = Files.createTempDirectory(prefix);
+            }
+          }
+          return tmpDir.toFile().getAbsolutePath();
+        } catch (IOException e) {
+          throw new FileSystemException(e);
+        }
+      }
+    };
+  }
+
+  protected BlockingAction<String> createTempFileInternal(String parentDir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
+    FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+    return new BlockingAction<String>(handler) {
+      public String perform() {
+        try {
+          Path tmpFile;
+          if (parentDir != null) {
+            Path dir = vertx.resolveFile(parentDir).toPath();
+            if (attrs != null) {
+              tmpFile = Files.createTempFile(dir, prefix, suffix, attrs);
+            } else {
+              tmpFile = Files.createTempFile(dir, prefix, suffix);
+            }
+          } else {
+            if (attrs != null) {
+              tmpFile = Files.createTempFile(prefix, suffix, attrs);
+            } else {
+              tmpFile = Files.createTempFile(prefix, suffix);
+            }
+          }
+          return tmpFile.toFile().getAbsolutePath();
+        } catch (IOException e) {
+          throw new FileSystemException(e);
+        }
       }
     };
   }

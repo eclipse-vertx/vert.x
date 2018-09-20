@@ -11,14 +11,9 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -26,7 +21,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
-  private boolean closeFrameSent;
+
   private ContextInternal context;
   private ChannelHandlerContext chctx;
   private final HttpVersion version;
@@ -85,41 +80,5 @@ class Http1xClientHandler extends VertxHttpHandler<Http1xClientConnection> {
       metrics.endpointDisconnected(endpointMetric, getConnection().metric());
     }
     super.channelInactive(chctx);
-  }
-
-  @Override
-  protected void handleMessage(Http1xClientConnection conn, Object msg) {
-    if (msg instanceof HttpObject) {
-      HttpObject obj = (HttpObject) msg;
-      conn.handleMessage(obj);
-    } else if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      switch (frame.type()) {
-        case BINARY:
-        case CONTINUATION:
-        case TEXT:
-        case PONG:
-          conn.handleWsFrame(frame);
-          break;
-        case PING:
-          // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-          chctx.writeAndFlush(new PongWebSocketFrame(frame.getBinaryData().copy()));
-          break;
-        case CLOSE:
-          conn.handleWsFrame(frame);
-          if (!closeFrameSent) {
-            // Echo back close frame and close the connection once it was written.
-            // This is specified in the WebSockets RFC 6455 Section  5.4.1
-            CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
-            chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
-            closeFrameSent = true;
-          }
-          break;
-        default:
-          throw new IllegalStateException("Invalid type: " + frame.type());
-      }
-    } else {
-      throw new IllegalStateException("Invalid object " + msg);
-    }
   }
 }

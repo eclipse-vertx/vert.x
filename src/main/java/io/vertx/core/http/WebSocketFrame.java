@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
@@ -136,5 +137,6 @@ public interface WebSocketFrame {
    */
   String closeReason();
 
+  @GenIgnore
   WebSocketFrameFactory factory = ServiceHelper.loadFactory(WebSocketFrameFactory.class);
 }

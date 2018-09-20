@@ -78,6 +78,9 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpClientRequest resume();
 
   @Override
+  HttpClientRequest fetch(long amount);
+
+  @Override
   HttpClientRequest endHandler(Handler<Void> endHandler);
 
   @Fluent

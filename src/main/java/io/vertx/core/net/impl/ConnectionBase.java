@@ -69,20 +69,20 @@ public abstract class ConnectionBase {
   }
 
   /**
-   * Encode to message before writing to the channel
+   * Fail the connection, the {@code error} will be sent to the pipeline and the connection will
+   * stop processing any further message.
    *
-   * @param obj the object to encode
-   * @return the encoded message
+   * @param error the {@code Throwable} to propagate
    */
-  protected Object encode(Object obj) {
-    return obj;
+  public void fail(Throwable error) {
+    handler().fail(error);
   }
 
-  public ChannelHandler handler() {
-    return chctx.handler();
+  public VertxHandler handler() {
+    return (VertxHandler) chctx.handler();
   }
 
-  public synchronized final void startRead() {
+  private synchronized void startRead() {
     checkContext();
     read = true;
   }
@@ -98,7 +98,6 @@ public abstract class ConnectionBase {
   }
 
   private void write(Object msg, ChannelPromise promise) {
-    msg = encode(msg);
     if (read || writeInProgress > 0) {
       needsFlush = true;
       chctx.write(msg, promise);
@@ -175,7 +174,7 @@ public abstract class ConnectionBase {
     config.setWriteBufferWaterMark(new WriteBufferWaterMark(size / 2, size));
   }
 
-  protected void checkContext() {
+  protected final void checkContext() {
     // Sanity check
     if (context != vertx.getContext()) {
       throw new IllegalStateException("Wrong context!");
@@ -347,5 +346,13 @@ public abstract class ConnectionBase {
     InetSocketAddress addr = (InetSocketAddress) chctx.channel().localAddress();
     if (addr == null) return null;
     return new SocketAddressImpl(addr);
+  }
+
+  final void handleRead(Object msg) {
+    startRead();
+    handleMessage(msg);
+  }
+
+  public void handleMessage(Object msg) {
   }
 }

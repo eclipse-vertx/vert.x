@@ -46,6 +46,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase resume();
 
   @Override
+  WebSocketBase fetch(long amount);
+
+  @Override
   WebSocketBase endHandler(Handler<Void> endHandler);
 
   @Override

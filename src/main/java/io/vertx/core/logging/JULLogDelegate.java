@@ -28,6 +28,11 @@ public class JULLogDelegate implements LogDelegate {
     logger = java.util.logging.Logger.getLogger(name);
   }
 
+  @Override
+  public boolean isWarnEnabled() {
+    return logger.isLoggable(Level.WARNING);
+  }
+
   public boolean isInfoEnabled() {
     return logger.isLoggable(Level.INFO);
   }

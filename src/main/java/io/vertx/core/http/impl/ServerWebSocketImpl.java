@@ -16,13 +16,12 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.ConnectionBase;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
 
@@ -40,7 +39,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private final String uri;
   private final String path;
   private final String query;
-  private final Supplier<String> connect;
+  private final Function<ServerWebSocketImpl, String> handshaker;
   private final MultiMap headers;
 
   private boolean connected;
@@ -48,14 +47,14 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private HttpResponseStatus rejectedStatus;
 
   public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
-                             Http1xConnectionBase conn, boolean supportsContinuation, Supplier<String> connectRunnable,
+                             Http1xConnectionBase conn, boolean supportsContinuation, Function<ServerWebSocketImpl, String> handshaker,
                              int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.uri = uri;
     this.path = path;
     this.query = query;
     this.headers = headers;
-    this.connect = connectRunnable;
+    this.handshaker = handshaker;
   }
 
   @Override
@@ -100,7 +99,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private void reject(HttpResponseStatus status) {
     synchronized (conn) {
       checkClosed();
-      if (connect == null) {
+      if (handshaker == null) {
         throw new IllegalStateException("Cannot reject websocket on the client side");
       }
       if (connected) {
@@ -143,7 +142,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   private boolean checkAccept() {
-    if (connect != null) {
+    if (handshaker != null) {
       if (isRejected()) {
         return true;
       }
@@ -155,7 +154,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   private void connect() {
-    subProtocol(connect.get());
+    subProtocol(handshaker.apply(this));
     connected = true;
   }
 
