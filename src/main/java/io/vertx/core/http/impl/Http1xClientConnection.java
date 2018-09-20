@@ -865,7 +865,7 @@ public class Http1xClientConnection extends Http1xConnectionBase implements Http
     }
 
     if(exceptionHandler() == null) {
-      client.exceptionHandler().handle(e);
+      client.uncaughtExceptionHandler().handle(e);
     }
   }
 

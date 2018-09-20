@@ -26,7 +26,6 @@ import io.vertx.core.streams.Pump;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -3916,13 +3915,11 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testConnectionExceptionHandler() throws Exception {
+  public void testUncaughtConnectionExceptionHandlerTriggered() throws Exception {
     final int netServerPort = 8999;
-    Handler<Throwable> connectionHandler = throwable -> {
-      complete();
-    };
+    Handler<Throwable> uncaughtConnectionHandler = throwable -> complete();
 
-    client.exceptionHandler(connectionHandler);
+    client.uncaughtExceptionHandler(uncaughtConnectionHandler);
 
     RequestOptions requestOptions = new RequestOptions()
       .setPort(netServerPort)
@@ -3935,6 +3932,42 @@ public abstract class HttpTest extends HttpTestBase {
     NetServerOptions options = new NetServerOptions().setPort(netServerPort)
                                                     .setHost(NetServerOptions.DEFAULT_HOST)
                                                     .setSsl(false);
+    NetServer netServer = vertx.createNetServer(options);
+
+    netServer.connectHandler((netSocket) -> {
+      netSocket.handler(event -> {
+        Buffer serverInvalidResponse = Buffer.buffer("HTTP/4.1 200 OK\\r\\n\n"
+          + "\\r\\n");
+        netSocket.end(serverInvalidResponse);
+      });
+
+    });
+    startNetServer(netServer);
+    request.end();
+    await();
+    netServer.close();
+  }
+
+  @Test
+  public void testUncaughtConnectionExceptionHandlerNotTriggered() throws Exception {
+    final int netServerPort = 8999;
+    Handler<Throwable> connectionHandler = throwable -> fail();
+
+    client.uncaughtExceptionHandler(connectionHandler);
+
+    RequestOptions requestOptions = new RequestOptions()
+      .setPort(netServerPort)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setSsl(false).setURI("/somepath");
+
+    HttpClientRequest request = client.get(requestOptions, response -> {
+    });
+
+    request.connectionHandler( throwable -> complete());
+
+    NetServerOptions options = new NetServerOptions().setPort(netServerPort)
+                                                     .setHost(NetServerOptions.DEFAULT_HOST)
+                                                     .setSsl(false);
     NetServer netServer = vertx.createNetServer(options);
 
     netServer.connectHandler((netSocket) -> {

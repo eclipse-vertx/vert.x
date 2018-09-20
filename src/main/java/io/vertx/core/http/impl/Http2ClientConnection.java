@@ -63,7 +63,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     super.handleException(t);
 
     if(exceptionHandler() == null) {
-      client.exceptionHandler().handle(t);
+      client.uncaughtExceptionHandler().handle(t);
     }
   }
 

@@ -106,7 +106,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final boolean keepAlive;
   private final boolean pipelining;
   private volatile boolean closed;
-  private volatile Handler<Throwable> exceptionHandler;
+  private volatile Handler<Throwable> uncaughtExceptionHandler;
   private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
@@ -938,13 +938,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClient exceptionHandler(Handler<Throwable> connectionExceptionHandler) {
-    this.exceptionHandler = connectionExceptionHandler;
+  public HttpClient uncaughtExceptionHandler(Handler<Throwable> connectionExceptionHandler) {
+    this.uncaughtExceptionHandler = connectionExceptionHandler;
     return this;
   }
 
-  public Handler<Throwable> exceptionHandler() {
-    return this.exceptionHandler;
+  public Handler<Throwable> uncaughtExceptionHandler() {
+    return this.uncaughtExceptionHandler;
   }
 
   @Override
