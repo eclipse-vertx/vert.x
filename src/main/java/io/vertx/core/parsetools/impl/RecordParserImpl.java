@@ -15,6 +15,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
+import io.vertx.core.parsetools.RecordTooLongException;
 import io.vertx.core.queue.Queue;
 import io.vertx.core.streams.ReadStream;
 
@@ -35,6 +36,7 @@ public class RecordParserImpl implements RecordParser {
   private boolean delimited;
   private byte[] delim;
   private int recordSize;
+  private int maxRecordSize;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
 
@@ -158,6 +160,21 @@ public class RecordParserImpl implements RecordParser {
     reset = true;
   }
 
+  /**
+   * Set the maximum allowed size for a record when using the delimited mode.
+   * The delimiter itself does not count for the record size.
+   * <p>
+   * If a record is longer than specified, a RecordTooLongException will be thrown.
+   *
+   * @param size the maximum record size
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public RecordParser maxRecordSize(int size) {
+    Arguments.require(size > 0, "Size must be > 0");
+    maxRecordSize = size;
+    return this;
+  }
+
   private void handleParsing() {
     int len = buff.length();
     do {
@@ -229,6 +246,14 @@ public class RecordParserImpl implements RecordParser {
       buff.appendBuffer(buffer);
     }
     handleParsing();
+    if (buff != null && maxRecordSize > 0 && buff.length() > maxRecordSize) {
+      RecordTooLongException ex = new RecordTooLongException("The current record is too long");
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(ex);
+      } else {
+        throw ex;
+      }
+    }
   }
 
   private void end() {
