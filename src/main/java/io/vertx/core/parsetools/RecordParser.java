@@ -197,7 +197,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * Set the maximum allowed size for a record when using the delimited mode.
    * The delimiter itself does not count for the record size.
    * <p>
-   * If a record is longer than specified, a RecordTooLongException will be thrown.
+   * If a record is longer than specified, an {@link IllegalStateException} will be thrown.
    *
    * @param size the maximum record size
    * @return  a reference to this, so the API can be used fluently

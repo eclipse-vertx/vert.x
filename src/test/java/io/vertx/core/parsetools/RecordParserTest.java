@@ -13,7 +13,6 @@ package io.vertx.core.parsetools;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
@@ -291,7 +290,7 @@ public class RecordParserTest {
         3, null, Buffer.buffer());
       fail("should throw exception");
     }
-    catch (RecordTooLongException ex) { /*OK*/ }
+    catch (IllegalStateException ex) { /*OK*/ }
     AtomicBoolean handled = new AtomicBoolean();
     Handler<Throwable> exHandler = throwable -> handled.set(true);
     doTestDelimitedMaxRecordSize(Buffer.buffer("ABCD--"), Buffer.buffer("--"), new Integer[] { 2 },
