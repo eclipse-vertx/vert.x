@@ -11,7 +11,6 @@
 
 package io.vertx.core.file;
 
-import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -23,7 +22,7 @@ public class FileSystemOptionsTest extends VertxTestBase {
   public void testDefaults() {
     FileSystemOptions options = new FileSystemOptions();
 
-    assertTrue(options.isFileResolverCachingEnabled());
+    assertTrue(options.isFileCachingEnabled());
     assertTrue(options.isClassPathResolvingEnabled());
   }
 
@@ -33,17 +32,17 @@ public class FileSystemOptionsTest extends VertxTestBase {
 
     Random rand = new Random();
     boolean enabled = rand.nextBoolean();
-    options.setFileResolverCachingEnabled(enabled);
+    options.setFileCachingEnabled(enabled);
     options.setClassPathResolvingEnabled(enabled);
     options = new FileSystemOptions(options);
     assertEquals(enabled, options.isClassPathResolvingEnabled());
-    assertEquals(enabled, options.isFileResolverCachingEnabled());
+    assertEquals(enabled, options.isFileCachingEnabled());
   }
 
   @Test
   public void testEmptyJsonOptions() {
     FileSystemOptions options = new FileSystemOptions(new JsonObject());
-    assertTrue(options.isFileResolverCachingEnabled());
+    assertTrue(options.isFileCachingEnabled());
     assertTrue(options.isClassPathResolvingEnabled());
   }
 
@@ -52,11 +51,11 @@ public class FileSystemOptionsTest extends VertxTestBase {
     Random rand = new Random();
     boolean enabled = rand.nextBoolean();
     FileSystemOptions options = new FileSystemOptions(new JsonObject().
-      put("fileResolverCachingEnabled", enabled).
+      put("fileCachingEnabled", enabled).
       put("classPathResolvingEnabled", enabled)
     );
-    assertEquals(enabled, options.isFileResolverCachingEnabled());
-    assertEquals(enabled, options.toJson().getBoolean("fileResolverCachingEnabled"));
+    assertEquals(enabled, options.isFileCachingEnabled());
+    assertEquals(enabled, options.toJson().getBoolean("fileCachingEnabled"));
     assertEquals(enabled, options.isClassPathResolvingEnabled());
     assertEquals(enabled, options.toJson().getBoolean("classPathResolvingEnabled"));
   }
