@@ -13,7 +13,6 @@ package io.vertx.core.file.impl;
 
 import io.vertx.core.VertxException;
 import io.vertx.core.file.FileSystemOptions;
-import io.vertx.core.VertxOptions;
 
 import java.io.Closeable;
 import java.io.File;
@@ -72,11 +71,11 @@ public class FileResolver {
   }
 
   public FileResolver(boolean enableCaching) {
-    this(new FileSystemOptions().setFileResolverCachingEnabled(enableCaching));
+    this(new FileSystemOptions().setFileCachingEnabled(enableCaching));
   }
 
   public FileResolver(FileSystemOptions fileSystemOptions) {
-    this.enableCaching = fileSystemOptions.isFileResolverCachingEnabled();
+    this.enableCaching = fileSystemOptions.isFileCachingEnabled();
     this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
