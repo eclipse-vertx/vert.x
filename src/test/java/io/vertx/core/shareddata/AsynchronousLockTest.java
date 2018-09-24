@@ -20,6 +20,7 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -203,6 +204,50 @@ public class AsynchronousLockTest extends VertxTestBase {
         // Should be delayed
         assertTrue(System.currentTimeMillis() - start >= 1000);
         testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testReleaseTwice() {
+    getVertx().sharedData().getLock("foo", ar1 -> {
+      assertTrue(ar1.succeeded());
+      long start = System.currentTimeMillis();
+      Lock lock1 = ar1.result();
+
+      AtomicBoolean nextFirst = new AtomicBoolean(false);
+      Runnable checkAndAssert = () -> {
+        if (!nextFirst.get()) {
+          nextFirst.set(true);
+        } else {
+          // Should be the last one
+          assertTrue(System.currentTimeMillis() - start >= 2000);
+          testComplete();
+        }
+      };
+
+      getVertx().sharedData().getLock("foo", ar2 -> {
+        assertTrue(ar2.succeeded());
+        Lock lock2 = ar2.result();
+        vertx.setTimer(1000, tid -> {
+          lock2.release();
+        });
+        checkAndAssert.run();
+      });
+
+      getVertx().sharedData().getLock("foo", ar3 -> {
+        assertTrue(ar3.succeeded());
+        Lock lock3 = ar3.result();
+        vertx.setTimer(1000, tid -> {
+          lock3.release();
+        });
+        checkAndAssert.run();
+      });
+
+      vertx.setTimer(1000, tid -> {
+        lock1.release();
+        lock1.release();
       });
     });
     await();
