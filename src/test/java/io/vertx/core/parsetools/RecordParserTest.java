@@ -13,7 +13,6 @@ package io.vertx.core.parsetools;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
@@ -23,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 import static org.junit.Assert.*;
 
@@ -41,6 +41,7 @@ public class RecordParserTest {
     assertNullPointerException(() -> parser.setOutput(null));
     assertNullPointerException(() -> parser.delimitedMode((Buffer) null));
     assertNullPointerException(() -> parser.delimitedMode((String) null));
+    assertIllegalArgumentException(() -> parser.maxRecordSize(-1));
   }
 
   @Test
@@ -275,6 +276,29 @@ public class RecordParserTest {
   }
 
   @Test
+  public void testDelimitedMaxRecordSize() {
+    doTestDelimitedMaxRecordSize(Buffer.buffer("ABCD\nEFGH\n"), Buffer.buffer("\n"), new Integer[] { 2 },
+      4, null, Buffer.buffer("ABCD"), Buffer.buffer("EFGH"));
+    doTestDelimitedMaxRecordSize(Buffer.buffer("A\nBC10\nDEFGHIJKLM\n"), Buffer.buffer("\n"), new Integer[] { 2 },
+      10, null, Buffer.buffer("A"), Buffer.buffer("BC10"), Buffer.buffer("DEFGHIJKLM"));
+    doTestDelimitedMaxRecordSize(Buffer.buffer("AB\nC\n\nDEFG\n\n"), Buffer.buffer("\n\n"), new Integer[] { 2 },
+      4, null, Buffer.buffer("AB\nC"), Buffer.buffer("DEFG"));
+    doTestDelimitedMaxRecordSize(Buffer.buffer("AB--C---D-"), Buffer.buffer("-"), new Integer[] { 3 },
+      2, null, Buffer.buffer("AB"), Buffer.buffer(""), Buffer.buffer("C"), Buffer.buffer(""), Buffer.buffer(""), Buffer.buffer("D"));
+    try {
+      doTestDelimitedMaxRecordSize(Buffer.buffer("ABCD--"), Buffer.buffer("--"), new Integer[] { 2 },
+        3, null, Buffer.buffer());
+      fail("should throw exception");
+    }
+    catch (IllegalStateException ex) { /*OK*/ }
+    AtomicBoolean handled = new AtomicBoolean();
+    Handler<Throwable> exHandler = throwable -> handled.set(true);
+    doTestDelimitedMaxRecordSize(Buffer.buffer("ABCD--"), Buffer.buffer("--"), new Integer[] { 2 },
+      3, exHandler, Buffer.buffer("ABCD"));
+    assertTrue(handled.get());
+  }
+
+  @Test
   public void testWrapReadStream() {
     AtomicBoolean paused = new AtomicBoolean();
     AtomicReference<Handler<Buffer>> eventHandler = new AtomicReference<>();
@@ -348,5 +372,21 @@ public class RecordParserTest {
 
     endHandler.get().handle(null);
     assertEquals(1, ends.get());
+  }
+
+  private void doTestDelimitedMaxRecordSize(final Buffer input, Buffer delim, Integer[] chunkSizes, int maxRecordSize,
+                                            Handler<Throwable> exHandler, final Buffer... expected) {
+    final Buffer[] results = new Buffer[expected.length];
+    Handler<Buffer> out = new Handler<Buffer>() {
+      int pos;
+      public void handle(Buffer buff) {
+        results[pos++] = buff;
+      }
+    };
+    RecordParser parser = RecordParser.newDelimited(delim, out);
+    parser.maxRecordSize(maxRecordSize);
+    parser.exceptionHandler(exHandler);
+    feedChunks(input, parser, chunkSizes);
+    checkResults(expected, results);
   }
 }

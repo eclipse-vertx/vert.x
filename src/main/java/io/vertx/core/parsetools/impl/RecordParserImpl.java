@@ -35,6 +35,7 @@ public class RecordParserImpl implements RecordParser {
   private boolean delimited;
   private byte[] delim;
   private int recordSize;
+  private int maxRecordSize;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
 
@@ -158,6 +159,21 @@ public class RecordParserImpl implements RecordParser {
     reset = true;
   }
 
+  /**
+   * Set the maximum allowed size for a record when using the delimited mode.
+   * The delimiter itself does not count for the record size.
+   * <p>
+   * If a record is longer than specified, an {@link IllegalStateException} will be thrown.
+   *
+   * @param size the maximum record size
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public RecordParser maxRecordSize(int size) {
+    Arguments.require(size > 0, "Size must be > 0");
+    maxRecordSize = size;
+    return this;
+  }
+
   private void handleParsing() {
     int len = buff.length();
     do {
@@ -229,6 +245,14 @@ public class RecordParserImpl implements RecordParser {
       buff.appendBuffer(buffer);
     }
     handleParsing();
+    if (buff != null && maxRecordSize > 0 && buff.length() > maxRecordSize) {
+      IllegalStateException ex = new IllegalStateException("The current record is too long");
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(ex);
+      } else {
+        throw ex;
+      }
+    }
   }
 
   private void end() {
