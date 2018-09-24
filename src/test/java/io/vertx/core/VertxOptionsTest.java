@@ -11,7 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.VertxOptions;
 import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
@@ -388,7 +387,7 @@ public class VertxOptionsTest extends VertxTestBase {
         put("warningExceptionTime", warningExceptionTime).
         put("fileSystemOptions", new JsonObject().
             put("classPathResolvingEnabled", classPathResolvingEnabled).
-            put("fileResolverCachingEnabled", fileResolverCachingEnabled)).
+            put("fileCachingEnabled", fileResolverCachingEnabled)).
         put("metricsOptions", new JsonObject().
             put("enabled", metricsEnabled).
             put("jmxEnabled", jmxEnabled).
@@ -417,7 +416,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haGroup, options.getHAGroup());
     FileSystemOptions fileSystemOptions = options.getFileSystemOptions();
     assertEquals(classPathResolvingEnabled, fileSystemOptions.isClassPathResolvingEnabled());
-    assertEquals(fileResolverCachingEnabled, fileSystemOptions.isFileResolverCachingEnabled());
+    assertEquals(fileResolverCachingEnabled, fileSystemOptions.isFileCachingEnabled());
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
     assertEquals(warningExceptionTime, options.getWarningExceptionTime());

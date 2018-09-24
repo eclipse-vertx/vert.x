@@ -21,15 +21,22 @@ import static io.vertx.core.file.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAM
 /**
  * Vert.x file system base configuration, this class can be extended by provider implementations to configure
  * those specific implementations.
- *
  */
 @DataObject(generateConverter = true, publicConverter = false)
 public class FileSystemOptions {
+
+  /**
+   * The default behavior for caching files for class path resolution = {@code false} if and only if the system property {@code "vertx.disableFileCaching"} exists and is set to the string {@code "false"}
+   */
   public static final boolean DEFAULT_FILE_CACHING_ENABLED = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
+
+  /**
+   * The default behavior to cache or not class path resolution = {@code false} if and only if the system property {@code "vertx.disableFileCPResolving"} exists and is set to the string {@code "false"}
+   */
   public static final boolean DEFAULT_CLASS_PATH_RESOLVING_ENABLED = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
 
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
-  private boolean fileResolverCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
+  private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
 
   /**
    * Default constructor
@@ -44,7 +51,7 @@ public class FileSystemOptions {
    */
   public FileSystemOptions(FileSystemOptions other) {
     this.classPathResolvingEnabled = other.isClassPathResolvingEnabled();
-    this.fileResolverCachingEnabled = other.isFileResolverCachingEnabled();
+    this.fileCachingEnabled = other.isFileCachingEnabled();
   }
 
   /**
@@ -70,21 +77,41 @@ public class FileSystemOptions {
     return json;
   }
 
+  /**
+   * @return whether classpath resolving is enabled
+   */
   public boolean isClassPathResolvingEnabled() {
     return this.classPathResolvingEnabled;
   }
 
-  public boolean isFileResolverCachingEnabled() {
-    return this.fileResolverCachingEnabled;
-  }
-
+  /**
+   * When vert.x cannot find the file on the filesystem it tries to resolve the
+   * file from the class path when this is set to {@code true}.
+   *
+   * @param classPathResolvingEnabled the value
+   * @return a reference to this, so the API can be used fluently
+   */
   public FileSystemOptions setClassPathResolvingEnabled(boolean classPathResolvingEnabled) {
     this.classPathResolvingEnabled = classPathResolvingEnabled;
     return this;
   }
 
-  public FileSystemOptions setFileResolverCachingEnabled(boolean fileResolverCachingEnabled) {
-    this.fileResolverCachingEnabled = fileResolverCachingEnabled;
+  /**
+   * @return whether file caching is enabled for class path resolving
+   */
+  public boolean isFileCachingEnabled() {
+    return this.fileCachingEnabled;
+  }
+
+  /**
+   * Set to {@code true} to cache files on the real file system
+   * when the filesystem performs class path resolving.
+   *
+   * @param fileCachingEnabled the value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public FileSystemOptions setFileCachingEnabled(boolean fileCachingEnabled) {
+    this.fileCachingEnabled = fileCachingEnabled;
     return this;
   }
 
@@ -96,13 +123,13 @@ public class FileSystemOptions {
     FileSystemOptions that = (FileSystemOptions) o;
 
     if (classPathResolvingEnabled != that.isClassPathResolvingEnabled()) return false;
-    return fileResolverCachingEnabled == that.isFileResolverCachingEnabled();
+    return fileCachingEnabled == that.isFileCachingEnabled();
   }
 
   @Override
   public int hashCode() {
     int result = (classPathResolvingEnabled ? 1 : 0);
-    result += (fileResolverCachingEnabled ? 1 : 0);
+    result += (fileCachingEnabled ? 1 : 0);
     return 31 * result;
   }
 
@@ -110,8 +137,7 @@ public class FileSystemOptions {
   public String toString() {
     return "FileSystemOptions{" +
     "classPathResolvingEnabled=" + classPathResolvingEnabled +
-    ", fileResolverCachingEnabled=" + fileResolverCachingEnabled +
+    ", fileCachingEnabled=" + fileCachingEnabled +
     '}';
   }
-
 }
