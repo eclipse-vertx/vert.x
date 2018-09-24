@@ -459,7 +459,21 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
 
       // Capture some stuff
-      Handler<HttpConnection> initializer = connectionHandler;
+      Handler<HttpConnection> h1 = connectionHandler;
+      Handler<HttpConnection> h2 = client.connectionHandler();
+      Handler<HttpConnection> initializer;
+      if (h1 != null) {
+        if (h2 != null) {
+          initializer = conn -> {
+            h1.handle(conn);
+            h2.handle(conn);
+          };
+        } else {
+          initializer = h1;
+        }
+      } else {
+        initializer = h2;
+      }
       ContextInternal connectCtx = vertx.getOrCreateContext();
 
       // We defer actual connection until the first part of body is written or end is called

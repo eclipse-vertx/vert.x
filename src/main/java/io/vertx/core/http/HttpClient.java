@@ -1392,6 +1392,14 @@ public interface HttpClient extends Measured {
                                   String subProtocols);
 
   /**
+   * Set a connection handler for the client. This handler is called when a new connection is established.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClient connectionHandler(Handler<HttpConnection> handler);
+
+  /**
    * Set a redirect handler for the http client.
    * <p>
    * The redirect handler is called when a {@code 3xx} response is received and the request is configured to

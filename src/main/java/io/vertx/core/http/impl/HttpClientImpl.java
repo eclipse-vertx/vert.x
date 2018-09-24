@@ -18,16 +18,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.*;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -44,7 +35,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -116,6 +106,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final boolean keepAlive;
   private final boolean pipelining;
   private volatile boolean closed;
+  private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
@@ -924,6 +915,16 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public Metrics getMetrics() {
     return metrics;
+  }
+
+  @Override
+  public HttpClient connectionHandler(Handler<HttpConnection> handler) {
+    connectionHandler = handler;
+    return this;
+  }
+
+  Handler<HttpConnection> connectionHandler() {
+    return connectionHandler;
   }
 
   @Override

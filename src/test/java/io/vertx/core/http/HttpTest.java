@@ -3395,7 +3395,21 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientLocalConnectionHandler() throws Exception {
+    testClientConnectionHandler(true, false);
+  }
+
+  @Test
+  public void testClientGlobalConnectionHandler() throws Exception {
+    testClientConnectionHandler(false, true);
+  }
+
+  @Test
   public void testClientConnectionHandler() throws Exception {
+    testClientConnectionHandler(true, true);
+  }
+
+  private void testClientConnectionHandler(boolean local, boolean global) throws Exception {
     server.requestHandler(req -> {
       req.response().end();
     });
@@ -3403,13 +3417,17 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(onSuccess(s -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     AtomicInteger status = new AtomicInteger();
+    Handler<HttpConnection> handler = conn -> status.getAndIncrement();
+    if (global) {
+      client.connectionHandler(handler);
+    }
     HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      assertEquals(1, status.getAndIncrement());
+      assertEquals((local ? 1 : 0) + (global ? 1 : 0), status.getAndIncrement());
       testComplete();
     });
-    req.connectionHandler(conn -> {
-      assertEquals(0, status.getAndIncrement());
-    });
+    if (local) {
+      req.connectionHandler(handler);
+    }
     req.end();
     await();
   }
