@@ -11,7 +11,7 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.util.CharsetUtil;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author <a href="mailto:plopes@redhat.com">Paulo Lopes</a>
@@ -69,7 +69,7 @@ public final class URIDecoder {
     if (!modified) {
       return s;
     }
-    final byte[] buf = s.getBytes();
+    final byte[] buf = s.getBytes(StandardCharsets.UTF_8);
     int pos = i;  // position in `buf'.
     for (; i < size; i++) {
       char c = s.charAt(i);
@@ -83,7 +83,7 @@ public final class URIDecoder {
           buf[pos++] = '%';  // "%%" -> "%"
           break;
         }
-        if (i == size - 1) {
+        if (i >= size - 1) {
           throw new IllegalArgumentException("partial escape"
             + " sequence at end of string: " + s);
         }
@@ -102,7 +102,7 @@ public final class URIDecoder {
         buf[pos++] = (byte) (plus && c == '+' ? ' ' : c);
       }
     }
-    return new String(buf, 0, pos, CharsetUtil.UTF_8);
+    return new String(buf, 0, pos, StandardCharsets.UTF_8);
   }
 
   /**
