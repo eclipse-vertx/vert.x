@@ -12,8 +12,6 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.Handler;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.SendContext;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -27,9 +25,10 @@ public class EventBusInterceptorTest extends VertxTestBase {
   protected EventBus eb;
 
   @Test
-  public void testInterceptorSend() {
-    eb.addInterceptor(sc -> {
+  public void testOutboundInterceptorOnSend() {
+    eb.addOutboundInterceptor(sc -> {
       assertEquals("armadillo", sc.message().body());
+      assertSame(sc.body(), sc.message().body());
       assertTrue(sc.send());
       sc.next();
     });
@@ -42,8 +41,28 @@ public class EventBusInterceptorTest extends VertxTestBase {
   }
 
   @Test
-  public void testInterceptorPublish() {
-    eb.addInterceptor(sc -> {
+  public void testInterceptorsOnSend() {
+    eb.addOutboundInterceptor(sc -> {
+      assertEquals("armadillo", sc.message().body());
+      assertTrue(sc.send());
+      sc.next();
+    }).addInboundInterceptor(dc -> {
+      assertEquals("armadillo", dc.message().body());
+      assertSame(dc.body(), dc.message().body());
+      assertTrue(dc.send());
+      dc.next();
+    });
+    eb.consumer("some-address", msg -> {
+      assertEquals("armadillo", msg.body());
+      testComplete();
+    });
+    eb.send("some-address", "armadillo");
+    await();
+  }
+
+  @Test
+  public void testOutboundInterceptorOnPublish() {
+    eb.addOutboundInterceptor(sc -> {
       assertEquals("armadillo", sc.message().body());
       assertFalse(sc.send());
       sc.next();
@@ -57,8 +76,27 @@ public class EventBusInterceptorTest extends VertxTestBase {
   }
 
   @Test
-  public void testInterceptorNoNext() {
-    eb.addInterceptor(sc -> {
+  public void testInterceptorsOnPublish() {
+    eb.addOutboundInterceptor(sc -> {
+      assertEquals("armadillo", sc.message().body());
+      assertFalse(sc.send());
+      sc.next();
+    }).addInboundInterceptor(dc -> {
+      assertEquals("armadillo", dc.message().body());
+      assertFalse(dc.send());
+      dc.next();
+    });
+    eb.consumer("some-address", msg -> {
+      assertEquals("armadillo", msg.body());
+      testComplete();
+    });
+    eb.publish("some-address", "armadillo");
+    await();
+  }
+
+  @Test
+  public void testOutboundInterceptorNoNext() {
+    eb.addOutboundInterceptor(sc -> {
       assertEquals("armadillo", sc.message().body());
     });
     eb.consumer("some-address", msg -> {
@@ -70,12 +108,26 @@ public class EventBusInterceptorTest extends VertxTestBase {
   }
 
   @Test
-  public void testMultipleInterceptors() {
+  public void testInboundInterceptorNoNext() {
+    eb.addInboundInterceptor(dc -> {
+      assertEquals("armadillo", dc.message().body());
+    });
+
+    eb.consumer("some-address", msg -> {
+      fail("Should not receive message");
+    });
+    eb.send("some-address", "armadillo");
+    vertx.setTimer(200, tid -> testComplete());
+    await();
+  }
+
+  @Test
+  public void testMultipleOutboundInterceptors() {
     AtomicInteger cnt = new AtomicInteger();
     int interceptorNum = 10;
     for (int i = 0; i < interceptorNum; i++) {
       final int expectedCount = i;
-      eb.addInterceptor(sc -> {
+      eb.addOutboundInterceptor(sc -> {
         assertEquals("armadillo", sc.message().body());
         int count = cnt.getAndIncrement();
         assertEquals(expectedCount, count);
@@ -92,32 +144,46 @@ public class EventBusInterceptorTest extends VertxTestBase {
   }
 
   @Test
-  public void testRemoveInterceptor() {
+  public void testRemoveOutboundInterceptor() {
 
     AtomicInteger cnt1 = new AtomicInteger();
     AtomicInteger cnt2 = new AtomicInteger();
+    AtomicInteger cnt3 = new AtomicInteger();
 
-    Handler<SendContext> eb1 = sc -> {
+    Handler<DeliveryContext<Object>> eb1 = sc -> {
       cnt1.incrementAndGet();
       sc.next();
     };
 
-    Handler<SendContext> eb2 = sc -> {
+    Handler<DeliveryContext<Object>> eb2 = sc -> {
       cnt2.incrementAndGet();
       sc.next();
     };
 
-    eb.addInterceptor(eb1).addInterceptor(eb2);
+    Handler<DeliveryContext<Object>> eb3 = sc -> {
+      cnt3.incrementAndGet();
+      sc.next();
+    };
+
+    eb.addOutboundInterceptor(eb1).addOutboundInterceptor(eb2).addOutboundInterceptor(eb3);
 
     eb.consumer("some-address", msg -> {
       if (msg.body().equals("armadillo")) {
         assertEquals(1, cnt1.get());
         assertEquals(1, cnt2.get());
-        eb.removeInterceptor(eb2);
+        assertEquals(1, cnt3.get());
+        eb.removeOutboundInterceptor(eb2);
         eb.send("some-address", "aardvark");
       } else if (msg.body().equals("aardvark")) {
         assertEquals(2, cnt1.get());
         assertEquals(1, cnt2.get());
+        assertEquals(2, cnt3.get());
+        eb.removeOutboundInterceptor(eb3);
+        eb.send("some-address", "anteater");
+      } else if (msg.body().equals("anteater")) {
+        assertEquals(3, cnt1.get());
+        assertEquals(1, cnt2.get());
+        assertEquals(2, cnt3.get());
         testComplete();
       } else {
         fail("wrong body");
@@ -128,9 +194,9 @@ public class EventBusInterceptorTest extends VertxTestBase {
   }
 
   @Test
-  public void testInterceptorOnReply() {
+  public void testOutboundInterceptorOnReply() {
     AtomicInteger cnt = new AtomicInteger();
-    eb.addInterceptor(sc -> {
+    eb.addOutboundInterceptor(sc -> {
       if (sc.message().body().equals("armadillo")) {
         assertEquals(0, cnt.get());
       } else if (sc.message().body().equals("echidna")) {
@@ -155,21 +221,76 @@ public class EventBusInterceptorTest extends VertxTestBase {
   }
 
   @Test
-  public void testExceptionInInterceptor() {
+  public void testInboundInterceptorOnReply() {
     AtomicInteger cnt = new AtomicInteger();
 
-    Handler<SendContext> eb1 = sc -> {
+    eb.addInboundInterceptor(dc -> {
+      if (dc.message().body().equals("armadillo")) {
+        assertEquals(0, cnt.get());
+      } else if (dc.message().body().equals("echidna")) {
+        assertEquals(1, cnt.get());
+      } else {
+        fail("wrong body");
+      }
+      cnt.incrementAndGet();
+      dc.next();
+    });
+
+    eb.consumer("some-address", msg -> {
+      assertEquals("armadillo", msg.body());
+      assertEquals(1, cnt.get());
+      msg.reply("echidna");
+    });
+    eb.send("some-address", "armadillo", reply -> {
+      assertEquals("echidna", reply.result().body());
+      assertEquals(2, cnt.get());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testExceptionInOutboundInterceptor() {
+    AtomicInteger cnt = new AtomicInteger();
+
+    Handler<DeliveryContext<Object>> eb1 = sc -> {
       cnt.incrementAndGet();
       vertx.runOnContext(v -> sc.next());
       throw new RuntimeException("foo");
     };
 
-    Handler<SendContext> eb2 = sc -> {
+    Handler<DeliveryContext<Object>> eb2 = sc -> {
       cnt.incrementAndGet();
       sc.next();
     };
 
-    eb.addInterceptor(eb1).addInterceptor(eb2);
+    eb.addOutboundInterceptor(eb1).addOutboundInterceptor(eb2);
+
+    eb.consumer("some-address", msg -> {
+      assertEquals("armadillo", msg.body());
+      assertEquals(2, cnt.get());
+      testComplete();
+    });
+    eb.send("some-address", "armadillo");
+    await();
+  }
+
+  @Test
+  public void testExceptionInInboundInterceptor() {
+    AtomicInteger cnt = new AtomicInteger();
+
+    Handler<DeliveryContext<Object>> eb1 = dc -> {
+      cnt.incrementAndGet();
+      vertx.runOnContext(v -> dc.next());
+      throw new RuntimeException("foo");
+    };
+
+    Handler<DeliveryContext<Object>> eb2 = dc -> {
+      cnt.incrementAndGet();
+      dc.next();
+    };
+
+    eb.addInboundInterceptor(eb1).addInboundInterceptor(eb2);
 
     eb.consumer("some-address", msg -> {
       assertEquals("armadillo", msg.body());

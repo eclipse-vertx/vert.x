@@ -261,9 +261,9 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     }).completionHandler(ar -> latch.countDown());
     awaitLatch(latch);
     StringLengthCodec codec = new StringLengthCodec();
-    vertices[1].eventBus().registerCodec(codec).addInterceptor(sc -> {
+    vertices[1].eventBus().registerCodec(codec).addOutboundInterceptor(sc -> {
       if ("whatever".equals(sc.message().address())) {
-        assertEquals(content, sc.sentBody());
+        assertEquals(content, sc.body());
         complete();
       }
       sc.next();

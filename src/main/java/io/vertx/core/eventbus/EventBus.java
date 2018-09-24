@@ -257,15 +257,34 @@ public interface EventBus extends Measured {
    * @param interceptor  the interceptor
    * @return a reference to this, so the API can be used fluently
    */
-  EventBus addInterceptor(Handler<SendContext> interceptor);
+  @Fluent
+  <T> EventBus addOutboundInterceptor(Handler<DeliveryContext<T>> interceptor);
 
   /**
-   * Remove an interceptor
+   * Remove an interceptor that was added by {@link #addOutboundInterceptor(Handler)}
    *
    * @param interceptor  the interceptor
    * @return a reference to this, so the API can be used fluently
    */
-  EventBus removeInterceptor(Handler<SendContext> interceptor);
+  @Fluent
+  <T> EventBus removeOutboundInterceptor(Handler<DeliveryContext<T>> interceptor);
 
+  /**
+   * Add an interceptor that will be called whenever a message is received by Vert.x
+   *
+   * @param interceptor  the interceptor
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  <T> EventBus addInboundInterceptor(Handler<DeliveryContext<T>> interceptor);
+
+  /**
+   * Remove an interceptor that was added by {@link #addInboundInterceptor(Handler)}
+   *
+   * @param interceptor  the interceptor
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  <T> EventBus removeInboundInterceptor(Handler<DeliveryContext<T>> interceptor);
 }
 

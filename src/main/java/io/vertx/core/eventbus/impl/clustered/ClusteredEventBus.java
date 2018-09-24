@@ -208,12 +208,12 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void sendReply(SendContextImpl<T> sendContext, MessageImpl replierMessage) {
+  protected <T> void sendReply(OutboundDeliveryContext<T> sendContext, MessageImpl replierMessage) {
     clusteredSendReply(((ClusteredMessage) replierMessage).getSender(), sendContext);
   }
 
   @Override
-  protected <T> void sendOrPub(SendContextImpl<T> sendContext) {
+  protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
     if (sendContext.options.isLocalOnly()) {
       if (metrics != null) {
         metrics.messageSent(sendContext.message.address(), !sendContext.message.isSend(), true, false);
@@ -229,7 +229,7 @@ public class ClusteredEventBus extends EventBusImpl {
     }
   }
 
-  private <T> void onSubsReceived(AsyncResult<ChoosableIterable<ClusterNodeInfo>> asyncResult, SendContextImpl<T> sendContext) {
+  private <T> void onSubsReceived(AsyncResult<ChoosableIterable<ClusterNodeInfo>> asyncResult, OutboundDeliveryContext<T> sendContext) {
     if (asyncResult.succeeded()) {
       ChoosableIterable<ClusterNodeInfo> serverIDs = asyncResult.result();
       if (serverIDs != null && !serverIDs.isEmpty()) {
@@ -326,7 +326,7 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToSubs(ChoosableIterable<ClusterNodeInfo> subs, SendContextImpl<T> sendContext) {
+  private <T> void sendToSubs(ChoosableIterable<ClusterNodeInfo> subs, OutboundDeliveryContext<T> sendContext) {
     String address = sendContext.message.address();
     if (sendContext.message.isSend()) {
       // Choose one
@@ -364,7 +364,7 @@ public class ClusteredEventBus extends EventBusImpl {
     }
   }
 
-  private <T> void clusteredSendReply(ServerID replyDest, SendContextImpl<T> sendContext) {
+  private <T> void clusteredSendReply(ServerID replyDest, OutboundDeliveryContext<T> sendContext) {
     MessageImpl message = sendContext.message;
     String address = message.address();
     if (!replyDest.equals(serverID)) {

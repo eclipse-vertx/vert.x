@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -15,15 +15,17 @@ import io.vertx.codegen.annotations.VertxGen;
 
 /**
  *
- * Encapsulates a message being sent from Vert.x. Used with event bus interceptors
+ * Encapsulates a message being delivered by Vert.x as well as providing control over the message delivery.
+ * <p/>
+ * Used with event bus interceptors.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface SendContext<T> {
+public interface DeliveryContext<T> {
 
   /**
-   * @return  The message being sent
+   * @return  The message being delivered
    */
   Message<T> message();
 
@@ -38,7 +40,7 @@ public interface SendContext<T> {
   boolean send();
 
   /**
-   * @return the value sent or published (before being processed by the codec)
+   * @return the value delivered by the message (before or after being processed by the codec)
    */
-  Object sentBody();
+  Object body();
 }
