@@ -726,7 +726,7 @@ public class VertxOptions {
     if (fileSystemOptions == null) {
       return DEFAULT_FILE_CACHING_ENABLED;
     }
-    return fileSystemOptions.isFileResolverCachingEnabled();
+    return fileSystemOptions.isFileCachingEnabled();
   }
 
   /**
@@ -742,7 +742,7 @@ public class VertxOptions {
     if (fileSystemOptions == null) {
       fileSystemOptions = new FileSystemOptions();
     }
-    this.fileSystemOptions.setFileResolverCachingEnabled(fileResolverCachingEnabled);
+    this.fileSystemOptions.setFileCachingEnabled(fileResolverCachingEnabled);
     return this;
   }
 
