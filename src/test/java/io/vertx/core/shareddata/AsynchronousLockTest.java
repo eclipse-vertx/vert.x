@@ -20,6 +20,7 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -206,5 +207,32 @@ public class AsynchronousLockTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  @Test
+  public void testReleaseTwice() {
+    waitFor(3);
+    AtomicInteger count = new AtomicInteger(); // success lock count
+    getVertx().sharedData().getLock("foo", onSuccess(lock1 -> {
+      count.incrementAndGet();
+      complete();
+      for (int i = 0; i < 2; i++) {
+        getVertx().sharedData().getLockWithTimeout("foo", 1000, ar -> {
+          if (ar.succeeded()) {
+            count.incrementAndGet();
+            vertx.setTimer(1000, l -> {
+              ar.result().release();
+              complete();
+            });
+          } else {
+            complete();
+          }
+        });
+      }
+      lock1.release();
+      lock1.release();
+    }));
+    await();
+    assertEquals(2, count.get());
   }
 }
