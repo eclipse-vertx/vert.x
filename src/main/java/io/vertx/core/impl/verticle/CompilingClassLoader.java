@@ -23,12 +23,12 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
 
 /**
  *
@@ -68,12 +68,7 @@ public class CompilingClassLoader extends ClassLoader {
       throw new RuntimeException("Resource not found: " + sourceName);
     }
     //Need to urldecode it too, since bug in JDK URL class which does not url decode it, so if it contains spaces you are screwed
-    File sourceFile;
-    try {
-      sourceFile = new File(URLDecoder.decode(resource.getFile(), "UTF-8"));
-    } catch (UnsupportedEncodingException e) {
-      throw new IllegalStateException("Failed to decode " + e.getMessage());
-    }
+    final File sourceFile = new File(decodeURIComponent(resource.getFile(), false));
     if (!sourceFile.canRead()) {
       throw new RuntimeException("File not found: " + sourceFile.getAbsolutePath() + " current dir is: " + new File(".").getAbsolutePath());
     }

@@ -18,9 +18,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -31,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import static io.vertx.core.net.impl.URIDecoder.*;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
@@ -168,12 +168,7 @@ public class FileResolver {
 
 
   private synchronized File unpackFromFileURL(URL url, String fileName, ClassLoader cl) {
-    File resource;
-    try {
-      resource = new File(URLDecoder.decode(url.getPath(), "UTF-8"));
-    } catch (UnsupportedEncodingException e) {
-      throw new VertxException(e);
-    }
+    final File resource = new File(decodeURIComponent(url.getPath(), false));
     boolean isDirectory = resource.isDirectory();
     File cacheFile = new File(cacheDir, fileName);
     if (!isDirectory) {
@@ -213,7 +208,7 @@ public class FileResolver {
         idx2 = path.lastIndexOf(".zip!", idx1 - 1);
       }
       if (idx2 == -1) {
-        File file = new File(URLDecoder.decode(path.substring(5, idx1 + 4), "UTF-8"));
+        File file = new File(decodeURIComponent(path.substring(5, idx1 + 4), false));
         zip = new ZipFile(file);
       } else {
         String s = path.substring(idx2 + 6, idx1 + 4);

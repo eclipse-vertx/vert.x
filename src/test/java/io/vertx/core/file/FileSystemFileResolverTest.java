@@ -11,6 +11,14 @@
 
 package io.vertx.core.file;
 
+import org.junit.Test;
+
+import java.io.File;
+
+import org.junit.Test;
+
+import java.io.File;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -22,4 +30,10 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
     webRoot = "webroot";
   }
 
+  @Test
+  public void testResolvePlusSignsOnName() {
+    File file = resolver.resolveFile("this+that");
+    assertFalse(file.exists());
+    assertEquals("this+that", file.getPath());
+  }
 }
