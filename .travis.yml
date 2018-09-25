@@ -2,9 +2,6 @@ language: java
 before_install:
 - cp .travis.maven.settings.xml $HOME/.m2/settings.xml
 env: # important!
-script:
-- set -e
-- mvn -q clean verify -B $TEST_PROFILE
 branches:
   only:
   - master
@@ -12,14 +9,16 @@ branches:
 jobs:
   include:
     - jdk: oraclejdk8
-    - if: type != pull_request
-      jdk: oraclejdk8
-      env: TEST_PROFILE="-PtestNativeTransport"
-    - if: type != pull_request
-      jdk: oraclejdk8
-      env: TEST_PROFILE="-PtestDomainSockets"
+      script: mvn -q clean verify -B
     - if: type != pull_request
       jdk: openjdk11
+      script: mvn -q clean verify -B
+    - if: type != pull_request
+      jdk: oraclejdk8
+      script: mvn -q clean verify -B -PtestNativeTransport
+    - if: type != pull_request
+      jdk: oraclejdk8
+      script: mvn -q clean verify -B -PtestDomainSockets
     - stage: deploy
       script: bash .travis.deploy.artifacts.sh
 notifications:
