@@ -9,7 +9,7 @@ branches:
   only:
   - master
   - /^\d+\.\d+$/
-matrix:
+jobs:
   include:
     - jdk: oraclejdk8
     - if: type != pull_request
@@ -20,8 +20,6 @@ matrix:
       env: TEST_PROFILE="-PtestDomainSockets"
     - if: type != pull_request
       jdk: openjdk11
-jobs:
-  include:
     - stage: deploy
       script: bash .travis.deploy.artifacts.sh
 notifications:
