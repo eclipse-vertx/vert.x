@@ -7,7 +7,8 @@ script:
 - mvn -q clean verify -B $TEST_PROFILE
 branches:
   only:
-  - /^(master)|(\d+\.\d+)$/
+  - master
+  - /^\d+\.\d+$/
 matrix:
   include:
     - jdk: oraclejdk8
@@ -19,6 +20,10 @@ matrix:
       env: TEST_PROFILE="-PtestDomainSockets"
     - if: type != pull_request
       jdk: openjdk11
+jobs:
+  include:
+    - stage: deploy
+      script: bash .travis.deploy.artifacts.sh
 notifications:
   email:
     recipients:
