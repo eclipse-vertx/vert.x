@@ -1,9 +1,6 @@
 language: java
 before_install:
 - cp .travis.maven.settings.xml $HOME/.m2/settings.xml
-jdk: oraclejdk8
-script: mvn -q clean verify -B
-name: "OracleJDK 8"
 branches:
   only:
   - master
@@ -11,21 +8,24 @@ branches:
 jobs:
   include:
     - stage: test
-      if: type != pull_request
-      jdk: openjdk11
-      name: "OpenJDK 11"
+      name: "OracleJDK 8"
+      jdk: oraclejdk8
       script: mvn -q clean verify -B
     - if: type != pull_request
-      jdk: oraclejdk8
+      name: "OpenJDK 11"
+      jdk: openjdk11
+      script: mvn -q clean verify -B
+    - if: type != pull_request
       name: "OracleJDK 8 / native transport"
+      jdk: oraclejdk8
       script: mvn -q clean verify -B -PtestNativeTransport
     - if: type != pull_request
-      jdk: oraclejdk8
       name: "OracleJDK 8 / domain sockets"
+      jdk: oraclejdk8
       script: mvn -q clean verify -B -PtestDomainSockets
     - stage: deploy
-      if: type != pull_request
       name: "Deploy to Sonatype's snapshots repository"
+      if: type != pull_request
       script: bash .travis.deploy.artifacts.sh
 notifications:
   email:
