@@ -25,6 +25,7 @@ jobs:
       name: "OracleJDK 8 / domain sockets"
       script: mvn -q clean verify -B -PtestDomainSockets
     - stage: deploy
+      if: type != pull_request
       name: "Deploy to Sonatype's snapshots repository"
       script: bash .travis.deploy.artifacts.sh
 notifications:
