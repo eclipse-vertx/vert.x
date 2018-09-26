@@ -4,7 +4,7 @@ before_install:
 env: # important!
 jdk: oraclejdk8
 script: mvn -q clean verify -B
-name: "OracleJDK8"
+name: "OracleJDK 8"
 branches:
   only:
   - master
@@ -14,17 +14,18 @@ jobs:
     - stage: test
       if: type != pull_request
       jdk: openjdk11
-      name: "OpenJDK11"
+      name: "OpenJDK 11"
       script: mvn -q clean verify -B
     - if: type != pull_request
       jdk: oraclejdk8
-      name: "OracleJDK8 / native transport"
+      name: "OracleJDK 8 / native transport"
       script: mvn -q clean verify -B -PtestNativeTransport
     - if: type != pull_request
       jdk: oraclejdk8
-      name: "OracleJDK8 / domain sockets"
+      name: "OracleJDK 8 / domain sockets"
       script: mvn -q clean verify -B -PtestDomainSockets
     - stage: deploy
+      name: "Deploy to Sonatype's snapshots repository"
       script: bash .travis.deploy.artifacts.sh
 notifications:
   email:
