@@ -1,7 +1,6 @@
 language: java
 before_install:
 - cp .travis.maven.settings.xml $HOME/.m2/settings.xml
-env: # important!
 jdk: oraclejdk8
 script: mvn -q clean verify -B
 name: "OracleJDK 8"
