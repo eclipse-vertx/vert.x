@@ -16,9 +16,11 @@ jobs:
       script: mvn -q clean verify -B
     - if: type != pull_request
       jdk: oraclejdk8
+      name: "Native transport"
       script: mvn -q clean verify -B -PtestNativeTransport
     - if: type != pull_request
       jdk: oraclejdk8
+      name: "Domain sockets"
       script: mvn -q clean verify -B -PtestDomainSockets
     - stage: deploy
       script: bash .travis.deploy.artifacts.sh
