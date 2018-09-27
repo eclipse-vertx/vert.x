@@ -576,7 +576,6 @@ Set whether Netty pooled buffers are enabled
 ++++
  Vert.x file system base configuration, this class can be extended by provider implementations to configure
  those specific implementations.
-
 ++++
 '''
 
