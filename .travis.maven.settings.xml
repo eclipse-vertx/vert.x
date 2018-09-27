@@ -5,34 +5,6 @@
 
   <interactiveMode>false</interactiveMode>
 
-  <profiles>
-    <profile>
-      <id>sonatype-repository</id>
-      <repositories>
-        <repository>
-          <id>sonatype-nexus-releases</id>
-          <url>https://oss.sonatype.org/content/repositories/releases</url>
-          <layout>default</layout>
-        </repository>
-        <repository>
-          <id>sonatype-nexus-snapshots</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-          <layout>default</layout>
-          <releases>
-            <enabled>false</enabled>
-          </releases>
-        </repository>
-      </repositories>
-    </profile>
-  </profiles>
-
-  <activeProfiles>
-    <activeProfile>sonatype-repository</activeProfile>
-  </activeProfiles>
-
   <servers>
     <server>
       <id>sonatype-nexus-snapshots</id>

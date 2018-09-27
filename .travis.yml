@@ -1,6 +1,4 @@
 language: java
-before_install:
-- cp .travis.maven.settings.xml $HOME/.m2/settings.xml
 branches:
   only:
   - master
