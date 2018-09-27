@@ -323,15 +323,15 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       if (handler != null) {
         chctx.pipeline().remove(handler);
       }
-      if (METRICS_ENABLED && metrics != null) {
-        ws.setMetric(metrics.upgrade(request.metric(), ws));
-      }
       ws.registerHandler(vertx.eventBus());
       return handshaker.selectedSubprotocol();
     };
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       f, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
+    if (METRICS_ENABLED && metrics != null) {
+      ws.setMetric(metrics.connected(metric(), request.metric(), ws));
+    }
     return ws;
   }
 
