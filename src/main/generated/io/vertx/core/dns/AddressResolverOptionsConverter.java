@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.dns.AddressResolverOptions} original class using Vert.x codegen.
  */
- class AddressResolverOptionsConverter {
+public class AddressResolverOptionsConverter {
 
-   static void fromJson(JsonObject json, AddressResolverOptions obj) {
+  public static void fromJson(JsonObject json, AddressResolverOptions obj) {
     if (json.getValue("cacheMaxTimeToLive") instanceof Number) {
       obj.setCacheMaxTimeToLive(((Number)json.getValue("cacheMaxTimeToLive")).intValue());
     }
@@ -78,7 +78,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(AddressResolverOptions obj, JsonObject json) {
+  public static void toJson(AddressResolverOptions obj, JsonObject json) {
     json.put("cacheMaxTimeToLive", obj.getCacheMaxTimeToLive());
     json.put("cacheMinTimeToLive", obj.getCacheMinTimeToLive());
     json.put("cacheNegativeTimeToLive", obj.getCacheNegativeTimeToLive());

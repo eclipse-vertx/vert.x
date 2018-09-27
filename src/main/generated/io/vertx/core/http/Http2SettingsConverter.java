@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.Http2Settings} original class using Vert.x codegen.
  */
- class Http2SettingsConverter {
+public class Http2SettingsConverter {
 
-   static void fromJson(JsonObject json, Http2Settings obj) {
+  public static void fromJson(JsonObject json, Http2Settings obj) {
     if (json.getValue("headerTableSize") instanceof Number) {
       obj.setHeaderTableSize(((Number)json.getValue("headerTableSize")).longValue());
     }
@@ -47,7 +47,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(Http2Settings obj, JsonObject json) {
+  public static void toJson(Http2Settings obj, JsonObject json) {
     json.put("headerTableSize", obj.getHeaderTableSize());
     json.put("initialWindowSize", obj.getInitialWindowSize());
     json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());

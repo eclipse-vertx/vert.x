@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.NetworkOptions} original class using Vert.x codegen.
  */
- class NetworkOptionsConverter {
+public class NetworkOptionsConverter {
 
-   static void fromJson(JsonObject json, NetworkOptions obj) {
+  public static void fromJson(JsonObject json, NetworkOptions obj) {
     if (json.getValue("logActivity") instanceof Boolean) {
       obj.setLogActivity((Boolean)json.getValue("logActivity"));
     }
@@ -47,7 +47,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(NetworkOptions obj, JsonObject json) {
+  public static void toJson(NetworkOptions obj, JsonObject json) {
     json.put("logActivity", obj.getLogActivity());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reuseAddress", obj.isReuseAddress());

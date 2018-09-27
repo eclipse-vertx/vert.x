@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.HttpClientOptions} original class using Vert.x codegen.
  */
- class HttpClientOptionsConverter {
+public class HttpClientOptionsConverter {
 
-   static void fromJson(JsonObject json, HttpClientOptions obj) {
+  public static void fromJson(JsonObject json, HttpClientOptions obj) {
     if (json.getValue("alpnVersions") instanceof JsonArray) {
       java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
       json.getJsonArray("alpnVersions").forEach( item -> {
@@ -118,7 +118,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(HttpClientOptions obj, JsonObject json) {
+  public static void toJson(HttpClientOptions obj, JsonObject json) {
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));

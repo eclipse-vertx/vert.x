@@ -77,10 +77,9 @@ import io.vertx.core.json.JsonArray;\n
 /**\n
 @{computeConverterClassJavadoc(type.name)}
  */\n
-@code{visibility=publicConverter?'public ':' '}
-@{visibility}class @{type.simpleName}Converter {\n
+public class @{type.simpleName}Converter {\n
 \n
-  @{visibility}static void fromJson(JsonObject json, @{type.simpleName} obj) {\n
+  public static void fromJson(JsonObject json, @{type.simpleName} obj) {\n
 		@foreach{property:properties}
 			@if{property.declared || inheritConverter}
 				@code{propType=property.type}
@@ -147,7 +146,7 @@ import io.vertx.core.json.JsonArray;\n
 @end{}
 
 \n
-  @{visibility}static void toJson(@{type.simpleName} obj, JsonObject json) {\n
+  public static void toJson(@{type.simpleName} obj, JsonObject json) {\n
 		@foreach{property:properties}
 			@if{(property.declared || inheritConverter) && property.getterMethod != null && property.jsonifiable}
 				@code{propType=property.type}

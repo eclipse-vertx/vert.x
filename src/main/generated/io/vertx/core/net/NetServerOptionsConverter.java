@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.NetServerOptions} original class using Vert.x codegen.
  */
- class NetServerOptionsConverter {
+public class NetServerOptionsConverter {
 
-   static void fromJson(JsonObject json, NetServerOptions obj) {
+  public static void fromJson(JsonObject json, NetServerOptions obj) {
     if (json.getValue("acceptBacklog") instanceof Number) {
       obj.setAcceptBacklog(((Number)json.getValue("acceptBacklog")).intValue());
     }
@@ -47,7 +47,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(NetServerOptions obj, JsonObject json) {
+  public static void toJson(NetServerOptions obj, JsonObject json) {
     json.put("acceptBacklog", obj.getAcceptBacklog());
     if (obj.getClientAuth() != null) {
       json.put("clientAuth", obj.getClientAuth().name());

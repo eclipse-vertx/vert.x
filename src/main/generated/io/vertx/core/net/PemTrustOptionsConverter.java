@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PemTrustOptions} original class using Vert.x codegen.
  */
- class PemTrustOptionsConverter {
+public class PemTrustOptionsConverter {
 
-   static void fromJson(JsonObject json, PemTrustOptions obj) {
+  public static void fromJson(JsonObject json, PemTrustOptions obj) {
     if (json.getValue("certPaths") instanceof JsonArray) {
       json.getJsonArray("certPaths").forEach(item -> {
         if (item instanceof String)
@@ -41,7 +41,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(PemTrustOptions obj, JsonObject json) {
+  public static void toJson(PemTrustOptions obj, JsonObject json) {
     if (obj.getCertPaths() != null) {
       JsonArray array = new JsonArray();
       obj.getCertPaths().forEach(item -> array.add(item));

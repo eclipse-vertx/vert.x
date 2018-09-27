@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.file.OpenOptions} original class using Vert.x codegen.
  */
- class OpenOptionsConverter {
+public class OpenOptionsConverter {
 
-   static void fromJson(JsonObject json, OpenOptions obj) {
+  public static void fromJson(JsonObject json, OpenOptions obj) {
     if (json.getValue("append") instanceof Boolean) {
       obj.setAppend((Boolean)json.getValue("append"));
     }
@@ -62,7 +62,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(OpenOptions obj, JsonObject json) {
+  public static void toJson(OpenOptions obj, JsonObject json) {
     json.put("append", obj.isAppend());
     json.put("create", obj.isCreate());
     json.put("createNew", obj.isCreateNew());

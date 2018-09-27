@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.DeploymentOptions} original class using Vert.x codegen.
  */
- class DeploymentOptionsConverter {
+public class DeploymentOptionsConverter {
 
-   static void fromJson(JsonObject json, DeploymentOptions obj) {
+  public static void fromJson(JsonObject json, DeploymentOptions obj) {
     if (json.getValue("config") instanceof JsonObject) {
       obj.setConfig(((JsonObject)json.getValue("config")).copy());
     }
@@ -72,7 +72,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(DeploymentOptions obj, JsonObject json) {
+  public static void toJson(DeploymentOptions obj, JsonObject json) {
     if (obj.getConfig() != null) {
       json.put("config", obj.getConfig());
     }

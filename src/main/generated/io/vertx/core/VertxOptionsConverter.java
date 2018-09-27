@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.VertxOptions} original class using Vert.x codegen.
  */
- class VertxOptionsConverter {
+public class VertxOptionsConverter {
 
-   static void fromJson(JsonObject json, VertxOptions obj) {
+  public static void fromJson(JsonObject json, VertxOptions obj) {
     if (json.getValue("addressResolverOptions") instanceof JsonObject) {
       obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((JsonObject)json.getValue("addressResolverOptions")));
     }
@@ -95,7 +95,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(VertxOptions obj, JsonObject json) {
+  public static void toJson(VertxOptions obj, JsonObject json) {
     if (obj.getAddressResolverOptions() != null) {
       json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
     }

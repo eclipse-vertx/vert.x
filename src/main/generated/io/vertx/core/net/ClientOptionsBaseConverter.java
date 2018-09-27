@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonArray;
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.ClientOptionsBase} original class using Vert.x codegen.
  */
- class ClientOptionsBaseConverter {
+public class ClientOptionsBaseConverter {
 
-   static void fromJson(JsonObject json, ClientOptionsBase obj) {
+  public static void fromJson(JsonObject json, ClientOptionsBase obj) {
     if (json.getValue("connectTimeout") instanceof Number) {
       obj.setConnectTimeout(((Number)json.getValue("connectTimeout")).intValue());
     }
@@ -44,7 +44,7 @@ import io.vertx.core.json.JsonArray;
     }
   }
 
-   static void toJson(ClientOptionsBase obj, JsonObject json) {
+  public static void toJson(ClientOptionsBase obj, JsonObject json) {
     json.put("connectTimeout", obj.getConnectTimeout());
     if (obj.getLocalAddress() != null) {
       json.put("localAddress", obj.getLocalAddress());
