@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -18,10 +18,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.launcher.commands.ExecUtils;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.resolver.ResolverProvider;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
@@ -32,6 +33,8 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class AddressResolver {
+
+  private static final Logger log = LoggerFactory.getLogger(AddressResolver.class);
 
   private static Pattern resolvOption(String regex) {
     return Pattern.compile("^[ \\t\\f]*options[^\n]+" + regex + "(?=$|\\s)", Pattern.MULTILINE);
@@ -47,16 +50,17 @@ public class AddressResolver {
     boolean rotate = false;
     if (ExecUtils.isLinux()) {
       File f = new File("/etc/resolv.conf");
-      if (f.exists() && f.isFile()) {
-        try {
+      try {
+        if (f.exists() && f.isFile()) {
           String conf = new String(Files.readAllBytes(f.toPath()));
           int ndotsOption = parseNdotsOptionFromResolvConf(conf);
           if (ndotsOption != -1) {
             ndots = ndotsOption;
           }
           rotate = parseRotateOptionFromResolvConf(conf);
-        } catch (Throwable ignore) {
         }
+      } catch (Throwable t) {
+        log.debug("Failed to load options from /etc/resolv/.conf", t);
       }
     }
     DEFAULT_NDOTS_RESOLV_OPTION = ndots;
