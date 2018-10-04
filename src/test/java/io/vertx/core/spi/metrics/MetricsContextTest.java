@@ -221,7 +221,7 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
         return new DummyHttpServerMetrics() {
           @Override
-          public Void connected(Void socketMetric, Void requestMetric, ServerWebSocket serverWebSocket) {
+          public Void connected(Void socketMetric, ServerWebSocket serverWebSocket) {
             websocketConnected.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;

@@ -90,14 +90,24 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
   }
 
   /**
-   * Called when a server web socket connects.
+   * Called when an http server request is upgrade to a websocket.
    *
-   * @param socketMetric the socket metric
    * @param requestMetric the request metric
    * @param serverWebSocket the server web socket
    * @return the server web socket metric
    */
-  default W connected(S socketMetric, R requestMetric, ServerWebSocket serverWebSocket) {
+  default W upgrade(R requestMetric, ServerWebSocket serverWebSocket) {
+    return null;
+  }
+
+  /**
+   * Called when a server web socket connects.
+   *
+   * @param socketMetric the socket metric
+   * @param serverWebSocket the server web socket
+   * @return the server web socket metric
+   */
+  default W connected(S socketMetric, ServerWebSocket serverWebSocket) {
     return null;
   }
 

@@ -84,8 +84,11 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
       EmptyHttpHeaders.INSTANCE
     );
     req.setRequest(nettyReq);
+    ServerWebSocketImpl ws = ((Http1xServerConnection)req.connection()).createWebSocket(req);
+    if (METRICS_ENABLED && metrics != null) {
+      ws.setMetric(metrics.connected(((Http1xServerConnection)req.connection()).metric(), ws));
+    }
     if (handlers.wsHandler != null) {
-      ServerWebSocketImpl ws = ((Http1xServerConnection)req.connection()).createWebSocket(req);
       handlers.wsHandler.handle(ws);
       if (!ws.isRejected()) {
         ws.connectNow();
