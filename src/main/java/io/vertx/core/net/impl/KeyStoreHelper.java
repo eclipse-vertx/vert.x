@@ -139,8 +139,7 @@ public class KeyStoreHelper {
       String alias = en.nextElement();
       Certificate cert = ks.getCertificate(alias);
       if (ks.isCertificateEntry(alias) && ! alias.startsWith(DUMMY_CERT_ALIAS)){
-        KeyStore keyStore = KeyStore.getInstance("jks");
-        keyStore.load(null, null);
+        final KeyStore keyStore = createEmptyKeyStore();
         keyStore.setCertificateEntry("cert-1", cert);
         TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         fact.init(keyStore);
@@ -284,8 +283,7 @@ public class KeyStoreHelper {
     } else if (keyValue.size() > certValue.size()) {
       throw new VertxException("Missing X.509 certificate");
     }
-    KeyStore keyStore = KeyStore.getInstance("jks");
-    keyStore.load(null, null);
+    final KeyStore keyStore = createEmptyKeyStore();
     Iterator<Buffer> keyValueIt = keyValue.iterator();
     Iterator<Buffer> certValueIt = certValue.iterator();
     int index = 0;
@@ -323,7 +321,7 @@ public class KeyStoreHelper {
   }
 
   private static KeyStore loadCA(Stream<Buffer> certValues) throws Exception {
-    KeyStore keyStore = KeyStore.getInstance("jks");
+    final KeyStore keyStore = createEmptyKeyStore();
     keyStore.load(null, null);
     int count = 0;
     Iterable<Buffer> iterable = certValues::iterator;
@@ -388,5 +386,34 @@ public class KeyStoreHelper {
       throw new RuntimeException("Missing -----BEGIN CERTIFICATE----- delimiter");
     }
     return certs.toArray(new X509Certificate[certs.size()]);
+  }
+
+  /**
+   * Creates a empty key store using the industry standard PCKS12.
+   *
+   * The format is the default format for keystores for Java >=9 and available on GraalVM.
+   *
+   * PKCS12 is an extensible, standard, and widely-supported format for storing cryptographic keys.
+   * As of JDK 8, PKCS12 keystores can store private keys, trusted public key certificates, and
+   * secret keys.
+   *
+   * The "old" default "JKS" (available since Java 1.2) can only store private keys and trusted
+   * public-key certificates, and they are based on a proprietary format that is not easily
+   * extensible to new cryptographic algorithms.
+
+   * @return keystore instance
+   *
+   * @throws KeyStoreException if the underlying engine cannot create an instance
+   */
+  private static KeyStore createEmptyKeyStore() throws KeyStoreException {
+    final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+    try {
+      keyStore.load(null, null);
+    } catch (CertificateException | NoSuchAlgorithmException | IOException e) {
+      // these exceptions should never be thrown as there is no initial data
+      // provided to the initialization of the keystore
+      throw new KeyStoreException("Failed to initialize the keystore", e);
+    }
+    return keyStore;
   }
 }
