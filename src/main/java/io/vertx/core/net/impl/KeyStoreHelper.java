@@ -139,7 +139,7 @@ public class KeyStoreHelper {
       String alias = en.nextElement();
       Certificate cert = ks.getCertificate(alias);
       if (ks.isCertificateEntry(alias) && ! alias.startsWith(DUMMY_CERT_ALIAS)){
-        KeyStore keyStore = KeyStore.getInstance("jks");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
         keyStore.load(null, null);
         keyStore.setCertificateEntry("cert-1", cert);
         TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -284,7 +284,7 @@ public class KeyStoreHelper {
     } else if (keyValue.size() > certValue.size()) {
       throw new VertxException("Missing X.509 certificate");
     }
-    KeyStore keyStore = KeyStore.getInstance("jks");
+    KeyStore keyStore = KeyStore.getInstance("PKCS12");
     keyStore.load(null, null);
     Iterator<Buffer> keyValueIt = keyValue.iterator();
     Iterator<Buffer> certValueIt = certValue.iterator();
@@ -323,7 +323,7 @@ public class KeyStoreHelper {
   }
 
   private static KeyStore loadCA(Stream<Buffer> certValues) throws Exception {
-    KeyStore keyStore = KeyStore.getInstance("jks");
+    KeyStore keyStore = KeyStore.getInstance("PKCS12");
     keyStore.load(null, null);
     int count = 0;
     Iterable<Buffer> iterable = certValues::iterator;
