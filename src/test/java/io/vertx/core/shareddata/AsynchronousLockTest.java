@@ -14,17 +14,15 @@ package io.vertx.core.shareddata;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
-import io.vertx.core.shareddata.Lock;
-import io.vertx.core.shareddata.SharedData;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -217,16 +215,11 @@ public class AsynchronousLockTest extends VertxTestBase {
       count.incrementAndGet();
       complete();
       for (int i = 0; i < 2; i++) {
-        getVertx().sharedData().getLockWithTimeout("foo", 1000, ar -> {
+        getVertx().sharedData().getLockWithTimeout("foo", 10, ar -> {
           if (ar.succeeded()) {
             count.incrementAndGet();
-            vertx.setTimer(1000, l -> {
-              ar.result().release();
-              complete();
-            });
-          } else {
-            complete();
           }
+          complete();
         });
       }
       lock1.release();
