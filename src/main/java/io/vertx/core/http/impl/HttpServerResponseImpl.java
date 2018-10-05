@@ -133,7 +133,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       checkValid();
       // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
       if (version != HttpVersion.HTTP_1_0) {
-        headers.set(HttpHeaders.TRANSFER_ENCODING, chunked ? "chunked" : null);
+        if (chunked) {
+          headers.set(HttpHeaders.TRANSFER_ENCODING, "chunked");
+        } else {
+          headers.remove(HttpHeaders.TRANSFER_ENCODING);
+        }
       }
       return this;
     }
