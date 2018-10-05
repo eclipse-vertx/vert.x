@@ -4498,4 +4498,14 @@ public class Http1xTest extends HttpTest {
     });
     await();
   }
+
+  @Test
+  public void testSetChunkedToFalse() throws Exception {
+    server.requestHandler(req -> req.response().setChunked(false).end());
+    startServer();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    }).setChunked(false).end();
+    await();
+  }
 }
