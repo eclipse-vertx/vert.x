@@ -39,25 +39,18 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     JsonObject config = config();
     id = config.getInteger("id");
     numAddresses = config.getInteger("addressesCount");
-
     List<Future> registrationFutures = new ArrayList<>(numAddresses);
     for (int i = 0; i < numAddresses; i++) {
       Future<Void> registrationFuture = Future.future();
       registrationFutures.add(registrationFuture);
       vertx.eventBus().consumer(createAddress(id, i), msg -> msg.reply("pong")).completionHandler(registrationFuture.completer());
     }
-
     Future<Void> registrationFuture = Future.future();
     registrationFutures.add(registrationFuture);
     vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture.completer());
-
     CompositeFuture.all(registrationFutures).setHandler(ar -> {
       if (ar.succeeded()) {
-        vertx.eventBus().send("control", "start", control -> {
-          if (control.failed()) {
-            log.error("Failed to send 'start' message", control.cause());
-          }
-        });
+        vertx.eventBus().send("control", "start");
       }
     });
   }
@@ -67,24 +60,15 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     for (int i = 0; i < jsonArray.size(); i++) {
       int node = jsonArray.getInteger(i);
       for (int j = 0; j < numAddresses; j++) {
-        String address = createAddress(node, j);
-        vertx.eventBus().send(address, "ping", ar -> {
+        vertx.eventBus().send(createAddress(node, j), "ping", ar -> {
           if (ar.succeeded()) {
-            vertx.eventBus().send("control", "pong", control -> {
-              if (control.failed()) {
-                log.error("Failed to send 'pong' message for: " + address, control.cause());
-              }
-            });
+            vertx.eventBus().send("control", "pong");
           } else {
             Throwable cause = ar.cause();
             if (cause instanceof ReplyException) {
               ReplyException replyException = (ReplyException) cause;
               if (replyException.failureType() == ReplyFailure.NO_HANDLERS) {
-                vertx.eventBus().send("control", "noHandlers", control -> {
-                  if (control.failed()) {
-                    log.error("Failed to send 'noHandlers' message", control.cause());
-                  }
-                });
+                vertx.eventBus().send("control", "noHandlers");
                 return;
               }
             }
