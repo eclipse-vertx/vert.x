@@ -222,13 +222,17 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected synchronized void handleClosed() {
-    NetworkMetrics metrics = metrics();
-    if (metrics != null && metrics instanceof TCPMetrics) {
-      ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+  protected void handleClosed() {
+    Handler<Void> handler;
+    synchronized (this) {
+      NetworkMetrics metrics = metrics();
+      if (metrics != null && metrics instanceof TCPMetrics) {
+        ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+      }
+      handler = closeHandler;
     }
-    if (closeHandler != null) {
-      vertx.runOnContext(closeHandler);
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 

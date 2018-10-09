@@ -73,6 +73,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Void> drainHandler;
   private Queue<Object> pending;
   private MessageConsumer registration;
+  private boolean closed;
 
   public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextInternal context,
                        SSLHelper helper, TCPMetrics metrics) {
@@ -107,7 +108,10 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public NetSocketInternal writeMessage(Object message) {
+  public synchronized NetSocketInternal writeMessage(Object message) {
+    if (closed) {
+      throw new IllegalStateException("Socket is closed");
+    }
     super.writeToChannel(message);
     return this;
   }
@@ -131,8 +135,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocket write(Buffer data) {
-    ByteBuf buf = data.getByteBuf();
-    write(buf);
+    write(data.getByteBuf());
     return this;
   }
 
@@ -150,6 +153,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       write(Unpooled.copiedBuffer(str, Charset.forName(enc)));
     }
     return this;
+  }
+
+  private void write(ByteBuf buff) {
+    reportBytesWritten(buff.readableBytes());
+    writeMessage(buff);
   }
 
   @Override
@@ -330,15 +338,24 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  protected synchronized void handleClosed() {
-    checkContext();
-    if (endHandler != null) {
-      endHandler.handle(null);
+  protected void handleClosed() {
+    Handler<Void> handler;
+    MessageConsumer consumer;
+    synchronized (this) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      consumer = registration;
+      registration = null;
+      handler = endHandler;
+    }
+    if (handler != null) {
+      handler.handle(null);
     }
     super.handleClosed();
-    if (registration != null) {
-      registration.unregister();
-      registration = null;
+    if (consumer != null) {
+      consumer.unregister();
     }
   }
 
@@ -369,11 +386,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         dataHandler.handle(data);
       }
     }
-  }
-
-  private void write(ByteBuf buff) {
-    reportBytesWritten(buff.readableBytes());
-    super.writeToChannel(buff);
   }
 
   private synchronized void callDrainHandler() {

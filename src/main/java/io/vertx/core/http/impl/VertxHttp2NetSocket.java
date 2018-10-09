@@ -78,15 +78,23 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   void handleException(Throwable cause) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(cause);
+    Handler<Throwable> handler;
+    synchronized (conn) {
+      handler = this.exceptionHandler;
+    }
+    if (handler != null) {
+      handler.handle(cause);
     }
   }
 
   @Override
   void handleClose() {
-    if (closeHandler != null) {
-      closeHandler.handle(null);
+    Handler<Void> handler;
+    synchronized (conn) {
+      handler = this.closeHandler;
+    }
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 

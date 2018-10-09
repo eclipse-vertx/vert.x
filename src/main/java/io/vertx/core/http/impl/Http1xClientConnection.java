@@ -42,10 +42,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.queue.Queue;
 
 import java.net.URI;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.vertx.core.http.HttpHeaders.*;
@@ -836,22 +833,27 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
   }
 
-  protected synchronized void handleClosed() {
+  protected void handleClosed() {
     super.handleClosed();
+    WebSocketImpl ws;
+    List<StreamImpl> list = Collections.emptyList();
+    synchronized (this) {
+      ws = this.ws;
+      for (StreamImpl r = responseInProgress;r != null;r = r.next) {
+        if (metrics != null) {
+          metrics.requestReset(r.request.metric());
+        }
+        if (list.isEmpty()) {
+          list = new ArrayList<>();
+        }
+        list.add(r);
+      }
+    }
     if (ws != null) {
       ws.handleClosed();
     }
-    if (metrics != null) {
-      for (StreamImpl r = responseInProgress;r != null;r = r.next) {
-        metrics.requestReset(r.request.metric());
-      }
-    }
-    failStreams(CLOSED_EXCEPTION);
-  }
-
-  private void failStreams(Throwable cause) {
-    for (StreamImpl r = responseInProgress;r != null;r = r.next) {
-      r.handleException(cause);
+    for (StreamImpl stream : list) {
+      stream.handleException(CLOSED_EXCEPTION);
     }
   }
 
@@ -861,7 +863,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     if (ws != null) {
       ws.handleException(e);
     } else {
-      failStreams(e);
+      for (StreamImpl r = responseInProgress;r != null;r = r.next) {
+        r.handleException(e);
+      }
     }
   }
 

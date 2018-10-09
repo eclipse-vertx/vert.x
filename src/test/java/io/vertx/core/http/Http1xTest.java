@@ -23,6 +23,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.test.core.Repeat;
+import io.vertx.test.core.CheckingSender;
 import io.vertx.test.verticles.SimpleServer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
@@ -3629,11 +3630,14 @@ public class Http1xTest extends HttpTest {
     AtomicReference<NetSocket> current = new AtomicReference<>();
     server.requestHandler(req -> {
       List<Throwable> errors = new ArrayList<>();
-      req.exceptionHandler(errors::add);
-      req.response().closeHandler(v -> {
-        errorsChecker.handle(errors);
-        testComplete();
-      });
+      Handler<Throwable> handler = err -> {
+        errors.add(err);
+        if (errors.size() == 2) {
+          errorsChecker.handle(errors);
+          testComplete();
+        }
+      };
+      req.exceptionHandler(handler);
       bodySender.handle(current.get());
     });
     startServer();
@@ -4506,6 +4510,58 @@ public class Http1xTest extends HttpTest {
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       testComplete();
     }).setChunked(false).end();
+    await();
+  }
+
+  @Test
+  public void testHttpServerRequestShouldExceptionHandlerWhenTheClosedHandlerIsCalled() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), resp);
+      sender.send();
+      resp.closeHandler(v -> {
+        Throwable failure = sender.close();
+        if (failure != null) {
+          fail(failure);
+        } else {
+          testComplete();
+        }
+      });
+    });
+    server.listen(onSuccess(s -> {
+      client.getNow(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", resp -> {
+        vertx.setTimer(1000, id -> {
+          resp.request().connection().close();
+        });
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testHttpClientRequestShouldExceptionHandlerWhenTheClosedHandlerIsCalled() throws Exception {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
+      vertx.setTimer(1000, id -> {
+        req.response().close();
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", resp -> {
+    }).setChunked(true);
+    CountDownLatch latch = new CountDownLatch(1);
+    req.sendHead(version -> latch.countDown());
+    awaitLatch(latch);
+    CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), req);
+    req.exceptionHandler(err -> {
+      Throwable failure = sender.close();
+      if (failure != null) {
+        fail(failure);
+      } else {
+        testComplete();
+      }
+    });
+    sender.send();
     await();
   }
 }

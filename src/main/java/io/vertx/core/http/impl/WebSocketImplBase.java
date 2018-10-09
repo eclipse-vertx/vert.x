@@ -99,10 +99,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   public void close() {
-    synchronized (conn) {
-      checkClosed();
+    if (doClose()) {
       conn.close();
-      cleanupHandlers();
+    } else {
+      throw new IllegalStateException("WebSocket is closed");
     }
   }
 
@@ -114,7 +114,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     synchronized (conn) {
       checkClosed();
       conn.closeWithPayload(HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason));
-      cleanupHandlers();
+      doClose();
     }
   }
 
@@ -438,32 +438,39 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void handleClosed() {
+    doClose();
+  }
+
+  private boolean doClose() {
     Handler<Void> endHandler;
+    Handler<Void> closeHandler;
+    MessageConsumer binaryConsumer;
+    MessageConsumer textConsumer;
     synchronized (conn) {
-      cleanupHandlers();
-      endHandler = this.endHandler;
-      Handler<Void> closeHandler = this.closeHandler;
-      if (closeHandler != null) {
-        conn.getContext().runOnContext(closeHandler);
+      if (closed) {
+        return false;
       }
+      binaryConsumer = this.binaryHandlerRegistration;
+      textConsumer = this.textHandlerRegistration;
+      endHandler = this.endHandler;
+      closeHandler = this.closeHandler;
+      closed = true;
+      binaryHandlerRegistration = null;
+      textHandlerRegistration = null;
+    }
+    if (binaryConsumer != null) {
+      binaryConsumer.unregister();
+    }
+    if (textConsumer != null) {
+      textConsumer.unregister();
+    }
+    if (closeHandler != null) {
+      closeHandler.handle(null);
     }
     if (endHandler != null) {
       endHandler.handle(null);
     }
-  }
-
-  private void cleanupHandlers() {
-    if (!closed) {
-      closed = true;
-      if (binaryHandlerRegistration != null) {
-        binaryHandlerRegistration.unregister();
-        binaryHandlerRegistration = null;
-      }
-      if (textHandlerRegistration != null) {
-        textHandlerRegistration.unregister();
-        textHandlerRegistration = null;
-      }
-    }
+    return true;
   }
 
   synchronized void setMetric(Object metric) {

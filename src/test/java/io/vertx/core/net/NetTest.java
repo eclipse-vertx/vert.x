@@ -3267,6 +3267,39 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  // We only do it for server, as client uses the same NetSocket implementation
+  @Test
+  public void testServerNetSocketShouldBeClosedWhenTheClosedHandlerIsCalled() throws Exception {
+    waitFor(2);
+    server.connectHandler(so -> {
+      CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), 2, so);
+      sender.send();
+      so.closeHandler(v -> {
+        Throwable failure = sender.close();
+        if (failure != null) {
+          fail(failure);
+        } else {
+          complete();
+        }
+      });
+      so.endHandler(v -> {
+        Throwable failure = sender.close();
+        if (failure != null) {
+          fail(failure);
+        } else {
+          complete();
+        }
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      vertx.setTimer(1000, id -> {
+        so.close();
+      });
+    }));
+    await();
+  }
+
   protected void startServer(SocketAddress remoteAddress) throws Exception {
     startServer(remoteAddress, vertx.getOrCreateContext());
   }

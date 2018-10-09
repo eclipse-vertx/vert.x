@@ -453,16 +453,22 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
   }
 
-  synchronized protected void handleClosed() {
-    if (METRICS_ENABLED && metrics != null && ws != null) {
-      metrics.disconnected(ws.getMetric());
-      ws.setMetric(null);
-    }
-    if (ws != null) {
-      ws.handleClosed();
+  protected void handleClosed() {
+    HttpServerRequestImpl responseInProgress;
+    ServerWebSocketImpl ws;
+    synchronized (this) {
+      ws = this.ws;
+      responseInProgress = this.responseInProgress;
+      if (METRICS_ENABLED && metrics != null && ws != null) {
+        metrics.disconnected(ws.getMetric());
+        ws.setMetric(null);
+      }
     }
     if (responseInProgress != null) {
       responseInProgress.handleException(CLOSED_EXCEPTION);
+    }
+    if (ws != null) {
+      ws.handleClosed();
     }
     super.handleClosed();
   }
