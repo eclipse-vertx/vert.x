@@ -471,7 +471,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public boolean isEnded() {
     synchronized (conn) {
-      return response != null && ended && (pending == null || pending.isEmpty());
+      return ended && (pending == null || pending.isEmpty());
     }
   }
 
@@ -545,19 +545,24 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   void handleException(Throwable t) {
+    Handler<Throwable> handler = null;
+    HttpServerResponseImpl resp = null;
     synchronized (conn) {
       if (!isEnded()) {
-        Handler<Throwable> handler = this.exceptionHandler;
-        if (handler != null) {
-          conn.getContext().runOnContext(v -> handler.handle(t));
-        }
+        handler = exceptionHandler;
       }
       if (!response.ended()) {
         if (METRICS_ENABLED) {
           reportRequestReset();
         }
-        response.handleException(t);
+        resp = response;
       }
+    }
+    if (resp != null) {
+      resp.handleException(t);
+    }
+    if (handler != null) {
+      handler.handle(t);
     }
   }
 

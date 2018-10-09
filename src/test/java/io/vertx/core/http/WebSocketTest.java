@@ -33,6 +33,7 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -1514,21 +1515,41 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testEndHandlerCalled() {
+  public void testRemoteCloseCallHandlers() {
+    testCloseCallHandlers(false);
+  }
+
+  @Test
+  public void testLocalCloseCallHandlers() {
+    testCloseCallHandlers(true);
+  }
+
+  private void testCloseCallHandlers(boolean local) {
     String path = "/some/path";
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(WebSocketBase::close);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      if (!local) {
+        ws.close();
+      }
+    });
     AtomicInteger doneCount = new AtomicInteger();
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
-          endHandler(done -> doneCount.incrementAndGet()).
-          handler(ws -> {
-            assertEquals(0, doneCount.get());
-            ws.closeHandler(v -> {
-              assertEquals(1, doneCount.get());
-              testComplete();
-            });
+        endHandler(done -> doneCount.incrementAndGet()).
+        handler(ws -> {
+          assertEquals(0, doneCount.get());
+          boolean[] closed = new boolean[1];
+          ws.closeHandler(v -> {
+            closed[0] = true;
+            assertEquals(1, doneCount.get());
+            testComplete();
           });
+          if (local) {
+            vertx.runOnContext(v -> {
+              ws.close();
+            });
+          }
+        });
     });
     await();
   }
@@ -2491,6 +2512,90 @@ public class WebSocketTest extends VertxTestBase {
         sock.write(buff);
       });
     });
+    await();
+  }
+
+  @Test
+  public void testServerWebSocketShouldBeClosedWhenTheClosedHandlerIsCalled() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), ws);
+      sender.send();
+      ws.closeHandler(v -> {
+        Throwable failure = sender.close();
+        if (failure != null) {
+          fail(failure);
+        } else {
+          testComplete();
+        }
+      });
+    });
+    server.listen(onSuccess(s -> {
+      client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", ws -> {
+        vertx.setTimer(1000, id -> {
+          ws.close();
+        });
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientWebSocketShouldBeClosedWhenTheClosedHandlerIsCalled() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      vertx.setTimer(1000, id -> {
+        ws.close();
+      });
+    });
+    server.listen(onSuccess(s -> {
+      client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", ws -> {
+        CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), ws);
+        sender.send();
+        ws.closeHandler(v -> {
+          Throwable failure = sender.close();
+          if (failure != null) {
+            fail(failure);
+          } else {
+            testComplete();
+          }
+        });
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testDontReceiveMessagerAfterCloseHandlerCalled() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      boolean[] closed = new boolean[1];
+      ws.handler(msg -> {
+        // We will still receive messages after the close frame is sent
+        if (closed[0]) {
+          fail("Should not receive a message after close handler callback");
+        }
+      });
+      ws.closeHandler(v -> {
+        closed[0] = true;
+        // Let some time to let message arrive in the handler
+        vertx.setTimer(10, id -> {
+          testComplete();
+        });
+      });
+      vertx.setTimer(500, id -> {
+        // Fill the buffer, so the close frame will be delayed
+        while (!ws.writeQueueFull()) {
+          ws.write(TestUtils.randomBuffer(1000));
+        }
+        // Send the close frame, the TCP connection will be closed after that frame is sent
+        ws.close();
+      });
+    });
+    server.listen(onSuccess(s -> {
+      client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", ws -> {
+        CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), ws);
+        ws.closeHandler(v -> sender.close());
+        sender.send();
+      });
+    }));
     await();
   }
 }

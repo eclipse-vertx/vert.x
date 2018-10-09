@@ -101,8 +101,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public void close() {
     synchronized (conn) {
       checkClosed();
+      closed = true;
+      unregisterHandlers();
       conn.close();
-      cleanupHandlers();
     }
   }
 
@@ -113,8 +114,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public void close(short statusCode, String reason) {
     synchronized (conn) {
       checkClosed();
+      closed = true;
+      unregisterHandlers();
       conn.closeWithPayload(HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason));
-      cleanupHandlers();
     }
   }
 
@@ -438,31 +440,42 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void handleClosed() {
+    unregisterHandlers();
     Handler<Void> endHandler;
+    Handler<Void> closeHandler;
     synchronized (conn) {
-      cleanupHandlers();
       endHandler = this.endHandler;
-      Handler<Void> closeHandler = this.closeHandler;
-      if (closeHandler != null) {
-        conn.getContext().runOnContext(closeHandler);
-      }
+      closeHandler = this.closeHandler;
+      closed = true;
+      binaryHandlerRegistration = null;
+      textHandlerRegistration = null;
+    }
+    if (closeHandler != null) {
+      closeHandler.handle(null);
     }
     if (endHandler != null) {
       endHandler.handle(null);
     }
   }
 
-  private void cleanupHandlers() {
-    if (!closed) {
+  /**
+   * Unregister handlers if they when they are present
+   */
+  private void unregisterHandlers() {
+    MessageConsumer binaryConsumer;
+    MessageConsumer textConsumer;
+    synchronized (conn) {
+      binaryConsumer = this.binaryHandlerRegistration;
+      textConsumer = this.textHandlerRegistration;
       closed = true;
-      if (binaryHandlerRegistration != null) {
-        binaryHandlerRegistration.unregister();
-        binaryHandlerRegistration = null;
-      }
-      if (textHandlerRegistration != null) {
-        textHandlerRegistration.unregister();
-        textHandlerRegistration = null;
-      }
+      binaryHandlerRegistration = null;
+      textHandlerRegistration = null;
+    }
+    if (binaryConsumer != null) {
+      binaryConsumer.unregister();
+    }
+    if (textConsumer != null) {
+      textConsumer.unregister();
     }
   }
 

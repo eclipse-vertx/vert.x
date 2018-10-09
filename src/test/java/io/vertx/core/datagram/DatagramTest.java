@@ -102,6 +102,7 @@ public class DatagramTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       Buffer buffer = TestUtils.randomBuffer(128);
       peer2.handler(packet -> {
+        assertFalse(Thread.holdsLock(peer2));
         Buffer data = packet.data();
         ByteBuf buff = data.getByteBuf();
         while (buff != buff.unwrap() && buff.unwrap() != null) {
@@ -111,7 +112,10 @@ public class DatagramTest extends VertxTestBase {
         assertEquals(buffer, data);
         testComplete();
       });
-      peer1.send(buffer, 1234, "127.0.0.1", ar2 -> assertTrue(ar2.succeeded()));
+      peer1.send(buffer, 1234, "127.0.0.1", ar2 -> {
+        assertFalse(Thread.holdsLock(peer1));
+        assertTrue(ar2.succeeded());
+      });
     });
     await();
   }

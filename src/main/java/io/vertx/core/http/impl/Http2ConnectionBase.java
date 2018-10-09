@@ -37,6 +37,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 
@@ -73,7 +74,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected final VertxHttp2ConnectionHandler handler;
   private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
-  private final ArrayDeque<Runnable> updateSettingsHandlers = new ArrayDeque<>(4);
+  private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Handler<AsyncResult<Buffer>>> pongHandlers = new ArrayDeque<>();
   private Http2Settings localSettings = new Http2Settings();
   private Http2Settings remoteSettings;
@@ -104,8 +105,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized void handleClosed() {
-    closed = true;
+  public void handleClosed() {
+    synchronized (this) {
+      closed = true;
+    }
     super.handleClosed();
   }
 
@@ -119,57 +122,72 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   synchronized void onConnectionError(Throwable cause) {
+    ArrayList<VertxHttp2Stream> copy;
     synchronized (this) {
-      for (VertxHttp2Stream stream : streams.values()) {
-        context.runOnContext(v -> {
-          synchronized (Http2ConnectionBase.this) {
-            stream.handleException(cause);
-          }
-        });
-      }
-      handleException(cause);
+      copy = new ArrayList<>(streams.values());
     }
+    for (VertxHttp2Stream stream : copy) {
+      context.executeFromIO(v -> stream.handleException(cause));
+    }
+    handleException(cause);
   }
 
-  synchronized void onStreamError(int streamId, Throwable cause) {
-    VertxHttp2Stream stream = streams.get(streamId);
+  void onStreamError(int streamId, Throwable cause) {
+    VertxHttp2Stream stream;
+    synchronized (this) {
+      stream = streams.get(streamId);
+    }
     if (stream != null) {
       stream.handleException(cause);
     }
   }
 
-  synchronized void onStreamwritabilityChanged(Http2Stream s) {
-    VertxHttp2Stream stream = streams.get(s.id());
+  void onStreamWritabilityChanged(Http2Stream s) {
+    VertxHttp2Stream stream;
+    synchronized (this) {
+      stream = streams.get(s.id());
+    }
     if (stream != null) {
       context.executeFromIO(v -> stream.onWritabilityChanged());
     }
   }
 
-  synchronized void onStreamClosed(Http2Stream stream) {
-    checkShutdownHandler();
-    VertxHttp2Stream removed = streams.remove(stream.id());
-    if (removed != null) {
-      context.executeFromIO(v -> removed.handleClose());
-    }
-  }
-
-  synchronized void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    if (!goneAway) {
-      goneAway = true;
-      checkShutdownHandler();
-    }
-  }
-
-  synchronized void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    if (!goneAway) {
-      goneAway = true;
-      Handler<GoAway> handler = goAwayHandler;
-      if (handler != null) {
-        Buffer buffer = Buffer.buffer(debugData);
-        context.executeFromIO(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
+  void onStreamClosed(Http2Stream stream) {
+    VertxHttp2Stream removed;
+    synchronized (this) {
+      removed = streams.remove(stream.id());
+      if (removed == null) {
+        return;
       }
-      checkShutdownHandler();
     }
+    context.executeFromIO(v -> removed.handleClose());
+    checkShutdownHandler();
+  }
+
+  void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+    synchronized (this) {
+      if (goneAway) {
+        return;
+      }
+      goneAway = true;
+    }
+    checkShutdownHandler();
+  }
+
+  void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+    Handler<GoAway> handler;
+    synchronized (this) {
+      if (goneAway) {
+        return;
+      }
+      goneAway = true;
+      handler = goAwayHandler;
+    }
+    if (handler != null) {
+      Buffer buffer = Buffer.buffer(debugData);
+      context.executeFromIO(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
+    }
+    checkShutdownHandler();
   }
 
   // Http2FrameListener
@@ -185,11 +203,14 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized void onSettingsAckRead(ChannelHandlerContext ctx) {
-    Runnable handler = updateSettingsHandlers.poll();
+  public void onSettingsAckRead(ChannelHandlerContext ctx) {
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = updateSettingsHandlers.poll();
+    }
     if (handler != null) {
       // No need to run on a particular context it shall be done by the handler instead
-      handler.run();
+      context.executeFromIO(handler);
     }
   }
 
@@ -199,23 +220,24 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     boolean changed;
-    Long val = settings.maxConcurrentStreams();
-    if (val != null) {
-      if (remoteSettings != null) {
-        changed = val != maxConcurrentStreams;
+    Handler<io.vertx.core.http.Http2Settings> handler;
+    synchronized (this) {
+      Long val = settings.maxConcurrentStreams();
+      if (val != null) {
+        if (remoteSettings != null) {
+          changed = val != maxConcurrentStreams;
+        } else {
+          changed = false;
+        }
+        maxConcurrentStreams = val;
       } else {
         changed = false;
       }
-      maxConcurrentStreams = val;
-    } else {
-      changed = false;
+      remoteSettings = settings;
+      handler = remoteSettingsHandler;
     }
-    remoteSettings = settings;
-    synchronized (this) {
-      Handler<io.vertx.core.http.Http2Settings> handler = remoteSettingsHandler;
-      if (handler != null) {
-        context.executeFromIO(v -> handler.handle(HttpUtils.toVertxSettings(settings)));
-      }
+    if (handler != null) {
+      context.executeFromIO(HttpUtils.toVertxSettings(settings), handler);
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
@@ -256,9 +278,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
+  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
-    VertxHttp2Stream req = streams.get(streamId);
+    VertxHttp2Stream req;
+    synchronized (this) {
+      req = streams.get(streamId);
+    }
     if (req != null) {
       Buffer buff = Buffer.buffer(safeBuffer(payload, ctx.alloc()));
       context.executeFromIO(v -> req.handleCustomFrame(frameType, flags.value(), buff));
@@ -266,17 +291,24 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    VertxHttp2Stream req = streams.get(streamId);
-    if (req != null) {
-      context.executeFromIO(v -> req.onResetRead(errorCode));
+  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
+    VertxHttp2Stream req;
+    synchronized (this) {
+      req = streams.get(streamId);
+      if (req == null) {
+        return;
+      }
     }
+    context.executeFromIO(v -> req.onResetRead(errorCode));
   }
 
   @Override
-  public synchronized int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
+  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
     int[] consumed = { padding };
-    VertxHttp2Stream req = streams.get(streamId);
+    VertxHttp2Stream req;
+    synchronized (this) {
+      req = streams.get(streamId);
+    }
     if (req != null) {
       data = safeBuffer(data, ctx.alloc());
       Buffer buff = Buffer.buffer(data);
@@ -312,7 +344,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
+  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
     if (errorCode < 0) {
       throw new IllegalArgumentException();
     }
@@ -336,7 +368,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized HttpConnection shutdown(long timeout) {
+  public HttpConnection shutdown(long timeout) {
     if (timeout < 0) {
       throw new IllegalArgumentException("Invalid timeout value " + timeout);
     }
@@ -369,16 +401,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
-    /*
-    io.vertx.core.http.Http2Settings a = new io.vertx.core.http.Http2Settings();
-    a.setPushEnabled(handler.connection().remote().allowPushTo());
-    a.setMaxConcurrentStreams((long) handler.connection().local().maxActiveStreams());
-    a.setMaxHeaderListSize(handler.encoder().configuration().headersConfiguration().maxHeaderListSize());
-    a.setHeaderTableSize(handler.encoder().configuration().headersConfiguration().maxHeaderTableSize());
-    a.setMaxFrameSize(handler.encoder().configuration().frameSizePolicy().maxFrameSize());
-    a.setInitialWindowSize(handler.encoder().flowController().initialWindowSize());
-    return a;
-    */
     return HttpUtils.toVertxSettings(remoteSettings);
   }
 
@@ -399,8 +421,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return this;
   }
 
-  protected synchronized void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
-    Context completionContext = completionHandler != null ? context.owner().getOrCreateContext() : null;
+  protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
     Http2Settings current = handler.decoder().localSettings();
     for (Map.Entry<Character, Long> entry : current.entrySet()) {
       Character key = entry.getKey();
@@ -408,12 +429,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         settingsUpdate.remove(key);
       }
     }
-    Runnable pending = () -> {
-      localSettings.putAll(settingsUpdate);
+    Handler<Void> pending = v -> {
+      synchronized (Http2ConnectionBase.this) {
+        localSettings.putAll(settingsUpdate);
+      }
       if (completionHandler != null) {
-        completionContext.runOnContext(v -> {
-          completionHandler.handle(Future.succeededFuture());
-        });
+        completionHandler.handle(Future.succeededFuture());
       }
     };
     updateSettingsHandlers.add(pending);
@@ -423,22 +444,22 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
           updateSettingsHandlers.remove(pending);
         }
         if (completionHandler != null) {
-          completionContext.runOnContext(v -> {
-            completionHandler.handle(Future.failedFuture(fut.cause()));
-          });
+          completionHandler.handle(Future.failedFuture(fut.cause()));
         }
       }
     });
   }
 
   @Override
-  public synchronized HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
+  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
     if (data.length() != 8) {
       throw new IllegalArgumentException("Ping data must be exactly 8 bytes");
     }
     handler.writePing(data.getLong(0)).addListener(fut -> {
       if (fut.isSuccess()) {
-        pongHandlers.add(pongHandler);
+        synchronized (Http2ConnectionBase.this) {
+          pongHandlers.add(pongHandler);
+        }
       } else {
         pongHandler.handle(Future.failedFuture(fut.cause()));
       }
@@ -452,23 +473,29 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return this;
   }
 
+  // Necessary to set the covariant return type
   @Override
-  public synchronized Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
+  public Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http2ConnectionBase) super.exceptionHandler(handler);
   }
 
   // Private
 
   private void checkShutdownHandler() {
-    if (!shutdown) {
-      Http2Connection conn = handler.connection();
-      if ((conn.goAwayReceived() || conn.goAwaySent()) && conn.numActiveStreams() == 0) {
-        shutdown  = true;
-        Handler<Void> handler = shutdownHandler;
-        if (handler != null) {
-          context.executeFromIO(handler);
-        }
+    Handler<Void> shutdownHandler;
+    synchronized (this) {
+      if (shutdown) {
+        return;
       }
+      Http2Connection conn = handler.connection();
+      if ((!conn.goAwayReceived() && !conn.goAwaySent()) || conn.numActiveStreams() > 0) {
+        return;
+      }
+      shutdown  = true;
+      shutdownHandler = this.shutdownHandler;
+    }
+    if (shutdownHandler != null) {
+      context.executeFromIO(shutdownHandler);
     }
   }
 }

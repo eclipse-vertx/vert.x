@@ -232,13 +232,14 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   void handleException(Throwable e) {
+    Handler<Throwable> handler;
     synchronized (conn) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(e);
-      } else {
-        log.error(e);
+      handler = exceptionHandler;
+      if (handler == null) {
+        handler = log::error;
       }
     }
+    handler.handle(e);
   }
 
   @Override

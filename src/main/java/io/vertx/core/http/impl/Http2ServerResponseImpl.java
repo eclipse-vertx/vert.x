@@ -101,23 +101,31 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     this.metric = metric;
   }
 
-  synchronized void beginRequest() {
-    inHandler = true;
+  void beginRequest() {
+    synchronized (conn) {
+      inHandler = true;
+    }
   }
 
-  synchronized boolean endRequest() {
-    inHandler = false;
-    return numPush > 0;
+  boolean endRequest() {
+    synchronized (conn) {
+      inHandler = false;
+      return numPush > 0;
+    }
   }
 
   void callReset(long code) {
-    handleEnded(true);
     handleError(new StreamResetException(code));
+    handleEnded(true);
   }
 
   void handleError(Throwable cause) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(cause);
+    Handler<Throwable> handler;
+    synchronized (conn) {
+      handler = exceptionHandler;
+    }
+    if (handler != null) {
+      handler.handle(cause);
     }
   }
 
@@ -363,15 +371,18 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   NetSocket netSocket() {
     checkEnded();
-    if (netSocket == null) {
+    synchronized (conn) {
+      if (netSocket != null) {
+        return netSocket;
+      }
       status = HttpResponseStatus.OK;
       if (!checkSendHeaders(false)) {
         throw new IllegalStateException("Response for CONNECT already sent");
       }
       ctx.flush();
-      handleEnded(false);
       netSocket = conn.toNetSocket(stream);
     }
+    handleEnded(false);
     return netSocket;
   }
 
@@ -415,6 +426,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   void write(ByteBuf chunk, boolean end) {
+    Handler<Void> bodyEndHandler;
     synchronized (conn) {
       checkEnded();
       boolean hasBody = false;
@@ -428,7 +440,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         if (!headWritten && !head && status != HttpResponseStatus.NOT_MODIFIED && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
           headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
         }
-        handleEnded(false);
       }
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
       if (hasBody || (!sent && end)) {
@@ -437,9 +448,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       if (end && trailers != null) {
         stream.writeHeaders(trailers, true);
       }
-      if (end && bodyEndHandler != null) {
+      bodyEndHandler = this.bodyEndHandler;
+    }
+    if (end) {
+      if (bodyEndHandler != null) {
         bodyEndHandler.handle(null);
       }
+      handleEnded(false);
     }
   }
 
@@ -460,28 +475,38 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private void handleEnded(boolean failed) {
-    if (!ended) {
+  private boolean handleEnded(boolean failed) {
+    Handler<Throwable> exceptionHandler;
+    Handler<Void> endHandler;
+    Handler<Void> closeHandler;
+    synchronized (conn) {
+      if (ended) {
+        return false;
+      }
       ended = true;
       if (METRICS_ENABLED && metric != null) {
         // Null in case of push response : handle this case
+        conn.reportBytesWritten(bytesWritten);
         if (failed) {
           conn.metrics().requestReset(metric);
         } else {
-          conn.reportBytesWritten(bytesWritten);
           conn.metrics().responseEnd(metric, this);
         }
       }
-      if (exceptionHandler != null) {
-        conn.getContext().runOnContext(v -> exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION));
-      }
-      if (endHandler != null) {
-        conn.getContext().runOnContext(endHandler);
-      }
-      if (closeHandler != null) {
-        conn.getContext().runOnContext(closeHandler);
-      }
+      exceptionHandler = this.exceptionHandler;
+      endHandler = this.endHandler;
+      closeHandler = this.closeHandler;
     }
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION);
+    }
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
+    if (closeHandler != null) {
+      closeHandler.handle(null);
+    }
+    return true;
   }
 
   void writabilityChanged() {
@@ -647,12 +672,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void reset(long code) {
-    synchronized (conn) {
-      checkEnded();
-      handleEnded(true);
-      stream.writeReset(code);
-      ctx.flush();
+    if (!handleEnded(true)) {
+      throw new IllegalStateException("Response has already been written");
     }
+    stream.writeReset(code);
+    ctx.flush();
   }
 
   @Override
