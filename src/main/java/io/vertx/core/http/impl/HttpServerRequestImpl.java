@@ -29,7 +29,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.queue.Queue;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -85,7 +85,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private long bytesRead;
 
   private boolean paused;
-  private Queue<Buffer> pending;
+  private InboundBuffer<Buffer> pending;
 
   HttpServerRequestImpl(Http1xServerConnection conn, DefaultHttpRequest request) {
     this.conn = conn;
@@ -104,10 +104,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  private Queue<Buffer> pendingQueue() {
+  private InboundBuffer<Buffer> pendingQueue() {
     if (pending == null) {
-      pending = Queue.queue(conn.getContext(), 8);
-      pending.writableHandler(v -> conn.doResume());
+      pending = new InboundBuffer<>(conn.getContext(), 8);
+      pending.drainHandler(v -> conn.doResume());
       pending.emptyHandler(v -> {
         if (ended) {
           doEnd();
@@ -120,7 +120,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   private void enqueueData(Buffer chunk) {
     // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-    if (!pendingQueue().add(chunk)) {
+    if (!pendingQueue().write(chunk)) {
       // We only pause when we are actively called by the connection
       conn.doPause();
     }
@@ -327,7 +327,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest fetch(long amount) {
     synchronized (conn) {
-      pendingQueue().take(amount);
+      pendingQueue().fetch(amount);
       return this;
     }
   }

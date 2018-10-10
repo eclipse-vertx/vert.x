@@ -23,7 +23,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.queue.Queue;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -46,7 +46,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final String binaryHandlerID;
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
-  private final Queue<Buffer> pending;
+  private final InboundBuffer<Buffer> pending;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -69,9 +69,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.conn = conn;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = Queue.<Buffer>queue(conn.getContext());
+    this.pending = new InboundBuffer<>(conn.getContext());
 
-    pending.writableHandler(v -> {
+    pending.drainHandler(v -> {
       conn.doResume();
     });
   }
@@ -284,7 +284,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     synchronized (conn) {
       if (frame.type() != FrameType.CLOSE) {
         conn.reportBytesRead(frame.length());
-        if (!pending.add(frame.binaryData())) {
+        if (!pending.write(frame.binaryData())) {
           conn.doPause();
         }
       }
@@ -557,7 +557,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   @Override
   public S fetch(long amount) {
     if (!isClosed()) {
-      pending.take(amount);
+      pending.fetch(amount);
     }
     return (S) this;
   }

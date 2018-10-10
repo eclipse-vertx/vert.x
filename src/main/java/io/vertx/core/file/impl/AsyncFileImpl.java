@@ -24,7 +24,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.queue.Queue;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -68,7 +68,7 @@ public class AsyncFileImpl implements AsyncFile {
   private int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
   private int lwm = maxWrites / 2;
   private int readBufferSize = DEFAULT_READ_BUFFER_SIZE;
-  private Queue<Buffer> queue;
+  private InboundBuffer<Buffer> queue;
   private Handler<Void> endHandler;
   private long readPos;
 
@@ -100,9 +100,9 @@ public class AsyncFileImpl implements AsyncFile {
       throw new FileSystemException(e);
     }
     this.context = context;
-    this.queue = Queue.queue(context, 0);
+    this.queue = new InboundBuffer<>(context, 0);
 
-    queue.writableHandler(v -> {
+    queue.drainHandler(v -> {
       doRead();
     });
   }
@@ -137,7 +137,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public AsyncFile fetch(long amount) {
-    queue.take(amount);
+    queue.fetch(amount);
     return this;
   }
 
@@ -338,7 +338,7 @@ public class AsyncFileImpl implements AsyncFile {
           handleEnd();
         } else {
           readPos += buffer.length();
-          if (queue.add(buffer)) {
+          if (queue.write(buffer)) {
             doRead();
           }
         }

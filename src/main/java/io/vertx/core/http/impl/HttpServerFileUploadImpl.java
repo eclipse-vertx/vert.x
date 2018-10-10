@@ -13,15 +13,13 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.queue.Queue;
 import io.vertx.core.streams.Pump;
-import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.nio.charset.Charset;
 
@@ -49,7 +47,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   private Handler<Throwable> exceptionHandler;
 
   private long size;
-  private Queue<Buffer> pending;
+  private InboundBuffer<Buffer> pending;
   private boolean complete;
   private boolean lazyCalculateSize;
 
@@ -64,7 +62,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
-    this.pending = Queue.<Buffer>queue(context)
+    this.pending = new InboundBuffer<Buffer>(context)
       .emptyHandler(v -> {
         if (complete) {
           handleComplete();
@@ -173,7 +171,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   synchronized void doReceiveData(Buffer data) {
-    if (!pending.add(data)) {
+    if (!pending.write(data)) {
       req.pause();
     }
   }

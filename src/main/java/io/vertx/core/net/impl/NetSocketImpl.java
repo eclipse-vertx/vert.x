@@ -36,7 +36,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.queue.Queue;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +71,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final TCPMetrics metrics;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private Queue<Object> pending;
+  private InboundBuffer<Object> pending;
   private MessageConsumer registration;
   private boolean closed;
 
@@ -87,8 +87,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
-    pending = Queue.queue(context, 0);
-    pending.writableHandler(v -> doResume());
+    pending = new InboundBuffer<>(context);
+    pending.drainHandler(v -> doResume());
     pending.handler(NULL_MSG_HANDLER);
   }
 
@@ -188,7 +188,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocket fetch(long amount) {
-    pending.take(amount);
+    pending.fetch(amount);
     return this;
   }
 
@@ -361,7 +361,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   public synchronized void handleMessage(Object msg) {
     checkContext();
-    if (!pending.add(msg)) {
+    if (!pending.write(msg)) {
       doPause();
     }
   }
