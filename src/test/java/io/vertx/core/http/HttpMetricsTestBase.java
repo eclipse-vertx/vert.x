@@ -25,6 +25,7 @@ import io.vertx.test.fakemetrics.HttpClientMetric;
 import io.vertx.test.fakemetrics.HttpServerMetric;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -94,9 +95,11 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
+      assertEquals(Collections.emptySet(), metrics.endpoints());
       HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath").exceptionHandler(this::fail);
       assertNull(metrics.getMetric(req));
       req.setChunked(true).handler(resp -> {
+        assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
         clientMetric.set(metrics.getMetric(req));
         assertNotNull(clientMetric.get());
         assertNotNull(clientMetric.get().socket);
@@ -114,6 +117,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     });
     awaitLatch(latch);
     client.close();
+    AsyncTestBase.assertWaitUntil(() -> metrics.endpoints().isEmpty());
     AsyncTestBase.assertWaitUntil(() -> !serverMetric.get().socket.connected.get());
     AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
     AsyncTestBase.assertWaitUntil(() -> contentLength  == serverMetric.get().socket.bytesWritten.get());
