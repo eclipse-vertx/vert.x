@@ -50,7 +50,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     this.useDecompressor = useDecompressor;
     encoder().flowController().listener(s -> {
       if (connection != null) {
-        connection.onStreamwritabilityChanged(s);
+        connection.onStreamWritabilityChanged(s);
       }
     });
     connection().addListener(this);

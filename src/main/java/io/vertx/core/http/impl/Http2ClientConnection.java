@@ -219,12 +219,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleReset(long errorCode) {
-      if (responseEnded) {
-        return;
-      }
-      responseEnded = true;
-      if (conn.metrics != null) {
-        conn.metrics.requestReset(request.metric());
+      synchronized (conn) {
+        if (responseEnded) {
+          return;
+        }
+        responseEnded = true;
+        if (conn.metrics != null) {
+          conn.metrics.requestReset(request.metric());
+        }
       }
       handleException(new StreamResetException(errorCode));
     }
@@ -294,15 +296,17 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     void handleException(Throwable exception) {
-      if (request != null && (!requestEnded || response == null)) {
-        context.executeFromIO(v -> {
-          request.handleException(exception);
-        });
+      HttpClientRequestBase req;
+      HttpClientResponseImpl resp;
+      synchronized (conn) {
+        req = (!requestEnded || response == null) ? request : null;
+        resp = response;
       }
-      if (response != null) {
-        context.executeFromIO(v -> {
-          response.handleException(exception);
-        });
+      if (req != null) {
+        req.handleException(exception);
+      }
+      if (resp != null) {
+        resp.handleException(exception);
       }
     }
 

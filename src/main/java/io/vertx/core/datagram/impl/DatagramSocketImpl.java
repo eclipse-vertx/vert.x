@@ -405,6 +405,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     }
 
     void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
+      Handler<io.vertx.core.datagram.DatagramPacket> handler;
       synchronized (DatagramSocketImpl.this) {
         if (metrics != null) {
           metrics.bytesRead(null, packet.sender(), packet.data().length());
@@ -413,10 +414,13 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
           if (demand != Long.MAX_VALUE) {
             demand--;
           }
-          if (packetHandler != null) {
-            packetHandler.handle(packet);
-          }
+          handler = packetHandler;
+        } else {
+          handler = null;
         }
+      }
+      if (handler != null) {
+        handler.handle(packet);
       }
     }
   }

@@ -39,7 +39,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
       if (metrics != null) {
         metrics.disconnected(getMetric());
       }
-      super.handleClosed();
     }
+    super.handleClosed();
   }
 }

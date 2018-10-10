@@ -1344,8 +1344,8 @@ public abstract class HttpTest extends HttpTestBase {
       AtomicInteger respEndHandlerCount = new AtomicInteger();
       req.exceptionHandler(err -> {
         assertEquals(1, reqExceptionHandlerCount.incrementAndGet());
-        assertEquals(0, respExceptionHandlerCount.get());
-        assertEquals(0, respEndHandlerCount.get());
+        assertEquals(1, respExceptionHandlerCount.get());
+        assertEquals(1, respEndHandlerCount.get());
         assertTrue(resp.closed());
         assertFalse(resp.ended());
         try {
@@ -1355,12 +1355,12 @@ public abstract class HttpTest extends HttpTestBase {
         }
       });
       resp.exceptionHandler(err -> {
-        assertEquals(1, reqExceptionHandlerCount.get());
+        assertEquals(0, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.incrementAndGet());
         assertEquals(0, respEndHandlerCount.get());
       });
       resp.endHandler(v -> {
-        assertEquals(1, reqExceptionHandlerCount.get());
+        assertEquals(0, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.get());
         assertEquals(1, respEndHandlerCount.incrementAndGet());
       });

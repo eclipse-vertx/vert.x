@@ -66,11 +66,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onResetRead(long code) {
-    synchronized (conn) {
-      // paused = false;
-      // pending.clear();
-      handleReset(code);
-    }
+    handleReset(code);
   }
 
   boolean onDataRead(Buffer data) {

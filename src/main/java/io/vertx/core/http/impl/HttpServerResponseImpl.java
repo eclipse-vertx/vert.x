@@ -518,29 +518,40 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   void handleException(Throwable t) {
-    synchronized (conn) {
-      if (t == Http1xServerConnection.CLOSED_EXCEPTION) {
-        handleClosed();
-      } else {
-        if (exceptionHandler != null) {
-          exceptionHandler.handle(t);
-        }
+    if (t == Http1xServerConnection.CLOSED_EXCEPTION) {
+      handleClosed();
+    } else {
+      Handler<Throwable> handler;
+      synchronized (conn) {
+        handler = exceptionHandler;
+      }
+      if (handler != null) {
+        handler.handle(t);
       }
     }
   }
 
   private void handleClosed() {
-    if (!closed) {
+    Handler<Void> closedHandler;
+    Handler<Void> endHandler;
+    Handler<Throwable> exceptionHandler;
+    synchronized (conn) {
+      if (closed) {
+        return;
+      }
       closed = true;
-      if (!written && exceptionHandler != null) {
-        conn.getContext().runOnContext(v -> exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION));
-      }
-      if (endHandler != null) {
-        conn.getContext().runOnContext(endHandler);
-      }
-      if (closeHandler != null) {
-        conn.getContext().runOnContext(closeHandler);
-      }
+      exceptionHandler = written ? null : this.exceptionHandler;
+      endHandler = this.endHandler;
+      closedHandler = this.closeHandler;
+    }
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION);
+    }
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
+    if (closedHandler != null) {
+      closedHandler.handle(null);
     }
   }
 

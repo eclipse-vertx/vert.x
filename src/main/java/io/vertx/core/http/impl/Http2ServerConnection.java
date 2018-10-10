@@ -247,6 +247,10 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     @Override
     void handleReset(long errorCode) {
+      Http2ServerResponseImpl response;
+      synchronized (conn) {
+        response = this.response;
+      }
       if (response != null) {
         response.callReset(errorCode);
       } else {
