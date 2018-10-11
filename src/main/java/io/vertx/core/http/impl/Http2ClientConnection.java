@@ -432,6 +432,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Object queueMetric,
     ConnectionListener<HttpClientConnection> listener,
     ContextInternal context,
+    Object socketMetric,
     BiConsumer<Http2ClientConnection, Long> c) {
     long http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();
     HttpClientOptions options = client.getOptions();
@@ -448,8 +449,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
       }
       if (metrics != null) {
-        Object metric = metrics.connected(conn.remoteAddress(), conn.remoteName());
-        conn.metric(metric);
+        Object m = socketMetric;
+        if (m == null)  {
+          m = metrics.connected(conn.remoteAddress(), conn.remoteName());
+          metrics.endpointConnected(queueMetric, m);
+        } else {
+
+        }
+        conn.metric(m);
       }
       long concurrency = conn.remoteSettings().getMaxConcurrentStreams();
       if (http2MaxConcurrency > 0) {

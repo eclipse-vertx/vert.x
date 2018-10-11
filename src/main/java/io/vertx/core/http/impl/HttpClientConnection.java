@@ -33,4 +33,6 @@ public interface HttpClientConnection extends HttpConnection {
 
   ContextInternal getContext();
 
+  Object metric();
+
 }
