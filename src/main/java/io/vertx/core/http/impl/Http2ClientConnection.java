@@ -453,9 +453,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (m == null)  {
           m = metrics.connected(conn.remoteAddress(), conn.remoteName());
           metrics.endpointConnected(queueMetric, m);
-        } else {
-
-        }
+        } 
         conn.metric(m);
       }
       long concurrency = conn.remoteSettings().getMaxConcurrentStreams();
