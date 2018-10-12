@@ -50,7 +50,7 @@ Here's an example:
 ----
 public class MyVerticle extends AbstractVerticle {
 
-  private HttpServeer server;
+  private HttpServer server;
 
   public void start(Future<Void> startFuture) {
     server = vertx.createHttpServer().requestHandler(req -> {
