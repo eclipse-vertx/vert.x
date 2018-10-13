@@ -16,14 +16,7 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.FrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
@@ -1558,6 +1551,32 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testReceiveHttpResponseHeadersOnClient() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
+      handshakeWithCookie(req);
+    });
+    AtomicReference<WebSocket> websocketRef = new AtomicReference();
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/some/path", ws -> {
+        MultiMap entries = ws.responseHeaders();
+        assertNotNull(entries);
+        assertFalse(entries.isEmpty());
+        assertEquals("websocket".toLowerCase(), entries.get("Upgrade").toLowerCase());
+        assertEquals("upgrade".toLowerCase(), entries.get("Connection").toLowerCase());
+        Set<String> cookiesToSet = new HashSet(entries.getAll("Set-Cookie"));
+        assertEquals(2, cookiesToSet.size());
+        assertTrue(cookiesToSet.contains("SERVERID=test-server-id"));
+        assertTrue(cookiesToSet.contains("JSONID=test-json-id"));
+        websocketRef.set(ws);
+        complete();
+      }, failure -> fail("connection should succeed"));
+    });
+    await();
+    assertNull(websocketRef.get().responseHeaders());
+  }
+
+  @Test
   public void testUpgrade() {
     testUpgrade(false);
   }
@@ -1701,6 +1720,31 @@ public class WebSocketTest extends VertxTestBase {
       }
     });
     testRaceConditionWithWebsocketClient(fut.get());
+  }
+
+  private NetSocket handshakeWithCookie(HttpServerRequest req) {
+    NetSocket so = req.netSocket();
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-1");
+      byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
+      digest.update(inputBytes);
+      byte[] hashedBytes = digest.digest();
+      byte[] accept = Base64.getEncoder().encode(hashedBytes);
+      Buffer data = Buffer.buffer();
+      data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
+      data.appendString("Upgrade: websocket\r\n");
+      data.appendString("Connection: upgrade\r\n");
+      data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
+      data.appendString("Set-Cookie: SERVERID=test-server-id\r\n");
+      data.appendString("Set-Cookie: JSONID=test-json-id\r\n");
+      data.appendString("\r\n");
+      so.write(data);
+      return so;
+    } catch (NoSuchAlgorithmException e) {
+      req.response().setStatusCode(500).end();
+      fail(e.getMessage());
+      return null;
+    }
   }
 
   private NetSocket handshake(HttpServerRequest req) {

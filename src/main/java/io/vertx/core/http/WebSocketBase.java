@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
@@ -89,6 +90,15 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * handshake will not be completed yet.
    */
   String subProtocol();
+
+  /**
+   *  Returns the HTTP response headers during the websocket connection handler.
+   *  <p/>
+   *  After the connection handler has completed the response headers will be null.
+   *
+   * @return the response headers
+   */
+  MultiMap responseHeaders();
 
   /**
    * Write a WebSocket frame to the connection
