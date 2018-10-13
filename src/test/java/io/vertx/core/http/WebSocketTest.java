@@ -1559,7 +1559,7 @@ public class WebSocketTest extends VertxTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/some/path", ws -> {
-        MultiMap entries = ws.responseHeaders();
+        MultiMap entries = ws.headers();
         assertNotNull(entries);
         assertFalse(entries.isEmpty());
         assertEquals("websocket".toLowerCase(), entries.get("Upgrade").toLowerCase());
@@ -1573,7 +1573,7 @@ public class WebSocketTest extends VertxTestBase {
       }, failure -> fail("connection should succeed"));
     });
     await();
-    assertNull(websocketRef.get().responseHeaders());
+    assertNull(websocketRef.get().headers());
   }
 
   @Test

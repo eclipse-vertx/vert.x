@@ -94,11 +94,11 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    *  Returns the HTTP response headers during the websocket connection handler.
    *  <p/>
-   *  After the connection handler has completed the response headers will be null.
+   *  After the completion handler callback has completed the response headers will be {@code null}
    *
    * @return the response headers
    */
-  MultiMap responseHeaders();
+  MultiMap headers();
 
   /**
    * Write a WebSocket frame to the connection

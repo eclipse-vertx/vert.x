@@ -60,7 +60,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Void> endHandler;
   protected final Http1xConnectionBase conn;
   protected boolean closed;
-  private MultiMap responseHeaders;
+  private MultiMap headers;
 
   WebSocketImplBase(VertxInternal vertx, Http1xConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
@@ -168,15 +168,15 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public MultiMap responseHeaders() {
+  public MultiMap headers() {
     synchronized(conn) {
-      return responseHeaders;
+      return headers;
     }
   }
 
-  void responseHeaders(MultiMap responseHeaders) {
+  void headers(MultiMap responseHeaders) {
     synchronized(conn) {
-      this.responseHeaders = responseHeaders;
+      this.headers = responseHeaders;
     }
   }
 
