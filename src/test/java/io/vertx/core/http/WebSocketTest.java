@@ -1569,11 +1569,13 @@ public class WebSocketTest extends VertxTestBase {
         assertTrue(cookiesToSet.contains("SERVERID=test-server-id"));
         assertTrue(cookiesToSet.contains("JSONID=test-json-id"));
         websocketRef.set(ws);
-        complete();
+        vertx.runOnContext(v -> {
+          assertNull(ws.headers());
+          testComplete();
+        });
       }, failure -> fail("connection should succeed"));
     });
     await();
-    assertNull(websocketRef.get().headers());
   }
 
   @Test
