@@ -36,13 +36,14 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.HttpHandlers;
-import io.vertx.core.http.impl.Http1xServerHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.HandlerHolder;
+import io.vertx.core.net.impl.VertxHandler;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -230,7 +231,15 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       response.end(HELLO_WORLD_BUFFER);
     };
     HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null, null));
-    Http1xServerHandler handler = new Http1xServerHandler(null, new HttpServerOptions(), "localhost", holder, null);
+    VertxHandler<Http1xServerConnection> handler = new VertxHandler<Http1xServerConnection>(chctx -> new Http1xServerConnection(
+      holder.context.owner(),
+      null,
+      new HttpServerOptions(),
+      chctx,
+      holder.context,
+      "localhost",
+      holder.handler,
+      null));
     vertxChannel.pipeline().addLast("handler", handler);
 
     nettyChannel = new EmbeddedChannel(new HttpRequestDecoder(
