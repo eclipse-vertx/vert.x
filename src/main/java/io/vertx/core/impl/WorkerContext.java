@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -24,9 +25,22 @@ class WorkerContext extends ContextImpl {
     super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
+  final <T> Runnable wrapTask(T arg, Handler<T> hTask, PoolMetrics metrics) {
+    Object metric = metrics != null ? metrics.submitted() : null;
+    return () -> {
+      if (metrics != null) {
+        metrics.begin(metric);
+      }
+      boolean succeeded = executeTask(arg, hTask);
+      if (metrics != null) {
+        metrics.end(metric, succeeded);
+      }
+    };
+  }
+
   @Override
-  public void executeAsync(Handler<Void> task) {
-    orderedTasks.execute(wrapTask(null, task, true, workerPool.metrics()), workerPool.executor());
+  void executeAsync(Handler<Void> task) {
+    execute(null, task);
   }
 
   @Override
@@ -39,20 +53,10 @@ class WorkerContext extends ContextImpl {
     return false;
   }
 
-  @Override
-  protected void checkCorrectThread() {
-    // NOOP
-  }
-
   // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
   // so we need to execute it on the worker thread
   @Override
-  public void executeFromIO(Handler<Void> task) {
-    executeFromIO(null, task);
-  }
-
-  @Override
-  public <T> void executeFromIO(T value, Handler<T> task) {
-    orderedTasks.execute(wrapTask(value, task, true, workerPool.metrics()), workerPool.executor());
+  <T> void execute(T value, Handler<T> task) {
+    orderedTasks.execute(wrapTask(value, task, workerPool.metrics()), workerPool.executor());
   }
 }
