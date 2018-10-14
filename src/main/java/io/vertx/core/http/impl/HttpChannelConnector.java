@@ -277,7 +277,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                               Channel ch,
                               Future<ConnectResult<HttpClientConnection>> future) {
     try {
-      VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metric, listener, context, (conn, concurrency) -> {
+      VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metric, listener, context, null, (conn, concurrency) -> {
         future.complete(new ConnectResult<>(conn, concurrency, ch, context, http2Weight));
       });
       ch.pipeline().addLast("handler", clientHandler);

@@ -66,6 +66,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     current.close();
   }
 
+  @Override
+  public Object metric() {
+    return current.metric();
+  }
+
   /**
    * The first stream that will send the request using HTTP/1, upgrades the connection when the protocol
    * switches and receives the response with HTTP/2 frames.
@@ -130,7 +135,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
 
           // Now we need to upgrade this to an HTTP2
           ConnectionListener<HttpClientConnection> listener = conn.listener();
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.endpointMetric(), listener, conn.getContext(), (conn, concurrency) -> {
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.endpointMetric(), listener, conn.getContext(), current.metric(), (conn, concurrency) -> {
             conn.upgradeStream(request, ar -> {
               UpgradingStream.this.conn.closeHandler(null);
               UpgradingStream.this.conn.exceptionHandler(null);

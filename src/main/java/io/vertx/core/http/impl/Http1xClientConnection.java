@@ -814,7 +814,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           webSocket.setMetric(metrics.connected(endpointMetric, metric(), webSocket));
         }
         webSocket.registerHandler(vertx.eventBus());
+        webSocket.headers(new HeadersAdaptor(response.headers()));
         wsConnect.handle(webSocket);
+        webSocket.headers(null);
       });
     }
   }

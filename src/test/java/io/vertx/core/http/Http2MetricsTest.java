@@ -12,31 +12,57 @@ package io.vertx.core.http;
 
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@RunWith(Parameterized.class)
 public class Http2MetricsTest extends HttpMetricsTestBase {
 
-  public Http2MetricsTest() {
+  @Parameterized.Parameters
+  public static Collection<Object[]> params() {
+    ArrayList<Object[]> params = new ArrayList<>();
+    // h2
+    params.add(new Object[] { Http2TestBase.createHttp2ClientOptions(), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST) });
+    // h2c with upgrade
+    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(true), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST) });
+    // h2c direct
+    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(false), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST) });
+    return params;
+  }
+
+  private HttpClientOptions clientOptions;
+  private HttpServerOptions serverOptions;
+
+  public Http2MetricsTest(HttpClientOptions clientOptions, HttpServerOptions serverOptions) {
     super(HttpVersion.HTTP_2);
+
+    this.clientOptions = clientOptions;
+    this.serverOptions = serverOptions.setHandle100ContinueAutomatically(true);
   }
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(true));
+    client = vertx.createHttpClient(clientOptions);
+    server = vertx.createHttpServer(serverOptions);
   }
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return serverOptions;
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions();
+    return clientOptions;
   }
 
   @Test
