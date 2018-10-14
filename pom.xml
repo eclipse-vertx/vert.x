@@ -234,6 +234,7 @@
               <vertx.handle100Continue>true</vertx.handle100Continue>
               <vertx.useNativeTransport>${vertx.testNativeTransport}</vertx.useNativeTransport>
               <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
+              <vertx.threadChecks>true</vertx.threadChecks>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->

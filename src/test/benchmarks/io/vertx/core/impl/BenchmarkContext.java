@@ -30,8 +30,13 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  protected void executeAsync(Handler<Void> task) {
-    executeTask(null, task, true);
+  void executeAsync(Handler<Void> task) {
+    execute(null, task);
+  }
+
+  @Override
+  protected <T> void execute(T value, Handler<T> task) {
+    executeTask(null, task);
   }
 
   @Override
@@ -42,9 +47,5 @@ public class BenchmarkContext extends ContextImpl {
   @Override
   public boolean isMultiThreadedWorkerContext() {
     return false;
-  }
-
-  @Override
-  protected void checkCorrectThread() {
   }
 }

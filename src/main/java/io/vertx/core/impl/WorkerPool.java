@@ -23,7 +23,7 @@ public class WorkerPool {
   private final ExecutorService pool;
   private final PoolMetrics metrics;
 
-  WorkerPool(ExecutorService pool, PoolMetrics metrics) {
+  public WorkerPool(ExecutorService pool, PoolMetrics metrics) {
     this.pool = pool;
     this.metrics = metrics;
   }
