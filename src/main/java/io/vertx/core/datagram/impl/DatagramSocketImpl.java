@@ -35,7 +35,6 @@ import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.metrics.*;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 import java.net.InetAddress;
@@ -87,7 +86,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   private void init() {
-    channel.pipeline().addLast("handler", new VertxHandler<Connection>(this::createConnection));
+    channel.pipeline().addLast("handler", VertxHandler.create(context, this::createConnection));
   }
 
   @Override
