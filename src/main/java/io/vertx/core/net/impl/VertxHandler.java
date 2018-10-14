@@ -25,7 +25,7 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
   public static ByteBuf safeBuffer(ByteBufHolder holder, ByteBufAllocator allocator) {
     return safeBuffer(holder.content(), allocator);
@@ -53,18 +53,24 @@ public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler
 
   private static final Handler<Object> NULL_HANDLER = m -> { };
 
+  public static <C extends ConnectionBase> VertxHandler<C> create(C connection) {
+    return create(connection.context, ctx -> connection);
+  }
+
+  public static <C extends ConnectionBase> VertxHandler<C> create(ContextInternal context, Function<ChannelHandlerContext, C> connectionFactory) {
+    return new VertxHandler<>(context, connectionFactory);
+  }
+
   private final Function<ChannelHandlerContext, C> connectionFactory;
+  private final ContextInternal context;
   private C conn;
   private Handler<Void> endReadAndFlush;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
   private Handler<Object> messageHandler;
 
-  public VertxHandler(C connection) {
-    this(chctx -> connection);
-  }
-
-  public VertxHandler(Function<ChannelHandlerContext, C> connectionFactory) {
+  private VertxHandler(ContextInternal context, Function<ChannelHandlerContext, C> connectionFactory) {
+    this.context = context;
     this.connectionFactory = connectionFactory;
   }
 
@@ -127,7 +133,6 @@ public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
-    ContextInternal context = conn.getContext();
     context.executeFromIO(v -> conn.handleInterestedOpsChanged());
   }
 
@@ -137,7 +142,6 @@ public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
     C connection = getConnection();
     if (connection != null) {
-      ContextInternal context = conn.getContext();
       context.executeFromIO(v -> {
         try {
           if (ch.isOpen()) {
@@ -157,20 +161,17 @@ public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler
     if (removeHandler != null) {
       removeHandler.handle(conn);
     }
-    ContextInternal context = conn.getContext();
     context.executeFromIO(v -> conn.handleClosed());
   }
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    ContextInternal context = conn.getContext();
     context.executeFromIO(endReadAndFlush);
   }
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    ContextInternal ctx = conn.getContext();
-    ctx.executeFromIO(msg, messageHandler);
+    context.executeFromIO(msg, messageHandler);
   }
 
   @Override

@@ -249,7 +249,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                                Channel ch, long weight,
                                Future<ConnectResult<HttpClientConnection>> future) {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
-    VertxHandler<Http1xClientConnection> clientHandler = new VertxHandler<Http1xClientConnection>(chctx -> {
+    VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(context, chctx -> {
       Http1xClientConnection conn = new Http1xClientConnection(listener, upgrade ? HttpVersion.HTTP_1_1 : version, client, endpointMetric, chctx, ssl, host, port, context, metrics);
       if (metrics != null) {
         context.executeFromIO(v -> {

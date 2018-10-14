@@ -172,7 +172,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     if (inflater != null) {
       pipeline.remove(inflater);
     }
-    pipeline.replace("handler", "handler",  new VertxHandler<>(socket));
+    pipeline.replace("handler", "handler", VertxHandler.create(socket));
 
     // Removing this codec might fire pending buffers in the HTTP decoder
     // this happens when the channel reads the HTTP response and the following data in a single buffer

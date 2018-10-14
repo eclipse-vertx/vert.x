@@ -433,7 +433,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       initializeWebsocketExtensions (pipeline);
     }
     HandlerHolder<HttpHandlers> holder2 = holder;
-    VertxHandler<Http1xServerConnection> handler = new VertxHandler<Http1xServerConnection>(chctx -> {
+    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(holder2.context, chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(holder2.context.owner(),
         sslHelper,
         options,
