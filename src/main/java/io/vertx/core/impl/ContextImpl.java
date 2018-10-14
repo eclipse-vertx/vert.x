@@ -306,7 +306,7 @@ abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
-  <T> boolean executeTask(T arg, Handler<T> hTask) {
+  public final VertxThread before() {
     Thread th = Thread.currentThread();
     if (!(th instanceof VertxThread)) {
       throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
@@ -315,30 +315,40 @@ abstract class ContextImpl implements ContextInternal {
     if (!DISABLE_TIMINGS) {
       current.executeStart();
     }
-    try {
-      setContext(current, this);
-      hTask.handle(arg);
-      return true;
-    } catch (Throwable t) {
-      handleException(t);
-      return false;
-    } finally {
-      // We don't unset the context after execution - this is done later when the context is closed via
-      // VertxThreadFactory
-      if (!DISABLE_TIMINGS) {
-        current.executeEnd();
-      }
+    setContext(current, this);
+    return current;
+  }
+
+  public final void after(VertxThread current) {
+    // We don't unset the context after execution - this is done later when the context is closed via
+    // VertxThreadFactory
+    setContext(current, null);
+    if (!DISABLE_TIMINGS) {
+      current.executeEnd();
     }
   }
 
-  private void handleException(Throwable t) {
-    log.error("Unhandled exception", t);
+  <T> boolean executeTask(T arg, Handler<T> hTask) {
+    VertxThread current = before();
+    try {
+      hTask.handle(arg);
+      return true;
+    } catch (Throwable t) {
+      reportException(t);
+      return false;
+    } finally {
+      after(current);
+    }
+  }
+
+  public void reportException(Throwable failure) {
+    log.error("Unhandled exception", failure);
     Handler<Throwable> handler = this.exceptionHandler;
     if (handler == null) {
       handler = owner.exceptionHandler();
     }
     if (handler != null) {
-      handler.handle(t);
+      handler.handle(failure);
     }
   }
 

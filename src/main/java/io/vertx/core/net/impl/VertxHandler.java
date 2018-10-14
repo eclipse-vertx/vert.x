@@ -58,18 +58,22 @@ public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler
   }
 
   public static <C extends ConnectionBase> VertxHandler<C> create(ContextInternal context, Function<ChannelHandlerContext, C> connectionFactory) {
-    return new VertxHandler<>(context, connectionFactory);
+    if (context.isEventLoopContext()) {
+      return new EventLoopHandler<>(context, connectionFactory);
+    } else {
+      return new VertxHandler<>(context, connectionFactory);
+    }
   }
 
   private final Function<ChannelHandlerContext, C> connectionFactory;
-  private final ContextInternal context;
-  private C conn;
+  protected final ContextInternal context;
+  protected C conn;
   private Handler<Void> endReadAndFlush;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
-  private Handler<Object> messageHandler;
+  protected Handler<Object> messageHandler;
 
-  private VertxHandler(ContextInternal context, Function<ChannelHandlerContext, C> connectionFactory) {
+  VertxHandler(ContextInternal context, Function<ChannelHandlerContext, C> connectionFactory) {
     this.context = context;
     this.connectionFactory = connectionFactory;
   }
@@ -79,7 +83,7 @@ public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler
    *
    * @param connection the connection
    */
-  protected void setConnection(C connection) {
+  private void setConnection(C connection) {
     conn = connection;
     endReadAndFlush = v -> conn.endReadAndFlush();
     messageHandler = ((ConnectionBase)conn)::handleRead; // Dubious cast to make compiler happy

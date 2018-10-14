@@ -127,7 +127,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       copy = new ArrayList<>(streams.values());
     }
     for (VertxHttp2Stream stream : copy) {
-      context.executeFromIO(v -> stream.handleException(cause));
+      stream.handleException(cause);
     }
     handleException(cause);
   }

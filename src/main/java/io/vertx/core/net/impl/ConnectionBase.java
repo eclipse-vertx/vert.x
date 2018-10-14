@@ -56,7 +56,7 @@ public abstract class ConnectionBase {
   protected final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private boolean read;
+  boolean read;
   private boolean needsFlush;
   private int writeInProgress;
   private Object metric;
@@ -80,11 +80,6 @@ public abstract class ConnectionBase {
 
   public VertxHandler handler() {
     return (VertxHandler) chctx.handler();
-  }
-
-  private synchronized void startRead() {
-    checkContext();
-    read = true;
   }
 
   protected synchronized final void endReadAndFlush() {
@@ -353,7 +348,9 @@ public abstract class ConnectionBase {
   }
 
   final void handleRead(Object msg) {
-    startRead();
+    synchronized (this) {
+      read = true;
+    }
     handleMessage(msg);
   }
 

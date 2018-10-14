@@ -310,6 +310,7 @@ public class DatagramTest extends VertxTestBase {
     if (USE_NATIVE_TRANSPORT) {
       return;
     }
+    waitFor(2);
     peer1 = vertx.createDatagramSocket(new DatagramSocketOptions().setBroadcast(true));
     peer2 = vertx.createDatagramSocket(new DatagramSocketOptions().setBroadcast(true));
     peer2.exceptionHandler(t -> fail(t.getMessage()));
@@ -318,11 +319,11 @@ public class DatagramTest extends VertxTestBase {
       Buffer buffer = TestUtils.randomBuffer(128);
       peer2.handler(packet -> {
         assertEquals(buffer, packet.data());
-        testComplete();
+        complete();
       });
-      peer1.send(buffer, 1234, "255.255.255.255", ar2 -> {
-        assertTrue(ar2.succeeded());
-      });
+      peer1.send(buffer, 1234, "255.255.255.255", onSuccess(v -> {
+        complete();
+      }));
     });
     await();
   }

@@ -88,6 +88,29 @@ public interface ContextInternal extends Context {
   <T> void executeFromIO(T value, Handler<T> task);
 
   /**
+   * Called before executing a task, from a {@link VertxThread}.
+   * <p/>
+   * This begins the thread timing
+   *
+   * @return the current Vertx thread
+   * @throws IllegalStateException if the current thread is not a Vert.x thread
+   */
+  VertxThread before() throws IllegalStateException;
+
+  /**
+   * Callback after a task execution.
+   *
+   * @param current the current vertx thread
+   */
+  void after(VertxThread current);
+
+  /**
+   * Report a failure on this context, the failure will handed off to the current exception handler.
+   * @param failure the throwable to report
+   */
+  void reportException(Throwable failure);
+
+  /**
    * @return the {@link ConcurrentMap} used to store context data
    * @see Context#get(String)
    * @see Context#put(String, Object)
