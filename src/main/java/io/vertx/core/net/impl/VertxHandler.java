@@ -20,10 +20,12 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
+import java.util.function.Function;
+
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
   public static ByteBuf safeBuffer(ByteBufHolder holder, ByteBufAllocator allocator) {
     return safeBuffer(holder.content(), allocator);
@@ -51,11 +53,20 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   private static final Handler<Object> NULL_HANDLER = m -> { };
 
+  private final Function<ChannelHandlerContext, C> connectionFactory;
   private C conn;
   private Handler<Void> endReadAndFlush;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
   private Handler<Object> messageHandler;
+
+  public VertxHandler(C connection) {
+    this(chctx -> connection);
+  }
+
+  public VertxHandler(Function<ChannelHandlerContext, C> connectionFactory) {
+    this.connectionFactory = connectionFactory;
+  }
 
   /**
    * Set the connection, this is usually called by subclasses when the channel is added to the pipeline.
@@ -80,6 +91,11 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   void fail(Throwable error) {
     messageHandler = NULL_HANDLER;
     conn.chctx.pipeline().fireExceptionCaught(error);
+  }
+
+  @Override
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    setConnection(connectionFactory.apply(ctx));
   }
 
   /**
