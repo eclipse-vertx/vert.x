@@ -413,7 +413,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       pipeline.remove("chunkedWriter");
     }
 
-    chctx.pipeline().replace("handler", "handler", new VertxHandler<>(socket));
+    chctx.pipeline().replace("handler", "handler", VertxHandler.create(socket));
 
     // check if the encoder can be removed yet or not.
     chctx.pipeline().remove("httpEncoder");
