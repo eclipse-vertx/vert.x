@@ -61,7 +61,6 @@ abstract class ContextImpl implements ContextInternal {
   private CloseHooks closeHooks;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
-  protected VertxThread contextThread;
   private ConcurrentMap<Object, Object> contextData;
   private volatile Handler<Throwable> exceptionHandler;
   protected final WorkerPool workerPool;
@@ -133,7 +132,9 @@ abstract class ContextImpl implements ContextInternal {
     VertxThreadFactory.unsetContext(this);
   }
 
-  protected abstract void executeAsync(Handler<Void> task);
+  abstract void executeAsync(Handler<Void> task);
+
+  abstract <T> void execute(T value, Handler<T> task);
 
   @Override
   public abstract boolean isEventLoopContext();
@@ -175,20 +176,26 @@ abstract class ContextImpl implements ContextInternal {
   // In such a case we should already be on an event loop thread (as Netty manages the event loops)
   // but check this anyway, then execute directly
   @Override
-  public void executeFromIO(Handler<Void> task) {
+  public final void executeFromIO(Handler<Void> task) {
     executeFromIO(null, task);
   }
 
   @Override
-  public <T> void executeFromIO(T value, Handler<T> task) {
+  public final <T> void executeFromIO(T value, Handler<T> task) {
     if (THREAD_CHECKS) {
-      checkCorrectThread();
+      checkEventLoopThread();
     }
-    // No metrics on this, as we are on the event loop.
-    executeTask(value, task, true);
+    execute(value, task);
   }
 
-  protected abstract void checkCorrectThread();
+  private void checkEventLoopThread() {
+    Thread current = Thread.currentThread();
+    if (!(current instanceof VertxThread)) {
+      throw new IllegalStateException("Expected to be on Vert.x thread, but actually on: " + current);
+    } else if (((VertxThread) current).isWorker()) {
+      throw new IllegalStateException("Event delivered on unexpected worker thread " + current);
+    }
+  }
 
   // Run the task asynchronously on this same context
   @Override
@@ -299,37 +306,17 @@ abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
-  protected <T> Runnable wrapTask(T arg, Handler<T> hTask, boolean checkThread, PoolMetrics metrics) {
-    Object metric = metrics != null ? metrics.submitted() : null;
-    return () -> {
-      if (metrics != null) {
-        metrics.begin(metric);
-      }
-      boolean succeeded = executeTask(arg, hTask, checkThread);
-      if (metrics != null) {
-        metrics.end(metric, succeeded);
-      }
-    };
-  }
-
-  protected <T> boolean executeTask(T arg, Handler<T> hTask, boolean checkThread) {
+  <T> boolean executeTask(T arg, Handler<T> hTask) {
     Thread th = Thread.currentThread();
     if (!(th instanceof VertxThread)) {
-      throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + th);
+      throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
     }
     VertxThread current = (VertxThread) th;
-    if (THREAD_CHECKS && checkThread) {
-      if (contextThread == null) {
-        contextThread = current;
-      } else if (contextThread != current && !contextThread.isWorker()) {
-        throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
-      }
-    }
     if (!DISABLE_TIMINGS) {
       current.executeStart();
     }
     try {
-      setContext(current, ContextImpl.this);
+      setContext(current, this);
       hTask.handle(arg);
       return true;
     } catch (Throwable t) {
