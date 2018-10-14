@@ -37,7 +37,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.NetSocketImpl;
-import io.vertx.core.net.impl.VertxNetHandler;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.queue.Queue;
 
@@ -142,6 +142,24 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         paused.set(false);
         return super.resume();
       }
+
+      @Override
+      public synchronized void handleMessage(Object msg) {
+        if (msg instanceof HttpContent) {
+          if (msg instanceof LastHttpContent) {
+            stream.endResponse((LastHttpContent) msg);
+          }
+          ReferenceCountUtil.release(msg);
+          return;
+        }
+        super.handleMessage(msg);
+      }
+
+      @Override
+      protected void handleClosed() {
+        listener.onDiscard();
+        super.handleClosed();
+      }
     };
     socket.metric(metric());
 
@@ -154,19 +172,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     if (inflater != null) {
       pipeline.remove(inflater);
     }
-    pipeline.replace("handler", "handler",  new VertxNetHandler(socket) {
-      @Override
-      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-        if (msg instanceof HttpContent) {
-          if (msg instanceof LastHttpContent) {
-            stream.endResponse((LastHttpContent) msg);
-          }
-          ReferenceCountUtil.release(msg);
-          return;
-        }
-        super.channelRead(chctx, msg);
-      }
-    }.removeHandler(sock -> listener.onDiscard()));
+    pipeline.replace("handler", "handler",  new VertxHandler<>(socket));
 
     // Removing this codec might fire pending buffers in the HTTP decoder
     // this happens when the channel reads the HTTP response and the following data in a single buffer
@@ -580,7 +586,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     } else if (obj instanceof HttpContent) {
       HttpContent chunk = (HttpContent) obj;
       if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(VertxHttpHandler.safeBuffer(chunk.content(), chctx.alloc()));
+        Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk.content(), chctx.alloc()));
         handleResponseChunk(buff);
       }
       if (chunk instanceof LastHttpContent) {
@@ -843,6 +849,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   protected void handleClosed() {
     super.handleClosed();
+    if (metrics != null) {
+      metrics.endpointDisconnected(endpointMetric, metric());
+    }
     WebSocketImpl ws;
     List<StreamImpl> list = Collections.emptyList();
     synchronized (this) {
