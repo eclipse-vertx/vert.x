@@ -39,12 +39,42 @@ public class HeadersContainsBenchmark extends BenchmarkBase {
   }
 
   @Benchmark
-  public boolean nettySmall() throws Exception {
-    return nettySmallHeaders.contains(HeadersUtils.CONTENT_LENGTH_HEADER);
+  public boolean nettySmallMatch() throws Exception {
+    return nettySmallHeaders.contains(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH.toString());
   }
 
   @Benchmark
-  public boolean vertxSmall() throws Exception {
-    return vertxSmallHeaders.contains(HeadersUtils.CONTENT_LENGTH_HEADER);
+  public boolean nettySmallMiss() throws Exception {
+    return nettySmallHeaders.contains(io.vertx.core.http.HttpHeaders.CLOSE.toString());
+  }
+
+  @Benchmark
+  public boolean nettySmallExactMatch() throws Exception {
+    return nettySmallHeaders.contains(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
+  }
+
+  @Benchmark
+  public boolean nettySmallExactMiss() throws Exception {
+    return nettySmallHeaders.contains(io.vertx.core.http.HttpHeaders.CLOSE);
+  }
+
+  @Benchmark
+  public boolean vertxSmallMatch() throws Exception {
+    return vertxSmallHeaders.contains(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH.toString());
+  }
+
+  @Benchmark
+  public boolean vertxSmallMiss() throws Exception {
+    return vertxSmallHeaders.contains(io.vertx.core.http.HttpHeaders.CLOSE.toString());
+  }
+
+  @Benchmark
+  public boolean vertxSmallExactMatch() throws Exception {
+    return vertxSmallHeaders.contains(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
+  }
+
+  @Benchmark
+  public boolean vertxSmallExactMiss() throws Exception {
+    return vertxSmallHeaders.contains(io.vertx.core.http.HttpHeaders.CLOSE);
   }
 }
