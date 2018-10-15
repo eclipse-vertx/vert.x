@@ -50,10 +50,6 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     return names().size();
   }
 
-  private static int index(int hash) {
-    return hash & 0x0000000F;
-  }
-
   private final VertxHttpHeaders.MapEntry[] entries = new VertxHttpHeaders.MapEntry[16];
   private final VertxHttpHeaders.MapEntry head = new VertxHttpHeaders.MapEntry();
 
@@ -64,7 +60,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   @Override
   public VertxHttpHeaders add(CharSequence name, CharSequence value) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     add0(h, i, name, value);
     return this;
   }
@@ -87,7 +83,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   @Override
   public VertxHttpHeaders add(CharSequence name, Iterable values) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     for (Object vstr: values) {
       add0(h, i, name, (String) vstr);
     }
@@ -120,7 +116,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   public VertxHttpHeaders remove(CharSequence name) {
     Objects.requireNonNull(name, "name");
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     remove0(h, i, name);
     return this;
   }
@@ -155,14 +151,14 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     Objects.requireNonNull(values, "values");
 
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
 
     remove0(h, i, name);
     for (Object v: values) {
       if (v == null) {
         break;
       }
-      add0(h, i, name, (String) v);
+      add0(h, i, name, (CharSequence) v);
     }
 
     return this;
@@ -176,11 +172,12 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   @Override
   public boolean contains(CharSequence name, CharSequence value, boolean ignoreCase) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     VertxHttpHeaders.MapEntry e = entries[i];
     HashingStrategy<CharSequence> strategy = ignoreCase ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER;
     while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         if (strategy.equals(value, e.getValue())) {
           return true;
         }
@@ -224,10 +221,11 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     LinkedList<String> values = new LinkedList<>();
 
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     VertxHttpHeaders.MapEntry e = entries[i];
     while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         values.addFirst(e.getValue().toString());
       }
       e = e.next;
@@ -445,7 +443,8 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     }
 
     for (;;) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         e.remove();
         VertxHttpHeaders.MapEntry next = e.next;
         if (next != null) {
@@ -465,7 +464,8 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
       if (next == null) {
         break;
       }
-      if (next.hash == h && AsciiString.contentEqualsIgnoreCase(name, next.key)) {
+      CharSequence key = next.key;
+      if (next.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         e.next = next.next;
         next.remove();
       } else {
@@ -493,7 +493,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   private VertxHttpHeaders set0(final CharSequence name, final CharSequence strVal) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     remove0(h, i, name);
     if (strVal != null) {
       // test me
@@ -504,10 +504,11 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   private CharSequence get0(CharSequence name) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     VertxHttpHeaders.MapEntry e = entries[i];
     while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         return e.getValue();
       }
       e = e.next;
