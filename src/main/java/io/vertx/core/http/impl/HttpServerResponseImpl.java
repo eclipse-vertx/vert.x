@@ -52,6 +52,7 @@ import java.io.RandomAccessFile;
  */
 public class HttpServerResponseImpl implements HttpServerResponse {
 
+  private static final Buffer EMPTY_BUFFER = Buffer.buffer(Unpooled.EMPTY_BUFFER);
   private static final Logger log = LoggerFactory.getLogger(HttpServerResponseImpl.class);
 
   private final VertxInternal vertx;
@@ -318,7 +319,30 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public void end(Buffer chunk) {
     synchronized (conn) {
-      end0(chunk.getByteBuf());
+      checkValid();
+      ByteBuf data = chunk.getByteBuf();
+      bytesWritten += data.readableBytes();
+      if (!headWritten) {
+        // if the head was not written yet we can write out everything in one go
+        // which is cheaper.
+        prepareHeaders(bytesWritten);
+        conn.writeToChannel(new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders));
+      } else {
+        conn.writeToChannel(new AssembledLastHttpContent(data, trailingHeaders));
+      }
+
+      if (!keepAlive) {
+        closeConnAfterWrite();
+        closed = true;
+      }
+      written = true;
+      conn.responseComplete();
+      if (bodyEndHandler != null) {
+        bodyEndHandler.handle(null);
+      }
+      if (endHandler != null) {
+        endHandler.handle(null);
+      }
     }
   }
 
@@ -338,9 +362,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void end() {
-    synchronized (conn) {
-      end0(Unpooled.EMPTY_BUFFER);
-    }
+    end(EMPTY_BUFFER);
   }
 
   @Override
@@ -396,32 +418,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     synchronized (conn) {
       this.bodyEndHandler = handler;
       return this;
-    }
-  }
-
-  private void end0(ByteBuf data) {
-    checkValid();
-    bytesWritten += data.readableBytes();
-    if (!headWritten) {
-      // if the head was not written yet we can write out everything in one go
-      // which is cheaper.
-      prepareHeaders(bytesWritten);
-      conn.writeToChannel(new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders));
-    } else {
-      conn.writeToChannel(new AssembledLastHttpContent(data, trailingHeaders));
-    }
-
-    if (!keepAlive) {
-      closeConnAfterWrite();
-      closed = true;
-    }
-    written = true;
-    conn.responseComplete();
-    if (bodyEndHandler != null) {
-      bodyEndHandler.handle(null);
-    }
-    if (endHandler != null) {
-      endHandler.handle(null);
     }
   }
 
