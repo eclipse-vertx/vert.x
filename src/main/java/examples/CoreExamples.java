@@ -100,7 +100,7 @@ public class CoreExamples {
 
     // 2 minutes
     long maxExecuteTime = 2;
-    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
+    TimeUnit maxExecuteTimeUnit = TimeUnit.MINUTES;
 
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime, maxExecuteTimeUnit);
   }
