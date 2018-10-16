@@ -59,7 +59,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
-import io.vertx.core.streams.ReadStream;
 
 import java.io.File;
 import java.io.IOException;
@@ -91,7 +90,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   static VertxImpl vertx(VertxOptions options) {
-    VertxImpl vertx = new VertxImpl(options, Transport.foo(options.getPreferNativeTransport()));
+    VertxImpl vertx = new VertxImpl(options, Transport.transport(options.getPreferNativeTransport()));
     vertx.init();
     return vertx;
   }
@@ -103,7 +102,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    VertxImpl vertx = new VertxImpl(options, Transport.foo(options.getPreferNativeTransport()));
+    VertxImpl vertx = new VertxImpl(options, Transport.transport(options.getPreferNativeTransport()));
     vertx.joinCluster(options, resultHandler);
   }
 
