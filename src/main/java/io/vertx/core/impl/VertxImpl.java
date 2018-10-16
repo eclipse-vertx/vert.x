@@ -91,13 +91,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   static VertxImpl vertx(VertxOptions options) {
-    VertxImpl vertx = new VertxImpl(options);
+    VertxImpl vertx = new VertxImpl(options, Transport.foo(options.getPreferNativeTransport()));
+    vertx.init();
+    return vertx;
+  }
+
+  static VertxImpl vertx(VertxOptions options, Transport transport) {
+    VertxImpl vertx = new VertxImpl(options, transport);
     vertx.init();
     return vertx;
   }
 
   static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    VertxImpl vertx = new VertxImpl(options);
+    VertxImpl vertx = new VertxImpl(options, Transport.foo(options.getPreferNativeTransport()));
     vertx.joinCluster(options, resultHandler);
   }
 
@@ -130,20 +136,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final CloseHooks closeHooks;
   private final Transport transport;
 
-  private VertxImpl(VertxOptions options) {
+  private VertxImpl(VertxOptions options, Transport transport) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
-    }
-    if (options.getPreferNativeTransport()) {
-      Transport nativeTransport = Transport.nativeTransport();
-      if (nativeTransport != null && nativeTransport.isAvailable()) {
-        transport = nativeTransport;
-      } else {
-        transport = Transport.JDK;
-      }
-    } else {
-      transport = Transport.JDK;
     }
     closeHooks = new CloseHooks(log);
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
@@ -169,6 +165,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
     defaultWorkerMaxExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
 
+    this.transport = transport;
     this.fileResolver = new FileResolver(options.getFileSystemOptions());
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());

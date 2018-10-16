@@ -15,9 +15,12 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
@@ -37,8 +40,22 @@ public class ChannelProvider {
   protected ChannelProvider() {
   }
 
-  public void connect(VertxInternal vertx, Bootstrap bootstrap, ProxyOptions options, SocketAddress remoteAddress,
-      Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
+  public final void connect(ContextInternal context, Bootstrap bootstrap, ProxyOptions options, SocketAddress remoteAddress,
+                      Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
+    doConnect(context, bootstrap, options, remoteAddress, channelInitializer, res -> {
+      if (Context.isOnEventLoopThread()) {
+        channelHandler.handle(res);
+      } else {
+        // We are on the GlobalEventExecutor
+        context.nettyEventLoop().execute(() -> channelHandler.handle(res));
+      }
+    });
+  }
+
+
+  public void doConnect(ContextInternal context, Bootstrap bootstrap, ProxyOptions options, SocketAddress remoteAddress,
+                      Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
+    VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
@@ -49,9 +66,9 @@ public class ChannelProvider {
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress, false));
     fut.addListener(res -> {
       if (res.isSuccess()) {
-        channelHandler.handle(Future.succeededFuture(fut.channel()));
+        channelHandler.handle(io.vertx.core.Future.succeededFuture(fut.channel()));
       } else {
-        channelHandler.handle(Future.failedFuture(res.cause()));
+        channelHandler.handle(io.vertx.core.Future.failedFuture(res.cause()));
       }
     });
   }

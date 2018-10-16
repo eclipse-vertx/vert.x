@@ -27,6 +27,7 @@ import io.netty.resolver.NoopAddressResolverGroup;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -48,13 +49,14 @@ public class ProxyChannelProvider extends ChannelProvider {
   }
 
   @Override
-  public void connect(VertxInternal vertx,
+  public void doConnect(ContextInternal context,
                       Bootstrap bootstrap,
                       ProxyOptions options,
                       SocketAddress remoteAddress,
                       Handler<Channel> channelInitializer,
                       Handler<AsyncResult<Channel>> channelHandler) {
 
+    final VertxInternal vertx = context.owner();
     final String proxyHost = options.getHost();
     final int proxyPort = options.getPort();
     final String proxyUsername = options.getUsername();

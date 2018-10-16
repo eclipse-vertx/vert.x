@@ -39,6 +39,19 @@ import java.util.concurrent.ThreadFactory;
  */
 public class Transport {
 
+  public static Transport foo(boolean preferNative) {
+    if (preferNative) {
+      Transport nativeTransport = Transport.nativeTransport();
+      if (nativeTransport != null && nativeTransport.isAvailable()) {
+        return nativeTransport;
+      } else {
+        return Transport.JDK;
+      }
+    } else {
+      return Transport.JDK;
+    }
+  }
+
   /**
    * The JDK transport, always there.
    */
@@ -72,7 +85,7 @@ public class Transport {
     return transport;
   }
 
-  Transport() {
+  protected Transport() {
   }
 
   /**

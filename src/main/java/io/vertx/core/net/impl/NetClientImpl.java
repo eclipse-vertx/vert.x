@@ -229,7 +229,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
       }
     };
 
-    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), remoteAddress, channelInitializer, channelHandler);
+    channelProvider.connect(context, bootstrap, options.getProxyOptions(), remoteAddress, channelInitializer, channelHandler);
   }
 
   private void connected(ContextInternal context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {

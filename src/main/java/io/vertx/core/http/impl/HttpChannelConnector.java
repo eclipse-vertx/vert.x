@@ -204,7 +204,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       }
     };
 
-    channelProvider.connect(client.getVertx(), bootstrap, options.getProxyOptions(), SocketAddress.inetSocketAddress(port, host), channelInitializer, channelHandler);
+    channelProvider.connect(context, bootstrap, options.getProxyOptions(), SocketAddress.inetSocketAddress(port, host), channelInitializer, channelHandler);
   }
 
   private void applyConnectionOptions(Bootstrap bootstrap) {
