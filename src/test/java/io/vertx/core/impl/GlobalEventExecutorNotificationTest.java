@@ -12,6 +12,7 @@ package io.vertx.core.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
+import io.netty.channel.ServerChannel;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.net.NetClientOptions;
@@ -38,12 +39,12 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
   }
 
   @Test
-  public void testConnectErrorNotifiesOnEventLoop() {
+  public void testConnectError() {
     testConnectErrorNotifiesOnEventLoop(new NetClientOptions());
   }
 
   @Test
-  public void testConnectToProxyErrorNotifiesOnEventLoop() {
+  public void testProxyConnectError() {
     testConnectErrorNotifiesOnEventLoop(new NetClientOptions()
       .setProxyOptions(new ProxyOptions()
         .setPort(1234)
@@ -56,11 +57,8 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
     vertx = VertxImpl.vertx(new VertxOptions(), new Transport() {
       @Override
       public ChannelFactory<? extends Channel> channelFactory(boolean domain) {
-        return new ChannelFactory<Channel>() {
-          @Override
-          public Channel newChannel() {
-            throw cause;
-          }
+        return (ChannelFactory<Channel>) () -> {
+          throw cause;
         };
       }
     });
@@ -72,6 +70,46 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
         assertSame(err, cause);
         testComplete();
       }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetBindError() {
+    RuntimeException cause = new RuntimeException();
+    vertx = VertxImpl.vertx(new VertxOptions(), new Transport() {
+      @Override
+      public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
+        return (ChannelFactory<ServerChannel>) () -> {
+          throw cause;
+        };
+      }
+    });
+
+    vertx.createNetServer()
+      .connectHandler(so -> fail())
+      .listen(1234, "localhost", onFailure(err -> {
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testHttpBindError() {
+    RuntimeException cause = new RuntimeException();
+    vertx = VertxImpl.vertx(new VertxOptions(), new Transport() {
+      @Override
+      public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
+        return (ChannelFactory<ServerChannel>) () -> {
+          throw cause;
+        };
+      }
+    });
+
+    vertx.createHttpServer()
+      .requestHandler(req -> fail())
+      .listen(8080, "localhost", onFailure(err -> {
+      testComplete();
     }));
     await();
   }
