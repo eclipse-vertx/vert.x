@@ -12,9 +12,12 @@
 package io.vertx.core.http.impl;
 
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
 import java.util.List;
@@ -30,6 +33,16 @@ final class VertxHttpResponseEncoder extends HttpResponseEncoder {
   @Override
   protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
     super.encode(context, msg, out);
+  }
+
+  @Override
+  protected void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
+    if (headers instanceof VertxHttpHeaders) {
+      VertxHttpHeaders vertxHeaders = (VertxHttpHeaders) headers;
+      vertxHeaders.encode(buf);
+    } else {
+      super.encodeHeaders(headers, buf);
+    }
   }
 
   @Override
