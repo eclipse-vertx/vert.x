@@ -11,6 +11,7 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
@@ -158,14 +159,8 @@ public class KeyStoreHelper {
           }
         }
         String dn = x509Cert.getSubjectX500Principal().getName();
-        LdapName ldapDN = new LdapName(dn);
-        for (Rdn rdn : ldapDN.getRdns()) {
-          if (rdn.getType().equalsIgnoreCase("cn")) {
-            String name = rdn.getValue().toString();
-            domains.add(name);
-          }
-        }
-        if (domains.size() > 0) {
+        domains.addAll(getX509CertificateCommonNames(dn));
+        if (!domains.isEmpty()) {
           PrivateKey key = (PrivateKey) ks.getKey(alias, password != null ? password.toCharArray() : null);
           Certificate[] tmp = ks.getCertificateChain(alias);
           if (tmp == null) {
@@ -258,6 +253,29 @@ public class KeyStoreHelper {
    */
   public KeyStore store() throws Exception {
     return store;
+  }
+
+  public static List<String> getX509CertificateCommonNames(String dn) throws Exception {
+    List<String> names = new ArrayList<>();
+    if (!PlatformDependent.isAndroid()) {
+      LdapName ldapDN = new LdapName(dn);
+      for (Rdn rdn : ldapDN.getRdns()) {
+        if (rdn.getType().equalsIgnoreCase("cn")) {
+          String name = rdn.getValue().toString();
+          names.add(name);
+        }
+      }
+    } else {
+      String [] rdns = dn.trim().split("[,;]");
+      for(String rdn : rdns) {
+        String [] nvp = rdn.trim().split("=");
+        if(nvp.length == 2 && "cn".equalsIgnoreCase(nvp[0])) {
+          names.add(nvp[1]);
+        }
+      }
+    }
+
+    return names;
   }
 
   private static KeyStore loadJKSOrPKCS12(String type, String password, Supplier<Buffer> value) throws Exception {
