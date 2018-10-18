@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,21 +11,21 @@
 
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.*;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
-import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.launcher.ExecutionContext;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -411,30 +411,7 @@ public class RunCommand extends BareCommand {
   }
 
   protected JsonObject getConfiguration() {
-    JsonObject conf;
-    if (config != null) {
-      try (Scanner scanner = new Scanner(new File(config), "UTF-8").useDelimiter("\\A")) {
-        String sconf = scanner.next();
-        try {
-          conf = new JsonObject(sconf);
-        } catch (DecodeException e) {
-          log.error("Configuration file " + sconf + " does not contain a valid JSON object");
-          return null;
-        }
-      } catch (FileNotFoundException e) {
-        try {
-          conf = new JsonObject(config);
-        } catch (DecodeException e2) {
-          // The configuration is not printed for security purpose, it can contain sensitive data.
-          log.error("The -conf option does not point to an existing file or is not a valid JSON object");
-          e2.printStackTrace();
-          return null;
-        }
-      }
-    } else {
-      conf = null;
-    }
-    return conf;
+    return getJsonFromFileOrString(config, "conf");
   }
 
   protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {

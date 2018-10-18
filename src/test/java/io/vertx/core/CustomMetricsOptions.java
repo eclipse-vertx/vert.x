@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,6 +11,7 @@
 
 package io.vertx.core;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 
 /**
@@ -19,6 +20,16 @@ import io.vertx.core.metrics.MetricsOptions;
 public class CustomMetricsOptions extends MetricsOptions {
 
   private String value;
+  private NestedMetricsOptions nestedOptions;
+
+  public CustomMetricsOptions() {
+  }
+
+  public CustomMetricsOptions(JsonObject json) {
+    value = json.getString("customProperty");
+    JsonObject nestedOptionsJson = json.getJsonObject("nestedOptions");
+    this.nestedOptions = nestedOptionsJson == null ? null : new NestedMetricsOptions(nestedOptionsJson);
+  }
 
   public String getCustomProperty() {
     return value;
@@ -26,5 +37,13 @@ public class CustomMetricsOptions extends MetricsOptions {
 
   public void setCustomProperty(String value) {
     this.value = value;
+  }
+
+  public NestedMetricsOptions getNestedOptions() {
+    return nestedOptions;
+  }
+
+  public void setNestedOptions(NestedMetricsOptions nestedOptions) {
+    this.nestedOptions = nestedOptions;
   }
 }
