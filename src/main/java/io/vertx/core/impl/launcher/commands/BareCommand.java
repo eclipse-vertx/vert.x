@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,11 +14,15 @@ package io.vertx.core.impl.launcher.commands;
 import io.vertx.core.*;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.launcher.ExecutionContext;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.lang.reflect.Method;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -26,6 +30,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,6 +58,7 @@ public class BareCommand extends ClasspathHandler {
 
   protected String haGroup;
 
+  protected String vertxOptions;
   protected VertxOptions options;
 
   protected Runnable finalAction;
@@ -108,6 +114,24 @@ public class BareCommand extends ClasspathHandler {
   }
 
   /**
+   * The Vert.x options, it can be a json file or a json string.
+   *
+   * @param vertxOptions the configuration
+   */
+  @Option(longName = "options", argName = "options")
+  @Description("Specifies the Vert.x options. It should reference either a JSON file which represents the options OR be a JSON string.")
+  public void setVertxOptions(String vertxOptions) {
+    if (vertxOptions != null) {
+      // For inlined configuration remove first and end single and double quotes if any
+      this.vertxOptions = vertxOptions.trim()
+        .replaceAll("^\"|\"$", "")
+        .replaceAll("^'|'$", "");
+    } else {
+      this.vertxOptions = null;
+    }
+  }
+
+  /**
    * @return whether or not the vert.x instance should be clustered. This implementation
    * returns {@code true}.
    */
@@ -148,8 +172,15 @@ public class BareCommand extends ClasspathHandler {
    */
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
   protected Vertx startVertx() {
-    MetricsOptions metricsOptions = getMetricsOptions();
-    options = new VertxOptions().setMetricsOptions(metricsOptions);
+    JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "options");
+    if (optionsJson == null) {
+      MetricsOptions metricsOptions = getMetricsOptions();
+      options = new VertxOptions().setMetricsOptions(metricsOptions);
+    } else {
+      MetricsOptions metricsOptions = getMetricsOptions(optionsJson.getJsonObject("metricsOptions"));
+      options = new VertxOptions(optionsJson).setMetricsOptions(metricsOptions);
+    }
+
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
     beforeStartingVertx(options);
     Vertx instance;
@@ -212,6 +243,33 @@ public class BareCommand extends ClasspathHandler {
     return instance;
   }
 
+  protected JsonObject getJsonFromFileOrString(String jsonFileOrString, String argName) {
+    JsonObject conf;
+    if (jsonFileOrString != null) {
+      try (Scanner scanner = new Scanner(new File(jsonFileOrString), "UTF-8").useDelimiter("\\A")) {
+        String sconf = scanner.next();
+        try {
+          conf = new JsonObject(sconf);
+        } catch (DecodeException e) {
+          log.error("Configuration file " + sconf + " does not contain a valid JSON object");
+          return null;
+        }
+      } catch (FileNotFoundException e) {
+        try {
+          conf = new JsonObject(jsonFileOrString);
+        } catch (DecodeException e2) {
+          // The configuration is not printed for security purpose, it can contain sensitive data.
+          log.error("The -" + argName + " argument does not point to an existing file or is not a valid JSON object");
+          e2.printStackTrace();
+          return null;
+        }
+      }
+    } else {
+      conf = null;
+    }
+    return conf;
+  }
+
   /**
    * Hook called after starting vert.x.
    *
@@ -240,12 +298,19 @@ public class BareCommand extends ClasspathHandler {
    * @return the metric options.
    */
   protected MetricsOptions getMetricsOptions() {
+    return getMetricsOptions(null);
+  }
+
+  /**
+   * @return the metric options.
+   */
+  protected MetricsOptions getMetricsOptions(JsonObject jsonObject) {
     MetricsOptions metricsOptions;
     VertxMetricsFactory factory = ServiceHelper.loadFactoryOrNull(VertxMetricsFactory.class);
     if (factory != null) {
-      metricsOptions = factory.newOptions();
+      metricsOptions = jsonObject == null ? factory.newOptions() : factory.newOptions(jsonObject);
     } else {
-      metricsOptions = new MetricsOptions();
+      metricsOptions = jsonObject == null ? new MetricsOptions() : new MetricsOptions(jsonObject);
     }
     configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);
     return metricsOptions;

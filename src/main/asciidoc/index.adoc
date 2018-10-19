@@ -913,8 +913,10 @@ vertx run groovy:io.vertx.example.MyGroovyVerticle
 
 The `vertx run` command can take a few optional parameters, they are:
 
- * `-conf <config_file>` - Provides some configuration to the verticle. `config_file` is the name of a text file
- containing a JSON object that represents the configuration for the verticle. This is optional.
+ * `-options <options>` - Provides the Vert.x options.
+ `options` is the name of a JSON file that represents the Vert.x options, or a JSON string. This is optional.
+ * `-conf <config>` - Provides some configuration to the verticle.
+ `config` is the name of a JSON file that represents the configuration for the verticle, or a JSON string. This is optional.
  * `-cp <path>` - The path on which to search for the verticle and any other resources used by the verticle. This
  defaults to `.` (current directory). If your verticle references other scripts, classes or other resources
  (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by
