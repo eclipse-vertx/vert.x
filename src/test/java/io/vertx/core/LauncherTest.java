@@ -483,7 +483,7 @@ public class LauncherTest extends VertxTestBase {
     }
 
     MyLauncher launcher = new MyLauncher();
-    String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-vertx-options", optionsArg};
+    String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-options", optionsArg};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
@@ -584,7 +584,7 @@ public class LauncherTest extends VertxTestBase {
     }
 
     MyLauncher launcher = new MyLauncher();
-    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-vertx-options", optionsArg};
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-options", optionsArg};
     ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(MetricsOptionsTest.createMetricsFromMetaInfLoader("io.vertx.core.CustomMetricsFactory"));
     try {

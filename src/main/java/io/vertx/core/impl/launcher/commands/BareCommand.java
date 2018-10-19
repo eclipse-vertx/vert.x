@@ -118,9 +118,8 @@ public class BareCommand extends ClasspathHandler {
    *
    * @param vertxOptions the configuration
    */
-  @Option(longName = "vertx-options", argName = "options")
-  @Description("Specifies the Vert.x options. It should reference either a " +
-    "text file containing a valid JSON object which represents the options OR be a JSON string.")
+  @Option(longName = "options", argName = "options")
+  @Description("Specifies the Vert.x options. It should reference either a JSON file which represents the options OR be a JSON string.")
   public void setVertxOptions(String vertxOptions) {
     if (vertxOptions != null) {
       // For inlined configuration remove first and end single and double quotes if any
@@ -173,7 +172,7 @@ public class BareCommand extends ClasspathHandler {
    */
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
   protected Vertx startVertx() {
-    JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "vertx-options");
+    JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "options");
     if (optionsJson == null) {
       MetricsOptions metricsOptions = getMetricsOptions();
       options = new VertxOptions().setMetricsOptions(metricsOptions);
