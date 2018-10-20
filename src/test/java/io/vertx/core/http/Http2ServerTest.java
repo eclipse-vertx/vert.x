@@ -313,9 +313,10 @@ public class Http2ServerTest extends Http2TestBase {
     server = vertx.createHttpServer(serverOptions);
     Context otherContext = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
+      Context ctx = Vertx.currentContext();
       otherContext.runOnContext(v -> {
         conn.updateSettings(expectedSettings, ar -> {
-          assertSame(otherContext, Vertx.currentContext());
+          assertSame(ctx, Vertx.currentContext());
           io.vertx.core.http.Http2Settings ackedSettings = conn.settings();
           assertEquals(expectedSettings.getMaxHeaderListSize(), ackedSettings.getMaxHeaderListSize());
           assertEquals(expectedSettings.getMaxFrameSize(), ackedSettings.getMaxFrameSize());

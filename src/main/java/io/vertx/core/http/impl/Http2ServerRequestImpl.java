@@ -105,19 +105,25 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   void handleException(Throwable cause) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(cause);
-      response.handleError(cause);
+    Handler<Throwable> handler;
+    synchronized (conn) {
+      handler = ended ? null : exceptionHandler;
     }
+    if (handler != null) {
+      handler.handle(cause);
+    }
+    response.handleError(cause);
   }
 
   @Override
   void handleClose() {
-    if (!ended) {
+    Handler<Throwable> handler;
+    synchronized (conn) {
+      handler = ended ? null : exceptionHandler;
       ended = true;
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(new ClosedChannelException());
-      }
+    }
+    if (handler != null) {
+      handler.handle(new ClosedChannelException());
     }
     response.handleClose();
   }
@@ -176,7 +182,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   void handleReset(long errorCode) {
-    ended = true;
+    Handler<Throwable> exceptionHandler;
+    Handler<Void> endHandler;
+    synchronized (conn) {
+      exceptionHandler = ended ? null : this.exceptionHandler;
+      endHandler = ended ? null : this.endHandler;
+      ended = true;
+    }
     if (exceptionHandler != null) {
       exceptionHandler.handle(new StreamResetException(errorCode));
     }
@@ -213,17 +225,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public HttpServerRequest pause() {
-    synchronized (conn) {
-      doPause();
-    }
+    doPause();
     return this;
   }
 
   @Override
   public HttpServerRequest resume() {
-    synchronized (conn) {
-      doResume();
-    }
+    doResume();
     return this;
   }
 
@@ -415,9 +423,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public NetSocket netSocket() {
-    synchronized (conn) {
-      return response.netSocket();
-    }
+    return response.netSocket();
   }
 
   @Override
@@ -502,8 +508,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
     synchronized (conn) {
       customFrameHandler = handler;
-      return this;
     }
+    return this;
   }
 
   @Override

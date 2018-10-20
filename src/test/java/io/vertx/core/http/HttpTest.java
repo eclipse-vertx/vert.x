@@ -1344,8 +1344,8 @@ public abstract class HttpTest extends HttpTestBase {
       AtomicInteger respEndHandlerCount = new AtomicInteger();
       req.exceptionHandler(err -> {
         assertEquals(1, reqExceptionHandlerCount.incrementAndGet());
-        assertEquals(0, respExceptionHandlerCount.get());
-        assertEquals(0, respEndHandlerCount.get());
+        assertEquals(1, respExceptionHandlerCount.get());
+        assertEquals(1, respEndHandlerCount.get());
         assertTrue(resp.closed());
         assertFalse(resp.ended());
         try {
@@ -1355,12 +1355,12 @@ public abstract class HttpTest extends HttpTestBase {
         }
       });
       resp.exceptionHandler(err -> {
-        assertEquals(1, reqExceptionHandlerCount.get());
+        assertEquals(0, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.incrementAndGet());
         assertEquals(0, respEndHandlerCount.get());
       });
       resp.endHandler(v -> {
-        assertEquals(1, reqExceptionHandlerCount.get());
+        assertEquals(0, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.get());
         assertEquals(1, respEndHandlerCount.incrementAndGet());
       });
@@ -4090,18 +4090,47 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerResponseCloseHandlerNotHoldingLock() throws Exception {
+    waitFor(7);
     server.requestHandler(req -> {
-      req.response().closeHandler(v -> {
-        assertFalse(Thread.holdsLock(req.connection()));
-        testComplete();
+      HttpConnection conn = req.connection();
+      req.exceptionHandler(err -> {
+        assertFalse(Thread.holdsLock(conn));
+        complete();
       });
-      req.response().setChunked(true).write("hello");
+      HttpServerResponse resp = req.response();
+      resp.exceptionHandler(err -> {
+        assertFalse(Thread.holdsLock(conn));
+        complete();
+      });
+      resp.closeHandler(v -> {
+        assertFalse(Thread.holdsLock(conn));
+        complete();
+      });
+      conn.closeHandler(err -> {
+        assertFalse(Thread.holdsLock(conn));
+        complete();
+      });
+      resp.setChunked(true).write("hello");
     });
     startServer();
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
-      resp.request().connection().close();
+      HttpConnection conn = resp.request().connection();
+      resp.exceptionHandler(err -> {
+        assertFalse(Thread.holdsLock(conn));
+        complete();
+      });
+      conn.closeHandler(v -> {
+        assertFalse(Thread.holdsLock(conn));
+        complete();
+      });
+      conn.close();
     });
+    req.exceptionHandler(err ->{
+      assertFalse(Thread.holdsLock(req.connection()));
+      complete();
+    });
+    req.setChunked(true).sendHead();
     await();
   }
 
@@ -4544,9 +4573,11 @@ public abstract class HttpTest extends HttpTestBase {
           NetSocket src = req.netSocket();
 
           // Create pumps which echo stuff
-          Pump.pump(src, dst).start();
-          Pump.pump(dst, src).start();
+          Pump pump1 = Pump.pump(src, dst).start();
+          Pump pump2 = Pump.pump(dst, src).start();
           dst.closeHandler(v -> {
+            pump1.stop();
+            pump2.stop();
             src.close();
           });
         }));

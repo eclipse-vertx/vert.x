@@ -22,7 +22,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -485,16 +484,14 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testServerWebSocket() throws Exception {
+  public void testServerWebSocket() {
     server = vertx.createHttpServer();
     server.websocketHandler(ws -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       WebSocketMetric metric = metrics.getMetric(ws);
       assertNotNull(metric);
       assertNotNull(metric.soMetric);
-      ws.handler(buffer -> {
-        ws.close();
-      });
+      ws.handler(ws::write);
       ws.closeHandler(closed -> {
         assertNull(metrics.getMetric(ws));
         testComplete();
@@ -505,13 +502,14 @@ public class MetricsTest extends VertxTestBase {
       client = vertx.createHttpClient();
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         ws.write(Buffer.buffer("wibble"));
+        ws.handler(buff -> ws.close());
       });
     });
     await();
   }
 
   @Test
-  public void testServerWebSocketUpgrade() throws Exception {
+  public void testServerWebSocketUpgrade() {
     server = vertx.createHttpServer();
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
@@ -521,11 +519,10 @@ public class MetricsTest extends VertxTestBase {
       WebSocketMetric metric = metrics.getMetric(ws);
       assertNotNull(metric);
       assertNotNull(metric.soMetric);
-      ws.handler(buffer -> {
-        ws.close();
-      });
+      ws.handler(buffer -> ws.write(buffer));
       ws.closeHandler(closed -> {
-        assertNull(metrics.getMetric(ws));
+        WebSocketMetric a = metrics.getMetric(ws);
+        assertNull(a);
         testComplete();
       });
     });
@@ -534,16 +531,20 @@ public class MetricsTest extends VertxTestBase {
       client = vertx.createHttpClient();
       client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
         ws.write(Buffer.buffer("wibble"));
+        ws.handler(buff -> {
+          ws.close();
+        });
       });
     });
     await();
   }
 
   @Test
-  public void testWebSocket() throws Exception {
+  public void testWebSocket() {
     server = vertx.createHttpServer();
     server.websocketHandler(ws -> {
       ws.write(Buffer.buffer("wibble"));
+      ws.handler(buff -> ws.close());
     });
     server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
       assertTrue(ar.succeeded());
@@ -557,9 +558,7 @@ public class MetricsTest extends VertxTestBase {
           assertNull(metrics.getMetric(ws));
           testComplete();
         });
-        ws.handler(buffer -> {
-          ws.close();
-        });
+        ws.handler(ws::write);
       });
     });
     await();

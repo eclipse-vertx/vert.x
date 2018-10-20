@@ -55,9 +55,10 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   @Override
   void handleEnd(MultiMap trailers) {
     try {
-      if (endHandler != null) {
+      Handler<Void> handler = endHandler();
+      if (handler != null) {
         // Give opportunity to send a last chunk
-        endHandler.handle(null);
+        handler.handle(null);
       }
     } finally {
       end();
@@ -66,8 +67,9 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   void handleData(Buffer buf) {
-    if (dataHandler != null) {
-      dataHandler.handle(buf);
+    Handler<Buffer> handler = handler();
+    if (handler != null) {
+      handler.handle(buf);
     }
   }
 
@@ -78,21 +80,23 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   void handleException(Throwable cause) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(cause);
+    Handler<Throwable> handler = exceptionHandler();
+    if (handler != null) {
+      handler.handle(cause);
     }
   }
 
   @Override
   void handleClose() {
-    if (closeHandler != null) {
-      closeHandler.handle(null);
+    Handler<Void> handler = closeHandler();
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 
   @Override
   void handleInterestedOpsChanged() {
-    Handler<Void> handler = this.drainHandler;
+    Handler<Void> handler = drainHandler();
     if (handler != null && !writeQueueFull()) {
       handler.handle(null);
     }
@@ -104,7 +108,13 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public NetSocket exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
       exceptionHandler = handler;
-      return this;
+    }
+    return this;
+  }
+
+  Handler<Throwable> exceptionHandler() {
+    synchronized (conn) {
+      return exceptionHandler;
     }
   }
 
@@ -112,7 +122,13 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public NetSocket handler(Handler<Buffer> handler) {
     synchronized (conn) {
       dataHandler = handler;
-      return this;
+    }
+    return this;
+  }
+
+  Handler<Buffer> handler() {
+    synchronized (conn) {
+      return dataHandler;
     }
   }
 
@@ -138,7 +154,13 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public NetSocket endHandler(Handler<Void> handler) {
     synchronized (conn) {
       endHandler = handler;
-      return this;
+    }
+    return this;
+  }
+
+  Handler<Void> endHandler() {
+    synchronized (conn) {
+      return endHandler;
     }
   }
 
@@ -159,7 +181,13 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public NetSocket drainHandler(Handler<Void> handler) {
     synchronized (conn) {
       drainHandler = handler;
-      return this;
+    }
+    return this;
+  }
+
+  Handler<Void> drainHandler() {
+    synchronized (conn) {
+      return drainHandler;
     }
   }
 
@@ -280,7 +308,13 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public NetSocket closeHandler(@Nullable Handler<Void> handler) {
     synchronized (conn) {
       closeHandler = handler;
-      return this;
+    }
+    return this;
+  }
+
+  Handler<Void> closeHandler() {
+    synchronized (conn) {
+      return closeHandler;
     }
   }
 

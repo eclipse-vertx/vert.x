@@ -453,27 +453,49 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
   }
 
-  synchronized protected void handleClosed() {
-    if (METRICS_ENABLED && metrics != null && ws != null) {
-      metrics.disconnected(ws.getMetric());
-      ws.setMetric(null);
+  protected void handleClosed() {
+    HttpServerRequestImpl responseInProgress;
+    HttpServerRequestImpl requestInProgress;
+    ServerWebSocketImpl ws;
+    synchronized (this) {
+      ws = this.ws;
+      requestInProgress = this.requestInProgress;
+      responseInProgress = this.responseInProgress;
+      if (METRICS_ENABLED && metrics != null && ws != null) {
+        metrics.disconnected(ws.getMetric());
+        ws.setMetric(null);
+      }
+    }
+    if (requestInProgress != null) {
+      requestInProgress.handleException(CLOSED_EXCEPTION);
+    }
+    if (responseInProgress != null && responseInProgress != requestInProgress) {
+      responseInProgress.handleException(CLOSED_EXCEPTION);
     }
     if (ws != null) {
       ws.handleClosed();
-    }
-    if (responseInProgress != null) {
-      responseInProgress.handleException(CLOSED_EXCEPTION);
     }
     super.handleClosed();
   }
 
   @Override
-  protected synchronized void handleException(Throwable t) {
+  protected void handleException(Throwable t) {
     super.handleException(t);
-    if (METRICS_ENABLED && metrics != null) {
-      requestFailed = true;
+    HttpServerRequestImpl responseInProgress;
+    HttpServerRequestImpl requestInProgress;
+    ServerWebSocketImpl ws;
+    synchronized (this) {
+      ws = this.ws;
+      requestInProgress = this.requestInProgress;
+      responseInProgress = this.responseInProgress;
+      if (METRICS_ENABLED && metrics != null) {
+        requestFailed = true;
+      }
     }
-    if (responseInProgress != null) {
+    if (requestInProgress != null) {
+      requestInProgress.handleException(t);
+    }
+    if (responseInProgress != null && responseInProgress != requestInProgress) {
       responseInProgress.handleException(t);
     }
     if (ws != null) {
