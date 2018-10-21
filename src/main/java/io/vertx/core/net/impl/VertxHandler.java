@@ -69,11 +69,11 @@ public class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler
   }
 
   /**
-   * Set the connection, this is usually called by subclasses when the channel is added to the pipeline.
+   * Set the connection, this is called when the channel is added to the pipeline.
    *
    * @param connection the connection
    */
-  protected void setConnection(C connection) {
+  private void setConnection(C connection) {
     conn = connection;
     endReadAndFlush = v -> conn.endReadAndFlush();
     messageHandler = ((ConnectionBase)conn)::handleRead; // Dubious cast to make compiler happy
