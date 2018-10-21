@@ -211,7 +211,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
             options.getMaxInitialLineLength(),
             options.getMaxHeaderSize(),
             options.getMaxChunkSize(),
-            false,
+            !io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION,
             options.getDecoderInitialBufferSize()),
         new HttpResponseEncoder()
     );
@@ -309,7 +309,8 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   @Fork(value = 1, jvmArgsAppend = {
       "-Dvertx.threadChecks=false",
       "-Dvertx.disableContextTimings=true",
-      "-Dvertx.disableTCCL=true ",
+      "-Dvertx.disableTCCL=true",
+      "-Dvertx.disableHttpHeadersValidation=true",
   })
   @Benchmark
   public void vertxOpt() {

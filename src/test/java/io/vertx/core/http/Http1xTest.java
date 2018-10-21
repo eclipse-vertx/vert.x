@@ -15,6 +15,7 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -4564,5 +4565,34 @@ public class Http1xTest extends HttpTest {
     });
     sender.send();
     await();
+  }
+
+  @Test
+  public void testHeaderNameValidation() {
+    for (char c : "\0\t\n\u000B\f\r ,:;=\u0080".toCharArray()) {
+      try {
+        HttpUtils.validateHeaderName(Character.toString(c));
+        fail("Char 0x" + Integer.toHexString(c) + " should not be valid");
+      } catch (IllegalArgumentException ignore) {
+        // Ok
+      }
+    }
+  }
+
+  @Test
+  public void testHeaderValueValidation() {
+    List<String> invalid = Arrays.asList("\f", "\0", "\u000b", "\r\n3", "\r3", "\n3", "\n\r");
+    for (String test : invalid) {
+      try {
+        HttpUtils.validateHeaderValue(test);
+        fail("String \"" + test + "\" should not be valid");
+      } catch (IllegalArgumentException e) {
+        // Ok
+      }
+    }
+    List<String> valid = Arrays.asList("\r\n\t", "\r\n ", "\n\t", "\n ");
+    for (String test : valid) {
+      HttpUtils.validateHeaderValue(test);
+    }
   }
 }
