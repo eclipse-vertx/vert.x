@@ -30,6 +30,7 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsciiString;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -1340,6 +1341,15 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testNetSocketConnect() throws Exception {
     waitFor(2);
+    final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
+    Handler<AsyncResult<Void>> writeHandler = (result) -> {
+      if(result.succeeded()) {
+        assertTrue(writeHandlerCounter.incrementAndGet() >= 1);
+      } else {
+        fail(result.cause());
+      }
+    };
+
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();
       AtomicInteger status = new AtomicInteger();
@@ -1347,7 +1357,7 @@ public class Http2ClientTest extends Http2TestBase {
         switch (status.getAndIncrement()) {
           case 0:
             assertEquals(Buffer.buffer("some-data"), buff);
-            socket.write(buff);
+            socket.write(buff, writeHandler);
             break;
           case 1:
             assertEquals(Buffer.buffer("last-data"), buff);
@@ -1359,11 +1369,12 @@ public class Http2ClientTest extends Http2TestBase {
       });
       socket.endHandler(v -> {
         assertEquals(2, status.getAndIncrement());
-        socket.write(Buffer.buffer("last-data"));
+        socket.write(Buffer.buffer("last-data"), writeHandler);
       });
       socket.closeHandler(v -> {
         assertEquals(3, status.getAndIncrement());
         complete();
+        assertEquals(2, writeHandlerCounter.get());
       });
     });
     startServer();

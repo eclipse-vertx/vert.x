@@ -789,6 +789,52 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testWriteHandlerSuccess() {
+    final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
+    Handler<AsyncResult<Void>> writeHandler = (v) -> {
+      if(v.succeeded()) {
+        assertEquals(1, writeHandlerCounter.incrementAndGet());
+      } else {
+        fail(v.cause());
+      }
+      testComplete();
+    };
+    Buffer sent = TestUtils.randomBuffer(100);
+    testEcho(sock -> sock.write(sent, writeHandler), buff -> assertEquals(sent, buff), sent.length());
+    assertEquals(1, writeHandlerCounter.get());
+  }
+
+  @Test
+  public void testWriteHandlerFailure() {
+    Handler<AsyncResult<Void>> writeHandler = (asyncResult) -> {
+      assertFalse(asyncResult.succeeded());
+      assertTrue(asyncResult.failed());
+      testComplete();
+    };
+
+    Handler<AsyncResult<NetSocket>> clientHandler = (asyncResult) -> {
+      assert(asyncResult.succeeded());
+      NetSocket socket = asyncResult.result();
+      socket.handler(socket::write);
+      socket.setWriteQueueMaxSize(100);
+      Buffer sent = TestUtils.randomBuffer(1000);
+      socket.write(sent);
+      socket.write(sent);
+      assertTrue(socket.writeQueueFull());
+      socket.write(sent, writeHandler);
+    };
+
+    Handler<AsyncResult<NetServer>> listenHandler = s -> client.connect(testAddress, clientHandler);
+    Handler<NetSocket> serverHandler = socket -> {
+      socket.pause();
+      socket.close();
+    };
+
+    server.connectHandler(serverHandler).listen(testAddress, listenHandler);
+    await();
+  }
+
+  @Test
   public void testEchoBytes() {
     Buffer sent = TestUtils.randomBuffer(100);
     testEcho(sock -> sock.write(sent), buff -> assertEquals(sent, buff), sent.length());

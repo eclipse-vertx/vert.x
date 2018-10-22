@@ -128,7 +128,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void writeData(ByteBuf chunk, boolean end) {
-    conn.handler.writeData(stream, chunk, end);
+    conn.handler.writeData(stream, chunk, end, null);
   }
 
   void writeReset(long code) {
