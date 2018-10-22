@@ -17,9 +17,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.parsetools.JsonEvent;
-import io.vertx.core.parsetools.JsonEventType;
-import io.vertx.core.parsetools.JsonParser;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -699,5 +696,119 @@ public class JsonParserTest {
     assertEquals(1, numberCount.get());
     assertEquals(1, nullCount.get());
     assertEquals(1, stringCount.get());
+  }
+
+  @Test
+  public void testStreamHandle() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    stream.handle("{}");
+    assertFalse(stream.isPaused());
+    assertEquals(2, events.size());
+  }
+
+  @Test
+  public void testStreamPause() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    parser.pause();
+    stream.handle("1234");
+    assertTrue(stream.isPaused());
+    assertEquals(0, events.size());
+  }
+
+  @Test
+  public void testStreamResume() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    parser.pause();
+    stream.handle("{}");
+    parser.resume();
+    assertEquals(2, events.size());
+    assertFalse(stream.isPaused());
+  }
+
+  @Test
+  public void testStreamFetch() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    parser.pause();
+    stream.handle("{}");
+    parser.fetch(1);
+    assertEquals(1, events.size());
+    assertTrue(stream.isPaused());
+  }
+
+  @Test
+  public void testStreamPauseInHandler() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(event -> {
+      assertTrue(events.isEmpty());
+      events.add(event);
+      parser.pause();
+    });
+    stream.handle("{}");
+    assertEquals(1, events.size());
+    assertTrue(stream.isPaused());
+  }
+
+  @Test
+  public void testStreamFetchInHandler() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(event -> {
+      events.add(event);
+      stream.fetch(1);
+    });
+    stream.pause();
+    stream.fetch(1);
+    stream.handle("{}");
+    assertEquals(2, events.size());
+    assertFalse(stream.isPaused());
+  }
+
+  @Test
+  public void testStreamEnd() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    AtomicInteger ended = new AtomicInteger();
+    parser.endHandler(v -> ended.incrementAndGet());
+    stream.end();
+    assertEquals(0, events.size());
+    assertEquals(1, ended.get());
+  }
+
+  @Test
+  public void testStreamPausedEnd() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    AtomicInteger ended = new AtomicInteger();
+    parser.endHandler(v -> ended.incrementAndGet());
+    parser.pause();
+    stream.handle("{}");
+    stream.end();
+    assertEquals(0, ended.get());
+    assertEquals(0, events.size());
+    parser.fetch(1);
+    assertEquals(1, events.size());
+    assertEquals(0, ended.get());
+    parser.fetch(1);
+    assertEquals(2, events.size());
+    assertEquals(1, ended.get());
   }
 }
