@@ -30,7 +30,6 @@ public class RecordParserImpl implements RecordParser {
   private int pos;            // Current position in buffer
   private int start;          // Position of beginning of current record
   private int delimPos;       // Position of current match in delimiter array
-  private boolean reset;      // Allows user to toggle mode / change delim when records are emitted
 
   private boolean delimited;
   private byte[] delim;
@@ -143,7 +142,6 @@ public class RecordParserImpl implements RecordParser {
     delimited = true;
     this.delim = delim.getBytes();
     delimPos = 0;
-    reset = true;
   }
 
   /**
@@ -157,7 +155,6 @@ public class RecordParserImpl implements RecordParser {
     Arguments.require(size > 0, "Size must be > 0");
     delimited = false;
     recordSize = size;
-    reset = true;
   }
 
   /**
@@ -178,13 +175,18 @@ public class RecordParserImpl implements RecordParser {
   private void handleParsing() {
     int len = buff.length();
     do {
-      reset = false;
+      Buffer event;
       if (delimited) {
-        parseDelimited();
+        event = parseDelimited();
       } else {
-        parseFixed();
+        event = parseFixed();
       }
-    } while (reset);
+      if (event != null) {
+        handleEvent(event);
+      } else {
+        break;
+      }
+    } while (true);
 
     if (start == len) {
       //Nothing left
@@ -203,16 +205,17 @@ public class RecordParserImpl implements RecordParser {
     }
   }
 
-  private void parseDelimited() {
+  private Buffer parseDelimited() {
     int len = buff.length();
-    for (; pos < len && !reset; pos++) {
+    for (; pos < len; pos++) {
       if (buff.getByte(pos) == delim[delimPos]) {
         delimPos++;
         if (delimPos == delim.length) {
-          Buffer ret = buff.getBuffer(start, pos - delim.length + 1);
-          start = pos + 1;
+          pos++;
+          Buffer ret = buff.getBuffer(start, pos - delim.length);
+          start = pos;
           delimPos = 0;
-          handleEvent(ret);
+          return ret;
         }
       } else {
         if (delimPos > 0) {
@@ -221,17 +224,19 @@ public class RecordParserImpl implements RecordParser {
         }
       }
     }
+    return null;
   }
 
-  private void parseFixed() {
+  private Buffer parseFixed() {
     int len = buff.length();
-    while (len - start >= recordSize && !reset) {
+    if (len - start >= recordSize) {
       int end = start + recordSize;
       Buffer ret = buff.getBuffer(start, end);
       start = end;
       pos = start - 1;
-      handleEvent(ret);
+      return ret;
     }
+    return null;
   }
 
   /**
