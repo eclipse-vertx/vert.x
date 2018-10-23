@@ -11,18 +11,11 @@
 
 package io.vertx.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -124,6 +117,44 @@ public class ContextTest extends VertxTestBase {
       assertTrue(Context.isOnEventLoopThread());
       assertEquals(r.result(), 3);
       testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testExecuteBlockingThreadSyncComplete() throws Exception {
+    Context context = vertx.getOrCreateContext();
+    context.<Void>runOnContext(v -> {
+      Thread expected = Thread.currentThread();
+      context.executeBlocking(Future::complete, r -> {
+        assertSame(expected, Thread.currentThread());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testExecuteBlockingThreadAsyncComplete() throws Exception {
+    Context context = vertx.getOrCreateContext();
+    context.<Void>runOnContext(v -> {
+      Thread expected = Thread.currentThread();
+      context.executeBlocking(fut -> {
+        new Thread(() -> {
+          try {
+            // Wait some time to allow the worker thread to set the handler on the future and have the future
+            // handler callback to be done this thread
+            Thread.sleep(200);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+          fut.complete();
+        }).start();
+      }, r -> {
+        assertSame(context, Vertx.currentContext());
+        assertSame(expected, Thread.currentThread());
+        testComplete();
+      });
     });
     await();
   }

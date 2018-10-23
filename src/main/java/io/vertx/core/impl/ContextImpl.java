@@ -274,7 +274,7 @@ abstract class ContextImpl implements ContextInternal {
           metrics.end(execMetric, res.succeeded());
         }
         if (resultHandler != null) {
-          runOnContext(v -> res.setHandler(resultHandler));
+          res.setHandler(ar -> runOnContext(v -> resultHandler.handle(ar)));
         }
       };
       if (queue != null) {
