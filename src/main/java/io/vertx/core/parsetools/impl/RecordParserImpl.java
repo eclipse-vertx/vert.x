@@ -233,7 +233,7 @@ public class RecordParserImpl implements RecordParser {
       int end = start + recordSize;
       Buffer ret = buff.getBuffer(start, end);
       start = end;
-      pos = start - 1;
+      pos = start;
       return ret;
     }
     return null;
