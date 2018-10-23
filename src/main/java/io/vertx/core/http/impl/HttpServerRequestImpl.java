@@ -435,7 +435,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
           if (contentType != null) {
             HttpMethod method = request.method();
             if (isValidMultipartContentType(contentType) && isValidMultipartMethod(method)) {
-              decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.vertx(), this, () -> uploadHandler), request);
+              decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.getContext(), this, () -> uploadHandler), request);
             }
           }
         }

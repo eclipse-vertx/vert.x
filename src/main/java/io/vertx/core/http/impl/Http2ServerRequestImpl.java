@@ -447,7 +447,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
                   method,
                   headers.path().toString());
               req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
-              postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(vertx, this, () -> uploadHandler), req);
+              postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), req);
             }
           }
         }

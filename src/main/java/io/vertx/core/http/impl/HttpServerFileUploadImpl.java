@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -36,7 +37,7 @@ import java.nio.charset.Charset;
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private final HttpServerRequest req;
-  private final Vertx vertx;
+  private final Context context;
   private final String name;
   private final String filename;
   private final String contentType;
@@ -52,10 +53,10 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   private boolean complete;
   private boolean lazyCalculateSize;
 
-  HttpServerFileUploadImpl(Vertx vertx, HttpServerRequest req, String name, String filename, String contentType,
+  HttpServerFileUploadImpl(Context context, HttpServerRequest req, String name, String filename, String contentType,
                            String contentTransferEncoding,
                            Charset charset, long size) {
-    this.vertx = vertx;
+    this.context = context;
     this.req = req;
     this.name = name;
     this.filename = filename;
@@ -63,7 +64,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
-    this.pending = Queue.<Buffer>queue()
+    this.pending = Queue.<Buffer>queue(context)
       .emptyHandler(v -> {
         if (complete) {
           handleComplete();
@@ -143,7 +144,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   @Override
   public HttpServerFileUpload streamToFileSystem(String filename) {
     pause();
-    vertx.fileSystem().open(filename, new OpenOptions(), ar -> {
+    context.owner().fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
         Pump p = Pump.pump(HttpServerFileUploadImpl.this, ar.result());
