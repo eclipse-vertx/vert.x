@@ -15,7 +15,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
-import io.vertx.core.queue.Queue;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.Objects;
@@ -30,29 +29,26 @@ public class RecordParserImpl implements RecordParser {
   private int pos;            // Current position in buffer
   private int start;          // Position of beginning of current record
   private int delimPos;       // Position of current match in delimiter array
+  private int next = -1;      // Position of the next matching record
 
   private boolean delimited;
   private byte[] delim;
   private int recordSize;
   private int maxRecordSize;
+  private long demand = Long.MAX_VALUE;
+  private Handler<Buffer> eventHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
 
   private final ReadStream<Buffer> stream;
-  private final Queue<Buffer> pending;
 
   private RecordParserImpl(ReadStream<Buffer> stream) {
     this.stream = stream;
-    this.pending = Queue
-      .<Buffer>queue()
-      .writableHandler(v -> {
-        stream.resume();
-      });
   }
 
   public void setOutput(Handler<Buffer> output) {
     Objects.requireNonNull(output, "output");
-    this.pending.handler(output);
+    eventHandler = output;
   }
 
   /**
@@ -175,15 +171,38 @@ public class RecordParserImpl implements RecordParser {
   private void handleParsing() {
     int len = buff.length();
     do {
-      Buffer event;
-      if (delimited) {
-        event = parseDelimited();
-      } else {
-        event = parseFixed();
+      if (next == -1) {
+        if (delimited) {
+          next = parseDelimited();
+        } else {
+          next = parseFixed();
+        }
       }
-      if (event != null) {
-        handleEvent(event);
+      if (demand > 0L) {
+        if (next == -1) {
+          ReadStream<Buffer> s = stream;
+          if (s != null) {
+            s.resume();
+          }
+          break;
+        }
+        if (demand != Long.MAX_VALUE) {
+          demand--;
+        }
+        Buffer event = buff.getBuffer(start, next);
+        start = pos;
+        next = -1;
+        Handler<Buffer> handler = eventHandler;
+        if (handler != null) {
+          handler.handle(event);
+        }
       } else {
+        if (next != -1) {
+          ReadStream<Buffer> s = stream;
+          if (s != null) {
+            s.pause();
+          }
+        }
         break;
       }
     } while (true);
@@ -199,23 +218,15 @@ public class RecordParserImpl implements RecordParser {
     start = 0;
   }
 
-  private void handleEvent(Buffer event) {
-    if (!pending.add(event) && stream != null) {
-      stream.pause();
-    }
-  }
-
-  private Buffer parseDelimited() {
+  private int parseDelimited() {
     int len = buff.length();
     for (; pos < len; pos++) {
       if (buff.getByte(pos) == delim[delimPos]) {
         delimPos++;
         if (delimPos == delim.length) {
           pos++;
-          Buffer ret = buff.getBuffer(start, pos - delim.length);
-          start = pos;
           delimPos = 0;
-          return ret;
+          return pos - delim.length;
         }
       } else {
         if (delimPos > 0) {
@@ -224,19 +235,17 @@ public class RecordParserImpl implements RecordParser {
         }
       }
     }
-    return null;
+    return -1;
   }
 
-  private Buffer parseFixed() {
+  private int parseFixed() {
     int len = buff.length();
     if (len - start >= recordSize) {
       int end = start + recordSize;
-      Buffer ret = buff.getBuffer(start, end);
-      start = end;
-      pos = start;
-      return ret;
+      pos = end;
+      return end;
     }
-    return null;
+    return -1;
   }
 
   /**
@@ -276,7 +285,7 @@ public class RecordParserImpl implements RecordParser {
 
   @Override
   public RecordParser handler(Handler<Buffer> handler) {
-    pending.handler(handler);
+    eventHandler = handler;
     if (stream != null) {
       if (handler != null) {
         stream.endHandler(v -> end());
@@ -297,20 +306,24 @@ public class RecordParserImpl implements RecordParser {
 
   @Override
   public RecordParser pause() {
-    pending.pause();
+    demand = 0L;
     return this;
   }
 
   @Override
   public RecordParser fetch(long amount) {
-    pending.take(amount);
+    Arguments.require(amount > 0, "Fetch amount must be > 0");
+    demand += amount;
+    if (demand < 0L) {
+      demand = Long.MAX_VALUE;
+    }
+    handleParsing();
     return this;
   }
 
   @Override
   public RecordParser resume() {
-    pending.resume();
-    return this;
+    return fetch(Long.MAX_VALUE);
   }
 
   @Override

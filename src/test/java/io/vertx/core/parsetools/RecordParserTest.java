@@ -333,9 +333,20 @@ public class RecordParserTest {
       assertEquals("item-" + i, records.poll());
     }
     assertNull(records.poll());
+    assertFalse(stream.isPaused());
 
     stream.end();
     assertEquals(1, ends.get());
+  }
+
+  @Test
+  public void testPausedStreamShouldNotPauseOnIncompleteMatch() {
+    FakeStream stream = new FakeStream();
+    RecordParser parser = RecordParser.newDelimited("\r\n", stream);
+    parser.handler(event -> {});
+    parser.pause();
+    stream.handle("abc");
+    assertFalse(stream.isPaused());
   }
 
   private void doTestDelimitedMaxRecordSize(final Buffer input, Buffer delim, Integer[] chunkSizes, int maxRecordSize,
