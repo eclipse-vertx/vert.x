@@ -42,11 +42,10 @@ public class RecordParserImpl implements RecordParser {
   private final ReadStream<Buffer> stream;
   private final Queue<Buffer> pending;
 
-  private RecordParserImpl(ReadStream<Buffer> stream, Handler<Buffer> output) {
+  private RecordParserImpl(ReadStream<Buffer> stream) {
     this.stream = stream;
     this.pending = Queue
       .<Buffer>queue()
-      .handler(output)
       .writableHandler(v -> {
         stream.resume();
       });
@@ -96,7 +95,8 @@ public class RecordParserImpl implements RecordParser {
    * @param output  handler that will receive the output
    */
   public static RecordParser newDelimited(Buffer delim, ReadStream<Buffer> stream, Handler<Buffer> output) {
-    RecordParserImpl ls = new RecordParserImpl(stream, output);
+    RecordParserImpl ls = new RecordParserImpl(stream);
+    ls.handler(output);
     ls.delimitedMode(delim);
     return ls;
   }
@@ -112,7 +112,8 @@ public class RecordParserImpl implements RecordParser {
    */
   public static RecordParser newFixed(int size, ReadStream<Buffer> stream, Handler<Buffer> output) {
     Arguments.require(size > 0, "Size must be > 0");
-    RecordParserImpl ls = new RecordParserImpl(stream, output);
+    RecordParserImpl ls = new RecordParserImpl(stream);
+    ls.handler(output);
     ls.fixedSizeMode(size);
     return ls;
   }
