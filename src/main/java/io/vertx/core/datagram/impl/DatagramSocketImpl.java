@@ -26,16 +26,15 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.http.impl.VertxHttpHandler;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.metrics.*;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 import java.net.InetAddress;
@@ -87,7 +86,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   private void init() {
-    channel.pipeline().addLast("handler", new DatagramServerHandler(this));
+    channel.pipeline().addLast("handler", VertxHandler.create(context, this::createConnection));
   }
 
   @Override
@@ -345,7 +344,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     super.finalize();
   }
 
-  Connection createConnection(ChannelHandlerContext chctx) {
+  private Connection createConnection(ChannelHandlerContext chctx) {
     return new Connection(context.owner(), chctx, context);
   }
 
@@ -398,7 +397,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         DatagramPacket packet = (DatagramPacket) msg;
         ByteBuf content = packet.content();
         if (content.isDirect())  {
-          content = VertxHttpHandler.safeBuffer(content, chctx.alloc());
+          content = VertxHandler.safeBuffer(content, chctx.alloc());
         }
         handlePacket(new DatagramPacketImpl(packet.sender(), Buffer.buffer(content)));
       }

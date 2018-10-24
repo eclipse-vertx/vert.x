@@ -432,7 +432,21 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         holder.handler.exceptionHandler));
       initializeWebsocketExtensions (pipeline);
     }
-    Http1xServerHandler handler = new Http1xServerHandler(sslHelper, options, serverOrigin, holder, metrics);
+    HandlerHolder<HttpHandlers> holder2 = holder;
+    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(holder2.context, chctx -> {
+      Http1xServerConnection conn = new Http1xServerConnection(holder2.context.owner(),
+        sslHelper,
+        options,
+        chctx,
+        holder2.context,
+        serverOrigin,
+        holder2.handler,
+        metrics);
+      if (metrics != null) {
+        holder2.context.executeFromIO(v -> conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName())));
+      }
+      return conn;
+    });
     handler.addHandler(conn -> {
       connectionMap.put(pipeline.channel(), conn);
     });

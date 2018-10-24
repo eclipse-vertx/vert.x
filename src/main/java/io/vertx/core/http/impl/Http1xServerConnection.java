@@ -35,7 +35,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.VertxNetHandler;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.IOException;
@@ -93,7 +93,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   final boolean handle100ContinueAutomatically;
   final HttpServerOptions options;
 
-  Http1xServerConnection(VertxInternal vertx,
+  public Http1xServerConnection(VertxInternal vertx,
                                 SSLHelper sslHelper,
                                 HttpServerOptions options,
                                 ChannelHandlerContext channel,
@@ -148,7 +148,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       handleError(content);
       return;
     }
-    Buffer buffer = Buffer.buffer(VertxHttpHandler.safeBuffer(content.content(), chctx.alloc()));
+    Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content(), chctx.alloc()));
     if (METRICS_ENABLED) {
       reportBytesRead(buffer);
     }
@@ -373,9 +373,29 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, sslHelper, metrics);
-    socket.metric(metric());
+
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
+
+    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, sslHelper, metrics) {
+      @Override
+      protected void handleClosed() {
+        if (metrics != null) {
+          metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
+        }
+        connectionMap.remove(chctx.channel());
+        super.handleClosed();
+      }
+
+      @Override
+      public synchronized void handleMessage(Object msg) {
+        if (msg instanceof HttpContent) {
+          ReferenceCountUtil.release(msg);
+          return;
+        }
+        super.handleMessage(msg);
+      }
+    };
+    socket.metric(metric());
     connectionMap.put(chctx.channel(), socket);
 
     // Flush out all pending data
@@ -393,21 +413,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       pipeline.remove("chunkedWriter");
     }
 
-    chctx.pipeline().replace("handler", "handler", new VertxNetHandler(socket) {
-      @Override
-      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-        if (msg instanceof HttpContent) {
-          ReferenceCountUtil.release(msg);
-          return;
-        }
-        super.channelRead(chctx, msg);
-      }
-    }.removeHandler(sock -> {
-      if (metrics != null) {
-        metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
-      }
-      connectionMap.remove(chctx.channel());
-    }));
+    chctx.pipeline().replace("handler", "handler", VertxHandler.create(socket));
 
     // check if the encoder can be removed yet or not.
     chctx.pipeline().remove("httpEncoder");

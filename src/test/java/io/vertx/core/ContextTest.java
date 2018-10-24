@@ -13,11 +13,12 @@ package io.vertx.core;
 
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.TaskQueue;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.WorkerPool;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -201,10 +202,12 @@ public class ContextTest extends VertxTestBase {
     awaitLatch(latch);
     workerContext.get().nettyEventLoop().execute(() -> {
       assertNull(Vertx.currentContext());
-      workerContext.get().executeFromIO(v -> {
-        assertSame(workerContext.get(), Vertx.currentContext());
-        assertTrue(Context.isOnWorkerThread());
-        testComplete();
+      workerContext.get().nettyEventLoop().execute(() -> {
+        workerContext.get().executeFromIO(v -> {
+          assertSame(workerContext.get(), Vertx.currentContext());
+          assertTrue(Context.isOnWorkerThread());
+          testComplete();
+        });
       });
     });
     await();
@@ -385,5 +388,38 @@ public class ContextTest extends VertxTestBase {
       }
     }
     await();
+  }
+
+  @Test
+  public void testExecuteFromIOEventLoopFromNonVertxThread() {
+    assertEquals("true", System.getProperty("vertx.threadChecks"));
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    AtomicBoolean called = new AtomicBoolean();
+    try {
+      ctx.executeFromIO(v -> {
+        called.set(true);
+      });
+      fail();
+    } catch (IllegalStateException ignore) {
+      //
+    }
+    assertFalse(called.get());
+  }
+
+  @Test
+  public void testExecuteFromIOWorkerFromNonVertxThread() {
+    assertEquals("true", System.getProperty("vertx.threadChecks"));
+    ExecutorService a = Executors.newSingleThreadExecutor();
+    ContextInternal ctx = ((VertxInternal) vertx).createWorkerContext(false, null, new WorkerPool(a, null), null, Thread.currentThread().getContextClassLoader());
+    AtomicBoolean called = new AtomicBoolean();
+    try {
+      ctx.executeFromIO(v -> {
+        called.set(true);
+      });
+      fail();
+    } catch (IllegalStateException ignore) {
+      //
+    }
+    assertFalse(called.get());
   }
 }
