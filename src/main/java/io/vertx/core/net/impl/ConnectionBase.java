@@ -82,11 +82,6 @@ public abstract class ConnectionBase {
     return (VertxHandler) chctx.handler();
   }
 
-  private synchronized void startRead() {
-    checkContext();
-    read = true;
-  }
-
   protected synchronized final void endReadAndFlush() {
     if (read) {
       read = false;
@@ -353,7 +348,9 @@ public abstract class ConnectionBase {
   }
 
   final void handleRead(Object msg) {
-    startRead();
+    synchronized (this) {
+      read = true;
+    }
     handleMessage(msg);
   }
 
