@@ -18,7 +18,6 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
@@ -37,7 +36,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.impl.ContextInternal;
@@ -403,8 +401,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (USE_FLASH_POLICY_HANDLER) {
       pipeline.addLast("flashpolicy", new FlashPolicyHandler());
     }
-    pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
-        , options.getMaxHeaderSize(), options.getMaxChunkSize(), !HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION, options.getDecoderInitialBufferSize()));
+    pipeline.addLast("httpDecoder", new VertxHttpRequestDecoder(options));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
     if (options.isDecompressionSupported()) {
       pipeline.addLast("inflater", new HttpContentDecompressor(true));

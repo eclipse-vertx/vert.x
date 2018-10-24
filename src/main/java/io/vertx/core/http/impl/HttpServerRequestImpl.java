@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
@@ -267,7 +268,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public MultiMap headers() {
     if (headers == null) {
-      headers = new HeadersAdaptor(request.headers());
+      HttpHeaders reqHeaders = request.headers();
+      if (reqHeaders instanceof MultiMap) {
+        headers = (MultiMap) reqHeaders;
+      } else {
+        headers = new HeadersAdaptor(reqHeaders);
+      }
     }
     return headers;
   }
