@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerFileUpload;
@@ -27,20 +28,20 @@ import java.util.function.Supplier;
  */
 class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
-  final Vertx vertx;
+  final Context context;
   final HttpServerRequest request;
   final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
-  NettyFileUploadDataFactory(Vertx vertx, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  NettyFileUploadDataFactory(Context context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
-    this.vertx = vertx;
+    this.context = context;
     this.request = request;
     this.lazyUploadHandler = lazyUploadHandler;
   }
 
   @Override
   public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
-    HttpServerFileUploadImpl upload = new HttpServerFileUploadImpl(vertx, request, name, filename, contentType, contentTransferEncoding, charset,
+    HttpServerFileUploadImpl upload = new HttpServerFileUploadImpl(context, request, name, filename, contentType, contentTransferEncoding, charset,
         size);
     NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
         contentTransferEncoding, charset);

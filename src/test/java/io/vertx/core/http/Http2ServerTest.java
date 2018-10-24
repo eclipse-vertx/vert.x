@@ -1383,7 +1383,6 @@ public class Http2ServerTest extends Http2TestBase {
     testHandlerFailure(true, (err, server) -> {
       server.requestHandler(req -> {
         req.handler(buf -> {
-          System.out.println("throwing from data");
           throw err;
         });
       });

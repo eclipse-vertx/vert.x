@@ -39,7 +39,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.queue.Queue;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.net.URI;
 import java.util.*;
@@ -195,7 +195,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     private boolean requestEnded;
     private boolean responseEnded;
     private boolean reset;
-    private Queue<Buffer> queue;
+    private InboundBuffer<Buffer> queue;
     private MultiMap trailers;
     private StreamImpl next;
 
@@ -203,7 +203,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       this.conn = conn;
       this.fut = Future.<HttpClientStream>future().setHandler(handler);
       this.id = id;
-      this.queue = Queue.queue(conn.context, 0);
+      this.queue = new InboundBuffer<>(conn.context, 5);
     }
 
     private void append(StreamImpl s) {
@@ -304,7 +304,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
 
     private boolean handleChunk(Buffer buff) {
-      return queue.add(buff);
+      return queue.write(buff);
     }
 
     @Override
@@ -342,7 +342,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public void doFetch(long amount) {
-      queue.take(amount);
+      queue.fetch(amount);
     }
 
     @Override
@@ -454,7 +454,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           response.handleEnd(trailers);
         }
       });
-      queue.writableHandler(v -> {
+      queue.drainHandler(v -> {
         if (!responseEnded) {
           conn.doResume();
         }

@@ -13,14 +13,12 @@ package io.vertx.core.parsetools;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
@@ -300,78 +298,55 @@ public class RecordParserTest {
 
   @Test
   public void testWrapReadStream() {
-    AtomicBoolean paused = new AtomicBoolean();
-    AtomicReference<Handler<Buffer>> eventHandler = new AtomicReference<>();
-    AtomicReference<Handler<Void>> endHandler = new AtomicReference<>();
-    AtomicReference<Handler<Throwable>> exceptionHandler = new AtomicReference<>();
-    ReadStream<Buffer> original = new ReadStream<Buffer>() {
-      @Override
-      public ReadStream<Buffer> exceptionHandler(Handler<Throwable> handler) {
-        exceptionHandler.set(handler);
-        return this;
-      }
-      @Override
-      public ReadStream<Buffer> handler(Handler<Buffer> handler) {
-        eventHandler.set(handler);
-        return this;
-      }
-      @Override
-      public ReadStream<Buffer> fetch(long amount) {
-        throw new UnsupportedOperationException();
-      }
-      @Override
-      public ReadStream<Buffer> pause() {
-        paused.set(true);
-        return this;
-      }
-      @Override
-      public ReadStream<Buffer> resume() {
-        paused.set(false);
-        return this;
-      }
-      @Override
-      public ReadStream<Buffer> endHandler(Handler<Void> handler) {
-        endHandler.set(handler);
-        return this;
-      }
-    };
-    RecordParser parser = RecordParser.newDelimited("\r\n", original);
+    FakeStream stream = new FakeStream();
+    RecordParser parser = RecordParser.newDelimited("\r\n", stream);
     AtomicInteger ends = new AtomicInteger();
     parser.endHandler(v -> ends.incrementAndGet());
     Deque<String> records = new ArrayDeque<>();
     parser.handler(record -> records.add(record.toString()));
-    assertFalse(paused.get());
-    eventHandler.get().handle(Buffer.buffer("first\r\nsecond\r\nthird"));
+    assertFalse(stream.isPaused());
+    stream.handle(Buffer.buffer("first\r\nsecond\r\nthird"));
     assertEquals("first", records.poll());
     assertEquals("second", records.poll());
     assertNull(records.poll());
-    eventHandler.get().handle(Buffer.buffer("\r\n"));
+    stream.handle(Buffer.buffer("\r\n"));
     assertEquals("third", records.poll());
     assertNull(records.poll());
     assertEquals(0, ends.get());
     Throwable cause = new Throwable();
-    exceptionHandler.get().handle(cause);
+    stream.fail(cause);
     List<Throwable> failures = new ArrayList<>();
     parser.exceptionHandler(failures::add);
-    exceptionHandler.get().handle(cause);
+    stream.fail(cause);
     assertEquals(Collections.singletonList(cause), failures);
 
-    assertFalse(paused.get());
+    assertFalse(stream.isPaused());
     parser.pause();
-    assertFalse(paused.get());
+    assertFalse(stream.isPaused());
     int count = 0;
     do {
-      eventHandler.get().handle(Buffer.buffer("item-" + count++ + "\r\n"));
-    } while (!paused.get());
+      stream.handle(Buffer.buffer("item-" + count++ + "\r\n"));
+    } while (!stream.isPaused());
     assertNull(records.poll());
     parser.resume();
     for (int i = 0;i < count;i++) {
       assertEquals("item-" + i, records.poll());
     }
     assertNull(records.poll());
+    assertFalse(stream.isPaused());
 
-    endHandler.get().handle(null);
+    stream.end();
     assertEquals(1, ends.get());
+  }
+
+  @Test
+  public void testPausedStreamShouldNotPauseOnIncompleteMatch() {
+    FakeStream stream = new FakeStream();
+    RecordParser parser = RecordParser.newDelimited("\r\n", stream);
+    parser.handler(event -> {});
+    parser.pause();
+    stream.handle("abc");
+    assertFalse(stream.isPaused());
   }
 
   private void doTestDelimitedMaxRecordSize(final Buffer input, Buffer delim, Integer[] chunkSizes, int maxRecordSize,

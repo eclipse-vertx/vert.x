@@ -20,7 +20,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.queue.Queue;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -35,7 +35,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final ChannelHandlerContext handlerContext;
   protected final Http2Stream stream;
 
-  private Queue<Buffer> pending;
+  private InboundBuffer<Buffer> pending;
   private int pendingBytes;
   private MultiMap trailers;
   private boolean writable;
@@ -47,15 +47,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.stream = stream;
     this.context = conn.getContext();
     this.writable = writable;
-    this.pending = Queue.queue(context, 5);
+    this.pending = new InboundBuffer<>(context, 5);
 
-    pending.writableHandler(v -> {
+    pending.drainHandler(v -> {
       int numBytes = pendingBytes;
       pendingBytes = 0;
       conn.handler.consume(stream, numBytes);
     });
 
     pending.handler(this::handleData);
+    pending.exceptionHandler(context.exceptionHandler());
     pending.emptyHandler(v -> {
       if (trailers != null) {
         handleEnd(trailers);
@@ -70,7 +71,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   boolean onDataRead(Buffer data) {
-    boolean read = pending.add(data);
+    boolean read = pending.write(data);
     if (!read) {
       pendingBytes += data.length();
     }
@@ -110,7 +111,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   public void doFetch(long amount) {
-    pending.take(amount);
+    pending.fetch(amount);
   }
 
   boolean isNotWritable() {
