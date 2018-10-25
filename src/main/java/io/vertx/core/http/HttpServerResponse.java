@@ -472,4 +472,15 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   default HttpServerResponse writeCustomFrame(HttpFrame frame) {
     return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
+
+  /**
+   * Sets the priority weight of the associated stream
+   * @param weight The weight priority weight or this requet's stream  
+   */
+  void setWeight(short weight);
+  /**
+   * Sets the dependecy of associated stream
+   * @param The identifier of the HTTP/2 stream this request's stream depends on
+   */
+  void setStreamDependency(int streamDependency);
 }

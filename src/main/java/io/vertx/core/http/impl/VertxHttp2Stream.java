@@ -124,8 +124,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
   }
 
-  void writeHeaders(Http2Headers headers, boolean end) {
-    conn.handler.writeHeaders(stream, headers, end);
+  void writeHeaders(Http2Headers headers, boolean end, int streamDependency, short weight) {
+    conn.handler.writeHeaders(stream, headers, end, streamDependency, weight);
   }
 
   void writeData(ByteBuf chunk, boolean end) {

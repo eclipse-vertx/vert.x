@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -327,5 +328,19 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @CacheReturn
   HttpConnection connection();
+
+  /**
+   * @return The identifier of the HTTP/2 stream this request's stream depends on  
+   */
+  default int getStreamDependency() {
+      return 0;
+  }
+  
+  /**
+   * @return The weight priority weight or this requet's stream  
+   */
+  default short getWeight() {
+      return Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
+  }
 
 }

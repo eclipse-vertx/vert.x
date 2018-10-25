@@ -189,6 +189,16 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       return this;
     }
   }
+  
+  @Override
+  public int getStreamDependency() {
+    return stream.getStreamDependency();
+  }
+
+  @Override
+  public short getWeight() {
+    return stream.getWeight();
+  }
 
   void handleUnknownFrame(HttpFrame frame) {
     synchronized (conn) {

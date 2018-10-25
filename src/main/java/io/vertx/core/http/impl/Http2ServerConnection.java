@@ -27,6 +27,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.Http2ClientConnection.Http2ClientStream;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -107,7 +108,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
   @Override
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId,
-                            Http2Headers headers, int padding, boolean endOfStream) {
+                            Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) {
     VertxHttp2Stream stream = streams.get(streamId);
     if (stream == null) {
       if (isMalformedRequest(headers)) {
@@ -115,6 +116,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       Http2ServerRequestImpl req = createRequest(streamId, headers);
+      req.setStreamDependency(streamDependency);
+      req.setWeight(weight);
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -139,6 +142,12 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       VertxHttp2Stream finalStream = stream;
       context.executeFromIO(v -> finalStream.onEnd());
     }
+  }
+
+  @Override
+  public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId,
+                            Http2Headers headers, int padding, boolean endOfStream) {
+    onHeadersRead(ctx, streamId, headers, 0, Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT, false, padding, endOfStream);
   }
 
   @Override

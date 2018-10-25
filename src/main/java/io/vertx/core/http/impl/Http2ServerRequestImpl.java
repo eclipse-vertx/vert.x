@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
@@ -79,6 +80,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   private Handler<Throwable> exceptionHandler;
   private Handler<HttpFrame> customFrameHandler;
+  
+  private int streamDependency = 0;
+  private short weight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
 
   public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable) {
@@ -516,4 +520,24 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   public HttpConnection connection() {
     return conn;
   }
+
+  @Override
+  public int getStreamDependency() {
+    return streamDependency;
+  }
+
+  public void setStreamDependency(int streamDependency) {
+    this.streamDependency = streamDependency;
+  }
+
+  @Override
+  public short getWeight() {
+    return weight;
+  }
+
+  public void setWeight(short weight) {
+    this.weight = weight;
+  }
+
+  
 }

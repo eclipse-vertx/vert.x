@@ -525,20 +525,20 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true, streamDependency, weight);
           stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false, streamDependency, weight);
         }
       } else {
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true, streamDependency, weight);
           stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false, streamDependency, weight);
         }
       }
       this.connecting = false;

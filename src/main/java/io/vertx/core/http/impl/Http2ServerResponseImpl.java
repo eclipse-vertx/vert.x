@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -78,6 +79,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private int numPush;
   private boolean inHandler;
   private NetSocket netSocket;
+  private short weight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
+  private int streamDependecy = 0;
 
   public Http2ServerResponseImpl(Http2ServerConnection conn,
                                  VertxHttp2Stream stream,
@@ -322,7 +325,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse writeContinue() {
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status("100"), false);
+      stream.writeHeaders(new DefaultHttp2Headers().status("100"), false, streamDependecy, weight);
       ctx.flush();
       return this;
     }
@@ -415,7 +418,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       headWritten = true;
       headers.status(Integer.toString(status.code())); // Could be optimized for usual case ?
-      stream.writeHeaders(headers, end);
+      stream.writeHeaders(headers, end, streamDependecy, weight);
       if (end) {
         ctx.flush();
       }
@@ -446,7 +449,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         stream.writeData(chunk, end && trailers == null);
       }
       if (end && trailers != null) {
-        stream.writeHeaders(trailers, true);
+        stream.writeHeaders(trailers, true, streamDependecy, weight);
       }
       bodyEndHandler = this.bodyEndHandler;
     }
@@ -708,5 +711,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     return push(method, host, path, handler);
+  }
+
+  @Override
+  public void setStreamDependency(int streamDependency) {
+    this.streamDependecy = streamDependency;
+  }
+
+  @Override
+  public void setWeight(short weight) {
+    this.weight = weight;
   }
 }

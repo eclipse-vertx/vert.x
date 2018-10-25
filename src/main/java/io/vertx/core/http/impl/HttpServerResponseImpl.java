@@ -666,4 +666,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
     return this;
   }
+
+  @Override
+  public void setStreamDependency(int streamDependency) {
+    // NO-OP
+  }
+
+  @Override
+  public void setWeight(short weight) {
+    // NO-OP
+  }
 }

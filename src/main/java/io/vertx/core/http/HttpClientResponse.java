@@ -153,4 +153,15 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    */
   @CacheReturn
   HttpClientRequest request();
+
+  /**
+   * @return The identifier of the HTTP/2 stream this request's stream depends on  
+   */
+  int getStreamDependency();
+  
+  /**
+   * @return The weight priority weight or this requet's stream  
+   */
+  short getWeight();
+
 }

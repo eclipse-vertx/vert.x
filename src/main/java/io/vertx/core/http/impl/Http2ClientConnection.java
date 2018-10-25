@@ -17,6 +17,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -133,6 +134,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+    Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
+    stream.setStreamDependency(streamDependency);
+    stream.setWeight(weight);
+    onHeadersRead(ctx, streamId, headers, padding, endOfStream);
+  }
+
+  @Override
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
@@ -175,6 +184,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
+    private int streamDependency = 0;
+    private short weight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
 
     Http2ClientStream(Http2ClientConnection conn, Http2Stream stream, boolean writable) {
       super(conn, stream, writable);
@@ -193,6 +204,24 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public int id() {
       return super.id();
+    }
+
+    @Override
+    public int getStreamDependency() {
+      return streamDependency;
+    }
+
+    public void setStreamDependency(int streamDependency) {
+      this.streamDependency = streamDependency;
+    }
+
+    @Override
+    public short getWeight() {
+      return weight;
+    }
+
+    public void setWeight(short weight) {
+      this.weight = weight;
     }
 
     @Override
@@ -315,7 +344,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, int streamDependency, short weight) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
@@ -341,12 +370,17 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.metrics != null) {
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
-      writeHeaders(h, end && content == null);
+      writeHeaders(h, end && content == null, streamDependency, weight);
       if (content != null) {
         writeBuffer(content, end);
       } else {
         handlerContext.flush();
       }
+    }
+
+    @Override
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
+        writeHead(method, rawMethod, uri, headers, hostHeader, chunked, content, end, 0, Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT);
     }
 
     @Override

@@ -188,19 +188,19 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   //
 
-  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end) {
+  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight) {
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
-      _writeHeaders(stream, headers, end);
+      _writeHeaders(stream, headers, end, streamDependency, weight);
     } else {
       executor.execute(() -> {
-        _writeHeaders(stream, headers, end);
+        _writeHeaders(stream, headers, end, streamDependency, weight);
       });
     }
   }
 
-  private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end) {
-    encoder().writeHeaders(chctx, stream.id(), headers, 0, end, chctx.newPromise());
+  private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight) {
+    encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, false, 0, end, chctx.newPromise());
   }
 
   void writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
