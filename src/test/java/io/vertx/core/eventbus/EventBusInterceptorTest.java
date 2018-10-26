@@ -301,6 +301,148 @@ public class EventBusInterceptorTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testForwardOutboundInterceptorPublish() {
+    AtomicInteger cnt = new AtomicInteger();
+    eb.addOutboundInterceptor(sc -> {
+      if (sc.message().address().equals("some-address")) {
+        assertEquals(0, cnt.get());
+        cnt.incrementAndGet();
+        sc.forward("forward-address");
+      } else if(sc.message().address().equals("forward-address")) {
+        assertEquals(1, cnt.get());
+        cnt.incrementAndGet();
+        sc.next();
+      } else {
+        fail("interceptor called too many times");
+      }
+    });
+    eb.consumer("some-address", msg -> {
+      fail("some-address called");
+    });
+    eb.consumer("forward-address", msg -> {
+      assertEquals(2, cnt.get());
+      testComplete();
+    });
+    eb.publish("some-address", "armadillo");
+    await();
+  }
+  
+  @Test
+  public void testForwardOutboundInterceptorSend() {
+    AtomicInteger cnt = new AtomicInteger();
+    eb.addOutboundInterceptor(sc -> {
+      if (sc.message().address().equals("some-address")) {
+        assertEquals(0, cnt.get());
+        cnt.incrementAndGet();
+        sc.forward("forward-address");
+      } else if(sc.message().address().equals("forward-address")) {
+        assertEquals(1, cnt.get());
+        cnt.incrementAndGet();
+        sc.next();
+      } else { //reply
+        assertEquals(2, cnt.get());
+        cnt.incrementAndGet();
+        sc.next();
+      }
+    });
+    eb.consumer("some-address", msg -> {
+      fail("some-address called");
+    });
+    eb.consumer("forward-address", msg -> {
+      msg.reply("echidna");
+    });
+    eb.send("some-address", "armadillo", reply -> {
+      assertEquals("echidna", reply.result().body());
+      assertEquals(3, cnt.get());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testForwardInboundInterceptorPublish() {
+    AtomicInteger cnt = new AtomicInteger();
+    eb.addInboundInterceptor(sc -> {
+      if (sc.message().address().equals("some-address")) {
+        assertEquals(0, cnt.get());
+        cnt.incrementAndGet();
+        sc.forward("forward-address");
+      } else if(sc.message().address().equals("forward-address")) {
+        assertEquals(1, cnt.get());
+        cnt.incrementAndGet();
+        sc.next();
+      } else {
+        fail("interceptor called too many times");
+      }
+    });
+    eb.consumer("some-address", msg -> {
+      fail("some-address called");
+    });
+    eb.consumer("forward-address", msg -> {
+      assertEquals("armadillo", msg.body());
+      assertEquals(2, cnt.get());
+      assertFalse(msg.isSend());
+      assertEquals("forward-address", msg.address());
+      assertEquals("Dasypus novemcinctus", msg.headers().get("some-header"));
+      testComplete();
+    });
+    eb.publish("some-address", "armadillo", createArmadilloOptions("Dasypus novemcinctus"));
+    await();
+  }
+  
+  @Test
+  public void testForwardInboundInterceptorSend() {
+    AtomicInteger cnt = new AtomicInteger();
+    eb.addInboundInterceptor(sc -> {      
+      if (sc.message().address().equals("some-address")) {
+        assertEquals(0, cnt.get());
+        cnt.incrementAndGet();
+        sc.forward("forward-address");
+      } else if(sc.message().address().equals("forward-address")) {
+        assertEquals(1, cnt.get());
+        cnt.incrementAndGet();
+        sc.next();
+      } else {
+        cnt.incrementAndGet();
+        sc.next();
+      }      
+    });
+    eb.consumer("some-address", msg -> {
+      fail("some-address called");
+    });
+    eb.consumer("forward-address", msg -> {
+      assertEquals("armadillo", msg.body());
+      assertEquals(2, cnt.get());
+      assertTrue(msg.isSend());
+      assertEquals("forward-address", msg.address());
+      assertEquals("Dasypus novemcinctus", msg.headers().get("some-header"));
+      msg.reply("armadillo2", createArmadilloOptions("Zaedyus pichiy"), replyResult -> {
+        Message<Object> reply = replyResult.result();
+        assertTrue(reply.isSend());
+        assertEquals(6, cnt.get());
+        assertEquals("armadillo3", reply.body());
+        assertEquals("Chaetophractus vellerosus", reply.headers().get("some-header"));
+        testComplete();
+      });      
+    });
+    eb.send("some-address", "armadillo", createArmadilloOptions("Dasypus novemcinctus"), replyResult -> {
+      Message<Object> reply = replyResult.result();
+      assertTrue(reply.isSend());
+      assertEquals(4, cnt.get());
+      assertEquals("armadillo2", reply.body());
+      assertEquals("Zaedyus pichiy", reply.headers().get("some-header"));
+      replyResult.result().reply("armadillo3", createArmadilloOptions("Chaetophractus vellerosus"));
+    });
+    await();
+  }
+  
+  private DeliveryOptions createArmadilloOptions(String armadilloSpecies) {
+    DeliveryOptions options = new DeliveryOptions();
+    options.addHeader("some-header", armadilloSpecies);
+    return options;
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();

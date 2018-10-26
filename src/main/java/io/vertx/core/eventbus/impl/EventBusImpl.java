@@ -422,6 +422,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       long timeout = options.getSendTimeout();
       String replyAddress = generateReplyAddress();
       message.setReplyAddress(replyAddress);
+      message.setReplyTimeout(timeout);
       Handler<Message<T>> simpleReplyHandler = convertHandler(replyHandler);
       HandlerRegistration<T> registration =
         new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, replyHandler, timeout);
@@ -496,6 +497,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     public Object body() {
       return message.sentBody;
     }
+    
+    @Override
+    public void forward(String address) {
+      message.address = address;
+      OutboundDeliveryContext<T> forwardedContext = new OutboundDeliveryContext<>(message, options, handlerRegistration, replierMessage);
+      forwardedContext.next();
+    }
+
   }
 
   private void unregisterAll() {
@@ -574,6 +583,48 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     @Override
     public Object body() {
       return message.receivedBody;
+    }
+
+    @Override
+    public void forward(String address) {
+      DeliveryOptions options = forwardOptions(message, holder.isLocalOnly());
+      MessageImpl forwardedMessage = createMessage(message.send, address, options.getHeaders(), message.receivedBody, options.getCodecName());      
+      sendOrPubInternal(forwardedMessage, options, forwardReplyHandler(message));
+    }
+    
+    private Handler<AsyncResult<Message<T>>> forwardReplyHandler(MessageImpl message) {
+      Handler<AsyncResult<Message<T>>> replyHandler;
+      if(message.replyAddress != null) {
+        replyHandler = (replyResult) -> {
+          if(replyResult.succeeded()) {
+            MessageImpl replyMessage = (MessageImpl) replyResult.result();
+            DeliveryOptions options = forwardOptions(replyMessage, false); //localOnly does not apply to reply messages, see DeliveryOptions.setLocalOnly
+            sendReply(createMessage(replyMessage.send, message.replyAddress, options.getHeaders(),
+                replyMessage.receivedBody, options.getCodecName()), message, options, forwardReplyHandler(replyMessage));
+          } else {
+            ReplyException replyException = (ReplyException) replyResult.cause();
+            sendReply(createMessage(true, message.replyAddress, null,
+                replyException, null), message, null, null);
+          }
+        };
+      } else {
+        replyHandler = null;
+      }
+      return replyHandler;
+    }
+
+    private DeliveryOptions forwardOptions(MessageImpl message, boolean localOnly) {
+      DeliveryOptions options = new DeliveryOptions();
+      if(message.replyTimeout > 0)
+        options.setSendTimeout(message.replyTimeout);
+      options.setHeaders(message.headers);
+      options.setLocalOnly(localOnly);
+      byte systemCodecID = message.messageCodec.systemCodecID();      
+      if (systemCodecID == -1) {
+        // User codec
+        options.setCodecName(message.messageCodec.name());
+      }
+      return options;
     }
   }
 

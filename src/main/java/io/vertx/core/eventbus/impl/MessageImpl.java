@@ -33,11 +33,12 @@ public class MessageImpl<U, V> implements Message<V> {
   protected EventBusImpl bus;
   protected String address;
   protected String replyAddress;
+  protected long replyTimeout;
   protected MultiMap headers;
   protected U sentBody;
   protected V receivedBody;
   protected boolean send;
-
+  
   public MessageImpl() {
   }
 
@@ -158,5 +159,9 @@ public class MessageImpl<U, V> implements Message<V> {
 
   protected boolean isLocal() {
     return true;
+  }
+
+  public void setReplyTimeout(long timeout) {
+    this.replyTimeout = timeout;
   }
 }

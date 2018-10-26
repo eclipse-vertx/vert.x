@@ -43,4 +43,11 @@ public interface DeliveryContext<T> {
    * @return the value delivered by the message (before or after being processed by the codec)
    */
   Object body();
+  
+  /**
+    * Forwards a message to another address
+    * @param address  the address to forward it to
+    */
+  void forward(String address);
+  
 }
