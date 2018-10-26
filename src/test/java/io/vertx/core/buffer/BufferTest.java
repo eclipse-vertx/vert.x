@@ -13,9 +13,12 @@ package io.vertx.core.buffer;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.IllegalReferenceCountException;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.spi.BufferFactory;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -1096,5 +1099,22 @@ public class BufferTest {
     assertEquals(0, buf.readerIndex());
     assertEquals(6, buf.writerIndex());
     assertEquals(other.toString(), "prefixfoobar");
+  }
+
+  @Test
+  public void testDirect() {
+    Buffer buff = Buffer.factory.directBuffer("hello world".getBytes());
+    assertEquals("hello world", buff.toString());
+    buff.appendString(" foobar");
+    assertEquals("hello world foobar", buff.toString());
+    ByteBuf bb = buff.getByteBuf().unwrap();
+    assertTrue(bb.isDirect());
+    assertTrue(bb.release());
+    try {
+      // Check it's deallocated
+      buff.toString();
+      fail();
+    } catch (IllegalReferenceCountException e) {
+    }
   }
 }

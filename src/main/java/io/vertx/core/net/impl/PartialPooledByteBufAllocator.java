@@ -31,7 +31,7 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
   // We can remove this once the following netty issue is fixed:
   // See https://github.com/netty/netty/issues/2264
   private static final ByteBufAllocator POOLED = new PooledByteBufAllocator(true);
-  private static final ByteBufAllocator UNPOOLED = new UnpooledByteBufAllocator(false);
+  public static final ByteBufAllocator UNPOOLED = new UnpooledByteBufAllocator(false);
 
   public static final PartialPooledByteBufAllocator INSTANCE = new PartialPooledByteBufAllocator();
 
