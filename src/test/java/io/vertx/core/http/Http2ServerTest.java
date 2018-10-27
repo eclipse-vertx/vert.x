@@ -528,7 +528,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertTrue(names.contains("bar"));
       assertEquals("foo_value", params.get("foo"));
       assertEquals(Collections.singletonList("foo_value"), params.getAll("foo"));
-      assertEquals("bar_value_2", params.get("bar"));
+      assertEquals("bar_value_1", params.get("bar"));
       assertEquals(Arrays.asList("bar_value_1", "bar_value_2"), params.getAll("bar"));
       testComplete();
     });
