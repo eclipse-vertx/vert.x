@@ -963,4 +963,22 @@ public class CaseInsensitiveHeadersTest {
     assertTrue(mmap.contains(name, vAlue, true));
     assertTrue(mmap.contains(name, Value, true));
   }
+
+  @Test
+  public void testGetShouldReturnAddedEntriesInOrder() {
+    MultiMap mmap = newMultiMap();
+    mmap.add("header", "value1");
+    mmap.add("header", "value2");
+    mmap.add("header", "value3");
+    assertEquals("value1", mmap.get("header"));
+    assertEquals(Arrays.asList("value1", "value2", "value3"), mmap.getAll("header"));
+  }
+
+  @Test
+  public void testGetShouldReturnEntriesFromListInOrder() {
+    MultiMap mmap = newMultiMap();
+    mmap.add("header", Arrays.<CharSequence>asList("value1", "value2", "value3"));
+    assertEquals("value1", mmap.get("header"));
+    assertEquals(Arrays.asList("value1", "value2", "value3"), mmap.getAll("header"));
+  }
 }
