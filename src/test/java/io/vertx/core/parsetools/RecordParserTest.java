@@ -305,6 +305,8 @@ public class RecordParserTest {
     Deque<String> records = new ArrayDeque<>();
     parser.handler(record -> records.add(record.toString()));
     assertFalse(stream.isPaused());
+    parser.pause();
+    parser.resume();
     stream.handle(Buffer.buffer("first\r\nsecond\r\nthird"));
     assertEquals("first", records.poll());
     assertEquals("second", records.poll());

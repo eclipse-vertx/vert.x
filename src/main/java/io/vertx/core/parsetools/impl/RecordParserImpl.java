@@ -169,6 +169,9 @@ public class RecordParserImpl implements RecordParser {
   }
 
   private void handleParsing() {
+    if (buff == null) {
+      return;
+    }
     int len = buff.length();
     do {
       if (next == -1) {
