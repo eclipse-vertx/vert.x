@@ -147,23 +147,22 @@ public class InboundBufferTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       buffer = new InboundBuffer<>(context, 4L);
       AtomicInteger events = new AtomicInteger();
-      buffer.handler(s -> {
-        checkContext();
-        events.getAndIncrement();
-      });
       AtomicInteger reads = new AtomicInteger();
       buffer.drainHandler(v2 -> {
         checkContext();
         assertEquals(0, reads.getAndIncrement());
+      });
+      buffer.handler(s -> {
+        checkContext();
+        assertEquals(0, reads.get());
+        assertEquals(0, events.getAndIncrement());
+        testComplete();
       });
       buffer.pause();
       for (int i = 0; i < 5;i++) {
         assertEquals(i < 4, emit());
       }
       buffer.fetch(1);
-      assertEquals(0, reads.get());
-      assertEquals(1, events.get());
-      testComplete();
     });
     await();
   }
@@ -196,29 +195,24 @@ public class InboundBufferTest extends VertxTestBase {
     waitFor(2);
     context.runOnContext(v1 -> {
       buffer = new InboundBuffer<>(context, 4L);
-      AtomicInteger events = new AtomicInteger();
-      buffer.handler(s -> {
-        checkContext();
-        events.getAndIncrement();
-      });
       AtomicInteger drained = new AtomicInteger();
+      AtomicInteger emitted = new AtomicInteger();
       buffer.drainHandler(v2 -> {
         checkContext();
         assertEquals(0, drained.getAndIncrement());
+        assertEquals(5, emitted.get());
         complete();
+      });
+      buffer.handler(s -> {
+        checkContext();
+        assertEquals(0, drained.get());
+        emitted.getAndIncrement();
       });
       buffer.pause();
       fill();
       assertEquals(0, drained.get());
-      assertEquals(0, events.get());
-      for (int i = 0;i < 5;i++) {
-        buffer.fetch(1);
-        assertEquals(1 + i, events.get());
-        if (i < 4) {
-          assertEquals(0, drained.get());
-        }
-      }
-      assertEquals(5, events.get());
+      assertEquals(0, emitted.get());
+      buffer.resume();
       complete();
     });
     await();
@@ -293,7 +287,8 @@ public class InboundBufferTest extends VertxTestBase {
       AtomicInteger itemCount = new AtomicInteger();
       buffer.handler(item -> itemCount.incrementAndGet());
       buffer.emptyHandler(v2 -> {
-        emptyCount.incrementAndGet();
+        assertEquals(0, emptyCount.getAndIncrement());
+        testComplete();
       });
       assertTrue(emit());
       assertEquals(1, itemCount.get());
@@ -306,10 +301,7 @@ public class InboundBufferTest extends VertxTestBase {
       for (int i = 0;i < 3;i++) {
         assertEquals(0, emptyCount.get());
         buffer.fetch(1);
-        assertEquals(2 + i, itemCount.get());
       }
-      assertEquals(1, emptyCount.get());
-      testComplete();
     });
     await();
   }
@@ -565,23 +557,26 @@ public class InboundBufferTest extends VertxTestBase {
       AtomicInteger emitted = new AtomicInteger();
       AtomicInteger emptied = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
-      buffer.handler(item -> emitted.incrementAndGet());
+      buffer.handler(item -> {
+        emitted.incrementAndGet();
+        assertEquals(0, drained.get());
+        assertEquals(0, emptied.get());
+        buffer.fetch(1);
+
+      });
       buffer.emptyHandler(v -> {
+        assertEquals(5, emitted.get());
         emptied.incrementAndGet();
         complete();
       });
       buffer.drainHandler(v -> {
+        assertEquals(5, emitted.get());
         drained.incrementAndGet();
         complete();
       });
       buffer.pause();
       assertFalse(emit(5));
-      for (int i = 0;i < 5;i++) {
-        assertEquals(0, drained.get());
-        assertEquals(0, emptied.get());
-        waitUntilEquals(i, emitted::get);
-        buffer.fetch(1);
-      }
+      buffer.fetch(1);
       complete();
     });
     await();
@@ -662,4 +657,25 @@ public class InboundBufferTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testCheckThatPauseAfterResumeWontDoAnyEmission() {
+    context.runOnContext(v1 -> {
+      buffer = new InboundBuffer<>(context, 4L);
+      AtomicInteger emitted = new AtomicInteger();
+      buffer.handler(elt -> emitted.incrementAndGet());
+      buffer.pause();
+      fill();
+      // Resume will execute an asynchronous drain operation
+      buffer.resume();
+      // Pause just after to ensure that no elements will be delivered to he handler
+      buffer.pause();
+      // Give enough time to have elements delivered
+      vertx.setTimer(20, id -> {
+        // Check we haven't received anything
+        assertEquals(0, emitted.get());
+        testComplete();
+      });
+    });
+    await();
+  }
 }

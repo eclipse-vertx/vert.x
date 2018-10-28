@@ -242,7 +242,9 @@ public class InboundBuffer<E> {
   /**
    * Request a specific {@code amount} of elements to be fetched, the amount is added to the actual demand.
    * <p/>
-   * The elements will be delivered on the context to the handler.
+   * Pending elements in the buffer will be delivered asynchronously on the context to the handler.
+   * <p/>
+   * This method can be called from any thread.
    *
    * @return a reference to this, so the API can be used fluently
    */
@@ -260,11 +262,7 @@ public class InboundBuffer<E> {
       }
       emitting = true;
     }
-    if (context == Vertx.currentContext()) {
-      drain();
-    } else {
-      context.runOnContext(v -> drain());
-    }
+    context.runOnContext(v -> drain());
     return this;
   }
 
@@ -305,6 +303,10 @@ public class InboundBuffer<E> {
 
   /**
    * Resume the buffer, and sets the buffer in {@code flowing} mode.
+   * <p/>
+   * Pending elements in the buffer will be delivered asynchronously on the context to the handler.
+   * <p/>
+   * This method can be called from any thread.
    *
    * @return a reference to this, so the API can be used fluently
    */
