@@ -789,6 +789,55 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testWriteHandlerSuccess() throws Exception {
+    CompletableFuture<Void> close = new CompletableFuture<>();
+    server.connectHandler(socket -> {
+      socket.pause();
+      close.thenAccept(v -> {
+        socket.resume();
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      writeUntilFull(so, v -> {
+        so.write(Buffer.buffer("lost buffer"), onSuccess(ack -> testComplete()));
+        close.complete(null);
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testWriteHandlerFailure() throws Exception {
+    CompletableFuture<Void> close = new CompletableFuture<>();
+    server.connectHandler(socket -> {
+      socket.pause();
+      close.thenAccept(v -> {
+        socket.close();
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      writeUntilFull(so, v -> {
+        so.write(Buffer.buffer("lost buffer"), onFailure(err -> {
+          testComplete();
+        }));
+        close.complete(null);
+      });
+    }));
+    await();
+  }
+
+  private void writeUntilFull(NetSocket so, Handler<Void> handler) {
+    if (so.writeQueueFull()) {
+      handler.handle(null);
+    } else {
+      so.write(TestUtils.randomBuffer(256));
+      vertx.runOnContext(v -> writeUntilFull(so, handler));
+    }
+  }
+
+  @Test
   public void testEchoBytes() {
     Buffer sent = TestUtils.randomBuffer(100);
     testEcho(sock -> sock.write(sent), buff -> assertEquals(sent, buff), sent.length());

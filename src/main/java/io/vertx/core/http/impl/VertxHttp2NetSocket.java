@@ -217,6 +217,14 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   }
 
   @Override
+  public NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler) {
+    synchronized (conn) {
+      conn.handler.writeData(stream, message.getByteBuf(), false, handler);
+      return this;
+    }
+  }
+
+  @Override
   public NetSocket sendFile(String filename, long offset, long length) {
     return sendFile(filename, offset, length, null);
   }

@@ -97,6 +97,13 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket write(String str, String enc);
 
   /**
+   * Like {@link #write(Object)} but with an {@code handler} called when the message has been written
+   * or failed to be written.
+   */
+  @Fluent
+  NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Tell the operating system to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
    * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
    *

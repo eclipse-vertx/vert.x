@@ -120,16 +120,14 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   public NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler) {
     ChannelPromise promise = chctx.newPromise();
     super.writeToChannel(message, promise);
-    promise.addListener(new ChannelFutureListener() {
-      @Override
-      public void operationComplete(ChannelFuture future) throws Exception {
+    promise.addListener((future) -> {
         if (future.isSuccess()) {
           handler.handle(Future.succeededFuture());
         } else {
           handler.handle(Future.failedFuture(future.cause()));
         }
       }
-    });
+    );
     return this;
   }
 
@@ -158,6 +156,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private void write(ByteBuf buff) {
     reportBytesWritten(buff.readableBytes());
     writeMessage(buff);
+  }
+
+  @Override
+  public NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler) {
+    writeMessage(message.getByteBuf(), handler);
+    return this;
   }
 
   @Override
