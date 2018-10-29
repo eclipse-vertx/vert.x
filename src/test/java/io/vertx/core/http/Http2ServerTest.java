@@ -2276,14 +2276,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testNetSocketConnect() throws Exception {
     waitFor(2);
-    final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
-    Handler<AsyncResult<Void>> writeHandler = (result) -> {
-      if(result.succeeded()) {
-        assertTrue(writeHandlerCounter.incrementAndGet() >= 1);
-      } else {
-        fail(result.cause());
-      }
-    };
+    List<Integer> callbacks = Collections.synchronizedList(new ArrayList<>());
 
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();
@@ -2292,7 +2285,7 @@ public class Http2ServerTest extends Http2TestBase {
         switch (status.getAndIncrement()) {
           case 0:
             assertEquals(Buffer.buffer("some-data"), buff);
-            socket.write(buff, writeHandler);
+            socket.write(buff, onSuccess(v2 -> callbacks.add(0)));
             break;
           case 1:
             assertEquals(Buffer.buffer("last-data"), buff);
@@ -2302,14 +2295,14 @@ public class Http2ServerTest extends Http2TestBase {
             break;
         }
       });
-      socket.endHandler(v -> {
+      socket.endHandler(v1 -> {
         assertEquals(2, status.getAndIncrement());
-        socket.write(Buffer.buffer("last-data"), writeHandler);
+        socket.write(Buffer.buffer("last-data"), onSuccess(v2 -> callbacks.add(1)));
       });
       socket.closeHandler(v -> {
-        assertEquals(3, status.getAndIncrement());
+        assertEquals(2, callbacks.size());
+        assertEquals(Arrays.asList(0, 1), callbacks);
         complete();
-        assertEquals(2, writeHandlerCounter.get());
       });
     });
 
@@ -2413,14 +2406,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testServerCloseNetSocket() throws Exception {
     waitFor(2);
-    final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
-    Handler<AsyncResult<Void>> writeHandler = (result) -> {
-      if(result.succeeded()) {
-        assertTrue(writeHandlerCounter.incrementAndGet() >= 1);
-      } else {
-        fail(result.cause());
-      }
-    };
+    final AtomicInteger writeAcks = new AtomicInteger(0);
     AtomicInteger status = new AtomicInteger();
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();
@@ -2428,7 +2414,7 @@ public class Http2ServerTest extends Http2TestBase {
         switch (status.getAndIncrement()) {
           case 0:
             assertEquals(Buffer.buffer("some-data"), buff);
-            socket.write(buff, writeHandler);
+            socket.write(buff, onSuccess(v -> writeAcks.incrementAndGet()));
             socket.close();
             break;
           case 1:
@@ -2445,7 +2431,7 @@ public class Http2ServerTest extends Http2TestBase {
       socket.closeHandler(v -> {
         assertEquals(3, status.getAndIncrement());
         complete();
-        assertEquals(1, writeHandlerCounter.get());
+        assertEquals(1, writeAcks.get());
       });
     });
 

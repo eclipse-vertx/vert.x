@@ -789,49 +789,52 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testWriteHandlerSuccess() {
-    final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
-    Handler<AsyncResult<Void>> writeHandler = (v) -> {
-      if(v.succeeded()) {
-        assertEquals(1, writeHandlerCounter.incrementAndGet());
-      } else {
-        fail(v.cause());
-      }
-      testComplete();
-    };
-    Buffer sent = TestUtils.randomBuffer(100);
-    testEcho(sock -> sock.write(sent, writeHandler), buff -> assertEquals(sent, buff), sent.length());
-    assertEquals(1, writeHandlerCounter.get());
+  public void testWriteHandlerSuccess() throws Exception {
+    CompletableFuture<Void> close = new CompletableFuture<>();
+    server.connectHandler(socket -> {
+      socket.pause();
+      close.thenAccept(v -> {
+        socket.resume();
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      writeUntilFull(so, v -> {
+        so.write(Buffer.buffer("lost buffer"), onSuccess(ack -> testComplete()));
+        close.complete(null);
+      });
+    }));
+    await();
   }
 
   @Test
-  public void testWriteHandlerFailure() {
-    Handler<AsyncResult<Void>> writeHandler = (asyncResult) -> {
-      assertFalse(asyncResult.succeeded());
-      assertTrue(asyncResult.failed());
-      testComplete();
-    };
-
-    Handler<AsyncResult<NetSocket>> clientHandler = (asyncResult) -> {
-      assert(asyncResult.succeeded());
-      NetSocket socket = asyncResult.result();
-      socket.handler(socket::write);
-      socket.setWriteQueueMaxSize(100);
-      Buffer sent = TestUtils.randomBuffer(1000);
-      socket.write(sent);
-      socket.write(sent);
-      assertTrue(socket.writeQueueFull());
-      socket.write(sent, writeHandler);
-    };
-
-    Handler<AsyncResult<NetServer>> listenHandler = s -> client.connect(testAddress, clientHandler);
-    Handler<NetSocket> serverHandler = socket -> {
+  public void testWriteHandlerFailure() throws Exception {
+    CompletableFuture<Void> close = new CompletableFuture<>();
+    server.connectHandler(socket -> {
       socket.pause();
-      socket.close();
-    };
-
-    server.connectHandler(serverHandler).listen(testAddress, listenHandler);
+      close.thenAccept(v -> {
+        socket.close();
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      writeUntilFull(so, v -> {
+        so.write(Buffer.buffer("lost buffer"), onFailure(err -> {
+          testComplete();
+        }));
+        close.complete(null);
+      });
+    }));
     await();
+  }
+
+  private void writeUntilFull(NetSocket so, Handler<Void> handler) {
+    if (so.writeQueueFull()) {
+      handler.handle(null);
+    } else {
+      so.write(TestUtils.randomBuffer(256));
+      vertx.runOnContext(v -> writeUntilFull(so, handler));
+    }
   }
 
   @Test
