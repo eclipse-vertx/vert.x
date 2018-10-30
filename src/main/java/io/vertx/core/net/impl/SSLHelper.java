@@ -13,6 +13,8 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
+import io.netty.util.Mapping;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -399,6 +401,21 @@ public class SSLHelper {
       public X509Certificate[] getAcceptedIssuers() {
         return new X509Certificate[0];
       }
+    };
+  }
+
+  public Mapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx) {
+    return serverName -> {
+      SslContext ctx = getContext(vertx, serverName);
+      if (ctx != null) {
+        ctx = new DelegatingSslContext(ctx) {
+          @Override
+          protected void initEngine(SSLEngine engine) {
+            configureEngine(engine, serverName);
+          }
+        };
+      }
+      return ctx;
     };
   }
 

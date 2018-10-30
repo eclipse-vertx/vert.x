@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFram
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleState;
@@ -229,18 +230,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
-                io.netty.util.concurrent.Future<Channel> handshakeFuture;
-                if (options.isSni()) {
-                  VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
-                  pipeline.addLast(sniHandler);
-                  handshakeFuture = sniHandler.handshakeFuture();
-                } else {
-                  SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
-                  pipeline.addLast("ssl", handler);
-                  handshakeFuture = handler.handshakeFuture();
-                }
-                handshakeFuture.addListener(future -> {
-                  if (future.isSuccess()) {
+                ch.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
+                  if (ar.succeeded()) {
                     if (options.isUseAlpn()) {
                       SslHandler sslHandler = pipeline.get(SslHandler.class);
                       String protocol = sslHandler.applicationProtocol();
@@ -255,10 +246,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                   } else {
                     HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
                     handler.context.executeFromIO(v -> {
-                      handler.handler.exceptionHandler.handle(future.cause());
+                      handler.handler.exceptionHandler.handle(ar.cause());
                     });
                   }
-                });
+                }));
+                if (options.isSni()) {
+                  SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
+                  pipeline.addFirst(sniHandler);
+                } else {
+                  SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
+                  pipeline.addFirst("ssl", handler);
+                }
               } else {
                 if (DISABLE_H2C) {
                   handleHttp1(ch);

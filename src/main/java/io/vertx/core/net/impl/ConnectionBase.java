@@ -307,7 +307,7 @@ public abstract class ConnectionBase {
 
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
+      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
       assert sslHandlerContext != null;
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession().getPeerCertificateChain();
@@ -317,8 +317,8 @@ public abstract class ConnectionBase {
   }
 
   public String indicatedServerName() {
-    if (chctx.channel().hasAttr(VertxSniHandler.SERVER_NAME_ATTR)) {
-      return chctx.channel().attr(VertxSniHandler.SERVER_NAME_ATTR).get();
+    if (chctx.channel().hasAttr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR)) {
+      return chctx.channel().attr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR).get();
     } else {
       return null;
     }
