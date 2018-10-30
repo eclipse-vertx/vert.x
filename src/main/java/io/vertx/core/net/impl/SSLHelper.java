@@ -13,6 +13,8 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
+import io.netty.util.Mapping;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -402,6 +404,21 @@ public class SSLHelper {
     };
   }
 
+  public Mapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx) {
+    return serverName -> {
+      SslContext ctx = getContext(vertx, serverName);
+      if (ctx != null) {
+        ctx = new DelegatingSslContext(ctx) {
+          @Override
+          protected void initEngine(SSLEngine engine) {
+            configureEngine(engine, serverName);
+          }
+        };
+      }
+      return ctx;
+    };
+  }
+
   public void configureEngine(SSLEngine engine, String serverName) {
     if (enabledCipherSuites != null && !enabledCipherSuites.isEmpty()) {
       String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);
@@ -501,9 +518,9 @@ public class SSLHelper {
     return engine;
   }
 
-  public SSLEngine createEngine(VertxInternal vertx, String host, int port, String serverName) {
+  public SSLEngine createEngine(VertxInternal vertx, String host, int port, boolean forceSNI) {
     SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT, host, port);
-    configureEngine(engine, serverName);
+    configureEngine(engine, forceSNI ? host : null);
     return engine;
   }
 

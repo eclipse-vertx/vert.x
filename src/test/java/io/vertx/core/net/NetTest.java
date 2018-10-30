@@ -41,6 +41,7 @@ import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -3011,7 +3012,7 @@ public class NetTest extends VertxTestBase {
       client.connect(4043, "127.0.0.1", arSocket -> {
         if (arSocket.succeeded()) {
           NetSocket ns = arSocket.result();
-          ns.exceptionHandler(th -> {
+          ns.closeHandler(v -> {
             testComplete();
           });
           ns.upgradeToSsl(v -> {

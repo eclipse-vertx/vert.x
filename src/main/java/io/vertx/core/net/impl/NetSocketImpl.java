@@ -14,12 +14,12 @@ package io.vertx.core.net.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
@@ -303,30 +303,24 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   public NetSocket upgradeToSsl(String serverName, Handler<Void> handler) {
     ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
     if (sslHandler == null) {
+      chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
+        if (ar.succeeded()) {
+          handler.handle(null);
+        } else {
+          chctx.channel().closeFuture();
+        }
+      }));
       if (remoteAddress != null) {
         sslHandler = new SslHandler(helper.createEngine(vertx, remoteAddress, serverName));
       } else {
         if (helper.isSNI()) {
-          sslHandler = new VertxSniHandler(helper, vertx);
+          sslHandler = new SniHandler(helper.serverNameMapper(vertx));
         } else {
           sslHandler = new SslHandler(helper.createEngine(vertx));
         }
       }
       chctx.pipeline().addFirst("ssl", sslHandler);
     }
-    io.netty.util.concurrent.Future<Channel> handshakeFuture;
-    if (sslHandler instanceof SslHandler) {
-      handshakeFuture = ((SslHandler) sslHandler).handshakeFuture();
-    } else {
-      handshakeFuture = ((VertxSniHandler) sslHandler).handshakeFuture();
-    }
-    handshakeFuture.addListener(future -> context.executeFromIO(v -> {
-      if (future.isSuccess()) {
-        handler.handle(null);
-      } else {
-        log.error(future.cause());
-      }
-    }));
     return this;
   }
 

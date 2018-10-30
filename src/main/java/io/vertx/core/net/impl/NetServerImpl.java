@@ -12,13 +12,12 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -192,30 +191,27 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
             HandlerHolder<Handlers> handler = handlerManager.chooseHandler(ch.eventLoop());
             if (handler != null) {
               if (sslHelper.isSSL()) {
-                io.netty.util.concurrent.Future<Channel> handshakeFuture;
-                if (options.isSni()) {
-                  VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
-                  handshakeFuture = sniHandler.handshakeFuture();
-                  ch.pipeline().addFirst("ssl", sniHandler);
-                } else {
-                  SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
-                  handshakeFuture = sslHandler.handshakeFuture();
-                  ch.pipeline().addFirst("ssl", sslHandler);
-                }
-                handshakeFuture.addListener(future -> {
-                  if (future.isSuccess()) {
+                ch.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
+                  if (ar.succeeded()) {
                     connected(handler, ch);
                   } else {
                     Handler<Throwable> exceptionHandler = handler.handler.exceptionHandler;
                     if (exceptionHandler != null) {
                       handler.context.executeFromIO(v -> {
-                        exceptionHandler.handle(future.cause());
+                        exceptionHandler.handle(ar.cause());
                       });
                     } else {
-                      log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + future.cause());
+                      log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + ar.cause());
                     }
                   }
-                });
+                }));
+                if (options.isSni()) {
+                  SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
+                  ch.pipeline().addFirst("ssl", sniHandler);
+                } else {
+                  SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
+                  ch.pipeline().addFirst("ssl", sslHandler);
+                }
               } else {
                 connected(handler, ch);
               }
