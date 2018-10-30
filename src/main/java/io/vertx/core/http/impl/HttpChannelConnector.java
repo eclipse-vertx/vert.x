@@ -16,7 +16,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -27,15 +26,13 @@ import io.vertx.core.http.impl.pool.ConnectResult;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.http.impl.pool.ConnectionProvider;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
-import io.vertx.core.net.impl.ProxyChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
-
-import javax.net.ssl.SSLHandshakeException;
 
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
@@ -136,13 +133,12 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
     boolean useAlpn = options.isUseAlpn();
 
-    // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
-    ChannelProvider channelProvider;
-    if (options.getProxyOptions() == null || !ssl && options.getProxyOptions().getType()== ProxyType.HTTP) {
-      channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
-    } else {
-      channelProvider = new ProxyChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
+    ProxyOptions options = this.options.getProxyOptions();
+    if (options != null && !ssl && options.getType()== ProxyType.HTTP) {
+      // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
+      options = null;
     }
+    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, ssl, context, options);
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
       if (res.succeeded()) {
@@ -166,7 +162,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
         } else {
           ChannelPipeline pipeline = ch.pipeline();
           if (version == HttpVersion.HTTP_2) {
-            if (options.isHttp2ClearTextUpgrade()) {
+            if (this.options.isHttp2ClearTextUpgrade()) {
               applyHttp1xConnectionOptions(pipeline);
               http1xConnected(listener, version, host, port, false, context, ch, http2Weight, future);
             } else {
@@ -183,7 +179,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       }
     };
 
-    channelProvider.connect(ssl, SocketAddress.inetSocketAddress(port, host), peerHost, options.isForceSni(), channelHandler);
+    channelProvider.connect(SocketAddress.inetSocketAddress(port, host), SocketAddress.inetSocketAddress(port, peerHost), this.options.isForceSni() ? peerHost : null, channelHandler);
   }
 
   private void applyConnectionOptions(Bootstrap bootstrap) {

@@ -501,9 +501,9 @@ public class SSLHelper {
     return engine;
   }
 
-  public SSLEngine createEngine(VertxInternal vertx, String host, int port, String serverName) {
+  public SSLEngine createEngine(VertxInternal vertx, String host, int port, boolean forceSNI) {
     SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT, host, port);
-    configureEngine(engine, serverName);
+    configureEngine(engine, forceSNI ? host : null);
     return engine;
   }
 
