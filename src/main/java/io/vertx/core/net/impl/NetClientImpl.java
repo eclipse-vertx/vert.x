@@ -35,6 +35,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.net.ConnectException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -181,41 +182,18 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     ChannelProvider channelProvider;
     if (options.getProxyOptions() == null) {
-      channelProvider = ChannelProvider.INSTANCE;
+      channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
     } else {
-      channelProvider = ProxyChannelProvider.INSTANCE;
+      channelProvider = new ProxyChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
     }
-
-    Handler<Channel> channelInitializer = ch -> {
-      if (sslHelper.isSSL()) {
-        SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx, remoteAddress, serverName));
-        ch.pipeline().addLast("ssl", sslHandler);
-      }
-    };
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
       if (res.succeeded()) {
-
         Channel ch = res.result();
-
-        if (sslHelper.isSSL()) {
-          // TCP connected, so now we must do the SSL handshake
-          SslHandler sslHandler = (SslHandler) ch.pipeline().get("ssl");
-
-          io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-          fut.addListener(future2 -> {
-            if (future2.isSuccess()) {
-              connected(context, ch, connectHandler, remoteAddress);
-            } else {
-              failed(context, ch, future2.cause(), connectHandler);
-            }
-          });
-        } else {
-          connected(context, ch, connectHandler, remoteAddress);
-        }
-
+        connected(context, ch, connectHandler, remoteAddress);
       } else {
-        if (remainingAttempts > 0 || remainingAttempts == -1) {
+        Throwable cause = res.cause();
+        if (cause instanceof ConnectException && (remainingAttempts > 0 || remainingAttempts == -1)) {
           context.executeFromIO(v -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
@@ -224,12 +202,12 @@ public class NetClientImpl implements MetricsProvider, NetClient {
             );
           });
         } else {
-          failed(context, null, res.cause(), connectHandler);
+          failed(context, null, cause, connectHandler);
         }
       }
     };
 
-    channelProvider.connect(context, bootstrap, options.getProxyOptions(), remoteAddress, channelInitializer, channelHandler);
+    channelProvider.connect(sslHelper.isSSL(), remoteAddress, remoteAddress.host(), false, channelHandler);
   }
 
   private void connected(ContextInternal context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {

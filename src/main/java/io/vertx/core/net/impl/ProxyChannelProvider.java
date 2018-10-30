@@ -43,18 +43,12 @@ import java.net.InetSocketAddress;
  */
 public class ProxyChannelProvider extends ChannelProvider {
 
-  public static final ChannelProvider INSTANCE = new ProxyChannelProvider();
-
-  private ProxyChannelProvider() {
+  public ProxyChannelProvider(Bootstrap bootstrap, SSLHelper sslHelper, ContextInternal context, ProxyOptions options) {
+    super(bootstrap, sslHelper, context, options);
   }
 
   @Override
-  public void doConnect(ContextInternal context,
-                      Bootstrap bootstrap,
-                      ProxyOptions options,
-                      SocketAddress remoteAddress,
-                      Handler<Channel> channelInitializer,
-                      Handler<AsyncResult<Channel>> channelHandler) {
+  public void doConnect(boolean ssl, SocketAddress remoteAddress, String peerHost, boolean forceSNI, Handler<AsyncResult<Channel>> channelHandler) {
 
     final VertxInternal vertx = context.owner();
     final String proxyHost = options.getHost();
@@ -96,19 +90,18 @@ public class ProxyChannelProvider extends ChannelProvider {
             pipeline.addFirst("proxy", proxy);
             pipeline.addLast(new ChannelInboundHandlerAdapter() {
               @Override
-              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
                 if (evt instanceof ProxyConnectionEvent) {
                   pipeline.remove(proxy);
                   pipeline.remove(this);
-                  channelInitializer.handle(ch);
-                  channelHandler.handle(Future.succeededFuture(ch));
+                  initialize(ssl, remoteAddress, peerHost, forceSNI, ch);
+                  cont(ch, channelHandler);
                 }
                 ctx.fireUserEventTriggered(evt);
               }
 
               @Override
-              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-                      throws Exception {
+              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
                 channelHandler.handle(Future.failedFuture(cause));
               }
             });

@@ -15,6 +15,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
@@ -24,6 +25,8 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
+
+import javax.net.ssl.SSLHandshakeException;
 
 /**
  * The logic for connecting to an host, this implementations performs a connection
@@ -35,14 +38,37 @@ import io.vertx.core.net.SocketAddress;
  */
 public class ChannelProvider {
 
-  public static final ChannelProvider INSTANCE = new ChannelProvider();
+  final Bootstrap bootstrap;
+  final SSLHelper sslHelper;
+  final ContextInternal context;
+  final ProxyOptions options;
+  private String applicationProtocol;
+  private Channel channel;
 
-  protected ChannelProvider() {
+  public ChannelProvider(Bootstrap bootstrap,
+                         SSLHelper sslHelper,
+                         ContextInternal context,
+                         ProxyOptions options) {
+    this.bootstrap = bootstrap;
+    this.context = context;
+    this.sslHelper = sslHelper;
+    this.options = options;
   }
 
-  public final void connect(ContextInternal context, Bootstrap bootstrap, ProxyOptions options, SocketAddress remoteAddress,
-                      Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
-    doConnect(context, bootstrap, options, remoteAddress, channelInitializer, res -> {
+  public String applicationProtocol() {
+    return applicationProtocol;
+  }
+
+  public Channel channel() {
+    return channel;
+  }
+
+  public final void connect(boolean ssl,
+                            SocketAddress remoteAddress,
+                            String peerHost,
+                            boolean forceSNI,
+                            Handler<AsyncResult<Channel>> channelHandler) {
+    doConnect(ssl, remoteAddress, peerHost, forceSNI, res -> {
       if (Context.isOnEventLoopThread()) {
         channelHandler.handle(res);
       } else {
@@ -52,24 +78,51 @@ public class ChannelProvider {
     });
   }
 
+  protected void initialize(boolean ssl, SocketAddress remoteAddress, String peerHost, boolean forceSNI, Channel ch) {
+    if (ssl) {
+      SslHandler sslHandler = new SslHandler(sslHelper.createEngine(context.owner(), peerHost, remoteAddress.port(), forceSNI ? peerHost : null));
+      ch.pipeline().addLast("ssl", sslHandler);
+    }
+  }
 
-  public void doConnect(ContextInternal context, Bootstrap bootstrap, ProxyOptions options, SocketAddress remoteAddress,
-                      Handler<Channel> channelInitializer, Handler<AsyncResult<Channel>> channelHandler) {
+
+  public void doConnect(boolean ssl, SocketAddress remoteAddress, String peerHost, boolean forceSNI, Handler<AsyncResult<Channel>> channelHandler) {
     VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
-      protected void initChannel(Channel channel) throws Exception {
-        channelInitializer.handle(channel);
+      protected void initChannel(Channel ch) {
+        initialize(ssl, remoteAddress, peerHost, forceSNI, ch);
       }
     });
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress, false));
     fut.addListener(res -> {
       if (res.isSuccess()) {
-        channelHandler.handle(io.vertx.core.Future.succeededFuture(fut.channel()));
+        cont(fut.channel(), channelHandler);
       } else {
         channelHandler.handle(io.vertx.core.Future.failedFuture(res.cause()));
       }
     });
   }
+
+  protected void cont(Channel ch, Handler<AsyncResult<Channel>> channelHandler) {
+    channel = ch;
+    // TCP connected, so now we must do the SSL handshake if any
+    SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
+    if (sslHandler != null) {
+      sslHandler.handshakeFuture().addListener(future -> {
+        if (future.isSuccess()) {
+          applicationProtocol = sslHandler.applicationProtocol();
+          channelHandler.handle(io.vertx.core.Future.succeededFuture(channel));
+        } else {
+          SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
+          sslException.initCause(future.cause());
+          channelHandler.handle(io.vertx.core.Future.failedFuture(sslException));
+        }
+      });
+    } else {
+      channelHandler.handle(io.vertx.core.Future.succeededFuture(channel));
+    }
+  }
+
 }
