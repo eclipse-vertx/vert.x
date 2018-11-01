@@ -1134,16 +1134,12 @@ public class NetTest extends VertxTestBase {
     reconnectAttempts(100000);
   }
 
-  void reconnectAttempts(int attempts) {
+  private void reconnectAttempts(int attempts) {
     client.close();
     client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(attempts).setReconnectInterval(10));
 
     //The server delays starting for a a few seconds, but it should still connect
-    client.connect(testAddress, (res) -> {
-      assertTrue(res.succeeded());
-      assertFalse(res.failed());
-      testComplete();
-    });
+    client.connect(testAddress, onSuccess(so -> testComplete()));
 
     // Start the server after a delay
     vertx.setTimer(2000, id -> startEchoServer(testAddress, s -> {}));

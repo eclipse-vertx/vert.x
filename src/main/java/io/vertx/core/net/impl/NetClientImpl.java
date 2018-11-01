@@ -35,6 +35,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.Map;
 import java.util.Objects;
@@ -188,7 +189,9 @@ public class NetClientImpl implements MetricsProvider, NetClient {
         connected(context, ch, connectHandler, remoteAddress);
       } else {
         Throwable cause = res.cause();
-        if (cause instanceof ConnectException && (remainingAttempts > 0 || remainingAttempts == -1)) {
+        // FileNotFoundException for domain sockets
+        boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
+        if (connectError && (remainingAttempts > 0 || remainingAttempts == -1)) {
           context.executeFromIO(v -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
