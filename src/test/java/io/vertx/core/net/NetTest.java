@@ -1869,17 +1869,18 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testRemoteAddress() throws Exception {
+  public void testRemoteAddress() {
     server.connectHandler(socket -> {
       SocketAddress addr = socket.remoteAddress();
       assertEquals("127.0.0.1", addr.host());
+      socket.close();
     }).listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
       vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", onSuccess(socket -> {
         SocketAddress addr = socket.remoteAddress();
         assertEquals("127.0.0.1", addr.host());
         assertEquals(addr.port(), 1234);
-        testComplete();
+        socket.closeHandler(v -> testComplete());
       }));
     });
     await();
