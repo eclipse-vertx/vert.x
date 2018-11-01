@@ -833,8 +833,9 @@ public class NetTest extends VertxTestBase {
     if (so.writeQueueFull()) {
       handler.handle(null);
     } else {
-      so.write(TestUtils.randomBuffer(256));
-      vertx.runOnContext(v -> writeUntilFull(so, handler));
+      // Give enough time to report a proper full
+      so.write(TestUtils.randomBuffer(16384));
+      vertx.setTimer(10, id -> writeUntilFull(so, handler));
     }
   }
 
