@@ -1720,6 +1720,8 @@ public class NetTest extends VertxTestBase {
 
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numConnections = numServers * 20;
+    System.out.println("numServers = " + numServers);
+    System.out.println("numConnections = " + numConnections);
 
     List<NetServer> servers = new ArrayList<>();
     Set<NetServer> connectedServers = new ConcurrentHashSet<>();

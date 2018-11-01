@@ -129,7 +129,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     bootstrap.group(context.nettyEventLoop());
     bootstrap.channelFactory(client.getVertx().transport().channelFactory(false));
 
-    applyConnectionOptions(bootstrap);
+    applyConnectionOptions(false, bootstrap);
 
     boolean useAlpn = options.isUseAlpn();
 
@@ -182,8 +182,8 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     channelProvider.connect(SocketAddress.inetSocketAddress(port, host), SocketAddress.inetSocketAddress(port, peerHost), this.options.isForceSni() ? peerHost : null, channelHandler);
   }
 
-  private void applyConnectionOptions(Bootstrap bootstrap) {
-    client.getVertx().transport().configure(options, bootstrap);
+  private void applyConnectionOptions(boolean domainSocket, Bootstrap bootstrap) {
+    client.getVertx().transport().configure(options, domainSocket, bootstrap);
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {

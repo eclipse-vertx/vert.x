@@ -56,7 +56,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
     RuntimeException cause = new RuntimeException();
     vertx = VertxImpl.vertx(new VertxOptions(), new Transport() {
       @Override
-      public ChannelFactory<? extends Channel> channelFactory(boolean domain) {
+      public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
         return (ChannelFactory<Channel>) () -> {
           throw cause;
         };
@@ -79,7 +79,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
     RuntimeException cause = new RuntimeException();
     vertx = VertxImpl.vertx(new VertxOptions(), new Transport() {
       @Override
-      public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
+      public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
         return (ChannelFactory<ServerChannel>) () -> {
           throw cause;
         };
@@ -99,7 +99,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
     RuntimeException cause = new RuntimeException();
     vertx = VertxImpl.vertx(new VertxOptions(), new Transport() {
       @Override
-      public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
+      public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
         return (ChannelFactory<ServerChannel>) () -> {
           throw cause;
         };

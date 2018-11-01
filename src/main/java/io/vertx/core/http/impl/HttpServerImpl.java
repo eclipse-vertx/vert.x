@@ -219,7 +219,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
-        applyConnectionOptions(bootstrap);
+        applyConnectionOptions(address.path() != null, bootstrap);
         sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
@@ -583,8 +583,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return sslHelper;
   }
 
-  private void applyConnectionOptions(ServerBootstrap bootstrap) {
-    vertx.transport().configure(options, bootstrap);
+  private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
+    vertx.transport().configure(options, domainSocket, bootstrap);
   }
 
 

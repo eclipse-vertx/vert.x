@@ -219,7 +219,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
           }
         });
 
-        applyConnectionOptions(bootstrap);
+        applyConnectionOptions(socketAddress.path() != null, bootstrap);
 
         handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
 
@@ -467,10 +467,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   /**
    * Apply the connection option to the server.
    *
+   * @param domainSocket whether it's a domain socket server
    * @param bootstrap the Netty server bootstrap
    */
-  protected void applyConnectionOptions(ServerBootstrap bootstrap) {
-    vertx.transport().configure(options, bootstrap);
+  private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
+    vertx.transport().configure(options, domainSocket, bootstrap);
   }
 
   @Override

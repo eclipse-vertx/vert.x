@@ -15,7 +15,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
@@ -149,8 +148,8 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     }
   }
 
-  private void applyConnectionOptions(Bootstrap bootstrap) {
-    vertx.transport().configure(options, bootstrap);
+  private void applyConnectionOptions(boolean domainSocket, Bootstrap bootstrap) {
+    vertx.transport().configure(options, domainSocket, bootstrap);
   }
 
   @Override
@@ -179,7 +178,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     bootstrap.group(context.nettyEventLoop());
     bootstrap.channelFactory(vertx.transport().channelFactory(remoteAddress.path() != null));
 
-    applyConnectionOptions(bootstrap);
+    applyConnectionOptions(remoteAddress.path() != null, bootstrap);
 
     ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, sslHelper.isSSL(), context, options.getProxyOptions());
 
