@@ -1718,13 +1718,11 @@ public class NetTest extends VertxTestBase {
   // To get this to reliably pass with a lot of connections.
   public void testSharedServersRoundRobin() throws Exception {
 
+    boolean domainSocket = testAddress.path() != null;
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
-    int numConnections = numServers * 20;
-    System.out.println("numServers = " + numServers);
-    System.out.println("numConnections = " + numConnections);
+    int numConnections = numServers * (domainSocket ? 10 : 20);
 
     List<NetServer> servers = new ArrayList<>();
-    Set<NetServer> connectedServers = new ConcurrentHashSet<>();
     Map<NetServer, Integer> connectCount = new ConcurrentHashMap<>();
 
     CountDownLatch latchListen = new CountDownLatch(numServers);
@@ -1733,11 +1731,7 @@ public class NetTest extends VertxTestBase {
       NetServer theServer = vertx.createNetServer();
       servers.add(theServer);
       theServer.connectHandler(sock -> {
-        connectedServers.add(theServer);
-        Integer cnt = connectCount.get(theServer);
-        int icnt = cnt == null ? 0 : cnt;
-        icnt++;
-        connectCount.put(theServer, icnt);
+        connectCount.compute(theServer, (s, cur) -> cur == null ? 1 : cur + 1);
         latchConns.countDown();
       }).listen(testAddress, ar -> {
         if (ar.succeeded()) {
@@ -1764,28 +1758,17 @@ public class NetTest extends VertxTestBase {
       });
     }
 
-    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
-    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
+    awaitLatch(latchClient);
+    awaitLatch(latchConns);
 
-    assertEquals(numServers, connectedServers.size());
+    assertEquals(numServers, connectCount.size());
     for (NetServer server : servers) {
-      assertTrue(connectedServers.contains(server));
+      assertTrue(connectCount.containsKey(server));
     }
     assertEquals(numServers, connectCount.size());
     for (int cnt : connectCount.values()) {
       assertEquals(numConnections / numServers, cnt);
     }
-
-    CountDownLatch closeLatch = new CountDownLatch(numServers);
-
-    for (NetServer server : servers) {
-      server.close(ar -> {
-        assertTrue(ar.succeeded());
-        closeLatch.countDown();
-      });
-    }
-
-    assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
 
     testComplete();
   }
