@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
@@ -92,7 +93,6 @@ public class FileResolver {
    * Close this file resolver, this is a blocking operation.
    */
   public void close() throws IOException {
-    deleteCacheDir();
     synchronized (this) {
       if (shutdownHook != null) {
         // May throw IllegalStateException if called from other shutdown hook so ignore that
@@ -102,6 +102,7 @@ public class FileResolver {
         }
       }
     }
+    deleteCacheDir();
   }
 
   public File resolveFile(String fileName) {
@@ -353,9 +354,15 @@ public class FileResolver {
   }
 
   private void deleteCacheDir() throws IOException {
-    if (cacheDir != null && cacheDir.exists()) {
-      FileSystemImpl.delete(cacheDir.toPath(), true);
+    Path path;
+    synchronized (this) {
+      if (cacheDir == null || !cacheDir.exists()) {
+        return;
+      }
+      path = cacheDir.toPath();
+      cacheDir = null;
     }
+    FileSystemImpl.delete(path, true);
   }
 }
 
