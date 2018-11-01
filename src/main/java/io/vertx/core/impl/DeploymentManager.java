@@ -123,7 +123,7 @@ public class DeploymentManager {
     }
     Verticle[] verticlesArray = verticles.toArray(new Verticle[verticles.size()]);
     String verticleClass = verticlesArray[0].getClass().getName();
-    doDeploy("java:" + verticleClass, generateDeploymentID(), options, currentContext, currentContext, completionHandler, cl, verticlesArray);
+    doDeploy("java:" + verticleClass, options, currentContext, currentContext, completionHandler, cl, verticlesArray);
   }
 
   public void deployVerticle(String identifier,
@@ -134,11 +134,13 @@ public class DeploymentManager {
     }
     ContextInternal callingContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(options);
-    doDeployVerticle(identifier, generateDeploymentID(), options, callingContext, callingContext, cl, completionHandler);
+
+
+
+    doDeployVerticle(identifier, options, callingContext, callingContext, cl, completionHandler);
   }
 
   private void doDeployVerticle(String identifier,
-                                String deploymentID,
                                 DeploymentOptions options,
                                 ContextInternal parentContext,
                                 ContextInternal callingContext,
@@ -146,13 +148,12 @@ public class DeploymentManager {
                                 Handler<AsyncResult<String>> completionHandler) {
     List<VerticleFactory> verticleFactories = resolveFactories(identifier);
     Iterator<VerticleFactory> iter = verticleFactories.iterator();
-    doDeployVerticle(iter, null, identifier, deploymentID, options, parentContext, callingContext, cl, completionHandler);
+    doDeployVerticle(iter, null, identifier, options, parentContext, callingContext, cl, completionHandler);
   }
 
   private void doDeployVerticle(Iterator<VerticleFactory> iter,
                                 Throwable prevErr,
                                 String identifier,
-                                String deploymentID,
                                 DeploymentOptions options,
                                 ContextInternal parentContext,
                                 ContextInternal callingContext,
@@ -198,17 +199,17 @@ public class DeploymentManager {
                 }
               }, res -> {
                 if (res.succeeded()) {
-                  doDeploy(identifier, deploymentID, options, parentContext, callingContext, completionHandler, cl, res.result());
+                  doDeploy(identifier, options, parentContext, callingContext, completionHandler, cl, res.result());
                 } else {
                   // Try the next one
-                  doDeployVerticle(iter, res.cause(), identifier, deploymentID, options, parentContext, callingContext, cl, completionHandler);
+                  doDeployVerticle(iter, res.cause(), identifier, options, parentContext, callingContext, cl, completionHandler);
                 }
               });
               return;
             } else {
               try {
                 Verticle[] verticles = createVerticles(verticleFactory, identifier, options.getInstances(), cl);
-                doDeploy(identifier, deploymentID, options, parentContext, callingContext, completionHandler, cl, verticles);
+                doDeploy(identifier, options, parentContext, callingContext, completionHandler, cl, verticles);
                 return;
               } catch (Exception e) {
                 err = e;
@@ -219,7 +220,7 @@ public class DeploymentManager {
           err = ar.cause();
         }
         // Try the next one
-        doDeployVerticle(iter, err, identifier, deploymentID, options, parentContext, callingContext, cl, completionHandler);
+        doDeployVerticle(iter, err, identifier, options, parentContext, callingContext, cl, completionHandler);
       });
     } else {
       if (prevErr != null) {
@@ -461,7 +462,8 @@ public class DeploymentManager {
     });
   }
 
-  private void doDeploy(String identifier, String deploymentID, DeploymentOptions options,
+  private void doDeploy(String identifier,
+                        DeploymentOptions options,
                         ContextInternal parentContext,
                         ContextInternal callingContext,
                         Handler<AsyncResult<String>> completionHandler,
@@ -470,6 +472,7 @@ public class DeploymentManager {
     String poolName = options.getWorkerPoolName();
 
     Deployment parent = parentContext.getDeployment();
+    String deploymentID = generateDeploymentID();
     DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
 
     AtomicInteger deployCount = new AtomicInteger();
