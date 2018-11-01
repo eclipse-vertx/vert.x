@@ -1324,7 +1324,9 @@ public class DeploymentTest extends VertxTestBase {
     });
     await();
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    vertx.undeploy(deployment.deploymentID());
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.undeploy(deployment.deploymentID(), ar -> latch.countDown());
+    awaitLatch(latch);
   }
 
   @Test

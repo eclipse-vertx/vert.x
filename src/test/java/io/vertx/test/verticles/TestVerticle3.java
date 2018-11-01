@@ -23,7 +23,4 @@ public class TestVerticle3 extends AbstractVerticle {
   public void start() throws Exception {
     vertx.eventBus().send("instanceCount", vertx.getOrCreateContext().getInstanceCount());
   }
-
-  @Override
-  public void stop(Future<Void> stopFuture) throws Exception { }
 }
