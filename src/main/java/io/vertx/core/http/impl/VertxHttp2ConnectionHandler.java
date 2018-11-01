@@ -90,7 +90,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    super.exceptionCaught(ctx, cause);
+    Http2Exception http2Cause = Http2CodecUtil.getEmbeddedHttp2Exception(cause);
+    if (http2Cause != null) {
+      // Super will only handle Http2Exception otherwise it will be reach the end of the pipeline
+      super.exceptionCaught(ctx, http2Cause);
+    }
     ctx.close();
   }
 

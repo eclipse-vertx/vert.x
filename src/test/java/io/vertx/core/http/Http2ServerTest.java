@@ -174,6 +174,11 @@ public class Http2ServerTest extends Http2TestBase {
           requestHandler.accept(conn);
         }
       }
+
+      @Override
+      public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Ignore
+      }
     }
 
     class TestClientHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<TestClientHandler, TestClientHandlerBuilder> {
