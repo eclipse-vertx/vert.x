@@ -82,6 +82,85 @@ public final class HttpUtils {
   }
 
   /**
+   * Normalizes a path as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
+   *
+   * There are 2 extra transformations that are not part of the spec but kept for backwards compatibility:
+   *
+   * double slash // will be converted to single slash and the path will always start with slash.
+   *
+   * @param pathname raw path
+   * @return normalized path
+   */
+  public static String normalizePath(String pathname) {
+    // add trailing slash if not set
+    if (pathname == null || pathname.length() == 0) {
+      return "/";
+    }
+
+    StringBuilder ibuf = new StringBuilder(pathname.length() + 1);
+
+    // Not standard!!!
+    if (pathname.charAt(0) != '/') {
+      ibuf.append('/');
+    }
+
+    ibuf.append(pathname);
+    int i = 0;
+
+    while (i < ibuf.length()) {
+      // decode unreserved chars described in
+      // http://tools.ietf.org/html/rfc3986#section-2.4
+      if (ibuf.charAt(i) == '%') {
+        decodeUnreserved(ibuf, i);
+      }
+
+      i++;
+    }
+
+    // remove dots as described in
+    // http://tools.ietf.org/html/rfc3986#section-5.2.4
+    return removeDots(ibuf);
+  }
+
+  private static void decodeUnreserved(StringBuilder path, int start) {
+    if (start + 3 <= path.length()) {
+      // these are latin chars so there is no danger of falling into some special unicode char that requires more
+      // than 1 byte
+      final String escapeSequence = path.substring(start + 1, start + 3);
+      int unescaped;
+      try {
+        unescaped = Integer.parseInt(escapeSequence, 16);
+        if (unescaped < 0) {
+          throw new IllegalArgumentException("Invalid escape sequence: %" + escapeSequence);
+        }
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("Invalid escape sequence: %" + escapeSequence);
+      }
+      // validate if the octet is within the allowed ranges
+      if (
+        // ALPHA
+        (unescaped >= 0x41 && unescaped <= 0x5A) ||
+          (unescaped >= 0x61 && unescaped <= 0x7A) ||
+          // DIGIT
+          (unescaped >= 0x30 && unescaped <= 0x39) ||
+          // HYPHEN
+          (unescaped == 0x2D) ||
+          // PERIOD
+          (unescaped == 0x2E) ||
+          // UNDERSCORE
+          (unescaped == 0x5F) ||
+          // TILDE
+          (unescaped == 0x7E)) {
+
+        path.setCharAt(start, (char) unescaped);
+        path.delete(start + 1, start + 3);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid position for escape character: " + start);
+    }
+  }
+
+  /**
    * Removed dots as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
    *
    * There are 2 extra transformations that are not part of the spec but kept for backwards compatibility:
