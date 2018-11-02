@@ -1091,19 +1091,19 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set option to offer Deflate Frame websocket compression
-   * @param tryDeflateFrame
-   * @return  a reference to this, so the API can be used fluently
+   * Set option to offer per frame WebSocket compression.
+   *
+   * @param tryUsePerFrameWebsocketCompression the per frame compression WebSocket compression
+   * @return a reference to this, so the API can be used fluently
    */
- public HttpClientOptions setTryUsePerFrameWebsocketCompression (boolean tryUsePerFrameWebsocketCompression )
+ public HttpClientOptions setTryUsePerFrameWebsocketCompression (boolean tryUsePerFrameWebsocketCompression)
  {
 	 this.websocketTryUseDeflateFrame = tryUsePerFrameWebsocketCompression;
 	 return this;
  }
 
  /**
-  *
-  * @return Whether Deflate Frame websocket compression will be offered
+  * @return Whether Deflate Frame WebSocket compression will be offered
   */
  public boolean tryWebsocketDeflateFrameCompression()
  {
@@ -1111,19 +1111,19 @@ public class HttpClientOptions extends ClientOptionsBase {
  }
 
 /**
- * Set option to offer Permessage Deflate websocket compression
- * @param tryPermessageDeflate
+ * Set option to offer per message WebSocket compression.
+ *
+ * @param tryUsePerMessageWebsocketCompression the per message WebSocket compression
  * @return  a reference to this, so the API can be used fluently
  */
- public HttpClientOptions setTryUsePerMessageWebsocketCompression (boolean tryUsePerMessageWebsocketCompression )
+ public HttpClientOptions setTryUsePerMessageWebsocketCompression (boolean tryUsePerMessageWebsocketCompression)
  {
 	 this.websocketTryUsePermessageDeflate = tryUsePerMessageWebsocketCompression;
 	 return this;
  }
 
  /**
-  *
-  * @return whether Permessage Deflate websocket compression will be offered
+  * @return whether per message WebSocket compression will be offered
   */
  public boolean tryUsePerMessageWebsocketCompression ()
  {
@@ -1131,28 +1131,29 @@ public class HttpClientOptions extends ClientOptionsBase {
  }
 
  /**
-  * Set websocket compression level
-  * @param compressionLevel
+  * Set WebSocket compression level
+  *
+  * @param compressionLevel the WebSocket compression level
   * @return a reference to this, so the API can be used fluently
   */
- public HttpClientOptions setWebsocketCompressionLevel (int websocketCompressionLevel)
+ public HttpClientOptions setWebsocketCompressionLevel (int compressionLevel)
  {
-	 this.websocketCompressionLevel = websocketCompressionLevel;
+	 this.websocketCompressionLevel = compressionLevel;
 	 return this;
  }
 
  /**
-  *
-  * @return websocket compression level
+  * @return the WebSocket compression level
   */
- public int websocketCompressionLevel()
+ public int getWebsocketCompressionLevel()
  {
 	 return this.websocketCompressionLevel;
  }
 
  /**
-  * Set the websocket compression allow client no context option
-  * @param allowClientNoContext
+  * Set the WebSocket compression allow client no context option.
+  *
+  * @param allowClientNoContext the no context option value
   * @return a reference to this, so the API can be used fluently
   */
  public HttpClientOptions setWebsocketCompressionAllowClientNoContext(boolean allowClientNoContext)
@@ -1162,7 +1163,6 @@ public class HttpClientOptions extends ClientOptionsBase {
  }
 
  /**
-  *
   * @return the current websocket compression client no context setting
   */
  public boolean getWebsocketCompressionAllowClientNoContext()
@@ -1171,8 +1171,9 @@ public class HttpClientOptions extends ClientOptionsBase {
  }
 
  /**
-  * Set the websocket compression server no context option
-  * @param requestServerNoContext
+  * Set the WebSocket compression server no context option
+  *
+  * @param requestServerNoContext the server no context option value
   * @return a reference to this, so the API can be used fluently
   */
  public HttpClientOptions setWebsocketCompressionRequestServerNoContext(boolean requestServerNoContext)
@@ -1182,7 +1183,6 @@ public class HttpClientOptions extends ClientOptionsBase {
  }
 
  /**
-  *
   * @return current setting of the websocket compression server no context option
   */
  public boolean getWebsocketCompressionRequestServerNoContext()
@@ -1197,6 +1197,7 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * set to {@code initialBufferSizeHttpDecoder} the initial buffer of the HttpDecoder.
+   * 
    * @param decoderInitialBufferSize the initial buffer size
    * @return a reference to this, so the API can be used fluently
    */
