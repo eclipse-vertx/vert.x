@@ -24,6 +24,8 @@ import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 import static org.junit.Assert.*;
 
+import io.vertx.test.fakestream.FakeStream;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
@@ -298,7 +300,7 @@ public class RecordParserTest {
 
   @Test
   public void testWrapReadStream() {
-    FakeStream stream = new FakeStream();
+    FakeStream<Buffer> stream = new FakeStream<>();
     RecordParser parser = RecordParser.newDelimited("\r\n", stream);
     AtomicInteger ends = new AtomicInteger();
     parser.endHandler(v -> ends.incrementAndGet());
@@ -307,11 +309,11 @@ public class RecordParserTest {
     assertFalse(stream.isPaused());
     parser.pause();
     parser.resume();
-    stream.handle(Buffer.buffer("first\r\nsecond\r\nthird"));
+    stream.emit(Buffer.buffer("first\r\nsecond\r\nthird"));
     assertEquals("first", records.poll());
     assertEquals("second", records.poll());
     assertNull(records.poll());
-    stream.handle(Buffer.buffer("\r\n"));
+    stream.emit(Buffer.buffer("\r\n"));
     assertEquals("third", records.poll());
     assertNull(records.poll());
     assertEquals(0, ends.get());
@@ -327,7 +329,7 @@ public class RecordParserTest {
     assertFalse(stream.isPaused());
     int count = 0;
     do {
-      stream.handle(Buffer.buffer("item-" + count++ + "\r\n"));
+      stream.emit(Buffer.buffer("item-" + count++ + "\r\n"));
     } while (!stream.isPaused());
     assertNull(records.poll());
     parser.resume();
@@ -343,50 +345,50 @@ public class RecordParserTest {
 
   @Test
   public void testPausedStreamShouldNotPauseOnIncompleteMatch() {
-    FakeStream stream = new FakeStream();
+    FakeStream<Buffer> stream = new FakeStream<>();
     RecordParser parser = RecordParser.newDelimited("\r\n", stream);
     parser.handler(event -> {});
     parser.pause().fetch(1);
-    stream.handle("abc");
+    stream.emit(Buffer.buffer("abc"));
     assertFalse(stream.isPaused());
   }
 
   @Test
   public void testSuspendParsing() {
-    FakeStream stream = new FakeStream();
+    FakeStream<Buffer> stream = new FakeStream<>();
     RecordParser parser = RecordParser.newDelimited("\r\n", stream);
     List<Buffer> emitted = new ArrayList<>();
     parser.handler(emitted::add);
     parser.pause().fetch(1);
-    stream.handle("abc\r\ndef\r\n");
+    stream.emit(Buffer.buffer("abc\r\ndef\r\n"));
     parser.fetch(1);
     assertEquals(Arrays.asList(Buffer.buffer("abc"), Buffer.buffer("def")), emitted);
   }
 
   @Test
   public void testParseEmptyChunkOnFetch() {
-    FakeStream stream = new FakeStream();
+    FakeStream<Buffer> stream = new FakeStream<>();
     RecordParser parser = RecordParser.newDelimited("\r\n", stream);
     List<Buffer> emitted = new ArrayList<>();
     parser.handler(emitted::add);
     parser.pause();
-    stream.handle("abc\r\n\r\n");
+    stream.emit(Buffer.buffer("abc\r\n\r\n"));
     parser.fetch(1);
-    assertEquals(Arrays.asList(Buffer.buffer("abc")), emitted);
+    assertEquals(Collections.singletonList(Buffer.buffer("abc")), emitted);
     parser.fetch(1);
     assertEquals(Arrays.asList(Buffer.buffer("abc"), Buffer.buffer()), emitted);
   }
 
   @Test
   public void testSwitchModeResetsState() {
-    FakeStream stream = new FakeStream();
+    FakeStream<Buffer> stream = new FakeStream<>();
     RecordParser parser = RecordParser.newDelimited("\r\n", stream);
     List<Buffer> emitted = new ArrayList<>();
     parser.handler(emitted::add);
     parser.pause();
-    stream.handle("3\r\nabc\r\n");
+    stream.emit(Buffer.buffer("3\r\nabc\r\n"));
     parser.fetch(1);
-    assertEquals(Arrays.asList(Buffer.buffer("3")), emitted);
+    assertEquals(Collections.singletonList(Buffer.buffer("3")), emitted);
     parser.fixedSizeMode(5);
     parser.fetch(1);
     assertEquals(Arrays.asList(Buffer.buffer("3"), Buffer.buffer("abc\r\n")), emitted);
