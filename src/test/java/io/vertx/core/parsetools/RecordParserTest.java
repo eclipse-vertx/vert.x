@@ -346,7 +346,7 @@ public class RecordParserTest {
     FakeStream stream = new FakeStream();
     RecordParser parser = RecordParser.newDelimited("\r\n", stream);
     parser.handler(event -> {});
-    parser.pause();
+    parser.pause().fetch(1);
     stream.handle("abc");
     assertFalse(stream.isPaused());
   }
@@ -375,6 +375,21 @@ public class RecordParserTest {
     assertEquals(Arrays.asList(Buffer.buffer("abc")), emitted);
     parser.fetch(1);
     assertEquals(Arrays.asList(Buffer.buffer("abc"), Buffer.buffer()), emitted);
+  }
+
+  @Test
+  public void testSwitchModeResetsState() {
+    FakeStream stream = new FakeStream();
+    RecordParser parser = RecordParser.newDelimited("\r\n", stream);
+    List<Buffer> emitted = new ArrayList<>();
+    parser.handler(emitted::add);
+    parser.pause();
+    stream.handle("3\r\nabc\r\n");
+    parser.fetch(1);
+    assertEquals(Arrays.asList(Buffer.buffer("3")), emitted);
+    parser.fixedSizeMode(5);
+    parser.fetch(1);
+    assertEquals(Arrays.asList(Buffer.buffer("3"), Buffer.buffer("abc\r\n")), emitted);
   }
 
   private void doTestDelimitedMaxRecordSize(final Buffer input, Buffer delim, Integer[] chunkSizes, int maxRecordSize,

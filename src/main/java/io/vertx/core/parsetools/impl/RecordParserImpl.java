@@ -33,7 +33,6 @@ public class RecordParserImpl implements RecordParser {
   private int pos;            // Current position in buffer
   private int start;          // Position of beginning of current record
   private int delimPos;       // Position of current match in delimiter array
-  private int next = -1;      // Position of the next matching record
 
   private boolean delimited;
   private byte[] delim;
@@ -174,14 +173,13 @@ public class RecordParserImpl implements RecordParser {
 
   private void handleParsing() {
     do {
-      if (next == -1) {
+      if (demand > 0L) {
+        int next;
         if (delimited) {
           next = parseDelimited();
         } else {
           next = parseFixed();
         }
-      }
-      if (demand > 0L) {
         if (next == -1) {
           ReadStream<Buffer> s = stream;
           if (s != null) {
@@ -194,17 +192,15 @@ public class RecordParserImpl implements RecordParser {
         }
         Buffer event = buff.getBuffer(start, next);
         start = pos;
-        next = -1;
         Handler<Buffer> handler = eventHandler;
         if (handler != null) {
           handler.handle(event);
         }
       } else {
-        if (next != -1) {
-          ReadStream<Buffer> s = stream;
-          if (s != null) {
-            s.pause();
-          }
+        // Should use a threshold ?
+        ReadStream<Buffer> s = stream;
+        if (s != null) {
+          s.pause();
         }
         break;
       }
@@ -216,9 +212,6 @@ public class RecordParserImpl implements RecordParser {
       buff = buff.getBuffer(start, len);
     }
     pos -= start;
-    if (next != -1) {
-      next -= start;
-    }
     start = 0;
   }
 
