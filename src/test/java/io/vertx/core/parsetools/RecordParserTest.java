@@ -31,7 +31,7 @@ import static org.junit.Assert.*;
 public class RecordParserTest {
 
   @Test
-  public void testIllegalArguments() throws Exception {
+  public void testIllegalArguments() {
     assertNullPointerException(() -> RecordParser.newDelimited((Buffer) null, handler -> {}));
     assertNullPointerException(() -> RecordParser.newDelimited((String) null, handler -> {}));
 
@@ -349,6 +349,32 @@ public class RecordParserTest {
     parser.pause();
     stream.handle("abc");
     assertFalse(stream.isPaused());
+  }
+
+  @Test
+  public void testSuspendParsing() {
+    FakeStream stream = new FakeStream();
+    RecordParser parser = RecordParser.newDelimited("\r\n", stream);
+    List<Buffer> emitted = new ArrayList<>();
+    parser.handler(emitted::add);
+    parser.pause().fetch(1);
+    stream.handle("abc\r\ndef\r\n");
+    parser.fetch(1);
+    assertEquals(Arrays.asList(Buffer.buffer("abc"), Buffer.buffer("def")), emitted);
+  }
+
+  @Test
+  public void testParseEmptyChunkOnFetch() {
+    FakeStream stream = new FakeStream();
+    RecordParser parser = RecordParser.newDelimited("\r\n", stream);
+    List<Buffer> emitted = new ArrayList<>();
+    parser.handler(emitted::add);
+    parser.pause();
+    stream.handle("abc\r\n\r\n");
+    parser.fetch(1);
+    assertEquals(Arrays.asList(Buffer.buffer("abc")), emitted);
+    parser.fetch(1);
+    assertEquals(Arrays.asList(Buffer.buffer("abc"), Buffer.buffer()), emitted);
   }
 
   private void doTestDelimitedMaxRecordSize(final Buffer input, Buffer delim, Integer[] chunkSizes, int maxRecordSize,

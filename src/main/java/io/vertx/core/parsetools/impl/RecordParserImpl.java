@@ -11,6 +11,7 @@
 
 package io.vertx.core.parsetools.impl;
 
+import io.netty.buffer.Unpooled;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
@@ -25,7 +26,10 @@ import java.util.Objects;
  */
 public class RecordParserImpl implements RecordParser {
 
-  private Buffer buff;
+  // Empty and unmodifiable
+  private static final Buffer EMPTY_BUFFER = Buffer.buffer(Unpooled.EMPTY_BUFFER);
+
+  private Buffer buff = EMPTY_BUFFER;
   private int pos;            // Current position in buffer
   private int start;          // Position of beginning of current record
   private int delimPos;       // Position of current match in delimiter array
@@ -169,10 +173,6 @@ public class RecordParserImpl implements RecordParser {
   }
 
   private void handleParsing() {
-    if (buff == null) {
-      return;
-    }
-    int len = buff.length();
     do {
       if (next == -1) {
         if (delimited) {
@@ -209,14 +209,15 @@ public class RecordParserImpl implements RecordParser {
         break;
       }
     } while (true);
-
+    int len = buff.length();
     if (start == len) {
-      //Nothing left
-      buff = null;
-      pos = 0;
+      buff = EMPTY_BUFFER;
     } else {
       buff = buff.getBuffer(start, len);
-      pos = buff.length();
+    }
+    pos -= start;
+    if (next != -1) {
+      next -= start;
     }
     start = 0;
   }
@@ -257,7 +258,7 @@ public class RecordParserImpl implements RecordParser {
    * @param buffer  a chunk of data
    */
   public void handle(Buffer buffer) {
-    if (buff == null) {
+    if (buff.length() == 0) {
       buff = buffer;
     } else {
       buff.appendBuffer(buffer);
