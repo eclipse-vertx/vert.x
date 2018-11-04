@@ -15,8 +15,7 @@ import org.junit.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class HttpUtilsTest {
 
@@ -81,7 +80,7 @@ public class HttpUtilsTest {
 
   @Test
   public void testNullPath() throws Exception {
-    assertEquals("/", HttpUtils.normalizePath(null));
+    assertNull(HttpUtils.normalizePath(null));
   }
 
   @Test

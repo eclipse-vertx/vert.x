@@ -88,12 +88,18 @@ public final class HttpUtils {
    *
    * double slash // will be converted to single slash and the path will always start with slash.
    *
+   * Null paths are not normalized as nothing can be said about them.
+   *
    * @param pathname raw path
    * @return normalized path
    */
   public static String normalizePath(String pathname) {
+    if (pathname == null) {
+      return null;
+    }
+
     // add trailing slash if not set
-    if (pathname == null || pathname.length() == 0) {
+    if (pathname.length() == 0) {
       return "/";
     }
 
@@ -163,9 +169,9 @@ public final class HttpUtils {
   /**
    * Removed dots as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
    *
-   * There are 2 extra transformations that are not part of the spec but kept for backwards compatibility:
+   * There is 1 extra transformation that are not part of the spec but kept for backwards compatibility:
    *
-   * double slash // will be converted to single slash and the path will always start with slash.
+   * double slash // will be converted to single slash.
    *
    * @param path raw path
    * @return normalized path
