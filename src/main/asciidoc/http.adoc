@@ -775,7 +775,7 @@ Both methods of specifying host/port are supported for all the different ways of
 Often, you'll want to make HTTP requests with no request body. This is usually the case with HTTP GET, OPTIONS and
 HEAD requests.
 
-The simplest way to do this with the Vert.x http client is using the methods prefixed with `Now`. For example
+The simplest way to do this with the Vert.x http client is using the methods suffixed with `Now`. For example
 {@link io.vertx.core.http.HttpClient#getNow}.
 
 These methods create the http request and send it in a single method call and allow you to provide a handler that will be
