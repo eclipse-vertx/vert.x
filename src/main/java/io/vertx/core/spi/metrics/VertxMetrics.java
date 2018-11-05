@@ -12,6 +12,7 @@
 package io.vertx.core.spi.metrics;
 
 import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpClient;
@@ -169,5 +170,14 @@ public interface VertxMetrics extends Metrics, Measured {
    */
   default PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
     return null;
+  }
+
+  /**
+   * Callback to signal when the Vertx instance is fully initialized. Other methods can be called before this method
+   * when the instance is being constructed.
+   *
+   * @param vertx the instance of Vertx
+   */
+  default void vertxCreated(Vertx vertx) {
   }
 }

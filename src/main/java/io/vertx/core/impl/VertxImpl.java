@@ -181,6 +181,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private void init() {
     eventBus.start(ar -> {});
+    if (metrics != null) {
+      metrics.vertxCreated(this);
+    }
   }
 
   private void joinCluster(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
@@ -230,6 +233,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       fut.complete();
     }, false, ar -> {
       if (ar.succeeded()) {
+        if (metrics != null) {
+          metrics.vertxCreated(this);
+        }
         resultHandler.handle(Future.succeededFuture(this));
       } else {
         log.error("Failed to initialize HAManager", ar.cause());

@@ -12,6 +12,7 @@
 package io.vertx.test.fakemetrics;
 
 import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
@@ -24,6 +25,12 @@ import io.vertx.core.spi.metrics.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
+
+  private volatile Vertx vertx;
+
+  public Vertx vertx() {
+    return vertx;
+  }
 
   @Override
   public boolean isMetricsEnabled() {
@@ -123,4 +130,8 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return true;
   }
 
+  @Override
+  public void vertxCreated(Vertx vertx) {
+    this.vertx = vertx;
+  }
 }
