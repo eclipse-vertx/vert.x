@@ -330,17 +330,17 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   HttpConnection connection();
 
   /**
-   * @return The identifier of the HTTP/2 stream this request's stream depends on  
+   * @return The priority of associated stream  
    */
-  default int getStreamDependency() {
-      return 0;
-  }
-  
-  /**
-   * @return The weight priority weight or this requet's stream  
-   */
-  default short getWeight() {
-      return Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
+  default StreamPriority getStreamPriority() {
+      return StreamPriority.DEFAULT;
   }
 
+  /**
+   * Registers handler for stream priority changes.
+   * 
+   * @param handler handler to be called when stream priority changes,
+   */
+  @Fluent
+  HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler);
 }

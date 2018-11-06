@@ -31,6 +31,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
@@ -193,8 +194,17 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   // Http2FrameListener
 
   @Override
-  public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency,
-                             short weight, boolean exclusive) {
+  public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
+      VertxHttp2Stream stream;
+      synchronized (this) {
+        stream = streams.get(streamId);
+      }
+      System.out.println(getClass().getName() + ".onPriorityRead(" + new StreamPriority(streamDependency, weight, exclusive) + ") : " + stream);
+
+      if (stream != null) {
+        StreamPriority streamPriority = new StreamPriority(streamDependency, weight, exclusive);
+        context.executeFromIO(v -> stream.handlePriorityChange(streamPriority));
+      }
   }
 
   @Override

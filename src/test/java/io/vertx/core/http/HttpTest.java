@@ -4015,8 +4015,8 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
-      public void setWeight(short weight) {}
-      public void setStreamDependency(int streamDependency) {}
+      @Override public HttpClientRequest setStreamPriority(StreamPriority streamPriority) { return this; }
+      @Override public StreamPriority getStreamPriority() { return null; }
     }
     HttpClientRequest req = new MockReq();
     class MockResp implements HttpClientResponse {
@@ -4039,8 +4039,8 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) { throw new UnsupportedOperationException(); }
       public NetSocket netSocket() { throw new UnsupportedOperationException(); }
       public HttpClientRequest request() { return req; }
-      @Override public short getWeight() { return 0; }
-      @Override public int getStreamDependency() { return -1; }
+      @Override public StreamPriority getStreamPriority() { return null; }
+      @Override public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) { return this; }
     }
     MockResp resp = new MockResp();
     Function<HttpClientResponse, Future<HttpClientRequest>> handler = client.redirectHandler();

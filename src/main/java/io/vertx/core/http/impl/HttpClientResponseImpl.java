@@ -48,6 +48,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<HttpFrame> customFrameHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
+  private Handler<StreamPriority> streamPriorityHandler;
   private NetSocket netSocket;
 
   // Track for metrics
@@ -191,13 +192,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
   
   @Override
-  public int getStreamDependency() {
-    return stream.getStreamDependency();
-  }
-
-  @Override
-  public short getWeight() {
-    return stream.getWeight();
+  public StreamPriority getStreamPriority() {
+    return stream.getStreamPriority();
   }
 
   void handleUnknownFrame(HttpFrame frame) {
@@ -281,6 +277,21 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       bodyHandler.handle(body());
       // reset body so it can get GC'ed
       body = null;
+    }
+  }
+
+  @Override
+  public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) {
+    streamPriorityHandler = handler;
+    return this;
+  }
+
+  void handlePriorityChange(StreamPriority streamPriority) {
+    synchronized (conn) {
+      Handler<StreamPriority> handler = streamPriorityHandler;
+      if (handler != null) {
+        handler.handle(streamPriority);
+      }
     }
   }
 }

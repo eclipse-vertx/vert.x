@@ -1826,6 +1826,23 @@ Set the request relative URI
 +++
 |===
 
+[[StreamPriority]]
+== StreamPriority
+
+++++
+ This class represents HTTP/2 stream priority defined in RFC 7540 clause 5.3
+++++
+'''
+
+[cols=">25%,25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[exclusive]]`@exclusive`|`Boolean`|-
+|[[streamDependency]]`@streamDependency`|`Number (int)`|-
+|[[weight]]`@weight`|`Number (short)`|-
+|===
+
 [[TCPSSLOptions]]
 == TCPSSLOptions
 

@@ -389,13 +389,19 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   }
   
   /**
-   * Sets the priority weight of the associated stream
-   * @param weight The weight priority weight or this requet's stream  
+   * Sets the priority of the associated stream
+   * @param streamPriority The priority of this requet's stream  
    */
-  void setWeight(short weight);
+  @Fluent
+  default HttpClientRequest setStreamPriority(StreamPriority streamPriority) {
+      return this;
+  }
+
   /**
-   * Sets the dependecy of associated stream
-   * @param The identifier of the HTTP/2 stream this request's stream depends on
+   * Gets the priority of the associated stream
+   * @return The priority of this requet's stream  
    */
-  void setStreamDependency(int streamDependency);
+  default StreamPriority getStreamPriority() {
+      return StreamPriority.DEFAULT;
+  }
 }

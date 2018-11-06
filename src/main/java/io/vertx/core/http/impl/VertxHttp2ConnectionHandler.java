@@ -188,19 +188,19 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   //
 
-  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight) {
+  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive) {
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
-      _writeHeaders(stream, headers, end, streamDependency, weight);
+      _writeHeaders(stream, headers, end, streamDependency, weight, exclusive);
     } else {
       executor.execute(() -> {
-        _writeHeaders(stream, headers, end, streamDependency, weight);
+        _writeHeaders(stream, headers, end, streamDependency, weight, exclusive);
       });
     }
   }
 
-  private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight) {
-    encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, false, 0, end, chctx.newPromise());
+  private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive) {
+    encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, chctx.newPromise());
   }
 
   void writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
@@ -440,5 +440,20 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) throws Http2Exception {
     throw new UnsupportedOperationException();
+  }
+  
+  private void _writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive) {
+      encoder().writePriority(chctx, stream.id(), streamDependency, weight, exclusive, chctx.newPromise());
+  }
+
+  void writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive) {
+    EventExecutor executor = chctx.executor();
+    if (executor.inEventLoop()) {
+      _writePriority(stream, streamDependency, weight, exclusive);
+    } else {
+      executor.execute(() -> {
+        _writePriority(stream, streamDependency, weight, exclusive);
+      });
+    }
   }
 }

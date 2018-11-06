@@ -28,9 +28,11 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -79,8 +81,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private int numPush;
   private boolean inHandler;
   private NetSocket netSocket;
-  private short weight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
-  private int streamDependecy = 0;
 
   public Http2ServerResponseImpl(Http2ServerConnection conn,
                                  VertxHttp2Stream stream,
@@ -325,7 +325,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse writeContinue() {
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status("100"), false, streamDependecy, weight);
+      stream.writeHeaders(new DefaultHttp2Headers().status("100"), false);
       ctx.flush();
       return this;
     }
@@ -418,7 +418,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       headWritten = true;
       headers.status(Integer.toString(status.code())); // Could be optimized for usual case ?
-      stream.writeHeaders(headers, end, streamDependecy, weight);
+      stream.writeHeaders(headers, end);
       if (end) {
         ctx.flush();
       }
@@ -449,7 +449,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         stream.writeData(chunk, end && trailers == null);
       }
       if (end && trailers != null) {
-        stream.writeHeaders(trailers, true, streamDependecy, weight);
+        stream.writeHeaders(trailers, true);
       }
       bodyEndHandler = this.bodyEndHandler;
     }
@@ -699,7 +699,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         throw new IllegalStateException("A push response cannot promise another push");
       }
       checkEnded();
-      conn.sendPush(stream.id(), host, method, headers, path, handler);
+      conn.sendPush(stream.id(), host, method, headers, path, stream.getStreamPriority(), handler);
       if (!inHandler) {
         ctx.flush();
       }
@@ -714,12 +714,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void setStreamDependency(int streamDependency) {
-    this.streamDependecy = streamDependency;
-  }
-
-  @Override
-  public void setWeight(short weight) {
-    this.weight = weight;
+  public HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
+    if(!streamPriority.equals(stream.getStreamPriority())) {
+      stream.setStreamPriority(streamPriority);
+      if(headWritten) {
+        stream.writePriorityFrame();
+      }
+    }
+    return this;
   }
 }

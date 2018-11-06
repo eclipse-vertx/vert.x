@@ -597,4 +597,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return QueryStringDecoder.decodeComponent(str, CharsetUtil.UTF_8);
   }
 
+  @Override
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
+    return this;
+  }
 }

@@ -134,10 +134,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+  public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
-    stream.setStreamDependency(streamDependency);
-    stream.setWeight(weight);
+    stream.setStreamPriority(new StreamPriority(streamDependency, weight, exclusive));
     onHeadersRead(ctx, streamId, headers, padding, endOfStream);
   }
 
@@ -184,8 +183,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
-    private int streamDependency = 0;
-    private short weight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
 
     Http2ClientStream(Http2ClientConnection conn, Http2Stream stream, boolean writable) {
       super(conn, stream, writable);
@@ -204,24 +201,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public int id() {
       return super.id();
-    }
-
-    @Override
-    public int getStreamDependency() {
-      return streamDependency;
-    }
-
-    public void setStreamDependency(int streamDependency) {
-      this.streamDependency = streamDependency;
-    }
-
-    @Override
-    public short getWeight() {
-      return weight;
-    }
-
-    public void setWeight(short weight) {
-      this.weight = weight;
     }
 
     @Override
@@ -292,6 +271,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       response.handleUnknownFrame(new HttpFrameImpl(type, flags, buff));
     }
 
+    
+    @Override
+    void handlePriorityChange(StreamPriority streamPriority) {
+      if(streamPriority != null && !streamPriority.equals(getStreamPriority())) {
+        setStreamPriority(streamPriority);
+        response.handlePriorityChange(streamPriority);
+      }
+    }
+
     void handleHeaders(Http2Headers headers, boolean end) {
       if (response == null || response.statusCode() == 100) {
         int status;
@@ -344,7 +332,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, int streamDependency, short weight) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
@@ -370,17 +358,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.metrics != null) {
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
-      writeHeaders(h, end && content == null, streamDependency, weight);
+      writeHeaders(h, end && content == null);
       if (content != null) {
         writeBuffer(content, end);
       } else {
         handlerContext.flush();
       }
-    }
-
-    @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
-        writeHead(method, rawMethod, uri, headers, hostHeader, chunked, content, end, 0, Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT);
     }
 
     @Override

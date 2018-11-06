@@ -45,8 +45,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private Object metric;
   private boolean paused;
   private HttpClientResponseImpl response;
-  protected int streamDependency = 0;
-  protected short weight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
 
   HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port, String uri) {
     this.client = client;
@@ -252,15 +250,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
       resume();
     }
     return this;
-  }
-  
-  @Override
-  public void setWeight(short weight) {
-    this.weight = weight;
-  }
-  @Override
-  public void setStreamDependency(int streamDependency) {
-    this.streamDependency = streamDependency;
   }
   
 }

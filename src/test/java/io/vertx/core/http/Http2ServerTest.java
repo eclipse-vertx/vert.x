@@ -3064,4 +3064,217 @@ public class Http2ServerTest extends Http2TestBase {
     assertEquals(Http1xOrH2CHandler.HTTP_2_PREFACE, res.toString(StandardCharsets.UTF_8));
     assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
   }
+  
+  
+  @Test
+  public void testStreamPriority() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority(123, (short)45, true);
+    StreamPriority responseStreamPriority = new StreamPriority(153, (short)75, false);
+    waitFor(3);
+    server.requestHandler(req -> {
+      System.out.println("Request " + req.getStreamPriority());
+      HttpServerResponse resp = req.response();
+      assertEquals(requestStreamPriority, req.getStreamPriority());
+      resp.setStatusCode(200);
+      resp.setStreamPriority(responseStreamPriority);
+      resp.end("data");
+      complete();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), requestStreamPriority.getStreamDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), 0, true, request.context.newPromise());
+      request.context.flush();
+      request.decoder.frameListener(new Http2FrameAdapter() {
+          @Override
+          public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+                boolean endStream) throws Http2Exception {
+            System.out.println("Response.onHeadersRead " + new StreamPriority(streamDependency, weight, exclusive));
+            super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
+            vertx.runOnContext(v -> {
+                assertEquals(id, streamId);
+                assertEquals(responseStreamPriority.getStreamDependency(), streamDependency);
+                assertEquals(responseStreamPriority.getWeight(), weight);
+                assertEquals(responseStreamPriority.isExclusive(), exclusive);
+                complete();
+              });
+          }
+          @Override
+          public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+            System.out.println("Response.onPriorityRead " + new StreamPriority(streamDependency, weight, exclusive));
+            vertx.runOnContext(v -> {
+              fail("Priority frame should not be sent");
+            });
+          }
+
+          @Override
+          public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+              if(endOfStream) {
+                vertx.runOnContext(v -> {
+                  complete();
+                });
+              }
+              return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+          }
+        });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testStreamPriorityChange() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority(123, (short)45, true);
+    StreamPriority requestStreamPriority2 = new StreamPriority(223, (short)145, false);
+    StreamPriority responseStreamPriority = new StreamPriority(153, (short)75, false);
+    StreamPriority responseStreamPriority2 = new StreamPriority(253, (short)175, true);
+    waitFor(5);
+    server.requestHandler(req -> {
+      System.out.println("Server.Request " + req.getStreamPriority());
+      HttpServerResponse resp = req.response();
+      assertEquals(requestStreamPriority, req.getStreamPriority());
+      req.bodyHandler(b -> {
+          System.out.println("Server.Body handler " + req.getStreamPriority());
+          assertEquals(requestStreamPriority2, req.getStreamPriority());
+          resp.setStatusCode(200);
+          resp.setStreamPriority(responseStreamPriority);
+          resp.write("hello");
+          resp.setStreamPriority(responseStreamPriority2);
+          resp.end("world");
+          complete();
+      });
+      req.streamPriorityHandler(streamPriority -> {
+          System.out.println("Server.Priority handler " + req.getStreamPriority());
+          assertEquals(requestStreamPriority2, streamPriority);
+          assertEquals(requestStreamPriority2, req.getStreamPriority());
+          complete();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), requestStreamPriority.getStreamDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), 0, false, request.context.newPromise());
+      request.context.flush();
+      request.encoder.writePriority(request.context, id, requestStreamPriority2.getStreamDependency(), requestStreamPriority2.getWeight(), requestStreamPriority2.isExclusive(), request.context.newPromise());
+      request.context.flush();
+      request.encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+              boolean endStream) throws Http2Exception {
+          System.out.println("Response.onHeadersRead " + new StreamPriority(streamDependency, weight, exclusive));
+          super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
+          vertx.runOnContext(v -> {
+            assertEquals(id, streamId);
+            assertEquals(responseStreamPriority.getStreamDependency(), streamDependency);
+            assertEquals(responseStreamPriority.getWeight(), weight);
+            assertEquals(responseStreamPriority.isExclusive(), exclusive);
+            complete();
+          });
+        }
+
+        @Override
+        public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+          System.out.println("Response.onPriorityRead " + new StreamPriority(streamDependency, weight, exclusive));
+          vertx.runOnContext(v -> {
+            assertEquals(id, streamId);
+            assertEquals(responseStreamPriority2.getStreamDependency(), streamDependency);
+            assertEquals(responseStreamPriority2.getWeight(), weight);
+            assertEquals(responseStreamPriority2.isExclusive(), exclusive);
+            complete();
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+            if(endOfStream) {
+              vertx.runOnContext(v -> {
+                complete();
+              });
+            }
+            return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+        
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testStreamPriorityNoChange() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority(123, (short)45, true);
+    StreamPriority responseStreamPriority = new StreamPriority(153, (short)75, false);
+    waitFor(3);
+    server.requestHandler(req -> {
+      System.out.println("Server.Request " + req.getStreamPriority());
+      HttpServerResponse resp = req.response();
+      assertEquals(requestStreamPriority, req.getStreamPriority());
+      req.bodyHandler(b -> {
+        System.out.println("Server.Body handler " + req.getStreamPriority());
+        assertEquals(requestStreamPriority, req.getStreamPriority());
+        resp.setStatusCode(200);
+        resp.setStreamPriority(responseStreamPriority);
+        resp.write("hello");
+        resp.setStreamPriority(responseStreamPriority);
+        resp.end("world");
+        complete();
+      });
+      req.streamPriorityHandler(streamPriority -> {
+        fail("Stream priority handler should not be called");
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), requestStreamPriority.getStreamDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), 0, false, request.context.newPromise());
+      request.context.flush();
+      request.encoder.writePriority(request.context, id, requestStreamPriority.getStreamDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), request.context.newPromise());
+      request.context.flush();
+      request.encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+              boolean endStream) throws Http2Exception {
+          System.out.println("Response.onHeadersRead " + new StreamPriority(streamDependency, weight, exclusive));
+          super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
+          vertx.runOnContext(v -> {
+            assertEquals(id, streamId);
+            assertEquals(responseStreamPriority.getStreamDependency(), streamDependency);
+            assertEquals(responseStreamPriority.getWeight(), weight);
+            assertEquals(responseStreamPriority.isExclusive(), exclusive);
+            complete();
+          });
+        }
+
+        @Override
+        public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+          System.out.println("Response.onPriorityRead " + new StreamPriority(streamDependency, weight, exclusive));
+          vertx.runOnContext(v -> {
+            fail("Priority frame should not be sent");
+          });
+        }
+
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+            if(endOfStream) {
+              vertx.runOnContext(v -> {
+                complete();
+              });
+            }
+            return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+        
+        
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+
 }

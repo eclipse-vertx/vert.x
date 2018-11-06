@@ -667,13 +667,4 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return this;
   }
 
-  @Override
-  public void setStreamDependency(int streamDependency) {
-    // NO-OP
-  }
-
-  @Override
-  public void setWeight(short weight) {
-    // NO-OP
-  }
 }

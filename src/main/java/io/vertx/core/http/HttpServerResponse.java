@@ -474,13 +474,11 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   }
 
   /**
-   * Sets the priority weight of the associated stream
-   * @param weight The weight priority weight or this requet's stream  
+   * Sets the priority of the associated stream
+   * @param streamPriority The priority for this requet's stream  
    */
-  void setWeight(short weight);
-  /**
-   * Sets the dependecy of associated stream
-   * @param The identifier of the HTTP/2 stream this request's stream depends on
-   */
-  void setStreamDependency(int streamDependency);
+  @Fluent
+  default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
+      return this;
+  }
 }

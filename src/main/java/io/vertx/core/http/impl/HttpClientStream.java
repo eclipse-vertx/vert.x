@@ -12,12 +12,12 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.net.NetSocket;
 
 /**
@@ -39,12 +39,10 @@ interface HttpClientStream {
   HttpConnection connection();
   Context getContext();
 
-  default void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, int streamDependency, short weight) {
-      writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end);
-  }
   void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
   void writeFrame(int type, int flags, ByteBuf payload);
+  default void writePriorityFrame() {}
 
   void reportBytesWritten(long numberOfBytes);
   void reportBytesRead(long numberOfBytes);
@@ -60,12 +58,9 @@ interface HttpClientStream {
   void endRequest();
 
   NetSocket createNetSocket();
-
-  default int getStreamDependency() {
-      return 0;
+  
+  default StreamPriority getStreamPriority() {
+      return StreamPriority.DEFAULT;
   }
-  default short getWeight() {
-      return Http2CodecUtil.CONNECTION_STREAM_ID;
-  }
-
+  default void setStreamPriority(StreamPriority streamPriority) { }
 }

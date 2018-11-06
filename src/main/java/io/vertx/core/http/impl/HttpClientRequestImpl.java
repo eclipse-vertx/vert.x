@@ -22,6 +22,7 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -69,6 +70,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private HttpClientStream stream;
   private boolean connecting;
+  
+  private StreamPriority streamPriority; // This filed is used to hold the steamPriority if it is set before the stream is created
 
   // completed => drainHandler = null
 
@@ -510,6 +513,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private void connected(Handler<HttpVersion> headersHandler, HttpClientStream stream) {
     synchronized (this) {
       this.stream = stream;
+      if(streamPriority != null) {
+          stream.setStreamPriority(streamPriority);
+      }
+          
       stream.beginRequest(this);
 
       // If anything was written or the request ended before we got the connection, then
@@ -525,20 +532,20 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true, streamDependency, weight);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true);
           stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false, streamDependency, weight);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false);
         }
       } else {
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true, streamDependency, weight);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true);
           stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false, streamDependency, weight);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false);
         }
       }
       this.connecting = false;
@@ -671,5 +678,26 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   synchronized Handler<HttpClientRequest> pushHandler() {
     return pushHandler;
+  }
+
+  @Override
+  public synchronized HttpClientRequest setStreamPriority(StreamPriority streamPriority) {
+    synchronized (this) {
+      if(!streamPriority.equals(getStreamPriority())) {
+        this.streamPriority = streamPriority;
+        if(stream != null) {
+          stream.setStreamPriority(streamPriority);
+          stream.writePriorityFrame();
+        }
+      }
+    }
+    return this;
+  }
+
+  @Override
+  public StreamPriority getStreamPriority() {
+    // If stream was already created return the priority value from the stream
+    HttpClientStream s = stream;
+    return s != null ? s.getStreamPriority() : streamPriority;
   }
 }

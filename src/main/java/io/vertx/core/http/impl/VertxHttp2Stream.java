@@ -18,6 +18,7 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -39,6 +40,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private int pendingBytes;
   private MultiMap trailers;
   private boolean writable;
+  private StreamPriority streamPriority = StreamPriority.DEFAULT;
 
   VertxHttp2Stream(C conn, Http2Stream stream, boolean writable) {
     this.conn = conn;
@@ -124,8 +126,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
   }
 
-  void writeHeaders(Http2Headers headers, boolean end, int streamDependency, short weight) {
-    conn.handler.writeHeaders(stream, headers, end, streamDependency, weight);
+  void writeHeaders(Http2Headers headers, boolean end) {
+    conn.handler.writeHeaders(stream, headers, end, streamPriority.getStreamDependency(), streamPriority.getWeight(), streamPriority.isExclusive());
+  }
+
+  public void writePriorityFrame() {
+    conn.handler.writePriority(stream, streamPriority.getStreamDependency(), streamPriority.getWeight(), streamPriority.isExclusive());
   }
 
   void writeData(ByteBuf chunk, boolean end) {
@@ -155,5 +161,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void handleClose() {
+  }
+  
+  public void setStreamPriority(StreamPriority streamPriority) {
+    this.streamPriority = streamPriority;
+  }
+
+  public StreamPriority getStreamPriority() {
+    return streamPriority;
+  }
+  
+  void handlePriorityChange(StreamPriority streamPriority) {
   }
 }

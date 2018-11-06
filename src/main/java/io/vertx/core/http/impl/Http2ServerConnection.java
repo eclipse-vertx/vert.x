@@ -116,8 +116,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       Http2ServerRequestImpl req = createRequest(streamId, headers);
-      req.setStreamDependency(streamDependency);
-      req.setWeight(weight);
+      req.setStreamPriority(new StreamPriority(streamDependency, weight, exclusive));
+
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -159,7 +159,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     super.onSettingsRead(ctx, settings);
   }
 
-  synchronized void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
+  synchronized void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
     Http2Headers headers_ = new DefaultHttp2Headers();
     if (method == HttpMethod.OTHER) {
       throw new IllegalArgumentException("Cannot push HttpMethod.OTHER");
@@ -184,6 +184,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
             boolean writable = handler.encoder().flowController().isWritable(promisedStream);
             Push push = new Push(promisedStream, contentEncoding, method, path, writable, completionHandler);
+            push.setStreamPriority(streamPriority);
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;

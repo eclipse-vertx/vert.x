@@ -34,6 +34,7 @@ import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.logging.Logger;
@@ -80,10 +81,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   private Handler<Throwable> exceptionHandler;
   private Handler<HttpFrame> customFrameHandler;
-  
-  private int streamDependency = 0;
-  private short weight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
 
+  private Handler<StreamPriority> streamPriorityHandler;
+  
   public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable) {
     super(conn, stream, writable);
@@ -522,22 +522,23 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   @Override
-  public int getStreamDependency() {
-    return streamDependency;
-  }
-
-  public void setStreamDependency(int streamDependency) {
-    this.streamDependency = streamDependency;
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
+    streamPriorityHandler = handler;
+    return this;
   }
 
   @Override
-  public short getWeight() {
-    return weight;
+  void handlePriorityChange(StreamPriority streamPriority) {
+    System.out.println(getClass().getName() + ".handlePriorityChange(" + streamPriority + ")");
+    synchronized (conn) {
+      Handler<StreamPriority> handler = streamPriorityHandler;
+      if (handler != null) {
+        if(streamPriority != null && !streamPriority.equals(getStreamPriority())) {
+          setStreamPriority(streamPriority);
+          handler.handle(streamPriority);      
+        }
+      }
+    }
   }
 
-  public void setWeight(short weight) {
-    this.weight = weight;
-  }
-
-  
 }
