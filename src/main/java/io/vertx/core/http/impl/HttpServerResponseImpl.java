@@ -146,7 +146,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public boolean isChunked() {
     synchronized (conn) {
-      return HttpHeaders.CHUNKED.equals(headers.get(HttpHeaders.TRANSFER_ENCODING));
+      return headers.contains(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED, true);
     }
   }
 

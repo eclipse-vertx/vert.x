@@ -4595,4 +4595,48 @@ public class Http1xTest extends HttpTest {
       HttpUtils.validateHeaderValue(test);
     }
   }
+
+  @Test
+  public void testChunkedServerResponse() {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      assertTrue(resp.isChunked());
+      resp.write("the-chunk");
+      vertx.setTimer(1, id -> {
+        resp.end();
+      });
+    }).listen(onSuccess(server -> {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        assertEquals("chunked", res.getHeader("transfer-encoding"));
+        res.bodyHandler(body -> {
+          assertEquals("the-chunk", body.toString());
+          testComplete();
+        });
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testChunkedClientRequest() {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      assertEquals("chunked", req.getHeader("transfer-encoding"));
+      req.bodyHandler(body -> {
+        assertEquals("the-chunk", body.toString());
+        req.response().end();
+      });
+    }).listen(onSuccess(server -> {
+      HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        testComplete();
+      });
+      req.setChunked(true);
+      req.write("the-chunk");
+      vertx.setTimer(1, id -> {
+        req.end();
+      });
+    }));
+    await();
+  }
 }
