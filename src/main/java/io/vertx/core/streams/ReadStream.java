@@ -21,6 +21,20 @@ import io.vertx.core.Handler;
  * <p>
  * Any class that implements this interface can be used by a {@link Pump} to pump data from it
  * to a {@link WriteStream}.
+ * <p>
+ * <h3>Streaming mode</h3>
+ * The stream is either in <i>flowing</i> or <i>fetch</i> mode.
+ * <ul>
+ *   <i>Initially the stream is in <i>flowing</i> mode.</i>
+ *   <li>When the stream is in <i>flowing</i> mode, elements are delivered to the {@code handler}.</li>
+ *   <li>When the stream is in <i>fetch</i> mode, only the number of requested elements will be delivered to the {@code handler}.</li>
+ * </ul>
+ * The mode can be changed with the {@link #pause()}, {@link #resume()} and {@link #fetch} methods:
+ * <ul>
+ *   <li>Calling {@link #resume()} sets the <i>flowing</i> mode</li>
+ *   <li>Calling {@link #pause()} sets the <i>fetch</i> mode and resets the demand to {@code 0}</li>
+ *   <li>Calling {@link #fetch(long)} requests a specific amount of elements and adds it to the actual demand</li>
+ * </ul>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -44,7 +58,9 @@ public interface ReadStream<T> extends StreamBase {
   ReadStream<T> handler(@Nullable Handler<T> handler);
 
   /**
-   * Pause the {@code ReadStream}. While it's paused, no data will be sent to the data {@code handler}
+   * Pause the {@code ReadStream}, it sets the buffer in {@code fetch} mode and clears the actual demand.
+   * <p>
+   * While it's paused, no data will be sent to the data {@code handler}.
    *
    * @return a reference to this, so the API can be used fluently
    */
@@ -52,7 +68,9 @@ public interface ReadStream<T> extends StreamBase {
   ReadStream<T> pause();
 
   /**
-   * Resume reading. If the {@code ReadStream} has been paused, reading will recommence on it.
+   * Resume reading, and sets the buffer in {@code flowing} mode.
+   * <p/>
+   * If the {@code ReadStream} has been paused, reading will recommence on it.
    *
    * @return a reference to this, so the API can be used fluently
    */
