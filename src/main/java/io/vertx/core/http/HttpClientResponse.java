@@ -155,7 +155,8 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   HttpClientRequest request();
 
   /**
-   * @return The priority of associated HTTP/2 stream  
+   * Gets the priority of the associated HTTP/2 stream
+   * @return The priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}  
    */
   StreamPriority getStreamPriority();
   
