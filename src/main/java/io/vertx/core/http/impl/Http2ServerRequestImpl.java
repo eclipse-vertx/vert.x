@@ -523,21 +523,25 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
-    streamPriorityHandler = handler;
+    synchronized (conn) {
+      streamPriorityHandler = handler;
+    }
     return this;
   }
 
   @Override
   void handlePriorityChange(StreamPriority streamPriority) {
-    System.out.println(getClass().getName() + ".handlePriorityChange(" + streamPriority + ")");
+    Handler<StreamPriority> handler;
+    boolean priorityChanged = false;
     synchronized (conn) {
-      Handler<StreamPriority> handler = streamPriorityHandler;
-      if (handler != null) {
-        if(streamPriority != null && !streamPriority.equals(getStreamPriority())) {
+      handler = streamPriorityHandler;
+      if(streamPriority != null && !streamPriority.equals(getStreamPriority())) {
           setStreamPriority(streamPriority);
-          handler.handle(streamPriority);      
-        }
+          priorityChanged = true;
       }
+    }
+    if (handler != null && priorityChanged) {
+      handler.handle(streamPriority);      
     }
   }
 
