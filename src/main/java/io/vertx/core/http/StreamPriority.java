@@ -18,14 +18,13 @@ import io.vertx.core.json.JsonObject;
 /**
  * This class represents HTTP/2 stream priority defined in RFC 7540 clause 5.3
  */
-@DataObject(generateConverter=true, publicConverter=false)
+@DataObject
 public class StreamPriority {
     
     public static final StreamPriority DEFAULT = new StreamPriority();
     /**
      * 
      */
-    @DataObjectProperty()
     private short weight;
     private int streamDependency;
     private boolean exclusive;
