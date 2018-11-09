@@ -398,10 +398,10 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   }
 
   /**
-   * Gets the priority of the associated stream
-   * @return The priority of this requet's stream  
+   * Gets the priority of the associated HTTP/2 stream
+   * @return The priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}  
    */
   default StreamPriority getStreamPriority() {
-      return StreamPriority.DEFAULT;
+      return null;
   }
 }
