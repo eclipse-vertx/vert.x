@@ -481,7 +481,7 @@ CAUTION: Multi-threaded worker verticles are an advanced feature and most applic
 Because of the concurrency in these verticles you have to be very careful to keep the verticle in a consistent state
 using standard Java techniques for multi-threaded programming.
 
-Multi-threaded worker verticles were designed and are intended for the sole use of consuming `EventBus` messages in parallel.
+Multi-threaded worker verticles were designed and are intended for the sole use of consuming simultaneously `EventBus` messages in a blocking fashion.
 
 WARNING: Vert.x clients and servers (TCP, HTTP, ...etc) cannot be created in a multi-threaded worker verticle.
 Should you incidentally try, an exception will be thrown.
@@ -494,7 +494,7 @@ So you could for example provide a worker pool name/size in {@link io.vertx.core
 {@link examples.CoreExamples#multiThreadedWorkerVerticleAlternative}
 ----
 
-Alternatively, you could create a regular verticle and wrap you blocking code with `executeBlocking` in parallel mode (`ordered` set to `false`):
+Alternatively, you could create a regular verticle and wrap you blocking code with multiple `executeBlocking` with the `ordered` flag set to `false`:
 
 [source,$lang]
 ----
