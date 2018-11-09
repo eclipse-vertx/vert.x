@@ -330,10 +330,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   HttpConnection connection();
 
   /**
-   * @return The priority of associated stream  
+   * Gets the priority of the associated HTTP/2 stream
+   * @return The priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}  
    */
   default StreamPriority getStreamPriority() {
-      return StreamPriority.DEFAULT;
+      return null;
   }
 
   /**
