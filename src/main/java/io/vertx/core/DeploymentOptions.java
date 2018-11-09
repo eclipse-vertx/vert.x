@@ -168,7 +168,11 @@ public class DeploymentOptions {
   }
 
   /**
-   * Set whether the verticle(s) should be deployed as a multi-threaded worker verticle
+   * Set whether the verticle(s) should be deployed as a multi-threaded worker verticle.
+   * <p>
+   * <strong>WARNING</strong>: Multi-threaded worker verticles are an advanced feature and most applications will have no need for them.
+   * Because of the concurrency in these verticles you have to be very careful to keep the verticle in a consistent state
+   * using standard Java techniques for multi-threaded programming.
    *
    * @param multiThreaded true for multi-threaded worker, false otherwise
    * @return a reference to this, so the API can be used fluently
