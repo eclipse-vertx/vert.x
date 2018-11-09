@@ -199,7 +199,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       synchronized (this) {
         stream = streams.get(streamId);
       }
-      System.out.println(getClass().getName() + ".onPriorityRead(" + new StreamPriority(streamDependency, weight, exclusive) + ") : " + stream);
 
       if (stream != null) {
         StreamPriority streamPriority = new StreamPriority(streamDependency, weight, exclusive);
