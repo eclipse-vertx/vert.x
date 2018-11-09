@@ -193,7 +193,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   
   @Override
   public StreamPriority getStreamPriority() {
-    return stream.getStreamPriority();
+    synchronized (conn) {
+      return stream.getStreamPriority();
+    }
   }
 
   void handleUnknownFrame(HttpFrame frame) {
