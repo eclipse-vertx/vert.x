@@ -34,6 +34,11 @@ public class JsonPOJOMapperTest {
     public HashMap<String, Object> c = new HashMap<>();
     public List<MyType> d = new ArrayList<>();
     public List<Integer> e = new ArrayList<>();
+    public MyEnum f;
+  }
+
+  public enum MyEnum {
+    VALUE;
   }
 
   @Test
@@ -43,6 +48,7 @@ public class JsonPOJOMapperTest {
       b = "obj0";
       c.put("z", Arrays.asList(7, 8));
       e.add(9);
+      f = MyEnum.VALUE;
     }};
     MyType myObj1 = new MyType() {{
       a = 5;
@@ -56,8 +62,8 @@ public class JsonPOJOMapperTest {
     JsonObject jsonObject1 = JsonObject.mapFrom(myObj1);
     String jsonStr1 = jsonObject1.encode();
     assertEquals("{\"a\":5,\"b\":\"obj1\",\"c\":{\"x\":\"1\",\"y\":2},\"d\":["
-        +"{\"a\":-1,\"b\":\"obj0\",\"c\":{\"z\":[7,8]},\"d\":[],\"e\":[9]}"
-        + "],\"e\":[3]}", jsonStr1);
+        +"{\"a\":-1,\"b\":\"obj0\",\"c\":{\"z\":[7,8]},\"d\":[],\"e\":[9],\"f\":\"VALUE\"}"
+        + "],\"e\":[3],\"f\":null}", jsonStr1);
 
     MyType myObj1Roundtrip = jsonObject1.mapTo(MyType.class);
     assertEquals(myObj1Roundtrip.a, 5);
@@ -65,11 +71,13 @@ public class JsonPOJOMapperTest {
     assertEquals(myObj1Roundtrip.c.get("x"), "1");
     assertEquals(myObj1Roundtrip.c.get("y"), new Integer(2));
     assertEquals(myObj1Roundtrip.e, Arrays.asList(3));
+    assertEquals(myObj1Roundtrip.f, null);
     MyType myObj0Roundtrip = myObj1Roundtrip.d.get(0);
     assertEquals(myObj0Roundtrip.a, -1);
     assertEquals(myObj0Roundtrip.b, "obj0");
     assertEquals(myObj0Roundtrip.c.get("z"), Arrays.asList(7, 8));
     assertEquals(myObj0Roundtrip.e, Arrays.asList(9));
+    assertEquals(myObj0Roundtrip.f, MyEnum.VALUE);
 
     boolean caughtCycle = false;
     try {
