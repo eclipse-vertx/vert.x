@@ -63,5 +63,5 @@ list can be provided:
 {@link examples.CoreExamples#configureSearchDomains()}
 ----
 
-When a search domain list is used, the threshold for the number of dots is {@code 1} or loaded from `/etc/resolv.conf`
+When a search domain list is used, the threshold for the number of dots is `1` or loaded from `/etc/resolv.conf`
 on Linux, it can be configured to a specific value with {@link io.vertx.core.dns.AddressResolverOptions#setNdots(int)}.

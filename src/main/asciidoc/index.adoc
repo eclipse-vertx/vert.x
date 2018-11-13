@@ -1081,7 +1081,7 @@ The `start`, `stop` and `list` command are also available from the `vertx` tool.
  * `java-opts` : the Java Virtual Machine options, uses the `JAVA_OPTS` environment variable if not set.
  * `redirect-output` : redirect the spawned process output and error streams to the parent process streams.
 
- If option values contain spaces, don't forget to wrap the value between {@code ""} (double-quotes).
+ If option values contain spaces, don't forget to wrap the value between `""` (double-quotes).
 
  As the `start` command spawns a new process, the java options passed to the JVM are not propagated, so you **must**
  use `java-opts` to configure the JVM (`-X`, `-D`...). If you use the `CLASSPATH` environment variable, be sure it
@@ -1637,13 +1637,13 @@ and {@link io.vertx.core.impl.launcher.VertxCommandLauncher#unregister(java.lang
 
 When you use the {@link io.vertx.core.Launcher} class as main class, it uses the following exit code:
 
-* {@code 0} if the process ends smoothly, or if an uncaught error is thrown
-* {@code 1} for general purpose error
-* {@code 11} if Vert.x cannot be initialized
-* {@code 12} if a spawn process cannot be started, found or stopped. This error code is used by the `start` and
+* `0` if the process ends smoothly, or if an uncaught error is thrown
+* `1` for general purpose error
+* `11` if Vert.x cannot be initialized
+* `12` if a spawn process cannot be started, found or stopped. This error code is used by the `start` and
 `stop` command
-* {@code 14} if the system configuration is not meeting the system requirement (shc as java not found)
-* {@code 15} if the main verticle cannot be deployed
+* `14` if the system configuration is not meeting the system requirement (shc as java not found)
+* `15` if the main verticle cannot be deployed
 
 == Configuring Vert.x cache
 

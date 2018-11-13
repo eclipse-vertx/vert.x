@@ -44,7 +44,7 @@ The method invocations can be chained because of the fluent API:
 
 ==== Getting values from a JSON object
 
-You get values from a JSON object using the {@code getXXX} methods, for example:
+You get values from a JSON object using the `getXXX` methods, for example:
 
 [source,java]
 ----
@@ -106,7 +106,7 @@ You add entries to a JSON array using the {@link io.vertx.core.json.JsonArray#ad
 
 ==== Getting values from a JSON array
 
-You get values from a JSON array using the {@code getXXX} methods, for example:
+You get values from a JSON array using the `getXXX` methods, for example:
 
 [source,java]
 ----
