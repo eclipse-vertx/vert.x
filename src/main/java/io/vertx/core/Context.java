@@ -231,10 +231,10 @@ public interface Context {
   @Nullable
   Handler<Throwable> exceptionHandler();
 
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void addCloseHook(Closeable hook);
 
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void removeCloseHook(Closeable hook);
 
 }

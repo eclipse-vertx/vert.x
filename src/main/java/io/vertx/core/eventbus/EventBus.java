@@ -198,7 +198,7 @@ public interface EventBus extends Measured {
    * @param codec  the message codec to register
    * @return a reference to this, so the API can be used fluently
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   EventBus registerCodec(MessageCodec codec);
 
   /**
@@ -207,7 +207,7 @@ public interface EventBus extends Measured {
    * @param name  the name of the codec
    * @return a reference to this, so the API can be used fluently
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   EventBus unregisterCodec(String name);
 
   /**
