@@ -71,7 +71,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private HttpClientStream stream;
   private boolean connecting;
   
-  private StreamPriority streamPriority; // This filed is used to hold the steamPriority if it is set before the stream is created
+  private StreamPriority streamPriority = StreamPriority.DEFAULT; // This filed is used to hold the steamPriority if it is set before the stream is created
 
   // completed => drainHandler = null
 
@@ -513,10 +513,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private void connected(Handler<HttpVersion> headersHandler, HttpClientStream stream) {
     synchronized (this) {
       this.stream = stream;
-      if(streamPriority != null) {
-          stream.setStreamPriority(streamPriority);
-      }
-          
       stream.beginRequest(this);
 
       // If anything was written or the request ended before we got the connection, then
@@ -532,20 +528,20 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true, streamPriority);
           stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false, streamPriority);
         }
       } else {
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true, streamPriority);
           stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false, streamPriority);
         }
       }
       this.connecting = false;
@@ -686,8 +682,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if(!streamPriority.equals(getStreamPriority())) {
         this.streamPriority = streamPriority;
         if(stream != null) {
-          stream.setStreamPriority(streamPriority);
-          stream.writePriorityFrame();
+          stream.updateStreamPriority(streamPriority);
         }
       }
     }

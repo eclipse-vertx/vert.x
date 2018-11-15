@@ -102,7 +102,8 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                           String hostHeader,
                           boolean chunked,
                           ByteBuf buf,
-                          boolean end) {
+                          boolean end,
+                          StreamPriority streamPriority) {
       ChannelPipeline pipeline = conn.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
       class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
@@ -161,7 +162,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end);
+      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, streamPriority);
     }
 
     @Override

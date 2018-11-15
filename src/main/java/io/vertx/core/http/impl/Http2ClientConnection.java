@@ -135,8 +135,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
-    stream.setStreamPriority(new StreamPriority(streamDependency, weight, exclusive));
+    VertxHttp2Stream stream = streams.get(streamId);
+    if(stream != null)
+        stream.setStreamPriority(new StreamPriority(streamDependency, weight, exclusive));
     onHeadersRead(ctx, streamId, headers, padding, endOfStream);
   }
 
@@ -332,7 +333,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority streamPriority) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
@@ -358,6 +359,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.metrics != null) {
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
+      setStreamPriority(streamPriority);
       writeHeaders(h, end && content == null);
       if (content != null) {
         writeBuffer(content, end);
@@ -377,6 +379,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (end) {
         handlerContext.flush();
       }
+    }
+    
+    
+
+    @Override
+    public void updateStreamPriority(StreamPriority streamPriority) {
+        setStreamPriority(streamPriority);
+        writePriorityFrame();
     }
 
     @Override
@@ -447,7 +457,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       return conn.toNetSocket(this);
     }
   }
-
+  
   public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
     HttpClientImpl client,
     Object queueMetric,

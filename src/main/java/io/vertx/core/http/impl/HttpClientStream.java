@@ -39,7 +39,7 @@ interface HttpClientStream {
   HttpConnection connection();
   Context getContext();
 
-  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
+  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority streamPriority);
   void writeBuffer(ByteBuf buf, boolean end);
   void writeFrame(int type, int flags, ByteBuf payload);
   default void writePriorityFrame() {}
@@ -62,5 +62,5 @@ interface HttpClientStream {
   default StreamPriority getStreamPriority() {
       return null;
   }
-  default void setStreamPriority(StreamPriority streamPriority) { }
+  default void updateStreamPriority(StreamPriority streamPriority) { }
 }
