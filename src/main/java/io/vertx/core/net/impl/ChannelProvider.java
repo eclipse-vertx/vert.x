@@ -91,6 +91,7 @@ public final class ChannelProvider {
   private void initSSL(SocketAddress peerAddress, String serverName, boolean ssl, Channel ch, Handler<AsyncResult<Channel>> channelHandler) {
     if (ssl) {
       SslHandler sslHandler = new SslHandler(sslHelper.createEngine(context.owner(), peerAddress, serverName));
+      sslHandler.setHandshakeTimeoutMillis(sslHelper.getSslHandshakeTimeout());
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
       pipeline.addLast(new ChannelInboundHandlerAdapter() {

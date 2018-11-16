@@ -362,6 +362,10 @@ public class NetClientOptions extends ClientOptionsBase {
     return (NetClientOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }
 
+  public NetClientOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    return (NetClientOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
