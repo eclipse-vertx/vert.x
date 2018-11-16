@@ -535,7 +535,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     boolean priorityChanged = false;
     synchronized (conn) {
       handler = streamPriorityHandler;
-      if(streamPriority != null && !streamPriority.equals(getStreamPriority())) {
+      if(streamPriority != null && !streamPriority.equals(streamPriority())) {
           setStreamPriority(streamPriority);
           priorityChanged = true;
       }

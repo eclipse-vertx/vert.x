@@ -135,10 +135,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    VertxHttp2Stream stream = streams.get(streamId);
-    if(stream != null)
-        stream.setStreamPriority(new StreamPriority(streamDependency, weight, exclusive));
-    onHeadersRead(ctx, streamId, headers, padding, endOfStream);
+    Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
+    if (stream != null) {
+      context.executeFromIO(v -> {
+        stream.handleHeaders(headers, new StreamPriority(streamDependency, weight, exclusive), endOfStream);
+      });
+    }
   }
 
   @Override
@@ -146,7 +148,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
       context.executeFromIO(v -> {
-        stream.handleHeaders(headers, endOfStream);
+        stream.handleHeaders(headers, null, endOfStream);
       });
     }
   }
@@ -275,13 +277,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     
     @Override
     void handlePriorityChange(StreamPriority streamPriority) {
-      if(streamPriority != null && !streamPriority.equals(getStreamPriority())) {
+      if(streamPriority != null && !streamPriority.equals(streamPriority())) {
         setStreamPriority(streamPriority);
         response.handlePriorityChange(streamPriority);
       }
     }
 
-    void handleHeaders(Http2Headers headers, boolean end) {
+    void handleHeaders(Http2Headers headers, StreamPriority streamPriority, boolean end) {
+      if(streamPriority != null)
+        setStreamPriority(streamPriority);
       if (response == null || response.statusCode() == 100) {
         int status;
         String statusMessage;

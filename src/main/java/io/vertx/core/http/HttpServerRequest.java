@@ -333,7 +333,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * Gets the priority of the associated HTTP/2 stream
    * @return The priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}  
    */
-  default StreamPriority getStreamPriority() {
+  default StreamPriority streamPriority() {
       return null;
   }
 

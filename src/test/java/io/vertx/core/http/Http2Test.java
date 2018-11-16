@@ -452,8 +452,8 @@ public class Http2Test extends HttpTest {
     short responseStreamWeight = 55;
     waitFor(2);
     server.requestHandler(req -> {
-      assertEquals(requestStreamWeight, req.getStreamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.getStreamPriority().getStreamDependency());
+      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, req.streamPriority().getStreamDependency());
       req.response().setStreamPriority(new StreamPriority(responseStreamDependency, responseStreamWeight, false));
       req.response().end();
       complete();
@@ -461,8 +461,8 @@ public class Http2Test extends HttpTest {
     startServer();
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
     HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      assertEquals(responseStreamWeight, resp.getStreamPriority().getWeight());
-      assertEquals(responseStreamDependency, resp.getStreamPriority().getStreamDependency());
+      assertEquals(responseStreamWeight, resp.streamPriority().getWeight());
+      assertEquals(responseStreamDependency, resp.streamPriority().getStreamDependency());
       complete();
     });
     request.setStreamPriority(new StreamPriority(requestStreamDependency, requestStreamWeight, false));
@@ -485,12 +485,12 @@ public class Http2Test extends HttpTest {
       req.streamPriorityHandler( sp -> {
         assertEquals(requestStreamWeight2, sp.getWeight());
         assertEquals(requestStreamDependency2, sp.getStreamDependency());
-        assertEquals(requestStreamWeight2, req.getStreamPriority().getWeight());
-        assertEquals(requestStreamDependency2, req.getStreamPriority().getStreamDependency());
+        assertEquals(requestStreamWeight2, req.streamPriority().getWeight());
+        assertEquals(requestStreamDependency2, req.streamPriority().getStreamDependency());
         complete();
       });
-      assertEquals(requestStreamWeight, req.getStreamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.getStreamPriority().getStreamDependency());
+      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, req.streamPriority().getStreamDependency());
       req.response().setStreamPriority(new StreamPriority(responseStreamDependency, responseStreamWeight, false));
       req.response().write("hello");
       req.response().setStreamPriority(new StreamPriority(responseStreamDependency2, responseStreamWeight2, false));
@@ -501,13 +501,13 @@ public class Http2Test extends HttpTest {
     startServer();
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
     HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      assertEquals(responseStreamWeight, resp.getStreamPriority().getWeight());
-      assertEquals(responseStreamDependency, resp.getStreamPriority().getStreamDependency());
+      assertEquals(responseStreamWeight, resp.streamPriority().getWeight());
+      assertEquals(responseStreamDependency, resp.streamPriority().getStreamDependency());
       resp.streamPriorityHandler( sp -> {
           assertEquals(responseStreamWeight2, sp.getWeight());
           assertEquals(responseStreamDependency2, sp.getStreamDependency());
-          assertEquals(responseStreamWeight2, resp.getStreamPriority().getWeight());
-          assertEquals(responseStreamDependency2, resp.getStreamPriority().getStreamDependency());
+          assertEquals(responseStreamWeight2, resp.streamPriority().getWeight());
+          assertEquals(responseStreamDependency2, resp.streamPriority().getStreamDependency());
           complete();
         });
       complete();
@@ -531,8 +531,8 @@ public class Http2Test extends HttpTest {
       req.streamPriorityHandler( sp -> {
           fail("Stream priority handler shoudl not be called");
       });
-      assertEquals(requestStreamWeight, req.getStreamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.getStreamPriority().getStreamDependency());
+      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, req.streamPriority().getStreamDependency());
       req.response().setStreamPriority(new StreamPriority(responseStreamDependency, responseStreamWeight, false));
       req.response().write("hello");
       req.response().setStreamPriority(new StreamPriority(responseStreamDependency, responseStreamWeight, false));
@@ -543,8 +543,8 @@ public class Http2Test extends HttpTest {
     startServer();
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
     HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      assertEquals(responseStreamWeight, resp.getStreamPriority().getWeight());
-      assertEquals(responseStreamDependency, resp.getStreamPriority().getStreamDependency());
+      assertEquals(responseStreamWeight, resp.streamPriority().getWeight());
+      assertEquals(responseStreamDependency, resp.streamPriority().getStreamDependency());
       resp.streamPriorityHandler( sp -> {
           fail("Stream priority handler shoudl not be called");
           complete();
@@ -566,16 +566,16 @@ public class Http2Test extends HttpTest {
     short requestStreamWeight = 53;
     waitFor(2);
     server.requestHandler(req -> {
-      assertEquals(requestStreamWeight, req.getStreamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.getStreamPriority().getStreamDependency());
+      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, req.streamPriority().getStreamDependency());
       req.response().end();
       complete();
     });
     startServer();
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
     HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      assertEquals(requestStreamWeight, resp.getStreamPriority().getWeight());
-      assertEquals(requestStreamDependency, resp.getStreamPriority().getStreamDependency());
+      assertEquals(requestStreamWeight, resp.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, resp.streamPriority().getStreamDependency());
       complete();
     });
     request.setStreamPriority(new StreamPriority(requestStreamDependency, requestStreamWeight, false));
@@ -589,16 +589,16 @@ public class Http2Test extends HttpTest {
     short defaultStreamWeight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
     waitFor(2);
     server.requestHandler(req -> {
-        assertEquals(defaultStreamWeight, req.getStreamPriority().getWeight());
-        assertEquals(defaultStreamDependency, req.getStreamPriority().getStreamDependency());
+        assertEquals(defaultStreamWeight, req.streamPriority().getWeight());
+        assertEquals(defaultStreamDependency, req.streamPriority().getStreamDependency());
       req.response().end();
       complete();
     });
     startServer();
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
     HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      assertEquals(defaultStreamWeight, resp.getStreamPriority().getWeight());
-      assertEquals(defaultStreamDependency, resp.getStreamPriority().getStreamDependency());
+      assertEquals(defaultStreamWeight, resp.streamPriority().getWeight());
+      assertEquals(defaultStreamDependency, resp.streamPriority().getStreamDependency());
       complete();
     });
     request.end();
@@ -628,8 +628,8 @@ public class Http2Test extends HttpTest {
     request.pushHandler(pushReq -> {
       complete();
       pushReq.handler(pushResp -> {
-        assertEquals(pushStreamDependency, pushResp.getStreamPriority().getStreamDependency());     
-        assertEquals(pushStreamWeight, pushResp.getStreamPriority().getWeight());     
+        assertEquals(pushStreamDependency, pushResp.streamPriority().getStreamDependency());     
+        assertEquals(pushStreamWeight, pushResp.streamPriority().getWeight());     
         complete();
       });
     });
@@ -659,8 +659,8 @@ public class Http2Test extends HttpTest {
     request.pushHandler(pushReq -> {
       complete();
       pushReq.handler(pushResp -> {
-        assertEquals(reqStreamDependency, pushResp.getStreamPriority().getStreamDependency());     
-        assertEquals(reqStreamWeight, pushResp.getStreamPriority().getWeight());     
+        assertEquals(reqStreamDependency, pushResp.streamPriority().getStreamDependency());     
+        assertEquals(reqStreamWeight, pushResp.streamPriority().getWeight());     
         complete();
       });
     });

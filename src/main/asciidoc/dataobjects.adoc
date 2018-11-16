@@ -1838,9 +1838,15 @@ Set the request relative URI
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[exclusive]]`@exclusive`|`Boolean`|-
-|[[streamDependency]]`@streamDependency`|`Number (int)`|-
-|[[weight]]`@weight`|`Number (short)`|-
+|[[exclusive]]`@exclusive`|`Boolean`|+++
+
++++
+|[[streamDependency]]`@streamDependency`|`Number (int)`|+++
+
++++
+|[[weight]]`@weight`|`Number (short)`|+++
+
++++
 |===
 
 [[TCPSSLOptions]]

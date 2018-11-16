@@ -192,9 +192,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
   
   @Override
-  public StreamPriority getStreamPriority() {
+  public StreamPriority streamPriority() {
     synchronized (conn) {
-      return stream.getStreamPriority();
+      return stream.streamPriority();
     }
   }
 

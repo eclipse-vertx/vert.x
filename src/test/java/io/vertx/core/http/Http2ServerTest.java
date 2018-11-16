@@ -3072,9 +3072,9 @@ public class Http2ServerTest extends Http2TestBase {
     StreamPriority responseStreamPriority = new StreamPriority(153, (short)75, false);
     waitFor(3);
     server.requestHandler(req -> {
-      System.out.println("Request " + req.getStreamPriority());
+      System.out.println("Request " + req.streamPriority());
       HttpServerResponse resp = req.response();
-      assertEquals(requestStreamPriority, req.getStreamPriority());
+      assertEquals(requestStreamPriority, req.streamPriority());
       resp.setStatusCode(200);
       resp.setStreamPriority(responseStreamPriority);
       resp.end("data");
@@ -3131,12 +3131,12 @@ public class Http2ServerTest extends Http2TestBase {
     StreamPriority responseStreamPriority2 = new StreamPriority(253, (short)175, true);
     waitFor(5);
     server.requestHandler(req -> {
-      System.out.println("Server.Request " + req.getStreamPriority());
+      System.out.println("Server.Request " + req.streamPriority());
       HttpServerResponse resp = req.response();
-      assertEquals(requestStreamPriority, req.getStreamPriority());
+      assertEquals(requestStreamPriority, req.streamPriority());
       req.bodyHandler(b -> {
-          System.out.println("Server.Body handler " + req.getStreamPriority());
-          assertEquals(requestStreamPriority2, req.getStreamPriority());
+          System.out.println("Server.Body handler " + req.streamPriority());
+          assertEquals(requestStreamPriority2, req.streamPriority());
           resp.setStatusCode(200);
           resp.setStreamPriority(responseStreamPriority);
           resp.write("hello");
@@ -3145,9 +3145,9 @@ public class Http2ServerTest extends Http2TestBase {
           complete();
       });
       req.streamPriorityHandler(streamPriority -> {
-          System.out.println("Server.Priority handler " + req.getStreamPriority());
+          System.out.println("Server.Priority handler " + req.streamPriority());
           assertEquals(requestStreamPriority2, streamPriority);
-          assertEquals(requestStreamPriority2, req.getStreamPriority());
+          assertEquals(requestStreamPriority2, req.streamPriority());
           complete();
       });
     });
@@ -3209,12 +3209,12 @@ public class Http2ServerTest extends Http2TestBase {
     StreamPriority responseStreamPriority = new StreamPriority(153, (short)75, false);
     waitFor(3);
     server.requestHandler(req -> {
-      System.out.println("Server.Request " + req.getStreamPriority());
+      System.out.println("Server.Request " + req.streamPriority());
       HttpServerResponse resp = req.response();
-      assertEquals(requestStreamPriority, req.getStreamPriority());
+      assertEquals(requestStreamPriority, req.streamPriority());
       req.bodyHandler(b -> {
-        System.out.println("Server.Body handler " + req.getStreamPriority());
-        assertEquals(requestStreamPriority, req.getStreamPriority());
+        System.out.println("Server.Body handler " + req.streamPriority());
+        assertEquals(requestStreamPriority, req.streamPriority());
         resp.setStatusCode(200);
         resp.setStreamPriority(responseStreamPriority);
         resp.write("hello");

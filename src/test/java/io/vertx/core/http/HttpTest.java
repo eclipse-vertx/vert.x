@@ -4039,7 +4039,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) { throw new UnsupportedOperationException(); }
       public NetSocket netSocket() { throw new UnsupportedOperationException(); }
       public HttpClientRequest request() { return req; }
-      @Override public StreamPriority getStreamPriority() { return null; }
+      @Override public StreamPriority streamPriority() { return null; }
       @Override public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) { return this; }
     }
     MockResp resp = new MockResp();

@@ -1948,7 +1948,7 @@ public class Http2ClientTest extends Http2TestBase {
     try {
       HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath").setStreamPriority(requestStreamPriority);
       req.handler(resp -> {
-        assertEquals(responseStreamPriority, resp.getStreamPriority());
+        assertEquals(responseStreamPriority, resp.streamPriority());
         Context ctx = vertx.getOrCreateContext();
         assertOnIOContext(ctx);
         resp.endHandler(v -> {
@@ -2010,16 +2010,16 @@ public class Http2ClientTest extends Http2TestBase {
     try {
       HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath").setStreamPriority(requestStreamPriority);
       req.handler(resp -> {
-        assertEquals(responseStreamPriority, resp.getStreamPriority());
+        assertEquals(responseStreamPriority, resp.streamPriority());
         Context ctx = vertx.getOrCreateContext();
         assertOnIOContext(ctx);
         resp.streamPriorityHandler(streamPriority ->  {
           assertEquals(responseStreamPriority2, streamPriority);
-          assertEquals(responseStreamPriority2, resp.getStreamPriority());
+          assertEquals(responseStreamPriority2, resp.streamPriority());
           complete();
         });
         resp.endHandler(v -> {
-          assertEquals(responseStreamPriority2, resp.getStreamPriority());
+          assertEquals(responseStreamPriority2, resp.streamPriority());
           complete();
         });
       }).sendHead(h -> {
@@ -2073,14 +2073,14 @@ public class Http2ClientTest extends Http2TestBase {
     try {
       HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath").setStreamPriority(requestStreamPriority);
       req.handler(resp -> {
-        assertEquals(responseStreamPriority, resp.getStreamPriority());
+        assertEquals(responseStreamPriority, resp.streamPriority());
         Context ctx = vertx.getOrCreateContext();
         assertOnIOContext(ctx);
         resp.streamPriorityHandler(streamPriority ->  {
           fail("Stream priority handler shoudl not be called");
         });
         resp.endHandler(v -> {
-          assertEquals(responseStreamPriority, resp.getStreamPriority());
+          assertEquals(responseStreamPriority, resp.streamPriority());
           complete();
         });
       }).sendHead(h -> {
