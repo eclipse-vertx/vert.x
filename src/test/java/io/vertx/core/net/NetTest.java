@@ -3451,6 +3451,45 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testSslHandshakeTimeoutWhenUpgradeSsl() {
+    server.close();
+    client.close();
+
+    NetServerOptions serverOptions = new NetServerOptions().setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get())
+      // set 1ms to produce timeout
+      .setSslHandshakeTimeout(1);
+    server = vertx.createNetServer(serverOptions);
+
+    NetClientOptions clientOptions = new NetClientOptions().setSsl(false)
+      .setTrustAll(true);
+    client = vertx.createNetClient(clientOptions);
+
+    server.connectHandler(s -> {
+    }).listen(testAddress, ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(testAddress, res -> {
+        assertTrue(res.succeeded());
+        NetSocket socket = res.result();
+
+        assertFalse(socket.isSsl());
+        socket.upgradeToSsl(v -> {
+          // this handler will never be called because of failure of handshake
+          assertFalse(socket.isSsl());
+        });
+        // wait a bit to make sure the above handler will not be called
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {
+          // ignore
+        }
+        testComplete();
+      });
+    });
+    await();
+  }
+
   protected void startServer(SocketAddress remoteAddress) throws Exception {
     startServer(remoteAddress, vertx.getOrCreateContext());
   }
