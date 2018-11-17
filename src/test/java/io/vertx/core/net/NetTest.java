@@ -3528,14 +3528,15 @@ public class NetTest extends VertxTestBase {
     server.close();
     client.close();
 
-    NetServerOptions serverOptions = new NetServerOptions().setSsl(true)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get());
+    // set up a normal server to force the SSL handshake time out in client
+    NetServerOptions serverOptions = new NetServerOptions()
+      .setSsl(false);
     server = vertx.createNetServer(serverOptions);
 
-    NetClientOptions clientOptions = new NetClientOptions().setSsl(true)
+    NetClientOptions clientOptions = new NetClientOptions()
+      .setSsl(true)
       .setTrustAll(true)
-      // set 1ms to produce timeout
-      .setSslHandshakeTimeout(1);
+      .setSslHandshakeTimeout(200);
     client = vertx.createNetClient(clientOptions);
 
     server.connectHandler(s -> {
@@ -3556,13 +3557,15 @@ public class NetTest extends VertxTestBase {
     server.close();
     client.close();
 
-    NetServerOptions serverOptions = new NetServerOptions().setSsl(true)
+    NetServerOptions serverOptions = new NetServerOptions()
+      .setSsl(true)
       .setKeyStoreOptions(Cert.SERVER_JKS.get())
       // set 1ms to produce timeout
       .setSslHandshakeTimeout(1);
     server = vertx.createNetServer(serverOptions);
 
-    NetClientOptions clientOptions = new NetClientOptions().setSsl(true)
+    NetClientOptions clientOptions = new NetClientOptions()
+      .setSsl(true)
       .setTrustAll(true);
     client = vertx.createNetClient(clientOptions);
 
@@ -3585,14 +3588,15 @@ public class NetTest extends VertxTestBase {
     server.close();
     client.close();
 
-    NetServerOptions serverOptions = new NetServerOptions().setSsl(true)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get())
-      // set 1ms to produce timeout
-      .setSslHandshakeTimeout(1);
+    // set up a normal server to force the SSL handshake time out in client
+    NetServerOptions serverOptions = new NetServerOptions()
+      .setSsl(false);
     server = vertx.createNetServer(serverOptions);
 
-    NetClientOptions clientOptions = new NetClientOptions().setSsl(false)
-      .setTrustAll(true);
+    NetClientOptions clientOptions = new NetClientOptions()
+      .setSsl(false)
+      .setTrustAll(true)
+      .setSslHandshakeTimeout(200);
     client = vertx.createNetClient(clientOptions);
 
     server.connectHandler(s -> {
@@ -3608,12 +3612,9 @@ public class NetTest extends VertxTestBase {
           assertFalse(socket.isSsl());
         });
         // wait a bit to make sure the above handler will not be called
-        try {
-          Thread.sleep(2000);
-        } catch (InterruptedException e) {
-          // ignore
-        }
-        testComplete();
+        vertx.setTimer(2000, id -> {
+          testComplete();
+        });
       });
     });
     await();
