@@ -296,12 +296,12 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   @Override
-  public synchronized MessageConsumer<T> resume() {
+  public MessageConsumer<T> resume() {
     return fetch(Long.MAX_VALUE);
   }
 
   @Override
-  public MessageConsumer<T> fetch(long amount) {
+  public synchronized MessageConsumer<T> fetch(long amount) {
     if (amount < 0) {
       throw new IllegalArgumentException();
     }
