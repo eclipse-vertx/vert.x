@@ -13,8 +13,10 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.*;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -449,11 +451,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
       prepareHeaders(bytesWritten);
 
+      ChannelFuture channelFuture;
       RandomAccessFile raf = null;
       try {
         raf = new RandomAccessFile(file, "r");
         conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
-        conn.sendFile(raf, Math.min(offset, file.length()), contentLength);
+        channelFuture = conn.sendFile(raf, Math.min(offset, file.length()), contentLength);
       } catch (IOException e) {
         try {
           if (raf != null) {
@@ -469,12 +472,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         }
         return;
       }
-
-      // write an empty last content to let the http encoder know the response is complete
-      ChannelPromise channelFuture = conn.channelFuture();
-      conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT, channelFuture);
       written = true;
 
+      // write an empty last content to let the http encoder know the response is complete
+      channelFuture.addListener(future -> {
+        conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+      });
+
+      // signal completion handler when there is one
       if (resultHandler != null) {
         ContextInternal ctx = vertx.getOrCreateContext();
         channelFuture.addListener(future -> {

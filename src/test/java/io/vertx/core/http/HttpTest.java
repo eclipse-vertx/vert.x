@@ -131,7 +131,7 @@ public abstract class HttpTest extends HttpTestBase {
     Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
     NetClient netClient = vx.createNetClient();
     HttpServer httpserver = vx.createHttpServer().requestHandler(req -> req.response().end());
-    File sockFile = TestUtils.tmpFile("vertx", ".sock");
+    File sockFile = TestUtils.tmpFile(".sock");
     SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
     httpserver.listen(sockAddress, onSuccess(server -> {
       netClient.connect(sockAddress, onSuccess(sock -> {

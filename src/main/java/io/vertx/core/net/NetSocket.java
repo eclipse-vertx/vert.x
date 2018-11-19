@@ -53,6 +53,12 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Override
   NetSocket fetch(long amount);
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * This handler might be called after the close handler when the socket is paused and there are still
+   * buffers to deliver.
+   */
   @Override
   NetSocket endHandler(Handler<Void> endHandler);
 

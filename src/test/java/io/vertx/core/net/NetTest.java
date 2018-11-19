@@ -49,10 +49,7 @@ import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -83,7 +80,7 @@ public class NetTest extends VertxTestBase {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
       assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
-      tmp = TestUtils.tmpFile("vertx", ".sock");
+      tmp = TestUtils.tmpFile(".sock");
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
     } else {
       testAddress = SocketAddress.inetSocketAddress(1234, "localhost");
@@ -1821,7 +1818,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testClosingVertxCloseSharedServers() throws Exception {
     int numServers = 2;
-    Vertx vertx = Vertx.vertx();
+    Vertx vertx = Vertx.vertx(getOptions());
     List<NetServerImpl> servers = new ArrayList<>();
     for (int i = 0;i < numServers;i++) {
       NetServer server = vertx.createNetServer().connectHandler(so -> {
@@ -3351,6 +3348,91 @@ public class NetTest extends VertxTestBase {
     client.connect(testAddress, onSuccess(so -> {
       vertx.setTimer(1000, id -> {
         so.close();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerWithIdleTimeoutSendChunkedFile() throws Exception {
+    testdleTimeoutSendChunkedFile(true);
+  }
+
+  @Test
+  public void testClientWithIdleTimeoutSendChunkedFile() throws Exception {
+    testdleTimeoutSendChunkedFile(false);
+  }
+
+  private void testdleTimeoutSendChunkedFile(boolean idleOnServer) throws Exception {
+    int expected = 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
+    File sent = TestUtils.tmpFile(".dat", expected);
+    server.close();
+    Consumer<NetSocket> sender = so -> {
+      so.sendFile(sent.getAbsolutePath());
+    };
+    Consumer<NetSocket> receiver = so -> {
+      int[] len = { 0 };
+      long now = System.currentTimeMillis();
+      so.handler(buff -> {
+        len[0] += buff.length();
+        so.pause();
+        vertx.setTimer(1, id -> {
+          so.resume();
+        });
+      });
+      so.exceptionHandler(this::fail);
+      so.endHandler(v -> {
+        assertEquals(0, expected - len[0]);
+        assertTrue(System.currentTimeMillis() - now > 200);
+        testComplete();
+      });
+    };
+    server = vertx
+      .createNetServer(new NetServerOptions().setIdleTimeout(200).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
+      .connectHandler((idleOnServer ? sender : receiver)::accept);
+    startServer();
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setIdleTimeout(200).setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
+    client.connect(testAddress, onSuccess(idleOnServer ? receiver : sender));
+    await();
+  }
+
+  @Test
+  public void testHalfCloseCallsEndHandlerAfterBuffersAreDelivered() throws Exception {
+    // Synchronized on purpose
+    StringBuffer expected = new StringBuffer();
+    server.connectHandler(so -> {
+      Context ctx = vertx.getOrCreateContext();
+      for (int i = 0;i < 8;i++) {
+        int val = i;
+        ctx.runOnContext(v -> {
+          String chunk = "chunk-" + val + "\r\n";
+          so.write(chunk);
+          expected.append(chunk);
+        });
+      }
+      ctx.runOnContext(v -> {
+        // This will half close the connection
+        so.close();
+      });
+    });
+    startServer();
+    client.connect(testAddress, "localhost", onSuccess(so -> {
+      so.pause();
+      AtomicBoolean closed = new AtomicBoolean();
+      AtomicBoolean ended = new AtomicBoolean();
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.closeHandler(v -> {
+        assertFalse(ended.get());
+        assertEquals(Buffer.buffer(), received);
+        closed.set(true);
+        so.resume();
+      });
+      so.endHandler(v -> {
+        assertEquals(expected.toString(), received.toString());
+        ended.set(true);
+        testComplete();
       });
     }));
     await();
