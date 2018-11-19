@@ -88,6 +88,15 @@ public interface ContextInternal extends Context {
   <T> void executeFromIO(T value, Handler<T> task);
 
   /**
+   * Report an exception to this context synchronously.
+   * <p>
+   * The exception handler will be called when there is one, otherwise the exception will be logged.
+   *
+   * @param t the exception to report
+   */
+  void reportException(Throwable t);
+
+  /**
    * @return the {@link ConcurrentMap} used to store context data
    * @see Context#get(String)
    * @see Context#put(String, Object)

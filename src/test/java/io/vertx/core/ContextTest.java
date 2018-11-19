@@ -422,4 +422,14 @@ public class ContextTest extends VertxTestBase {
     }
     assertFalse(called.get());
   }
+
+  @Test
+  public void testReportExceptionToContext() {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    RuntimeException expected = new RuntimeException();
+    AtomicReference<Throwable> err = new AtomicReference<>();
+    ctx.exceptionHandler(err::set);
+    ctx.reportException(expected);
+    assertSame(expected, err.get());
+  }
 }

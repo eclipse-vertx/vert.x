@@ -320,7 +320,7 @@ abstract class ContextImpl implements ContextInternal {
       hTask.handle(arg);
       return true;
     } catch (Throwable t) {
-      handleException(t);
+      reportException(t);
       return false;
     } finally {
       // We don't unset the context after execution - this is done later when the context is closed via
@@ -331,14 +331,15 @@ abstract class ContextImpl implements ContextInternal {
     }
   }
 
-  private void handleException(Throwable t) {
-    log.error("Unhandled exception", t);
+  public void reportException(Throwable t) {
     Handler<Throwable> handler = this.exceptionHandler;
     if (handler == null) {
       handler = owner.exceptionHandler();
     }
     if (handler != null) {
       handler.handle(t);
+    } else {
+      log.error("Unhandled exception", t);
     }
   }
 
