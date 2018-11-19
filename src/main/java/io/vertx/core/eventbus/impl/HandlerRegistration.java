@@ -25,9 +25,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.ArrayDeque;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 
 /*
  * This class is optimised for performance when used on the same event loop it was created on.
@@ -83,12 +81,31 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   @Override
-  public synchronized MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
+  public MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
     Arguments.require(maxBufferedMessages >= 0, "Max buffered messages cannot be negative");
-    while (pending.size() > maxBufferedMessages) {
-      pending.poll();
+    List<Message<T>> discarded;
+    Handler<Message<T>> discardHandler;
+    synchronized (this) {
+      this.maxBufferedMessages = maxBufferedMessages;
+      int overflow = pending.size() - maxBufferedMessages;
+      if (overflow <= 0) {
+        return this;
+      }
+      discardHandler = this.discardHandler;
+      if (discardHandler == null) {
+        while (pending.size() > maxBufferedMessages) {
+          pending.poll();
+        }
+        return this;
+      }
+      discarded = new ArrayList<>(overflow);
+      while (pending.size() > maxBufferedMessages) {
+        discarded.add(pending.poll());
+      }
     }
-    this.maxBufferedMessages = maxBufferedMessages;
+    for (Message<T> msg : discarded) {
+      discardHandler.handle(msg);
+    }
     return this;
   }
 
@@ -114,12 +131,12 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   @Override
-  public synchronized void unregister() {
+  public void unregister() {
     doUnregister(null);
   }
 
   @Override
-  public synchronized void unregister(Handler<AsyncResult<Void>> completionHandler) {
+  public void unregister(Handler<AsyncResult<Void>> completionHandler) {
     Objects.requireNonNull(completionHandler);
     doUnregister(completionHandler);
   }
@@ -130,25 +147,42 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {
-    if (timeoutID != -1) {
-      vertx.cancelTimer(timeoutID);
+    Deque<Message<T>> discarded;
+    Handler<Message<T>> discardHandler;
+    synchronized (this) {
+      if (timeoutID != -1) {
+        vertx.cancelTimer(timeoutID);
+      }
+      if (endHandler != null) {
+        Handler<Void> theEndHandler = endHandler;
+        Handler<AsyncResult<Void>> handler = completionHandler;
+        completionHandler = ar -> {
+          theEndHandler.handle(null);
+          if (handler != null) {
+            handler.handle(ar);
+          }
+        };
+      }
+      HandlerHolder<T> holder = registered;
+      if (pending.size() > 0) {
+        discarded = new ArrayDeque<>(pending);
+        pending.clear();
+      } else {
+        discarded = null;
+      }
+      discardHandler = this.discardHandler;
+      if (holder != null) {
+        registered = null;
+        eventBus.removeRegistration(holder, completionHandler);
+      } else {
+        callCompletionHandlerAsync(completionHandler);
+      }
     }
-    if (endHandler != null) {
-      Handler<Void> theEndHandler = endHandler;
-      Handler<AsyncResult<Void>> handler = completionHandler;
-      completionHandler = ar -> {
-        theEndHandler.handle(null);
-        if (handler != null) {
-          handler.handle(ar);
-        }
-      };
-    }
-    HandlerHolder<T> holder = registered;
-    if (holder != null) {
-      registered = null;
-      eventBus.removeRegistration(holder, completionHandler);
-    } else {
-      callCompletionHandlerAsync(completionHandler);
+    if (discardHandler != null && discarded != null) {
+      Message<T> msg;
+      while ((msg = discarded.poll()) != null) {
+        discardHandler.handle(msg);
+      }
     }
   }
 

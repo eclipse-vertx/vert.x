@@ -1064,6 +1064,30 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testSetMaxBufferedMessageDropsMessages() {
+    MessageConsumer<Integer> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+      consumer.pause();
+      Context ctx = vertx.getOrCreateContext();
+      ctx.runOnContext(v -> {
+        AtomicInteger count = new AtomicInteger(1);
+        ((HandlerRegistration<Integer>)consumer).discardHandler(discarded -> {
+          int val = discarded.body();
+          assertEquals(count.getAndIncrement(), val);
+          if (val == 9) {
+            testComplete();
+          }
+        });
+        consumer.setMaxBufferedMessages(10);
+      });
+    });
+    for (int i = 0;i < 20;i++) {
+      eb.send(ADDRESS1, i);
+    }
+    await();
+  }
+
+  @Test
   public void testExceptionWhenDeliveringBufferedMessageWithMessageStream() {
     testExceptionWhenDeliveringBufferedMessage((consumer, handler) -> consumer.handler(message -> handler.handle(message.body())));
   }
@@ -1377,6 +1401,27 @@ public class LocalEventBusTest extends EventBusTestBase {
         vertx.eventBus().send(ADDRESS1, "msg-" + i);
       }
     }));
+    await();
+  }
+
+  @Test
+  public void testUnregisterConsumerDiscardPendingMessages() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+      assertEquals("val0", msg.body());
+      consumer.pause();
+      eb.send(ADDRESS1, "val1");
+      Context ctx = Vertx.currentContext();
+      ctx.runOnContext(v -> {
+        consumer.resume();
+        ((HandlerRegistration<?>) consumer).discardHandler(discarded -> {
+          assertEquals("val1", discarded.body());
+          testComplete();
+        });
+        consumer.handler(null);
+      });
+    });
+    eb.send(ADDRESS1, "val0");
     await();
   }
 }
