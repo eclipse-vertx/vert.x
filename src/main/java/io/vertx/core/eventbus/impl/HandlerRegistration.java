@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -18,6 +19,7 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
@@ -50,7 +52,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private long timeoutID = -1;
   private HandlerHolder<T> registered;
   private Handler<Message<T>> handler;
-  private Context handlerContext;
+  private ContextInternal handlerContext;
   private AsyncResult<Void> result;
   private Handler<AsyncResult<Void>> completionHandler;
   private Handler<Void> endHandler;
@@ -157,7 +159,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   synchronized void setHandlerContext(Context context) {
-    handlerContext = context;
+    handlerContext = (ContextInternal) context;
   }
 
   public synchronized void setResult(AsyncResult<Void> result) {
@@ -178,6 +180,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   @Override
   public void handle(Message<T> message) {
     Handler<Message<T>> theHandler;
+    ContextInternal ctx;
     synchronized (this) {
       if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
@@ -197,14 +200,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         }
         theHandler = handler;
       }
+      ctx = handlerContext;
     }
-    deliver(theHandler, message);
+    deliver(theHandler, message, ctx);
   }
 
-  private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
+  private void deliver(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    checkNextTick();
     boolean local = true;
     if (message instanceof ClusteredMessage) {
       // A bit hacky
@@ -230,8 +233,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       if (metrics != null) {
         metrics.endHandleMessage(metric, e);
       }
-      throw e;
+      context.reportException(e);
     }
+    checkNextTick();
   }
 
   private synchronized void checkNextTick() {
@@ -240,6 +244,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       handlerContext.runOnContext(v -> {
         Message<T> message;
         Handler<Message<T>> theHandler;
+        ContextInternal ctx;
         synchronized (HandlerRegistration.this) {
           if (demand == 0L || (message = pending.poll()) == null) {
             return;
@@ -248,8 +253,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
             demand--;
           }
           theHandler = handler;
+          ctx = handlerContext;
         }
-        deliver(theHandler, message);
+        deliver(theHandler, message, ctx);
       });
     }
   }
