@@ -31,6 +31,7 @@ import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.RandomAccessFile;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -4661,5 +4662,37 @@ public class Http1xTest extends HttpTest {
     servers.forEach(server -> {
       assertTrue(server.isClosed());
     });
+  }
+
+  @Test
+  public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
+    int expected = 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
+    File sent = TestUtils.tmpFile(".dat", expected);
+    server.close();
+    server = vertx
+      .createHttpServer(createBaseServerOptions().setIdleTimeout(400).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
+      .requestHandler(
+        req -> {
+          req.response().sendFile(sent.getAbsolutePath());
+        });
+    startServer();
+    client.getNow(8080, "localhost", "/", resp -> {
+      long now = System.currentTimeMillis();
+      int[] length = {0};
+      resp.handler(buff -> {
+        length[0] += buff.length();
+        resp.pause();
+        vertx.setTimer(1, id -> {
+          resp.resume();
+        });
+      });
+      resp.exceptionHandler(this::fail);
+      resp.endHandler(v -> {
+        assertEquals(expected, length[0]);
+        assertTrue(System.currentTimeMillis() - now > 1000);
+        testComplete();
+      });
+    });
+    await();
   }
 }

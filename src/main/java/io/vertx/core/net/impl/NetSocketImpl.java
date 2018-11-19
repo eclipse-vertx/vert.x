@@ -87,11 +87,10 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
-    // We use 0 highWatermark so when the connection is paused, the channel auto read is immediately set to false
-    // otherwise the channel might become inactive with buffers still pending that won't be delivered to the application
-    pending = new InboundBuffer<>(context, 0L);
+    pending = new InboundBuffer<>(context);
     pending.drainHandler(v -> doResume());
     pending.handler(NULL_MSG_HANDLER);
+    pending.emptyHandler(v -> checkEnd());
   }
 
   synchronized void registerEventBusHandler() {
@@ -339,7 +338,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   protected void handleClosed() {
-    Handler<Void> handler;
     MessageConsumer consumer;
     synchronized (this) {
       if (closed) {
@@ -348,15 +346,22 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       closed = true;
       consumer = registration;
       registration = null;
-      handler = endHandler;
     }
-    if (handler != null) {
-      handler.handle(null);
-    }
+    checkEnd();
     super.handleClosed();
     if (consumer != null) {
       consumer.unregister();
     }
+  }
+
+  private void checkEnd() {
+    Handler<Void> handler;
+    synchronized (this) {
+      if (!closed || pending.size() > 0 || (handler = endHandler) == null) {
+        return;
+      }
+    }
+    handler.handle(null);
   }
 
   public synchronized void handleMessage(Object msg) {

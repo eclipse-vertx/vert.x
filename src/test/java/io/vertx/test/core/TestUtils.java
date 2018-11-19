@@ -24,6 +24,7 @@ import io.vertx.test.netty.TestLoggerFactory;
 import javax.security.cert.X509Certificate;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.List;
@@ -409,9 +410,20 @@ public class TestUtils {
   /**
    * Create a temp file that does not exists.
    */
-  public static File tmpFile(String prefix, String suffix) throws Exception {
-    File tmp = Files.createTempFile(prefix, suffix).toFile();
+  public static File tmpFile(String suffix) throws Exception {
+    File tmp = Files.createTempFile("vertx", suffix).toFile();
     assertTrue(tmp.delete());
+    return tmp;
+  }
+
+  /**
+   * Create a temp file that exists and with a specified {@code length}. The file will be deleted at VM exit.
+   */
+  public static File tmpFile(String suffix, long length) throws Exception {
+    File tmp = File.createTempFile("vertx", suffix);
+    tmp.deleteOnExit();
+    RandomAccessFile f = new RandomAccessFile(tmp, "rw");
+    f.setLength(length);
     return tmp;
   }
 
