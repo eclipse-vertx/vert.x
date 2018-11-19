@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -675,6 +676,25 @@ public class InboundBufferTest extends VertxTestBase {
         assertEquals(0, emitted.get());
         testComplete();
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testBufferSignalingFullImmediately() {
+    context.runOnContext(v1 -> {
+      buffer = new InboundBuffer<>(context, 0L);
+      List<Integer> emitted = new ArrayList<>();
+      buffer.drainHandler(v -> {
+        assertEquals(Arrays.asList(0, 1), emitted);
+        testComplete();
+      });
+      buffer.handler(emitted::add);
+      assertTrue(emit());
+      assertEquals(Collections.singletonList(0), emitted);
+      buffer.pause();
+      assertFalse(emit());
+      buffer.resume();
     });
     await();
   }

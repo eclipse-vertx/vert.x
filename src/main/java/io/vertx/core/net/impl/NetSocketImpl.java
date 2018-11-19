@@ -87,7 +87,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
-    pending = new InboundBuffer<>(context);
+    // We use 0 highWatermark so when the connection is paused, the channel auto read is immediately set to false
+    // otherwise the channel might become inactive with buffers still pending that won't be delivered to the application
+    pending = new InboundBuffer<>(context, 0L);
     pending.drainHandler(v -> doResume());
     pending.handler(NULL_MSG_HANDLER);
   }
