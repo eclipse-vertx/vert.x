@@ -26,7 +26,6 @@ import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /*
  * This class is optimised for performance when used on the same event loop it was created on.
@@ -104,7 +103,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         discarded.add(pending.poll());
       }
     }
-    System.out.println("discarded = " + discarded.stream().map(m -> m.body()).collect(Collectors.toList()));
     for (Message<T> msg : discarded) {
       discardHandler.handle(msg);
     }
