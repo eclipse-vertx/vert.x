@@ -11,6 +11,9 @@
 
 package io.vertx.core.spi.metrics;
 
+import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SingleThreadEventLoop;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
@@ -1101,5 +1104,24 @@ public class MetricsTest extends VertxTestBase {
       }
       future.complete(null);
     };
+  }
+
+  @Test
+  public void testInitialization() {
+    assertSame(vertx, ((FakeVertxMetrics)FakeMetricsBase.getMetrics(vertx)).vertx());
+    startNodes(1);
+    assertSame(vertices[0], ((FakeVertxMetrics)FakeMetricsBase.getMetrics(vertices[0])).vertx());
+    EventLoopGroup group = vertx.nettyEventLoopGroup();
+    Set<EventLoop> loops = new HashSet<>();
+    int count = 0;
+    while (true) {
+      EventLoop next = group.next();
+      if (!loops.add(next)) {
+        break;
+      }
+      count++;
+      assertTrue(count <= VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE);
+    }
+    assertEquals(loops.size(), VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE);
   }
 }

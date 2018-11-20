@@ -465,6 +465,9 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     @Override
     public CharSequence setValue(CharSequence value) {
       Objects.requireNonNull(value, "value");
+      if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+        HttpUtils.validateHeaderValue(value);
+      }
       CharSequence oldValue = this.value;
       this.value = value;
       return oldValue;
@@ -515,11 +518,8 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   private void add0(int h, int i, final CharSequence name, final CharSequence value) {
-    if (!(name instanceof AsciiString)) {
-      HttpUtils.validateHeader(name);
-    }
-    if (!(value instanceof AsciiString)) {
-      HttpUtils.validateHeader(value);
+    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+      HttpUtils.validateHeader(name, value);
     }
     // Update the hash table.
     VertxHttpHeaders.MapEntry e = entries[i];
@@ -546,14 +546,15 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     VertxHttpHeaders.MapEntry e = entries[i];
+    CharSequence value = null;
     while (e != null) {
       CharSequence key = e.key;
       if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
-        return e.getValue();
+        value = e.getValue();
       }
       e = e.next;
     }
-    return null;
+    return value;
   }
 
   private MultiMap set0(Iterable<Map.Entry<String, String>> map) {

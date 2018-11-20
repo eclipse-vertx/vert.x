@@ -30,6 +30,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.*;
@@ -41,16 +42,14 @@ import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -81,7 +80,7 @@ public class NetTest extends VertxTestBase {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
       assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
-      tmp = TestUtils.tmpFile("vertx", ".sock");
+      tmp = TestUtils.tmpFile(".sock");
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
     } else {
       testAddress = SocketAddress.inetSocketAddress(1234, "localhost");
@@ -789,6 +788,56 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testWriteHandlerSuccess() throws Exception {
+    CompletableFuture<Void> close = new CompletableFuture<>();
+    server.connectHandler(socket -> {
+      socket.pause();
+      close.thenAccept(v -> {
+        socket.resume();
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      writeUntilFull(so, v -> {
+        so.write(Buffer.buffer("lost buffer"), onSuccess(ack -> testComplete()));
+        close.complete(null);
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testWriteHandlerFailure() throws Exception {
+    CompletableFuture<Void> close = new CompletableFuture<>();
+    server.connectHandler(socket -> {
+      socket.pause();
+      close.thenAccept(v -> {
+        socket.close();
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      writeUntilFull(so, v -> {
+        so.write(Buffer.buffer("lost buffer"), onFailure(err -> {
+          testComplete();
+        }));
+        close.complete(null);
+      });
+    }));
+    await();
+  }
+
+  private void writeUntilFull(NetSocket so, Handler<Void> handler) {
+    if (so.writeQueueFull()) {
+      handler.handle(null);
+    } else {
+      // Give enough time to report a proper full
+      so.write(TestUtils.randomBuffer(16384));
+      vertx.setTimer(10, id -> writeUntilFull(so, handler));
+    }
+  }
+
+  @Test
   public void testEchoBytes() {
     Buffer sent = TestUtils.randomBuffer(100);
     testEcho(sock -> sock.write(sent), buff -> assertEquals(sent, buff), sent.length());
@@ -1083,16 +1132,12 @@ public class NetTest extends VertxTestBase {
     reconnectAttempts(100000);
   }
 
-  void reconnectAttempts(int attempts) {
+  private void reconnectAttempts(int attempts) {
     client.close();
     client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(attempts).setReconnectInterval(10));
 
     //The server delays starting for a a few seconds, but it should still connect
-    client.connect(testAddress, (res) -> {
-      assertTrue(res.succeeded());
-      assertFalse(res.failed());
-      testComplete();
-    });
+    client.connect(testAddress, onSuccess(so -> testComplete()));
 
     // Start the server after a delay
     vertx.setTimer(2000, id -> startEchoServer(testAddress, s -> {}));
@@ -1671,11 +1716,11 @@ public class NetTest extends VertxTestBase {
   // To get this to reliably pass with a lot of connections.
   public void testSharedServersRoundRobin() throws Exception {
 
+    boolean domainSocket = testAddress.path() != null;
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
-    int numConnections = numServers * 20;
+    int numConnections = numServers * (domainSocket ? 10 : 20);
 
     List<NetServer> servers = new ArrayList<>();
-    Set<NetServer> connectedServers = new ConcurrentHashSet<>();
     Map<NetServer, Integer> connectCount = new ConcurrentHashMap<>();
 
     CountDownLatch latchListen = new CountDownLatch(numServers);
@@ -1684,11 +1729,7 @@ public class NetTest extends VertxTestBase {
       NetServer theServer = vertx.createNetServer();
       servers.add(theServer);
       theServer.connectHandler(sock -> {
-        connectedServers.add(theServer);
-        Integer cnt = connectCount.get(theServer);
-        int icnt = cnt == null ? 0 : cnt;
-        icnt++;
-        connectCount.put(theServer, icnt);
+        connectCount.compute(theServer, (s, cur) -> cur == null ? 1 : cur + 1);
         latchConns.countDown();
       }).listen(testAddress, ar -> {
         if (ar.succeeded()) {
@@ -1715,28 +1756,17 @@ public class NetTest extends VertxTestBase {
       });
     }
 
-    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
-    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
+    awaitLatch(latchClient);
+    awaitLatch(latchConns);
 
-    assertEquals(numServers, connectedServers.size());
+    assertEquals(numServers, connectCount.size());
     for (NetServer server : servers) {
-      assertTrue(connectedServers.contains(server));
+      assertTrue(connectCount.containsKey(server));
     }
     assertEquals(numServers, connectCount.size());
     for (int cnt : connectCount.values()) {
       assertEquals(numConnections / numServers, cnt);
     }
-
-    CountDownLatch closeLatch = new CountDownLatch(numServers);
-
-    for (NetServer server : servers) {
-      server.close(ar -> {
-        assertTrue(ar.succeeded());
-        closeLatch.countDown();
-      });
-    }
-
-    assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
 
     testComplete();
   }
@@ -1786,6 +1816,28 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testClosingVertxCloseSharedServers() throws Exception {
+    int numServers = 2;
+    Vertx vertx = Vertx.vertx(getOptions());
+    List<NetServerImpl> servers = new ArrayList<>();
+    for (int i = 0;i < numServers;i++) {
+      NetServer server = vertx.createNetServer().connectHandler(so -> {
+        fail();
+      });
+      startServer(server);
+      servers.add((NetServerImpl) server);
+    }
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.close(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    servers.forEach(server -> {
+      assertTrue(server.isClosed());
+    });
+  }
+
+  @Test
   // This tests using NetSocket.writeHandlerID (on the server side)
   // Send some data and make sure it is fanned out to all connections
   public void testFanout() throws Exception {
@@ -1819,17 +1871,18 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testRemoteAddress() throws Exception {
+  public void testRemoteAddress() {
     server.connectHandler(socket -> {
       SocketAddress addr = socket.remoteAddress();
       assertEquals("127.0.0.1", addr.host());
+      socket.close();
     }).listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
       vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", onSuccess(socket -> {
         SocketAddress addr = socket.remoteAddress();
         assertEquals("127.0.0.1", addr.host());
         assertEquals(addr.port(), 1234);
-        testComplete();
+        socket.closeHandler(v -> testComplete());
       }));
     });
     await();
@@ -2962,7 +3015,7 @@ public class NetTest extends VertxTestBase {
       client.connect(4043, "127.0.0.1", arSocket -> {
         if (arSocket.succeeded()) {
           NetSocket ns = arSocket.result();
-          ns.exceptionHandler(th -> {
+          ns.closeHandler(v -> {
             testComplete();
           });
           ns.upgradeToSsl(v -> {
@@ -3295,6 +3348,91 @@ public class NetTest extends VertxTestBase {
     client.connect(testAddress, onSuccess(so -> {
       vertx.setTimer(1000, id -> {
         so.close();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerWithIdleTimeoutSendChunkedFile() throws Exception {
+    testdleTimeoutSendChunkedFile(true);
+  }
+
+  @Test
+  public void testClientWithIdleTimeoutSendChunkedFile() throws Exception {
+    testdleTimeoutSendChunkedFile(false);
+  }
+
+  private void testdleTimeoutSendChunkedFile(boolean idleOnServer) throws Exception {
+    int expected = 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
+    File sent = TestUtils.tmpFile(".dat", expected);
+    server.close();
+    Consumer<NetSocket> sender = so -> {
+      so.sendFile(sent.getAbsolutePath());
+    };
+    Consumer<NetSocket> receiver = so -> {
+      int[] len = { 0 };
+      long now = System.currentTimeMillis();
+      so.handler(buff -> {
+        len[0] += buff.length();
+        so.pause();
+        vertx.setTimer(1, id -> {
+          so.resume();
+        });
+      });
+      so.exceptionHandler(this::fail);
+      so.endHandler(v -> {
+        assertEquals(0, expected - len[0]);
+        assertTrue(System.currentTimeMillis() - now > 200);
+        testComplete();
+      });
+    };
+    server = vertx
+      .createNetServer(new NetServerOptions().setIdleTimeout(200).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
+      .connectHandler((idleOnServer ? sender : receiver)::accept);
+    startServer();
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setIdleTimeout(200).setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
+    client.connect(testAddress, onSuccess(idleOnServer ? receiver : sender));
+    await();
+  }
+
+  @Test
+  public void testHalfCloseCallsEndHandlerAfterBuffersAreDelivered() throws Exception {
+    // Synchronized on purpose
+    StringBuffer expected = new StringBuffer();
+    server.connectHandler(so -> {
+      Context ctx = vertx.getOrCreateContext();
+      for (int i = 0;i < 8;i++) {
+        int val = i;
+        ctx.runOnContext(v -> {
+          String chunk = "chunk-" + val + "\r\n";
+          so.write(chunk);
+          expected.append(chunk);
+        });
+      }
+      ctx.runOnContext(v -> {
+        // This will half close the connection
+        so.close();
+      });
+    });
+    startServer();
+    client.connect(testAddress, "localhost", onSuccess(so -> {
+      so.pause();
+      AtomicBoolean closed = new AtomicBoolean();
+      AtomicBoolean ended = new AtomicBoolean();
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.closeHandler(v -> {
+        assertFalse(ended.get());
+        assertEquals(Buffer.buffer(), received);
+        closed.set(true);
+        so.resume();
+      });
+      so.endHandler(v -> {
+        assertEquals(expected.toString(), received.toString());
+        ended.set(true);
+        testComplete();
       });
     }));
     await();

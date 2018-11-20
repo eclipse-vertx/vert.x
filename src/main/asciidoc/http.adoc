@@ -56,7 +56,7 @@ WARNING: most browsers won't support `h2c`, so for serving web sites you should 
 When a server accepts an HTTP/2 connection, it sends to the client its {@link io.vertx.core.http.HttpServerOptions#getInitialSettings initial settings}.
 The settings define how the client can use the connection, the default initial settings for a server are:
 
-- {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: {@code 100} as recommended by the HTTP/2 RFC
+- {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: `100` as recommended by the HTTP/2 RFC
 - the default HTTP/2 settings values for the others
 
 NOTE: Worker Verticles are not compatible with HTTP/2
@@ -775,7 +775,7 @@ Both methods of specifying host/port are supported for all the different ways of
 Often, you'll want to make HTTP requests with no request body. This is usually the case with HTTP GET, OPTIONS and
 HEAD requests.
 
-The simplest way to do this with the Vert.x http client is using the methods prefixed with `Now`. For example
+The simplest way to do this with the Vert.x http client is using the methods suffixed with `Now`. For example
 {@link io.vertx.core.http.HttpClient#getNow}.
 
 These methods create the http request and send it in a single method call and allow you to provide a handler that will be

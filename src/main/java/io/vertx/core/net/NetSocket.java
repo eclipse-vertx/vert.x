@@ -53,6 +53,12 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Override
   NetSocket fetch(long amount);
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * This handler might be called after the close handler when the socket is paused and there are still
+   * buffers to deliver.
+   */
   @Override
   NetSocket endHandler(Handler<Void> endHandler);
 
@@ -95,6 +101,13 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   NetSocket write(String str, String enc);
+
+  /**
+   * Like {@link #write(Object)} but with an {@code handler} called when the message has been written
+   * or failed to be written.
+   */
+  @Fluent
+  NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler);
 
   /**
    * Tell the operating system to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
@@ -234,7 +247,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    *         not SSL.
    * @see javax.net.ssl.SSLSession
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   SSLSession sslSession();
 
   /**

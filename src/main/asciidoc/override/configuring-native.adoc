@@ -1,0 +1,7 @@
+[source,$lang]
+----
+{@link examples.CoreExamples#configureNative()}
+----
+
+NOTE: preferring native transport will not prevent the application to execute (for example if a JAR is missing).
+If your application requires native transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.

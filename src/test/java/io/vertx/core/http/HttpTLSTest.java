@@ -1129,7 +1129,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       AtomicInteger count = new AtomicInteger();
       server.exceptionHandler(err -> {
         if (shouldPass) {
-          fail();
+          HttpTLSTest.this.fail(err);
         } else {
           if (count.incrementAndGet() == 1) {
             complete();

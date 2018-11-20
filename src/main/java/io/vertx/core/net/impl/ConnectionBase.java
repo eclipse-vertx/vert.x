@@ -49,6 +49,7 @@ public abstract class ConnectionBase {
    */
   public static final VertxException CLOSED_EXCEPTION = new VertxException("Connection was closed", true);
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
+  private static final int MAX_REGION_SIZE = 1024 * 1024;
 
   private final VoidChannelPromise voidPromise;
   protected final VertxInternal vertx;
@@ -80,11 +81,6 @@ public abstract class ConnectionBase {
 
   public VertxHandler handler() {
     return (VertxHandler) chctx.handler();
-  }
-
-  private synchronized void startRead() {
-    checkContext();
-    read = true;
   }
 
   protected synchronized final void endReadAndFlush() {
@@ -276,6 +272,38 @@ public abstract class ConnectionBase {
     return chctx.pipeline().get(SslHandler.class) != null;
   }
 
+  /**
+   * Send a file as a file region for zero copy transfer to the socket.
+   *
+   * The implementation splits the file into multiple regions to avoid stalling the pipeline
+   * and producing idle timeouts for very large files.
+   *
+   * @param file the file to send
+   * @param offset the file offset
+   * @param length the file length
+   * @param writeFuture the write future to be completed when the transfer is done or failed
+   */
+  private void sendFileRegion(RandomAccessFile file, long offset, long length, ChannelPromise writeFuture) {
+    if (length < MAX_REGION_SIZE) {
+      writeToChannel(new DefaultFileRegion(file.getChannel(), offset, length), writeFuture);
+    } else {
+      ChannelPromise promise = chctx.newPromise();
+      FileRegion region = new DefaultFileRegion(file.getChannel(), offset, MAX_REGION_SIZE);
+      // Retain explicitly this file region so the underlying channel is not closed by the NIO channel when it
+      // as been sent as we need it again
+      region.retain();
+      writeToChannel(region, promise);
+      promise.addListener(future -> {
+        if (future.isSuccess()) {
+          sendFileRegion(file, offset + MAX_REGION_SIZE, length - MAX_REGION_SIZE, writeFuture);
+        } else {
+          future.cause().printStackTrace();
+          writeFuture.setFailure(future.cause());
+        }
+      });
+    }
+  }
+
   protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
     // Write the content.
     ChannelPromise writeFuture = chctx.newPromise();
@@ -284,8 +312,7 @@ public abstract class ConnectionBase {
       writeToChannel(new ChunkedFile(raf, offset, length, 8192), writeFuture);
     } else {
       // No encryption - use zero-copy.
-      FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
-      writeToChannel(region, writeFuture);
+      sendFileRegion(raf, offset, length, writeFuture);
     }
     if (writeFuture != null) {
       writeFuture.addListener(fut -> raf.close());
@@ -312,7 +339,7 @@ public abstract class ConnectionBase {
 
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
+      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
       assert sslHandlerContext != null;
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession().getPeerCertificateChain();
@@ -322,8 +349,8 @@ public abstract class ConnectionBase {
   }
 
   public String indicatedServerName() {
-    if (chctx.channel().hasAttr(VertxSniHandler.SERVER_NAME_ATTR)) {
-      return chctx.channel().attr(VertxSniHandler.SERVER_NAME_ATTR).get();
+    if (chctx.channel().hasAttr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR)) {
+      return chctx.channel().attr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR).get();
     } else {
       return null;
     }
@@ -353,7 +380,9 @@ public abstract class ConnectionBase {
   }
 
   final void handleRead(Object msg) {
-    startRead();
+    synchronized (this) {
+      read = true;
+    }
     handleMessage(msg);
   }
 

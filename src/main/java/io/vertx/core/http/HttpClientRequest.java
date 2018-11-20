@@ -11,13 +11,10 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -171,7 +168,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   /**
    * Like {@link #putHeader(String, String)} but using CharSequence
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpClientRequest putHeader(CharSequence name, CharSequence value);
 
@@ -182,14 +179,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    * @param values The header values
    * @return @return a reference to this, so the API can be used fluently
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpClientRequest putHeader(String name, Iterable<String> values);
 
   /**
    * Like {@link #putHeader(String, Iterable)} but using CharSequence
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
 

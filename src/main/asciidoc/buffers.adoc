@@ -52,14 +52,14 @@ Note that buffers created this way *are empty*. It does not create a buffer fill
 
 There are two ways to write to a buffer: appending, and random access.
 In either case buffers will always expand automatically to encompass the bytes. It's not possible to get
-an {@code IndexOutOfBoundsException} with a buffer.
+an `IndexOutOfBoundsException` with a buffer.
 
 ==== Appending to a Buffer
 
-To append to a buffer, you use the {@code appendXXX} methods.
+To append to a buffer, you use the `appendXXX` methods.
 Append methods exist for appending various different types.
 
-The return value of the {@code appendXXX} methods is the buffer itself, so these can be chained:
+The return value of the `appendXXX` methods is the buffer itself, so these can be chained:
 
 [source,$lang]
 ----
@@ -68,7 +68,7 @@ The return value of the {@code appendXXX} methods is the buffer itself, so these
 
 ==== Random access buffer writes
 
-You can also write into the buffer at a specific index, by using the {@code setXXX} methods.
+You can also write into the buffer at a specific index, by using the `setXXX` methods.
 Set methods exist for various different data types. All the set methods take an index as the first argument - this
 represents the position in the buffer where to start writing the data.
 
@@ -81,7 +81,7 @@ The buffer will always expand as necessary to accommodate the data.
 
 === Reading from a Buffer
 
-Data is read from a buffer using the {@code getXXX} methods. Get methods exist for various datatypes.
+Data is read from a buffer using the `getXXX` methods. Get methods exist for various datatypes.
 The first argument to these methods is an index in the buffer from where to get the data.
 
 [source,$lang]
@@ -91,8 +91,8 @@ The first argument to these methods is an index in the buffer from where to get 
 
 === Working with unsigned numbers
 
-Unsigned numbers can be read from or appended/set to a buffer with the {@code getUnsignedXXX},
-{@code appendUnsignedXXX} and {@code setUnsignedXXX} methods. This is useful when implementing a codec for a
+Unsigned numbers can be read from or appended/set to a buffer with the `getUnsignedXXX`,
+`appendUnsignedXXX` and `setUnsignedXXX` methods. This is useful when implementing a codec for a
 network protocol optimized to minimize bandwidth consumption.
 
 In the following example, value 200 is set at specified position with just one byte:

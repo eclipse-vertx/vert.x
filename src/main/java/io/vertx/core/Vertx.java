@@ -319,7 +319,7 @@ public interface Vertx extends Measured {
    *
    * @param verticle  the verticle instance to deploy.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void deployVerticle(Verticle verticle);
 
   /**
@@ -333,7 +333,7 @@ public interface Vertx extends Measured {
    * @param verticle  the verticle instance to deploy
    * @param completionHandler  a handler which will be notified when the deployment is complete
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler);
 
   /**
@@ -343,7 +343,7 @@ public interface Vertx extends Measured {
    * @param verticle  the verticle instance to deploy
    * @param options  the deployment options.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void deployVerticle(Verticle verticle, DeploymentOptions options);
 
   /**
@@ -362,7 +362,7 @@ public interface Vertx extends Measured {
    * <p>
    * Note that the supplier will be invoked on the caller thread.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
 
   /**
@@ -373,7 +373,7 @@ public interface Vertx extends Measured {
    * @param options  the deployment options.
    * @param completionHandler  a handler which will be notified when the deployment is complete
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
@@ -392,7 +392,7 @@ public interface Vertx extends Measured {
    * <p>
    * Note that the supplier will be invoked on the caller thread.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
@@ -468,7 +468,7 @@ public interface Vertx extends Measured {
    *
    * @param factory the factory to register
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void registerVerticleFactory(VerticleFactory factory);
 
   /**
@@ -476,7 +476,7 @@ public interface Vertx extends Measured {
    *
    * @param factory the factory to unregister
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   void unregisterVerticleFactory(VerticleFactory factory);
 
   /**
@@ -484,7 +484,7 @@ public interface Vertx extends Measured {
    *
    * @return the set of verticle factories
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   Set<VerticleFactory> verticleFactories();
 
   /**
@@ -528,7 +528,7 @@ public interface Vertx extends Measured {
    *
    * @return the EventLoopGroup
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   EventLoopGroup nettyEventLoopGroup();
 
   /**

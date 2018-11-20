@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -42,6 +43,13 @@ public class HandlerManager<T> {
 
   public boolean hasHandlers() {
     return hasHandlers;
+  }
+
+  public synchronized List<T> handlers() {
+    return handlerMap.values().stream()
+      .flatMap(handlers -> handlers.list.stream())
+      .map(holder -> holder.handler)
+      .collect(Collectors.toList());
   }
 
   public HandlerHolder<T> chooseHandler(EventLoop worker) {

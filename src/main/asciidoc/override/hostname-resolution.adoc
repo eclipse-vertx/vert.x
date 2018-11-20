@@ -1,0 +1,67 @@
+== Host name resolution
+
+Vert.x uses an an address resolver for resolving host name into IP addresses instead of
+the JVM built-in blocking resolver.
+
+An host name resolves to an IP address using:
+
+- the _hosts_ file of the operating system
+- otherwise DNS queries against a list of servers
+
+By default it will use the list of the system DNS server addresses from the environment, if that list cannot be
+retrieved it will use Google's public DNS servers `"8.8.8.8"` and `"8.8.4.4"`.
+
+DNS servers can be also configured when creating a {@link io.vertx.core.Vertx} instance:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#configureDNSServers}
+----
+
+The default port of a DNS server is `53`, when a server uses a different port, this port can be set
+using a colon delimiter: `192.168.0.2:40000`.
+
+NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
+_-Dvertx.disableDnsResolver=true_ activates this behavior
+
+=== Failover
+
+When a server does not reply in a timely manner, the resolver will try the next one from the list, the search
+is limited by {@link io.vertx.core.dns.AddressResolverOptions#setMaxQueries(int)} (the default value is `4` queries).
+
+A DNS query is considered as failed when the resolver has not received a correct answer within
+{@link io.vertx.core.dns.AddressResolverOptions#getQueryTimeout()} milliseconds (the default value is `5` seconds).
+
+=== Server list rotation
+
+By default the dns server selection uses the first one, the remaining servers are used for failover.
+
+You can configure {@link io.vertx.core.dns.AddressResolverOptions#setRotateServers(boolean)} to `true` to let
+the resolver perform a round-robin selection instead. It spreads the query load among the servers and avoids
+all lookup to hit the first server of the list.
+
+Failover still applies and will use the next server in the list.
+
+=== Hosts mapping
+
+The _hosts_ file of the operating system is used to perform an hostname lookup for an ipaddress.
+
+An alternative _hosts_ file can be used instead:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#configureHosts}
+----
+
+=== Search domains
+
+By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
+list can be provided:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#configureSearchDomains()}
+----
+
+When a search domain list is used, the threshold for the number of dots is `1` or loaded from `/etc/resolv.conf`
+on Linux, it can be configured to a specific value with {@link io.vertx.core.dns.AddressResolverOptions#setNdots(int)}.

@@ -76,8 +76,8 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public ChannelFactory<? extends Channel> channelFactory(boolean domain) {
-    if (domain) {
+  public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
+    if (domainSocket) {
       return KQueueDomainSocketChannel::new;
     } else {
       return KQueueSocketChannel::new;
@@ -85,8 +85,8 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
-    if (domain) {
+  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
+    if (domainSocket) {
       return KQueueServerDomainSocketChannel::new;
     } else {
       return KQueueServerSocketChannel::new;
@@ -94,9 +94,11 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public void configure(NetServerOptions options, ServerBootstrap bootstrap) {
-    bootstrap.option(KQueueChannelOption.SO_REUSEPORT, options.isReusePort());
-    super.configure(options, bootstrap);
+  public void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
+    if (!domainSocket) {
+      bootstrap.option(KQueueChannelOption.SO_REUSEPORT, options.isReusePort());
+    }
+    super.configure(options, domainSocket, bootstrap);
   }
 
   @Override

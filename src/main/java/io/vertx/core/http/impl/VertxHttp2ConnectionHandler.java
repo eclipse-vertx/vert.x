@@ -90,7 +90,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    super.exceptionCaught(ctx, cause);
+    Http2Exception http2Cause = Http2CodecUtil.getEmbeddedHttp2Exception(cause);
+    if (http2Cause != null) {
+      // Super will only handle Http2Exception otherwise it will be reach the end of the pipeline
+      super.exceptionCaught(ctx, http2Cause);
+    }
     ctx.close();
   }
 
@@ -203,19 +207,29 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, chctx.newPromise());
   }
 
-  void writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
+  void writeData(Http2Stream stream, ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
     EventExecutor executor = chctx.executor();
+    ChannelPromise promise = chctx.newPromise();
+    if (handler != null) {
+      promise.addListener((future) -> {
+        if(future.isSuccess()) {
+          handler.handle(Future.succeededFuture());
+        } else {
+          handler.handle(Future.failedFuture(future.cause()));
+        }
+      });
+    }
     if (executor.inEventLoop()) {
-      _writeData(stream, chunk, end);
+      _writeData(stream, chunk, end, promise);
     } else {
       executor.execute(() -> {
-        _writeData(stream, chunk, end);
+        _writeData(stream, chunk, end, promise);
       });
     }
   }
 
-  private void _writeData(Http2Stream stream, ByteBuf chunk, boolean end) {
-    encoder().writeData(chctx, stream.id(), chunk, 0, end, chctx.newPromise());
+  private void _writeData(Http2Stream stream, ByteBuf chunk, boolean end, ChannelPromise promise) {
+    encoder().writeData(chctx, stream.id(), chunk, 0, end, promise);
     Http2RemoteFlowController controller = encoder().flowController();
     if (!controller.isWritable(stream) || end) {
       try {

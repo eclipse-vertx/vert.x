@@ -19,6 +19,7 @@ import io.vertx.core.impl.*;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -26,9 +27,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -1066,6 +1065,33 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testSetMaxBufferedMessageDropsMessages() {
+    MessageConsumer<Integer> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+      consumer.pause();
+      Context ctx = vertx.getOrCreateContext();
+      // Let enough time of the 20 messages to go in the consumer pending queue
+      vertx.setTimer(20, v -> {
+        AtomicInteger count = new AtomicInteger(1);
+        ((HandlerRegistration<Integer>)consumer).discardHandler(discarded -> {
+          int val = discarded.body();
+          assertEquals(count.getAndIncrement(), val);
+          if (val == 9) {
+            testComplete();
+          }
+        });
+        consumer.setMaxBufferedMessages(10);
+      });
+    });
+    vertx.runOnContext(v -> {
+      for (int i = 0;i < 20;i++) {
+        eb.send(ADDRESS1, i);
+      }
+    });
+    await();
+  }
+
+  @Test
   public void testExceptionWhenDeliveringBufferedMessageWithMessageStream() {
     testExceptionWhenDeliveringBufferedMessage((consumer, handler) -> consumer.handler(message -> handler.handle(message.body())));
   }
@@ -1318,6 +1344,88 @@ public class LocalEventBusTest extends EventBusTestBase {
       });
       eb.consumer(ADDRESS1).unregister();
     });
+    await();
+  }
+
+  @Test
+  public void testMTWorkerConsumer() {
+    int num = 3;
+    waitFor(num);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+        CyclicBarrier barrier = new CyclicBarrier(3);
+        vertx.eventBus().consumer(ADDRESS1, msg -> {
+          try {
+            barrier.await();
+            complete();
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            fail(e);
+          } catch (BrokenBarrierException e) {
+            fail(e);
+          }
+        });
+      }
+    }, new DeploymentOptions()
+      .setInstances(1)
+      .setWorker(true)
+      .setMultiThreaded(true), onSuccess(id -> {
+        for (int i = 0;i < num;i++) {
+          vertx.eventBus().send(ADDRESS1, "msg-" + i);
+        }
+    }));
+    await();
+  }
+
+  @Test
+  public void testMTExecBlockingConsumer() {
+    int num = 3;
+    waitFor(num);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+        CyclicBarrier barrier = new CyclicBarrier(3);
+        vertx.eventBus().consumer(ADDRESS1, msg -> {
+          vertx.executeBlocking(block -> {
+            try {
+              barrier.await();
+              complete();
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+              fail(e);
+            } catch (BrokenBarrierException e) {
+              fail(e);
+            }
+          }, false, null);
+        });
+      }
+    }, onSuccess(id -> {
+      for (int i = 0;i < num;i++) {
+        vertx.eventBus().send(ADDRESS1, "msg-" + i);
+      }
+    }));
+    await();
+  }
+
+  @Test
+  public void testUnregisterConsumerDiscardPendingMessages() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+      assertEquals("val0", msg.body());
+      consumer.pause();
+      eb.send(ADDRESS1, "val1");
+      Context ctx = Vertx.currentContext();
+      ctx.runOnContext(v -> {
+        consumer.resume();
+        ((HandlerRegistration<?>) consumer).discardHandler(discarded -> {
+          assertEquals("val1", discarded.body());
+          testComplete();
+        });
+        consumer.handler(null);
+      });
+    });
+    eb.send(ADDRESS1, "val0");
     await();
   }
 }

@@ -38,6 +38,8 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.HttpHandlers;
+import io.vertx.core.http.impl.VertxHttpRequestDecoder;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
@@ -207,13 +209,14 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
     vertx = (VertxInternal) Vertx.vertx();
     HttpServerOptions options = new HttpServerOptions();
     vertxChannel = new EmbeddedChannel(
-        new HttpRequestDecoder(
-            options.getMaxInitialLineLength(),
-            options.getMaxHeaderSize(),
-            options.getMaxChunkSize(),
-            false,
-            options.getDecoderInitialBufferSize()),
-        new HttpResponseEncoder()
+        new VertxHttpRequestDecoder(options),
+        // We don't use the VertxHttpResponseDecoder because it will use the PartialPooledByteBufAllocator
+        new HttpResponseEncoder() {
+          @Override
+          protected void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
+            ((VertxHttpHeaders)headers).encode(buf);
+          }
+        }
     );
     vertxChannel.config().setAllocator(new Alloc());
 
@@ -230,7 +233,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
           .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH);
       response.end(HELLO_WORLD_BUFFER);
     };
-    HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(app, null, null, null));
+    HandlerHolder<HttpHandlers> holder = new HandlerHolder<>(context, new HttpHandlers(null, app, null, null, null));
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(holder.context, chctx -> new Http1xServerConnection(
       holder.context.owner(),
       null,
@@ -309,7 +312,8 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   @Fork(value = 1, jvmArgsAppend = {
       "-Dvertx.threadChecks=false",
       "-Dvertx.disableContextTimings=true",
-      "-Dvertx.disableTCCL=true ",
+      "-Dvertx.disableTCCL=true",
+      "-Dvertx.disableHttpHeadersValidation=true",
   })
   @Benchmark
   public void vertxOpt() {

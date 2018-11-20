@@ -15,6 +15,8 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
+import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -29,6 +31,7 @@ import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.RandomAccessFile;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -4563,6 +4566,133 @@ public class Http1xTest extends HttpTest {
       }
     });
     sender.send();
+    await();
+  }
+
+  @Test
+  public void testHeaderNameValidation() {
+    for (char c : "\0\t\n\u000B\f\r ,:;=\u0080".toCharArray()) {
+      try {
+        HttpUtils.validateHeaderName(Character.toString(c));
+        fail("Char 0x" + Integer.toHexString(c) + " should not be valid");
+      } catch (IllegalArgumentException ignore) {
+        // Ok
+      }
+    }
+  }
+
+  @Test
+  public void testHeaderValueValidation() {
+    List<String> invalid = Arrays.asList("\f", "\0", "\u000b", "\r\n3", "\r3", "\n3", "\n\r");
+    for (String test : invalid) {
+      try {
+        HttpUtils.validateHeaderValue(test);
+        fail("String \"" + test + "\" should not be valid");
+      } catch (IllegalArgumentException e) {
+        // Ok
+      }
+    }
+    List<String> valid = Arrays.asList("\r\n\t", "\r\n ", "\n\t", "\n ");
+    for (String test : valid) {
+      HttpUtils.validateHeaderValue(test);
+    }
+  }
+
+  @Test
+  public void testChunkedServerResponse() {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      assertTrue(resp.isChunked());
+      resp.write("the-chunk");
+      vertx.setTimer(1, id -> {
+        resp.end();
+      });
+    }).listen(onSuccess(server -> {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        assertEquals("chunked", res.getHeader("transfer-encoding"));
+        res.bodyHandler(body -> {
+          assertEquals("the-chunk", body.toString());
+          testComplete();
+        });
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testChunkedClientRequest() {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      assertEquals("chunked", req.getHeader("transfer-encoding"));
+      req.bodyHandler(body -> {
+        assertEquals("the-chunk", body.toString());
+        req.response().end();
+      });
+    }).listen(onSuccess(server -> {
+      HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        testComplete();
+      });
+      req.setChunked(true);
+      req.write("the-chunk");
+      vertx.setTimer(1, id -> {
+        req.end();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testClosingVertxCloseSharedServers() throws Exception {
+    int numServers = 2;
+    Vertx vertx = Vertx.vertx();
+    List<HttpServerImpl> servers = new ArrayList<>();
+    for (int i = 0;i < numServers;i++) {
+      HttpServer server = vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> {
+
+      });
+      startServer(server);
+      servers.add((HttpServerImpl) server);
+    }
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.close(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    servers.forEach(server -> {
+      assertTrue(server.isClosed());
+    });
+  }
+
+  @Test
+  public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
+    int expected = 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
+    File sent = TestUtils.tmpFile(".dat", expected);
+    server.close();
+    server = vertx
+      .createHttpServer(createBaseServerOptions().setIdleTimeout(400).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
+      .requestHandler(
+        req -> {
+          req.response().sendFile(sent.getAbsolutePath());
+        });
+    startServer();
+    client.getNow(8080, "localhost", "/", resp -> {
+      long now = System.currentTimeMillis();
+      int[] length = {0};
+      resp.handler(buff -> {
+        length[0] += buff.length();
+        resp.pause();
+        vertx.setTimer(1, id -> {
+          resp.resume();
+        });
+      });
+      resp.exceptionHandler(this::fail);
+      resp.endHandler(v -> {
+        assertEquals(expected, length[0]);
+        assertTrue(System.currentTimeMillis() - now > 1000);
+        testComplete();
+      });
+    });
     await();
   }
 }

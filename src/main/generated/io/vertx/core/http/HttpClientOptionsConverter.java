@@ -232,6 +232,7 @@ import java.time.format.DateTimeFormatter;
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
     json.put("websocketCompressionAllowClientNoContext", obj.getWebsocketCompressionAllowClientNoContext());
+    json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
     json.put("websocketCompressionRequestServerNoContext", obj.getWebsocketCompressionRequestServerNoContext());
   }
 }

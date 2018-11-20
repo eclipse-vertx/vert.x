@@ -14,6 +14,7 @@ package io.vertx.core.file;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -1218,7 +1219,7 @@ public class FileSystemTest extends VertxTestBase {
 
     NONE {
       @Override void init(ReadStream<Buffer> stream) { }
-      @Override void handle(ReadStream<Buffer> stream) { }
+      @Override Future<Void> handle(ReadStream<Buffer> stream) { return Future.succeededFuture(); }
     },
 
     FLOWING {
@@ -1228,13 +1229,16 @@ public class FileSystemTest extends VertxTestBase {
       }
 
       @Override
-      void handle(ReadStream<Buffer> stream) {
+      Future<Void> handle(ReadStream<Buffer> stream) {
+        Future<Void> fut = Future.future();
         assert flowing.getAndSet(false);
         stream.pause();
         Vertx.currentContext().owner().setTimer(1, id -> {
           assert !flowing.getAndSet(true);
           stream.resume();
+          fut.complete();
         });
+        return fut;
       }
     },
 
@@ -1246,12 +1250,15 @@ public class FileSystemTest extends VertxTestBase {
         stream.fetch(1);
       }
       @Override
-      void handle(ReadStream<Buffer> stream) {
+      Future<Void> handle(ReadStream<Buffer> stream) {
+        Future<Void> fut = Future.future();
         assert fetching.getAndSet(false);
         Vertx.currentContext().owner().setTimer(1, id -> {
           assert !fetching.getAndSet(true);
           stream.fetch(1);
+          fut.complete();
         });
+        return fut;
       }
     };
 
@@ -1259,7 +1266,7 @@ public class FileSystemTest extends VertxTestBase {
     final static AtomicBoolean fetching = new AtomicBoolean();
 
     abstract void init(ReadStream<Buffer> stream);
-    abstract void handle(ReadStream<Buffer> stream);
+    abstract Future<Void> handle(ReadStream<Buffer> stream);
 
   }
 
@@ -1286,23 +1293,36 @@ public class FileSystemTest extends VertxTestBase {
     createFile(fileName, content);
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
+        AtomicInteger inProgress = new AtomicInteger();
+        AtomicBoolean ended = new AtomicBoolean();
+        Buffer buff = Buffer.buffer();
+        Runnable checkEnd = () -> {
+          if (ended.get() && inProgress.get() == 0) {
+            ar.result().close(ar2 -> {
+              if (ar2.failed()) {
+                fail(ar2.cause().getMessage());
+              } else {
+                assertEquals(Buffer.buffer(content), buff);
+                testComplete();
+              }
+            });
+          }
+        };
         ReadStream<Buffer> rs = ar.result();
         strategy.init(rs);
-        Buffer buff = Buffer.buffer();
         rs.handler(chunk -> {
           buff.appendBuffer(chunk);
-          strategy.handle(rs);
+          inProgress.incrementAndGet();
+          Future<Void> fut = strategy.handle(rs);
+          fut.setHandler(v -> {
+            inProgress.decrementAndGet();
+            checkEnd.run();
+          });
         });
         rs.exceptionHandler(t -> fail(t.getMessage()));
         rs.endHandler(v -> {
-          ar.result().close(ar2 -> {
-            if (ar2.failed()) {
-              fail(ar2.cause().getMessage());
-            } else {
-              assertEquals(Buffer.buffer(content), buff);
-              testComplete();
-            }
-          });
+          ended.set(true);
+          checkEnd.run();
         });
       } else {
         fail(ar.cause().getMessage());

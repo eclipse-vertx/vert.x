@@ -18,23 +18,20 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
@@ -219,7 +216,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
-        applyConnectionOptions(bootstrap);
+        applyConnectionOptions(address.path() != null, bootstrap);
         sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
@@ -230,18 +227,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
-                io.netty.util.concurrent.Future<Channel> handshakeFuture;
-                if (options.isSni()) {
-                  VertxSniHandler sniHandler = new VertxSniHandler(sslHelper, vertx);
-                  pipeline.addLast(sniHandler);
-                  handshakeFuture = sniHandler.handshakeFuture();
-                } else {
-                  SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
-                  pipeline.addLast("ssl", handler);
-                  handshakeFuture = handler.handshakeFuture();
-                }
-                handshakeFuture.addListener(future -> {
-                  if (future.isSuccess()) {
+                ch.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
+                  if (ar.succeeded()) {
                     if (options.isUseAlpn()) {
                       SslHandler sslHandler = pipeline.get(SslHandler.class);
                       String protocol = sslHandler.applicationProtocol();
@@ -256,10 +243,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                   } else {
                     HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
                     handler.context.executeFromIO(v -> {
-                      handler.handler.exceptionHandler.handle(future.cause());
+                      handler.handler.exceptionHandler.handle(ar.cause());
                     });
                   }
-                });
+                }));
+                if (options.isSni()) {
+                  SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
+                  pipeline.addFirst(sniHandler);
+                } else {
+                  SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
+                  pipeline.addFirst("ssl", handler);
+                }
               } else {
                 if (DISABLE_H2C) {
                   handleHttp1(ch);
@@ -402,8 +396,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (USE_FLASH_POLICY_HANDLER) {
       pipeline.addLast("flashpolicy", new FlashPolicyHandler());
     }
-    pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
-        , options.getMaxHeaderSize(), options.getMaxChunkSize(), false, options.getDecoderInitialBufferSize()));
+    pipeline.addLast("httpDecoder", new VertxHttpRequestDecoder(options));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
     if (options.isDecompressionSupported()) {
       pipeline.addLast("inflater", new HttpContentDecompressor(true));
@@ -426,6 +419,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       // some casting and a header check
     } else {
       holder = new HandlerHolder<>(holder.context, new HttpHandlers(
+        this,
         new WebSocketRequestHandler(metrics, holder.handler),
         holder.handler.wsHandler,
         holder.handler.connectionHandler,
@@ -508,6 +502,18 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
+  /**
+   * Internal method that closes all servers when Vert.x is closing
+   */
+  public void closeAll(Handler<AsyncResult<Void>> handler) {
+    List<HttpHandlers> list = httpHandlerMgr.handlers();
+    List<Future> futures = list.stream()
+      .<Future<Void>>map(handlers -> Future.future(handlers.server::close))
+      .collect(Collectors.toList());
+    CompositeFuture fut = CompositeFuture.all(futures);
+    fut.setHandler(ar -> handler.handle(ar.mapEmpty()));
+  }
+
   @Override
   public void close() {
     close(null);
@@ -549,6 +555,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         actualServer.httpHandlerMgr.removeHandler(
           new HttpHandlers(
+            this,
             requestStream.handler(),
             wsStream.handler(),
             connectionHandler,
@@ -573,6 +580,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
+  public synchronized boolean isClosed() {
+    return !listening;
+  }
+
   @Override
   public Metrics getMetrics() {
     return metrics;
@@ -587,14 +598,15 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return sslHelper;
   }
 
-  private void applyConnectionOptions(ServerBootstrap bootstrap) {
-    vertx.transport().configure(options, bootstrap);
+  private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
+    vertx.transport().configure(options, domainSocket, bootstrap);
   }
 
 
   private void addHandlers(HttpServerImpl server, ContextInternal context) {
     server.httpHandlerMgr.addHandler(
       new HttpHandlers(
+        this,
         requestStream.handler(),
         wsStream.handler(),
         connectionHandler,

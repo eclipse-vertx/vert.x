@@ -33,7 +33,7 @@ describe options and arguments:
 As you can see, you can create a new {@link io.vertx.core.cli.CLI} using
 {@link io.vertx.core.cli.CLI#create(java.lang.String)}. The passed string is the name of the CLI. Once created you
 can set the summary and description. The summary is intended to be short (one line), while the description can
-contain more details. Each option and argument are also added on the {@code CLI} object using the
+contain more details. Each option and argument are also added on the `CLI` object using the
 {@link io.vertx.core.cli.CLI#addArgument(io.vertx.core.cli.Argument)} and
 {@link io.vertx.core.cli.CLI#addOption(io.vertx.core.cli.Option)} methods.
 

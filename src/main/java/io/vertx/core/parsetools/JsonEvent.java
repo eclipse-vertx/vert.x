@@ -12,6 +12,7 @@
 package io.vertx.core.parsetools;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -116,7 +117,7 @@ public interface JsonEvent {
    * @throws java.lang.ClassCastException if the value is not a String
    * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   Instant instantValue();
 
   /**
@@ -160,7 +161,7 @@ public interface JsonEvent {
    * @param type the type to decode the value to
    * @return the decoded value
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   <T> T mapTo(TypeReference<T> type);
 
 }

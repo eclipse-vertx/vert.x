@@ -88,7 +88,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @param bytes the byte array
    * @return the buffer
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static Buffer buffer(byte[] bytes) {
     return factory.buffer(bytes);
   }
@@ -110,7 +110,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @param byteBuf the Netty ByteBuf
    * @return the buffer
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static Buffer buffer(ByteBuf byteBuf) {
     return factory.buffer(byteBuf);
   }
@@ -128,7 +128,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
   /**
    * Returns a {@code String} representation of the Buffer with the encoding specified by {@code enc}
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   String toString(Charset enc);
 
   /**
@@ -270,14 +270,14 @@ public interface Buffer extends ClusterSerializable, Shareable {
   /**
    * Returns a copy of the entire Buffer as a {@code byte[]}
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   byte[] getBytes();
 
   /**
    * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
    * and ending at position {@code end - 1}
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   byte[] getBytes(int start, int end);
 
   /**
@@ -286,7 +286,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @param dst the destination byte array
    * @throws IndexOutOfBoundsException if the content of the Buffer cannot fit into the destination byte array
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer getBytes(byte[] dst);
 
@@ -296,7 +296,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @param dst the destination byte array
    * @throws IndexOutOfBoundsException if the content of the Buffer cannot fit into the destination byte array
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer getBytes(byte[] dst, int dstIndex);
 
@@ -307,7 +307,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @param dst the destination byte array
    * @throws IndexOutOfBoundsException if the content of the Buffer cannot fit into the destination byte array
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer getBytes(int start, int end, byte[] dst);
 
@@ -318,7 +318,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @param dst the destination byte array
    * @throws IndexOutOfBoundsException if the content of the Buffer cannot fit into the destination byte array
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer getBytes(int start, int end, byte[] dst, int dstIndex);
 
@@ -360,7 +360,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * Appends the specified {@code byte[]} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer appendBytes(byte[] bytes);
 
@@ -369,7 +369,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer appendBytes(byte[] bytes, int offset, int len);
 
@@ -631,7 +631,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code ByteBuffer b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer setBytes(int pos, ByteBuffer b);
 
@@ -639,7 +639,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code byte[] b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer setBytes(int pos, byte[] b);
 
@@ -647,7 +647,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * Sets the given number of bytes at position {@code pos} in the Buffer to the bytes represented by the {@code byte[] b}.<p></p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Buffer setBytes(int pos, byte[] b, int offset, int len);
 
@@ -696,7 +696,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * The returned {@code ByteBuf} might have its {@code readerIndex > 0}
    * This method is meant for internal use only.<p>
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   ByteBuf getByteBuf();
 
   @GenIgnore
