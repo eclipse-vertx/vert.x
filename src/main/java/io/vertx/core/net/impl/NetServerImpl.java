@@ -22,10 +22,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -41,9 +38,12 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -221,7 +221,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
         applyConnectionOptions(socketAddress.path() != null, bootstrap);
 
-        handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
+        handlerManager.addHandler(new Handlers(this, handler, exceptionHandler), listenContext);
 
         try {
           bindFuture = AsyncResolveConnectHelper.doBind(vertx, socketAddress, bootstrap);
@@ -266,7 +266,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         this.actualPort = shared.actualPort();
         VertxMetrics metrics = vertx.metricsSPI();
         this.metrics = metrics != null ? metrics.createNetServerMetrics(options, new SocketAddressImpl(id.port, id.host)) : null;
-        actualServer.handlerManager.addHandler(new Handlers(handler, exceptionHandler), listenContext);
+        actualServer.handlerManager.addHandler(new Handlers(this, handler, exceptionHandler), listenContext);
       }
 
       // just add it to the future so it gets notified once the bind is complete
@@ -348,6 +348,18 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     return connectStream;
   }
 
+  /**
+   * Internal method that closes all servers when Vert.x is closing
+   */
+  public void closeAll(Handler<AsyncResult<Void>> handler) {
+    List<Handlers> list = handlerManager.handlers();
+    List<Future> futures = list.stream()
+      .<Future<Void>>map(handlers -> Future.future(handlers.server::close))
+      .collect(Collectors.toList());
+    CompositeFuture fut = CompositeFuture.all(futures);
+    fut.setHandler(ar -> handler.handle(ar.mapEmpty()));
+  }
+
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
     if (creatingContext != null) {
@@ -379,7 +391,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(new Handlers(registeredHandler, exceptionHandler), listenContext);
+        actualServer.handlerManager.removeHandler(new Handlers(this, registeredHandler, exceptionHandler), listenContext);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
@@ -398,6 +410,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         });
       }
     }
+  }
+
+  public synchronized boolean isClosed() {
+    return !listening;
   }
 
   public synchronized int actualPort() {
@@ -532,9 +548,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   static class Handlers {
+    final NetServer server;
     final Handler<NetSocket> connectionHandler;
     final Handler<Throwable> exceptionHandler;
-    public Handlers(Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
+    public Handlers(NetServer server, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
+      this.server = server;
       this.connectionHandler = connectionHandler;
       this.exceptionHandler = exceptionHandler;
     }

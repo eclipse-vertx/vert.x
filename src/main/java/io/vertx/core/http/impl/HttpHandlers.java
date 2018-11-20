@@ -25,16 +25,19 @@ import java.util.Objects;
  */
 public class HttpHandlers {
 
+  final HttpServerImpl server;
   final Handler<HttpServerRequest> requestHandler;
   final Handler<ServerWebSocket> wsHandler;
   final Handler<HttpConnection> connectionHandler;
   final Handler<Throwable> exceptionHandler;
 
   public HttpHandlers(
+    HttpServerImpl server,
     Handler<HttpServerRequest> requestHandler,
     Handler<ServerWebSocket> wsHandler,
     Handler<HttpConnection> connectionHandler,
     Handler<Throwable> exceptionHandler) {
+    this.server = server;
     this.requestHandler = requestHandler;
     this.wsHandler = wsHandler;
     this.connectionHandler = connectionHandler;

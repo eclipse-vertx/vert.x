@@ -31,10 +31,7 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
@@ -422,6 +419,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       // some casting and a header check
     } else {
       holder = new HandlerHolder<>(holder.context, new HttpHandlers(
+        this,
         new WebSocketRequestHandler(metrics, holder.handler),
         holder.handler.wsHandler,
         holder.handler.connectionHandler,
@@ -504,6 +502,18 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
+  /**
+   * Internal method that closes all servers when Vert.x is closing
+   */
+  public void closeAll(Handler<AsyncResult<Void>> handler) {
+    List<HttpHandlers> list = httpHandlerMgr.handlers();
+    List<Future> futures = list.stream()
+      .<Future<Void>>map(handlers -> Future.future(handlers.server::close))
+      .collect(Collectors.toList());
+    CompositeFuture fut = CompositeFuture.all(futures);
+    fut.setHandler(ar -> handler.handle(ar.mapEmpty()));
+  }
+
   @Override
   public void close() {
     close(null);
@@ -545,6 +555,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         actualServer.httpHandlerMgr.removeHandler(
           new HttpHandlers(
+            this,
             requestStream.handler(),
             wsStream.handler(),
             connectionHandler,
@@ -569,6 +580,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
+  public synchronized boolean isClosed() {
+    return !listening;
+  }
+
   @Override
   public Metrics getMetrics() {
     return metrics;
@@ -591,6 +606,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private void addHandlers(HttpServerImpl server, ContextInternal context) {
     server.httpHandlerMgr.addHandler(
       new HttpHandlers(
+        this,
         requestStream.handler(),
         wsStream.handler(),
         connectionHandler,

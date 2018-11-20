@@ -554,7 +554,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             eventBus.close(ar4 -> {
               closeClusterManager(ar5 -> {
                 // Copy set to prevent ConcurrentModificationException
-                Set<HttpServer> httpServers = new HashSet<>(sharedHttpServers.values());
+                Set<HttpServerImpl> httpServers = new HashSet<>(sharedHttpServers.values());
                 Set<NetServerImpl> netServers = new HashSet<>(sharedNetServers.values());
                 sharedHttpServers.clear();
                 sharedNetServers.clear();
@@ -572,11 +572,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                   }
                 };
 
-                for (HttpServer server : httpServers) {
-                  server.close(serverCloseHandler);
+                for (HttpServerImpl server : httpServers) {
+                  server.closeAll(serverCloseHandler);
                 }
                 for (NetServerImpl server : netServers) {
-                  server.close(serverCloseHandler);
+                  server.closeAll(serverCloseHandler);
                 }
                 if (serverCount == 0) {
                   deleteCacheDirAndShutdown(completionHandler);
