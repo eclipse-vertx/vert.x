@@ -699,7 +699,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         throw new IllegalStateException("A push response cannot promise another push");
       }
       checkEnded();
-      conn.sendPush(stream.id(), host, method, headers, path, stream.streamPriority(), handler);
+      conn.sendPush(stream.id(), host, method, headers, path, stream.priority(), handler);
       if (!inHandler) {
         ctx.flush();
       }
@@ -715,8 +715,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
-    if(!streamPriority.equals(stream.streamPriority())) {
-      stream.setStreamPriority(streamPriority);
+    if(!streamPriority.equals(stream.priority())) {
+      stream.priority(streamPriority);
       if(headWritten) {
         stream.writePriorityFrame();
       }

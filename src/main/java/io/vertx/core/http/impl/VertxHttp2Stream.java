@@ -163,11 +163,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void handleClose() {
   }
   
-  public void setStreamPriority(StreamPriority streamPriority) {
+  public void priority(StreamPriority streamPriority) {
     this.streamPriority = streamPriority;
   }
 
-  public StreamPriority streamPriority() {
+  public StreamPriority priority() {
     return streamPriority;
   }
   

@@ -682,7 +682,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if(!streamPriority.equals(getStreamPriority())) {
         this.streamPriority = streamPriority;
         if(stream != null) {
-          stream.updateStreamPriority(streamPriority);
+          stream.updatePriority(streamPriority);
         }
       }
     }
@@ -693,6 +693,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public StreamPriority getStreamPriority() {
     // If stream was already created return the priority value from the stream
     HttpClientStream s = stream;
-    return s != null ? s.streamPriority() : streamPriority;
+    return s != null ? s.priority() : streamPriority;
   }
 }

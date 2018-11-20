@@ -59,8 +59,8 @@ interface HttpClientStream {
 
   NetSocket createNetSocket();
   
-  default StreamPriority streamPriority() {
+  default StreamPriority priority() {
       return null;
   }
-  default void updateStreamPriority(StreamPriority streamPriority) { }
+  default void updatePriority(StreamPriority streamPriority) { }
 }

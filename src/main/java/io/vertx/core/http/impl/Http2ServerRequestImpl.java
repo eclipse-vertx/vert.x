@@ -536,7 +536,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     synchronized (conn) {
       handler = streamPriorityHandler;
       if(streamPriority != null && !streamPriority.equals(streamPriority())) {
-          setStreamPriority(streamPriority);
+          priority(streamPriority);
           priorityChanged = true;
       }
     }
@@ -544,5 +544,12 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       handler.handle(streamPriority);      
     }
   }
+
+  @Override
+  public StreamPriority streamPriority() {
+    return priority();
+  }
+  
+  
 
 }

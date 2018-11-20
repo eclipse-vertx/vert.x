@@ -277,15 +277,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     
     @Override
     void handlePriorityChange(StreamPriority streamPriority) {
-      if(streamPriority != null && !streamPriority.equals(streamPriority())) {
-        setStreamPriority(streamPriority);
+      if(streamPriority != null && !streamPriority.equals(priority())) {
+        priority(streamPriority);
         response.handlePriorityChange(streamPriority);
       }
     }
 
     void handleHeaders(Http2Headers headers, StreamPriority streamPriority, boolean end) {
       if(streamPriority != null)
-        setStreamPriority(streamPriority);
+        priority(streamPriority);
       if (response == null || response.statusCode() == 100) {
         int status;
         String statusMessage;
@@ -363,7 +363,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.metrics != null) {
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
-      setStreamPriority(streamPriority);
+      priority(streamPriority);
       writeHeaders(h, end && content == null);
       if (content != null) {
         writeBuffer(content, end);
@@ -388,8 +388,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     
 
     @Override
-    public void updateStreamPriority(StreamPriority streamPriority) {
-        setStreamPriority(streamPriority);
+    public void updatePriority(StreamPriority streamPriority) {
+        priority(streamPriority);
         writePriorityFrame();
     }
 

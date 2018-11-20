@@ -116,7 +116,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       Http2ServerRequestImpl req = createRequest(streamId, headers);
-      req.setStreamPriority(new StreamPriority(streamDependency, weight, exclusive));
+      req.priority(new StreamPriority(streamDependency, weight, exclusive));
 
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
@@ -184,7 +184,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
             boolean writable = handler.encoder().flowController().isWritable(promisedStream);
             Push push = new Push(promisedStream, contentEncoding, method, path, writable, completionHandler);
-            push.setStreamPriority(streamPriority);
+            push.priority(streamPriority);
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
