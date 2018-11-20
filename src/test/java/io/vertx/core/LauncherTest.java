@@ -652,6 +652,17 @@ public class LauncherTest extends VertxTestBase {
   }
 
   @Test
+  public void testConfigureClusterPublicHostPortFromCommandLine() throws Exception {
+    int clusterPublicPort = TestUtils.randomHighPortInt();
+    MyLauncher launcher = new MyLauncher();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-public-host", "127.0.0.1", "--cluster-public-port", Integer.toString(clusterPublicPort)};
+    launcher.dispatch(args);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertEquals("127.0.0.1", launcher.options.getClusterPublicHost());
+    assertEquals(clusterPublicPort, launcher.options.getClusterPublicPort());
+  }
+
+  @Test
   public void testOverrideClusterHostPortFromProperties() throws Exception {
     int clusterPort = TestUtils.randomHighPortInt();
     int newClusterPort = TestUtils.randomHighPortInt();
@@ -675,6 +686,7 @@ public class LauncherTest extends VertxTestBase {
   @Test
   public void testOverrideClusterHostPortFromCommandLine() throws Exception {
     int clusterPort = TestUtils.randomHighPortInt();
+    int clusterPublicPort = TestUtils.randomHighPortInt();
     int newClusterPort = TestUtils.randomHighPortInt();
     int newClusterPublicPort = TestUtils.randomHighPortInt();
     MyLauncher launcher = new MyLauncher();
@@ -682,7 +694,12 @@ public class LauncherTest extends VertxTestBase {
     launcher.clusterPort = newClusterPort;
     launcher.clusterPublicHost = "127.0.0.3";
     launcher.clusterPublicPort = newClusterPublicPort;
-    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-host", "127.0.0.2", "--cluster-port", Integer.toString(clusterPort)};
+    String[] args = {
+      "run", "java:" + TestVerticle.class.getCanonicalName(),
+      "-cluster",
+      "--cluster-host", "127.0.0.2", "--cluster-port", Integer.toString(clusterPort),
+      "--cluster-public-host", "127.0.0.4", "--cluster-public-port", Integer.toString(clusterPublicPort)
+    };
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals("127.0.0.1", launcher.options.getClusterHost());
