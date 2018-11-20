@@ -201,14 +201,14 @@ public class RunCommand extends BareCommand {
   public void setUp(ExecutionContext context) throws CLIException {
     super.setUp(context);
 
-    // If cluster-host and / or port is set, cluster need to have been explicitly set
-    io.vertx.core.cli.Option clusterHostOption = executionContext.cli().getOption("cluster-host");
-    io.vertx.core.cli.Option clusterPortOption = executionContext.cli().getOption("cluster-port");
     CommandLine commandLine = executionContext.commandLine();
-    if ((!isClustered()) &&
-        (commandLine.isOptionAssigned(clusterHostOption)
-            || commandLine.isOptionAssigned(clusterPortOption))) {
-      throw new CLIException("The option -cluster-host and -cluster-port requires -cluster to be enabled");
+    if (!isClustered() && (
+      commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-host"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-port"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-public-host"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-public-port"))
+    )) {
+      throw new CLIException("The -cluster-xxx options require -cluster to be enabled");
     }
 
     // If quorum and / or ha-group, ha need to have been explicitly set
@@ -356,6 +356,12 @@ public class RunCommand extends BareCommand {
     }
     if (clusterPort != 0) {
       args.add("--cluster-port=" + clusterPort);
+    }
+    if (clusterPublicHost != null) {
+      args.add("--cluster-public-host=" + clusterPublicHost);
+    }
+    if (clusterPublicPort != -1) {
+      args.add("--cluster-public-port=" + clusterPublicPort);
     }
     if (ha) {
       args.add("--ha");

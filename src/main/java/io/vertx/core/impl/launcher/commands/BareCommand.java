@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
@@ -51,11 +52,13 @@ public class BareCommand extends ClasspathHandler {
   public static final String METRICS_OPTIONS_PROP_PREFIX = "vertx.metrics.options.";
 
   protected Vertx vertx;
+
   protected int clusterPort;
-
   protected String clusterHost;
-  protected int quorum;
+  protected int clusterPublicPort;
+  protected String clusterPublicHost;
 
+  protected int quorum;
   protected String haGroup;
 
   protected String vertxOptions;
@@ -111,6 +114,29 @@ public class BareCommand extends ClasspathHandler {
     " from the available interfaces.")
   public void setClusterHost(String host) {
     this.clusterHost = host;
+  }
+
+  /**
+   * Sets the cluster public port.
+   *
+   * @param port the port
+   */
+  @Option(longName = "cluster-public-port", argName = "public-port")
+  @Description("Public port to use for cluster communication. Default is -1 which means same as cluster port.")
+  @DefaultValue("-1")
+  public void setClusterPublicPort(int port) {
+    this.clusterPublicPort = port;
+  }
+
+  /**
+   * Sets the cluster public host.
+   *
+   * @param host the host
+   */
+  @Option(longName = "cluster-public-host", argName = "public-host")
+  @Description("Public host to bind to for cluster communication. If not specified, Vert.x will use the same as cluster host.")
+  public void setClusterPublicHost(String host) {
+    this.clusterPublicHost = host;
   }
 
   /**
@@ -186,11 +212,17 @@ public class BareCommand extends ClasspathHandler {
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
-      if (!options.getClusterHost().equals(VertxOptions.DEFAULT_CLUSTER_HOST)) {
+      if (!Objects.equals(options.getClusterHost(), VertxOptions.DEFAULT_CLUSTER_HOST)) {
         clusterHost = options.getClusterHost();
       }
       if (options.getClusterPort() != VertxOptions.DEFAULT_CLUSTER_PORT) {
         clusterPort = options.getClusterPort();
+      }
+      if (!Objects.equals(options.getClusterPublicHost(), VertxOptions.DEFAULT_CLUSTER_PUBLIC_HOST)) {
+        clusterPublicHost = options.getClusterPublicHost();
+      }
+      if (options.getClusterPublicPort() != VertxOptions.DEFAULT_CLUSTER_PUBLIC_PORT) {
+        clusterPublicPort = options.getClusterPublicPort();
       }
       if (clusterHost == null) {
         clusterHost = getDefaultAddress();
@@ -204,7 +236,12 @@ public class BareCommand extends ClasspathHandler {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
 
-      options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
+      options.setClustered(true)
+        .setClusterHost(clusterHost).setClusterPort(clusterPort)
+        .setClusterPublicHost(clusterPublicHost);
+      if (clusterPublicPort != -1) {
+        options.setClusterPublicPort(clusterPublicPort);
+      }
       if (getHA()) {
         options.setHAEnabled(true);
         if (haGroup != null) {

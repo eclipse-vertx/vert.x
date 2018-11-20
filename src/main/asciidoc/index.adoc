@@ -913,12 +913,16 @@ one instance. If omitted a single instance will be deployed.
  * `-cluster` -  This option determines whether the Vert.x instance will attempt to form a cluster with other Vert.x
  instances on the network. Clustering Vert.x instances allows Vert.x to form a distributed event bus with
  other nodes. Default is `false` (not clustered).
- * `-cluster-port` - If the cluster option has also been specified then this determines which port will be used for
+ * `-cluster-port` - If the `cluster` option has also been specified then this determines which port will be bound for
  cluster communication with other Vert.x instances. Default is `0` - which means '_choose a free random port_'. You
  don't usually need to specify this parameter unless you really need to bind to a specific port.
- * `-cluster-host` - If the cluster option has also been specified then this determines which host address will be
- used for cluster communication with other Vert.x instances. By default it will try and pick one from the available
+ * `-cluster-host` - If the `cluster` option has also been specified then this determines which host address will be
+ bound for cluster communication with other Vert.x instances. By default it will try and pick one from the available
  interfaces. If you have more than one interface and you want to use a specific one, specify it here.
+ * `-cluster-public-port` - If the `cluster` option has also been specified then this determines which port will be advertised for
+ cluster communication with other Vert.x instances. Default is `-1`, which means same as `cluster-port`.
+ * `-cluster-public-host` - If the `cluster` option has also been specified then this determines which host address will be advertised for
+ cluster communication with other Vert.x instances. If not specified, Vert.x uses the value of `cluster-host`.
  * `-ha` - if specified the verticle will be deployed as  high availability (HA) deployment. See related section
  for more details
  * `-quorum` - used in conjunction with `-ha`. It specifies the minimum number of nodes in the cluster for any _HA
