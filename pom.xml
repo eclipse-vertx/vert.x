@@ -642,7 +642,7 @@
     <profile>
       <id>java-8</id>
       <properties>
-        <jetty.alpnAgent.version>2.0.7</jetty.alpnAgent.version>
+        <jetty.alpnAgent.version>2.0.9</jetty.alpnAgent.version>
         <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
         <jetty.alpnAgent.argLine>-javaagent:"${jetty.alpnAgent.path}"</jetty.alpnAgent.argLine>
       </properties>
