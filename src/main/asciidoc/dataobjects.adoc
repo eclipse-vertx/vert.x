@@ -1838,14 +1838,14 @@ Set the request relative URI
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[exclusive]]`@exclusive`|`Boolean`|+++
-
+|[[dependency]]`@dependency`|`Number (int)`|+++
+Set the priority dependency value.
 +++
-|[[streamDependency]]`@streamDependency`|`Number (int)`|+++
-
+|[[exclusive]]`@exclusive`|`Boolean`|+++
+Set the priority exclusive value.
 +++
 |[[weight]]`@weight`|`Number (short)`|+++
-
+Set the priority weight.
 +++
 |===
 

@@ -250,7 +250,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       return conn.context;
     }
 
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority streamPriority) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority) {
       HttpRequest request = createRequest(method, rawMethod, uri, headers);
       prepareRequestHeaders(request, hostHeader, chunked);
       sendRequest(request, buf, end);
@@ -419,6 +419,15 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         }
         return conn.upgrade(this);
       }
+    }
+
+    @Override
+    public StreamPriority priority() {
+      return null;
+    }
+
+    @Override
+    public void updatePriority(StreamPriority streamPriority) {
     }
 
     private HttpClientResponseImpl beginResponse(HttpResponse resp) {

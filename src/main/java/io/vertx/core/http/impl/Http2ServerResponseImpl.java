@@ -714,13 +714,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
-    if(!streamPriority.equals(stream.priority())) {
-      stream.priority(streamPriority);
-      if(headWritten) {
-        stream.writePriorityFrame();
-      }
-    }
+  public HttpServerResponse setStreamPriority(StreamPriority priority) {
+    stream.updatePriority(priority);
     return this;
   }
 }

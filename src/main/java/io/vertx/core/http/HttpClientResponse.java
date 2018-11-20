@@ -155,15 +155,11 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   HttpClientRequest request();
 
   /**
-   * Gets the priority of the associated HTTP/2 stream
-   * @return The priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}  
-   */
-  StreamPriority streamPriority();
-  
-  /**
-   * Registers handler for stream priority changes.
-   * 
-   * @param handler Handler to be called when stream priority changes.
+   * Set an handler for stream priority changes.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param handler the handler to be called when the stream priority changes
    */
   @Fluent
   HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler);

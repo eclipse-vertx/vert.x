@@ -39,10 +39,9 @@ interface HttpClientStream {
   HttpConnection connection();
   Context getContext();
 
-  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority streamPriority);
+  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority);
   void writeBuffer(ByteBuf buf, boolean end);
   void writeFrame(int type, int flags, ByteBuf payload);
-  default void writePriorityFrame() {}
 
   void reportBytesWritten(long numberOfBytes);
   void reportBytesRead(long numberOfBytes);
@@ -59,8 +58,6 @@ interface HttpClientStream {
 
   NetSocket createNetSocket();
   
-  default StreamPriority priority() {
-      return null;
-  }
-  default void updatePriority(StreamPriority streamPriority) { }
+  StreamPriority priority();
+  void updatePriority(StreamPriority streamPriority);
 }

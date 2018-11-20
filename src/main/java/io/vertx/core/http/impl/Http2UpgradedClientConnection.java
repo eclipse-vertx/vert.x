@@ -103,7 +103,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                           boolean chunked,
                           ByteBuf buf,
                           boolean end,
-                          StreamPriority streamPriority) {
+                          StreamPriority priority) {
       ChannelPipeline pipeline = conn.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
       class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
@@ -162,7 +162,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, streamPriority);
+      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority);
     }
 
     @Override
@@ -244,6 +244,16 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     @Override
     public NetSocket createNetSocket() {
       return stream.createNetSocket();
+    }
+
+    @Override
+    public StreamPriority priority() {
+      return stream.priority();
+    }
+
+    @Override
+    public void updatePriority(StreamPriority streamPriority) {
+      stream.updatePriority(streamPriority);
     }
   }
 

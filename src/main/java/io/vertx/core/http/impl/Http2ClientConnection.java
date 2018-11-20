@@ -17,7 +17,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -137,8 +136,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
+      StreamPriority streamPriority = new StreamPriority()
+        .setDependency(streamDependency)
+        .setWeight(weight)
+        .setExclusive(exclusive);
       context.executeFromIO(v -> {
-        stream.handleHeaders(headers, new StreamPriority(streamDependency, weight, exclusive), endOfStream);
+        stream.handleHeaders(headers, streamPriority, endOfStream);
       });
     }
   }
@@ -194,6 +197,16 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Http2ClientStream(Http2ClientConnection conn, HttpClientRequestPushPromise request, Http2Stream stream, boolean writable) {
       super(conn, stream, writable);
       this.request = request;
+    }
+
+    @Override
+    public StreamPriority priority() {
+      return super.priority();
+    }
+
+    @Override
+    public void updatePriority(StreamPriority streamPriority) {
+      super.updatePriority(streamPriority);
     }
 
     @Override
@@ -337,7 +350,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority streamPriority) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
@@ -363,7 +376,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.metrics != null) {
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
-      priority(streamPriority);
+      priority(priority);
       writeHeaders(h, end && content == null);
       if (content != null) {
         writeBuffer(content, end);
@@ -385,14 +398,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
     }
     
-    
-
-    @Override
-    public void updatePriority(StreamPriority streamPriority) {
-        priority(streamPriority);
-        writePriorityFrame();
-    }
-
     @Override
     public void writeFrame(int type, int flags, ByteBuf payload) {
       super.writeFrame(type, flags, payload);

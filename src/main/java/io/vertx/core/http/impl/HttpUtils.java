@@ -25,6 +25,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.StreamPriority;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,6 +44,24 @@ import static io.vertx.core.http.Http2Settings.*;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public final class HttpUtils {
+
+  static final StreamPriority DEFAULT_STREAM_PRIORITY = new StreamPriority() {
+    @Override
+    public StreamPriority setWeight(short weight) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+
+    @Override
+    public StreamPriority setDependency(int dependency) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+
+    @Override
+    public StreamPriority setExclusive(boolean exclusive) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+  };
+
 
   private HttpUtils() {
   }

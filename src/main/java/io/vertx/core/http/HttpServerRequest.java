@@ -330,17 +330,18 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   HttpConnection connection();
 
   /**
-   * Gets the priority of the associated HTTP/2 stream
-   * @return The priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}  
+   * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
    */
   default StreamPriority streamPriority() {
       return null;
   }
 
   /**
-   * Registers handler for stream priority changes.
+   * Set an handler for stream priority changes
+   * <p>
+   * This is not implemented for HTTP/1.x.
    * 
-   * @param handler handler to be called when stream priority changes,
+   * @param handler the handler to be called when stream priority changes
    */
   @Fluent
   HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler);

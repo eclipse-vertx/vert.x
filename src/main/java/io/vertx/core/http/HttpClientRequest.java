@@ -389,8 +389,11 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   }
   
   /**
-   * Sets the priority of the associated stream
-   * @param streamPriority The priority of this requet's stream  
+   * Sets the priority of the associated stream.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param streamPriority the priority of this request's stream
    */
   @Fluent
   default HttpClientRequest setStreamPriority(StreamPriority streamPriority) {
@@ -398,10 +401,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   }
 
   /**
-   * Gets the priority of the associated HTTP/2 stream
-   * @return The priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}  
+   * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
    */
-  default StreamPriority getStreamPriority() {
-      return null;
-  }
+  StreamPriority getStreamPriority();
 }

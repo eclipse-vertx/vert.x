@@ -475,7 +475,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   /**
    * Sets the priority of the associated stream
-   * @param streamPriority The priority for this requet's stream  
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param streamPriority the priority for this request's stream
    */
   @Fluent
   default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {

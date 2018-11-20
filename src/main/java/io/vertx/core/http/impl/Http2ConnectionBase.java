@@ -24,7 +24,6 @@ import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
@@ -199,9 +198,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       synchronized (this) {
         stream = streams.get(streamId);
       }
-
       if (stream != null) {
-        StreamPriority streamPriority = new StreamPriority(streamDependency, weight, exclusive);
+        StreamPriority streamPriority = new StreamPriority()
+          .setDependency(streamDependency)
+          .setWeight(weight)
+          .setExclusive(exclusive);
         context.executeFromIO(v -> stream.handlePriorityChange(streamPriority));
       }
   }

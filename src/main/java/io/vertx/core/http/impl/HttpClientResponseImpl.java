@@ -19,7 +19,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +47,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<HttpFrame> customFrameHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
-  private Handler<StreamPriority> streamPriorityHandler;
+  private Handler<StreamPriority> priorityHandler;
   private NetSocket netSocket;
 
   // Track for metrics
@@ -190,13 +189,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       return this;
     }
   }
-  
-  @Override
-  public StreamPriority streamPriority() {
-    synchronized (conn) {
-      return stream.priority();
-    }
-  }
 
   void handleUnknownFrame(HttpFrame frame) {
     synchronized (conn) {
@@ -284,16 +276,19 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) {
-    streamPriorityHandler = handler;
+    synchronized (conn) {
+      priorityHandler = handler;
+    }
     return this;
   }
 
   void handlePriorityChange(StreamPriority streamPriority) {
+    Handler<StreamPriority> handler;
     synchronized (conn) {
-      Handler<StreamPriority> handler = streamPriorityHandler;
-      if (handler != null) {
-        handler.handle(streamPriority);
+      if ((handler = priorityHandler) == null) {
+        return;
       }
     }
+    handler.handle(streamPriority);
   }
 }

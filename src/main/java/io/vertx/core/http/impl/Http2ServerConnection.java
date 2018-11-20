@@ -27,7 +27,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.Http2ClientConnection.Http2ClientStream;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -102,8 +101,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
     boolean writable = handler.encoder().flowController().isWritable(stream);
-    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable);
-    return request;
+    return new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable);
   }
 
   @Override
@@ -116,7 +114,11 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       Http2ServerRequestImpl req = createRequest(streamId, headers);
-      req.priority(new StreamPriority(streamDependency, weight, exclusive));
+      req.priority(new StreamPriority()
+        .setDependency(streamDependency)
+        .setWeight(weight)
+        .setExclusive(exclusive)
+      );
 
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
@@ -246,6 +248,10 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     @Override
     void handleData(Buffer buf) {
+    }
+
+    @Override
+    void handlePriorityChange(StreamPriority streamPriority) {
     }
 
     @Override
