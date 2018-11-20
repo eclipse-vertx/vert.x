@@ -15,6 +15,7 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientRequestImpl;
+import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
@@ -4638,5 +4639,27 @@ public class Http1xTest extends HttpTest {
       });
     }));
     await();
+  }
+
+  @Test
+  public void testClosingVertxCloseSharedServers() throws Exception {
+    int numServers = 2;
+    Vertx vertx = Vertx.vertx();
+    List<HttpServerImpl> servers = new ArrayList<>();
+    for (int i = 0;i < numServers;i++) {
+      HttpServer server = vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> {
+
+      });
+      startServer(server);
+      servers.add((HttpServerImpl) server);
+    }
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.close(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    servers.forEach(server -> {
+      assertTrue(server.isClosed());
+    });
   }
 }

@@ -30,6 +30,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.*;
@@ -1815,6 +1816,28 @@ public class NetTest extends VertxTestBase {
     });
     assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
     testSharedServersRoundRobin();
+  }
+
+  @Test
+  public void testClosingVertxCloseSharedServers() throws Exception {
+    int numServers = 2;
+    Vertx vertx = Vertx.vertx();
+    List<NetServerImpl> servers = new ArrayList<>();
+    for (int i = 0;i < numServers;i++) {
+      NetServer server = vertx.createNetServer().connectHandler(so -> {
+        fail();
+      });
+      startServer(server);
+      servers.add((NetServerImpl) server);
+    }
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.close(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    servers.forEach(server -> {
+      assertTrue(server.isClosed());
+    });
   }
 
   @Test
