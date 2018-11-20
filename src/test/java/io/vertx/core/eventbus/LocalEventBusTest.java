@@ -19,6 +19,7 @@ import io.vertx.core.impl.*;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -1069,7 +1070,8 @@ public class LocalEventBusTest extends EventBusTestBase {
     consumer.handler(msg -> {
       consumer.pause();
       Context ctx = vertx.getOrCreateContext();
-      ctx.runOnContext(v -> {
+      // Let enough time of the 20 messages to go in the consumer pending queue
+      vertx.setTimer(20, v -> {
         AtomicInteger count = new AtomicInteger(1);
         ((HandlerRegistration<Integer>)consumer).discardHandler(discarded -> {
           int val = discarded.body();
@@ -1081,9 +1083,11 @@ public class LocalEventBusTest extends EventBusTestBase {
         consumer.setMaxBufferedMessages(10);
       });
     });
-    for (int i = 0;i < 20;i++) {
-      eb.send(ADDRESS1, i);
-    }
+    vertx.runOnContext(v -> {
+      for (int i = 0;i < 20;i++) {
+        eb.send(ADDRESS1, i);
+      }
+    });
     await();
   }
 
