@@ -18,6 +18,7 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -39,6 +40,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private int pendingBytes;
   private MultiMap trailers;
   private boolean writable;
+  private StreamPriority priority;
 
   VertxHttp2Stream(C conn, Http2Stream stream, boolean writable) {
     this.conn = conn;
@@ -48,6 +50,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.context = conn.getContext();
     this.writable = writable;
     this.pending = new InboundBuffer<>(context, 5);
+    this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
 
     pending.drainHandler(v -> {
       int numBytes = pendingBytes;
@@ -125,7 +128,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void writeHeaders(Http2Headers headers, boolean end) {
-    conn.handler.writeHeaders(stream, headers, end);
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+  }
+
+  private void writePriorityFrame(StreamPriority priority) {
+    conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
   void writeData(ByteBuf chunk, boolean end) {
@@ -156,4 +163,23 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   void handleClose() {
   }
+  
+  synchronized void priority(StreamPriority streamPriority) {
+    this.priority = streamPriority;
+  }
+
+  synchronized StreamPriority priority() {
+    return priority;
+  }
+
+  synchronized void updatePriority(StreamPriority priority) {
+    if (!this.priority.equals(priority)) {
+      this.priority = priority;
+      if (stream.isHeadersSent()) {
+        writePriorityFrame(priority);
+      }
+    }
+  }
+
+  abstract void handlePriorityChange(StreamPriority streamPriority);
 }

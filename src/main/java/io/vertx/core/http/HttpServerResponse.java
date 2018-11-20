@@ -469,4 +469,16 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   default HttpServerResponse writeCustomFrame(HttpFrame frame) {
     return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
+
+  /**
+   * Sets the priority of the associated stream
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param streamPriority the priority for this request's stream
+   */
+  @Fluent
+  default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
+      return this;
+  }
 }

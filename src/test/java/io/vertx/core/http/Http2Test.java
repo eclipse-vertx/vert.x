@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http2ServerConnection;
@@ -442,4 +443,269 @@ public class Http2Test extends HttpTest {
     });
     await();
   }
+  
+  @Test
+  public void testStreamWeightAndDependency() throws Exception {
+    int requestStreamDependency = 56;
+    short requestStreamWeight = 43;
+    int responseStreamDependency = 98;
+    short responseStreamWeight = 55;
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
+      req.response().setStreamPriority(new StreamPriority()
+        .setDependency(responseStreamDependency)
+        .setWeight(responseStreamWeight)
+        .setExclusive(false));
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
+      assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
+      complete();
+    });
+    request.setStreamPriority(new StreamPriority()
+      .setDependency(requestStreamDependency)
+      .setWeight(requestStreamWeight)
+      .setExclusive(false));
+    request.end();
+    await();
+  }
+
+  @Test
+  public void testStreamWeightAndDependencyChange() throws Exception {
+    int requestStreamDependency = 56;
+    short requestStreamWeight = 43;
+    int requestStreamDependency2 = 157;
+    short requestStreamWeight2 = 143;
+    int responseStreamDependency = 98;
+    short responseStreamWeight = 55;
+    int responseStreamDependency2 = 198;
+    short responseStreamWeight2 = 155;
+    waitFor(4);
+    server.requestHandler(req -> {
+      req.streamPriorityHandler( sp -> {
+        assertEquals(requestStreamWeight2, sp.getWeight());
+        assertEquals(requestStreamDependency2, sp.getDependency());
+        assertEquals(requestStreamWeight2, req.streamPriority().getWeight());
+        assertEquals(requestStreamDependency2, req.streamPriority().getDependency());
+        complete();
+      });
+      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
+      req.response().setStreamPriority(new StreamPriority()
+        .setDependency(responseStreamDependency)
+        .setWeight(responseStreamWeight)
+        .setExclusive(false));
+      req.response().write("hello");
+      req.response().setStreamPriority(new StreamPriority()
+        .setDependency(responseStreamDependency2)
+        .setWeight(responseStreamWeight2)
+        .setExclusive(false));
+      req.response().drainHandler(h -> {});
+      req.response().end("world");
+      complete();
+    });
+    startServer();
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
+      assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
+      resp.streamPriorityHandler( sp -> {
+          assertEquals(responseStreamWeight2, sp.getWeight());
+          assertEquals(responseStreamDependency2, sp.getDependency());
+          assertEquals(responseStreamWeight2, resp.request().getStreamPriority().getWeight());
+          assertEquals(responseStreamDependency2, resp.request().getStreamPriority().getDependency());
+          complete();
+        });
+      complete();
+    });
+    request.setStreamPriority(new StreamPriority()
+      .setDependency(requestStreamDependency)
+      .setWeight(requestStreamWeight)
+      .setExclusive(false));
+    request.sendHead(h -> {
+      request.setStreamPriority(new StreamPriority()
+        .setDependency(requestStreamDependency2)
+        .setWeight(requestStreamWeight2)
+        .setExclusive(false));
+      request.end();
+    });
+    await();
+  }
+
+  @Test
+  public void testStreamWeightAndDependencyNoChange() throws Exception {
+    int requestStreamDependency = 56;
+    short requestStreamWeight = 43;
+    int responseStreamDependency = 98;
+    short responseStreamWeight = 55;
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.streamPriorityHandler( sp -> {
+          fail("Stream priority handler shoudl not be called");
+      });
+      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
+      req.response().setStreamPriority(new StreamPriority()
+        .setDependency(responseStreamDependency)
+        .setWeight(responseStreamWeight)
+        .setExclusive(false));
+      req.response().write("hello");
+      req.response().setStreamPriority(new StreamPriority()
+        .setDependency(responseStreamDependency)
+        .setWeight(responseStreamWeight)
+        .setExclusive(false));
+      req.response().drainHandler(h -> {});
+      req.response().end("world");
+      complete();
+    });
+    startServer();
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
+      assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
+      resp.streamPriorityHandler( sp -> {
+          fail("Stream priority handler shoudl not be called");
+          complete();
+        });
+      complete();
+    });
+    request.setStreamPriority(new StreamPriority()
+      .setDependency(requestStreamDependency)
+      .setWeight(requestStreamWeight)
+      .setExclusive(false));
+    request.sendHead(h -> {
+      request.setStreamPriority(new StreamPriority()
+        .setDependency(requestStreamDependency)
+        .setWeight(requestStreamWeight)
+        .setExclusive(false));
+      request.end();
+    });
+    await();
+  }
+
+
+  @Test
+  public void testStreamWeightAndDependencyInheritance() throws Exception {
+    int requestStreamDependency = 86;
+    short requestStreamWeight = 53;
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
+      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(requestStreamWeight, resp.request().getStreamPriority().getWeight());
+      assertEquals(requestStreamDependency, resp.request().getStreamPriority().getDependency());
+      complete();
+    });
+    request.setStreamPriority(new StreamPriority()
+      .setDependency(requestStreamDependency)
+      .setWeight(requestStreamWeight)
+      .setExclusive(false));
+    request.end();
+    await();
+  }
+
+  @Test
+  public void testDefaultStreamWeightAndDependency() throws Exception {
+    int defaultStreamDependency = 0;
+    short defaultStreamWeight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
+    waitFor(2);
+    server.requestHandler(req -> {
+        assertEquals(defaultStreamWeight, req.streamPriority().getWeight());
+        assertEquals(defaultStreamDependency, req.streamPriority().getDependency());
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(defaultStreamWeight, resp.request().getStreamPriority().getWeight());
+      assertEquals(defaultStreamDependency, resp.request().getStreamPriority().getDependency());
+      complete();
+    });
+    request.end();
+    await();
+  }
+
+  @Test
+  public void testStreamWeightAndDependencyPushPromise() throws Exception {
+    int pushStreamDependency = 456;
+    short pushStreamWeight = 14;
+    waitFor(4);
+    server.requestHandler(req -> {
+      req.response().push(HttpMethod.GET, "/pushpath", ar -> {
+        assertTrue(ar.succeeded());
+        HttpServerResponse pushedResp = ar.result();
+        pushedResp.setStreamPriority(new StreamPriority()
+          .setDependency(pushStreamDependency)
+          .setWeight(pushStreamWeight)
+          .setExclusive(false));
+        pushedResp.end();
+      });
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      complete();
+    });
+    request.pushHandler(pushReq -> {
+      complete();
+      pushReq.handler(pushResp -> {
+        assertEquals(pushStreamDependency, pushResp.request().getStreamPriority().getDependency());
+        assertEquals(pushStreamWeight, pushResp.request().getStreamPriority().getWeight());
+        complete();
+      });
+    });
+    request.end();
+    await();
+  }
+
+  @Test
+  public void testStreamWeightAndDependencyInheritancePushPromise() throws Exception {
+    int reqStreamDependency = 556;
+    short reqStreamWeight = 84;
+    waitFor(4);
+    server.requestHandler(req -> {
+      req.response().push(HttpMethod.GET, "/pushpath", ar -> {
+        assertTrue(ar.succeeded());
+        HttpServerResponse pushedResp = ar.result();
+        pushedResp.end();
+      });
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      complete();
+    });
+    request.pushHandler(pushReq -> {
+      complete();
+      pushReq.handler(pushResp -> {
+        assertEquals(reqStreamDependency, pushResp.request().getStreamPriority().getDependency());
+        assertEquals(reqStreamWeight, pushResp.request().getStreamPriority().getWeight());
+        complete();
+      });
+    });
+    request.setStreamPriority(new StreamPriority()
+      .setDependency(reqStreamDependency)
+      .setWeight(reqStreamWeight)
+      .setExclusive(false));
+    request.end();
+    await();
+  }
+
 }

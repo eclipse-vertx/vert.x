@@ -150,4 +150,14 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    */
   @CacheReturn
   HttpClientRequest request();
+
+  /**
+   * Set an handler for stream priority changes.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param handler the handler to be called when the stream priority changes
+   */
+  @Fluent
+  HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler);
 }

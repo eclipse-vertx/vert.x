@@ -101,13 +101,12 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
     boolean writable = handler.encoder().flowController().isWritable(stream);
-    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable);
-    return request;
+    return new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable);
   }
 
   @Override
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId,
-                            Http2Headers headers, int padding, boolean endOfStream) {
+                            Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) {
     VertxHttp2Stream stream = streams.get(streamId);
     if (stream == null) {
       if (isMalformedRequest(headers)) {
@@ -115,6 +114,12 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       Http2ServerRequestImpl req = createRequest(streamId, headers);
+      req.priority(new StreamPriority()
+        .setDependency(streamDependency)
+        .setWeight(weight)
+        .setExclusive(exclusive)
+      );
+
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -142,6 +147,12 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   }
 
   @Override
+  public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId,
+                            Http2Headers headers, int padding, boolean endOfStream) {
+    onHeadersRead(ctx, streamId, headers, 0, Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT, false, padding, endOfStream);
+  }
+
+  @Override
   public synchronized void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     Long v = settings.maxConcurrentStreams();
     if (v != null) {
@@ -150,7 +161,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     super.onSettingsRead(ctx, settings);
   }
 
-  synchronized void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
+  synchronized void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
     Http2Headers headers_ = new DefaultHttp2Headers();
     if (method == HttpMethod.OTHER) {
       throw new IllegalArgumentException("Cannot push HttpMethod.OTHER");
@@ -175,6 +186,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
             boolean writable = handler.encoder().flowController().isWritable(promisedStream);
             Push push = new Push(promisedStream, contentEncoding, method, path, writable, completionHandler);
+            push.priority(streamPriority);
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
@@ -236,6 +248,10 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     @Override
     void handleData(Buffer buf) {
+    }
+
+    @Override
+    void handlePriorityChange(StreamPriority streamPriority) {
     }
 
     @Override

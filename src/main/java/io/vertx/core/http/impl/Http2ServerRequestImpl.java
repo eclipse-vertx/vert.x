@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
@@ -33,6 +34,7 @@ import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.logging.Logger;
@@ -80,6 +82,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private Handler<Throwable> exceptionHandler;
   private Handler<HttpFrame> customFrameHandler;
 
+  private Handler<StreamPriority> streamPriorityHandler;
+  
   public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable) {
     super(conn, stream, writable);
@@ -516,4 +520,36 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   public HttpConnection connection() {
     return conn;
   }
+
+  @Override
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
+    synchronized (conn) {
+      streamPriorityHandler = handler;
+    }
+    return this;
+  }
+
+  @Override
+  void handlePriorityChange(StreamPriority streamPriority) {
+    Handler<StreamPriority> handler;
+    boolean priorityChanged = false;
+    synchronized (conn) {
+      handler = streamPriorityHandler;
+      if (streamPriority != null && !streamPriority.equals(streamPriority())) {
+        priority(streamPriority);
+        priorityChanged = true;
+      }
+    }
+    if (handler != null && priorityChanged) {
+      handler.handle(streamPriority);
+    }
+  }
+
+  @Override
+  public StreamPriority streamPriority() {
+    return priority();
+  }
+  
+  
+
 }

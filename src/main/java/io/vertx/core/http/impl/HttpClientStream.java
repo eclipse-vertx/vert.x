@@ -17,6 +17,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.net.NetSocket;
 
 /**
@@ -38,7 +39,7 @@ interface HttpClientStream {
   HttpConnection connection();
   Context getContext();
 
-  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
+  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority);
   void writeBuffer(ByteBuf buf, boolean end);
   void writeFrame(int type, int flags, ByteBuf payload);
 
@@ -56,4 +57,7 @@ interface HttpClientStream {
   void endRequest();
 
   NetSocket createNetSocket();
+  
+  StreamPriority priority();
+  void updatePriority(StreamPriority streamPriority);
 }

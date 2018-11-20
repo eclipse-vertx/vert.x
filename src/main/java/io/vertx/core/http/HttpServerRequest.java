@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -328,4 +329,20 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   @CacheReturn
   HttpConnection connection();
 
+  /**
+   * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
+   */
+  default StreamPriority streamPriority() {
+      return null;
+  }
+
+  /**
+   * Set an handler for stream priority changes
+   * <p>
+   * This is not implemented for HTTP/1.x.
+   * 
+   * @param handler the handler to be called when stream priority changes
+   */
+  @Fluent
+  HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler);
 }

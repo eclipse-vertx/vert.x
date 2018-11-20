@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
@@ -250,4 +251,5 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     }
     return this;
   }
+  
 }

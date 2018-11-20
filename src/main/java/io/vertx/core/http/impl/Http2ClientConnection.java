@@ -133,11 +133,25 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
+  public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+    Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
+    if (stream != null) {
+      StreamPriority streamPriority = new StreamPriority()
+        .setDependency(streamDependency)
+        .setWeight(weight)
+        .setExclusive(exclusive);
+      context.executeFromIO(v -> {
+        stream.handleHeaders(headers, streamPriority, endOfStream);
+      });
+    }
+  }
+
+  @Override
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
       context.executeFromIO(v -> {
-        stream.handleHeaders(headers, endOfStream);
+        stream.handleHeaders(headers, null, endOfStream);
       });
     }
   }
@@ -183,6 +197,16 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Http2ClientStream(Http2ClientConnection conn, HttpClientRequestPushPromise request, Http2Stream stream, boolean writable) {
       super(conn, stream, writable);
       this.request = request;
+    }
+
+    @Override
+    public StreamPriority priority() {
+      return super.priority();
+    }
+
+    @Override
+    public void updatePriority(StreamPriority streamPriority) {
+      super.updatePriority(streamPriority);
     }
 
     @Override
@@ -263,7 +287,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       response.handleUnknownFrame(new HttpFrameImpl(type, flags, buff));
     }
 
-    void handleHeaders(Http2Headers headers, boolean end) {
+    
+    @Override
+    void handlePriorityChange(StreamPriority streamPriority) {
+      if(streamPriority != null && !streamPriority.equals(priority())) {
+        priority(streamPriority);
+        response.handlePriorityChange(streamPriority);
+      }
+    }
+
+    void handleHeaders(Http2Headers headers, StreamPriority streamPriority, boolean end) {
+      if(streamPriority != null)
+        priority(streamPriority);
       if (response == null || response.statusCode() == 100) {
         int status;
         String statusMessage;
@@ -315,7 +350,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
@@ -341,6 +376,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.metrics != null) {
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
+      priority(priority);
       writeHeaders(h, end && content == null);
       if (content != null) {
         writeBuffer(content, end);
@@ -361,7 +397,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         handlerContext.flush();
       }
     }
-
+    
     @Override
     public void writeFrame(int type, int flags, ByteBuf payload) {
       super.writeFrame(type, flags, payload);
@@ -430,7 +466,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       return conn.toNetSocket(this);
     }
   }
-
+  
   public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
     HttpClientImpl client,
     Object queueMetric,

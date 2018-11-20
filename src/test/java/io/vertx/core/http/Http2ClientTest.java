@@ -1554,8 +1554,6 @@ public class Http2ClientTest extends Http2TestBase {
           assertSame(((HttpClientConnection)conn).channel(), ((HttpClientConnection)resp2.request().connection()).channel());
           testComplete();
         }).exceptionHandler(this::fail).end();
-      }).connectionHandler(conn -> {
-        System.out.println("CONNECTED " + conn);
       }).exceptionHandler(this::fail).end();
       await();
     } finally {
@@ -1934,4 +1932,174 @@ public class Http2ClientTest extends Http2TestBase {
 
     await();
   }
+  
+  
+  @Test
+  public void testStreamPriority() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    waitFor(2);
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          assertEquals(requestStreamPriority.getDependency(), streamDependency);
+          assertEquals(requestStreamPriority.getWeight(), weight);
+          assertEquals(requestStreamPriority.isExclusive(), exclusive);
+          encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), responseStreamPriority.getDependency(), responseStreamPriority.getWeight(), responseStreamPriority.isExclusive(), 0, true, ctx.newPromise());
+          ctx.flush();
+          if(endStream)
+            complete();
+        });
+      }
+    });
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    try {
+      HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath").setStreamPriority(requestStreamPriority);
+      req.handler(resp -> {
+        assertEquals(responseStreamPriority, resp.request().getStreamPriority());
+        Context ctx = vertx.getOrCreateContext();
+        assertOnIOContext(ctx);
+        resp.endHandler(v -> {
+          complete();
+        });
+      }).end();
+      await();
+    } finally {
+      s.channel().close().sync();
+    }
+  }
+
+  @Test
+  public void testStreamPriorityChange() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriority requestStreamPriority2 = new StreamPriority().setDependency(223).setWeight((short)145).setExclusive(false);
+    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    StreamPriority responseStreamPriority2 = new StreamPriority().setDependency(253).setWeight((short)175).setExclusive(true);
+    waitFor(5);
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          assertEquals(requestStreamPriority.getDependency(), streamDependency);
+          assertEquals(requestStreamPriority.getWeight(), weight);
+          assertEquals(requestStreamPriority.isExclusive(), exclusive);
+          assertFalse(endStream);
+          complete();
+        });
+      }
+      @Override
+      public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          assertEquals(requestStreamPriority2.getDependency(), streamDependency);
+          assertEquals(requestStreamPriority2.getWeight(), weight);
+          assertEquals(requestStreamPriority2.isExclusive(), exclusive);
+          complete();
+        });
+      }
+      @Override
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          if(endOfStream) {
+            encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), responseStreamPriority.getDependency(), responseStreamPriority.getWeight(), responseStreamPriority.isExclusive(), 0, false, ctx.newPromise());
+            ctx.flush();
+            encoder.writePriority(ctx, streamId, responseStreamPriority2.getDependency(), responseStreamPriority2.getWeight(), responseStreamPriority2.isExclusive(), ctx.newPromise());
+            ctx.flush();
+            encoder.writeData(ctx, streamId, Buffer.buffer("hello").getByteBuf(), 0, true, ctx.newPromise());
+            ctx.flush();
+            vertx.runOnContext(v -> {
+              complete();
+            });
+          }
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+      }
+      
+    });
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    try {
+      HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath").setStreamPriority(requestStreamPriority);
+      req.handler(resp -> {
+        assertEquals(responseStreamPriority, resp.request().getStreamPriority());
+        Context ctx = vertx.getOrCreateContext();
+        assertOnIOContext(ctx);
+        resp.streamPriorityHandler(streamPriority ->  {
+          assertEquals(responseStreamPriority2, streamPriority);
+          assertEquals(responseStreamPriority2, resp.request().getStreamPriority());
+          complete();
+        });
+        resp.endHandler(v -> {
+          assertEquals(responseStreamPriority2, resp.request().getStreamPriority());
+          complete();
+        });
+      }).sendHead(h -> {
+          req.setStreamPriority(requestStreamPriority2);
+          req.end();
+        });
+      await();
+    } finally {
+      s.channel().close().sync();
+    }
+  }
+
+  @Test
+  public void testStreamPriorityNoChange() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    waitFor(3);
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          assertEquals(requestStreamPriority.getDependency(), streamDependency);
+          assertEquals(requestStreamPriority.getWeight(), weight);
+          assertEquals(requestStreamPriority.isExclusive(), exclusive);
+          assertFalse(endStream);
+          complete();
+        });
+        encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), responseStreamPriority.getDependency(), responseStreamPriority.getWeight(), responseStreamPriority.isExclusive(), 0, false, ctx.newPromise());
+        ctx.flush();
+        encoder.writePriority(ctx, streamId, responseStreamPriority.getDependency(), responseStreamPriority.getWeight(), responseStreamPriority.isExclusive(), ctx.newPromise());
+        ctx.flush();
+        encoder.writeData(ctx, streamId, Buffer.buffer("hello").getByteBuf(), 0, true, ctx.newPromise());
+        ctx.flush();
+      }
+      @Override
+      public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+        fail("Priority frame shoudl not be sent");
+      }
+      @Override
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          if(endOfStream) {
+            vertx.runOnContext(v -> {
+              complete();
+            });
+          }
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+      }
+      
+    });
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    try {
+      HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath").setStreamPriority(requestStreamPriority);
+      req.handler(resp -> {
+        assertEquals(responseStreamPriority, resp.request().getStreamPriority());
+        Context ctx = vertx.getOrCreateContext();
+        assertOnIOContext(ctx);
+        resp.streamPriorityHandler(streamPriority ->  {
+          fail("Stream priority handler shoudl not be called");
+        });
+        resp.endHandler(v -> {
+          assertEquals(responseStreamPriority, resp.request().getStreamPriority());
+          complete();
+        });
+      }).sendHead(h -> {
+        req.setStreamPriority(requestStreamPriority);
+        req.end();
+      });
+      await();
+    } finally {
+      s.channel().close().sync();
+    }
+  }
+
+  
 }

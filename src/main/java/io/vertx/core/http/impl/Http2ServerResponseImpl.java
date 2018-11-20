@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -27,9 +28,11 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -696,7 +699,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         throw new IllegalStateException("A push response cannot promise another push");
       }
       checkEnded();
-      conn.sendPush(stream.id(), host, method, headers, path, handler);
+      conn.sendPush(stream.id(), host, method, headers, path, stream.priority(), handler);
       if (!inHandler) {
         ctx.flush();
       }
@@ -708,5 +711,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     return push(method, host, path, handler);
+  }
+
+  @Override
+  public HttpServerResponse setStreamPriority(StreamPriority priority) {
+    stream.updatePriority(priority);
+    return this;
   }
 }

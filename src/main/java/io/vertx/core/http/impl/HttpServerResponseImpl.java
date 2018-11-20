@@ -671,4 +671,5 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
     return this;
   }
+
 }

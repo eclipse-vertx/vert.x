@@ -384,4 +384,21 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   default HttpClientRequest writeCustomFrame(HttpFrame frame) {
     return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
+  
+  /**
+   * Sets the priority of the associated stream.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param streamPriority the priority of this request's stream
+   */
+  @Fluent
+  default HttpClientRequest setStreamPriority(StreamPriority streamPriority) {
+      return this;
+  }
+
+  /**
+   * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
+   */
+  StreamPriority getStreamPriority();
 }
