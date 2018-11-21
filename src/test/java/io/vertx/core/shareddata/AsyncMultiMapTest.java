@@ -111,11 +111,7 @@ public class AsyncMultiMapTest extends VertxTestBase {
                 map.remove("some-sub2", serverID3, onSuccess(res7 -> {
 
                   map.get("some-sub2", onSuccess(res8 -> {
-                    Set<ServerID> set3 = new HashSet<>();
-                    for (ServerID sid : res8) {
-                      set3.add(sid);
-                    }
-                    assertEquals(0, set3.size());
+                    waitUntil(res8::isEmpty);
                     testComplete();
                   }));
                 }));
