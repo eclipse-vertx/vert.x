@@ -251,8 +251,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * @return are Netty pooled buffers enabled?
-   *
+   * @deprecated this has no effect, just don't use it
    */
+  @Deprecated
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
@@ -262,7 +263,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * @param usePooledBuffers true if pooled buffers enabled
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this has no effect, just don't use it
    */
+  @Deprecated
   public TCPSSLOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
