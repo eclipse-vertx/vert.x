@@ -1057,6 +1057,17 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testWriteEmptyAsync() throws Exception {
+    String fileName = "some-file.dat";
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
+      file.write(Buffer.buffer(), 0, onSuccess(v -> {
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testReadAsync() throws Exception {
     String fileName = "some-file.dat";
     int chunkSize = 1000;

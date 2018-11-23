@@ -370,13 +370,14 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {
-    if (toWrite == 0) {
-      throw new IllegalStateException("Cannot save zero bytes");
+    if (toWrite > 0) {
+      synchronized (this) {
+        writesOutstanding += toWrite;
+      }
+      writeInternal(buff, position, handler);
+    } else {
+      handler.handle(Future.succeededFuture());
     }
-    synchronized (this) {
-      writesOutstanding += toWrite;
-    }
-    writeInternal(buff, position, handler);
   }
 
   private void writeInternal(ByteBuffer buff, long position, Handler<AsyncResult<Void>> handler) {
