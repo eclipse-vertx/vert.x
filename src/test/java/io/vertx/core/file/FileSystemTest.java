@@ -18,9 +18,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.*;
-import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
@@ -430,13 +427,13 @@ public class FileSystemTest extends VertxTestBase {
     String file1 = "some-file.dat";
     createFileWithJunk(file1, 100);
     testChmod(file1, perms, null, true, v -> {
-      azzertPerms(perms, file1);
+      assertPerms(perms, file1);
       deleteFile(file1);
     });
     await();
   }
 
-  private void azzertPerms(String perms, String file1) {
+  private void assertPerms(String perms, String file1) {
     if (!Utils.isWindows()) {
       assertEquals(perms, getPerms(file1));
     }
@@ -484,11 +481,11 @@ public class FileSystemTest extends VertxTestBase {
     mkDir(dir + pathSep + dir2);
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     testChmod(dir, perms, dirPerms, true, v -> {
-      azzertPerms(dirPerms, dir);
-      azzertPerms(perms, dir + file1);
-      azzertPerms(perms, dir + file2);
-      azzertPerms(dirPerms, dir + pathSep + dir2);
-      azzertPerms(perms, dir + pathSep + dir2 + file3);
+      assertPerms(dirPerms, dir);
+      assertPerms(perms, dir + file1);
+      assertPerms(perms, dir + file2);
+      assertPerms(dirPerms, dir + pathSep + dir2);
+      assertPerms(perms, dir + pathSep + dir2 + file3);
       deleteDir(dir);
     });
     await();
@@ -551,9 +548,9 @@ public class FileSystemTest extends VertxTestBase {
   private void testChmod(String file, String perms, String dirPerms,
                          boolean shouldPass, Handler<Void> afterOK) throws Exception {
     if (Files.isDirectory(Paths.get(testDir + pathSep + file))) {
-      azzertPerms(DEFAULT_DIR_PERMS, file);
+      assertPerms(DEFAULT_DIR_PERMS, file);
     } else {
-      azzertPerms(DEFAULT_FILE_PERMS, file);
+      assertPerms(DEFAULT_FILE_PERMS, file);
     }
     if (dirPerms != null) {
       vertx.fileSystem().chmodRecursive(testDir + pathSep + file, perms, dirPerms, createHandler(shouldPass, afterOK));
@@ -834,7 +831,7 @@ public class FileSystemTest extends VertxTestBase {
     testMkdir(dirName, perms, false, true, v -> {
       assertTrue(fileExists(dirName));
       assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
-      azzertPerms(perms, dirName);
+      assertPerms(perms, dirName);
     });
     await();
   }
@@ -856,7 +853,7 @@ public class FileSystemTest extends VertxTestBase {
     testMkdir(dirName, perms, true, true, v -> {
       assertTrue(fileExists(dirName));
       assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
-      azzertPerms(perms, dirName);
+      assertPerms(perms, dirName);
     });
     await();
   }
@@ -1487,7 +1484,7 @@ public class FileSystemTest extends VertxTestBase {
           assertTrue(fileExists(fileName));
           assertEquals(0, fileLength(fileName));
           if (perms != null) {
-            azzertPerms(perms, fileName);
+            assertPerms(perms, fileName);
           }
           testComplete();
         } else {
