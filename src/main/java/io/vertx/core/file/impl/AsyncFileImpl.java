@@ -328,9 +328,13 @@ public class AsyncFileImpl implements AsyncFile {
     }
   }
 
-  private synchronized void doRead() {
+  private void doRead() {
+    doRead(ByteBuffer.allocate(readBufferSize));
+  }
+
+  private synchronized void doRead(ByteBuffer bb) {
     Buffer buff = Buffer.buffer(readBufferSize);
-    read(buff, 0, readPos, readBufferSize, ar -> {
+    doRead(buff, 0, bb, readPos, ar -> {
       if (ar.succeeded()) {
         Buffer buffer = ar.result();
         if (buffer.length() == 0) {
@@ -339,7 +343,7 @@ public class AsyncFileImpl implements AsyncFile {
         } else {
           readPos += buffer.length();
           if (queue.write(buffer)) {
-            doRead();
+            doRead(bb);
           }
         }
       } else {
@@ -424,6 +428,7 @@ public class AsyncFileImpl implements AsyncFile {
         context.runOnContext((v) -> {
           buff.flip();
           writeBuff.setBytes(offset, buff);
+          buff.compact();
           handler.handle(Future.succeededFuture(writeBuff));
         });
       }
