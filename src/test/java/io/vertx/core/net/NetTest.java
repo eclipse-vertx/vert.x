@@ -3395,7 +3395,7 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testSslHandshakeTimeoutInClient() throws Exception {
+  public void testSslHandshakeTimeoutHappened() throws Exception {
     server.close();
     client.close();
 
@@ -3424,15 +3424,15 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testSslHandshakeTimeoutInServer() throws Exception {
+  public void testSslHandshakeTimeoutNotHappened() throws Exception {
     server.close();
     client.close();
 
     NetServerOptions serverOptions = new NetServerOptions()
       .setSsl(true)
       .setKeyStoreOptions(Cert.SERVER_JKS.get())
-      // set 1ms to produce timeout
-      .setSslHandshakeTimeout(1);
+      // set 100ms to let the connection established
+      .setSslHandshakeTimeout(100);
     server = vertx.createNetServer(serverOptions);
 
     NetClientOptions clientOptions = new NetClientOptions()
@@ -3441,13 +3441,10 @@ public class NetTest extends VertxTestBase {
     client = vertx.createNetClient(clientOptions);
 
     server.connectHandler(s -> {
-    }).exceptionHandler(t -> {
-      assertEquals("handshake timed out", t.getMessage());
     }).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       client.connect(testAddress, res -> {
-        assertTrue(res.failed());
-        assertTrue(res.cause() instanceof SSLHandshakeException);
+        assertTrue(res.succeeded());
         testComplete();
       });
     });
@@ -3455,7 +3452,7 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testSslHandshakeTimeoutWhenUpgradeSsl() {
+  public void testSslHandshakeTimeoutHappenedWhenUpgradeSsl() {
     server.close();
     client.close();
 
