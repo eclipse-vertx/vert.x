@@ -56,6 +56,7 @@ public class DNSTest extends VertxTestBase {
   @Override
   protected void tearDown() throws Exception {
     dnsServer.stop();
+    super.tearDown();
   }
 
   @Test
