@@ -2733,8 +2733,13 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testFormUploadLargerFile() throws Exception {
+  public void testFormUploadMediumFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(20000), false);
+  }
+
+  @Test
+  public void testFormUploadLargeFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false);
   }
 
   @Test
@@ -2743,8 +2748,13 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testFormUploadLargerFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(20000), true);
+  public void testFormUploadMediumFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true);
+  }
+
+  @Test
+  public void testFormUploadLargeFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true);
   }
 
   private void testFormUploadFile(String contentStr, boolean streamToDisk) throws Exception {

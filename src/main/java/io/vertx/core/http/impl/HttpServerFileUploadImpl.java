@@ -63,6 +63,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.charset = charset;
     this.size = size;
     this.pending = new InboundBuffer<Buffer>(context)
+      .drainHandler(v -> req.resume())
       .emptyHandler(v -> {
         if (complete) {
           handleComplete();
