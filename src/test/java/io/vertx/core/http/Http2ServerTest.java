@@ -2642,13 +2642,13 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Future<HttpClientResponse> fut) {
-    HttpClientRequest req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+    HttpClientRequest req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
       assertEquals(HttpVersion.HTTP_2, resp.version());
       // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
       // assertEquals(1, serverConnectionCount.get());
       // assertEquals(1, clientConnectionCount.get());
       fut.tryComplete(resp);
-    });
+    }));
     if (connHandler != null) {
       req.connectionHandler(connHandler);
     }
@@ -2678,17 +2678,17 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
     client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-    req.handler(resp -> {
+    req.handler(onSuccess(resp -> {
       assertEquals(HttpVersion.HTTP_2, resp.version());
       complete();
-    }).exceptionHandler(this::fail).pushHandler(pushedReq -> {
+    })).exceptionHandler(this::fail).pushHandler(pushedReq -> {
       assertEquals("http", pushedReq.headers().get(":scheme"));
-      pushedReq.handler(pushResp -> {
+      pushedReq.handler(onSuccess(pushResp -> {
         pushResp.bodyHandler(buff -> {
           assertEquals("the-pushed-response", buff.toString());
           complete();
         });
-      });
+      }));
     }).end();
     await();
   }
@@ -2743,11 +2743,11 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(context);
     client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
-    doRequest.apply(client).handler(resp -> {
+    doRequest.apply(client).handler(onSuccess(resp -> {
       assertEquals(400, resp.statusCode());
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
       testComplete();
-    }).exceptionHandler(this::fail).end();
+    })).exceptionHandler(this::fail).end();
     await();
   }
 
@@ -2825,10 +2825,10 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(createWorker());
     client = vertx.createHttpClient(clientOptions);
-    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
       testComplete();
-    }).end();
+    })).end();
     await();
   }
 

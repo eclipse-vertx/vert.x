@@ -681,7 +681,7 @@ public class MetricsTest extends VertxTestBase {
     awaitLatch(started);
     CountDownLatch closed = new CountDownLatch(1);
     HttpClientRequest req = client.get(8080, "localhost", "/somepath");
-    req.handler(resp -> {
+    req.handler(onSuccess(resp -> {
       resp.endHandler(v1 -> {
         HttpConnection conn = req.connection();
         conn.closeHandler(v2 -> {
@@ -689,7 +689,7 @@ public class MetricsTest extends VertxTestBase {
         });
         conn.close();
       });
-    });
+    }));
     req.end();
     awaitLatch(closed);
     EndpointMetric val = endpointMetrics.get();
@@ -764,7 +764,7 @@ public class MetricsTest extends VertxTestBase {
       client = vertx.createHttpClient();
       HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, host, "/");
       FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-      request.handler(resp -> {
+      request.handler(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         clientMetric.set(metrics.getMetric(request));
         assertNotNull(clientMetric.get());
@@ -775,7 +775,7 @@ public class MetricsTest extends VertxTestBase {
           assertNull(metrics.getMetric(request));
           socket.close();
         });
-      }).end();
+      })).end();
     });
     await();
   }

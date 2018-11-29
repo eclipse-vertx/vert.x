@@ -126,10 +126,10 @@ public class SSLEngineTest extends HttpTestBase {
           .setUseAlpn(useAlpn)
           .setTrustAll(true)
           .setProtocolVersion(version));
-      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
-      });
+      }));
     }));
     await();
   }

@@ -1122,12 +1122,12 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setWebsocketSubProtocols("invalid")).websocketHandler(ws -> {
     });
     server.listen(onSuccess(ar -> {
-      client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, resp -> {
+      client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, onSuccess(resp -> {
         assertEquals(400, resp.statusCode());
         resp.endHandler(v -> {
           testComplete();
         });
-      }).putHeader("Upgrade", "Websocket").end();
+      })).putHeader("Upgrade", "Websocket").end();
     }));
     await();
   }
@@ -1138,12 +1138,12 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setWebsocketSubProtocols("invalid")).websocketHandler(ws -> {
     });
     server.listen(onSuccess(ar -> {
-      client.head(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, resp -> {
+      client.head(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, onSuccess(resp -> {
         assertEquals(405, resp.statusCode());
         resp.endHandler(v -> {
           testComplete();
         });
-      }).putHeader("Upgrade", "Websocket").putHeader("Connection", "Upgrade").end();
+      })).putHeader("Upgrade", "Websocket").putHeader("Connection", "Upgrade").end();
     }));
     await();
   }
@@ -1179,12 +1179,12 @@ public class WebSocketTest extends VertxTestBase {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> fail());
     server.listen(onSuccess(ar -> {
-      client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, resp -> {
+      client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, onSuccess(resp -> {
         assertEquals(413, resp.statusCode());
         resp.request().connection().closeHandler(v -> {
           testComplete();
         });
-      }).putHeader("Upgrade", "Websocket")
+      })).putHeader("Upgrade", "Websocket")
         .putHeader("Connection", "Upgrade")
         .end(TestUtils.randomBuffer(8192 + 1));
     }));
@@ -1755,10 +1755,10 @@ public class WebSocketTest extends VertxTestBase {
       .putHeader("Sec-WebSocket-Protocol", "chat")
       .putHeader("Sec-WebSocket-Version", "13")
       .putHeader("Origin", "http://example.com");
-    request.handler(resp -> {
+    request.handler(onSuccess(resp -> {
       assertEquals(101, resp.statusCode());
       handler.handle(resp.netSocket());
-    });
+    }));
     request.end();
   }
 

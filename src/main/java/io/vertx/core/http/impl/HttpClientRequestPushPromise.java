@@ -13,6 +13,8 @@ package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -27,7 +29,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private final Http2ClientConnection.Http2ClientStream stream;
   private final String rawMethod;
   private final MultiMap headers;
-  private Handler<HttpClientResponse> respHandler;
+  private Handler<AsyncResult<HttpClientResponse>> respHandler;
 
   public HttpClientRequestPushPromise(
       Http2ClientConnection conn,
@@ -53,13 +55,13 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
-    Handler<HttpClientResponse> handler;
+    Handler<AsyncResult<HttpClientResponse>> handler;
     synchronized (this) {
       if ((handler = respHandler) == null) {
         return;
       }
     }
-    handler.handle(resp);
+    handler.handle(Future.succeededFuture(resp));
   }
 
   @Override
@@ -67,7 +69,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public synchronized HttpClientRequest handler(Handler<HttpClientResponse> handler) {
+  public synchronized HttpClientRequest handler(Handler<AsyncResult<HttpClientResponse>> handler) {
     respHandler = handler;
     return this;
   }

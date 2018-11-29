@@ -1159,7 +1159,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         }
         HttpClientRequest req = requestProvider.apply(client);
         req.setFollowRedirects(followRedirects);
-        req.handler(response -> {
+        req.handler(onSuccess(response -> {
           HttpConnection conn = response.request().connection();
           if (conn.isSsl()) {
             try {
@@ -1181,7 +1181,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
           } else {
             HttpTLSTest.this.fail("Should not get a response");
           }
-        });
+        }));
         req.exceptionHandler(t -> {
           if (shouldPass) {
             t.printStackTrace();

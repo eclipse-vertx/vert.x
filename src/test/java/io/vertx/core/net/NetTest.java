@@ -3198,13 +3198,13 @@ public class NetTest extends VertxTestBase {
     });
     startServer(SocketAddress.inetSocketAddress(1234, "localhost"));
     HttpClient client = vertx.createHttpClient(clientOptions);
-    client.getNow(1234, "localhost", "/somepath", resp -> {
+    client.getNow(1234, "localhost", "/somepath", onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
       resp.bodyHandler(buff -> {
         assertEquals("Hello World", buff.toString());
         complete();
       });
-    });
+    }));
     await();
   }
 

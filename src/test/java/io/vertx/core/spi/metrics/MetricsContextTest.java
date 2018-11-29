@@ -177,7 +177,7 @@ public class MetricsContextTest extends VertxTestBase {
     });
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient();
-    client.put(8080, "localhost", "/", resp -> {
+    client.put(8080, "localhost", "/", onSuccess(resp -> {
       resp.netSocket().closeHandler(v -> {
         vertx.close(v4 -> {
           assertTrue(requestBeginCalled.get());
@@ -190,7 +190,7 @@ public class MetricsContextTest extends VertxTestBase {
           testComplete();
         });
       });
-    }).exceptionHandler(err -> {
+    })).exceptionHandler(err -> {
       fail(err.getMessage());
     }).setChunked(true).write(Buffer.buffer("hello")).end();
     await();

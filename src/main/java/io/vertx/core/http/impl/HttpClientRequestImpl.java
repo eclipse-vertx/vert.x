@@ -50,7 +50,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
   private final VertxInternal vertx;
-  private Handler<HttpClientResponse> respHandler;
+  private Handler<AsyncResult<HttpClientResponse>> respHandler;
   private boolean chunked;
   private String hostHeader;
   private String rawMethod;
@@ -92,7 +92,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest handler(Handler<HttpClientResponse> handler) {
+  public synchronized HttpClientRequest handler(Handler<AsyncResult<HttpClientResponse>> handler) {
     if (handler != null) {
       checkComplete();
     }
@@ -414,7 +414,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
       } else {
         if (respHandler != null) {
-          respHandler.handle(resp);
+          respHandler.handle(Future.succeededFuture(resp));
         }
       }
     }

@@ -144,14 +144,14 @@ public class HostnameResolutionTest extends VertxTestBase {
         listenLatch.countDown();
       }));
       awaitLatch(listenLatch);
-      client.getNow(8080, "vertx.io", "/somepath", resp -> {
+      client.getNow(8080, "vertx.io", "/somepath", onSuccess(resp -> {
         Buffer buffer = Buffer.buffer();
         resp.handler(buffer::appendBuffer);
         resp.endHandler(v -> {
           assertEquals(Buffer.buffer("foo"), buffer);
           testComplete();
         });
-      });
+      }));
       await();
     } finally {
       client.close();

@@ -98,7 +98,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       assertEquals(Collections.emptySet(), metrics.endpoints());
       HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath").exceptionHandler(this::fail);
       assertNull(metrics.getMetric(req));
-      req.setChunked(true).handler(resp -> {
+      req.setChunked(true).handler(onSuccess(resp -> {
         assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
         clientMetric.set(metrics.getMetric(req));
         assertNotNull(clientMetric.get());
@@ -110,7 +110,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
           assertEquals(contentLength, buff.length());
           latch.countDown();
         });
-      });
+      }));
       for (int i = 0;i < numBuffers;i++) {
         req.write(TestUtils.randomBuffer(chunkSize));
       }
@@ -171,12 +171,12 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     CountDownLatch responseEndLatch = new CountDownLatch(1);
-    HttpClientRequest req = client.post(8080, "localhost", "/somepath", resp -> {
+    HttpClientRequest req = client.post(8080, "localhost", "/somepath", onSuccess(resp -> {
       responseBeginLatch.countDown();
       resp.endHandler(v -> {
         responseEndLatch.countDown();
       });
-    }).setChunked(true);
+    })).setChunked(true);
     req.sendHead();
     awaitLatch(requestBeginLatch);
     HttpClientMetric reqMetric = clientMetrics.getMetric(req);
@@ -210,7 +210,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(2));
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-    req.handler(resp -> {
+    req.handler(onSuccess(resp -> {
       HttpClientMetric metric = metrics.getMetric(req);
       assertNotNull(metric);
       assertFalse(metric.failed.get());
@@ -219,7 +219,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         assertTrue(metric.failed.get());
         testComplete();
       });
-    });
+    }));
     req.end();
     await();
   }

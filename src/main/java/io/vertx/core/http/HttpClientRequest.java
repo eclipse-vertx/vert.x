@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -64,7 +65,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   @Override
   HttpClientRequest drainHandler(Handler<Void> handler);
 
-  HttpClientRequest handler(Handler<HttpClientResponse> handler);
+  HttpClientRequest handler(Handler<AsyncResult<HttpClientResponse>> handler);
 
   @Fluent
   HttpClientRequest setFollowRedirects(boolean followRedirects);
