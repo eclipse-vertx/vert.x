@@ -15,7 +15,6 @@ import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -48,7 +47,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpClientResponse> {
+public interface HttpClientRequest extends WriteStream<Buffer> {
 
   @Override
   HttpClientRequest exceptionHandler(Handler<Throwable> handler);
@@ -65,20 +64,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Override
   HttpClientRequest drainHandler(Handler<Void> handler);
 
-  @Override
   HttpClientRequest handler(Handler<HttpClientResponse> handler);
-
-  @Override
-  HttpClientRequest pause();
-
-  @Override
-  HttpClientRequest resume();
-
-  @Override
-  HttpClientRequest fetch(long amount);
-
-  @Override
-  HttpClientRequest endHandler(Handler<Void> endHandler);
 
   @Fluent
   HttpClientRequest setFollowRedirects(boolean followRedirects);

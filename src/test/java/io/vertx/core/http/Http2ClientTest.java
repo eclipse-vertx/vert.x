@@ -1473,12 +1473,9 @@ public class Http2ClientTest extends Http2TestBase {
     HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       assertEquals(1, status.getAndIncrement());
       resp.endHandler(v -> {
-        assertEquals(3, status.getAndIncrement());
+        assertEquals(2, status.getAndIncrement());
         testComplete();
       });
-    });
-    req.endHandler(v -> {
-      assertEquals(2, status.getAndIncrement());
     });
     req.sendHead(version -> {
       assertEquals(0, status.getAndIncrement());

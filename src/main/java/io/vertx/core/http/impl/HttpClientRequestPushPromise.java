@@ -141,11 +141,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest endHandler(Handler<Void> endHandler) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public HttpClientRequest setFollowRedirects(boolean followRedirect) {
     throw new IllegalStateException();
   }

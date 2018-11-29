@@ -51,7 +51,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private final VertxInternal vertx;
   private Handler<HttpClientResponse> respHandler;
-  private Handler<Void> endHandler;
   private boolean chunked;
   private String hostHeader;
   private String rawMethod;
@@ -110,17 +109,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         this.followRedirects = 0;
       }
-      return this;
-    }
-  }
-
-  @Override
-  public HttpClientRequest endHandler(Handler<Void> handler) {
-    synchronized (this) {
-      if (handler != null) {
-        checkComplete();
-      }
-      endHandler = handler;
       return this;
     }
   }
@@ -365,7 +353,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     next.handler(respHandler);
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
-    next.endHandler(endHandler);
     next.pushHandler = pushHandler;
     next.followRedirects = followRedirects - 1;
     next.written = written;
@@ -428,9 +415,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         if (respHandler != null) {
           respHandler.handle(resp);
-        }
-        if (endHandler != null) {
-          endHandler.handle(null);
         }
       }
     }

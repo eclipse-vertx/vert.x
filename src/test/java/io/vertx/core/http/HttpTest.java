@@ -1250,7 +1250,6 @@ public abstract class HttpTest extends HttpTestBase {
   public void testClientExceptionHandlerCalledWhenFailingToConnect() throws Exception {
     client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
         exceptionHandler(error -> testComplete()).
-        endHandler(done -> fail()).
         end();
     await();
   }
@@ -1265,7 +1264,7 @@ public abstract class HttpTest extends HttpTestBase {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       for (int i = 0; i < numReqs; i++) {
         client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
-            exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
+            exceptionHandler(error -> latch.countDown()).end();
       }
     }));
     awaitLatch(latch);
@@ -3137,111 +3136,6 @@ public abstract class HttpTest extends HttpTestBase {
         });
       });
     });
-    await();
-  }
-
-  @Test
-  public void testClearHandlersOnEnd() {
-    String path = "/some/path";
-    server = vertx.createHttpServer(createBaseServerOptions());
-    server.requestHandler(req -> {
-      req.endHandler(v -> {
-        try {
-          req.endHandler(null);
-          req.exceptionHandler(null);
-          req.handler(null);
-          req.bodyHandler(null);
-          req.uploadHandler(null);
-        } catch (Exception e) {
-          fail("Was expecting to set to null the handlers when the request is completed");
-          return;
-        }
-        HttpServerResponse resp = req.response();
-        resp.setStatusCode(200).end();
-        try {
-          resp.endHandler(null);
-          resp.exceptionHandler(null);
-          resp.drainHandler(null);
-          resp.bodyEndHandler(null);
-          resp.closeHandler(null);
-          resp.headersEndHandler(null);
-        } catch (Exception e) {
-          fail("Was expecting to set to null the handlers when the response is completed");
-        }
-      });
-    });
-    server.listen(ar -> {
-      assertTrue(ar.succeeded());
-      HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
-      AtomicInteger count = new AtomicInteger();
-      req.handler(resp -> {
-        resp.endHandler(v -> {
-          try {
-            resp.endHandler(null);
-            resp.exceptionHandler(null);
-            resp.handler(null);
-            resp.bodyHandler(null);
-          } catch (Exception e) {
-            fail("Was expecting to set to null the handlers when the response is completed");
-            return;
-          }
-          if (count.incrementAndGet() == 2) {
-            testComplete();
-          }
-        });
-      });
-      req.endHandler(done -> {
-        try {
-          req.handler(null);
-          req.exceptionHandler(null);
-          req.endHandler(null);
-          req.drainHandler(null);
-          req.connectionHandler(null);
-          req.continueHandler(null);
-        } catch (Exception e) {
-          fail("Was expecting to set to null the handlers when the response is completed");
-          return;
-        }
-        if (count.incrementAndGet() == 2) {
-          testComplete();
-        }
-      });
-      req.end();
-
-    });
-    await();
-  }
-
-  @Test
-  public void testSetHandlersOnEnd() throws Exception {
-    String path = "/some/path";
-    server.requestHandler(req -> req.response().setStatusCode(200).end());
-    startServer();
-    HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
-    req.handler(resp -> {
-    });
-    req.endHandler(done -> {
-      try {
-        req.handler(arg -> {
-        });
-        fail();
-      } catch (Exception ignore) {
-      }
-      try {
-        req.exceptionHandler(arg -> {
-        });
-        fail();
-      } catch (Exception ignore) {
-      }
-      try {
-        req.endHandler(arg -> {
-        });
-        fail();
-      } catch (Exception ignore) {
-      }
-      testComplete();
-    });
-    req.end();
     await();
   }
 
