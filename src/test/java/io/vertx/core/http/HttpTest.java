@@ -1248,9 +1248,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientExceptionHandlerCalledWhenFailingToConnect() throws Exception {
-    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
-        exceptionHandler(error -> testComplete()).
-        end();
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, onFailure(err ->
+      testComplete()))
+      .exceptionHandler(error -> fail("Exception handler should not be called"))
+      .end();
     await();
   }
 
@@ -1263,8 +1264,11 @@ public abstract class HttpTest extends HttpTestBase {
     }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       for (int i = 0; i < numReqs; i++) {
-        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
-            exceptionHandler(error -> latch.countDown()).end();
+        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
+          latch.countDown();
+        }))
+          .exceptionHandler(error -> fail("Exception handler should not be called"))
+          .end();
       }
     }));
     awaitLatch(latch);
@@ -1389,11 +1393,7 @@ public abstract class HttpTest extends HttpTestBase {
       });
     });
     startServer();
-    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
-      resp.handler(chunk -> {
-        resp.request().connection().close();
-      });
-    })).setChunked(true);
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(err -> {})).setChunked(true);
     req.exceptionHandler(err -> {
       testComplete();
     });
@@ -1828,9 +1828,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        fail("Should not receive response");
-      }).end();
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {})).end();
       vertx.setTimer(100, tid -> testComplete());
     }));
 
@@ -1849,9 +1847,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        fail("Should not receive response");
-      }).end();
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(resp -> {})).end();
     }));
 
     await();
@@ -1871,9 +1867,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        fail("Should not receive response");
-      }).end();
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {})).end();
     }));
 
     await();
@@ -2116,44 +2110,30 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testConnectionErrorsGetReportedToRequest() throws InterruptedException {
-    AtomicInteger req1Exceptions = new AtomicInteger();
-    AtomicInteger req2Exceptions = new AtomicInteger();
-    AtomicInteger req3Exceptions = new AtomicInteger();
-
+  public void testConnectionErrorsGetReportedToHandlers() throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(3);
 
     // This one should cause an error in the Client Exception handler, because it has no exception handler set specifically.
-    HttpClientRequest req1 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl1", resp -> {
-      fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
-    });
+    HttpClientRequest req1 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl1", onFailure(resp -> {
+      latch.countDown();
+    }));
 
     req1.exceptionHandler(t -> {
-      assertEquals("More than one call to req1 exception handler was not expected", 1, req1Exceptions.incrementAndGet());
+      fail("Should not be called");
+    });
+
+    HttpClientRequest req2 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl2", onFailure(resp -> {
       latch.countDown();
-    });
+    }));
 
-    HttpClientRequest req2 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl2", resp -> {
-      fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
-    });
-
+    AtomicInteger req2Exceptions = new AtomicInteger();
     req2.exceptionHandler(t -> {
       assertEquals("More than one call to req2 exception handler was not expected", 1, req2Exceptions.incrementAndGet());
       latch.countDown();
     });
 
-    HttpClientRequest req3 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl2", resp -> {
-      fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
-    });
-
-    req3.exceptionHandler(t -> {
-      assertEquals("More than one call to req2 exception handler was not expected", 1, req3Exceptions.incrementAndGet());
-      latch.countDown();
-    });
-
     req1.end();
-    req2.end();
-    req3.end();
+    req2.sendHead();
 
     awaitLatch(latch);
     testComplete();
@@ -2164,17 +2144,14 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler()); // No response handler so timeout triggers
     AtomicBoolean failed = new AtomicBoolean();
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        fail("End should not be called because the request should timeout");
-      });
-      req.exceptionHandler(t -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(t -> {
         // Catch the first, the second is going to be a connection closed exception when the
         // server is shutdown on testComplete
         if (failed.compareAndSet(false, true)) {
           assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
           testComplete();
         }
-      });
+      }));
       req.setTimeout(1000);
       req.end();
     }));
@@ -2186,12 +2163,9 @@ public abstract class HttpTest extends HttpTestBase {
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
     AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
-    HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      fail("End should not be called because the request should fail to connect");
-    });
-    req.exceptionHandler(exception::set);
-    req.setTimeout(800);
-    req.end();
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(exception::set))
+      .setTimeout(800)
+      .end();
 
     vertx.setTimer(1500, id -> {
       assertNotNull("Expected an exception to be set", exception.get());
@@ -2237,15 +2211,11 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Response should not be handled"));
-      AtomicBoolean failed = new AtomicBoolean();
-      req.exceptionHandler(t -> {
-        if (failed.compareAndSet(false, true)) {
-          assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
-          //Delay a bit to let any response come back
-          vertx.setTimer(500, id -> testComplete());
-        }
-      });
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(t -> {
+        assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
+        //Delay a bit to let any response come back
+        vertx.setTimer(500, id -> testComplete());
+      }));
       req.setTimeout(100);
       req.end();
     }));
@@ -2275,19 +2245,17 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectInvalidPort() {
-    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
-        exceptionHandler(t -> testComplete()).
-        end();
-
+    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> testComplete()))
+      .exceptionHandler(t -> fail("Exception handler should not be called"))
+      .end();
     await();
   }
 
   @Test
   public void testConnectInvalidHost() {
-    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
-        exceptionHandler(t -> testComplete()).
-        end();
-
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, onFailure(resp -> testComplete()))
+      .exceptionHandler(t -> fail("Exception handler should not be called"))
+      .end();
     await();
   }
 
@@ -3402,9 +3370,7 @@ public abstract class HttpTest extends HttpTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.listen(onSuccess(s -> listenLatch.countDown()));
     awaitLatch(listenLatch);
-    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      fail();
-    });
+    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(err -> {}));
     req.setChunked(true);
     req.write(TestUtils.randomBuffer(1024));
     awaitLatch(latch);
@@ -3421,15 +3387,13 @@ public abstract class HttpTest extends HttpTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.listen(onSuccess(s -> listenLatch.countDown()));
     awaitLatch(listenLatch);
-    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      fail();
-    });
-    req.connectionHandler(conn -> {
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(err -> {
+    }))
+      .connectionHandler(conn -> {
       conn.closeHandler(v -> {
         testComplete();
       });
-    });
-    req.sendHead();
+    }).sendHead();
     await();
   }
 
@@ -3715,21 +3679,20 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer();
     AtomicBoolean called = new AtomicBoolean();
-    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
-      assertEquals(200, resp.statusCode());
-      testComplete();
-    })).setFollowRedirects(true)
-        .exceptionHandler(err -> {
-          if (expectFail) {
-            if (called.compareAndSet(false, true)) {
-              testComplete();
-            }
-          } else {
-            fail(err);
-          }
-        })
-        .setChunked(true)
-        .write(buff1);
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", ar -> {
+      assertEquals(expectFail, ar.failed());
+      if (ar.succeeded()) {
+        HttpClientResponse resp = ar.result();
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      } else {
+        if (called.compareAndSet(false, true)) {
+          testComplete();
+        }
+      }
+    }).setFollowRedirects(true)
+      .setChunked(true)
+      .write(buff1);
     awaitLatch(latch);
     // Wait so we end the request while having received the server response (but we can't be notified)
     if (!expectFail) {
@@ -3803,15 +3766,12 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer();
     AtomicBoolean done = new AtomicBoolean();
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      fail();
-    }).setFollowRedirects(true)
-      .exceptionHandler(err -> {
-        if (done.compareAndSet(false, true)) {
-          assertEquals(2, redirections.get());
-          testComplete();
-        }
-      })
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(t -> {
+      if (done.compareAndSet(false, true)) {
+        assertEquals(2, redirections.get());
+        testComplete();
+      }
+    })).setFollowRedirects(true)
       .setTimeout(500).end();
     await();
   }
@@ -4311,16 +4271,14 @@ public abstract class HttpTest extends HttpTestBase {
       AtomicInteger failures = new AtomicInteger();
       vertx.runOnContext(v -> {
         for (int i = 0; i < (poolSize + 1); i++) {
-          HttpClientRequest clientRequest = client.getAbs("http://invalid-host-name.foo.bar", resp -> fail());
           AtomicBoolean f = new AtomicBoolean();
-          clientRequest.exceptionHandler(e -> {
+          client.getAbs("http://invalid-host-name.foo.bar", onFailure(resp -> {
             if (f.compareAndSet(false, true)) {
               if (failures.incrementAndGet() == poolSize + 1) {
                 testComplete();
               }
             }
-          });
-          clientRequest.end();
+          })).end();
         }
       });
       await();
@@ -4332,13 +4290,11 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientConnectInvalidPort() {
-    client.get(-1, "localhost", "/someuri", resp -> {
-      fail();
-    }).exceptionHandler(err -> {
+    client.getNow(-1, "localhost", "/someuri", onFailure(err -> {
       assertEquals(err.getClass(), IllegalArgumentException.class);
       assertEquals(err.getMessage(), "port p must be in range 0 <= p <= 65535");
       testComplete();
-    }).end();
+    }));
     await();
   }
 

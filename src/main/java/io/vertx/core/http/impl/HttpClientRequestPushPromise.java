@@ -29,7 +29,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private final Http2ClientConnection.Http2ClientStream stream;
   private final String rawMethod;
   private final MultiMap headers;
-  private Handler<AsyncResult<HttpClientResponse>> respHandler;
+  private final Future<HttpClientResponse> respHandler;
 
   public HttpClientRequestPushPromise(
       Http2ClientConnection conn,
@@ -47,6 +47,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream, false);
     this.rawMethod = rawMethod;
     this.headers = headers;
+    this.respHandler = Future.future();
   }
 
   Http2ClientConnection.Http2ClientStream getStream() {
@@ -55,13 +56,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
-    Handler<AsyncResult<HttpClientResponse>> handler;
-    synchronized (this) {
-      if ((handler = respHandler) == null) {
-        return;
-      }
-    }
-    handler.handle(Future.succeededFuture(resp));
+    respHandler.complete(resp);
   }
 
   @Override
@@ -69,8 +64,13 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
+    return this;
+  }
+
+  @Override
   public synchronized HttpClientRequest handler(Handler<AsyncResult<HttpClientResponse>> handler) {
-    respHandler = handler;
+    respHandler.setHandler(handler);
     return this;
   }
 

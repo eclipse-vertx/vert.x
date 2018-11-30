@@ -50,7 +50,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
   private final VertxInternal vertx;
-  private Handler<AsyncResult<HttpClientResponse>> respHandler;
+  private final Future<HttpClientResponse> respFut;
   private boolean chunked;
   private String hostHeader;
   private String rawMethod;
@@ -58,6 +58,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> drainHandler;
   private Handler<HttpClientRequest> pushHandler;
   private Handler<HttpConnection> connectionHandler;
+  private Handler<Throwable> exceptionHandler;
   private boolean completed;
   private Handler<Void> completionHandler;
   private Long reset;
@@ -78,6 +79,23 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     this.chunked = false;
     this.vertx = vertx;
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
+    this.respFut = Future.future();
+  }
+
+  @Override
+  public void handleException(Throwable t) {
+    super.handleException(t);
+    Handler<Throwable> handler;
+    synchronized (this) {
+      exceptionOccurred = t;
+      if (exceptionHandler != null) {
+        handler = exceptionHandler;
+      } else {
+        handler = log::error;
+      }
+    }
+    handler.handle(t);
+    respFut.tryFail(t);
   }
 
   @Override
@@ -96,7 +114,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (handler != null) {
       checkComplete();
     }
-    respHandler = handler;
+    respFut.setHandler(handler);
     return this;
   }
 
@@ -204,6 +222,20 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return s.isNotWritable();
   }
 
+  private synchronized Handler<Throwable> exceptionHandler() {
+    return exceptionHandler;
+  }
+
+  public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
+    if (handler != null) {
+      checkComplete();
+      this.exceptionHandler = handler;
+    } else {
+      this.exceptionHandler = null;
+    }
+    return this;
+  }
+
   @Override
   public HttpClientRequest drainHandler(Handler<Void> handler) {
     synchronized (this) {
@@ -299,6 +331,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (!completed) {
       completed = true;
       drainHandler = null;
+      exceptionHandler = null;
       return true;
     } else {
       return false;
@@ -350,7 +383,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void handleNextRequest(HttpClientRequestImpl next, long timeoutMs) {
-    next.handler(respHandler);
+    next.handler(respFut.getHandler());
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
     next.pushHandler = pushHandler;
@@ -413,9 +446,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           continueHandler.handle(null);
         }
       } else {
-        if (respHandler != null) {
-          respHandler.handle(Future.succeededFuture(resp));
-        }
+        respFut.complete(resp);
       }
     }
   }
@@ -650,9 +681,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void checkResponseHandler() {
-    if (respHandler == null) {
-      throw new IllegalStateException("You must set an handler for the HttpClientResponse before connecting");
-    }
   }
 
   synchronized Handler<HttpClientRequest> pushHandler() {

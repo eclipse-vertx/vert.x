@@ -11,11 +11,8 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 
 import java.util.concurrent.TimeoutException;
 
@@ -23,8 +20,6 @@ import java.util.concurrent.TimeoutException;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class HttpClientRequestBase implements HttpClientRequest {
-
-  private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   protected final HttpClientImpl client;
   protected final io.vertx.core.http.HttpMethod method;
@@ -34,7 +29,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final int port;
   protected final String query;
   protected final boolean ssl;
-  private Handler<Throwable> exceptionHandler;
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
@@ -98,21 +92,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    if (handler != null) {
-      checkComplete();
-      this.exceptionHandler = handler;
-    } else {
-      this.exceptionHandler = null;
-    }
-    return this;
-  }
-
-  synchronized Handler<Throwable> exceptionHandler() {
-    return exceptionHandler;
-  }
-
-  @Override
   public synchronized HttpClientRequest setTimeout(long timeoutMs) {
     cancelOutstandingTimeoutTimer();
     currentTimeoutMs = timeoutMs;
@@ -121,17 +100,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   public void handleException(Throwable t) {
-    Handler<Throwable> handler;
-    synchronized (this) {
-      cancelOutstandingTimeoutTimer();
-      exceptionOccurred = t;
-      if (exceptionHandler != null) {
-        handler = exceptionHandler;
-      } else {
-        handler = log::error;
-      }
-    }
-    handler.handle(t);
+    cancelOutstandingTimeoutTimer();
   }
 
   synchronized void handleResponse(HttpClientResponseImpl resp) {

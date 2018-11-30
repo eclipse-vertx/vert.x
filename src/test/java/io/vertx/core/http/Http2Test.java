@@ -79,16 +79,18 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testServerResponseResetFromOtherThread() throws Exception {
+    waitFor(2);
     server.requestHandler(req -> {
       runAsync(() -> {
         req.response().reset(0);
       });
     }).listen(onSuccess(v -> {
-      client.get(8080, "localhost", "/somepath", resp -> {
-        fail();
-      }).exceptionHandler(err -> {
+      client.get(8080, "localhost", "/somepath", onFailure(err -> {
         assertTrue(err instanceof StreamResetException);
-        testComplete();
+        complete();
+      })).exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        complete();
       }).sendHead();
     }));
     await();
@@ -296,9 +298,9 @@ public class Http2Test extends HttpTest {
     });
     startServer();
     AtomicBoolean closed = new AtomicBoolean();
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      fail();
-    }).connectionHandler(conn -> conn.closeHandler(v -> closed.set(true))).end();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {}))
+      .connectionHandler(conn -> conn.closeHandler(v -> closed.set(true)))
+      .end();
     AsyncTestBase.assertWaitUntil(closed::get);
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       testComplete();

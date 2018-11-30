@@ -1159,35 +1159,38 @@ public abstract class HttpTLSTest extends HttpTestBase {
         }
         HttpClientRequest req = requestProvider.apply(client);
         req.setFollowRedirects(followRedirects);
-        req.handler(onSuccess(response -> {
-          HttpConnection conn = response.request().connection();
-          if (conn.isSsl()) {
-            try {
-              clientPeerCert = conn.peerCertificateChain()[0];
-            } catch (SSLPeerUnverifiedException ignore) {
+        req.handler(ar2 -> {
+          if (ar2.succeeded()) {
+            HttpClientResponse response = ar2.result();
+            HttpConnection conn = response.request().connection();
+            if (conn.isSsl()) {
+              try {
+                clientPeerCert = conn.peerCertificateChain()[0];
+              } catch (SSLPeerUnverifiedException ignore) {
+              }
             }
-          }
-          if (shouldPass) {
-            response.version();
-            HttpMethod method = response.request().method();
-            if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
-              complete();
-            } else {
-              response.bodyHandler(data -> {
-                assertEquals("bar", data.toString());
+            if (shouldPass) {
+              response.version();
+              HttpMethod method = response.request().method();
+              if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
                 complete();
-              });
+              } else {
+                response.bodyHandler(data -> {
+                  assertEquals("bar", data.toString());
+                  complete();
+                });
+              }
+            } else {
+              HttpTLSTest.this.fail("Should not get a response");
             }
           } else {
-            HttpTLSTest.this.fail("Should not get a response");
-          }
-        }));
-        req.exceptionHandler(t -> {
-          if (shouldPass) {
-            t.printStackTrace();
-            HttpTLSTest.this.fail("Should not throw exception");
-          } else {
-            complete();
+            Throwable t = ar.cause();
+            if (shouldPass) {
+              t.printStackTrace();
+              HttpTLSTest.this.fail("Should not throw exception");
+            } else {
+              complete();
+            }
           }
         });
         req.end("foo");
