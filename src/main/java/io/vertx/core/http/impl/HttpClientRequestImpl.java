@@ -681,6 +681,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void checkResponseHandler() {
+    if (stream == null && !connecting && respFut.getHandler() == null) {
+      throw new IllegalStateException("You must set a response handler before connecting to the server");
+    }
   }
 
   synchronized Handler<HttpClientRequest> pushHandler() {

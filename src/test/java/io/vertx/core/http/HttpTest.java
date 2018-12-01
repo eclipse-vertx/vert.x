@@ -26,6 +26,7 @@ import io.vertx.core.streams.Pump;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -715,12 +716,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
     String postData = "param=" + URLEncoder.encode(value,"UTF-8");
     server.listen(onSuccess(server -> {
-      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> testComplete()))
           .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
           .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(postData.length()))
-          .handler(resp -> {
-            testComplete();
-          })
           .write(postData).end();
     }));
 
@@ -2225,19 +2223,24 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHttpClientRequestTimeoutResetsTheConnection() throws Exception {
-    waitFor(2);
+    waitFor(3);
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         complete();
       });
     });
     startServer();
-    HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Response should not be handled"));
-    req.exceptionHandler(err -> {
+    HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
       complete();
+    }));
+    AtomicBoolean errored = new AtomicBoolean();
+    req.exceptionHandler(err -> {
+      if (errored.compareAndSet(false, true)) {
+        complete();
+      }
     });
     CountDownLatch latch = new CountDownLatch(1);
-    req.sendHead(version -> latch.countDown());
+    req.setChunked(true).sendHead(version -> latch.countDown());
     awaitLatch(latch);
     req.setTimeout(100);
     await();
@@ -2968,10 +2971,9 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().setChunked(true).write(expected);
     });
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
       Buffer received = Buffer.buffer();
-      req.handler(onSuccess(resp -> {
-        req.setTimeout(500);
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        resp.request().setTimeout(500);
         resp.handler(received::appendBuffer);
       }));
       AtomicInteger count = new AtomicInteger();
