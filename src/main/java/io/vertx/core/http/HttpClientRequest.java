@@ -65,18 +65,39 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Override
   HttpClientRequest drainHandler(Handler<Void> handler);
 
+  /**
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
+   */
+  @Deprecated
   @Override
+  @Fluent
   HttpClientRequest handler(Handler<HttpClientResponse> handler);
 
+  /**
+   * @deprecated this method will be removed in Vert.x 4
+   */
+  @Deprecated
   @Override
   HttpClientRequest pause();
 
+  /**
+   * @deprecated this method will be removed in Vert.x 4
+   */
+  @Deprecated
   @Override
   HttpClientRequest resume();
 
+  /**
+   * @deprecated this method will be removed in Vert.x 4
+   */
+  @Deprecated
   @Override
   HttpClientRequest fetch(long amount);
 
+  /**
+   * @deprecated this method will be removed in Vert.x 4
+   */
+  @Deprecated
   @Override
   HttpClientRequest endHandler(Handler<Void> endHandler);
 

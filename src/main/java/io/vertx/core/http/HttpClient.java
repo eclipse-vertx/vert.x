@@ -87,7 +87,9 @@ public interface HttpClient extends Measured {
    * @param method  the HTTP method
    * @param options  the request options
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -99,7 +101,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -110,7 +114,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest request(HttpMethod method, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -128,7 +134,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest request(HttpMethod method, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -146,7 +154,9 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -179,7 +189,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest get(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -190,7 +202,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest get(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -200,7 +214,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest get(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -216,7 +232,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest get(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -232,7 +250,9 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest getAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -241,7 +261,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
@@ -253,7 +275,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -264,7 +288,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient getNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -274,7 +300,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient getNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -308,7 +336,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest post(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -319,7 +349,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest post(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -329,7 +361,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest post(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -345,7 +379,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest post(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -361,7 +397,9 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest postAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -394,7 +432,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest head(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -405,7 +445,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest head(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -415,7 +457,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest head(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -431,7 +475,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest head(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -447,7 +493,9 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest headAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -456,7 +504,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient headNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
@@ -468,7 +518,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient headNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -479,7 +531,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient headNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -489,7 +543,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient headNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -523,7 +579,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest options(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -534,7 +592,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest options(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -544,7 +604,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest options(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -560,7 +622,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest options(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -576,7 +640,9 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest optionsAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -585,7 +651,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient optionsNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
@@ -597,7 +665,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient optionsNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -608,7 +678,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient optionsNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -618,7 +690,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   @Fluent
   HttpClient optionsNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -652,7 +726,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest put(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -663,7 +739,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest put(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -673,7 +751,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest put(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -689,7 +769,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest put(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -705,7 +787,9 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest putAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -738,7 +822,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest delete(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -749,7 +835,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest delete(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -759,7 +847,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest delete(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -775,7 +865,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest delete(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -791,7 +883,9 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest deleteAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
