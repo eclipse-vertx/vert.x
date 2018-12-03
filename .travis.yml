@@ -8,19 +8,19 @@ jobs:
     - stage: test
       name: "OracleJDK 8"
       jdk: oraclejdk8
-      script: mvn -q clean verify -B
+      script: mvn -q clean verify -B -Dtest=NetTest
     - if: type != pull_request
       name: "OpenJDK 11"
       jdk: openjdk11
-      script: mvn -q clean verify -B
+      script: mvn -q clean verify -B -Dtest=NetTest
     - if: type != pull_request
       name: "OracleJDK 8 / native transport"
       jdk: oraclejdk8
-      script: mvn -q clean verify -B -PtestNativeTransport
+      script: mvn -q clean verify -B -PtestNativeTransport -Dtest=NetTest
     - if: type != pull_request
       name: "OracleJDK 8 / domain sockets"
       jdk: oraclejdk8
-      script: mvn -q clean verify -B -PtestDomainSockets
+      script: mvn -q clean verify -B -PtestDomainSockets -Dtest=NetTest
     - stage: deploy
       name: "Deploy to Sonatype's snapshots repository"
       if: type != pull_request AND env(SONATYPE_NEXUS_USERNAME) IS present
