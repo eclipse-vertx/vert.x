@@ -2229,22 +2229,48 @@ public abstract class HttpTest extends HttpTestBase {
   public void testRequestNotReceivedIfTimedout() {
     server.requestHandler(req -> {
       vertx.setTimer(500, id -> {
-        req.response().setStatusCode(200);
-        req.response().end("OK");
+        HttpServerResponse resp = req.response();
+        if (!resp.closed()) {
+          resp.setStatusCode(200);
+          resp.end("OK");
+        }
       });
     });
 
     server.listen(onSuccess(s -> {
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Response should not be handled"));
+      AtomicBoolean failed = new AtomicBoolean();
       req.exceptionHandler(t -> {
-        assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
-        //Delay a bit to let any response come back
-        vertx.setTimer(500, id -> testComplete());
+        if (failed.compareAndSet(false, true)) {
+          assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
+          //Delay a bit to let any response come back
+          vertx.setTimer(500, id -> testComplete());
+        }
       });
       req.setTimeout(100);
       req.end();
     }));
 
+    await();
+  }
+
+  @Test
+  public void testHttpClientRequestTimeoutResetsTheConnection() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.exceptionHandler(err -> {
+        complete();
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Response should not be handled"));
+    req.exceptionHandler(err -> {
+      complete();
+    });
+    CountDownLatch latch = new CountDownLatch(1);
+    req.sendHead(version -> latch.countDown());
+    awaitLatch(latch);
+    req.setTimeout(100);
     await();
   }
 
