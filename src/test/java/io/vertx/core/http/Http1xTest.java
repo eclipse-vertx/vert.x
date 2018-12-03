@@ -1921,7 +1921,10 @@ public class Http1xTest extends HttpTest {
 
     server.requestHandler(req -> {
       vertx.setTimer(1000, id -> {
-        req.response().end();
+        HttpServerResponse resp = req.response();
+        if (!resp.closed()) {
+          resp.end();
+        }
       });
     });
 
@@ -1934,7 +1937,12 @@ public class Http1xTest extends HttpTest {
         HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
           fail("Should not be called");
         });
-        req.exceptionHandler(t -> assertTrue(t instanceof TimeoutException));
+        AtomicBoolean failed = new AtomicBoolean();
+        req.exceptionHandler(t -> {
+          if (failed.compareAndSet(false, true)) {
+            assertTrue(t instanceof TimeoutException);
+          }
+        });
         req.setTimeout(500);
         req.end();
       }
@@ -2838,12 +2846,15 @@ public class Http1xTest extends HttpTest {
     awaitLatch(listenLatch);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
-    CountDownLatch respLatch = new CountDownLatch(2);
-    HttpClientRequestImpl req = (HttpClientRequestImpl) client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
+    AtomicInteger connCount = new AtomicInteger();
+    client.connectionHandler(conn -> connCount.incrementAndGet());
+    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
       fail();
     });
-    req.handleException(new Throwable()); // Simulate the connection timed out
-    req.end(); // When connected, the connection should be recycled
+    // Force connect
+    req.sendHead(v -> {});
+    req.reset();
+    CountDownLatch respLatch = new CountDownLatch(2);
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/second", resp -> {
       assertEquals(200, resp.statusCode());
       resp.endHandler(v -> {
@@ -2860,6 +2871,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(Arrays.asList("/second", "/third"), responses);
     awaitLatch(respLatch);
     server.close();
+    assertEquals(1, connCount.get());
   }
 
   @Test

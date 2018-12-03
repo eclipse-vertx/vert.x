@@ -214,6 +214,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
         return this;
       }
     });
+    reset(0);
   }
 
   synchronized void dataReceived() {
