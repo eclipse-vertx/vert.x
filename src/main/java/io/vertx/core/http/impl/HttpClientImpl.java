@@ -451,7 +451,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
     return requestAbs(method, absoluteURI).handler(responseHandler);
   }
@@ -462,13 +462,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
     return request(method, port, host, requestURI).handler(responseHandler);
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest request(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(method, options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
@@ -478,7 +478,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest request(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(method, options.getDefaultPort(), options.getDefaultHost(), requestURI, responseHandler);
   }
 
@@ -516,7 +516,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(method, options).handler(responseHandler);
   }
 
@@ -541,17 +541,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest get(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest get(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.GET, options, responseHandler);
   }
 
   @Override
-  public HttpClientRequest get(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest get(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.GET, port, host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClientRequest get(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest get(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return get(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
@@ -561,7 +561,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest get(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest get(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.GET, requestURI, responseHandler);
   }
 
@@ -571,28 +571,28 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest getAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest getAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestAbs(HttpMethod.GET, absoluteURI, responseHandler);
   }
 
   @Override
-  public HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient getNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestNow(HttpMethod.GET, options, responseHandler);
   }
 
   @Override
-  public HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient getNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     get(port, host, requestURI, responseHandler).end();
     return this;
   }
 
   @Override
-  public HttpClient getNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient getNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return getNow(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClient getNow(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient getNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     get(requestURI, responseHandler).end();
     return this;
   }
@@ -613,17 +613,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest post(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest post(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.POST, options, responseHandler);
   }
 
   @Override
-  public HttpClientRequest post(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest post(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.POST, port, host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClientRequest post(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest post(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return post(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
@@ -633,7 +633,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest post(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest post(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.POST, requestURI, responseHandler);
   }
 
@@ -643,7 +643,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest postAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest postAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestAbs(HttpMethod.POST, absoluteURI, responseHandler);
   }
 
@@ -663,17 +663,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest head(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest head(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.HEAD, options, responseHandler);
   }
 
   @Override
-  public HttpClientRequest head(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest head(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.HEAD, port, host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClientRequest head(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest head(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return head(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
@@ -683,7 +683,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest head(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest head(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.HEAD, requestURI, responseHandler);
   }
 
@@ -693,28 +693,28 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest headAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest headAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestAbs(HttpMethod.HEAD, absoluteURI, responseHandler);
   }
 
   @Override
-  public HttpClient headNow(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient headNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestNow(HttpMethod.HEAD, options, responseHandler);
   }
 
   @Override
-  public HttpClient headNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient headNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     head(port, host, requestURI, responseHandler).end();
     return this;
   }
 
   @Override
-  public HttpClient headNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient headNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return headNow(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClient headNow(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient headNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     head(requestURI, responseHandler).end();
     return this;
   }
@@ -735,17 +735,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest options(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest options(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.OPTIONS, options, responseHandler);
   }
 
   @Override
-  public HttpClientRequest options(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest options(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.OPTIONS, port, host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClientRequest options(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest options(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return options(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
@@ -755,7 +755,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest options(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest options(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.OPTIONS, requestURI, responseHandler);
   }
 
@@ -765,28 +765,28 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest optionsAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest optionsAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestAbs(HttpMethod.OPTIONS, absoluteURI, responseHandler);
   }
 
   @Override
-  public HttpClient optionsNow(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient optionsNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestNow(HttpMethod.OPTIONS, options, responseHandler);
   }
 
   @Override
-  public HttpClient optionsNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient optionsNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     options(port, host, requestURI, responseHandler).end();
     return this;
   }
 
   @Override
-  public HttpClient optionsNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient optionsNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return optionsNow(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClient optionsNow(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient optionsNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     options(requestURI, responseHandler).end();
     return this;
   }
@@ -807,17 +807,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest put(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest put(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.PUT, options, responseHandler);
   }
 
   @Override
-  public HttpClientRequest put(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest put(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.PUT, port, host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClientRequest put(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest put(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return put(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
@@ -827,7 +827,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest put(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest put(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.PUT, requestURI, responseHandler);
   }
 
@@ -837,7 +837,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest putAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest putAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestAbs(HttpMethod.PUT, absoluteURI, responseHandler);
   }
 
@@ -857,17 +857,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest delete(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest delete(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.DELETE, options, responseHandler);
   }
 
   @Override
-  public HttpClientRequest delete(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest delete(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.DELETE, port, host, requestURI, responseHandler);
   }
 
   @Override
-  public HttpClientRequest delete(String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest delete(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return delete(options.getDefaultPort(), host, requestURI, responseHandler);
   }
 
@@ -877,7 +877,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest delete(String requestURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest delete(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return request(HttpMethod.DELETE, requestURI, responseHandler);
   }
 
@@ -887,7 +887,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClientRequest deleteAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest deleteAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestAbs(HttpMethod.DELETE, absoluteURI, responseHandler);
   }
 
@@ -1000,7 +1000,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
   }
 
-  private HttpClient requestNow(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+  private HttpClient requestNow(HttpMethod method, RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     createRequest(method, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).handler(responseHandler).end();
     return this;
   }

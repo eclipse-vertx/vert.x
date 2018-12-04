@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -88,7 +89,7 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @return  an HTTP client request object
    */
-  HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP request to send to the server at the specified host and port, specifying a response handler to receive
@@ -100,7 +101,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -111,7 +112,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest request(HttpMethod method, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest request(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP request to send to the server at the default host and port.
@@ -129,7 +130,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest request(HttpMethod method, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest request(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP request to send to the server using an absolute URI
@@ -147,7 +148,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server with the specified options.
@@ -180,7 +181,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest get(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest get(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server at the specified host and port, specifying a response handler to receive
@@ -191,7 +192,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest get(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest get(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -201,7 +202,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest get(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest get(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server at the default host and port.
@@ -217,7 +218,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest get(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest get(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server using an absolute URI
@@ -233,7 +234,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest getAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest getAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP GET request to the server with the specified options, specifying a response handler to receive
@@ -243,7 +244,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP GET request to the server at the specified host and port, specifying a response handler to receive
@@ -255,7 +256,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP GET request to the server at the specified host and default port, specifying a response handler to receive
@@ -266,7 +267,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient getNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP GET request  to the server at the default host and port, specifying a response handler to receive
@@ -276,7 +277,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient getNow(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP POST request to send to the server with the specified options.
@@ -309,7 +310,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest post(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest post(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP POST request to send to the server at the specified host and port, specifying a response handler to receive
@@ -320,7 +321,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest post(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest post(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP POST request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -330,7 +331,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest post(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest post(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP POST request to send to the server at the default host and port.
@@ -346,7 +347,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest post(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest post(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP POST request to send to the server using an absolute URI
@@ -362,7 +363,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest postAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest postAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server with the specified options.
@@ -395,7 +396,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest head(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest head(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server at the specified host and port, specifying a response handler to receive
@@ -406,7 +407,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest head(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest head(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -416,7 +417,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest head(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest head(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server at the default host and port.
@@ -432,7 +433,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest head(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest head(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP HEAD request to send to the server using an absolute URI
@@ -448,7 +449,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest headAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest headAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP HEAD request to the server with the specified options, specifying a response handler to receive
@@ -458,7 +459,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient headNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClient headNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP HEAD request to the server at the specified host and port, specifying a response handler to receive
@@ -470,7 +471,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient headNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient headNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP HEAD request to the server at the specified host and default port, specifying a response handler to receive
@@ -481,7 +482,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient headNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient headNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP HEAD request  to the server at the default host and port, specifying a response handler to receive
@@ -491,7 +492,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient headNow(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient headNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP OPTIONS request to send to the server with the specified options.
@@ -524,7 +525,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest options(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest options(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the specified host and port, specifying a response handler to receive
@@ -535,7 +536,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest options(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest options(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -545,7 +546,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest options(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest options(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP OPTIONS request to send to the server at the default host and port.
@@ -561,7 +562,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest options(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest options(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP OPTIONS request to send to the server using an absolute URI
@@ -577,7 +578,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest optionsAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest optionsAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP OPTIONS request to the server with the specified options, specifying a response handler to receive
@@ -587,7 +588,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient optionsNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClient optionsNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP OPTIONS request to the server at the specified host and port, specifying a response handler to receive
@@ -599,7 +600,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient optionsNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient optionsNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP OPTIONS request to the server at the specified host and default port, specifying a response handler to receive
@@ -610,7 +611,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient optionsNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient optionsNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Sends an HTTP OPTIONS request  to the server at the default host and port, specifying a response handler to receive
@@ -620,7 +621,7 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient optionsNow(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient optionsNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP PUT request to send to the server with the specified options.
@@ -653,7 +654,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest put(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest put(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP PUT request to send to the server at the specified host and port, specifying a response handler to receive
@@ -664,7 +665,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest put(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest put(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP PUT request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -674,7 +675,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest put(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest put(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP PUT request to send to the server at the default host and port.
@@ -690,7 +691,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest put(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest put(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP PUT request to send to the server using an absolute URI
@@ -706,7 +707,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest putAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest putAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server with the specified options.
@@ -739,7 +740,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest delete(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest delete(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server at the specified host and port, specifying a response handler to receive
@@ -750,7 +751,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest delete(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest delete(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -760,7 +761,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest delete(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest delete(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server at the default host and port.
@@ -776,7 +777,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest delete(String requestURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest delete(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Create an HTTP DELETE request to send to the server using an absolute URI
@@ -792,7 +793,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
    */
-  HttpClientRequest deleteAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
+  HttpClientRequest deleteAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
    * Connect a WebSocket with the specified options

@@ -131,29 +131,32 @@ public class HttpProxy extends TestProxyBase {
           uri = forceUri;
         }
         HttpClient client = vertx.createHttpClient();
-        HttpClientRequest clientRequest = client.getAbs(uri, resp -> {
-          for (String name : resp.headers().names()) {
-            request.response().putHeader(name, resp.headers().getAll(name));
+        HttpClientRequest clientRequest = client.getAbs(uri, ar -> {
+          if (ar.succeeded()) {
+            HttpClientResponse resp = ar.result();
+            for (String name : resp.headers().names()) {
+              request.response().putHeader(name, resp.headers().getAll(name));
+            }
+            resp.bodyHandler(body -> {
+              request.response().end(body);
+            });
+          } else {
+            Throwable e = ar.cause();
+            log.debug("exception", e);
+            int status;
+            if (e instanceof UnknownHostException) {
+              status = 504;
+            } else {
+              status = 400;
+            }
+            request.response().setStatusCode(status).end(e.toString() + " on client request");
           }
-          resp.bodyHandler(body -> {
-            request.response().end(body);
-          });
         });
         for (String name : request.headers().names()) {
           if (!name.equals("Proxy-Authorization")) {
             clientRequest.putHeader(name, request.headers().getAll(name));
           }
         }
-        clientRequest.exceptionHandler(e -> {
-          log.debug("exception", e);
-          int status;
-          if (e instanceof UnknownHostException) {
-            status = 504;
-          } else {
-            status = 400;
-          }
-          request.response().setStatusCode(status).end(e.toString() + " on client request");
-        });
         clientRequest.end();
       } else {
         request.response().setStatusCode(405).end("method not supported");

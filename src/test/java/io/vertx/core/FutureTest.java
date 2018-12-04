@@ -876,6 +876,7 @@ public class FutureTest extends VertxTestBase {
       Throwable cause;
       public boolean isComplete() { throw new UnsupportedOperationException(); }
       public Future<T> setHandler(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
+      public Handler<AsyncResult<T>> getHandler() { throw new UnsupportedOperationException(); }
 
       public void complete(T result) {
         if (!tryComplete(result)) {

@@ -150,6 +150,11 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   }
 
   @Override
+  public synchronized Handler<AsyncResult<CompositeFuture>> getHandler() {
+    return this.handler;
+  }
+
+  @Override
   public Throwable cause(int index) {
     return future(index).cause();
   }

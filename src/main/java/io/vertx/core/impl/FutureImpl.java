@@ -82,6 +82,11 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   }
 
   @Override
+  public synchronized Handler<AsyncResult<T>> getHandler() {
+    return handler;
+  }
+
+  @Override
   public void complete(T result) {
     if (!tryComplete(result)) {
       throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"));

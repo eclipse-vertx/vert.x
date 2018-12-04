@@ -11,14 +11,8 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.concurrent.TimeoutException;
 
@@ -26,8 +20,6 @@ import java.util.concurrent.TimeoutException;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class HttpClientRequestBase implements HttpClientRequest {
-
-  private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   protected final HttpClientImpl client;
   protected final io.vertx.core.http.HttpMethod method;
@@ -37,14 +29,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final int port;
   protected final String query;
   protected final boolean ssl;
-  private Handler<Throwable> exceptionHandler;
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
   protected Throwable exceptionOccurred;
   private Object metric;
-  private boolean paused;
-  private HttpClientResponseImpl response;
 
   HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port, String uri) {
     this.client = client;
@@ -103,21 +92,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    if (handler != null) {
-      checkComplete();
-      this.exceptionHandler = handler;
-    } else {
-      this.exceptionHandler = null;
-    }
-    return this;
-  }
-
-  synchronized Handler<Throwable> exceptionHandler() {
-    return exceptionHandler;
-  }
-
-  @Override
   public synchronized HttpClientRequest setTimeout(long timeoutMs) {
     cancelOutstandingTimeoutTimer();
     currentTimeoutMs = timeoutMs;
@@ -126,43 +100,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   public void handleException(Throwable t) {
-    Handler<Throwable> handler;
-    synchronized (this) {
-      cancelOutstandingTimeoutTimer();
-      exceptionOccurred = t;
-      if (exceptionHandler != null) {
-        handler = exceptionHandler;
-      } else {
-        handler = log::error;
-      }
-    }
-    handler.handle(t);
+    cancelOutstandingTimeoutTimer();
   }
 
-  void handleResponse(HttpClientResponseImpl resp) {
-    synchronized (this) {
-      response = resp;
-    }
-    checkHandleResponse();
-  }
-
-  private void checkHandleResponse() {
-    HttpClientResponseImpl resp;
-    synchronized (this) {
-      if (response != null) {
-        if (paused) {
-          return;
-        }
-        resp = response;
-        response = null;
-      } else {
-        return;
-      }
-    }
-    doHandleResponse(resp);
-  }
-
-  private synchronized void doHandleResponse(HttpClientResponseImpl resp) {
+  synchronized void handleResponse(HttpClientResponseImpl resp) {
     long timeoutMS;
     synchronized (this) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
@@ -222,35 +163,4 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
       lastDataReceived = System.currentTimeMillis();
     }
   }
-
-  @Override
-  public HttpClientRequest pause() {
-    paused = true;
-    return this;
-  }
-
-  @Override
-  public HttpClientRequest resume() {
-    synchronized (this) {
-      if (paused) {
-        paused = false;
-      } else {
-        return this;
-      }
-    }
-    checkHandleResponse();
-    return this;
-  }
-
-  @Override
-  public synchronized HttpClientRequest fetch(long amount) {
-    if (amount < 0L) {
-      throw new IllegalArgumentException();
-    }
-    if (amount > 0L) {
-      resume();
-    }
-    return this;
-  }
-  
 }
