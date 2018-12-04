@@ -309,6 +309,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
           handler.handle(null);
         } else {
           chctx.channel().closeFuture();
+          handleException(ar.cause());
         }
       }));
       if (remoteAddress != null) {
