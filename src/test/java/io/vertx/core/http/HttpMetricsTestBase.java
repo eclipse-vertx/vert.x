@@ -23,6 +23,7 @@ import io.vertx.test.fakemetrics.FakeMetricsBase;
 import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.HttpClientMetric;
 import io.vertx.test.fakemetrics.HttpServerMetric;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -227,6 +228,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
   }
 
   @Test
+  @Ignore
   public void testServerConnectionClosed() throws Exception {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setIdleTimeout(2));

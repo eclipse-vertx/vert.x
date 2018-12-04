@@ -294,7 +294,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             push.complete();
           });
         }
-        response.handleClose();
+        response.handleClose(false);
       }
     }
 

@@ -132,8 +132,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  void handleClose() {
-    handleEnded(true);
+  void handleClose(boolean failed) {
+    handleEnded(failed);
   }
 
   private void checkHeadWritten() {

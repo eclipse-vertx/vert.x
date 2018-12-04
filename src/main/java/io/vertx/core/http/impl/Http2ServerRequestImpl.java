@@ -128,8 +128,10 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     }
     if (handler != null) {
       handler.handle(new ClosedChannelException());
+      response.handleClose(true);
+    } else {
+      response.handleClose(false);
     }
-    response.handleClose();
   }
 
   @Override
