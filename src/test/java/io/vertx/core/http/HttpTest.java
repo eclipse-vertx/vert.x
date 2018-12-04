@@ -23,6 +23,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
@@ -4176,10 +4177,10 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testCloseHandlerWhenConnectionEnds() throws Exception {
     server.requestHandler(req -> {
-      req.response().endHandler(v -> {
+      req.response().closeHandler(v -> {
         testComplete();
       });
-      req.response().end("some-data");
+      req.response().setChunked(true).write("some-data");
     });
     startServer();
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
