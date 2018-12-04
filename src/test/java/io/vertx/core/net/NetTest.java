@@ -1246,6 +1246,12 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  // StartTLS client specifies cert but it's not trusted
+  public void testStartTLSClientCertClientNotTrusted() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, true, false, false, true);
+  }
+
+  @Test
   // Specify some cipher suites
   public void testTLSCipherSuites() throws Exception {
     testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, true, true, false, ENABLED_CIPHER_SUITES);
@@ -1600,6 +1606,13 @@ public class NetTest extends VertxTestBase {
             if (upgradedServer.compareAndSet(false, true)) {
               indicatedServerName = socket.indicatedServerName();
               assertFalse(socket.isSsl());
+              socket.exceptionHandler(err -> {
+                if (shouldPass) {
+                  fail("Should not fail to connect");
+                } else {
+                  complete();
+                }
+              });
               socket.upgradeToSsl(v -> {
                 certificateChainChecker.accept(socket);
                 upgradedServerCount.incrementAndGet();
@@ -1638,7 +1651,7 @@ public class NetTest extends VertxTestBase {
         client = vertx.createNetClient(clientOptions);
         client.connect(address, serverName, ar2 -> {
           if (ar2.succeeded()) {
-            if (!shouldPass) {
+            if (!startTLS && !shouldPass) {
               fail("Should not connect");
               return;
             }
@@ -1682,6 +1695,13 @@ public class NetTest extends VertxTestBase {
                     socket.write(toSend.get(i));
                   }
                 };
+                socket.exceptionHandler(err -> {
+                  if (shouldPass) {
+                    fail("Should not fail to connect");
+                  } else {
+                    complete();
+                  }
+                });
                 if (serverName != null) {
                   socket.upgradeToSsl(serverName, handler);
                 } else {
