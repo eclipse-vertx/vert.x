@@ -237,7 +237,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       assertFalse(metric.failed.get());
       req.response().closeHandler(v -> {
         assertNull(metrics.getMetric(req));
-        assertFalse(metric.failed.get());
+        assertEquals(protocol == HttpVersion.HTTP_1_1, metric.failed.get());
         testComplete();
       });
     });
