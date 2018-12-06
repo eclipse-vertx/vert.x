@@ -29,6 +29,15 @@ import java.util.concurrent.ConcurrentMap;
  */
 public interface ContextInternal extends Context {
 
+  static void setContext(ContextInternal context) {
+    Thread current = Thread.currentThread();
+    if (current instanceof VertxThread) {
+      ((VertxThread)current).setContext(context);
+    } else {
+      throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
+    }
+  }
+
   static boolean isOnWorkerThread() {
     return ContextImpl.isOnVertxThread(true);
   }
@@ -102,4 +111,10 @@ public interface ContextInternal extends Context {
    * @see Context#put(String, Object)
    */
   ConcurrentMap<Object, Object> contextData();
+
+  /**
+   * @return the classloader associated with this context
+   */
+  ClassLoader classLoader();
+
 }

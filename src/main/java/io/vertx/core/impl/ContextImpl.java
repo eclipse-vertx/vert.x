@@ -49,10 +49,8 @@ abstract class ContextImpl implements ContextInternal {
 
   private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
-  private static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
   private static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
   private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
-  private static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
 
   protected final VertxInternal owner;
   protected final String deploymentID;
@@ -63,10 +61,10 @@ abstract class ContextImpl implements ContextInternal {
   private final EventLoop eventLoop;
   private ConcurrentMap<Object, Object> contextData;
   private volatile Handler<Throwable> exceptionHandler;
-  protected final WorkerPool workerPool;
-  protected final WorkerPool internalBlockingPool;
+  private final WorkerPool internalBlockingPool;
+  private final TaskQueue internalOrderedTasks;
+  final WorkerPool workerPool;
   final TaskQueue orderedTasks;
-  protected final TaskQueue internalOrderedTasks;
 
   protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
@@ -75,7 +73,7 @@ abstract class ContextImpl implements ContextInternal {
 
   protected ContextImpl(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
-    if (DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
+    if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
     }
     this.deploymentID = deploymentID;
@@ -88,26 +86,6 @@ abstract class ContextImpl implements ContextInternal {
     this.orderedTasks = new TaskQueue();
     this.internalOrderedTasks = new TaskQueue();
     this.closeHooks = new CloseHooks(log);
-  }
-
-  static void setContext(ContextImpl context) {
-    Thread current = Thread.currentThread();
-    if (current instanceof VertxThread) {
-      setContext((VertxThread) current, context);
-    } else {
-      throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
-    }
-  }
-
-  private static void setContext(VertxThread thread, ContextImpl context) {
-    thread.setContext(context);
-    if (!DISABLE_TCCL) {
-      if (context != null) {
-        context.setTCCL();
-      } else {
-        Thread.currentThread().setContextClassLoader(null);
-      }
-    }
   }
 
   public void setDeployment(Deployment deployment) {
@@ -265,7 +243,7 @@ abstract class ContextImpl implements ContextInternal {
         }
         Future<T> res = Future.future();
         try {
-          ContextImpl.setContext(this);
+          ContextInternal.setContext(this);
           blockingCodeHandler.handle(res);
         } catch (Throwable e) {
           res.tryFail(e);
@@ -296,6 +274,11 @@ abstract class ContextImpl implements ContextInternal {
   }
 
   @Override
+  public ClassLoader classLoader() {
+    return tccl;
+  }
+
+  @Override
   public synchronized ConcurrentMap<Object, Object> contextData() {
     if (contextData == null) {
       contextData = new ConcurrentHashMap<>();
@@ -313,7 +296,7 @@ abstract class ContextImpl implements ContextInternal {
       current.executeStart();
     }
     try {
-      setContext(current, this);
+      current.setContext(this);
       hTask.handle(arg);
       return true;
     } catch (Throwable t) {
@@ -338,10 +321,6 @@ abstract class ContextImpl implements ContextInternal {
     } else {
       log.error("Unhandled exception", t);
     }
-  }
-
-  private void setTCCL() {
-    Thread.currentThread().setContextClassLoader(tccl);
   }
 
   @Override
