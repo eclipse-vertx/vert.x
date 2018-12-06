@@ -20,25 +20,33 @@ import java.util.concurrent.TimeUnit;
  */
 public final class VertxThread extends FastThreadLocalThread {
 
+  static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
+  static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
+
   private final boolean worker;
   private final long maxExecTime;
   private final TimeUnit maxExecTimeUnit;
   private long execStart;
-  private ContextImpl context;
+  private ContextInternal context;
 
-  public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
+  VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     super(target, name);
     this.worker = worker;
     this.maxExecTime = maxExecTime;
     this.maxExecTimeUnit = maxExecTimeUnit;
   }
 
-  ContextImpl getContext() {
-    return context;
+  ContextInternal setContext(ContextInternal next) {
+    ContextInternal prev = context;
+    context = next;
+    if (!DISABLE_TCCL) {
+      setContextClassLoader(next != null ? next.classLoader() : null);
+    }
+    return prev;
   }
 
-  void setContext(ContextImpl context) {
-    this.context = context;
+  ContextInternal getContext() {
+    return context;
   }
 
   public final void executeStart() {
