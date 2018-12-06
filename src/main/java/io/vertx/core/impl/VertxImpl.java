@@ -338,7 +338,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public void runOnContext(Handler<Void> task) {
-    ContextImpl context = getOrCreateContext();
+    ContextInternal context = getOrCreateContext();
     context.runOnContext(task);
   }
 
@@ -355,8 +355,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return acceptorEventLoopGroup;
   }
 
-  public ContextImpl getOrCreateContext() {
-    ContextImpl ctx = getContext();
+  public ContextInternal getOrCreateContext() {
+    ContextInternal ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
       ctx = createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader());
@@ -398,7 +398,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public ContextImpl createWorkerContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
+  public ContextInternal createWorkerContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
     if (workerPool == null) {
       workerPool = this.workerPool;
     }
@@ -470,7 +470,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return mgr;
   }
 
-  private long scheduleTimeout(ContextImpl context, Handler<Long> handler, long delay, boolean periodic) {
+  private long scheduleTimeout(ContextInternal context, Handler<Long> handler, long delay, boolean periodic) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
@@ -489,9 +489,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return null;
   }
 
-  public ContextImpl getContext() {
-    ContextImpl context = (ContextImpl) context();
-    if (context != null && context.owner == this) {
+  public ContextInternal getContext() {
+    ContextInternal context = (ContextInternal) context();
+    if (context != null && context.owner() == this) {
       return context;
     }
     return null;
@@ -725,7 +725,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public <T> void executeBlockingInternal(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    ContextImpl context = getOrCreateContext();
+    ContextInternal context = getOrCreateContext();
 
     context.executeBlockingInternal(blockingCodeHandler, resultHandler);
   }
@@ -733,7 +733,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered,
                                   Handler<AsyncResult<T>> asyncResultHandler) {
-    ContextImpl context = getOrCreateContext();
+    ContextInternal context = getOrCreateContext();
     context.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler);
   }
 
@@ -862,7 +862,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     final Handler<Long> handler;
     final boolean periodic;
     final long timerID;
-    final ContextImpl context;
+    final ContextInternal context;
     final java.util.concurrent.Future<?> future;
     final AtomicBoolean cancelled;
 
@@ -875,7 +875,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
     }
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, long delay, ContextImpl context) {
+    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, long delay, ContextInternal context) {
       this.context = context;
       this.timerID = timerID;
       this.handler = runnable;
@@ -905,7 +905,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     private void cleanupNonPeriodic() {
       VertxImpl.this.timeouts.remove(timerID);
-      ContextImpl context = getContext();
+      ContextInternal context = getContext();
       if (context != null) {
         context.removeCloseHook(this);
       }
@@ -1074,7 +1074,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       sharedWorkerPool.refCount++;
     }
-    ContextImpl context = getOrCreateContext();
+    ContextInternal context = getOrCreateContext();
     WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool);
     context.addCloseHook(namedExec);
     return namedExec;
