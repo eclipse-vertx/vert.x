@@ -43,9 +43,4 @@ public class BenchmarkContext extends ContextImpl {
   public boolean isEventLoopContext() {
     return false;
   }
-
-  @Override
-  public boolean isMultiThreadedWorkerContext() {
-    return false;
-  }
 }

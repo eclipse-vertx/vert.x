@@ -48,11 +48,6 @@ class WorkerContext extends ContextImpl {
     return false;
   }
 
-  @Override
-  public boolean isMultiThreadedWorkerContext() {
-    return false;
-  }
-
   // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
   // so we need to execute it on the worker thread
   @Override

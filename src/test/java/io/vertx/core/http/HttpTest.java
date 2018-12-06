@@ -3071,21 +3071,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testUseInMultithreadedWorker() throws Exception {
-    class MyVerticle extends AbstractVerticle {
-      @Override
-      public void start() {
-        assertIllegalStateException(() -> server = vertx.createHttpServer(new HttpServerOptions()));
-        assertIllegalStateException(() -> client = vertx.createHttpClient(new HttpClientOptions()));
-        testComplete();
-      }
-    }
-    MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
-    await();
-  }
-
-  @Test
   public void testMultipleServerClose() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     AtomicInteger times = new AtomicInteger();
@@ -3199,32 +3184,6 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(200, resp.statusCode());
       }));
     });
-    await();
-  }
-
-  @Test
-  public void testInMultithreadedWorker() throws Exception {
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        assertTrue(Vertx.currentContext().isWorkerContext());
-        assertTrue(Vertx.currentContext().isMultiThreadedWorkerContext());
-        assertTrue(Context.isOnWorkerThread());
-        try {
-          vertx.createHttpServer();
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
-        try {
-          vertx.createHttpClient();
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
-        testComplete();
-      }
-    }, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
     await();
   }
 

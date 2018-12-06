@@ -940,15 +940,6 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithWorkerVerticle() {
-    testWithWorkerVerticle(new DeploymentOptions().setWorker(true));
-  }
-
-  @Test
-  public void testThreadPoolMetricsWithWorkerVerticleAndMultiThread() {
-    testWithWorkerVerticle(new DeploymentOptions().setWorker(true).setMultiThreaded(true));
-  }
-
-  private void testWithWorkerVerticle(DeploymentOptions options) {
     AtomicInteger counter = new AtomicInteger();
     Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
@@ -996,7 +987,7 @@ public class MetricsTest extends VertxTestBase {
     };
 
 
-    vertx.deployVerticle(worker, options, s -> {
+    vertx.deployVerticle(worker, new DeploymentOptions().setWorker(true), s -> {
       for (int i = 0; i < count; i++) {
         vertx.eventBus().send("message", i);
       }

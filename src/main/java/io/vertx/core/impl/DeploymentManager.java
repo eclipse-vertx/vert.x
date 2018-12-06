@@ -81,9 +81,6 @@ public class DeploymentManager {
     if (options.getInstances() < 1) {
       throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
     }
-    if (options.isMultiThreaded() && !options.isWorker()) {
-      throw new IllegalArgumentException("If multi-threaded then must be worker too");
-    }
     if (options.getExtraClasspath() != null) {
       throw new IllegalArgumentException("Can't specify extraClasspath for already created verticle");
     }
@@ -129,9 +126,6 @@ public class DeploymentManager {
   public void deployVerticle(String identifier,
                              DeploymentOptions options,
                              Handler<AsyncResult<String>> completionHandler) {
-    if (options.isMultiThreaded() && !options.isWorker()) {
-      throw new IllegalArgumentException("If multi-threaded then must be worker too");
-    }
     ContextInternal callingContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(options);
 
@@ -480,7 +474,7 @@ public class DeploymentManager {
     for (Verticle verticle: verticles) {
       WorkerExecutorInternal workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
-      ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, pool, conf, tccl) :
+      ContextImpl context = options.isWorker() ? vertx.createWorkerContext(deploymentID, pool, conf, tccl) :
         vertx.createEventLoopContext(deploymentID, pool, conf, tccl);
       if (workerExec != null) {
         context.addCloseHook(workerExec);

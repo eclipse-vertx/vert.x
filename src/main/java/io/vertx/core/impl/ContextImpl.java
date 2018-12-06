@@ -140,9 +140,6 @@ abstract class ContextImpl implements ContextInternal {
   public abstract boolean isEventLoopContext();
 
   @Override
-  public abstract boolean isMultiThreadedWorkerContext();
-
-  @Override
   @SuppressWarnings("unchecked")
   public <T> T get(String key) {
     return (T) contextData().get(key);

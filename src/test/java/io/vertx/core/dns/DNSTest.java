@@ -365,20 +365,6 @@ public class DNSTest extends VertxTestBase {
   }
 
   @Test
-  public void testUseInMultithreadedWorker() throws Exception {
-    class MyVerticle extends AbstractVerticle {
-      @Override
-      public void start() {
-        assertIllegalStateException(() -> vertx.createDnsClient(1234, "localhost"));
-        testComplete();
-      }
-    }
-    MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
-    await();
-  }
-
-  @Test
   public void testLookup4CNAME() throws Exception {
     final String cname = "cname.vertx.io";
     final String ip = "10.0.0.1";

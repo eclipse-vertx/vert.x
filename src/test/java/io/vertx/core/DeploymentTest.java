@@ -57,9 +57,6 @@ public class DeploymentTest extends VertxTestBase {
     assertFalse(options.isWorker());
     assertEquals(options, options.setWorker(true));
     assertTrue(options.isWorker());
-    assertFalse(options.isMultiThreaded());
-    assertEquals(options, options.setMultiThreaded(true));
-    assertTrue(options.isMultiThreaded());
     assertNull(options.getIsolationGroup());
     String rand = TestUtils.randomUnicodeString(1000);
     assertEquals(options, options.setIsolationGroup(rand));
@@ -104,7 +101,6 @@ public class DeploymentTest extends VertxTestBase {
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     options.setConfig(config);
     options.setWorker(worker);
-    options.setMultiThreaded(multiThreaded);
     options.setIsolationGroup(isolationGroup);
     options.setHa(ha);
     options.setExtraClasspath(cp);
@@ -115,7 +111,6 @@ public class DeploymentTest extends VertxTestBase {
     options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     DeploymentOptions copy = new DeploymentOptions(options);
     assertEquals(worker, copy.isWorker());
-    assertEquals(multiThreaded, copy.isMultiThreaded());
     assertEquals(isolationGroup, copy.getIsolationGroup());
     assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
@@ -136,7 +131,6 @@ public class DeploymentTest extends VertxTestBase {
     DeploymentOptions json = new DeploymentOptions(new JsonObject());
     assertEquals(def.getConfig(), json.getConfig());
     assertEquals(def.isWorker(), json.isWorker());
-    assertEquals(def.isMultiThreaded(), json.isMultiThreaded());
     assertEquals(def.getIsolationGroup(), json.getIsolationGroup());
     assertEquals(def.isHa(), json.isHa());
     assertEquals(def.getExtraClasspath(), json.getExtraClasspath());
@@ -175,7 +169,6 @@ public class DeploymentTest extends VertxTestBase {
     json.put("maxWorkerExecuteTimeUnit", maxWorkerExecuteTimeUnit);
     DeploymentOptions options = new DeploymentOptions(json);
     assertEquals(worker, options.isWorker());
-    assertEquals(multiThreaded, options.isMultiThreaded());
     assertEquals(isolationGroup, options.getIsolationGroup());
     assertEquals("bar", options.getConfig().getString("foo"));
     assertEquals(ha, options.isHa());
@@ -204,7 +197,6 @@ public class DeploymentTest extends VertxTestBase {
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     options.setConfig(config);
     options.setWorker(worker);
-    options.setMultiThreaded(multiThreaded);
     options.setIsolationGroup(isolationGroup);
     options.setHa(ha);
     options.setExtraClasspath(cp);
@@ -216,7 +208,6 @@ public class DeploymentTest extends VertxTestBase {
     JsonObject json = options.toJson();
     DeploymentOptions copy = new DeploymentOptions(json);
     assertEquals(worker, copy.isWorker());
-    assertEquals(multiThreaded, copy.isMultiThreaded());
     assertEquals(isolationGroup, copy.getIsolationGroup());
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHa());
@@ -233,7 +224,6 @@ public class DeploymentTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
       assertDeployment(1, verticle, null, ar);
-      assertFalse(verticle.startContext.isMultiThreadedWorkerContext());
       assertFalse(verticle.startContext.isWorkerContext());
       assertTrue(verticle.startContext.isEventLoopContext());
       testComplete();
@@ -297,25 +287,6 @@ public class DeploymentTest extends VertxTestBase {
     JsonObject conf = generateJSONObject();
     vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(conf).setWorker(true), ar -> {
       assertDeployment(1, verticle, conf, ar);
-      assertFalse(verticle.startContext.isMultiThreadedWorkerContext());
-      assertTrue(verticle.startContext.isWorkerContext());
-      assertFalse(verticle.startContext.isEventLoopContext());
-      vertx.undeploy(ar.result(), ar2 -> {
-        assertTrue(ar2.succeeded());
-        assertEquals(verticle.startContext, verticle.stopContext);
-        testComplete();
-      });
-    });
-    await();
-  }
-
-  @Test
-  public void testDeployMultithreadedWorkerWithConfig() throws Exception {
-    MyVerticle verticle = new MyVerticle();
-    JsonObject conf = generateJSONObject();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(conf).setWorker(true).setMultiThreaded(true), ar -> {
-      assertDeployment(1, verticle, conf, ar);
-      assertTrue(verticle.startContext.isMultiThreadedWorkerContext());
       assertTrue(verticle.startContext.isWorkerContext());
       assertFalse(verticle.startContext.isEventLoopContext());
       vertx.undeploy(ar.result(), ar2 -> {
@@ -361,39 +332,6 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testMTWorkerRightThread() throws Exception {
-    assertFalse(Context.isOnVertxThread());
-    Verticle verticle = new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        assertTrue(Context.isOnVertxThread());
-        assertTrue(Context.isOnWorkerThread());
-        assertFalse(Context.isOnEventLoopThread());
-      }
-
-      @Override
-      public void stop() throws Exception {
-        assertTrue(Context.isOnVertxThread());
-        assertTrue(Context.isOnWorkerThread());
-        assertFalse(Context.isOnEventLoopThread());
-      }
-    };
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true), onSuccess(res -> {
-      assertTrue(Context.isOnVertxThread());
-      assertFalse(Context.isOnWorkerThread());
-      assertTrue(Context.isOnEventLoopThread());
-      vertx.undeploy(res, onSuccess(res2 -> {
-        assertTrue(Context.isOnVertxThread());
-        assertFalse(Context.isOnWorkerThread());
-        assertTrue(Context.isOnEventLoopThread());
-        testComplete();
-      }));
-    }));
-
-    await();
-  }
-
-  @Test
   public void testStandardRightThread() throws Exception {
     assertFalse(Context.isOnVertxThread());
     Verticle verticle = new AbstractVerticle() {
@@ -424,25 +362,6 @@ public class DeploymentTest extends VertxTestBase {
     }));
 
     await();
-  }
-
-  @Test
-  public void testDeployMultithreadedNotWorker() throws Exception {
-    MyVerticle verticle = new MyVerticle();
-    try {
-      vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(false).setMultiThreaded(true), ar -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      vertx.deployVerticle(MyVerticle.class.getName(), new DeploymentOptions().setWorker(false).setMultiThreaded(true), ar -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
   }
 
   @Test

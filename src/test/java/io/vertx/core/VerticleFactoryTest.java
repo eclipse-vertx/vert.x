@@ -257,7 +257,6 @@ public class VerticleFactoryTest extends VertxTestBase {
       }
       @Override
       public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
-        deploymentOptions.setMultiThreaded(true);
         vertx.runOnContext(v -> {
           // Async resolution
           resolution.complete("whatever");
@@ -274,7 +273,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     // With completion handler
     vertx.deployVerticle("resolve:someid", onFailure(err -> {
       // Expected since we deploy a non multi-threaded worker verticle
-      assertEquals(IllegalArgumentException.class, err.getClass());
+      assertEquals(ClassNotFoundException.class, err.getClass());
       testComplete();
     }));
     await();

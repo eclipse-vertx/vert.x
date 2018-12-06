@@ -169,13 +169,6 @@ public interface Context {
   boolean isWorkerContext();
 
   /**
-   * Is the current context a multi-threaded worker context?
-   *
-   * @return true if the current context is a multi-threaded worker context, false otherwise
-   */
-  boolean isMultiThreadedWorkerContext();
-
-  /**
    * Get some data from the context.
    *
    * @param key  the key of the data

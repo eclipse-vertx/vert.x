@@ -430,37 +430,6 @@ If you want to deploy a verticle as a worker verticle you do that with {@link io
 Worker verticle instances are never executed concurrently by Vert.x by more than one thread, but can executed by
 different threads at different times.
 
-==== Multi-threaded worker verticles
-
-A multi-threaded worker verticle is just like a normal worker verticle but it *can* be executed concurrently by
-different threads.
-
-CAUTION: Multi-threaded worker verticles are an advanced feature and most applications will have no need for them.
-
-Because of the concurrency in these verticles you have to be very careful to keep the verticle in a consistent state
-using standard Java techniques for multi-threaded programming.
-
-Multi-threaded worker verticles were designed and are intended for the sole use of consuming simultaneously `EventBus` messages in a blocking fashion.
-
-WARNING: Vert.x clients and servers (TCP, HTTP, ...etc) cannot be created in a multi-threaded worker verticle.
-Should you incidentally try, an exception will be thrown.
-
-Essentially, multi-threaded worker verticles simply avoid the user from deploying as much instances of a worker verticle as the number of threads in a worker pool.
-So you could for example provide a worker pool name/size in {@link io.vertx.core.DeploymentOptions} and set the number of instances accordingly:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#multiThreadedWorkerVerticleAlternative}
-----
-
-Alternatively, you could create a regular verticle and wrap you blocking code with multiple `executeBlocking` with the `ordered` flag set to `false`:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#multiThreadedWorkerVerticleAlternative2}
-----
-
-
 === Deploying verticles programmatically
 
 You can deploy a verticle using one of the {@link io.vertx.core.Vertx#deployVerticle} method, specifying a verticle

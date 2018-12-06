@@ -528,20 +528,6 @@ public class DatagramTest extends VertxTestBase {
   }
 
   @Test
-  public void testUseInMultithreadedWorker() throws Exception {
-    class MyVerticle extends AbstractVerticle {
-      @Override
-      public void start() {
-        assertIllegalStateException(() -> peer1 = vertx.createDatagramSocket(new DatagramSocketOptions()));
-        testComplete();
-      }
-    }
-    MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
-    await();
-  }
-
-  @Test
   public void testNoLogging() throws Exception {
     TestLoggerFactory factory = testLogging(new DatagramSocketOptions(), new DatagramSocketOptions());
     assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));

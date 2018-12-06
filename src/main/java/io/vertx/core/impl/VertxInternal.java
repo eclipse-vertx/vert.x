@@ -70,7 +70,7 @@ public interface VertxInternal extends Vertx {
   /**
    * @return worker loop context
    */
-  ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool pool, JsonObject config, ClassLoader tccl);
+  ContextImpl createWorkerContext(String deploymentID, WorkerPool pool, JsonObject config, ClassLoader tccl);
 
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name);

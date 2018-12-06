@@ -85,9 +85,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     this.creatingContext = vertx.getContext();
     this.logEnabled = options.getLogActivity();
     if (creatingContext != null) {
-      if (creatingContext.isMultiThreadedWorkerContext()) {
-        throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
-      }
       creatingContext.addCloseHook(this);
     }
   }

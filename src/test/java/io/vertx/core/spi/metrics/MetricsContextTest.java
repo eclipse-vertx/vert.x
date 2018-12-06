@@ -878,20 +878,15 @@ public class MetricsContextTest extends VertxTestBase {
 
   @Test
   public void testDeployEventLoop() {
-    testDeploy(false, false, eventLoopChecker);
+    testDeploy(false, eventLoopChecker);
   }
 
   @Test
   public void testDeployWorker() {
-    testDeploy(true, false, workerChecker);
+    testDeploy(true, workerChecker);
   }
 
-  @Test
-  public void testDeployMultiThreadedWorker() {
-    testDeploy(true, true, workerChecker);
-  }
-
-  private void testDeploy(boolean worker, boolean multiThreaded, BiConsumer<Thread, Context> checker) {
+  private void testDeploy(boolean worker, BiConsumer<Thread, Context> checker) {
     AtomicReference<Thread> verticleThread = new AtomicReference<>();
     AtomicReference<Context> verticleContext = new AtomicReference<>();
     AtomicBoolean deployedCalled = new AtomicBoolean();
@@ -915,7 +910,7 @@ public class MetricsContextTest extends VertxTestBase {
         verticleThread.set(Thread.currentThread());
         verticleContext.set(Vertx.currentContext());
       }
-    }, new DeploymentOptions().setWorker(worker).setMultiThreaded(multiThreaded), ar1 -> {
+    }, new DeploymentOptions().setWorker(worker), ar1 -> {
       assertTrue(ar1.succeeded());
       vertx.undeploy(ar1.result(), ar2 -> {
         assertTrue(ar1.succeeded());

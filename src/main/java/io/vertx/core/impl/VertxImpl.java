@@ -398,16 +398,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool workerPool, JsonObject config,
-                                         ClassLoader tccl) {
+  public ContextImpl createWorkerContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
     if (workerPool == null) {
       workerPool = this.workerPool;
     }
-    if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, internalBlockingPool, workerPool, deploymentID, config, tccl);
-    } else {
-      return new WorkerContext(this, internalBlockingPool, workerPool, deploymentID, config, tccl);
-    }
+    return new WorkerContext(this, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
   @Override

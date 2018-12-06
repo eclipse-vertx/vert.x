@@ -30,14 +30,12 @@ import java.util.concurrent.TimeUnit;
 public class DeploymentOptions {
 
   public static final boolean DEFAULT_WORKER = false;
-  public static final boolean DEFAULT_MULTI_THREADED = false;
   public static final String DEFAULT_ISOLATION_GROUP = null;
   public static final boolean DEFAULT_HA = false;
   public static final int DEFAULT_INSTANCES = 1;
 
   private JsonObject config;
   private boolean worker;
-  private boolean multiThreaded;
   private String isolationGroup;
   private String workerPoolName;
   private int workerPoolSize;
@@ -54,7 +52,6 @@ public class DeploymentOptions {
   public DeploymentOptions() {
     this.worker = DEFAULT_WORKER;
     this.config = null;
-    this.multiThreaded = DEFAULT_MULTI_THREADED;
     this.isolationGroup = DEFAULT_ISOLATION_GROUP;
     this.ha = DEFAULT_HA;
     this.instances = DEFAULT_INSTANCES;
@@ -72,7 +69,6 @@ public class DeploymentOptions {
   public DeploymentOptions(DeploymentOptions other) {
     this.config = other.getConfig() == null ? null : other.getConfig().copy();
     this.worker = other.isWorker();
-    this.multiThreaded = other.isMultiThreaded();
     this.isolationGroup = other.getIsolationGroup();
     this.ha = other.isHa();
     this.extraClasspath = other.getExtraClasspath() == null ? null : new ArrayList<>(other.getExtraClasspath());
@@ -102,7 +98,6 @@ public class DeploymentOptions {
   public void fromJson(JsonObject json) {
     this.config = json.getJsonObject("config");
     this.worker = json.getBoolean("worker", DEFAULT_WORKER);
-    this.multiThreaded = json.getBoolean("multiThreaded", DEFAULT_MULTI_THREADED);
     this.isolationGroup = json.getString("isolationGroup", DEFAULT_ISOLATION_GROUP);
     this.ha = json.getBoolean("ha", DEFAULT_HA);
     JsonArray arr = json.getJsonArray("extraClasspath", null);
@@ -153,39 +148,6 @@ public class DeploymentOptions {
    */
   public DeploymentOptions setWorker(boolean worker) {
     this.worker = worker;
-    return this;
-  }
-
-  /**
-   * Should the verticle(s) be deployed as a multi-threaded worker verticle?
-   * <p>
-   * Ignored if {@link #isWorker} is not true.
-   *
-   * @return true if will be deployed as multi-threaded worker, false otherwise
-   */
-  public boolean isMultiThreaded() {
-    return multiThreaded;
-  }
-
-  /**
-   * Set whether the verticle(s) should be deployed as a multi-threaded worker verticle.
-   * <p>
-   * <strong>WARNING</strong>: Multi-threaded worker verticles are a deprecated feature.
-   * <p>
-   * Most applications will have no need for them. Because of the concurrency in these verticles you have to be
-   * very careful to keep the verticle in a consistent state using standard Java techniques for multi-threaded
-   * programming.
-   * <p>
-   * You can read the documentation that explains how you can replace this feature by the usage of custom worker
-   * pools or {@code executeBlocking} calls.
-   *
-   * @deprecated as of 3.6.0
-   * @param multiThreaded true for multi-threaded worker, false otherwise
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Deprecated
-  public DeploymentOptions setMultiThreaded(boolean multiThreaded) {
-    this.multiThreaded = multiThreaded;
     return this;
   }
 
@@ -405,7 +367,6 @@ public class DeploymentOptions {
     DeploymentOptions that = (DeploymentOptions) o;
 
     if (worker != that.worker) return false;
-    if (multiThreaded != that.multiThreaded) return false;
     if (ha != that.ha) return false;
     if (instances != that.instances) return false;
     if (config != null ? !config.equals(that.config) : that.config != null) return false;
@@ -421,7 +382,6 @@ public class DeploymentOptions {
   public int hashCode() {
     int result = config != null ? config.hashCode() : 0;
     result = 31 * result + (worker ? 1 : 0);
-    result = 31 * result + (multiThreaded ? 1 : 0);
     result = 31 * result + (isolationGroup != null ? isolationGroup.hashCode() : 0);
     result = 31 * result + (ha ? 1 : 0);
     result = 31 * result + (extraClasspath != null ? extraClasspath.hashCode() : 0);

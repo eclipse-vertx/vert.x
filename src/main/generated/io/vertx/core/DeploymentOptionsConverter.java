@@ -64,11 +64,6 @@ import java.time.format.DateTimeFormatter;
             obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
-        case "multiThreaded":
-          if (member.getValue() instanceof Boolean) {
-            obj.setMultiThreaded((Boolean)member.getValue());
-          }
-          break;
         case "worker":
           if (member.getValue() instanceof Boolean) {
             obj.setWorker((Boolean)member.getValue());
@@ -115,7 +110,6 @@ import java.time.format.DateTimeFormatter;
     if (obj.getMaxWorkerExecuteTimeUnit() != null) {
       json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
     }
-    json.put("multiThreaded", obj.isMultiThreaded());
     json.put("worker", obj.isWorker());
     if (obj.getWorkerPoolName() != null) {
       json.put("workerPoolName", obj.getWorkerPoolName());

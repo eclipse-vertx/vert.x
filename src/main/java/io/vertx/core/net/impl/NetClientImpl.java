@@ -78,9 +78,6 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     if (useCreatingContext) {
       creatingContext = vertx.getContext();
       if (creatingContext != null) {
-        if (creatingContext.isMultiThreadedWorkerContext()) {
-          throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
-        }
         creatingContext.addCloseHook(closeHook);
       }
     } else {

@@ -58,9 +58,6 @@ public final class DnsClientImpl implements DnsClient {
     this.options = new DnsClientOptions(options);
 
     ContextInternal creatingContext = vertx.getContext();
-    if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
-      throw new IllegalStateException("Cannot use DnsClient in a multi-threaded worker verticle");
-    }
 
     this.dnsServer = new InetSocketAddress(options.getHost(), options.getPort());
     if (this.dnsServer.isUnresolved()) {

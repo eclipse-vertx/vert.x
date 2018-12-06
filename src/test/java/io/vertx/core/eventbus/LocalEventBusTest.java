@@ -664,31 +664,22 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testInVerticle() throws Exception {
-    testInVerticle(false, false);
+    testInVerticle(false);
   }
 
   @Test
   public void testInWorkerVerticle() throws Exception {
-    testInVerticle(true, false);
+    testInVerticle(true);
   }
 
-  @Test
-  public void testInMultithreadedWorkerVerticle() throws Exception {
-    testInVerticle(true, true);
-  }
-
-  private void testInVerticle(boolean  worker, boolean multiThreaded) throws Exception {
+  private void testInVerticle(boolean  worker) throws Exception {
     class MyVerticle extends AbstractVerticle {
       Context ctx;
       @Override
       public void start() {
         ctx = context;
         if (worker) {
-          if (multiThreaded) {
-            assertTrue(ctx.isMultiThreadedWorkerContext());
-          } else {
-            assertTrue(ctx.isWorkerContext() && !ctx.isMultiThreadedWorkerContext());
-          }
+          assertTrue(ctx.isWorkerContext());
         } else {
           assertTrue(ctx instanceof EventLoopContext);
         }
@@ -718,7 +709,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker).setMultiThreaded(multiThreaded));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker));
     await();
   }
 
@@ -1344,67 +1335,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       });
       eb.consumer(ADDRESS1).unregister();
     });
-    await();
-  }
-
-  @Test
-  public void testMTWorkerConsumer() {
-    int num = 3;
-    waitFor(num);
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() {
-        CyclicBarrier barrier = new CyclicBarrier(3);
-        vertx.eventBus().consumer(ADDRESS1, msg -> {
-          try {
-            barrier.await();
-            complete();
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            fail(e);
-          } catch (BrokenBarrierException e) {
-            fail(e);
-          }
-        });
-      }
-    }, new DeploymentOptions()
-      .setInstances(1)
-      .setWorker(true)
-      .setMultiThreaded(true), onSuccess(id -> {
-        for (int i = 0;i < num;i++) {
-          vertx.eventBus().send(ADDRESS1, "msg-" + i);
-        }
-    }));
-    await();
-  }
-
-  @Test
-  public void testMTExecBlockingConsumer() {
-    int num = 3;
-    waitFor(num);
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() {
-        CyclicBarrier barrier = new CyclicBarrier(3);
-        vertx.eventBus().consumer(ADDRESS1, msg -> {
-          vertx.executeBlocking(block -> {
-            try {
-              barrier.await();
-              complete();
-            } catch (InterruptedException e) {
-              Thread.currentThread().interrupt();
-              fail(e);
-            } catch (BrokenBarrierException e) {
-              fail(e);
-            }
-          }, false, null);
-        });
-      }
-    }, onSuccess(id -> {
-      for (int i = 0;i < num;i++) {
-        vertx.eventBus().send(ADDRESS1, "msg-" + i);
-      }
-    }));
     await();
   }
 

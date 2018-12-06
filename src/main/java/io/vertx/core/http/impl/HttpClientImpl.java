@@ -135,9 +135,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       completionHandler.handle(Future.succeededFuture());
     };
     if (creatingContext != null) {
-      if (creatingContext.isMultiThreadedWorkerContext()) {
-        throw new IllegalStateException("Cannot use HttpClient in a multi-threaded worker verticle");
-      }
       if(options.getProtocolVersion() == HttpVersion.HTTP_2 && Context.isOnWorkerThread()) {
         throw new IllegalStateException("Cannot use HttpClient with HTTP_2 in a worker");
       }

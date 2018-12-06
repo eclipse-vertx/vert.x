@@ -2293,31 +2293,6 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testInMultithreadedWorker() throws Exception {
-    class MyVerticle extends AbstractVerticle {
-      @Override
-      public void start() {
-        try {
-          server = vertx.createNetServer(new NetServerOptions());
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
-        try {
-          client = vertx.createNetClient(new NetClientOptions());
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
-        testComplete();
-      }
-    }
-    MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
-    await();
-  }
-
-  @Test
   public void testContexts() throws Exception {
     int numConnections = 10;
 
