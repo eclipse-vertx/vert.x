@@ -234,22 +234,6 @@ public abstract class ConnectionBase {
 
   protected abstract void handleInterestedOpsChanged();
 
-  protected void addFuture(final Handler<AsyncResult<Void>> completionHandler, final ChannelFuture future) {
-    if (future != null) {
-      future.addListener(channelFuture -> context.executeFromIO(v -> {
-        if (completionHandler != null) {
-          if (channelFuture.isSuccess()) {
-            completionHandler.handle(Future.succeededFuture());
-          } else {
-            completionHandler.handle(Future.failedFuture(channelFuture.cause()));
-          }
-        } else if (!channelFuture.isSuccess()) {
-          handleException(channelFuture.cause());
-        }
-      }));
-    }
-  }
-
   protected boolean supportsFileRegion() {
     return !isSSL();
   }
@@ -304,7 +288,7 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
+  public final ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
     // Write the content.
     ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {

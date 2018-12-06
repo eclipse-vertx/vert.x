@@ -509,17 +509,9 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
   }
 
-  protected void addFuture(Handler<AsyncResult<Void>> completionHandler, ChannelFuture future) {
-    super.addFuture(completionHandler, future);
-  }
-
   @Override
   protected boolean supportsFileRegion() {
     return super.supportsFileRegion() && chctx.pipeline().get(HttpChunkContentCompressor.class) == null;
-  }
-
-  protected ChannelFuture sendFile(RandomAccessFile file, long offset, long length) throws IOException {
-    return super.sendFile(file, offset, length);
   }
 
   private void handleError(HttpObject obj) {
