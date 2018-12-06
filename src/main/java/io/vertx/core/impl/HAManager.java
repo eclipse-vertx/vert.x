@@ -350,10 +350,10 @@ public class HAManager {
             ContextInternal context = vertx.getContext();
             try {
               // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
-              ContextImpl.setContext(null);
+              ContextInternal.setContext(null);
               checkQuorumWhenAdded(nodeID, start);
             } finally {
-              ContextImpl.setContext((ContextImpl) context);
+              ContextInternal.setContext(context);
             }
           }
           fut.complete();
@@ -412,10 +412,10 @@ public class HAManager {
     toDeployOnQuorum.add(() -> {
       ContextInternal ctx = vertx.getContext();
       try {
-        ContextImpl.setContext(null);
+        ContextInternal.setContext(null);
         deployVerticle(verticleName, deploymentOptions, doneHandler);
       } finally {
-        ContextImpl.setContext((ContextImpl) ctx);
+        ContextInternal.setContext(ctx);
       }
     });
    }
@@ -440,7 +440,7 @@ public class HAManager {
         if (dep.deploymentOptions().isHa()) {
           ContextInternal ctx = vertx.getContext();
           try {
-            ContextImpl.setContext(null);
+            ContextInternal.setContext(null);
             deploymentManager.undeployVerticle(deploymentID, result -> {
               if (result.succeeded()) {
                 log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
@@ -456,7 +456,7 @@ public class HAManager {
               }
             });
           } finally {
-            ContextImpl.setContext((ContextImpl) ctx);
+            ContextInternal.setContext(ctx);
           }
         }
       }
@@ -550,7 +550,7 @@ public class HAManager {
     ContextInternal ctx = vertx.getContext();
     if (ctx != null) {
       // We could be on main thread in which case we don't want to overwrite tccl
-      ContextImpl.setContext(null);
+      ContextInternal.setContext(null);
     }
     JsonObject options = failedVerticle.getJsonObject("options");
     try {
@@ -569,7 +569,7 @@ public class HAManager {
       });
     } finally {
       if (ctx != null) {
-        ContextImpl.setContext((ContextImpl) ctx);
+        ContextInternal.setContext(ctx);
       }
     }
     try {
