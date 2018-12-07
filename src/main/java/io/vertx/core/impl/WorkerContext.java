@@ -25,19 +25,6 @@ class WorkerContext extends ContextImpl {
     super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
-  final <T> Runnable wrapTask(T arg, Handler<T> hTask, PoolMetrics metrics) {
-    Object metric = metrics != null ? metrics.submitted() : null;
-    return () -> {
-      if (metrics != null) {
-        metrics.begin(metric);
-      }
-      boolean succeeded = executeTask(arg, hTask);
-      if (metrics != null) {
-        metrics.end(metric, succeeded);
-      }
-    };
-  }
-
   @Override
   void executeAsync(Handler<Void> task) {
     execute(null, task);
@@ -52,6 +39,19 @@ class WorkerContext extends ContextImpl {
   // so we need to execute it on the worker thread
   @Override
   <T> void execute(T value, Handler<T> task) {
-    orderedTasks.execute(wrapTask(value, task, workerPool.metrics()), workerPool.executor());
+    PoolMetrics metrics = workerPool.metrics();
+    Object metric = metrics != null ? metrics.submitted() : null;
+    orderedTasks.execute(() -> exec(metrics, metric, value, task), workerPool.executor());
   }
+
+  private <T> void exec(PoolMetrics metrics, Object metric, T value, Handler<T> task) {
+    if (metrics != null) {
+      metrics.begin(metric);
+    }
+    executeTask(value, task);
+    if (metrics != null) {
+      metrics.end(metric, true);
+    }
+  }
+
 }

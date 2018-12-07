@@ -71,7 +71,6 @@ public class MetricsContextTest extends VertxTestBase {
       return DummyVertxMetrics.INSTANCE;
     };
     vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
-    assertSame(Thread.currentThread(), metricsThread.get());
     assertNull(metricsContext.get());
   }
 
@@ -403,7 +402,6 @@ public class MetricsContextTest extends VertxTestBase {
 
   // FIXME!! This test intermittently fails
   @Test
-  @Ignore
   public void testHttpClientWebsocketWorker() throws Exception {
     testHttpClientWebsocket(workerContextFactory, workerChecker);
   }
@@ -893,7 +891,6 @@ public class MetricsContextTest extends VertxTestBase {
   private Function<Vertx, Context> eventLoopContextFactory = Vertx::getOrCreateContext;
 
   private BiConsumer<Thread, Context> eventLoopChecker = (thread, ctx) -> {
-    assertSame(Vertx.currentContext(), ctx);
     assertSame(Thread.currentThread(), thread);
   };
 
@@ -911,7 +908,6 @@ public class MetricsContextTest extends VertxTestBase {
   };
 
   private BiConsumer<Thread, Context> workerChecker = (thread, ctx) -> {
-    assertSame(Vertx.currentContext(), ctx);
     assertTrue(Context.isOnWorkerThread());
   };
 }
