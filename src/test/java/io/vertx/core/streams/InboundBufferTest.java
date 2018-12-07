@@ -740,4 +740,19 @@ public class InboundBufferTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testRejectWrongThread() {
+    buffer = new InboundBuffer<>(context);
+    try {
+      buffer.write(0);
+      fail();
+    } catch (IllegalStateException ignore) {
+    }
+    try {
+      buffer.write(Arrays.asList(0, 1, 2));
+      fail();
+    } catch (IllegalStateException ignore) {
+    }
+  }
 }
