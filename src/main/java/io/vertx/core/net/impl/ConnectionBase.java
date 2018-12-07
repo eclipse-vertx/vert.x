@@ -274,7 +274,7 @@ public abstract class ConnectionBase {
     Handler<Void> handler;
     synchronized (this) {
       NetworkMetrics metrics = metrics();
-      if (metrics != null && metrics instanceof TCPMetrics) {
+      if (metrics instanceof TCPMetrics) {
         ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
       }
       handler = closeHandler;
