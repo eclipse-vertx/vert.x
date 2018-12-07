@@ -286,7 +286,7 @@ abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
-  <T> boolean executeTask(T arg, Handler<T> hTask) {
+  <T> void executeTask(T arg, Handler<T> hTask) {
     Thread th = Thread.currentThread();
     if (!(th instanceof VertxThread)) {
       throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
@@ -298,10 +298,8 @@ abstract class ContextImpl implements ContextInternal {
     try {
       current.setContext(this);
       hTask.handle(arg);
-      return true;
     } catch (Throwable t) {
       reportException(t);
-      return false;
     } finally {
       // We don't unset the context after execution - this is done later when the context is closed via
       // VertxThreadFactory

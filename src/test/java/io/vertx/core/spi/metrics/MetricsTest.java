@@ -939,7 +939,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testThreadPoolMetricsWithWorkerVerticle() {
+  public void testThreadPoolMetricsWithWorkerVerticle() throws Exception {
     AtomicInteger counter = new AtomicInteger();
     Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
@@ -955,6 +955,7 @@ public class MetricsTest extends VertxTestBase {
 
     AtomicInteger msg = new AtomicInteger();
 
+    CountDownLatch latch = new CountDownLatch(1);
     Verticle worker = new AbstractVerticle() {
       @Override
       public void start(Future<Void> done) throws Exception {
@@ -974,7 +975,7 @@ public class MetricsTest extends VertxTestBase {
               }
 
               if (counter.incrementAndGet() == count) {
-                testComplete();
+                latch.countDown();
               }
 
             } catch (InterruptedException e) {
@@ -993,9 +994,9 @@ public class MetricsTest extends VertxTestBase {
       }
     });
 
+    awaitLatch(latch);
+
     assertWaitUntil(() -> count + 1 == metrics.numberOfCompletedTasks());
-
-
 
     // The verticle deployment is also executed on the worker thread pool
     assertEquals(count + 1, metrics.numberOfSubmittedTask());
