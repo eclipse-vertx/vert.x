@@ -58,6 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
@@ -1306,6 +1307,12 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testTextMessageAsBinary() {
+    String messageToSend = TestUtils.randomAlphaString(256);
+    testWriteSingleTextMessageAsBinary(Buffer.buffer(messageToSend), WebsocketVersion.V13);
+  }
+
+  @Test
   public void testTooLargeMessage() {
     String messageToSend = TestUtils.randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE + 1);
     SocketMessages socketMessages = testWriteTextMessages(Collections.singletonList(messageToSend), WebsocketVersion.V13);
@@ -1349,6 +1356,31 @@ public class WebSocketTest extends VertxTestBase {
       ws.close();
     });
 
+    return getSocketMessages(version, path);
+  }
+
+  private void testWriteSingleTextMessageAsBinary(Buffer messageToSend, WebsocketVersion version) {
+    List<Buffer> messagesToSend = Collections.singletonList(messageToSend);
+    SocketMessages socketMessages = testWriteTextMessagesAsBinary(messagesToSend, version);
+    assertEquals("Did not receive all messages",
+      messagesToSend.stream().map(b -> b.toString()).collect(Collectors.toList()), socketMessages.getReceivedMessages());
+    List<Throwable> expectedExceptions = Collections.emptyList();
+    assertEquals("Should not have received any exceptions", expectedExceptions, socketMessages.getReceivedExceptions());
+  }
+
+  private SocketMessages testWriteTextMessagesAsBinary(List<Buffer> messagesToSend, WebsocketVersion version) {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      for (Buffer messageToSend : messagesToSend) {
+        ws.writeBinaryTextMessage(messageToSend);
+      }
+      ws.close();
+    });
+
+    return getSocketMessages(version, path);
+  }
+
+  private SocketMessages getSocketMessages(WebsocketVersion version, String path) {
     List<String> receivedMessages = new ArrayList<>();
     List<Throwable> receivedExceptions = new ArrayList<>();
     server.listen(ar -> {

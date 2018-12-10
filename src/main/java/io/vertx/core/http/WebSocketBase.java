@@ -138,6 +138,16 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase writeTextMessage(String text);
 
   /**
+   * Writes a (potentially large) piece of binary text data to the connection.
+   * This data might be written as multiple frames if it exceeds the maximum WebSocket frame size.
+   *
+   * @param textBuffer  the data to write
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  WebSocketBase writeBinaryTextMessage(Buffer textBuffer);
+
+  /**
    * Writes a ping to the connection. This will be written in a single frame. Ping frames may be at most 125 bytes (octets).
    * <p>
    * This method should not be used to write application data and should only be used for implementing a keep alive or
