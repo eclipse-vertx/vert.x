@@ -11,6 +11,20 @@
 
 package io.vertx.core.file.impl;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -25,20 +39,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.streams.impl.InboundBuffer;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -71,6 +71,7 @@ public class AsyncFileImpl implements AsyncFile {
   private InboundBuffer<Buffer> queue;
   private Handler<Void> endHandler;
   private long readPos;
+  private long readLength = Long.MAX_VALUE;
 
   AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextInternal context) {
     if (!options.isRead() && !options.isWrite()) {
@@ -131,7 +132,7 @@ public class AsyncFileImpl implements AsyncFile {
     Arguments.require(length >= 0, "length must be >= 0");
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
-    doRead(buffer, offset, bb, position, handler);
+    doRead(buffer, offset, bb, position, getReadSize(), handler);
     return this;
   }
 
@@ -286,6 +287,12 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
+  public synchronized AsyncFile setReadLength(long readLength) {
+    this.readLength = readLength;
+    return this;
+  }
+
+  @Override
   public synchronized AsyncFile setWritePos(long writePos) {
     this.writePos = writePos;
     return this;
@@ -334,24 +341,30 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doRead(ByteBuffer bb) {
     Buffer buff = Buffer.buffer(readBufferSize);
-    doRead(buff, 0, bb, readPos, ar -> {
-      if (ar.succeeded()) {
-        Buffer buffer = ar.result();
-        if (buffer.length() == 0) {
-          // Empty buffer represents end of file
-          handleEnd();
-        } else {
-          readPos += buffer.length();
-          if (queue.write(buffer)) {
-            doRead(bb);
-          }
-        }
-      } else {
+    int readSize = getReadSize();
+    doRead(buff, 0, bb, readPos, readSize, ar -> {
+      if (!ar.succeeded()) {
         handleException(ar.cause());
+        return;
+      }
+      Buffer buffer = ar.result();
+      if (buffer.length() == 0) {
+        // Empty buffer represents end of file
+        handleEnd();
+        return;
+      }
+      readPos += buffer.length();
+      readLength -= buffer.length();
+      if (queue.write(buffer)) {
+        doRead(bb);
       }
     });
   }
 
+  private int getReadSize() {
+      return (int) Math.min((long)readBufferSize, readLength);
+  }
+  
   private synchronized void handleEnd() {
     queue.handler(null);
     if (endHandler != null) {
@@ -418,12 +431,16 @@ public class AsyncFileImpl implements AsyncFile {
     });
   }
 
-  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, Handler<AsyncResult<Buffer>> handler) {
-
+  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, int readSize, 
+      Handler<AsyncResult<Buffer>> handler) {
+    if (readSize < buff.capacity()) {
+      buff.limit(readSize);
+    }
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       long pos = position;
-
+      int size = readSize;
+      
       private void done() {
         context.runOnContext((v) -> {
           buff.flip();
@@ -437,14 +454,22 @@ public class AsyncFileImpl implements AsyncFile {
         if (bytesRead == -1) {
           //End of file
           done();
-        } else if (buff.hasRemaining()) {
-          // partial read
-          pos += bytesRead;
-          // resubmit
-          doRead(writeBuff, offset, buff, pos, handler);
-        } else {
-          // It's been fully written
+          return;
+        } 
+        
+        if (!buff.hasRemaining()) {
           done();
+          return;
+        }
+
+        // partial read
+        pos += bytesRead;
+        size -= bytesRead;
+        if (size == 0) {
+          done();
+        } else {
+          // resubmit
+          doRead(writeBuff, offset, buff, pos, size, handler);
         }
       }
 
