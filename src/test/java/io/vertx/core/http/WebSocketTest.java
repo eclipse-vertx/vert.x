@@ -1372,7 +1372,7 @@ public class WebSocketTest extends VertxTestBase {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       for (Buffer messageToSend : messagesToSend) {
-        ws.writeBinaryTextMessage(messageToSend);
+        ws.writeTextMessage(messageToSend);
       }
       ws.close();
     });

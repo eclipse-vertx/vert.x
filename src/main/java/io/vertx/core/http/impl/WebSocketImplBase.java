@@ -187,7 +187,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public S writeBinaryTextMessage(Buffer textBuffer) {
+  public S writeTextMessage(Buffer textBuffer) {
     synchronized (conn) {
       checkClosed();
       writePartialMessage(FrameType.TEXT, textBuffer, 0);

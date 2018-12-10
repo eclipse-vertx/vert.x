@@ -145,7 +145,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  WebSocketBase writeBinaryTextMessage(Buffer textBuffer);
+  WebSocketBase writeTextMessage(Buffer textBuffer);
 
   /**
    * Writes a ping to the connection. This will be written in a single frame. Ping frames may be at most 125 bytes (octets).
