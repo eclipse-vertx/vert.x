@@ -12,7 +12,10 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
@@ -406,8 +409,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void close() {
-    endReadAndFlush();
-    shutdown(0L);
+    ChannelPromise promise = chctx.newPromise();
+    flush(promise);
+    promise.addListener((ChannelFutureListener) future -> shutdown(0L));
   }
 
   @Override
