@@ -11,6 +11,7 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
@@ -83,7 +84,7 @@ public abstract class ConnectionBase {
     return (VertxHandler) chctx.handler();
   }
 
-  protected synchronized final void endReadAndFlush() {
+  synchronized final void endReadAndFlush() {
     if (read) {
       read = false;
       if (needsFlush && writeInProgress == 0) {
@@ -129,6 +130,33 @@ public abstract class ConnectionBase {
     writeToChannel(obj, voidPromise);
   }
 
+  /**
+   * Asynchronous flush.
+   */
+  public final void flush() {
+    flush(voidPromise);
+  }
+
+  /**
+   * Asynchronous flush.
+   *
+   * @param promise the promise resolved when flush occurred
+   */
+  public final void flush(ChannelPromise promise) {
+    if (chctx.executor().inEventLoop()) {
+      synchronized (this) {
+        if (needsFlush) {
+          needsFlush = false;
+          chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+          return;
+        }
+      }
+      promise.setSuccess();
+    } else {
+      chctx.executor().execute(() -> flush(promise));
+    }
+  }
+
   // This is a volatile read inside the Netty channel implementation
   public boolean isNotWritable() {
     return !chctx.channel().isWritable();
@@ -139,8 +167,9 @@ public abstract class ConnectionBase {
    */
   public void close() {
     // make sure everything is flushed out on close
-    endReadAndFlush();
-    chctx.channel().close();
+    ChannelPromise promise = chctx.newPromise();
+    flush(promise);
+    promise.addListener((ChannelFutureListener) future -> chctx.channel().close());
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
