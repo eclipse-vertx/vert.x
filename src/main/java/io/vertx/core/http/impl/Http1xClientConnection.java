@@ -164,7 +164,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     socket.metric(metric());
 
     // Flush out all pending data
-    endReadAndFlush();
+    flush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
     ChannelPipeline pipeline = chctx.pipeline();
@@ -916,15 +916,18 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       super.close();
     } else {
       // make sure everything is flushed out on close
-      endReadAndFlush();
+      ChannelPromise promise = chctx.newPromise();
+      flush(promise);
       // close the websocket connection by sending a close frame with specified payload.
-      CloseWebSocketFrame closeFrame;
-      if (byteBuf != null) {
-        closeFrame = new CloseWebSocketFrame(true, 0, byteBuf);
-      } else {
-        closeFrame = new CloseWebSocketFrame(true, 0, 1000, null);
-      }
-      handshaker.close(chctx.channel(), closeFrame);
+      promise.addListener((ChannelFutureListener) future -> {
+        CloseWebSocketFrame closeFrame;
+        if (byteBuf != null) {
+          closeFrame = new CloseWebSocketFrame(true, 0, byteBuf);
+        } else {
+          closeFrame = new CloseWebSocketFrame(true, 0, 1000, null);
+        }
+        handshaker.close(chctx.channel(), closeFrame);
+      });
     }
   }
 
