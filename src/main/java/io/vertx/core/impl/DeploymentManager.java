@@ -25,6 +25,7 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -32,11 +33,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -380,10 +384,76 @@ public class DeploymentManager {
     return factoryList;
   }
 
+  private static URL mapToURL(String path) {
+    try {
+        return new URL(path); 
+    } catch (MalformedURLException e) {
+      try {
+        return new File(path).toURI().toURL();
+      } catch (MalformedURLException e1) {
+        throw new IllegalArgumentException(e1);
+      }
+    }
+  }
+
+  private static List<URL> extractCPFromProperty() {
+    List<URL> classpathURLs = new ArrayList<>();
+    String classpath = System.getProperty("java.class.path");
+    if (Objects.nonNull(classpath)) {
+      for (String path : classpath.split(File.pathSeparator)) {
+        classpathURLs.add(mapToURL(path));
+      }
+    }
+    return classpathURLs;
+  }
+
+  // VisibleForTesting
+  static List<URL> extractCPByManifest(ClassLoader current) {
+    List<URL> classpathURLs = new ArrayList<>();
+    String searchFile = "META-INF/MANIFEST.MF";
+    Enumeration<URL> urls;
+    try {
+      urls = current.getResources(searchFile);
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+    for (URL url : Collections.list(urls)) {
+      String urlString = url.toExternalForm();
+      if ("jar".equals(url.getProtocol().toLowerCase())) {
+        String prefix = "jar:";
+        String suffix = "!/" + searchFile;
+        urlString = urlString.replace(prefix, "").replace(suffix, "").trim();
+      }
+      // handle exploded jars
+      urlString = urlString.replace(searchFile, "").trim();
+      try {
+        classpathURLs.add(new URL(urlString));
+      } catch (MalformedURLException e) {
+        throw new IllegalStateException(e);
+      }
+    }
+    return classpathURLs;
+  }
+
+  // VisibleForTesting
+  static List<URL> extractClasspath(ClassLoader current) {
+    if (current instanceof URLClassLoader) {
+      URLClassLoader urlc = (URLClassLoader)current;
+      return Arrays.asList(urlc.getURLs());
+    } else {
+      List<URL> classpathURLs = extractCPFromProperty();
+      for (URL url : extractCPByManifest(current)) {
+        if (!classpathURLs.contains(url)) {
+          classpathURLs.add(url); 
+        }
+      }
+      return classpathURLs;
+    }
+  }
+
   /**
-   * <strong>IMPORTANT</strong> - Isolation groups are not supported on Java 9+ because the application classloader is not
-   * an URLClassLoader anymore. Thus we can't extract the list of jars to configure the IsolatedClassLoader.
-   *
+   * <strong>IMPORTANT</strong> - Isolation groups are not supported if modules are used. Because modules are living
+   * in the runtime image and there is no way, to extract these modules.
    */
   private ClassLoader getClassLoader(DeploymentOptions options) {
     String isolationGroup = options.getIsolationGroup();
@@ -391,32 +461,20 @@ public class DeploymentManager {
     if (isolationGroup == null) {
       cl = getCurrentClassLoader();
     } else {
-      // IMPORTANT - Isolation groups are not supported on Java 9+, because the system classloader is not an URLClassLoader
-      // anymore. Thus we can't extract the paths from the classpath and isolate the loading.
       synchronized (this) {
         cl = classloaders.get(isolationGroup);
         if (cl == null) {
           ClassLoader current = getCurrentClassLoader();
-          if (!(current instanceof URLClassLoader)) {
-            throw new IllegalStateException("Current classloader must be URLClassLoader");
-          }
           List<URL> urls = new ArrayList<>();
           // Add any extra URLs to the beginning of the classpath
           List<String> extraClasspath = options.getExtraClasspath();
           if (extraClasspath != null) {
             for (String pathElement: extraClasspath) {
-              File file = new File(pathElement);
-              try {
-                URL url = file.toURI().toURL();
-                urls.add(url);
-              } catch (MalformedURLException e) {
-                throw new IllegalStateException(e);
-              }
+              urls.add(mapToURL(pathElement));
             }
           }
           // And add the URLs of the Vert.x classloader
-          URLClassLoader urlc = (URLClassLoader)current;
-          urls.addAll(Arrays.asList(urlc.getURLs()));
+          urls.addAll(extractClasspath(current));
 
           // Create an isolating cl with the urls
           cl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
