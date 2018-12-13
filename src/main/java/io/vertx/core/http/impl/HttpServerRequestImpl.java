@@ -85,7 +85,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private boolean ended;
   private long bytesRead;
 
-  private boolean paused;
   private InboundBuffer<Buffer> pending;
 
   HttpServerRequestImpl(Http1xServerConnection conn, DefaultHttpRequest request) {
@@ -128,7 +127,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   void handleContent(Buffer buffer) {
-    if (paused || pending != null) {
+    if (pending != null) {
       enqueueData(buffer);
     } else {
       handleData(buffer);
@@ -159,11 +158,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   void handlePipelined() {
-    paused = false;
     boolean end = ended;
     ended = false;
     handleBegin();
-    if (!paused && pending != null && pending.size() > 0) {
+    if (pending != null && pending.size() > 0) {
       pending.resume();
     }
     if (end) {
