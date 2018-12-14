@@ -31,7 +31,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "certValue":
           if (member.getValue() instanceof String) {
-            obj.setCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+            obj.setCertValue(base64Decode((String)member.getValue()));
           }
           break;
         case "certValues":
@@ -39,7 +39,7 @@ import java.time.format.DateTimeFormatter;
             java.util.ArrayList<io.vertx.core.buffer.Buffer> list =  new java.util.ArrayList<>();
             ((Iterable<Object>)member.getValue()).forEach( item -> {
               if (item instanceof String)
-                list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+                list.add(base64Decode((String)item));
             });
             obj.setCertValues(list);
           }
@@ -61,7 +61,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "keyValue":
           if (member.getValue() instanceof String) {
-            obj.setKeyValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+            obj.setKeyValue(base64Decode((String)member.getValue()));
           }
           break;
         case "keyValues":
@@ -69,12 +69,31 @@ import java.time.format.DateTimeFormatter;
             java.util.ArrayList<io.vertx.core.buffer.Buffer> list =  new java.util.ArrayList<>();
             ((Iterable<Object>)member.getValue()).forEach( item -> {
               if (item instanceof String)
-                list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+                list.add(base64Decode((String)item));
             });
             obj.setKeyValues(list);
           }
           break;
       }
+    }
+  }
+
+  private static final java.util.concurrent.atomic.AtomicBoolean base64WarningLogged = new java.util.concurrent.atomic.AtomicBoolean();
+
+  private static io.vertx.core.buffer.Buffer base64Decode(String value) {
+    try {
+      return io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getUrlDecoder().decode(value));
+    } catch (IllegalArgumentException e) {
+      io.vertx.core.buffer.Buffer result = io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode(value));
+      if (base64WarningLogged.compareAndSet(false, true)) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+        pw.println("Failed to decode a PemKeyCertOptions value with base64url encoding. Used the base64 fallback.");
+        e.printStackTrace(pw);
+        pw.close();
+        System.err.print(sw.toString());
+      }
+      return result;
     }
   }
 
@@ -90,7 +109,7 @@ import java.time.format.DateTimeFormatter;
     }
     if (obj.getCertValues() != null) {
       JsonArray array = new JsonArray();
-      obj.getCertValues().forEach(item -> array.add(java.util.Base64.getEncoder().encodeToString(item.getBytes())));
+      obj.getCertValues().forEach(item -> array.add(java.util.Base64.getUrlEncoder().encodeToString(item.getBytes())));
       json.put("certValues", array);
     }
     if (obj.getKeyPaths() != null) {
@@ -100,7 +119,7 @@ import java.time.format.DateTimeFormatter;
     }
     if (obj.getKeyValues() != null) {
       JsonArray array = new JsonArray();
-      obj.getKeyValues().forEach(item -> array.add(java.util.Base64.getEncoder().encodeToString(item.getBytes())));
+      obj.getKeyValues().forEach(item -> array.add(java.util.Base64.getUrlEncoder().encodeToString(item.getBytes())));
       json.put("keyValues", array);
     }
   }

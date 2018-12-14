@@ -26,10 +26,29 @@ import java.time.format.DateTimeFormatter;
           break;
         case "value":
           if (member.getValue() instanceof String) {
-            obj.setValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+            obj.setValue(base64Decode((String)member.getValue()));
           }
           break;
       }
+    }
+  }
+
+  private static final java.util.concurrent.atomic.AtomicBoolean base64WarningLogged = new java.util.concurrent.atomic.AtomicBoolean();
+
+  private static io.vertx.core.buffer.Buffer base64Decode(String value) {
+    try {
+      return io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getUrlDecoder().decode(value));
+    } catch (IllegalArgumentException e) {
+      io.vertx.core.buffer.Buffer result = io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode(value));
+      if (base64WarningLogged.compareAndSet(false, true)) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+        pw.println("Failed to decode a PfxOptions value with base64url encoding. Used the base64 fallback.");
+        e.printStackTrace(pw);
+        pw.close();
+        System.err.print(sw.toString());
+      }
+      return result;
     }
   }
 
@@ -45,7 +64,7 @@ import java.time.format.DateTimeFormatter;
       json.put("path", obj.getPath());
     }
     if (obj.getValue() != null) {
-      json.put("value", java.util.Base64.getEncoder().encodeToString(obj.getValue().getBytes()));
+      json.put("value", java.util.Base64.getUrlEncoder().encodeToString(obj.getValue().getBytes()));
     }
   }
 }

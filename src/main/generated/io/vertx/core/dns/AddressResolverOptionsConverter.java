@@ -36,7 +36,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "hostsValue":
           if (member.getValue() instanceof String) {
-            obj.setHostsValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+            obj.setHostsValue(base64Decode((String)member.getValue()));
           }
           break;
         case "maxQueries":
@@ -93,6 +93,25 @@ import java.time.format.DateTimeFormatter;
     }
   }
 
+  private static final java.util.concurrent.atomic.AtomicBoolean base64WarningLogged = new java.util.concurrent.atomic.AtomicBoolean();
+
+  private static io.vertx.core.buffer.Buffer base64Decode(String value) {
+    try {
+      return io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getUrlDecoder().decode(value));
+    } catch (IllegalArgumentException e) {
+      io.vertx.core.buffer.Buffer result = io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode(value));
+      if (base64WarningLogged.compareAndSet(false, true)) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+        pw.println("Failed to decode a AddressResolverOptions value with base64url encoding. Used the base64 fallback.");
+        e.printStackTrace(pw);
+        pw.close();
+        System.err.print(sw.toString());
+      }
+      return result;
+    }
+  }
+
    static void toJson(AddressResolverOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
@@ -105,7 +124,7 @@ import java.time.format.DateTimeFormatter;
       json.put("hostsPath", obj.getHostsPath());
     }
     if (obj.getHostsValue() != null) {
-      json.put("hostsValue", java.util.Base64.getEncoder().encodeToString(obj.getHostsValue().getBytes()));
+      json.put("hostsValue", java.util.Base64.getUrlEncoder().encodeToString(obj.getHostsValue().getBytes()));
     }
     json.put("maxQueries", obj.getMaxQueries());
     json.put("ndots", obj.getNdots());
