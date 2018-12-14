@@ -138,7 +138,7 @@ public class JsonMapperTest extends VertxTestBase {
   public void testBytesDecoding() {
     Pojo original = new Pojo();
     original.bytes = TestUtils.randomByteArray(12);
-    Pojo decoded = Json.decodeValue("{\"bytes\":\"" + Base64.getEncoder().encodeToString(original.bytes) + "\"}", Pojo.class);
+    Pojo decoded = Json.decodeValue("{\"bytes\":\"" + Base64.getUrlEncoder().encodeToString(original.bytes) + "\"}", Pojo.class);
     assertArrayEquals(original.bytes, decoded.bytes);
   }
 

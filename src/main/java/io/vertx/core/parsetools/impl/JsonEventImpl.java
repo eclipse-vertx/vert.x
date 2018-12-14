@@ -182,7 +182,7 @@ public class JsonEventImpl implements JsonEvent {
 
   @Override
   public Buffer binaryValue() {
-    return value != null ? Buffer.buffer(Base64.getDecoder().decode((String) value)) : null;
+    return value != null ? Buffer.buffer(Base64.getUrlDecoder().decode((String) value)) : null;
   }
 
   @Override

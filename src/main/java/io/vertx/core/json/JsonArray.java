@@ -215,7 +215,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     if (val == null) {
       return null;
     } else {
-      return Base64.getDecoder().decode(val);
+      return Base64.getUrlDecoder().decode(val);
     }
   }
 
@@ -411,7 +411,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    */
   public JsonArray add(byte[] value) {
     Objects.requireNonNull(value);
-    list.add(Base64.getEncoder().encodeToString(value));
+    list.add(Base64.getUrlEncoder().encodeToString(value));
     return this;
   }
 

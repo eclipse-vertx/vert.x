@@ -255,7 +255,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public byte[] getBinary(String key) {
     Objects.requireNonNull(key);
     String encoded = (String) map.get(key);
-    return encoded == null ? null : Base64.getDecoder().decode(encoded);
+    return encoded == null ? null : Base64.getUrlDecoder().decode(encoded);
   }
 
   /**
@@ -446,7 +446,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public byte[] getBinary(String key, byte[] def) {
     Objects.requireNonNull(key);
     Object val = map.get(key);
-    return val != null || map.containsKey(key) ? (val == null ? null : Base64.getDecoder().decode((String)val)) : def;
+    return val != null || map.containsKey(key) ? (val == null ? null : Base64.getUrlDecoder().decode((String) val)) : def;
   }
 
   /**
@@ -652,7 +652,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public JsonObject put(String key, byte[] value) {
     Objects.requireNonNull(key);
-    map.put(key, value == null ? null : Base64.getEncoder().encodeToString(value));
+    map.put(key, value == null ? null : Base64.getUrlEncoder().encodeToString(value));
     return this;
   }
 

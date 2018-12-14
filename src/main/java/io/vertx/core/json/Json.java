@@ -208,7 +208,7 @@ public class Json {
         val = new JsonArray((List)val);
       }
     } else if (val instanceof byte[]) {
-      val = Base64.getEncoder().encodeToString((byte[])val);
+      val = Base64.getUrlEncoder().encodeToString((byte[]) val);
     } else if (val instanceof Instant) {
       val = ISO_INSTANT.format((Instant) val);
     } else {
@@ -259,7 +259,7 @@ public class Json {
 
     @Override
     public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeString(Base64.getEncoder().encodeToString(value));
+      jgen.writeString(Base64.getUrlEncoder().encodeToString(value));
     }
   }
 
@@ -269,7 +269,7 @@ public class Json {
     public byte[] deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
       String text = p.getText();
       try {
-        return Base64.getDecoder().decode(text);
+        return Base64.getUrlDecoder().decode(text);
       } catch (IllegalArgumentException e) {
         throw new InvalidFormatException(p, "Expected a base64 encoded byte array", text, Instant.class);
       }

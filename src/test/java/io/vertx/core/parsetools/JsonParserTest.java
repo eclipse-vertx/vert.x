@@ -22,25 +22,14 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static java.time.format.DateTimeFormatter.*;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -248,7 +237,7 @@ public class JsonParserTest {
   @Test
   public void testBinaryValue() {
     byte[] value = TestUtils.randomByteArray(10);
-    String encoded = Base64.getEncoder().encodeToString(value);
+    String encoded = Base64.getUrlEncoder().encodeToString(value);
     testValue('"' + encoded + '"', event -> {
       assertEquals(encoded, event.value());
       assertFalse(event.isArray());

@@ -15,11 +15,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * An internal conversion helper, later it could be merged with JsonObject mapFrom/mapTo and moved in Json class
@@ -47,7 +43,7 @@ public class ConversionHelper {
     } else if (obj instanceof CharSequence) {
       return obj.toString();
     } else if (obj instanceof Buffer) {
-      return Base64.getEncoder().encodeToString(((Buffer)obj).getBytes());
+      return Base64.getUrlEncoder().encodeToString(((Buffer) obj).getBytes());
     }
     return obj;
   }

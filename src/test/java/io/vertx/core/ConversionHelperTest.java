@@ -19,13 +19,7 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -106,7 +100,7 @@ public class ConversionHelperTest {
     assertEquals("the_string", map.get("string"));
     assertEquals(4, map.get("integer"));
     assertEquals(true, map.get("boolean"));
-    assertEquals("hello", new String(Base64.getDecoder().decode((String)map.get("binary"))));
+    assertEquals("hello", new String(Base64.getUrlDecoder().decode((String) map.get("binary"))));
     assertEquals(Collections.singletonMap("nested", 4), map.get("object"));
     assertEquals(Arrays.asList(1, 2, 3), map.get("array"));
   }
@@ -125,7 +119,7 @@ public class ConversionHelperTest {
     assertEquals("the_string", map.get(0));
     assertEquals(4, map.get(1));
     assertEquals(true, map.get(2));
-    assertEquals("hello", new String(Base64.getDecoder().decode((String)map.get(3))));
+    assertEquals("hello", new String(Base64.getUrlDecoder().decode((String) map.get(3))));
     assertEquals(Collections.singletonMap("nested", 4), map.get(4));
     assertEquals(Arrays.asList(1, 2, 3), map.get(5));
   }
