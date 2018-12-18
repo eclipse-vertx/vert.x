@@ -14,7 +14,9 @@ package io.vertx.core.streams;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.streams.impl.PipeImpl;
 
 /**
  * Represents a stream of items that can be read from.
@@ -95,4 +97,29 @@ public interface ReadStream<T> extends StreamBase {
   @Fluent
   ReadStream<T> endHandler(@Nullable Handler<Void> endHandler);
 
+  default Pipe<T> pipe() {
+    pause();
+    return new PipeImpl<>(this);
+  }
+
+  /**
+   * Like {@link #pipeTo(WriteStream, Handler)} but with no completion handler.
+   */
+  default void pipeTo(WriteStream<T> ws) {
+    new PipeImpl<>(this).to(ws);
+  }
+
+  /**
+   * Pipe this {@code ReadStream} to the {@code WriteStream}.
+   * <p>
+   * Elements emitted by this stream will be written to the write stream until this stream ends or fails.
+   * <p>
+   * Once this stream has ended or failed, the write streamm will be ended and the {@code handler} will be
+   * called with the result.
+   *
+   * @param ws the write stream
+   */
+  default void pipeTo(WriteStream<T> ws, Handler<AsyncResult<Void>> handler) {
+    new PipeImpl<>(this).to(ws, handler);
+  }
 }

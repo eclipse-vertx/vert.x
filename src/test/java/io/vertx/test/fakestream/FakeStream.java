@@ -39,9 +39,19 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   private boolean ended;
   private boolean overflow;
   private Handler<Void> drainHandler;
+  private int pauseCount;
+  private int resumeCount;
 
   public FakeStream() {
     pending = new ArrayDeque<>();
+  }
+
+  public synchronized int pauseCount() {
+    return pauseCount;
+  }
+
+  public synchronized int resumeCount() {
+    return resumeCount;
   }
 
   public synchronized boolean isPaused() {
@@ -115,6 +125,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
 
   @Override
   public synchronized FakeStream<T> pause() {
+    pauseCount++;
     demand = 0L;
     return this;
   }
@@ -163,6 +174,9 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
 
   @Override
   public FakeStream<T> resume() {
+    synchronized (this) {
+      resumeCount++;
+    }
     return fetch(Long.MAX_VALUE);
   }
 
