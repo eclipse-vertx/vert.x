@@ -10,22 +10,15 @@
  */
 package io.vertx.core.http.impl.pool;
 
-import io.netty.channel.Channel;
-import io.vertx.core.impl.ContextInternal;
-
 public class ConnectResult<C> {
 
   private final C conn;
   private final long concurrency;
-  private final Channel channel;
-  private final ContextInternal context;
   private final long weight;
 
-  public ConnectResult(C connection, long concurrency, Channel channel, ContextInternal context, long weight) {
+  public ConnectResult(C connection, long concurrency, long weight) {
     this.conn = connection;
     this.concurrency = concurrency;
-    this.channel = channel;
-    this.context = context;
     this.weight = weight;
   }
 
@@ -35,14 +28,6 @@ public class ConnectResult<C> {
 
   public long concurrency() {
     return concurrency;
-  }
-
-  public Channel channel() {
-    return channel;
-  }
-
-  public ContextInternal context() {
-    return context;
   }
 
   public long weight() {

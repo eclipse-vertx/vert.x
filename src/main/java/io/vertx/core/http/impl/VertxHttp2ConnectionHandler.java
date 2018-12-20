@@ -152,7 +152,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       super.userEventTriggered(ctx, evt);
     } finally {
       if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
-        ctx.close();
+        connection.handleIdle();
       }
     }
   }

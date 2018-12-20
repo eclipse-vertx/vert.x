@@ -31,7 +31,6 @@ import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.RandomAccessFile;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -2077,7 +2076,7 @@ public class Http1xTest extends HttpTest {
     CountDownLatch latch2 = new CountDownLatch(1);
     int numReqs = 16;
     int numConns = 8;
-    // There should be a context per *connection*
+    // There should be a context per *endpoint*
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(numConns));
     for (int i = 0; i < numReqs; i++) {
@@ -2087,7 +2086,7 @@ public class Http1xTest extends HttpTest {
         if (cnt.incrementAndGet() == numReqs) {
           int size = contexts.size();
           // Some connections might get closed if response comes back quick enough hence the >=
-          assertTrue("Expected " + size + " >= " + numConns, size >= numConns);
+          assertEquals(1, size);
           latch2.countDown();
         }
       }).exceptionHandler(this::fail).end();
