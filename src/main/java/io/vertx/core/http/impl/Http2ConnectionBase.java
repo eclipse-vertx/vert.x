@@ -117,6 +117,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     // Handled by HTTP/2
   }
 
+  @Override
+  protected void handleIdle() {
+    super.handleIdle();
+  }
+
   synchronized boolean isClosed() {
     return closed;
   }
@@ -164,21 +169,22 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     checkShutdownHandler();
   }
 
-  void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+  boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
     synchronized (this) {
       if (goneAway) {
-        return;
+        return false;
       }
       goneAway = true;
     }
     checkShutdownHandler();
+    return true;
   }
 
-  void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+  boolean onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
     Handler<GoAway> handler;
     synchronized (this) {
       if (goneAway) {
-        return;
+        return false;
       }
       goneAway = true;
       handler = goAwayHandler;
@@ -188,6 +194,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       context.executeFromIO(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
     }
     checkShutdownHandler();
+    return true;
   }
 
   // Http2FrameListener

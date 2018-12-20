@@ -59,15 +59,21 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  synchronized void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    listener.onDiscard();
-    super.onGoAwaySent(lastStreamId, errorCode, debugData);
+  synchronized boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+    boolean goneAway = super.onGoAwaySent(lastStreamId, errorCode, debugData);
+    if (goneAway) {
+      listener.onEvict();
+    }
+    return goneAway;
   }
 
   @Override
-  synchronized void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    listener.onDiscard();
-    super.onGoAwayReceived(lastStreamId, errorCode, debugData);
+  synchronized boolean onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+    boolean goneAway = super.onGoAwayReceived(lastStreamId, errorCode, debugData);
+    if (goneAway) {
+      listener.onEvict();
+    }
+    return goneAway;
   }
 
   @Override
@@ -466,7 +472,17 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       return conn.toNetSocket(this);
     }
   }
-  
+
+  @Override
+  protected void handleIdle() {
+    synchronized (this) {
+      if (streams.isEmpty()) {
+        return;
+      }
+    }
+    super.handleIdle();
+  }
+
   public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
     HttpClientImpl client,
     Object queueMetric,
@@ -506,7 +522,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (metrics != null) {
         metrics.endpointDisconnected(queueMetric, conn.metric());
       }
-      listener.onDiscard();
+      listener.onEvict();
     });
     return handler;
   }

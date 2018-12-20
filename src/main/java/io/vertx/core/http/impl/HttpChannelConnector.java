@@ -104,22 +104,6 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     }
   }
 
-  @Override
-  public void activate(HttpClientConnection conn) {
-    if (options.getIdleTimeout() > 0) {
-      ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
-      pipeline.addFirst("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
-    }
-  }
-
-  @Override
-  public void deactivate(HttpClientConnection conn) {
-    if (options.getIdleTimeout() > 0) {
-      ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
-      pipeline.remove("idle");
-    }
-  }
-
   private void doConnect(
     ConnectionListener<HttpClientConnection> listener,
     ContextInternal context,
@@ -187,10 +171,15 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
-    // No specific options
+    if (options.getIdleTimeout() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+    }
   }
 
   private void applyHttp1xConnectionOptions(ChannelPipeline pipeline) {
+    if (options.getIdleTimeout() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+    }
     if (options.getLogActivity()) {
       pipeline.addLast("logging", new LoggingHandler());
     }
@@ -228,13 +217,13 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     });
     clientHandler.addHandler(conn -> {
       if (upgrade) {
-        future.complete(new ConnectResult<>(new Http2UpgradedClientConnection(client, conn), 1, ch, context, http2Weight));
+        future.complete(new ConnectResult<>(new Http2UpgradedClientConnection(client, conn), 1, http2Weight));
       } else {
-        future.complete(new ConnectResult<>(conn, http1MaxConcurrency, ch, context, http1Weight));
+        future.complete(new ConnectResult<>(conn, http1MaxConcurrency, http1Weight));
       }
     });
     clientHandler.removeHandler(conn -> {
-      listener.onDiscard();
+      listener.onEvict();
     });
     ch.pipeline().addLast("handler", clientHandler);
   }
@@ -245,7 +234,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                               Future<ConnectResult<HttpClientConnection>> future) {
     try {
       VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, endpointMetric, listener, context, null, (conn, concurrency) -> {
-        future.complete(new ConnectResult<>(conn, concurrency, ch, context, http2Weight));
+        future.complete(new ConnectResult<>(conn, concurrency, http2Weight));
       });
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
