@@ -232,6 +232,17 @@ public abstract class ConnectionBase {
     }
   }
 
+  /**
+   * Called by the Netty handler when the connection becomes idle. The default implementation closes the
+   * connection.
+   * <p/>
+   * Subclasses can override it to prevent the idle event to happen (e.g when the connection is pooled) or
+   * perform extra work when the idle event happens.
+   */
+  protected void handleIdle() {
+    chctx.close();
+  }
+
   protected abstract void handleInterestedOpsChanged();
 
   protected boolean supportsFileRegion() {

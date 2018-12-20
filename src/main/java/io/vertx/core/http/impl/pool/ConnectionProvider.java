@@ -32,20 +32,6 @@ public interface ConnectionProvider<C> {
   void connect(ConnectionListener<C> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<C>>> resultHandler);
 
   /**
-   * Callback before the connection becomes used (at least one usage).
-   *
-   * @param conn the connection
-   */
-  void activate(C conn);
-
-  /**
-   * Callback before the connection becomes unused (no usage).
-   *
-   * @param conn the connection
-   */
-  void deactivate(C conn);
-
-  /**
    * Close a connection.
    *
    * @param conn the connection
