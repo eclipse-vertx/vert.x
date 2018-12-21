@@ -18,6 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
+ * @deprecated see https://github.com/eclipse-vertx/vert.x/issues/2774
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class LoggerFactory {
@@ -60,6 +62,10 @@ public class LoggerFactory {
     LoggerFactory.delegateFactory = delegateFactory;
   }
 
+  /**
+   * @deprecated see https://github.com/eclipse-vertx/vert.x/issues/2774
+   */
+  @Deprecated
   public static Logger getLogger(final Class<?> clazz) {
     String name = clazz.isAnonymousClass() ?
       clazz.getEnclosingClass().getCanonicalName() :
@@ -67,6 +73,10 @@ public class LoggerFactory {
     return getLogger(name);
   }
 
+  /**
+   * @deprecated see https://github.com/eclipse-vertx/vert.x/issues/2774
+   */
+  @Deprecated
   public static Logger getLogger(final String name) {
     Logger logger = loggers.get(name);
 
@@ -85,6 +95,10 @@ public class LoggerFactory {
     return logger;
   }
 
+  /**
+   * @deprecated see https://github.com/eclipse-vertx/vert.x/issues/2774
+   */
+  @Deprecated
   public static void removeLogger(String name) {
     loggers.remove(name);
   }
