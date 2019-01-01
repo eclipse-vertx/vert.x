@@ -97,7 +97,12 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
       }
       handlers.wsHandler.handle(ws);
       if (!ws.isRejected()) {
-        ws.connectNow();
+        try {
+          ws.connectNow();
+        } catch (Exception e) {
+          // Handshake failed
+          // log it ?
+        }
       } else {
         req.response().setStatusCode(ws.getRejectedStatus().code()).end();
       }

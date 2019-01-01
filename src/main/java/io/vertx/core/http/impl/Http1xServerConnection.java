@@ -311,13 +311,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       return null;
     }
     Function<ServerWebSocketImpl, String> f = ws -> {
-      try {
-        handshaker.handshake(chctx.channel(), nettyReq);
-      } catch (WebSocketHandshakeException e) {
-        handleException(e);
-      } catch (Exception e) {
-        log.error("Failed to generate shake response", e);
-      }
+      handshaker.handshake(chctx.channel(), nettyReq);
       // remove compressor as its not needed anymore once connection was upgraded to websockets
       ChannelHandler handler = chctx.pipeline().get(HttpChunkContentCompressor.class);
       if (handler != null) {
@@ -342,34 +336,32 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     Channel ch = channel();
     String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
     if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
-      HttpUtils.sendError(ch, BAD_REQUEST, "\"Connection\" must be \"Upgrade\".");
+      HttpUtils.sendError(ch, BAD_REQUEST, "\"Connection\" header must be \"Upgrade\".");
       return null;
     }
-
     if (request.method() != HttpMethod.GET) {
       HttpUtils.sendError(ch, METHOD_NOT_ALLOWED, null);
       return null;
     }
-
+    String wsURL;
     try {
-
-      WebSocketServerHandshakerFactory factory =
-        new WebSocketServerHandshakerFactory(HttpUtils.getWebSocketLocation(request, isSSL()),
-          options.getWebsocketSubProtocols(),
-          options.perMessageWebsocketCompressionSupported() || options.perFrameWebsocketCompressionSupported(),
-          options.getMaxWebsocketFrameSize(), options.isAcceptUnmaskedFrames());
-
-      WebSocketServerHandshaker shake = factory.newHandshaker(request);
-
-      if (shake == null) {
-        log.error("Unrecognised websockets handshake");
-        WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
-      }
-
-      return shake;
+      wsURL = HttpUtils.getWebSocketLocation(request, isSSL());
     } catch (Exception e) {
-      throw new VertxException(e);
+      HttpUtils.sendError(ch, BAD_REQUEST, "Invalid request URI");
+      return null;
     }
+
+    WebSocketServerHandshakerFactory factory =
+      new WebSocketServerHandshakerFactory(wsURL,
+        options.getWebsocketSubProtocols(),
+        options.perMessageWebsocketCompressionSupported() || options.perFrameWebsocketCompressionSupported(),
+        options.getMaxWebsocketFrameSize(), options.isAcceptUnmaskedFrames());
+    WebSocketServerHandshaker shake = factory.newHandshaker(request);
+    if (shake == null) {
+      //log.error("Unrecognised websockets handshake");
+      WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
+    }
+    return shake;
   }
 
   NetSocket createNetSocket() {
