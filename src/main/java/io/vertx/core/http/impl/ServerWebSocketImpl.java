@@ -24,6 +24,7 @@ import javax.security.cert.X509Certificate;
 import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -154,7 +155,14 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   private void connect() {
-    subProtocol(handshaker.apply(this));
+    String res;
+    try {
+      res = handshaker.apply(this);
+    } catch (Exception e) {
+      HttpUtils.sendError(conn.channel(), BAD_REQUEST, "\"Connection\" header must be \"Upgrade\".");
+      throw e;
+    }
+    subProtocol(res);
     connected = true;
   }
 

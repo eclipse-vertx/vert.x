@@ -1116,36 +1116,116 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
+  Function<Handler<HttpClientResponse>, HttpClientRequest> INVALID_MISSING_CONNECTION_HEADER = handler -> client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, "/some/path", handler)
+    .putHeader("Upgrade", "Websocket");
+
   @Test
-  public void testInvalidMissingConnectionHeader() throws Exception {
-    String path = "/some/path";
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setWebsocketSubProtocols("invalid")).websocketHandler(ws -> {
-    });
-    server.listen(onSuccess(ar -> {
-      client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, resp -> {
-        assertEquals(400, resp.statusCode());
-        resp.endHandler(v -> {
-          testComplete();
-        });
-      }).putHeader("Upgrade", "Websocket").end();
-    }));
+  public void testInvalidMissingConnectionHeader() {
+    testInvalidHandshake(INVALID_MISSING_CONNECTION_HEADER, false, false,400);
     await();
   }
 
   @Test
-  public void testInvalidMethod() throws Exception {
-    String path = "/some/path";
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setWebsocketSubProtocols("invalid")).websocketHandler(ws -> {
-    });
-    server.listen(onSuccess(ar -> {
-      client.head(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, path, resp -> {
-        assertEquals(405, resp.statusCode());
-        resp.endHandler(v -> {
+  public void testInvalidMissingConnectionHeaderRequestUpgrade() {
+    testInvalidHandshake(INVALID_MISSING_CONNECTION_HEADER, false, true,400);
+    await();
+  }
+
+  Function<Handler<HttpClientResponse>, HttpClientRequest> INVALID_HTTP_METHOD = handler -> client.head(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, "/some/path", handler)
+    .putHeader("Upgrade", "Websocket")
+    .putHeader("Connection", "Upgrade");
+
+  @Test
+  public void testInvalidMethod() {
+    testInvalidHandshake(INVALID_HTTP_METHOD, false, false,405);
+    await();
+  }
+
+  @Test
+  public void testInvalidMethodRequestUpgrade() {
+    testInvalidHandshake(INVALID_HTTP_METHOD, false, true,405);
+    await();
+  }
+
+  Function<Handler<HttpClientResponse>, HttpClientRequest> INVALID_URI = handler -> client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, ":", handler)
+    .putHeader("Upgrade", "Websocket")
+    .putHeader("Connection", "Upgrade");
+
+  @Test
+  public void testInvalidUri() {
+    testInvalidHandshake(INVALID_URI, false, false,400);
+    await();
+  }
+
+  @Test
+  public void testInvalidUriRequestUpgrade() {
+    testInvalidHandshake(INVALID_URI, false, true,400);
+    await();
+  }
+
+  Function<Handler<HttpClientResponse>, HttpClientRequest> INVALID_WEBSOCKET_VERSION = handler -> client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, "/some/path", handler)
+    .putHeader("Upgrade", "Websocket")
+    .putHeader("Sec-Websocket-Version", "15")
+    .putHeader("Connection", "Upgrade");
+
+  @Test
+  public void testInvalidWebSocketVersion() {
+    testInvalidHandshake(INVALID_WEBSOCKET_VERSION, false, false,426);
+    await();
+  }
+
+  @Test
+  public void testInvalidWebSocketVersionRequestUpgrade() {
+    testInvalidHandshake(INVALID_WEBSOCKET_VERSION, false, true,426);
+    await();
+  }
+
+  Function<Handler<HttpClientResponse>, HttpClientRequest> HANDSHAKE_EXCEPTION = handler -> client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTPS_HOST, "/some/path", handler)
+    .putHeader("Upgrade", "Websocket")
+    .putHeader("Sec-Websocket-Version", "13")
+    .putHeader("Connection", "Upgrade");
+
+  @Test
+  public void testHandshakeException() {
+    testInvalidHandshake(HANDSHAKE_EXCEPTION, true, false,400);
+    await();
+  }
+
+  @Test
+  public void testHandshakeExceptionRequestUpgrade() {
+    testInvalidHandshake(HANDSHAKE_EXCEPTION, true, true,400);
+    await();
+  }
+
+  // Check client response with the ws handler
+  private void testInvalidHandshake(Function<Handler<HttpClientResponse>, HttpClientRequest> requestProvider,
+                                    boolean expectEvent,
+                                    boolean upgradeRequest,
+                                    int expectedStatus) {
+    if (upgradeRequest) {
+      server = vertx.createHttpServer().websocketHandler(ws -> {
+        // Check we can get notified
+        // handshake fails after this method returns and does not reject the ws
+        assertTrue(expectEvent);
+      });
+    } else {
+      server = vertx.createHttpServer().requestHandler(req -> {
+        try {
+          req.upgrade();
+        } catch (Exception e) {
+          // Expected
+        }
+      });
+    }
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(ar -> {
+      HttpClientRequest req = requestProvider.apply(resp -> {
+        assertEquals(expectedStatus, resp.statusCode());
+        resp.endHandler(v1 -> {
           testComplete();
         });
-      }).putHeader("Upgrade", "Websocket").putHeader("Connection", "Upgrade").end();
+      });
+      req.end();
     }));
-    await();
   }
 
   private void testReject(WebsocketVersion version, Integer rejectionStatus, int expectedRejectionStatus) throws Exception {
