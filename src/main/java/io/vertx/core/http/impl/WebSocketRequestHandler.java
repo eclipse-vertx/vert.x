@@ -18,6 +18,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
+import static io.vertx.core.http.HttpHeaders.UPGRADE;
+import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
@@ -38,7 +40,10 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
 
   @Override
   public void handle(HttpServerRequest req) {
-    if (req.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
+    if (req.headers()
+      .contains(UPGRADE, WEBSOCKET, true)
+      || handlers.requestHandler == null) {
+      // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
       handle((HttpServerRequestImpl) req);
     } else {
       handlers.requestHandler.handle(req);
@@ -86,6 +91,10 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
     req.setRequest(nettyReq);
     if (handlers.wsHandler != null) {
       ServerWebSocketImpl ws = ((Http1xServerConnection)req.connection()).createWebSocket(req);
+      if (ws == null) {
+        // Response is already sent
+        return;
+      }
       handlers.wsHandler.handle(ws);
       if (!ws.isRejected()) {
         ws.connectNow();

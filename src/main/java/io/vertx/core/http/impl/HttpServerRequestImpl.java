@@ -425,6 +425,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public ServerWebSocket upgrade() {
     ServerWebSocketImpl ws = conn.createWebSocket(this);
+    if (ws == null) {
+      throw new IllegalStateException("Can't upgrade this request");
+    }
     ws.connectNow();
     return ws;
   }
