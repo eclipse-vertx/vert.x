@@ -2598,4 +2598,20 @@ public class WebSocketTest extends VertxTestBase {
     }));
     await();
   }
+
+  @Test
+  public void testNoRequestHandler() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.createHttpServer()
+      .websocketHandler(ws -> fail())
+      .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v -> latch.countDown()));
+    awaitLatch(latch);
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+      resp.endHandler(v -> {
+        assertEquals(400, resp.statusCode());
+        testComplete();
+      });
+    }));
+    await();
+  }
 }
