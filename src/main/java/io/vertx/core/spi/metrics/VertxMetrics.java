@@ -55,27 +55,6 @@ public interface VertxMetrics extends Metrics, Measured {
   }
 
   /**
-   * Called when a timer is created
-   * <p>
-   * No specific thread and context can be expected when this method is called.
-   *
-   * @param id the id of the timer
-   */
-  default void timerCreated(long id) {
-  }
-
-  /**
-   * Called when a timer has ended (setTimer) or has been cancelled.<p/>
-   * <p>
-   * No specific thread and context can be expected when this method is called.
-   *
-   * @param id        the id of the timer
-   * @param cancelled if the timer was cancelled by the user
-   */
-  default void timerEnded(long id, boolean cancelled) {
-  }
-
-  /**
    * Provides the event bus metrics SPI when the event bus is created.<p/>
    * <p>
    * No specific thread and context can be expected when this method is called.<p/>

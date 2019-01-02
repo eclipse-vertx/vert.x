@@ -43,12 +43,6 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   public void verticleUndeployed(Verticle verticle) {
   }
 
-  public void timerCreated(long id) {
-  }
-
-  public void timerEnded(long id, boolean cancelled) {
-  }
-
   public EventBusMetrics createEventBusMetrics() {
     return new FakeEventBusMetrics();
   }
