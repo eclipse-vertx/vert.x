@@ -65,16 +65,39 @@ And there we have it. The {@link io.vertx.core.streams.WriteStream#drainHandler}
 get called when the write queue is ready to accept more data, this resumes the `NetSocket` that
 allows more data to be read.
 
-Wanting to do this is quite common while writing Vert.x applications, so we provide a helper class
-called {@link io.vertx.core.streams.Pump} that does all of this hard work for you.
-You just feed it the `ReadStream` plus the `WriteStream` then start it:
+Wanting to do this is quite common while writing Vert.x applications, so we added the
+{@link io.vertx.core.streams.ReadStream#pipeTo} method that does all of this hard work for you.
+You just feed it the `WriteStream` and use it:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pump5(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe01(io.vertx.core.Vertx)}
 ----
 
-This does exactly the same thing as the more verbose example.
+This does exactly the same thing as the more verbose example, plus it handles stream failures and termination: the
+destination `WriteStream` is ended when the pipe completes with success or a failure.
+
+You can be notified when the operation completes:
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pipe02(io.vertx.core.net.NetServer)}
+----
+
+When you deal with an asynchronous destination, you can create a {@link io.vertx.core.streams.Pipe} instance that
+pauses the source and resumes it when the source is piped to the destination:
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pipe03(io.vertx.core.net.NetServer, io.vertx.core.file.FileSystem)}
+----
+
+As seen above, by default the destination is always ended when the stream completes, you can control this behavior
+on the pipe object:
+
+* {@link io.vertx.core.streams.Pipe#endOnFailure(boolean)} controls the behavior when a failure happens
+* {@link io.vertx.core.streams.Pipe#endOnSuccess(boolean)} controls the behavior when the read stream ends
+* {@link io.vertx.core.streams.Pipe#endOnComplete(boolean)} controls the behavior in all cases
 
 Let's now look at the methods on `ReadStream` and `WriteStream` in more detail:
 

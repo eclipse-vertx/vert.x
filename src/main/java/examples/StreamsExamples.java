@@ -14,9 +14,13 @@ package examples;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.Pump;
 
 /**
@@ -87,6 +91,49 @@ public class StreamsExamples {
     );
     server.connectHandler(sock -> {
       Pump.pump(sock, sock).start();
+    }).listen();
+  }
+
+  public void pipe01(Vertx vertx) {
+    NetServer server = vertx.createNetServer(
+      new NetServerOptions().setPort(1234).setHost("localhost")
+    );
+    server.connectHandler(sock -> {
+      sock.pipeTo(sock);
+    }).listen();
+  }
+
+  public void pipe02(NetServer server) {
+    server.connectHandler(sock -> {
+
+      // Pipe the socket providing an handler to be notified of the result
+      sock.pipeTo(sock, ar -> {
+        if (ar.succeeded()) {
+          System.out.println("Pipe succeeded");
+        } else {
+          System.out.println("Pipe failed");
+        }
+      });
+    }).listen();
+  }
+
+  public void pipe03(NetServer server, FileSystem fs) {
+    server.connectHandler(sock -> {
+
+      // Create a pipe that to use asynchronously
+      Pipe<Buffer> pipe = sock.pipe();
+
+      // Open a destination file
+      fs.open("/path/to/file", new OpenOptions(), ar -> {
+        if (ar.succeeded()) {
+          AsyncFile file = ar.result();
+
+          // Pipe the socket to the file and close the file at the end
+          pipe.to(file);
+        } else {
+          sock.close();
+        }
+      });
     }).listen();
   }
 }
