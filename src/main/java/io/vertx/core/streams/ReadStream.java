@@ -97,6 +97,13 @@ public interface ReadStream<T> extends StreamBase {
   @Fluent
   ReadStream<T> endHandler(@Nullable Handler<Void> endHandler);
 
+  /**
+   * Pause this stream and return a {@link Pipe} to transfer the elements of this stream to a destination {@link WriteStream}.
+   * <p/>
+   * The stream will be resumed when the pipe will be wired to a {@code WriteStream}.
+   *
+   * @return a pipe
+   */
   default Pipe<T> pipe() {
     pause();
     return new PipeImpl<>(this);
@@ -105,8 +112,8 @@ public interface ReadStream<T> extends StreamBase {
   /**
    * Like {@link #pipeTo(WriteStream, Handler)} but with no completion handler.
    */
-  default void pipeTo(WriteStream<T> ws) {
-    new PipeImpl<>(this).to(ws);
+  default void pipeTo(WriteStream<T> dst) {
+    new PipeImpl<>(this).to(dst);
   }
 
   /**
@@ -114,12 +121,12 @@ public interface ReadStream<T> extends StreamBase {
    * <p>
    * Elements emitted by this stream will be written to the write stream until this stream ends or fails.
    * <p>
-   * Once this stream has ended or failed, the write streamm will be ended and the {@code handler} will be
+   * Once this stream has ended or failed, the write stream will be ended and the {@code handler} will be
    * called with the result.
    *
-   * @param ws the write stream
+   * @param dst the destination write stream
    */
-  default void pipeTo(WriteStream<T> ws, Handler<AsyncResult<Void>> handler) {
-    new PipeImpl<>(this).to(ws, handler);
+  default void pipeTo(WriteStream<T> dst, Handler<AsyncResult<Void>> handler) {
+    new PipeImpl<>(this).to(dst, handler);
   }
 }

@@ -49,7 +49,7 @@ public class PipeImpl<T> implements Pipe<T> {
   }
 
   @Override
-  public synchronized Pipe<T> end(boolean end) {
+  public synchronized Pipe<T> endOnComplete(boolean end) {
     endOnSuccess = end;
     endOnFailure = end;
     return this;

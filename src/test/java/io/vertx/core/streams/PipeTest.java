@@ -23,6 +23,9 @@ public class PipeTest extends AsyncTestBase {
 
   private FakeStream<Object> dst;
   private List<Object> emitted;
+  private Object o1 = new Object();
+  private Object o2 = new Object();
+  private Object o3 = new Object();
 
   @Override
   protected void setUp() throws Exception {
@@ -34,9 +37,6 @@ public class PipeTest extends AsyncTestBase {
 
   @Test
   public void testSimple() {
-    Object o1 = new Object();
-    Object o2 = new Object();
-    Object o3 = new Object();
     FakeStream<Object> src = new FakeStream<>();
     src.pipeTo(dst, onSuccess(v -> {
       assertTrue(dst.isEnded());
@@ -100,6 +100,23 @@ public class PipeTest extends AsyncTestBase {
       testComplete();
     }));
     dst.fail(expected);
+    await();
+  }
+
+  @Test
+  public void testDoNotEndWriteStreamOnSuccess() {
+    FakeStream<Object> src = new FakeStream<>();
+    Pipe<Object> pipe = src.pipe();
+    pipe.endOnSuccess(false);
+    pipe.to(dst, onSuccess(v -> {
+      assertEquals(Arrays.asList(o1, o2, o3), emitted);
+      assertFalse(dst.isEnded());
+      testComplete();
+    }));
+    src.write(o1);
+    src.write(o2);
+    src.write(o3);
+    src.end();
     await();
   }
 

@@ -66,7 +66,7 @@ public interface Pipe<T> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  Pipe<T> end(boolean end);
+  Pipe<T> endOnComplete(boolean end);
 
   /**
    * Like {@link #to(WriteStream, Handler)} but without a completion handler
