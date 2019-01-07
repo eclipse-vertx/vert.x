@@ -30,7 +30,7 @@ import io.vertx.core.streams.Pump;
  */
 public class StreamsExamples {
 
-  public void pump1(Vertx vertx) {
+  public void pipe1(Vertx vertx) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -42,7 +42,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pump2(Vertx vertx) {
+  public void pipe2(Vertx vertx) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -56,7 +56,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pump3(Vertx vertx) {
+  public void pipe3(Vertx vertx) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -70,7 +70,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pump4(Vertx vertx) {
+  public void pipe4(Vertx vertx) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -87,7 +87,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pipe01(Vertx vertx) {
+  public void pipe5(Vertx vertx) {
     NetServer server = vertx.createNetServer(
       new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -96,7 +96,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pipe02(NetServer server) {
+  public void pipe6(NetServer server) {
     server.connectHandler(sock -> {
 
       // Pipe the socket providing an handler to be notified of the result
@@ -110,7 +110,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pipe03(NetServer server, FileSystem fs) {
+  public void pipe7(NetServer server, FileSystem fs) {
     server.connectHandler(sock -> {
 
       // Create a pipe that to use asynchronously
@@ -130,7 +130,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pipe04(Vertx vertx, FileSystem fs) {
+  public void pipe8(Vertx vertx, FileSystem fs) {
     vertx.createHttpServer()
       .requestHandler(request -> {
 
