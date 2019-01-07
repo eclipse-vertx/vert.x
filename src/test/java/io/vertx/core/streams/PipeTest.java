@@ -94,11 +94,16 @@ public class PipeTest extends AsyncTestBase {
     Throwable expected = new Throwable();
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
+    dst.pause();
     pipe.to(dst, onFailure(err -> {
+      assertFalse(src.isPaused());
       assertSame(expected, err);
       assertFalse(dst.isEnded());
       testComplete();
     }));
+    while (!src.isPaused()) {
+      src.write(o1);
+    }
     dst.fail(expected);
     await();
   }
@@ -150,5 +155,46 @@ public class PipeTest extends AsyncTestBase {
       assertEquals(i + 1, src.pauseCount());
       assertEquals(i + 2, src.resumeCount());
     }
+  }
+
+  @Test
+  public void testClosePipeBeforeStart() {
+    FakeStream<Object> src = new FakeStream<>();
+    Pipe<Object> pipe = src.pipe();
+    assertTrue(src.isPaused());
+    pipe.close();
+    assertFalse(src.isPaused());
+  }
+
+  @Test
+  public void testClosePipeBeforeEnd() {
+    FakeStream<Object> src = new FakeStream<>();
+    Pipe<Object> pipe = src.pipe();
+    pipe.to(dst);
+    dst.pause();
+    while (!src.isPaused()) {
+      src.write(o1);
+    }
+    assertTrue(src.isPaused());
+    pipe.close();
+    assertNull(src.handler());
+    assertNull(src.exceptionHandler());
+    assertNull(dst.drainHandler());
+    assertNull(dst.exceptionHandler());
+    assertFalse(src.isPaused());
+  }
+
+  @Test
+  public void testClosePipeAfterEnd() {
+    FakeStream<Object> src = new FakeStream<>();
+    Pipe<Object> pipe = src.pipe();
+    pipe.to(dst);
+    dst.pause();
+    while (!src.isPaused()) {
+      src.write(o1);
+    }
+    src.end();
+    assertTrue(src.isPaused());
+    pipe.close();
   }
 }

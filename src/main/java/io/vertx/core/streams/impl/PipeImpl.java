@@ -27,6 +27,7 @@ public class PipeImpl<T> implements Pipe<T> {
   private final ReadStream<T> src;
   private boolean endOnSuccess = true;
   private boolean endOnFailure = true;
+  private WriteStream<T> dst;
 
   public PipeImpl(ReadStream<T> src) {
     this.src = src;
@@ -61,55 +62,71 @@ public class PipeImpl<T> implements Pipe<T> {
   }
 
   @Override
-  public void to(WriteStream<T> dst, Handler<AsyncResult<Void>> completionHandler) {
-    if (dst == null) {
+  public void to(WriteStream<T> ws, Handler<AsyncResult<Void>> completionHandler) {
+    if (ws == null) {
       throw new NullPointerException();
     }
     boolean endOnSuccess;
     boolean endOnFailure;
     synchronized (PipeImpl.this) {
+      if (dst != null) {
+        throw new IllegalStateException();
+      }
+      dst = ws;
       endOnSuccess = this.endOnSuccess;
       endOnFailure = this.endOnFailure;
     }
-    dst.drainHandler(v -> {
+    ws.drainHandler(v -> {
       src.resume();
     });
     src.handler(item -> {
-      dst.write(item);
-      if (dst.writeQueueFull()) {
+      ws.write(item);
+      if (ws.writeQueueFull()) {
         src.pause();
       }
     });
-    dst.exceptionHandler(err -> result.tryFail(new WriteException(err)));
+    ws.exceptionHandler(err -> result.tryFail(new WriteException(err)));
     src.exceptionHandler(result::tryFail);
     src.resume();
     result.setHandler(ar -> {
       try {
-        src.exceptionHandler(null);
-        src.handler(null);
-        dst.drainHandler(null);
-        dst.exceptionHandler(null);
         if (ar.succeeded()) {
           if (endOnSuccess) {
-            dst.end();
+            ws.end();
           }
         } else {
           Throwable err = ar.cause();
           if (err instanceof WriteException) {
             ar = Future.failedFuture(err.getCause());
+            src.resume();
           } else if (endOnFailure){
-            dst.end();
+            ws.end();
           }
         }
       } catch (Exception e) {
         if (endOnFailure) {
-          dst.end();
+          ws.end();
         }
         completionHandler.handle(Future.failedFuture(e));
         return;
       }
       completionHandler.handle(ar);
     });
+  }
+
+  public void close() {
+    synchronized (this) {
+      src.exceptionHandler(null);
+      src.handler(null);
+      if (dst != null) {
+        dst.drainHandler(null);
+        dst.exceptionHandler(null);
+      }
+      if (result.isComplete()) {
+        return;
+      }
+    }
+    src.resume();
   }
 
   private static class WriteException extends VertxException {

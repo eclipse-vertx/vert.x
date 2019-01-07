@@ -75,10 +75,19 @@ public interface Pipe<T> {
 
   /**
    * Start to pipe the elements to the destination {@code WriteStream}.
+   * <p>
+   * When the operation fails with a write error, the source stream is resumed.
    *
    * @param dst the destination write stream
    * @param completionHandler the handler called when the pipe operation completes
    */
   void to(WriteStream<T> dst, Handler<AsyncResult<Void>> completionHandler);
+
+  /**
+   * Close the pipe.
+   * <p>
+   * The streams handlers will be unset and the read stream resumed unless it is already ended.
+   */
+  void close();
 
 }

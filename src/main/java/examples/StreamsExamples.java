@@ -17,6 +17,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
@@ -135,5 +137,30 @@ public class StreamsExamples {
         }
       });
     }).listen();
+  }
+
+  public void pipe04(Vertx vertx, FileSystem fs) {
+    vertx.createHttpServer()
+      .requestHandler(request -> {
+
+        // Create a pipe that to use asynchronously
+        Pipe<Buffer> pipe = request.pipe();
+
+        // Open a destination file
+        fs.open("/path/to/file", new OpenOptions(), ar -> {
+          if (ar.succeeded()) {
+            AsyncFile file = ar.result();
+
+            // Pipe the socket to the file and close the file at the end
+            pipe.to(file);
+          } else {
+            // Close the pipe and resume the request, the body buffers will be discarded
+            pipe.close();
+
+            // Send an error response
+            request.response().setStatusCode(500).end();
+          }
+        });
+      }).listen(8080);
   }
 }

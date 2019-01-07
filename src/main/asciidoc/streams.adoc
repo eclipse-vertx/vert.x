@@ -92,6 +92,15 @@ pauses the source and resumes it when the source is piped to the destination:
 {@link examples.StreamsExamples#pipe03(io.vertx.core.net.NetServer, io.vertx.core.file.FileSystem)}
 ----
 
+When you need to abort the transfer, you need to close it:
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pipe04(io.vertx.core.Vertx, io.vertx.core.file.FileSystem)}
+----
+
+When the pipe is closed, the streams handlers are unset and the `ReadStream` resumed.
+
 As seen above, by default the destination is always ended when the stream completes, you can control this behavior
 on the pipe object:
 
