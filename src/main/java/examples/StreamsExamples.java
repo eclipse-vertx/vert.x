@@ -87,15 +87,6 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pump5(Vertx vertx) {
-    NetServer server = vertx.createNetServer(
-        new NetServerOptions().setPort(1234).setHost("localhost")
-    );
-    server.connectHandler(sock -> {
-      Pump.pump(sock, sock).start();
-    }).listen();
-  }
-
   public void pipe01(Vertx vertx) {
     NetServer server = vertx.createNetServer(
       new NetServerOptions().setPort(1234).setHost("localhost")
