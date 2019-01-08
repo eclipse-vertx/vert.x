@@ -1191,25 +1191,6 @@ also make sure the relevant Log4J or SLF4J jars are on your classpath.
 Notice that, the provided delegate for Log4J 1 does not support parameterized message. The delegate for Log4J 2
 uses the `{}` syntax like the SLF4J delegate. JUL delegate uses the `{x}` syntax.
 
-=== Logging from your application
-
-Vert.x itself is just a library and you can use whatever logging library you prefer to log from your own application,
-using that logging library's API.
-
-However, if you prefer you can use the Vert.x logging facility as described above to provide logging for your
-application too.
-
-To do that you use {@link io.vertx.core.logging.LoggerFactory} to get an instance of {@link io.vertx.core.logging.Logger}
-which you then use for logging, e.g.
-
-[source,$lang]
-----
-{@link examples.CoreExamples#example18}
-----
-
-CAUTION: Logging backends use different formats to represent replaceable tokens in parameterized messages.
-As a consequence, if you rely on Vert.x parameterized logging methods, you won't be able to switch backends without changing your code.
-
 [[netty-logging]]
 === Netty logging
 
