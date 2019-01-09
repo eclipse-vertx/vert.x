@@ -1726,50 +1726,51 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testSendFile() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.html", content, false);
+    sendFile("test-send-file.html", content, false,
+      handler -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, handler));
   }
 
   @Test
   public void testSendFileWithHandler() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.html", content, true);
+    sendFile("test-send-file.html", content, true,
+      handler -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, handler));
   }
 
-  private void sendFile(String fileName, String contentExpected, boolean handler) throws Exception {
+  @Test
+  public void testSendFileWithConnectionCloseHeader() throws Exception {
+    String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
+    sendFile("test-send-file.html", content, false,
+      handler -> client
+        .get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, handler)
+        .putHeader(HttpHeaders.CONNECTION, "close"));
+  }
+
+  private void sendFile(String fileName, String contentExpected, boolean useHandler, Function<Handler<HttpClientResponse>, HttpClientRequest> requestFact) throws Exception {
+    waitFor(2);
     File fileToSend = setupFile(fileName, contentExpected);
-
-    CountDownLatch latch;
-    if (handler) {
-      latch = new CountDownLatch(2);
-    } else {
-      latch = new CountDownLatch(1);
-    }
-
     server.requestHandler(req -> {
-      if (handler) {
-        Handler<AsyncResult<Void>> completionHandler = onSuccess(v -> latch.countDown());
+      if (useHandler) {
+        Handler<AsyncResult<Void>> completionHandler = onSuccess(v -> complete());
         req.response().sendFile(fileToSend.getAbsolutePath(), completionHandler);
       } else {
         req.response().sendFile(fileToSend.getAbsolutePath());
+        complete();
       }
     });
-
-    server.listen(onSuccess(s -> {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        assertEquals(200, resp.statusCode());
-
-        assertEquals("text/html", resp.headers().get("Content-Type"));
-        resp.bodyHandler(buff -> {
-          assertEquals(contentExpected, buff.toString());
-          assertEquals(fileToSend.length(), Long.parseLong(resp.headers().get("content-length")));
-          latch.countDown();
-        });
-      }).end();
-    }));
-
-    assertTrue("Timed out waiting for test to complete.", latch.await(10, TimeUnit.SECONDS));
-
-    testComplete();
+    startServer();
+    requestFact.apply(resp -> {
+      assertEquals(200, resp.statusCode());
+      assertEquals("text/html", resp.headers().get("Content-Type"));
+      resp.exceptionHandler(this::fail);
+      resp.bodyHandler(buff -> {
+        assertEquals(contentExpected, buff.toString());
+        assertEquals(fileToSend.length(), Long.parseLong(resp.headers().get("content-length")));
+        complete();
+      });
+    }).exceptionHandler(this::fail)
+      .end();
+    await();
   }
 
   @Test
