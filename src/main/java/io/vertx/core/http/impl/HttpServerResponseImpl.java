@@ -474,8 +474,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
       written = true;
 
-      // write an empty last content to let the http encoder know the response is complete
+      ContextInternal ctx = vertx.getOrCreateContext();
       channelFuture.addListener(future -> {
+
+        // write an empty last content to let the http encoder know the response is complete
         if (future.isSuccess()) {
           ChannelPromise pr = conn.channelHandlerContext().newPromise();
           conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT, pr);
@@ -485,27 +487,32 @@ public class HttpServerResponseImpl implements HttpServerResponse {
             });
           }
         }
-      });
 
-      // signal completion handler when there is one
-      if (resultHandler != null) {
-        ContextInternal ctx = vertx.getOrCreateContext();
-        channelFuture.addListener(future -> {
+        // signal completion handler when there is one
+        if (resultHandler != null) {
           AsyncResult<Void> res;
           if (future.isSuccess()) {
             res = Future.succeededFuture();
           } else {
             res = Future.failedFuture(future.cause());
           }
-          ctx.runOnContext((v) -> resultHandler.handle(res));
-        });
-      }
+          ctx.executeFromIO(v -> resultHandler.handle(res));
+        }
 
-      conn.responseComplete();
+        // signal body end handler
+        Handler<Void> handler;
+        synchronized (conn) {
+          handler = bodyEndHandler;
+        }
+        if (handler != null) {
+          ctx.executeFromIO(v -> {
+            handler.handle(null);
+          });
+        }
 
-      if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
-      }
+        // allow to write next response
+        conn.responseComplete();
+      });
     }
   }
 
