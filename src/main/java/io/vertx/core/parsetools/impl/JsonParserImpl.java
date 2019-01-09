@@ -224,6 +224,7 @@ public class JsonParserImpl implements JsonParser {
             if (endHandler != null) {
               endHandler.handle(null);
             }
+            return;
           }
           break;
         } else {
