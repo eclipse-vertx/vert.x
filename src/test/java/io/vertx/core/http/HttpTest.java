@@ -2715,13 +2715,23 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testPausedHttpServerRequestDuringLastChunkEndsTheRequest() throws Exception {
+  public void testHttpServerRequestPausedDuringLastChunk() throws Exception {
     server.requestHandler(req -> {
+      AtomicBoolean ended = new AtomicBoolean();
+      AtomicBoolean paused = new AtomicBoolean();
       req.handler(buff -> {
         assertEquals("small", buff.toString());
         req.pause();
+        paused.set(true);
+        vertx.setTimer(20, id -> {
+          assertFalse(ended.get());
+          paused.set(false);
+          req.resume();
+        });
       });
       req.endHandler(v -> {
+        assertFalse(paused.get());
+        ended.set(true);
         req.response().end();
       });
     });
@@ -2731,6 +2741,36 @@ public abstract class HttpTest extends HttpTestBase {
     client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
       complete();
     }).end("small");
+    await();
+  }
+
+  @Test
+  public void testHttpClientResponsePausedDuringLastChunk() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end("small");
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
+      AtomicBoolean ended = new AtomicBoolean();
+      AtomicBoolean paused = new AtomicBoolean();
+      resp.handler(buff -> {
+        assertEquals("small", buff.toString());
+        resp.pause();
+        paused.set(true);
+        vertx.setTimer(20, id -> {
+          assertFalse(ended.get());
+          paused.set(false);
+          resp.resume();
+        });
+      });
+      resp.endHandler(v -> {
+        assertFalse(paused.get());
+        ended.set(true);
+        complete();
+      });
+    });
     await();
   }
 

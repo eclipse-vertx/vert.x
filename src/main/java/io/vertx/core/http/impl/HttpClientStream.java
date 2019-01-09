@@ -49,7 +49,6 @@ interface HttpClientStream {
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();
   void doPause();
-  void doResume();
   void doFetch(long amount);
 
   void reset(long code);

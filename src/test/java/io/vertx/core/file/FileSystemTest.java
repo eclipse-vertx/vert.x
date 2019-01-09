@@ -1668,6 +1668,28 @@ public class FileSystemTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testPausedEnd() throws Exception {
+    String fileName = "some-file.dat";
+    createFile(fileName, new byte[0]);
+    AtomicBoolean paused = new AtomicBoolean(false);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
+      Buffer buffer = Buffer.buffer();
+      paused.set(true);
+      file.pause();
+      vertx.setTimer(100, id -> {
+        paused.set(false);
+        file.resume();
+      });
+      file.endHandler(v -> {
+        assertFalse(paused.get());
+        testComplete();
+      });
+      file.handler(buffer::appendBuffer);
+    }));
+    await();
+  }
+
   private Handler<AsyncResult<Void>> createHandler(boolean shouldPass, Handler<Void> afterOK) {
     return ar -> {
       if (ar.failed()) {

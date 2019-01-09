@@ -348,12 +348,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public void doFetch(long amount) {
-      queue.fetch(amount);
-    }
-
-    @Override
-    public void doResume() {
-      queue.resume();
+      if (!queue.fetch(amount)) {
+        response.handleEnd(trailers);
+      }
     }
 
     @Override
@@ -489,7 +486,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           }
         }
         trailers = new HeadersAdaptor(trailer.trailingHeaders());
-        if (queue.isEmpty()) {
+        if (queue.isEmpty() && !queue.isPaused()) {
           response.handleEnd(trailers);
         }
         responseEnded = true;

@@ -151,8 +151,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket resume() {
-    doResume();
-    return this;
+    return fetch(Long.MAX_VALUE);
   }
 
   @Override

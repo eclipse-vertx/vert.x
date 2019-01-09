@@ -36,7 +36,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final ChannelHandlerContext handlerContext;
   protected final Http2Stream stream;
 
-  private InboundBuffer<Buffer> pending;
+  private final InboundBuffer<Buffer> pending;
   private int pendingBytes;
   private MultiMap trailers;
   private boolean writable;
@@ -95,7 +95,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void onEnd(MultiMap map) {
     synchronized (conn) {
       trailers = map;
-      if (pending.isEmpty()) {
+      if (pending.isEmpty() && !pending.isPaused()) {
         handleEnd(trailers);
       }
     }
@@ -109,12 +109,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     pending.pause();
   }
 
-  public void doResume() {
-    pending.resume();
-  }
-
   public void doFetch(long amount) {
-    pending.fetch(amount);
+    if (!pending.fetch(amount)) {
+      if (trailers != null) {
+        handleEnd(trailers);
+      }
+    }
   }
 
   boolean isNotWritable() {

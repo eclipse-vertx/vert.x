@@ -3478,6 +3478,28 @@ public class NetTest extends VertxTestBase {
     awaitLatch(latch);
   }
 
+  @Test
+  public void testPausedDuringLastChunk() throws Exception {
+    server.connectHandler(so -> {
+      AtomicBoolean paused = new AtomicBoolean();
+      paused.set(true);
+      so.pause();
+      so.closeHandler(v -> {
+        paused.set(false);
+        so.resume();
+      });
+      so.endHandler(v -> {
+        assertFalse(paused.get());
+        testComplete();
+      });
+    });
+    startServer();
+    client.connect(1234, "localhost", onSuccess(so -> {
+      so.close();
+    }));
+    await();
+  }
+
   protected void startServer() throws Exception {
     startServer(testAddress, vertx.getOrCreateContext());
   }
