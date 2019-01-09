@@ -789,6 +789,9 @@ public class JsonParserTest {
     stream.end();
     assertEquals(0, events.size());
     assertEquals(1, ended.get());
+    //regression check for #2790 - ensure that by accident resume method is not called.
+    assertEquals(0, stream.pauseCount());
+    assertEquals(0, stream.resumeCount());
   }
 
   @Test
