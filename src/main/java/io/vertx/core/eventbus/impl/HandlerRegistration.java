@@ -18,6 +18,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
@@ -46,7 +47,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private final String address;
   private final String repliedAddress;
   private final boolean localOnly;
-  private final Handler<AsyncResult<Message<T>>> asyncResultHandler;
   private long timeoutID = -1;
   private HandlerHolder<T> registered;
   private Handler<Message<T>> handler;
@@ -61,20 +61,15 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private Object metric;
 
   public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
-                             String repliedAddress, boolean localOnly,
-                             Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
+                             String repliedAddress, boolean localOnly, long timeout) {
     this.vertx = vertx;
     this.metrics = metrics;
     this.eventBus = eventBus;
     this.address = address;
     this.repliedAddress = repliedAddress;
     this.localOnly = localOnly;
-    this.asyncResultHandler = asyncResultHandler;
     if (timeout != -1) {
       timeoutID = vertx.setTimer(timeout, tid -> {
-        if (metrics != null) {
-          metrics.replyFailure(address, ReplyFailure.TIMEOUT);
-        }
         sendAsyncResultFailure(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress);
       });
     }
@@ -143,7 +138,8 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   public void sendAsyncResultFailure(ReplyFailure failure, String msg) {
     unregister();
-    asyncResultHandler.handle(Future.failedFuture(new ReplyException(failure, msg)));
+    MessageImpl timeout = new MessageImpl(repliedAddress, null, new CaseInsensitiveHeaders(), new ReplyException(failure, msg), CodecManager.REPLY_EXCEPTION_MESSAGE_CODEC, true, eventBus);
+    handler.handle(timeout);
   }
 
   private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {

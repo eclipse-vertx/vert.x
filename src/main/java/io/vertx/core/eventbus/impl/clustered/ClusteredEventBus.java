@@ -58,7 +58,6 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private final ClusterManager clusterManager;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
-  private final Context sendNoContext;
 
   private EventBusOptions options;
   private AsyncMultiMap<String, ClusterNodeInfo> subs;
@@ -73,7 +72,6 @@ public class ClusteredEventBus extends EventBusImpl {
     super(vertx);
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
-    this.sendNoContext = vertx.getOrCreateContext();
   }
 
   private NetServerOptions getServerOptions() {
@@ -215,13 +213,10 @@ public class ClusteredEventBus extends EventBusImpl {
   @Override
   protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
     if (sendContext.options.isLocalOnly()) {
-      if (metrics != null) {
-        metrics.messageSent(sendContext.message.address(), !sendContext.message.isSend(), true, false);
-      }
-      deliverMessageLocally(sendContext);
-    } else if (Vertx.currentContext() == null) {
-      // Guarantees the order when there is no current context
-      sendNoContext.runOnContext(v -> {
+      super.sendOrPub(sendContext);
+    } else if (Vertx.currentContext() != sendContext.ctx) {
+      // Current event-loop might be null when sending from non vertx thread
+      sendContext.ctx.runOnContext(v -> {
         subs.get(sendContext.message.address(), ar -> onSubsReceived(ar, sendContext));
       });
     } else {
@@ -235,10 +230,7 @@ public class ClusteredEventBus extends EventBusImpl {
       if (serverIDs != null && !serverIDs.isEmpty()) {
         sendToSubs(serverIDs, sendContext);
       } else {
-        if (metrics != null) {
-          metrics.messageSent(sendContext.message.address(), !sendContext.message.isSend(), true, false);
-        }
-        deliverMessageLocally(sendContext);
+        super.sendOrPub(sendContext);
       }
     } else {
       log.error("Failed to send message", asyncResult.cause());
@@ -327,60 +319,38 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private <T> void sendToSubs(ChoosableIterable<ClusterNodeInfo> subs, OutboundDeliveryContext<T> sendContext) {
-    String address = sendContext.message.address();
     if (sendContext.message.isSend()) {
       // Choose one
       ClusterNodeInfo ci = subs.choose();
       ServerID sid = ci == null ? null : ci.serverID;
       if (sid != null && !sid.equals(serverID)) {  //We don't send to this node
-        if (metrics != null) {
-          metrics.messageSent(address, false, false, true);
-        }
-        sendRemote(sid, sendContext.message);
+        sendRemote(sendContext, sid, sendContext.message);
       } else {
-        if (metrics != null) {
-          metrics.messageSent(address, false, true, false);
-        }
-        deliverMessageLocally(sendContext);
+        super.sendOrPub(sendContext);
       }
     } else {
       // Publish
-      boolean local = false;
-      boolean remote = false;
       for (ClusterNodeInfo ci : subs) {
         if (!ci.serverID.equals(serverID)) {  //We don't send to this node
-          remote = true;
-          sendRemote(ci.serverID, sendContext.message);
+          sendRemote(sendContext, ci.serverID, sendContext.message);
         } else {
-          local = true;
+          super.sendOrPub(sendContext);
         }
-      }
-      if (metrics != null) {
-        metrics.messageSent(address, true, local, remote);
-      }
-      if (local) {
-        deliverMessageLocally(sendContext);
       }
     }
   }
 
   private <T> void clusteredSendReply(ServerID replyDest, OutboundDeliveryContext<T> sendContext) {
     MessageImpl message = sendContext.message;
-    String address = message.address();
     if (!replyDest.equals(serverID)) {
-      if (metrics != null) {
-        metrics.messageSent(address, false, false, true);
-      }
-      sendRemote(replyDest, message);
+      sendRemote(sendContext, replyDest, message);
     } else {
-      if (metrics != null) {
-        metrics.messageSent(address, false, true, false);
-      }
-      deliverMessageLocally(sendContext);
+      super.sendOrPub(sendContext);
     }
   }
 
-  private void sendRemote(ServerID theServerID, MessageImpl message) {
+  private void sendRemote(OutboundDeliveryContext<?> sendContext, ServerID theServerID, MessageImpl message) {
+    messageSent(sendContext, false, true);
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
