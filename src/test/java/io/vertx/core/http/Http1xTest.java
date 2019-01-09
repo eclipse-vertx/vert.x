@@ -4682,4 +4682,27 @@ public class Http1xTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testSendFilePipelined() throws Exception {
+    int n = 4;
+    waitFor(n);
+    File sent = TestUtils.tmpFile(".dat", 16 * 1024);
+    server.requestHandler(
+      req -> {
+        req.response().sendFile(sent.getAbsolutePath());
+      });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1));
+    for (int i = 0;i < n;i++) {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        resp.exceptionHandler(this::fail);
+        resp.bodyHandler(body -> {
+          complete();
+        });
+      }));
+    }
+    await();
+  }
 }
