@@ -476,7 +476,15 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       // write an empty last content to let the http encoder know the response is complete
       channelFuture.addListener(future -> {
-        conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+        if (future.isSuccess()) {
+          ChannelPromise pr = conn.channelHandlerContext().newPromise();
+          conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT, pr);
+          if (!keepAlive) {
+            pr.addListener(a -> {
+              closeConnAfterWrite();
+            });
+          }
+        }
       });
 
       // signal completion handler when there is one
@@ -493,9 +501,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         });
       }
 
-      if (!keepAlive) {
-        closeConnAfterWrite();
-      }
       conn.responseComplete();
 
       if (bodyEndHandler != null) {
