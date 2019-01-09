@@ -19,6 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.logging.Logger;
@@ -52,11 +53,13 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   protected final ConcurrentMap<String, ConcurrentCyclicSequence<HandlerHolder>> handlerMap = new ConcurrentHashMap<>();
   protected final CodecManager codecManager = new CodecManager();
   protected volatile boolean started;
+  private final ContextInternal sendNoContext;
 
   public EventBusImpl(VertxInternal vertx) {
     VertxMetrics metrics = vertx.metricsSPI();
     this.vertx = vertx;
     this.metrics = metrics != null ? metrics.createEventBusMetrics() : null;
+    this.sendNoContext = vertx.getOrCreateContext();
   }
 
   @Override
@@ -153,7 +156,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> MessageConsumer<T> consumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new HandlerRegistration<>(vertx, metrics, this, address, null, false, null, -1);
+    return new HandlerRegistration<>(vertx, metrics, this, address, null, false, -1);
   }
 
   @Override
@@ -168,7 +171,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> MessageConsumer<T> localConsumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new HandlerRegistration<>(vertx, metrics, this, address, null, true, null, -1);
+    return new HandlerRegistration<>(vertx, metrics, this, address, null, true, -1);
   }
 
   @Override
@@ -316,7 +319,12 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       throw new IllegalStateException("address not specified");
     } else {
       HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(replyMessage, options, replyHandler);
-      new OutboundDeliveryContext<>(replyMessage, options, replyHandlerRegistration, replierMessage).next();
+      ContextInternal ctx = vertx.getOrCreateContext();
+      if (ctx == null) {
+        // Guarantees the order when there is no current context in clustered mode
+        ctx = sendNoContext;
+      }
+      new OutboundDeliveryContext<>(ctx, replyMessage, options, replyHandlerRegistration, replierMessage).next();
     }
   }
 
@@ -325,11 +333,15 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
-    MessageImpl message = sendContext.message;
-    if (metrics != null) {
-      metrics.messageSent(message.address(), !message.isSend(), true, false);
-    }
+    messageSent(sendContext, true, false);
     deliverMessageLocally(sendContext);
+  }
+
+  protected final void messageSent(OutboundDeliveryContext<?> sendContext, boolean local, boolean remote) {
+    if (metrics != null) {
+      MessageImpl message = sendContext.message;
+      metrics.messageSent(message.address(), !message.send, local, remote);
+    }
   }
 
   protected <T> Handler<Message<T>> convertHandler(Handler<AsyncResult<Message<T>>> handler) {
@@ -360,9 +372,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   protected <T> void deliverMessageLocally(OutboundDeliveryContext<T> sendContext) {
     if (!deliverMessageLocally(sendContext.message)) {
       // no handlers
-      if (metrics != null) {
-        metrics.replyFailure(sendContext.message.address, ReplyFailure.NO_HANDLERS);
-      }
       if (sendContext.handlerRegistration != null) {
         sendContext.handlerRegistration.sendAsyncResultFailure(ReplyFailure.NO_HANDLERS, "No handlers for address "
                                                                + sendContext.message.address);
@@ -424,7 +433,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       message.setReplyAddress(replyAddress);
       Handler<Message<T>> simpleReplyHandler = convertHandler(replyHandler);
       HandlerRegistration<T> registration =
-        new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, replyHandler, timeout);
+        new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, timeout);
       registration.handler(simpleReplyHandler);
       return registration;
     } else {
@@ -436,23 +445,30 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                                      Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
     HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(message, options, replyHandler);
-    OutboundDeliveryContext<T> sendContext = new OutboundDeliveryContext<>(message, options, replyHandlerRegistration);
+    ContextInternal ctx = vertx.getContext();
+    if (ctx == null) {
+      // Guarantees the order when there is no current context in clustered mode
+      ctx = sendNoContext;
+    }
+    OutboundDeliveryContext<T> sendContext = new OutboundDeliveryContext<>(ctx, message, options, replyHandlerRegistration);
     sendContext.next();
   }
 
   protected class OutboundDeliveryContext<T> implements DeliveryContext<T> {
 
+    public final ContextInternal ctx;
     public final MessageImpl message;
     public final DeliveryOptions options;
     public final Iterator<Handler<DeliveryContext>> iter;
     private final HandlerRegistration<T> handlerRegistration;
     private final MessageImpl replierMessage;
 
-    private OutboundDeliveryContext(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration) {
-      this(message, options, handlerRegistration, null);
+    private OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration) {
+      this(ctx, message, options, handlerRegistration, null);
     }
 
-    private OutboundDeliveryContext(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration, MessageImpl replierMessage) {
+    private OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration, MessageImpl replierMessage) {
+      this.ctx = ctx;
       this.message = message;
       this.options = options;
       this.handlerRegistration = handlerRegistration;
