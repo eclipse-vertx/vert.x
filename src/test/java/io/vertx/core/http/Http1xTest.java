@@ -14,7 +14,6 @@ package io.vertx.core.http;
 import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -2741,9 +2740,9 @@ public class Http1xTest extends HttpTest {
     client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
     AtomicInteger connCount = new AtomicInteger();
     client.connectionHandler(conn -> connCount.incrementAndGet());
-    HttpClientRequestImpl req = (HttpClientRequestImpl) client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
+    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", onSuccess(resp -> {
       fail();
-    });
+    }));
     req.reset(0);
     CountDownLatch respLatch = new CountDownLatch(2);
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/second", onSuccess(resp -> {

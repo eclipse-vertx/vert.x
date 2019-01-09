@@ -193,14 +193,15 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocket fetch(long amount) {
-    pending.fetch(amount);
+    if (!pending.fetch(amount)) {
+      checkEnd();
+    }
     return this;
   }
 
   @Override
   public synchronized NetSocket resume() {
-    pending.resume();
-    return this;
+    return fetch(Long.MAX_VALUE);
   }
 
   @Override
@@ -358,7 +359,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private void checkEnd() {
     Handler<Void> handler;
     synchronized (this) {
-      if (!closed || pending.size() > 0 || (handler = endHandler) == null) {
+      if (!closed || pending.isPaused() || (handler = endHandler) == null) {
         return;
       }
     }

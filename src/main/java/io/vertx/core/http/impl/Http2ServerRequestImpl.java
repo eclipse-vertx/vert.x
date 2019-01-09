@@ -225,19 +225,22 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public HttpServerRequest pause() {
-    doPause();
+    synchronized (conn) {
+      checkEnded();
+      doPause();
+    }
     return this;
   }
 
   @Override
   public HttpServerRequest resume() {
-    doResume();
-    return this;
+    return fetch(Long.MAX_VALUE);
   }
 
   @Override
   public HttpServerRequest fetch(long amount) {
     synchronized (conn) {
+      checkEnded();
       doFetch(amount);
     }
     return this;

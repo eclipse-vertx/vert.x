@@ -132,26 +132,41 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
+  private void checkEnded() {
+    if (trailers != null) {
+      throw new IllegalStateException();
+    }
+  }
+
   @Override
-  public HttpClientResponse handler(Handler<Buffer> dataHandler) {
+  public HttpClientResponse handler(Handler<Buffer> handle) {
     synchronized (conn) {
-      this.dataHandler = dataHandler;
+      if (handle != null) {
+        checkEnded();
+      }
+      dataHandler = handle;
       return this;
     }
   }
 
   @Override
-  public HttpClientResponse endHandler(Handler<Void> endHandler) {
+  public HttpClientResponse endHandler(Handler<Void> handler) {
     synchronized (conn) {
-      this.endHandler = endHandler;
+      if (handler != null) {
+        checkEnded();
+      }
+      endHandler = handler;
       return this;
     }
   }
 
   @Override
-  public HttpClientResponse exceptionHandler(Handler<Throwable> exceptionHandler) {
+  public HttpClientResponse exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
-      this.exceptionHandler = exceptionHandler;
+      if (handler != null) {
+        checkEnded();
+      }
+      exceptionHandler = handler;
       return this;
     }
   }
@@ -164,8 +179,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public HttpClientResponse resume() {
-    stream.doResume();
-    return this;
+    return fetch(Long.MAX_VALUE);
   }
 
   @Override
@@ -175,16 +189,24 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public HttpClientResponse bodyHandler(final Handler<Buffer> bodyHandler) {
-    BodyHandler handler = new BodyHandler();
-    handler(handler);
-    endHandler(v -> handler.notifyHandler(bodyHandler));
+  public HttpClientResponse bodyHandler(final Handler<Buffer> handler) {
+    if (handler != null) {
+      BodyHandler bodyHandler = new BodyHandler();
+      handler(bodyHandler);
+      endHandler(v -> bodyHandler.notifyHandler(handler));
+    } else {
+      handler(null);
+      endHandler(null);
+    }
     return this;
   }
 
   @Override
   public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) {
     synchronized (conn) {
+      if (endHandler != null) {
+        checkEnded();
+      }
       customFrameHandler = handler;
       return this;
     }
@@ -217,16 +239,19 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   void handleEnd(MultiMap trailers) {
+    Handler<Void> handler;
     synchronized (conn) {
       stream.reportBytesRead(bytesRead);
       bytesRead = 0;
       this.trailers = trailers;
-      if (endHandler != null) {
-        try {
-          endHandler.handle(null);
-        } catch (Throwable t) {
-          handleException(t);
-        }
+      handler = endHandler;
+      endHandler = null;
+    }
+    if (handler != null) {
+      try {
+        handler.handle(null);
+      } catch (Throwable t) {
+        handleException(t);
       }
     }
   }
@@ -277,6 +302,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) {
     synchronized (conn) {
+      if (handler != null) {
+        checkEnded();
+      }
       priorityHandler = handler;
     }
     return this;

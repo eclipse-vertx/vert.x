@@ -69,6 +69,7 @@ public class AsyncFileImpl implements AsyncFile {
   private int lwm = maxWrites / 2;
   private int readBufferSize = DEFAULT_READ_BUFFER_SIZE;
   private InboundBuffer<Buffer> queue;
+  private Handler<Buffer> handler;
   private Handler<Void> endHandler;
   private long readPos;
   private long readLength = Long.MAX_VALUE;
@@ -102,7 +103,13 @@ public class AsyncFileImpl implements AsyncFile {
     }
     this.context = context;
     this.queue = new InboundBuffer<>(context, 0);
-
+    queue.handler(buff -> {
+      if (buff.length() > 0) {
+        handleBuffer(buff);
+      } else {
+        handleEnd();
+      }
+    });
     queue.drainHandler(v -> {
       doRead();
     });
@@ -235,7 +242,7 @@ public class AsyncFileImpl implements AsyncFile {
     if (closed) {
       return this;
     }
-    queue.handler(handler);
+    this.handler = handler;
     if (handler != null) {
       doRead();
     } else {
@@ -346,15 +353,11 @@ public class AsyncFileImpl implements AsyncFile {
     doRead(buff, 0, bb, readPos, ar -> {
       if (ar.succeeded()) {
         Buffer buffer = ar.result();
-        if (buffer.length() == 0) {
-          // Empty buffer represents end of file
-          handleEnd();
-        } else {
-          readPos += buffer.length();
-          readLength -= buffer.length();
-          if (queue.write(buffer)) {
-            doRead(bb);
-          }
+        readPos += buffer.length();
+        readLength -= buffer.length();
+        // Empty buffer represents end of file
+        if (queue.write(buffer) && buffer.length() > 0) {
+          doRead(bb);
         }
       } else {
         handleException(ar.cause());
@@ -362,8 +365,15 @@ public class AsyncFileImpl implements AsyncFile {
     });
   }
 
+  private synchronized void handleBuffer(Buffer buff) {
+    if (handler != null) {
+      checkContext();
+      handler.handle(buff);
+    }
+  }
+
   private synchronized void handleEnd() {
-    queue.handler(null);
+    handler = null;
     if (endHandler != null) {
       checkContext();
       endHandler.handle(null);

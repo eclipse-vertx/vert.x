@@ -21,6 +21,7 @@ import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -444,7 +445,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     Handler<Void> endHandler;
     Handler<Void> closeHandler;
     synchronized (conn) {
-      endHandler = this.endHandler;
+      endHandler = pending.isPaused() ? null : this.endHandler;
       closeHandler = this.closeHandler;
       closed = true;
       binaryHandlerRegistration = null;
@@ -548,8 +549,17 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public S resume() {
-    if (!isClosed()) {
-      pending.resume();
+    synchronized (this) {
+      if (isClosed()) {
+        Handler<Void> handler = endHandler;
+        endHandler = null;
+        if (handler != null) {
+          ContextInternal ctx = conn.getContext();
+          ctx.runOnContext(v -> handler.handle(null));
+        }
+      } else {
+        pending.resume();
+      }
     }
     return (S) this;
   }

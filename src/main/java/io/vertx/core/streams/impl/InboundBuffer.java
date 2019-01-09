@@ -251,9 +251,9 @@ public class InboundBuffer<E> {
    * <p/>
    * This method can be called from any thread.
    *
-   * @return a reference to this, so the API can be used fluently
+   * @return {@code true} when the buffer will be drained
    */
-  public InboundBuffer<E> fetch(long amount) {
+  public boolean fetch(long amount) {
     if (amount < 0L) {
       throw new IllegalArgumentException();
     }
@@ -263,12 +263,12 @@ public class InboundBuffer<E> {
         demand = Long.MAX_VALUE;
       }
       if (emitting || (pending.isEmpty() && !overflow)) {
-        return this;
+        return false;
       }
       emitting = true;
     }
     context.runOnContext(v -> drain());
-    return this;
+    return true;
   }
 
   /**
@@ -313,9 +313,9 @@ public class InboundBuffer<E> {
    * <p/>
    * This method can be called from any thread.
    *
-   * @return a reference to this, so the API can be used fluently
+   * @return {@code true} when the buffer will be drained
    */
-  public InboundBuffer<E> resume() {
+  public boolean resume() {
     return fetch(Long.MAX_VALUE);
   }
 

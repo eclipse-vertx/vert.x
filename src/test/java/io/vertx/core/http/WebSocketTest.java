@@ -2694,4 +2694,26 @@ public class WebSocketTest extends VertxTestBase {
     }));
     await();
   }
-}
+
+  @Test
+  public void testPausedDuringLastChunk() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .websocketHandler(ws -> {
+        AtomicBoolean paused = new AtomicBoolean(true);
+        ws.pause();
+        ws.closeHandler(v -> {
+          paused.set(false);
+          ws.resume();
+        });
+        ws.endHandler(v -> {
+          assertFalse(paused.get());
+          testComplete();
+        });
+      })
+      .listen(onSuccess(v -> {
+        client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
+          ws.close();
+        });
+      }));
+    await();
+  }}

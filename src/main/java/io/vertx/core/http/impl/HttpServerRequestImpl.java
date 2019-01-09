@@ -161,7 +161,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     boolean end = ended;
     ended = false;
     handleBegin();
-    if (pending != null && pending.size() > 0) {
+    if (pending != null && pending.isPaused()) {
       pending.resume();
     }
     if (end) {
@@ -340,7 +340,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   public HttpServerRequest resume() {
     synchronized (conn) {
       if (!isEnded()) {
-        pendingQueue().resume();
+        if (ended) {
+          if (!pending.resume()) {
+            doEnd();
+          }
+        } else if (pending != null) {
+          pending.resume();
+        }
       }
       return this;
     }
@@ -478,7 +484,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public boolean isEnded() {
     synchronized (conn) {
-      return ended && (pending == null || pending.isEmpty());
+      return ended && (pending == null || (!pending.isPaused() && pending.isEmpty()));
     }
   }
 
