@@ -359,18 +359,13 @@ public final class HttpUtils {
 
   static String absoluteURI(String serverOrigin, HttpServerRequest req) throws URISyntaxException {
     String absoluteURI;
-    URI uri = new URI(req.uri());
-    String scheme = uri.getScheme();
-    if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
-      absoluteURI = uri.toString();
+    String uri = req.uri();
+    String host = req.host();
+    if (host != null) {
+      absoluteURI = req.scheme() + "://" + host + uri;
     } else {
-      String host = req.host();
-      if (host != null) {
-        absoluteURI = req.scheme() + "://" + host + uri;
-      } else {
-        // Fall back to the server origin
-        absoluteURI = serverOrigin + uri;
-      }
+      // Fall back to the server origin
+      absoluteURI = serverOrigin + uri;
     }
     return absoluteURI;
   }

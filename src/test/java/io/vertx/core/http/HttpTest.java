@@ -2516,6 +2516,34 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testGetAbsoluteURIWithParam() {
+    server.requestHandler(req -> {
+      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar?a=1", req.absoluteURI());
+      req.response().end();
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/foo/bar?a=1", onSuccess(resp -> resp.endHandler(v -> testComplete()))).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURIWithUnsafeParam() {
+    server.requestHandler(req -> {
+      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar?a={1}", req.absoluteURI());
+      req.response().end();
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/foo/bar?a={1}", onSuccess(resp -> resp.endHandler(v -> testComplete()))).end();
+    }));
+
+    await();
+  }
+
+  @Test
   public void testListenInvalidPort() throws Exception {
     /* Port 7 is free for use by any application in Windows, so this test fails. */
     Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
