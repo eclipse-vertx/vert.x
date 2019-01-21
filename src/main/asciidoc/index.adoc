@@ -225,6 +225,13 @@ result handler to be called back asynchronous when the blocking code has been ex
 {@link examples.CoreExamples#example7}
 ----
 
+WARNING: Blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+         or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
+         When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
+         blocked thread checker. Long blocking operations should use a dedicated thread managed by the application,
+         which can interact with verticles using the event-bus or {@link io.vertx.core.Context#runOnContext(io.vertx.core.Handler)}
+
+
 By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
 the different executeBlocking are executed _serially_ (i.e. one after another).
 

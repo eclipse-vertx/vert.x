@@ -108,6 +108,15 @@ public interface Context {
    * A {@code Future} instance is passed into {@code blockingCodeHandler}. When the blocking code successfully completes,
    * the handler should call the {@link Future#complete} or {@link Future#complete(Object)} method, or the {@link Future#fail}
    * method if it failed.
+   * <p>
+   * The blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+   * or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
+   * <p>
+   * When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
+   * blocked thread checker.
+   * <p>
+   * Long blocking operations should use a dedicated thread managed by the application, which can interact with
+   * verticles using the event-bus or {@link Context#runOnContext(Handler)}
    *
    * @param blockingCodeHandler  handler representing the blocking code to run
    * @param resultHandler  handler that will be called when the blocking code is complete
