@@ -297,7 +297,7 @@ public class ClusteredEventBus extends EventBusImpl {
             size = buff.getInt(0);
             parser.fixedSizeMode(size);
           } else {
-            ClusteredMessage received = new ClusteredMessage();
+            ClusteredMessage received = new ClusteredMessage(ClusteredEventBus.this);
             received.readFromWire(buff, codecManager);
             if (metrics != null) {
               metrics.messageRead(received.address(), buff.length());
