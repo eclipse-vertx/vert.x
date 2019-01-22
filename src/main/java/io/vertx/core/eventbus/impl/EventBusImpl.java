@@ -156,7 +156,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> MessageConsumer<T> consumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new HandlerRegistration<>(vertx, metrics, this, address, null, false, -1);
+    return new HandlerRegistration<>(vertx, metrics, this, address, null, false);
   }
 
   @Override
@@ -171,7 +171,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> MessageConsumer<T> localConsumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new HandlerRegistration<>(vertx, metrics, this, address, null, true, -1);
+    return new HandlerRegistration<>(vertx, metrics, this, address, null, true);
   }
 
   @Override
@@ -318,13 +318,13 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     if (replyMessage.address() == null) {
       throw new IllegalStateException("address not specified");
     } else {
-      HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(replyMessage, options, replyHandler);
       ContextInternal ctx = vertx.getOrCreateContext();
       if (ctx == null) {
         // Guarantees the order when there is no current context in clustered mode
         ctx = sendNoContext;
       }
-      new OutboundDeliveryContext<>(ctx, replyMessage, options, replyHandlerRegistration, replierMessage).next();
+      ReplyHandler<T> handler = createReplyHandler(replyMessage, options, replyHandler);
+      new OutboundDeliveryContext<>(ctx, replyMessage, options, handler, replierMessage).next();
     }
   }
 
@@ -344,23 +344,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
   }
 
-  protected <T> Handler<Message<T>> convertHandler(Handler<AsyncResult<Message<T>>> handler) {
-    return reply -> {
-      Future<Message<T>> result;
-      if (reply.body() instanceof ReplyException) {
-        // This is kind of clunky - but hey-ho
-        ReplyException exception = (ReplyException) reply.body();
-        if (metrics != null) {
-          metrics.replyFailure(reply.address(), exception.failureType());
-        }
-        result = Future.failedFuture(exception);
-      } else {
-        result = Future.succeededFuture(reply);
-      }
-      handler.handle(result);
-    };
-  }
-
   protected void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
     if (completionHandler != null) {
       vertx.runOnContext(v -> {
@@ -372,9 +355,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   protected <T> void deliverMessageLocally(OutboundDeliveryContext<T> sendContext) {
     if (!deliverMessageLocally(sendContext.message)) {
       // no handlers
-      if (sendContext.handlerRegistration != null) {
-        sendContext.handlerRegistration.sendAsyncResultFailure(ReplyFailure.NO_HANDLERS, "No handlers for address "
-                                                               + sendContext.message.address);
+      if (sendContext.replyHandler != null) {
+        sendContext.replyHandler.fail(new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address "
+          + sendContext.message.address));
       }
     }
   }
@@ -423,33 +406,67 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return "__vertx.reply." + Long.toString(replySequence.incrementAndGet());
   }
 
-  private <T> HandlerRegistration<T> createReplyHandlerRegistration(MessageImpl message,
-                                                                    DeliveryOptions options,
-                                                                    Handler<AsyncResult<Message<T>>> replyHandler) {
+  private <T> ReplyHandler<T> createReplyHandler(MessageImpl message,
+                                                 DeliveryOptions options,
+                                                 Handler<AsyncResult<Message<T>>> replyHandler) {
     if (replyHandler != null) {
       long timeout = options.getSendTimeout();
       String replyAddress = generateReplyAddress();
       message.setReplyAddress(replyAddress);
-      Handler<Message<T>> simpleReplyHandler = convertHandler(replyHandler);
-      HandlerRegistration<T> registration =
-        new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, timeout);
-      registration.handler(simpleReplyHandler);
-      return registration;
+      HandlerRegistration<T> registration = new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true);
+      ReplyHandler<T> handler = new ReplyHandler<>(registration, timeout);
+      handler.result.setHandler(replyHandler);
+      registration.handler(handler);
+      return handler;
     } else {
       return null;
+    }
+  }
+
+  class ReplyHandler<T> implements Handler<Message<T>> {
+
+    final Future<Message<T>> result;
+    final HandlerRegistration<T> registration;
+    final long timeoutID;
+
+    ReplyHandler(HandlerRegistration<T> registration, long timeout) {
+      this.result = Future.future();
+      this.registration = registration;
+      this.timeoutID = vertx.setTimer(timeout, id -> {
+        fail(new ReplyException(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + registration.address + ", repliedAddress: " + registration.repliedAddress));
+      });
+    }
+
+    void fail(ReplyException failure) {
+      registration.unregister();
+      if (metrics != null) {
+        metrics.replyFailure(registration.address, failure.failureType());
+      }
+      result.tryFail(failure);
+    }
+
+    @Override
+    public void handle(Message<T> reply) {
+      vertx.cancelTimer(timeoutID);
+      if (reply.body() instanceof ReplyException) {
+        // This is kind of clunky - but hey-ho
+        fail((ReplyException) reply.body());
+      } else {
+        result.complete(reply);
+      }
     }
   }
 
   private <T> void sendOrPubInternal(MessageImpl message, DeliveryOptions options,
                                      Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
-    HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(message, options, replyHandler);
+    ReplyHandler<T> handler = createReplyHandler(message, options, replyHandler);
     ContextInternal ctx = vertx.getContext();
     if (ctx == null) {
       // Guarantees the order when there is no current context in clustered mode
       ctx = sendNoContext;
     }
-    OutboundDeliveryContext<T> sendContext = new OutboundDeliveryContext<>(ctx, message, options, replyHandlerRegistration);
+    OutboundDeliveryContext<T> sendContext = new OutboundDeliveryContext<>(ctx, message, options, handler);
     sendContext.next();
   }
 
@@ -459,20 +476,20 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     public final MessageImpl message;
     public final DeliveryOptions options;
     public final Iterator<Handler<DeliveryContext>> iter;
-    private final HandlerRegistration<T> handlerRegistration;
+    private final ReplyHandler<T> replyHandler;
     private final MessageImpl replierMessage;
 
-    private OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration) {
-      this(ctx, message, options, handlerRegistration, null);
+    private OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler) {
+      this(ctx, message, options, replyHandler, null);
     }
 
-    private OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration, MessageImpl replierMessage) {
+    private OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler, MessageImpl replierMessage) {
       this.ctx = ctx;
       this.message = message;
       this.options = options;
-      this.handlerRegistration = handlerRegistration;
       this.iter = sendInterceptors.iterator();
       this.replierMessage = replierMessage;
+      this.replyHandler = replyHandler;
     }
 
     @Override
