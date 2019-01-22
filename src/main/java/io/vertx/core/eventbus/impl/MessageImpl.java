@@ -30,7 +30,7 @@ public class MessageImpl<U, V> implements Message<V> {
   private static final Logger log = LoggerFactory.getLogger(MessageImpl.class);
 
   protected MessageCodec<U, V> messageCodec;
-  protected EventBusImpl bus;
+  protected final EventBusImpl bus;
   protected String address;
   protected String replyAddress;
   protected MultiMap headers;
@@ -38,7 +38,8 @@ public class MessageImpl<U, V> implements Message<V> {
   protected V receivedBody;
   protected boolean send;
 
-  public MessageImpl() {
+  public MessageImpl(EventBusImpl bus) {
+    this.bus = bus;
   }
 
   public MessageImpl(String address, String replyAddress, MultiMap headers, U sentBody,
@@ -146,14 +147,8 @@ public class MessageImpl<U, V> implements Message<V> {
     return messageCodec;
   }
 
-  public void setBus(EventBusImpl bus) {
-    this.bus = bus;
-  }
-
   protected <R> void sendReply(MessageImpl msg, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
-    if (bus != null) {
-      bus.sendReply(msg, this, options, replyHandler);
-    }
+    bus.sendReply(msg, this, options, replyHandler);
   }
 
   protected boolean isLocal() {

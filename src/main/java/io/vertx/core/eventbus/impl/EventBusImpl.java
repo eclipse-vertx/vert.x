@@ -384,7 +384,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   protected <T> boolean deliverMessageLocally(MessageImpl msg) {
-    msg.setBus(this);
     ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
     if (handlers != null) {
       if (msg.isSend()) {
