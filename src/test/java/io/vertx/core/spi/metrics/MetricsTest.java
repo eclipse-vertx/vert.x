@@ -423,7 +423,7 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitLatch(latch);
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
-    assertEquals(Collections.singletonList(ADDRESS1), metrics.getReplyFailureAddresses());
+    assertEquals(Collections.singletonList("__vertx.reply.1"), metrics.getReplyFailureAddresses());
     assertEquals(Collections.singletonList(ReplyFailure.NO_HANDLERS), metrics.getReplyFailures());
   }
 

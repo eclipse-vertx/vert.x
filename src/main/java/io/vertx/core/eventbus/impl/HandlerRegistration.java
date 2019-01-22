@@ -11,14 +11,10 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.ReplyException;
-import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
@@ -44,10 +40,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private final Vertx vertx;
   private final EventBusMetrics metrics;
   private final EventBusImpl eventBus;
-  private final String address;
-  private final String repliedAddress;
+  final String address;
+  final String repliedAddress;
   private final boolean localOnly;
-  private long timeoutID = -1;
   private HandlerHolder<T> registered;
   private Handler<Message<T>> handler;
   private ContextInternal handlerContext;
@@ -61,18 +56,13 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private Object metric;
 
   public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
-                             String repliedAddress, boolean localOnly, long timeout) {
+                             String repliedAddress, boolean localOnly) {
     this.vertx = vertx;
     this.metrics = metrics;
     this.eventBus = eventBus;
     this.address = address;
     this.repliedAddress = repliedAddress;
     this.localOnly = localOnly;
-    if (timeout != -1) {
-      timeoutID = vertx.setTimer(timeout, tid -> {
-        sendAsyncResultFailure(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress);
-      });
-    }
   }
 
   @Override
@@ -136,19 +126,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     doUnregister(completionHandler);
   }
 
-  public void sendAsyncResultFailure(ReplyFailure failure, String msg) {
-    unregister();
-    MessageImpl timeout = new MessageImpl(repliedAddress, null, new CaseInsensitiveHeaders(), new ReplyException(failure, msg), CodecManager.REPLY_EXCEPTION_MESSAGE_CODEC, true, eventBus);
-    handler.handle(timeout);
-  }
-
   private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {
     Deque<Message<T>> discarded;
     Handler<Message<T>> discardHandler;
     synchronized (this) {
-      if (timeoutID != -1) {
-        vertx.cancelTimer(timeoutID);
-      }
       if (endHandler != null) {
         Handler<Void> theEndHandler = endHandler;
         Handler<AsyncResult<Void>> handler = completionHandler;
