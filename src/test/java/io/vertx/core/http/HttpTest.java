@@ -1318,9 +1318,14 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testNoExceptionHandlerCalledWhenResponseReceivedOK() throws Exception {
-    server.requestHandler(request -> {
-      request.response().end();
+  public void testNoExceptionHandlerCalledWhenResponseEnded() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      req.exceptionHandler(this::fail);
+      resp.exceptionHandler(err -> {
+        err.printStackTrace();
+      });
+      resp.end();
     }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.endHandler(v -> {
@@ -2228,40 +2233,14 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testRequestNotReceivedIfTimedout() {
-    server.requestHandler(req -> {
-      vertx.setTimer(500, id -> {
-        HttpServerResponse resp = req.response();
-        if (!resp.closed()) {
-          resp.setStatusCode(200);
-          resp.end("OK");
-        }
-      });
-    });
-
-    server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Response should not be handled"));
-      AtomicBoolean failed = new AtomicBoolean();
-      req.exceptionHandler(t -> {
-        if (failed.compareAndSet(false, true)) {
-          assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
-          //Delay a bit to let any response come back
-          vertx.setTimer(500, id -> testComplete());
-        }
-      });
-      req.setTimeout(100);
-      req.end();
-    }));
-
-    await();
-  }
-
-  @Test
   public void testHttpClientRequestTimeoutResetsTheConnection() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
+      AtomicBoolean errored = new AtomicBoolean();
       req.exceptionHandler(err -> {
-        complete();
+        if (errored.compareAndSet(false, true)) {
+          complete();
+        }
       });
     });
     startServer();

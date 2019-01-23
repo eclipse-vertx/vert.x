@@ -59,6 +59,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
@@ -1004,12 +1005,8 @@ public class Http2ServerTest extends Http2TestBase {
         if (err instanceof StreamResetException) {
           assertEquals(10L, ((StreamResetException) err).getCode());
           assertEquals(1, resetCount.getAndIncrement());
+          testComplete();
         }
-      });
-      req.endHandler(v -> {
-        assertEquals(ctx, Vertx.currentContext());
-        assertEquals(2, resetCount.get());
-        testComplete();
       });
     });
     startServer(ctx);
@@ -1714,7 +1711,7 @@ public class Http2ServerTest extends Http2TestBase {
       } else {
         assertEquals(0, status.getAndIncrement());
         req.exceptionHandler(err -> {
-          closed.incrementAndGet();
+          fail();
         });
         req.response().closeHandler(err -> {
           closed.incrementAndGet();
@@ -1724,7 +1721,7 @@ public class Http2ServerTest extends Http2TestBase {
         });
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
-          assertEquals(5, closed.get());
+          assertEquals(4, closed.get());
           assertEquals(1, status.get());
           complete();
         });
@@ -1789,7 +1786,7 @@ public class Http2ServerTest extends Http2TestBase {
           fail();
         });
         req.response().exceptionHandler(err -> {
-          assertEquals(2, status.getAndIncrement());
+          fail();
         });
       } else {
         assertEquals(0, status.getAndIncrement());
@@ -1797,11 +1794,11 @@ public class Http2ServerTest extends Http2TestBase {
           fail();
         });
         req.response().exceptionHandler(err -> {
-          assertEquals(3, status.getAndIncrement());
+          fail();
         });
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
-          assertEquals(4, status.getAndIncrement());
+          assertEquals(2, status.getAndIncrement());
           complete();
         });
         conn.shutdown();

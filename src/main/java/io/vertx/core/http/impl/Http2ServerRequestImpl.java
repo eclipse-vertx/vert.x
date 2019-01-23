@@ -20,7 +20,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
@@ -73,6 +72,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
+  private boolean streamEnded;
   private boolean ended;
   private long bytesRead;
 
@@ -85,11 +85,12 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private Handler<StreamPriority> streamPriorityHandler;
   
   public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
-      String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable) {
+      String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
     super(conn, stream, writable);
 
     this.serverOrigin = serverOrigin;
     this.headers = headers;
+    this.streamEnded = streamEnded;
 
     String host = host();
     if (host == null) {
@@ -116,15 +117,14 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     if (handler != null) {
       handler.handle(cause);
     }
-    response.handleError(cause);
+    response.handleException(cause);
   }
 
   @Override
   void handleClose() {
     Handler<Throwable> handler;
     synchronized (conn) {
-      handler = ended ? null : exceptionHandler;
-      ended = true;
+      handler = streamEnded ? null : exceptionHandler;
     }
     if (handler != null) {
       handler.handle(new ClosedChannelException());
@@ -154,6 +154,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   void handleEnd(MultiMap trailers) {
+    streamEnded = true;
     ended = true;
     conn.reportBytesRead(bytesRead);
     if (postRequestDecoder != null) {
@@ -186,20 +187,15 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   void handleReset(long errorCode) {
-    Handler<Throwable> exceptionHandler;
-    Handler<Void> endHandler;
+    Handler<Throwable> handler;
     synchronized (conn) {
-      exceptionHandler = ended ? null : this.exceptionHandler;
-      endHandler = ended ? null : this.endHandler;
+      handler = ended ? null : exceptionHandler;
       ended = true;
     }
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(new StreamResetException(errorCode));
+    if (handler != null) {
+      handler.handle(new StreamResetException(errorCode));
     }
-    response.callReset(errorCode);
-    if (endHandler != null) {
-      endHandler.handle(null);
-    }
+    response.handleReset(errorCode);
   }
 
   private void checkEnded() {
