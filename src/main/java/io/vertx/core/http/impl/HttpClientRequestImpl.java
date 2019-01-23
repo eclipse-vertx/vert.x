@@ -47,7 +47,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  */
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
-  static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
+  static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   private final VertxInternal vertx;
   private Handler<HttpClientResponse> respHandler;
