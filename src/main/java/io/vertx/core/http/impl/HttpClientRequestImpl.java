@@ -34,7 +34,7 @@ import java.util.Objects;
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
- * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * This class is optimised for performance when used on the same event loop that was passed to the handler with.
  * However it can be used safely from other threads.
  *
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
@@ -47,7 +47,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  */
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
-  static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
+  static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   private final VertxInternal vertx;
   private final Future<HttpClientResponse> respFut;
