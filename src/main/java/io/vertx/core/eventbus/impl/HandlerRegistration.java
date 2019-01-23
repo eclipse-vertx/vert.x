@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.*;
+import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
@@ -222,33 +223,12 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private void deliver(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    boolean local = true;
-    if (message instanceof ClusteredMessage) {
-      // A bit hacky
-      ClusteredMessage cmsg = (ClusteredMessage)message;
-      if (cmsg.isFromWire()) {
-        local = false;
-      }
-    }
     String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
     if (creditsAddress != null) {
       eventBus.send(creditsAddress, 1);
     }
-    try {
-      if (metrics != null) {
-        metrics.beginHandleMessage(metric, local);
-      }
-      theHandler.handle(message);
-      if (metrics != null) {
-        metrics.endHandleMessage(metric, null);
-      }
-    } catch (Exception e) {
-      log.error("Failed to handleMessage. address: " + message.address(), e);
-      if (metrics != null) {
-        metrics.endHandleMessage(metric, e);
-      }
-      context.reportException(e);
-    }
+    InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
+    deliveryCtx.next();
     checkNextTick();
   }
 
@@ -352,6 +332,76 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   public Object getMetric() {
     return metric;
+  }
+
+  protected class InboundDeliveryContext implements DeliveryContext<T> {
+
+    private final MessageImpl<?, T> message;
+    private final Iterator<Handler<DeliveryContext>> iter;
+    private final Handler<Message<T>> handler;
+    private final ContextInternal context;
+
+    private InboundDeliveryContext(MessageImpl<?, T> message, Handler<Message<T>> handler, ContextInternal context) {
+      this.message = message;
+      this.handler = handler;
+      this.iter = eventBus.receiveInterceptors();
+      this.context = context;
+    }
+
+    @Override
+    public Message<T> message() {
+      return message;
+    }
+
+    @Override
+    public void next() {
+      if (iter.hasNext()) {
+        try {
+          Handler<DeliveryContext> handler = iter.next();
+          if (handler != null) {
+            handler.handle(this);
+          } else {
+            next();
+          }
+        } catch (Throwable t) {
+          log.error("Failure in interceptor", t);
+        }
+      } else {
+        boolean local = true;
+        if (message instanceof ClusteredMessage) {
+          // A bit hacky
+          ClusteredMessage cmsg = (ClusteredMessage)message;
+          if (cmsg.isFromWire()) {
+            local = false;
+          }
+        }
+        try {
+          if (metrics != null) {
+            metrics.beginHandleMessage(metric, local);
+          }
+          handler.handle(message);
+          if (metrics != null) {
+            metrics.endHandleMessage(metric, null);
+          }
+        } catch (Exception e) {
+          log.error("Failed to handleMessage. address: " + message.address(), e);
+          if (metrics != null) {
+            metrics.endHandleMessage(metric, e);
+          }
+          context.reportException(e);
+        }
+      }
+    }
+
+    @Override
+    public boolean send() {
+      return message.isSend();
+    }
+
+    @Override
+    public Object body() {
+      return message.receivedBody;
+    }
   }
 
 }
