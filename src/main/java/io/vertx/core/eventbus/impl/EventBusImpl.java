@@ -80,6 +80,10 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return this;
   }
 
+  Iterator<Handler<DeliveryContext>> receiveInterceptors() {
+    return receiveInterceptors.iterator();
+  }
+
   @Override
   public <T> EventBus removeInboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
     receiveInterceptors.remove(interceptor);
@@ -542,7 +546,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private <T> void deliverToHandler(MessageImpl msg, HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
     MessageImpl copied = msg.copyBeforeReceive();
-    DeliveryContext<T> receiveContext = new InboundDeliveryContext<>(copied, holder);
 
     if (metrics != null) {
       metrics.scheduleMessage(holder.getHandler().getMetric(), msg.isLocal());
@@ -553,7 +556,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // before it was received
       try {
         if (!holder.isRemoved()) {
-          receiveContext.next();
+          holder.getHandler().handle(copied);
         }
       } finally {
         if (holder.isReplyHandler()) {
@@ -561,52 +564,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
       }
     });
-  }
-
-  protected class InboundDeliveryContext<T> implements DeliveryContext<T> {
-
-    private final MessageImpl message;
-    private final Iterator<Handler<DeliveryContext>> iter;
-    private final HandlerHolder<T> holder;
-
-    private InboundDeliveryContext(MessageImpl message, HandlerHolder<T> holder) {
-      this.message = message;
-      this.holder = holder;
-      this.iter = receiveInterceptors.iterator();
-    }
-
-    @Override
-    public Message<T> message() {
-      return message;
-    }
-
-    @Override
-    public void next() {
-      if (iter.hasNext()) {
-        try {
-          Handler<DeliveryContext> handler = iter.next();
-          if (handler != null) {
-            handler.handle(this);
-          } else {
-            next();
-          }
-        } catch (Throwable t) {
-          log.error("Failure in interceptor", t);
-        }
-      } else {
-        holder.getHandler().handle(message);
-      }
-    }
-
-    @Override
-    public boolean send() {
-      return message.isSend();
-    }
-
-    @Override
-    public Object body() {
-      return message.receivedBody;
-    }
   }
 
   public class HandlerEntry<T> implements Closeable {
