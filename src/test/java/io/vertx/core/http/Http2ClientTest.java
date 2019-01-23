@@ -700,8 +700,11 @@ public class Http2ClientTest extends Http2TestBase {
       req.handler(buf -> {
         bufReceived.complete();
       });
+      AtomicBoolean errored = new AtomicBoolean();
       req.exceptionHandler(err -> {
-        assertEquals(err.getClass(), StreamResetException.class);
+        if (errored.compareAndSet(false, true)) {
+          assertEquals(err.getClass(), StreamResetException.class);
+        }
       });
       AtomicLong reset = new AtomicLong();
       req.response().exceptionHandler(err -> {

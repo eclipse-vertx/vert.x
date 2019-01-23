@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Error;
@@ -97,11 +96,11 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     return false;
   }
 
-  private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers) {
+  private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
     boolean writable = handler.encoder().flowController().isWritable(stream);
-    return new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable);
+    return new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable, streamEnded);
   }
 
   @Override
@@ -113,7 +112,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
         return;
       }
-      Http2ServerRequestImpl req = createRequest(streamId, headers);
+      Http2ServerRequestImpl req = createRequest(streamId, headers, endOfStream);
       req.priority(new StreamPriority()
         .setDependency(streamDependency)
         .setWeight(weight)
@@ -128,15 +127,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         req.response().writeContinue();
       }
       streams.put(streamId, req);
-      context.executeFromIO(v -> {
-        Http2ServerResponseImpl resp = req.response();
-        resp.beginRequest();
-        requestHandler.handle(req);
-        boolean hasPush = resp.endRequest();
-        if (hasPush) {
-          ctx.flush();
-        }
-      });
+      context.executeFromIO(req, requestHandler);
     } else {
       // Http server request trailer - not implemented yet (in api)
     }
@@ -209,18 +200,6 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     super.updateSettings(settingsUpdate, completionHandler);
   }
 
-  Http2ServerRequestImpl createUpgradeRequest(HttpRequest request) {
-    DefaultHttp2Headers headers = new DefaultHttp2Headers();
-    headers.method(request.method().name());
-    headers.path(request.uri());
-    headers.authority(request.headers().get("host"));
-    headers.scheme("http");
-    request.headers().remove("http2-settings");
-    request.headers().remove("host");
-    request.headers().forEach(header -> headers.set(header.getKey().toLowerCase(), header.getValue()));
-    return createRequest(1, headers);
-  }
-
   private class Push extends VertxHttp2Stream<Http2ServerConnection> {
 
     private final HttpMethod method;
@@ -268,7 +247,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         response = this.response;
       }
       if (response != null) {
-        response.callReset(errorCode);
+        response.handleReset(errorCode);
       } else {
         completionHandler.fail(new StreamResetException(errorCode));
       }
@@ -277,7 +256,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     @Override
     void handleException(Throwable cause) {
       if (response != null) {
-        response.handleError(cause);
+        response.handleException(cause);
       }
     }
 
