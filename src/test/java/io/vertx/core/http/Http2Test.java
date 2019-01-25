@@ -35,15 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Http2Test extends HttpTest {
 
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(true));
-  }
-
-  @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).setHandle100ContinueAutomatically(true);
   }
 
   @Override

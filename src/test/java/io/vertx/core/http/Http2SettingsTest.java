@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 /**
  * @author Thomas Segismont
  */
-public class Http2SettingsTest extends HttpTestBase {
+public class Http2SettingsTest {
 
   long[] min = { 0, 0, 0, 0, 0x4000, 0 };
   long[] max = { 0xFFFFFFFFL, 1, 0xFFFFFFFFL, Integer.MAX_VALUE, 0xFFFFFF, Integer.MAX_VALUE };

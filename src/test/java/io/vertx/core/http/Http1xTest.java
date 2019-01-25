@@ -53,6 +53,11 @@ import static io.vertx.test.core.TestUtils.*;
 public class Http1xTest extends HttpTest {
 
   @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return super.createBaseServerOptions().setHandle100ContinueAutomatically(true);
+  }
+
+  @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
     options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
@@ -61,13 +66,6 @@ public class Http1xTest extends HttpTest {
       "127.0.0.1 host1\n" +
       "127.0.0.1 host2\n"));
     return options;
-  }
-
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    client = vertx.createHttpClient(new HttpClientOptions());
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST).setHandle100ContinueAutomatically(true));
   }
 
   @Test
