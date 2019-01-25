@@ -49,13 +49,6 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
   }
 
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    client = vertx.createHttpClient(clientOptions);
-    server = vertx.createHttpServer(serverOptions);
-  }
-
-  @Override
   protected HttpServerOptions createBaseServerOptions() {
     return serverOptions;
   }

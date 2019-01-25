@@ -23,11 +23,9 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -61,14 +59,6 @@ public abstract class HttpTest extends HttpTestBase {
   public void setUp() throws Exception {
     super.setUp();
     testDir = testFolder.newFolder();
-  }
-
-  protected HttpServerOptions createBaseServerOptions() {
-    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
-  }
-
-  protected HttpClientOptions createBaseClientOptions() {
-    return new HttpClientOptions();
   }
 
   @Test
@@ -1938,7 +1928,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void test100ContinueHandledManually() throws Exception {
 
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions());
+    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(false));
 
     Buffer toSend = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> {
@@ -1970,7 +1960,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void test100ContinueRejectedManually() throws Exception {
 
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions());
+    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(false));
 
     server.requestHandler(req -> {
       req.response().setStatusCode(405).end();

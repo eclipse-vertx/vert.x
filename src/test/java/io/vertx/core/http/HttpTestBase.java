@@ -38,9 +38,18 @@ public class HttpTestBase extends VertxTestBase {
   protected HttpClient client;
   protected TestProxyBase proxy;
 
+  protected HttpServerOptions createBaseServerOptions() {
+    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
+  }
+
+  protected HttpClientOptions createBaseClientOptions() {
+    return new HttpClientOptions();
+  }
+
   public void setUp() throws Exception {
     super.setUp();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server = vertx.createHttpServer(createBaseServerOptions());
+    client = vertx.createHttpClient(createBaseClientOptions());
   }
 
   protected void tearDown() throws Exception {

@@ -20,7 +20,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -59,7 +58,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
@@ -246,27 +244,10 @@ public class Http2ServerTest extends Http2TestBase {
     }
   }
 
-  private List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
-
-  @Override
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    super.setUp();
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
-      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
-    }
-  }
-
   @Test
   public void testConnectionHandler() throws Exception {
     waitFor(2);
     Context ctx = vertx.getOrCreateContext();
-    server.close();
     server.connectionHandler(conn -> {
       assertOnIOContext(ctx);
       complete();
@@ -316,8 +297,6 @@ public class Http2ServerTest extends Http2TestBase {
     waitFor(2);
     io.vertx.core.http.Http2Settings expectedSettings = TestUtils.randomHttp2Settings();
     expectedSettings.setHeaderTableSize((int)io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
-    server.close();
-    server = vertx.createHttpServer(serverOptions);
     Context otherContext = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
       Context ctx = Vertx.currentContext();
@@ -2674,6 +2653,7 @@ public class Http2ServerTest extends Http2TestBase {
       req.response().end();
     });
     startServer();
+    client.close();
     client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
     req.handler(onSuccess(resp -> {
@@ -2740,6 +2720,7 @@ public class Http2ServerTest extends Http2TestBase {
       fail();
     });
     startServer(context);
+    client.close();
     client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
     doRequest.apply(client, onSuccess(resp -> {
       assertEquals(400, resp.statusCode());
@@ -2764,6 +2745,7 @@ public class Http2ServerTest extends Http2TestBase {
       });
     });
     startServer();
+    client.close();
     client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
     HttpClientRequest request = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
     }).putHeader("Upgrade", "h2c")
@@ -2822,6 +2804,7 @@ public class Http2ServerTest extends Http2TestBase {
       req.response().end();
     });
     startServer(createWorker());
+    client.close();
     client = vertx.createHttpClient(clientOptions);
     client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
@@ -2835,7 +2818,6 @@ public class Http2ServerTest extends Http2TestBase {
     waitFor(2);
     Buffer expected = TestUtils.randomBuffer(8);
     Context ctx = vertx.getOrCreateContext();
-    server.close();
     server.connectionHandler(conn -> {
       conn.ping(expected, ar -> {
         assertSame(ctx, Vertx.currentContext());
@@ -2867,7 +2849,6 @@ public class Http2ServerTest extends Http2TestBase {
   public void testReceivePing() throws Exception {
     Buffer expected = TestUtils.randomBuffer(8);
     Context ctx = vertx.getOrCreateContext();
-    server.close();
     server.connectionHandler(conn -> {
       conn.pingHandler(buff -> {
         assertOnIOContext(ctx);
