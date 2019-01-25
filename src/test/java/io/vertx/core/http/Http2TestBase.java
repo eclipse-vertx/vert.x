@@ -11,10 +11,15 @@
 
 package io.vertx.core.http;
 
+import io.netty.channel.EventLoopGroup;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -41,13 +46,32 @@ public class Http2TestBase extends HttpTestBase {
 
   protected HttpServerOptions serverOptions;
   protected HttpClientOptions clientOptions;
+  protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
 
   @Override
   public void setUp() throws Exception {
-    super.setUp();
+    eventLoopGroups.clear();
     serverOptions =  createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
     clientOptions = createHttp2ClientOptions();
-    server = vertx.createHttpServer(serverOptions);
+    super.setUp();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
+      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+    }
+  }
+
+  @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return serverOptions;
+  }
+
+  @Override
+  protected HttpClientOptions createBaseClientOptions() {
+    return clientOptions;
   }
 
   protected void assertOnIOContext(Context context) {

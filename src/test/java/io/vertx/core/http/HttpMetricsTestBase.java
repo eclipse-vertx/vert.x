@@ -42,14 +42,6 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     this.protocol = protocol;
   }
 
-  protected HttpServerOptions createBaseServerOptions() {
-    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
-  }
-
-  protected HttpClientOptions createBaseClientOptions() {
-    return new HttpClientOptions();
-  }
-
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
