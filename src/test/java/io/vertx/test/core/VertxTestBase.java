@@ -25,7 +25,10 @@ import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.spi.TracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.tracing.Tracer;
+import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
 
@@ -74,9 +77,17 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
+  protected Tracer getTracer() {
+    return null;
+  }
+
   protected VertxOptions getOptions() {
     VertxOptions options = new VertxOptions();
     options.setPreferNativeTransport(USE_NATIVE_TRANSPORT);
+    Tracer tracer = getTracer();
+    if (tracer != null) {
+      options.setTracingOptions(new TracingOptions().setFactory(options1 -> tracer));
+    }
     return options;
   }
 

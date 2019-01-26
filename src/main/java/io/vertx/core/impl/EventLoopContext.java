@@ -34,6 +34,10 @@ public class EventLoopContext extends ContextImpl {
     super(vertx, eventLoop, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
+  private EventLoopContext(EventLoopContext context, ContextImpl foo) {
+    super(context, foo);
+  }
+
   void executeAsync(Handler<Void> task) {
     nettyEventLoop().execute(() -> dispatch(null, task));
   }
@@ -53,4 +57,13 @@ public class EventLoopContext extends ContextImpl {
     return true;
   }
 
+  @Override
+  public ContextInternal createTraceContext() {
+    return new EventLoopContext(this, null);
+  }
+
+  @Override
+  public ContextInternal createTraceContext(ContextInternal in) {
+    return new EventLoopContext(this, (ContextImpl) in);
+  }
 }

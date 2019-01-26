@@ -25,6 +25,10 @@ class WorkerContext extends ContextImpl {
     super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
+  private WorkerContext(WorkerContext context, ContextImpl foo) {
+    super(context, foo);
+  }
+
   @Override
   void executeAsync(Handler<Void> task) {
     execute(null, task);
@@ -71,5 +75,10 @@ class WorkerContext extends ContextImpl {
         }
       }
     }, workerPool.executor());
+  }
+
+  @Override
+  public ContextInternal createTraceContext(ContextInternal in) {
+    return new WorkerContext(this, (ContextImpl) in);
   }
 }

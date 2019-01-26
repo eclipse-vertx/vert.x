@@ -22,6 +22,7 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.spi.tracing.Tracer;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -61,6 +62,11 @@ public interface VertxInternal extends Vertx {
    * @return the context
    */
   ContextInternal getContext();
+
+  /**
+   * @return the tracer
+   */
+  Tracer tracer();
 
   /**
    * @return event loop context
@@ -128,4 +134,5 @@ public interface VertxInternal extends Vertx {
   void addCloseHook(Closeable hook);
 
   void removeCloseHook(Closeable hook);
+
 }

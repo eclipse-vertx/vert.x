@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -60,7 +61,8 @@ abstract class ContextImpl implements ContextInternal {
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
   private ConcurrentMap<Object, Object> contextData;
-  private volatile Handler<Throwable> exceptionHandler;
+  private ConcurrentMap<Object, Object> localContextData;
+  private final AtomicReference<Handler<Throwable>> exceptionHandler;
   private final WorkerPool internalBlockingPool;
   private final TaskQueue internalOrderedTasks;
   final WorkerPool workerPool;
@@ -86,6 +88,22 @@ abstract class ContextImpl implements ContextInternal {
     this.orderedTasks = new TaskQueue();
     this.internalOrderedTasks = new TaskQueue();
     this.closeHooks = new CloseHooks(log);
+    this.exceptionHandler = new AtomicReference<>();
+  }
+
+  protected ContextImpl(ContextImpl context, ContextImpl foo) {
+    this.deploymentID = context.deploymentID;
+    this.config = context.config;
+    this.eventLoop = context.eventLoop;
+    this.tccl = context.tccl;
+    this.owner = context.owner;
+    this.workerPool = context.workerPool;
+    this.internalBlockingPool = context.internalBlockingPool;
+    this.orderedTasks = context.orderedTasks;
+    this.internalOrderedTasks = context.internalOrderedTasks;
+    this.closeHooks = context.closeHooks;
+    this.exceptionHandler = context.exceptionHandler;
+    this.localContextData = foo != null ? foo.localContextData : null;
   }
 
   public void setDeployment(Deployment deployment) {
@@ -308,8 +326,16 @@ abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
+  @Override
+  public synchronized ConcurrentMap<Object, Object> localContextData() {
+    if (localContextData == null) {
+      localContextData = new ConcurrentHashMap<>();
+    }
+    return localContextData;
+  }
+
   public void reportException(Throwable t) {
-    Handler<Throwable> handler = this.exceptionHandler;
+    Handler<Throwable> handler = exceptionHandler.get();
     if (handler == null) {
       handler = owner.exceptionHandler();
     }
@@ -322,13 +348,13 @@ abstract class ContextImpl implements ContextInternal {
 
   @Override
   public Context exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
+    exceptionHandler.set(handler);
     return this;
   }
 
   @Override
   public Handler<Throwable> exceptionHandler() {
-    return exceptionHandler;
+    return exceptionHandler.get();
   }
 
   public int getInstanceCount() {
@@ -342,5 +368,10 @@ abstract class ContextImpl implements ContextInternal {
       return 1;
     }
     return deployment.deploymentOptions().getInstances();
+  }
+
+  @Override
+  public ContextInternal createTraceContext() {
+    return createTraceContext(null);
   }
 }
