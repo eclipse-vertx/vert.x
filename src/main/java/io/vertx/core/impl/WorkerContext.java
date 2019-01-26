@@ -13,15 +13,16 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.spi.metrics.PoolMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class WorkerContext extends ContextImpl {
 
-  WorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
-                       ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deployment, tccl);
+  WorkerContext(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+                ClassLoader tccl) {
+    super(vertx, tracer, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override
@@ -38,6 +39,10 @@ class WorkerContext extends ContextImpl {
   // so we need to execute it on the worker thread
   @Override
   <T> void execute(T value, Handler<T> task) {
+    execute(this, value ,task);
+  }
+
+  private <T> void execute(ContextInternal ctx, T value, Handler<T> task) {
     PoolMetrics metrics = workerPool.metrics();
     Object metric = metrics != null ? metrics.submitted() : null;
     orderedTasks.execute(() -> {
@@ -45,7 +50,7 @@ class WorkerContext extends ContextImpl {
         metrics.begin(metric);
       }
       try {
-        dispatch(value, task);
+        ctx.dispatch(value, task);
       } finally {
         if (metrics != null) {
           metrics.end(metric, true);
@@ -70,5 +75,35 @@ class WorkerContext extends ContextImpl {
         }
       }
     }, workerPool.executor());
+  }
+
+  public ContextInternal duplicate(ContextInternal in) {
+    return new Duplicated(this, in);
+  }
+
+  static class Duplicated extends ContextImpl.Duplicated<WorkerContext> {
+
+    Duplicated(WorkerContext delegate, ContextInternal other) {
+      super(delegate, other);
+    }
+
+    void executeAsync(Handler<Void> task) {
+      execute(null, task);
+    }
+
+    @Override
+    <T> void execute(T value, Handler<T> task) {
+      delegate.execute(this, value, task);
+    }
+
+    @Override
+    public boolean isEventLoopContext() {
+      return false;
+    }
+
+    @Override
+    public ContextInternal duplicate(ContextInternal context) {
+      return new Duplicated(delegate, context);
+    }
   }
 }

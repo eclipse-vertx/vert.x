@@ -1931,6 +1931,24 @@ Set the ALPN usage.
 +++
 |===
 
+[[TracingOptions]]
+== TracingOptions
+
+++++
+ Vert.x tracing base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
+++++
+'''
+
+[cols=">25%,25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[enabled]]`@enabled`|`Boolean`|+++
+Set whether tracing will be enabled on the Vert.x instance.
++++
+|===
+
 [[VertxOptions]]
 == VertxOptions
 
@@ -2022,6 +2040,7 @@ Set wether to prefer the native transport to the JDK transport.
 |[[quorumSize]]`@quorumSize`|`Number (int)`|+++
 Set the quorum size to be used when HA is enabled.
 +++
+|[[tracingOptions]]`@tracingOptions`|`link:dataobjects.html#TracingOptions[TracingOptions]`|-
 |[[warningExceptionTime]]`@warningExceptionTime`|`Number (long)`|+++
 Set the threshold value above this, the blocked warning contains a stack trace. in link.
  The default value of link is

@@ -14,6 +14,7 @@ package io.vertx.core;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxThread;
 import io.vertx.core.impl.WorkerPool;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -27,6 +28,24 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ContextTest extends VertxTestBase {
+
+  private ExecutorService workerExecutor;
+
+  private ContextInternal createWorkerContext() {
+    return ((VertxInternal) vertx).createWorkerContext(null, new WorkerPool(workerExecutor, null), Thread.currentThread().getContextClassLoader());
+  }
+
+  @Override
+  public void setUp() throws Exception {
+    workerExecutor = Executors.newSingleThreadExecutor(r -> new VertxThread(r, "vert.x-worker-thread", true, 10, TimeUnit.SECONDS));
+    super.setUp();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    workerExecutor.shutdown();
+    super.tearDown();
+  }
 
   @Test
   public void testRunOnContext() throws Exception {
@@ -189,22 +208,13 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testWorkerExecuteFromIo() throws Exception {
-    AtomicReference<ContextInternal> workerContext = new AtomicReference<>();
-    CountDownLatch latch = new CountDownLatch(1);
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        workerContext.set((ContextInternal) context);
-        latch.countDown();
-      }
-    }, new DeploymentOptions().setWorker(true));
-    awaitLatch(latch);
-    workerContext.get().nettyEventLoop().execute(() -> {
+  public void testWorkerExecuteFromIo() {
+    ContextInternal workerContext = createWorkerContext();
+    workerContext.nettyEventLoop().execute(() -> {
       assertNull(Vertx.currentContext());
-      workerContext.get().nettyEventLoop().execute(() -> {
-        workerContext.get().executeFromIO(v -> {
-          assertSame(workerContext.get(), Vertx.currentContext());
+      workerContext.nettyEventLoop().execute(() -> {
+        workerContext.executeFromIO(v -> {
+          assertSame(workerContext, Vertx.currentContext());
           assertTrue(Context.isOnWorkerThread());
           testComplete();
         });
@@ -409,8 +419,7 @@ public class ContextTest extends VertxTestBase {
   @Test
   public void testExecuteFromIOWorkerFromNonVertxThread() {
     assertEquals("true", System.getProperty("vertx.threadChecks"));
-    ExecutorService a = Executors.newSingleThreadExecutor();
-    ContextInternal ctx = ((VertxInternal) vertx).createWorkerContext(null, new WorkerPool(a, null), Thread.currentThread().getContextClassLoader());
+    ContextInternal ctx = createWorkerContext();
     AtomicBoolean called = new AtomicBoolean();
     try {
       ctx.executeFromIO(v -> {
@@ -431,5 +440,101 @@ public class ContextTest extends VertxTestBase {
     ctx.exceptionHandler(err::set);
     ctx.reportException(expected);
     assertSame(expected, err.get());
+  }
+
+  @Test
+  public void testDuplicate() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicate = ctx.duplicate();
+    checkDuplicate(ctx, duplicate);
+  }
+
+  @Test
+  public void testDuplicateWorker() throws Exception {
+    ContextInternal ctx = createWorkerContext();
+    ContextInternal duplicate = ctx.duplicate();
+    checkDuplicate(ctx, duplicate);
+  }
+
+  @Test
+  public void testDuplicateTwice() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = ctx.duplicate().duplicate();
+    checkDuplicate(ctx, duplicated);
+  }
+
+  @Test
+  public void testDuplicateWith() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal other = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = ctx.duplicate(other);
+    checkDuplicate(ctx, duplicated);
+    checkDuplicateWith(other, duplicated);
+  }
+
+  private void checkDuplicate(ContextInternal ctx, ContextInternal duplicated) throws Exception {
+    assertSame(ctx.nettyEventLoop(), duplicated.nettyEventLoop());
+    assertSame(ctx.getDeployment(), duplicated.getDeployment());
+    assertSame(ctx.classLoader(), duplicated.classLoader());
+    assertSame(ctx.owner(), duplicated.owner());
+    Object shared = new Object();
+    Object local = new Object();
+    ctx.put("key", shared);
+    ctx.putLocal("key", local);
+    assertSame(shared, duplicated.get("key"));
+    assertNull(duplicated.getLocal("key"));
+    assertTrue(duplicated.remove("key"));
+    assertNull(ctx.get("key"));
+
+    CountDownLatch latch1 = new CountDownLatch(1);
+    duplicated.runOnContext(v -> {
+      assertSame(Vertx.currentContext(), duplicated);
+      latch1.countDown();
+    });
+    awaitLatch(latch1);
+
+    CountDownLatch latch2 = new CountDownLatch(1);
+    Throwable failure = new Throwable();
+    ctx.exceptionHandler(err -> {
+      assertSame(failure, err);
+      latch2.countDown();
+    });
+    duplicated.reportException(failure);
+    awaitLatch(latch2);
+
+    CountDownLatch latch3 = new CountDownLatch(1);
+    duplicated.runOnContext(v -> {
+      vertx.setTimer(10, id -> {
+        assertSame(duplicated, Vertx.currentContext());
+        latch3.countDown();
+      });
+    });
+    awaitLatch(latch3);
+
+    CountDownLatch latch4 = new CountDownLatch(1);
+    duplicated.runOnContext(v -> {
+      vertx.executeBlocking(Future::complete, res -> {
+        assertSame(duplicated, Vertx.currentContext());
+        latch4.countDown();
+      });
+    });
+    awaitLatch(latch4);
+  }
+
+  @Test
+  public void testDuplicateWithTwice() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal other = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = ctx.duplicate().duplicate(other);
+    checkDuplicate(ctx, duplicated);
+    checkDuplicateWith(other, duplicated);
+  }
+
+  private void checkDuplicateWith(ContextInternal ctx, ContextInternal duplicated) {
+    Object val = new Object();
+    ctx.putLocal("key", val);
+    assertSame(val, duplicated.getLocal("key"));
+    duplicated.removeLocal("key");
+    assertNull(ctx.getLocal("key"));
   }
 }

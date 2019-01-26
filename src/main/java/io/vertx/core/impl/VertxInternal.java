@@ -16,7 +16,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
 import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.transport.Transport;
@@ -128,4 +127,5 @@ public interface VertxInternal extends Vertx {
   void addCloseHook(Closeable hook);
 
   void removeCloseHook(Closeable hook);
+
 }

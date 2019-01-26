@@ -19,6 +19,7 @@ import io.vertx.core.impl.cpu.CpuCoreSensor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.tracing.TracingOptions;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -156,6 +157,7 @@ public class VertxOptions {
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
   private MetricsOptions metricsOptions = new MetricsOptions();
+  private TracingOptions tracingOptions = new TracingOptions();
   private FileSystemOptions fileSystemOptions = new FileSystemOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
   private EventBusOptions eventBusOptions = new EventBusOptions();
@@ -197,6 +199,7 @@ public class VertxOptions {
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
     this.blockedThreadCheckIntervalUnit = other.blockedThreadCheckIntervalUnit;
+    this.tracingOptions = other.tracingOptions != null ? other.tracingOptions.copy() : null;
   }
 
   /**
@@ -802,6 +805,15 @@ public class VertxOptions {
    */
   public VertxOptions setBlockedThreadCheckIntervalUnit(TimeUnit blockedThreadCheckIntervalUnit) {
     this.blockedThreadCheckIntervalUnit = blockedThreadCheckIntervalUnit;
+    return this;
+  }
+
+  public TracingOptions getTracingOptions() {
+    return tracingOptions;
+  }
+
+  public VertxOptions setTracingOptions(TracingOptions tracingOptions) {
+    this.tracingOptions = tracingOptions;
     return this;
   }
 

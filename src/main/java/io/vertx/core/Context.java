@@ -205,6 +205,33 @@ public interface Context {
   boolean remove(String key);
 
   /**
+   * Get some local data from the context.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the data
+   */
+  <T> T getLocal(String key);
+
+  /**
+   * Put some local data in the context.
+   * <p>
+   * This can be used to share data between different handlers that share a context
+   *
+   * @param key  the key of the data
+   * @param value  the data
+   */
+  void putLocal(String key, Object value);
+
+  /**
+   * Remove some local data from the context.
+   *
+   * @param key  the key to remove
+   * @return true if removed successfully, false otherwise
+   */
+  boolean removeLocal(String key);
+
+  /**
    * @return The Vertx instance that created the context
    */
   Vertx owner();

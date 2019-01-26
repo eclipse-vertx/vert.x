@@ -17,6 +17,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;
 
@@ -69,10 +70,10 @@ public interface ContextInternal extends Context {
     }
   }
 
-  static void setContext(ContextInternal context) {
+  static ContextInternal setContext(ContextInternal context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
-      ((VertxThread)current).setContext(context);
+      return ((VertxThread)current).setContext(context);
     } else {
       throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
     }
@@ -186,8 +187,42 @@ public interface ContextInternal extends Context {
   ConcurrentMap<Object, Object> contextData();
 
   /**
+   * @return the {@link ConcurrentMap} used to store local context data
+   */
+  ConcurrentMap<Object, Object> localContextData();
+
+  /**
    * @return the classloader associated with this context
    */
   ClassLoader classLoader();
+
+  /**
+   * @return the tracer for this context
+   */
+  VertxTracer tracer();
+
+  /**
+   * Returns a context which shares the whole behavior of this context but not the {@link #localContextData()} which
+   * remains private to the context:
+   * <ul>
+   *   <li>same concurrency</li>
+   *   <li>same exception handler</li>
+   *   <li>same context context</li>
+   *   <li>same deployment</li>
+   *   <li>same config</li>
+   *   <li>same classloader</li>
+   * </ul>
+   * <p>
+   * The duplicated context will have its own private local context data.
+   *
+   * @return a context whose behavior will is equivalent to this context but with new private
+   */
+  ContextInternal duplicate();
+
+  /**
+   * Like {@link #duplicate()} but the duplicated context local data will adopt the local data of the specified
+   * {@code context} argument.
+   */
+  ContextInternal duplicate(ContextInternal context);
 
 }
