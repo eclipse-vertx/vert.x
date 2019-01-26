@@ -39,7 +39,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
@@ -52,6 +51,7 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
+import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -59,6 +59,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
 import java.io.IOException;
@@ -134,6 +135,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final TimeUnit defaultWorkerMaxExecTimeUnit;
   private final CloseHooks closeHooks;
   private final Transport transport;
+  final VertxTracer tracer;
 
   private VertxImpl(VertxOptions options, Transport transport) {
     // Sanity check
@@ -169,6 +171,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
+    this.tracer = initializeTracer(options);
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);
       this.eventBus = new ClusteredEventBus(this, options, clusterManager);
@@ -394,7 +397,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public EventLoopContext createEventLoopContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, tccl);
+    return new EventLoopContext(this, tracer, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, tccl);
   }
 
   @Override
@@ -402,7 +405,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (workerPool == null) {
       workerPool = this.workerPool;
     }
-    return new WorkerContext(this, internalBlockingPool, workerPool, deployment, tccl);
+    return new WorkerContext(this, tracer, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override
@@ -443,6 +446,24 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         VertxMetrics metrics = factory.metrics(options);
         Objects.requireNonNull(metrics, "The metric instance created from " + factory + " cannot be null");
         return metrics;
+      }
+    }
+    return null;
+  }
+
+  private VertxTracer initializeTracer(VertxOptions options) {
+    if (options.getTracingOptions() != null && options.getTracingOptions().isEnabled()) {
+      VertxTracerFactory factory = options.getTracingOptions().getFactory();
+      if (factory == null) {
+        factory = ServiceHelper.loadFactoryOrNull(VertxTracerFactory.class);
+        if (factory == null) {
+          log.warn("Metrics has been set to enabled but no TracerFactory found on classpath");
+        }
+      }
+      if (factory != null) {
+        VertxTracer tracer = factory.tracer(options.getTracingOptions());
+        Objects.requireNonNull(tracer, "The tracer instance created from " + factory + " cannot be null");
+        return tracer;
       }
     }
     return null;
@@ -838,6 +859,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
               }
               if (metrics != null) {
                 metrics.close();
+              }
+              if (tracer != null) {
+                tracer.close();
               }
 
               checker.close();

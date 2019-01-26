@@ -15,6 +15,9 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.tracing.VertxTracer;
+
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -23,14 +26,14 @@ public class EventLoopContext extends ContextImpl {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
-  EventLoopContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
-                          ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deployment, tccl);
+  EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+                   ClassLoader tccl) {
+    super(vertx, tracer, internalBlockingPool, workerPool, deployment, tccl);
   }
 
-  public EventLoopContext(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+  public EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                           ClassLoader tccl) {
-    super(vertx, eventLoop, internalBlockingPool, workerPool, deployment, tccl);
+    super(vertx, tracer, eventLoop, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   void executeAsync(Handler<Void> task) {
@@ -52,4 +55,34 @@ public class EventLoopContext extends ContextImpl {
     return true;
   }
 
+  @Override
+  public ContextInternal duplicate(ContextInternal in) {
+    return new Duplicated(this, in);
+  }
+
+  static class Duplicated extends ContextImpl.Duplicated<EventLoopContext> {
+
+    Duplicated(EventLoopContext delegate, ContextInternal other) {
+      super(delegate, other);
+    }
+
+    void executeAsync(Handler<Void> task) {
+      nettyEventLoop().execute(() -> dispatch(null, task));
+    }
+
+    @Override
+    <T> void execute(T value, Handler<T> task) {
+      dispatch(value, task);
+    }
+
+    @Override
+    public boolean isEventLoopContext() {
+      return true;
+    }
+
+    @Override
+    public ContextInternal duplicate(ContextInternal context) {
+      return new Duplicated(delegate, context);
+    }
+  }
 }

@@ -14,6 +14,8 @@ package io.vertx.core.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -25,7 +27,7 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deployment, tccl);
+    super(vertx, null, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override
@@ -46,5 +48,10 @@ public class BenchmarkContext extends ContextImpl {
   @Override
   public boolean isEventLoopContext() {
     return false;
+  }
+
+  @Override
+  public ContextInternal duplicate(ContextInternal in) {
+    throw new UnsupportedOperationException();
   }
 }

@@ -29,7 +29,7 @@ public final class VertxThread extends FastThreadLocalThread {
   private long execStart;
   private ContextInternal context;
 
-  VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
+  public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     super(target, name);
     this.worker = worker;
     this.maxExecTime = maxExecTime;
