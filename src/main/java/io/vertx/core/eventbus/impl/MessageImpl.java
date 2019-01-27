@@ -106,10 +106,7 @@ public class MessageImpl<U, V> implements Message<V> {
 
   @Override
   public void fail(int failureCode, String message) {
-    if (replyAddress != null) {
-      sendReply(bus.createMessage(true, replyAddress, null,
-        new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message), null), null, null);
-    }
+    reply(new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message));
   }
 
   @Override
@@ -130,7 +127,8 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (replyAddress != null) {
-      sendReply(bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
+      MessageImpl reply = bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName());
+      bus.sendReply(reply, this, options, replyHandler);
     }
   }
 
@@ -145,10 +143,6 @@ public class MessageImpl<U, V> implements Message<V> {
 
   public MessageCodec<U, V> codec() {
     return messageCodec;
-  }
-
-  protected <R> void sendReply(MessageImpl msg, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
-    bus.sendReply(msg, this, options, replyHandler);
   }
 
   protected boolean isLocal() {
