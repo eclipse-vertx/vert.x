@@ -12,22 +12,22 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
-import io.vertx.core.eventbus.*;
 import io.vertx.core.eventbus.impl.HandlerRegistration;
 import io.vertx.core.http.CaseInsensitiveHeaders;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -1053,6 +1053,47 @@ public class LocalEventBusTest extends EventBusTestBase {
       eb.publish(ADDRESS1, msg);
     }
     await();
+  }
+
+  @Test
+  public void testPauseFetchMessageStream() throws Exception {
+    testPauseFetch((consumer, handler) -> consumer.handler(message -> handler.handle(message.body())));
+  }
+
+  @Test
+  public void testPauseFetchBodyStream() throws Exception {
+    testPauseFetch((consumer, handler) -> consumer.bodyStream().handler(handler));
+  }
+
+  private void testPauseFetch(BiFunction<MessageConsumer<String>, Handler<String>, ReadStream<?>> streamSupplier) throws Exception {
+    List<String> data = new ArrayList<>();
+    for (int i = 0; i < 11; i++) {
+      data.add(TestUtils.randomAlphaString(10));
+    }
+    List<String> received = Collections.synchronizedList(new ArrayList<>());
+    CountDownLatch receiveLatch = new CountDownLatch(4);
+    HandlerRegistration<String> consumer = (HandlerRegistration<String>) eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(5);
+    streamSupplier.apply(consumer, e -> {
+      received.add(e);
+      receiveLatch.countDown();
+    }).pause().fetch(4);
+    List<String> discarded = Collections.synchronizedList(new ArrayList<>());
+    CountDownLatch discardLatch = new CountDownLatch(2);
+    consumer.discardHandler(msg -> {
+      discarded.add(msg.body());
+      discardLatch.countDown();
+    });
+    ListIterator<String> iterator = data.listIterator();
+    while (iterator.nextIndex() < 4) {
+      eb.publish(ADDRESS1, iterator.next());
+    }
+    awaitLatch(receiveLatch);
+    while (iterator.hasNext()) {
+      eb.publish(ADDRESS1, iterator.next());
+    }
+    awaitLatch(discardLatch);
+    assertEquals(data.subList(0, 4), received);
+    assertEquals(data.subList(data.size() - 2, data.size()), discarded);
   }
 
   @Test

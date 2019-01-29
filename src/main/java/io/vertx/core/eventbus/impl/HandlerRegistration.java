@@ -232,6 +232,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           pending.add(message);
           message = pending.poll();
         }
+        if (demand != Long.MAX_VALUE) {
+          demand--;
+        }
         theHandler = handler;
       }
       ctx = handlerContext;
