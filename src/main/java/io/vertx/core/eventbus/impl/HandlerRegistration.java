@@ -11,7 +11,6 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -216,24 +215,20 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     Handler<Message<T>> theHandler;
     ContextInternal ctx;
     synchronized (this) {
-      if (demand == 0L) {
-        if (pending.size() < maxBufferedMessages) {
-          pending.add(message);
-        } else {
+      if (repliedAddress == null) {
+        if (pending.size() >= maxBufferedMessages) {
           if (discardHandler != null) {
             discardHandler.handle(message);
           } else {
             log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer. address: " + address);
           }
+        } else {
+          pending.add(message);
+          checkNextTick();
         }
         return;
-      } else {
-        if (pending.size() > 0) {
-          pending.add(message);
-          message = pending.poll();
-        }
-        theHandler = handler;
       }
+      theHandler = handler;
       ctx = handlerContext;
     }
     deliver(theHandler, message, ctx);
