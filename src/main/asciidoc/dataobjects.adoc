@@ -2050,6 +2050,9 @@ Set the time unit of <code>maxWorkerExecuteTime</code>.
 |[[metricsOptions]]`@metricsOptions`|`link:dataobjects.html#MetricsOptions[MetricsOptions]`|+++
 Set the metrics options
 +++
+|[[name]]`@name`|`String`|+++
+
++++
 |[[preferNativeTransport]]`@preferNativeTransport`|`Boolean`|+++
 Set wether to prefer the native transport to the JDK transport.
 +++

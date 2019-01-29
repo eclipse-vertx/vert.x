@@ -145,6 +145,8 @@ public class VertxOptions {
    */
   public static final TimeUnit DEFAULT_WARNING_EXCEPTION_TIME_UNIT = TimeUnit.NANOSECONDS;
 
+  public static final String DEFAULT_VERTX_NAME = "vert.x";
+
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -165,6 +167,7 @@ public class VertxOptions {
   private TimeUnit maxWorkerExecuteTimeUnit = DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
   private TimeUnit warningExceptionTimeUnit = DEFAULT_WARNING_EXCEPTION_TIME_UNIT;
   private TimeUnit blockedThreadCheckIntervalUnit = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL_UNIT;
+  private String name = DEFAULT_VERTX_NAME;
 
   /**
    * Default constructor
@@ -197,6 +200,7 @@ public class VertxOptions {
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
     this.blockedThreadCheckIntervalUnit = other.blockedThreadCheckIntervalUnit;
+    this.name = other.name;
   }
 
   /**
@@ -833,6 +837,23 @@ public class VertxOptions {
    */
   public VertxOptions setBlockedThreadCheckIntervalUnit(TimeUnit blockedThreadCheckIntervalUnit) {
     this.blockedThreadCheckIntervalUnit = blockedThreadCheckIntervalUnit;
+    return this;
+  }
+
+  /**
+   *
+   * @return name of vertx instance, default to be "vert.x"
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   *
+   * @param name the name of vertx
+   */
+  public VertxOptions setName(String name) {
+    this.name = name;
     return this;
   }
 

@@ -107,6 +107,12 @@ public interface Vertx extends Measured {
   }
 
   /**
+   *
+   * @return name of vertx instance, default to be "vert.x"
+   */
+  String getName();
+
+  /**
    * Gets the current context, or creates one if there isn't one
    *
    * @return The current context (created if didn't exist)

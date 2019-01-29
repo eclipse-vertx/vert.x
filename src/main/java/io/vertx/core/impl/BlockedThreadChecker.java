@@ -32,8 +32,8 @@ public class BlockedThreadChecker {
   private final Map<VertxThread, Object> threads = new WeakHashMap<>();
   private final Timer timer; // Need to use our own timer - can't use event loop for this
 
-  BlockedThreadChecker(long interval, TimeUnit intervalUnit, long warningExceptionTime, TimeUnit warningExceptionTimeUnit) {
-    timer = new Timer("vertx-blocked-thread-checker", true);
+  BlockedThreadChecker(String vertxName, long interval, TimeUnit intervalUnit, long warningExceptionTime, TimeUnit warningExceptionTimeUnit) {
+    timer = new Timer(vertxName + "-blocked-thread-checker", true);
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
