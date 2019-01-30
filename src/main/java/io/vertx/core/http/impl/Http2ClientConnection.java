@@ -28,9 +28,11 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
@@ -95,11 +97,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     super.onStreamClosed(nettyStream);
   }
 
-  void upgradeStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  void upgradeStream(HttpClientRequestImpl req, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        Http2ClientStream stream = createStream(handler.connection().stream(1));
+        Http2ClientStream stream = createStream(context, handler.connection().stream(1));
         stream.beginRequest(req);
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
@@ -110,13 +112,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public void createStream(Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+    ContextInternal sub = getContext().duplicate(context);
     Future<HttpClientStream> fut;
     synchronized (this) {
       Http2Connection conn = handler.connection();
       try {
         int id = conn.local().lastStreamCreated() == 0 ? 1 : conn.local().lastStreamCreated() + 2;
-        Http2ClientStream stream = createStream(conn.local().createStream(id, false));
+        Http2ClientStream stream = createStream(sub, conn.local().createStream(id, false));
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
@@ -125,9 +128,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     completionHandler.handle(fut);
   }
 
-  private Http2ClientStream createStream(Http2Stream stream) {
+  private Http2ClientStream createStream(ContextInternal context, Http2Stream stream) {
     boolean writable = handler.encoder().flowController().isWritable(stream);
-    Http2ClientStream clientStream = new Http2ClientStream(this, stream, writable);
+    Http2ClientStream clientStream = new Http2ClientStream(this, context, stream, writable);
     streams.put(clientStream.stream.id(), clientStream);
     return clientStream;
   }
@@ -189,13 +192,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
+    private Object trace;
 
-    Http2ClientStream(Http2ClientConnection conn, Http2Stream stream, boolean writable) {
-      super(conn, stream, writable);
+    Http2ClientStream(Http2ClientConnection conn, ContextInternal context, Http2Stream stream, boolean writable) {
+      super(conn, context, stream, writable);
     }
 
-    Http2ClientStream(Http2ClientConnection conn, HttpClientRequestPushPromise request, Http2Stream stream, boolean writable) {
-      super(conn, stream, writable);
+    Http2ClientStream(Http2ClientConnection conn, ContextInternal context, HttpClientRequestPushPromise request, Http2Stream stream, boolean writable) {
+      super(conn, context, stream, writable);
       this.request = request;
     }
 
@@ -257,6 +261,17 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleClose() {
+      VertxTracer tracer = context.tracer();
+      if (tracer != null) {
+        Throwable failure;
+        if (!responseEnded || !requestEnded) {
+          failure = ConnectionBase.CLOSED_EXCEPTION;
+        } else {
+          failure = null;
+        }
+        tracer.receiveResponse(context, failure == null ? response : null, trace, failure, failure == null ? Collections.singletonList(new AbstractMap.SimpleEntry<>("http.status_code", "" + response.statusCode())) : null);
+      }
+
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
       // boolean disposable = conn.streams.isEmpty();
       if (request == null || request instanceof HttpClientRequestImpl) {
@@ -430,6 +445,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public void beginRequest(HttpClientRequestImpl req) {
       request = req;
+      VertxTracer tracer = context.tracer();
+      if (tracer != null) {
+        List<Map.Entry<String, String>> tags = new ArrayList<>();
+        tags.add(new AbstractMap.SimpleEntry<>("http.url", req.absoluteURI()));
+        tags.add(new AbstractMap.SimpleEntry<>("http.method", req.method().name()));
+        BiConsumer<String, String> headers = (key, val) -> req.headers().add(key, val);
+        trace = tracer.sendRequest(context, request, request.method.name(), headers, tags);
+      }
     }
 
     @Override

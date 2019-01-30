@@ -36,14 +36,17 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -195,6 +198,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     private final int id;
     private final Http1xClientConnection conn;
+    private final ContextInternal context;
     private final Future<HttpClientStream> fut;
     private HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
@@ -204,8 +208,10 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     private InboundBuffer<Buffer> queue;
     private MultiMap trailers;
     private StreamImpl next;
+    private Object trace;
 
-    StreamImpl(Http1xClientConnection conn, int id, Handler<AsyncResult<HttpClientStream>> handler) {
+    StreamImpl(ContextInternal context, Http1xClientConnection conn, int id, Handler<AsyncResult<HttpClientStream>> handler) {
+      this.context = context;
       this.conn = conn;
       this.fut = Future.<HttpClientStream>future().setHandler(handler);
       this.id = id;
@@ -247,7 +253,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public ContextInternal getContext() {
-      return conn.context;
+      return context;
     }
 
     public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority) {
@@ -389,6 +395,14 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           Object reqMetric = conn.metrics.requestBegin(conn.endpointMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
           request.metric(reqMetric);
         }
+        VertxTracer tracer = context.tracer();
+        if (tracer != null) {
+          List<Map.Entry<String, String>> tags = new ArrayList<>();
+          tags.add(new AbstractMap.SimpleEntry<>("http.url", req.absoluteURI()));
+          tags.add(new AbstractMap.SimpleEntry<>("http.method", req.method().name()));
+          BiConsumer<String, String> headers = (key, val) -> req.headers().add(key, val);
+          trace = tracer.sendRequest(request.stream.getContext(), request, request.method.name(), headers, tags);
+        }
       }
     }
 
@@ -479,14 +493,19 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     private boolean endResponse(LastHttpContent trailer) {
       synchronized (conn) {
+        HttpClientRequestImpl req = request;
         if (conn.metrics != null) {
-          HttpClientRequestBase req = request;
           Object reqMetric = req.metric();
           if (req.exceptionOccurred != null) {
             conn.metrics.requestReset(reqMetric);
           } else {
             conn.metrics.responseEnd(reqMetric, response);
           }
+        }
+        VertxTracer tracer = context.tracer();
+        if (tracer != null) {
+          List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("http.status_code", "" + response.statusCode()));
+          tracer.receiveResponse(context, response, trace, null, tags);
         }
         trailers = new HeadersAdaptor(trailer.trailingHeaders());
         if (queue.isEmpty() && !queue.isPaused()) {
@@ -823,7 +842,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      WebSocketImpl webSocket = new WebSocketImpl(vertx, Http1xClientConnection.this, supportsContinuation,
+      WebSocketImpl webSocket = new WebSocketImpl(vertx, Http1xClientConnection.this.getContext(), Http1xClientConnection.this, supportsContinuation,
                                                   options.getMaxWebsocketFrameSize(),
                                                   options.getMaxWebsocketMessageSize());
       ws = webSocket;
@@ -863,12 +882,16 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       metrics.endpointDisconnected(endpointMetric, metric());
     }
     WebSocketImpl ws;
+    VertxTracer tracer = context.tracer();
     List<StreamImpl> list = Collections.emptyList();
     synchronized (this) {
       ws = this.ws;
       for (StreamImpl r = responseInProgress;r != null;r = r.next) {
         if (metrics != null) {
           metrics.requestReset(r.request.metric());
+        }
+        if (tracer != null) {
+          tracer.receiveResponse(r.context, null, r.trace, ConnectionBase.CLOSED_EXCEPTION, Collections.emptyList());
         }
         if (list.isEmpty()) {
           list = new ArrayList<>();
@@ -932,10 +955,11 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   }
 
   @Override
-  public void createStream(Handler<AsyncResult<HttpClientStream>> handler) {
+  public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler) {
     StreamImpl stream;
     synchronized (this) {
-      stream = new StreamImpl(this, seq++, handler);
+      ContextInternal sub = getContext().duplicate(context);
+      stream = new StreamImpl(sub, this, seq++, handler);
       if (requestInProgress != null) {
         requestInProgress.append(stream);
         return;

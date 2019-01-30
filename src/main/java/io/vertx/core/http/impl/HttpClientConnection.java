@@ -29,7 +29,7 @@ public interface HttpClientConnection extends HttpConnection {
 
   void close();
 
-  void createStream(Handler<AsyncResult<HttpClientStream>> handler);
+  void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler);
 
   ContextInternal getContext();
 
