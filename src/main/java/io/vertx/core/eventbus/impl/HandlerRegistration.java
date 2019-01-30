@@ -21,6 +21,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.*;
@@ -44,6 +45,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   final String address;
   final String repliedAddress;
   private final boolean localOnly;
+  protected final boolean src;
   private HandlerHolder<T> registered;
   private Handler<Message<T>> handler;
   private ContextInternal handlerContext;
@@ -57,13 +59,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private Object metric;
 
   public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
-                             String repliedAddress, boolean localOnly) {
+                             String repliedAddress, boolean localOnly, boolean src) {
     this.vertx = vertx;
     this.metrics = metrics;
     this.eventBus = eventBus;
     this.address = address;
     this.repliedAddress = repliedAddress;
     this.localOnly = localOnly;
+    this.src = src;
   }
 
   @Override
@@ -228,8 +231,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       eventBus.send(creditsAddress, 1);
     }
     InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
-    deliveryCtx.next();
+    deliveryCtx.context.dispatch(v -> {
+      deliveryCtx.next();
+    });
     checkNextTick();
+  }
+
+  ContextInternal handlerContext() {
+    return handlerContext;
   }
 
   private synchronized void checkNextTick() {
@@ -345,7 +354,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       this.message = message;
       this.handler = handler;
       this.iter = eventBus.receiveInterceptors();
-      this.context = context;
+      this.context = message.src ? context : context.duplicate();
     }
 
     @Override
@@ -379,7 +388,15 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           if (metrics != null) {
             metrics.beginHandleMessage(metric, local);
           }
-          handler.handle(message);
+          VertxTracer tracer = handlerContext.tracer();
+          if (tracer != null && !src) {
+            List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("peer.service", message.address));
+            Object trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, tags);
+            handler.handle(message);
+            tracer.sendResponse(context, null, trace, null, Collections.emptyList());
+          } else {
+            handler.handle(message);
+          }
           if (metrics != null) {
             metrics.endHandleMessage(metric, null);
           }

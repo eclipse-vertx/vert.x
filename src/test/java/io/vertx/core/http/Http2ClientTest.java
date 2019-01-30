@@ -746,7 +746,7 @@ public class Http2ClientTest extends Http2TestBase {
       if (ctx.get() == null) {
         ctx.set(current);
       } else {
-        assertEquals(ctx.get(), current);
+        assertSameEventLoop(ctx.get(), current);
       }
       resp.endHandler(v -> {
         complete();
@@ -757,7 +757,7 @@ public class Http2ClientTest extends Http2TestBase {
       if (ctx.get() == null) {
         ctx.set(current);
       } else {
-        assertEquals(ctx.get(), current);
+        assertSameEventLoop(ctx.get(), current);
       }
       assertOnIOContext(current);
       assertEquals(HttpMethod.GET, pushedReq.method());
