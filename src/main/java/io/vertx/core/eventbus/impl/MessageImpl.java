@@ -31,6 +31,7 @@ public class MessageImpl<U, V> implements Message<V> {
 
   protected MessageCodec<U, V> messageCodec;
   protected final EventBusImpl bus;
+  public final boolean src;
   protected String address;
   protected String replyAddress;
   protected MultiMap headers;
@@ -38,13 +39,14 @@ public class MessageImpl<U, V> implements Message<V> {
   protected V receivedBody;
   protected boolean send;
 
-  public MessageImpl(EventBusImpl bus) {
+  public MessageImpl(boolean src, EventBusImpl bus) {
     this.bus = bus;
+    this.src = src;
   }
 
   public MessageImpl(String address, String replyAddress, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec,
-                     boolean send, EventBusImpl bus) {
+                     boolean send, boolean src, EventBusImpl bus) {
     this.messageCodec = messageCodec;
     this.address = address;
     this.replyAddress = replyAddress;
@@ -52,13 +54,15 @@ public class MessageImpl<U, V> implements Message<V> {
     this.sentBody = sentBody;
     this.send = send;
     this.bus = bus;
+    this.src = src;
   }
 
-  protected MessageImpl(MessageImpl<U, V> other) {
+  protected MessageImpl(MessageImpl<U, V> other, boolean src) {
     this.bus = other.bus;
     this.address = other.address;
     this.replyAddress = other.replyAddress;
     this.messageCodec = other.messageCodec;
+    this.src = src;
     if (other.headers != null) {
       List<Map.Entry<String, String>> entries = other.headers.entries();
       this.headers = new CaseInsensitiveHeaders();
@@ -73,8 +77,8 @@ public class MessageImpl<U, V> implements Message<V> {
     this.send = other.send;
   }
 
-  public MessageImpl<U, V> copyBeforeReceive() {
-    return new MessageImpl<>(this);
+  public MessageImpl<U, V> copyBeforeReceive(boolean src) {
+    return new MessageImpl<>(this, src);
   }
 
   @Override
@@ -127,7 +131,7 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (replyAddress != null) {
-      MessageImpl reply = bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName());
+      MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName());
       bus.sendReply(reply, this, options, replyHandler);
     }
   }

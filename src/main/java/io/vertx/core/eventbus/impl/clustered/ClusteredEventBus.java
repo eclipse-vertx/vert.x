@@ -31,8 +31,10 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -173,11 +175,11 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+  protected MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, this);
+    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, src, this);
     return msg;
   }
 
@@ -297,7 +299,7 @@ public class ClusteredEventBus extends EventBusImpl {
             size = buff.getInt(0);
             parser.fixedSizeMode(size);
           } else {
-            ClusteredMessage received = new ClusteredMessage(ClusteredEventBus.this);
+            ClusteredMessage received = new ClusteredMessage(false, ClusteredEventBus.this);
             received.readFromWire(buff, codecManager);
             if (metrics != null) {
               metrics.messageRead(received.address(), buff.length());
@@ -350,7 +352,17 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private void sendRemote(OutboundDeliveryContext<?> sendContext, ServerID theServerID, MessageImpl message) {
-    messageSent(sendContext, false, true);
+    Object trace = messageSent(sendContext, false, true);
+
+    // SAME CODE THAN IN PARENT!!!!
+    VertxTracer tracer = sendContext.ctx.tracer();
+    if (tracer != null && sendContext.message.src) {
+      if (sendContext.replyHandler == null) {
+        tracer.receiveResponse(sendContext.ctx, null, trace, null, Collections.emptyList());
+      } else {
+        sendContext.replyHandler.trace = trace;
+      }
+    }
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
