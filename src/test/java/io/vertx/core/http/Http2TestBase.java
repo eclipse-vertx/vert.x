@@ -73,16 +73,4 @@ public class Http2TestBase extends HttpTestBase {
   protected HttpClientOptions createBaseClientOptions() {
     return clientOptions;
   }
-
-  protected void assertOnIOContext(Context context) {
-    Context current = Vertx.currentContext();
-    assertNotNull(current);
-    assertEquals(context, current);
-    for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
-      if (elt.getMethodName().equals("executeFromIO")) {
-        return;
-      }
-    }
-    fail("Not from IO");
-  }
 }
