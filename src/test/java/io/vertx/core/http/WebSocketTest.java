@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -2700,18 +2701,19 @@ public class WebSocketTest extends VertxTestBase {
     Context serverCtx = vertx.getOrCreateContext();
     server = vertx.createHttpServer()
       .websocketHandler(ws -> {
-        assertEquals(serverCtx, Vertx.currentContext());
+        Context current = Vertx.currentContext();
+        assertSameEventLoop(serverCtx, current);
         ws.handler(buff -> {
-          assertEquals(serverCtx, Vertx.currentContext());
+          assertEquals(current, Vertx.currentContext());
         });
         ws.frameHandler(frame -> {
-          assertEquals(serverCtx, Vertx.currentContext());
+          assertEquals(current, Vertx.currentContext());
         });
         ws.closeHandler(v -> {
-          assertEquals(serverCtx, Vertx.currentContext());
+          assertEquals(current, Vertx.currentContext());
         });
         ws.endHandler(v -> {
-          assertEquals(serverCtx, Vertx.currentContext());
+          assertEquals(current, Vertx.currentContext());
           complete();
         });
     });

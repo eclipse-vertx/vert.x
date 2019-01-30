@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -47,10 +48,10 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private boolean rejected;
   private HttpResponseStatus rejectedStatus;
 
-  public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
+  public ServerWebSocketImpl(VertxInternal vertx, ContextInternal context, String uri, String path, String query, MultiMap headers,
                              Http1xConnectionBase conn, boolean supportsContinuation, Function<ServerWebSocketImpl, String> handshaker,
                              int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
-    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    super(vertx, context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.uri = uri;
     this.path = path;
     this.query = query;

@@ -273,7 +273,7 @@ public abstract class ConnectionBase {
       handler = closeHandler;
     }
     if (handler != null) {
-      handler.handle(null);
+      context.dispatch(handler);
     }
   }
 

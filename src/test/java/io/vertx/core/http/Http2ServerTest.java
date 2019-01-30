@@ -974,14 +974,14 @@ public class Http2ServerTest extends Http2TestBase {
         bufReceived.complete();
       });
       req.exceptionHandler(err -> {
-        assertEquals(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         if (err instanceof StreamResetException) {
           assertEquals(10L, ((StreamResetException) err).getCode());
           assertEquals(0, resetCount.getAndIncrement());
         }
       });
       req.response().exceptionHandler(err -> {
-        assertEquals(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         if (err instanceof StreamResetException) {
           assertEquals(10L, ((StreamResetException) err).getCode());
           assertEquals(1, resetCount.getAndIncrement());
@@ -1477,22 +1477,22 @@ public class Http2ServerTest extends Http2TestBase {
       AtomicInteger reqErrors = new AtomicInteger();
       req.exceptionHandler(err -> {
         // Called twice : reset + close
-        assertEquals(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         reqErrors.incrementAndGet();
       });
       AtomicInteger respErrors = new AtomicInteger();
       req.response().exceptionHandler(err -> {
-        assertEquals(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         respErrors.incrementAndGet();
       });
       req.response().closeHandler(v -> {
-        assertEquals(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         assertTrue("Was expecting reqErrors to be > 0", reqErrors.get() > 0);
         assertTrue("Was expecting respErrors to be > 0", respErrors.get() > 0);
         complete();
       });
       req.response().endHandler(v -> {
-        assertEquals(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         complete();
       });
       when.complete();
@@ -1534,16 +1534,16 @@ public class Http2ServerTest extends Http2TestBase {
         HttpServerResponse resp = ar.result();
         AtomicInteger erros = new AtomicInteger();
         resp.exceptionHandler(err -> {
-          assertSame(ctx, Vertx.currentContext());
+          assertOnIOContext(ctx);
           erros.incrementAndGet();
         });
         resp.closeHandler(v -> {
-          assertSame(ctx, Vertx.currentContext());
+          assertOnIOContext(ctx);
           assertTrue("Was expecting errors to be > 0", erros.get() > 0);
           complete();
         });
         resp.endHandler(v -> {
-          assertSame(ctx, Vertx.currentContext());
+          assertOnIOContext(ctx);
           complete();
         });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
@@ -1580,32 +1580,32 @@ public class Http2ServerTest extends Http2TestBase {
       AtomicInteger reqFailures = new AtomicInteger();
       AtomicInteger respFailures = new AtomicInteger();
       req.exceptionHandler(err -> {
-        assertSame(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         reqFailures.incrementAndGet();
       });
       req.response().exceptionHandler(err -> {
-        assertSame(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         respFailures.incrementAndGet();
       });
       req.response().closeHandler(v -> {
-        assertSame(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         complete();
       });
       req.response().endHandler(v -> {
+        assertOnIOContext(ctx);
         assertTrue(reqFailures.get() > 0);
         assertTrue(respFailures.get() > 0);
-        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       HttpConnection conn = req.connection();
       AtomicInteger connFailures = new AtomicInteger();
       conn.exceptionHandler(err -> {
-        assertSame(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         connFailures.incrementAndGet();
       });
       conn.closeHandler(v -> {
         assertTrue(connFailures.get() > 0);
-        assertSame(ctx, Vertx.currentContext());
+        assertOnIOContext(ctx);
         complete();
       });
       when.complete();

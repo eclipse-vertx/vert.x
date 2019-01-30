@@ -24,6 +24,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
@@ -47,8 +48,8 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
 
-  public VertxHttp2NetSocket(C conn, Http2Stream stream, boolean writable) {
-    super(conn, stream, writable);
+  public VertxHttp2NetSocket(C conn, ContextInternal context, Http2Stream stream, boolean writable) {
+    super(conn, context, stream, writable);
   }
 
   // Stream impl

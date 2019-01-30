@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.http.WebSocket;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -26,10 +27,10 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
 
-  public WebSocketImpl(VertxInternal vertx,
+  public WebSocketImpl(VertxInternal vertx, ContextInternal context,
                        Http1xClientConnection conn, boolean supportsContinuation,
                        int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
-    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    super(vertx, context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
   }
 
   @Override

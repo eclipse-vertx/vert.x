@@ -970,7 +970,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                Handler<AsyncResult<HttpClientStream>> handler) {
     httpCM.getConnection(ctx, peerHost, ssl, port, host, ar -> {
       if (ar.succeeded()) {
-        ar.result().createStream(handler);
+        ar.result().createStream(ctx, handler);
       } else {
         handler.handle(Future.failedFuture(ar.cause()));
       }

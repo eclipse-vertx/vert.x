@@ -68,7 +68,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private long written;
   private VertxHttpHeaders headers;
   private StreamPriority priority;
-  private HttpClientStream stream;
+  public HttpClientStream stream;
   private boolean connecting;
 
   // completed => drainHandler = null

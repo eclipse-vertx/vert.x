@@ -42,12 +42,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private boolean writable;
   private StreamPriority priority;
 
-  VertxHttp2Stream(C conn, Http2Stream stream, boolean writable) {
+  VertxHttp2Stream(C conn, ContextInternal context, Http2Stream stream, boolean writable) {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.handlerContext = conn.handlerContext;
     this.stream = stream;
-    this.context = conn.getContext();
+    this.context = context;
     this.writable = writable;
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;

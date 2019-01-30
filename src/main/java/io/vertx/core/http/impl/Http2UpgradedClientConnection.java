@@ -137,7 +137,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
           // Now we need to upgrade this to an HTTP2
           ConnectionListener<HttpClientConnection> listener = conn.listener();
           VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.endpointMetric(), listener, conn.getContext(), current.metric(), (conn, concurrency) -> {
-            conn.upgradeStream(request, ar -> {
+            conn.upgradeStream(request, stream.getContext(), ar -> {
               UpgradingStream.this.conn.closeHandler(null);
               UpgradingStream.this.conn.exceptionHandler(null);
               if (ar.succeeded()) {
@@ -258,9 +258,9 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public void createStream(Handler<AsyncResult<HttpClientStream>> handler) {
+  public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler) {
     if (current instanceof Http1xClientConnection) {
-      current.createStream(ar -> {
+      current.createStream(context, ar -> {
         if (ar.succeeded()) {
           HttpClientStream stream = ar.result();
           UpgradingStream upgradingStream = new UpgradingStream(stream, (Http1xClientConnection) current);
@@ -270,7 +270,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
         }
       });
     } else {
-      current.createStream(handler);
+      current.createStream(context, handler);
     }
   }
 

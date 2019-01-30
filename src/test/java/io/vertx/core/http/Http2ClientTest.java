@@ -1583,7 +1583,6 @@ public class Http2ClientTest extends Http2TestBase {
     ctx.runOnContext(v1 -> {
       HttpClientRequest req = client.get("/somepath", onSuccess(resp -> {
         resp.exceptionHandler(err -> {
-          assertSame(ctx, Vertx.currentContext());
           assertOnIOContext(ctx);
           complete();
         });

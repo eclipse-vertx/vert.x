@@ -217,7 +217,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       bytesRead = 0;
       this.trailers = trailers;
       if (endHandler != null) {
-        ((ContextInternal)stream.getContext()).dispatch(null, endHandler);
+        stream.getContext().dispatch(null, endHandler);
       }
     }
   }
