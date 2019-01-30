@@ -3086,7 +3086,7 @@ public abstract class HttpTest extends HttpTestBase {
         server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
-          assertSame(ctx, Vertx.currentContext());
+          assertSameEventLoop(ctx, Vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
@@ -3099,7 +3099,7 @@ public abstract class HttpTest extends HttpTestBase {
           }
           client = vertx.createHttpClient(new HttpClientOptions());
           client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(res -> {
-            assertSame(ctx, Vertx.currentContext());
+            assertSameEventLoop(ctx, Vertx.currentContext());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
@@ -3342,7 +3342,7 @@ public abstract class HttpTest extends HttpTestBase {
     AtomicReference<HttpConnection> connRef = new AtomicReference<>();
     Context serverCtx = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
-      assertSame(serverCtx, Vertx.currentContext());
+      assertSameEventLoop(serverCtx, Vertx.currentContext());
       assertEquals(0, status.getAndIncrement());
       assertNull(connRef.getAndSet(conn));
     });

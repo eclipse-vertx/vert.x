@@ -244,7 +244,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
     if (handler != null) {
       try {
-        ((ContextInternal)stream.getContext()).dispatch(null, handler);
+        stream.getContext().dispatch(null, handler);
       } catch (Throwable t) {
         handleException(t);
       }

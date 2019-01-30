@@ -100,7 +100,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
     boolean writable = handler.encoder().flowController().isWritable(stream);
-    return new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable, streamEnded);
+    return new Http2ServerRequestImpl(this, context.duplicate(), stream, metrics, serverOrigin, headers, contentEncoding, writable, streamEnded);
   }
 
   @Override
@@ -127,7 +127,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         req.response().writeContinue();
       }
       streams.put(streamId, req);
-      context.dispatch(req, requestHandler);
+      req.dispatch(requestHandler);
     } else {
       // Http server request trailer - not implemented yet (in api)
     }
@@ -175,7 +175,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             String contentEncoding = HttpUtils.determineContentEncoding(headers_);
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
             boolean writable = handler.encoder().flowController().isWritable(promisedStream);
-            Push push = new Push(promisedStream, contentEncoding, method, path, writable, completionHandler);
+            Push push = new Push(promisedStream, context, contentEncoding, method, path, writable, completionHandler);
             push.priority(streamPriority);
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
@@ -206,12 +206,13 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     private final Future<HttpServerResponse> completionHandler;
 
     public Push(Http2Stream stream,
+                ContextInternal context,
                 String contentEncoding,
                 HttpMethod method,
                 String uri,
                 boolean writable,
                 Handler<AsyncResult<HttpServerResponse>> completionHandler) {
-      super(Http2ServerConnection.this, stream, writable);
+      super(Http2ServerConnection.this, context, stream, writable);
       this.method = method;
       this.uri = uri;
       this.contentEncoding = contentEncoding;

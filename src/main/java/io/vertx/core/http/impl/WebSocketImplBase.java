@@ -48,6 +48,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
   private final InboundBuffer<Buffer> pending;
+  private final ContextInternal context;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -62,15 +63,16 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   protected boolean closed;
 
 
-  WebSocketImplBase(VertxInternal vertx, Http1xConnectionBase conn, boolean supportsContinuation,
+  WebSocketImplBase(VertxInternal vertx, ContextInternal context, Http1xConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     this.supportsContinuation = supportsContinuation;
     this.textHandlerID = "__vertx.ws." + UUID.randomUUID().toString();
     this.binaryHandlerID = "__vertx.ws." + UUID.randomUUID().toString();
     this.conn = conn;
+    this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundBuffer<>(conn.getContext());
+    this.pending = new InboundBuffer<>(context);
 
     pending.drainHandler(v -> {
       conn.doResume();
@@ -294,7 +296,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       switch(frame.type()) {
         case PONG:
           if (pongHandler != null) {
-            conn.getContext().dispatch(frame.binaryData(), pongHandler);
+            context.dispatch(frame.binaryData(), pongHandler);
           }
           break;
         case TEXT:
@@ -302,7 +304,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         case BINARY:
         case CONTINUATION:
           if (frameHandler != null) {
-            conn.getContext().dispatch(frame, frameHandler);
+            context.dispatch(frame, frameHandler);
           }
           break;
       }
@@ -454,10 +456,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       textHandlerRegistration = null;
     }
     if (closeHandler != null) {
-      conn.getContext().dispatch(closeHandler);
+      context.dispatch(closeHandler);
     }
     if (endHandler != null) {
-      conn.getContext().dispatch(endHandler);
+      context.dispatch(endHandler);
     }
   }
 
@@ -499,7 +501,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       if (handler == null) {
         pending.handler(null);
       } else {
-        pending.handler(buff -> conn.getContext().dispatch(buff, handler));
+        pending.handler(buff -> context.dispatch(buff, handler));
       }
       return (S) this;
     }

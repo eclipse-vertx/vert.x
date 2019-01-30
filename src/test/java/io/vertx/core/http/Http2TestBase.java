@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Http2TestBase extends HttpTestBase {
 
-  static HttpServerOptions createHttp2ServerOptions(int port, String host) {
+  public static HttpServerOptions createHttp2ServerOptions(int port, String host) {
     return new HttpServerOptions()
         .setPort(port)
         .setHost(host)
@@ -34,7 +34,7 @@ public class Http2TestBase extends HttpTestBase {
         .setKeyStoreOptions(Cert.SERVER_JKS.get());
   };
 
-  static HttpClientOptions createHttp2ClientOptions() {
+  public static HttpClientOptions createHttp2ClientOptions() {
     return new HttpClientOptions().
         setUseAlpn(true).
         setSsl(true).

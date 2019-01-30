@@ -44,7 +44,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       MultiMap headers) {
     super(client, ssl, method, host, port, uri);
     this.conn = conn;
-    this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream, false);
+    this.stream = new Http2ClientConnection.Http2ClientStream(conn, conn.getContext(), this, stream, false);
     this.rawMethod = rawMethod;
     this.headers = headers;
     this.respHandler = Future.future();

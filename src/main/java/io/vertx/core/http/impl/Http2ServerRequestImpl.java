@@ -36,17 +36,21 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.HttpFrame;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
+import java.util.*;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -69,6 +73,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private String path;
   private String query;
   private MultiMap attributes;
+  private Object trace;
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -84,9 +89,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   private Handler<StreamPriority> streamPriorityHandler;
   
-  public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
-      String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
-    super(conn, stream, writable);
+  public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, HttpServerMetrics metrics,
+                                String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
+    super(conn, context, stream, writable);
 
     this.serverOrigin = serverOrigin;
     this.headers = headers;
@@ -101,6 +106,17 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     if (METRICS_ENABLED && metrics != null) {
       response.metric(metrics.requestBegin(conn.metric(), this));
     }
+  }
+
+  void dispatch(Handler<HttpServerRequest> handler) {
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      List<Map.Entry<String, String>> tags = new ArrayList<>();
+      tags.add(new AbstractMap.SimpleEntry<>("http.url", absoluteURI()));
+      tags.add(new AbstractMap.SimpleEntry<>("http.method", method.name()));
+      trace = tracer.receiveRequest(context, this, method().name(), headers(), tags);
+    }
+    context.dispatch(this, handler);
   }
 
   @Override
@@ -123,8 +139,19 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   void handleClose() {
     Handler<Throwable> handler;
+    Throwable failure;
     synchronized (conn) {
       handler = streamEnded ? null : exceptionHandler;
+      if (!streamEnded && (!ended || !response.ended())) {
+        failure = ConnectionBase.CLOSED_EXCEPTION;
+      } else {
+        failure = null;
+      }
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("http.status_code", "" + response.getStatusCode()));
+      tracer.sendResponse(context, failure == null ? response : null, trace, failure, tags);
     }
     if (handler != null) {
       context.dispatch(new ClosedChannelException(), handler);

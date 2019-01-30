@@ -35,6 +35,7 @@ import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.*;
 import java.util.function.Function;
@@ -123,6 +124,9 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       requestInProgress = req;
       if (responseInProgress == null) {
         responseInProgress = requestInProgress;
+        if (METRICS_ENABLED) {
+          req.reportRequestBegin();
+        }
         req.handleBegin();
       } else {
         // Deferred until the current response completion
@@ -276,6 +280,11 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
       bytesWritten = 0;
     }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("http.status_code", "" + responseInProgress.response().getStatusCode()));
+      tracer.sendResponse(responseInProgress.context(), responseInProgress.response(), responseInProgress.trace(), null, tags);
+    }
   }
 
   String getServerOrigin() {
@@ -316,7 +325,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       ws.registerHandler(vertx.eventBus());
       return handshaker.selectedSubprotocol();
     };
-    ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
+    ws = new ServerWebSocketImpl(vertx, vertx.getOrCreateContext(), request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       f, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
