@@ -12,8 +12,10 @@
 package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.hamcrest.Matcher;
@@ -654,5 +656,9 @@ public class AsyncTestBase {
       latch.countDown();
     });
     awaitLatch(latch);
+  }
+
+  protected void assertSameEventLoop(Context expected, Context actual) {
+    assertSame(((ContextInternal)expected).nettyEventLoop(), ((ContextInternal)actual).nettyEventLoop());
   }
 }
