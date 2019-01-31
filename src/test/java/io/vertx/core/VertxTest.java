@@ -11,11 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;

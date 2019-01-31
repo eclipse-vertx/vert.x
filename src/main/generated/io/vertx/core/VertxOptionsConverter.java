@@ -124,6 +124,11 @@ import java.time.format.DateTimeFormatter;
             obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)member.getValue()));
           }
           break;
+        case "name":
+          if (member.getValue() instanceof String) {
+            obj.setName((String)member.getValue());
+          }
+          break;
         case "preferNativeTransport":
           if (member.getValue() instanceof Boolean) {
             obj.setPreferNativeTransport((Boolean)member.getValue());
@@ -199,6 +204,9 @@ import java.time.format.DateTimeFormatter;
     }
     if (obj.getMetricsOptions() != null) {
       json.put("metricsOptions", obj.getMetricsOptions().toJson());
+    }
+    if (obj.getName() != null) {
+      json.put("name", obj.getName());
     }
     json.put("preferNativeTransport", obj.getPreferNativeTransport());
     json.put("quorumSize", obj.getQuorumSize());
