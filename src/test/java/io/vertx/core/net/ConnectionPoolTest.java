@@ -459,6 +459,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertEquals(1, mgr.size());
     assertEquals(1, mgr.removeExpired(2L));
     assertEquals(0, mgr.size());
+    assertWaitUntil(mgr::closed);
   }
 
   @Test
