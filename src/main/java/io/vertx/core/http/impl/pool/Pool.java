@@ -224,6 +224,7 @@ public class Pool<C> {
         }
       }
     }
+    checkProgress();
     for (C conn : toClose) {
       connector.close(conn);
     }
