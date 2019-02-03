@@ -114,7 +114,7 @@ public class StreamsExamples {
   public void pipe7(NetServer server, FileSystem fs) {
     server.connectHandler(sock -> {
 
-      // Create a pipe that to use asynchronously
+      // Create a pipe to use asynchronously
       Pipe<Buffer> pipe = sock.pipe();
 
       // Open a destination file
@@ -163,5 +163,14 @@ public class StreamsExamples {
         // Append some text and close the file
         dst.end(Buffer.buffer("done"));
     });
+  }
+
+  public void pump(Vertx vertx) {
+    NetServer server = vertx.createNetServer(
+      new NetServerOptions().setPort(1234).setHost("localhost")
+    );
+    server.connectHandler(sock -> {
+      Pump.pump(sock, sock).start();
+    }).listen();
   }
 }

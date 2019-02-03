@@ -115,11 +115,6 @@ Here is a short example:
 {@link examples.StreamsExamples#pipe9(io.vertx.core.file.AsyncFile, io.vertx.core.file.AsyncFile)}
 ----
 
-NOTE: before Vert.x 3.7 the {@link io.vertx.core.streams.Pump} was the advocated API for transferring a read stream to
-a write stream. The pump exposes a subset of the pipe API and only transfers the items between streams and does not handle
-the completion or failure of the transfer operation. Since 3.7 the pipe API supersedes the pump API, you can find the
-pump documentation in the documentation of previous previous.
-
 Let's now look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 === ReadStream
@@ -168,6 +163,17 @@ Will be called if an exception occurs on the `WriteStream`.
 The handler will be called if the `WriteStream` is considered no longer full.
 
 === Pump
+
+The pump exposes a subset of the pipe API and only transfers the items between streams, it does not handle
+the completion or failure of the transfer operation.
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pump(io.vertx.core.Vertx)}
+----
+
+Before Vert.x 3.7 the {@link io.vertx.core.streams.Pump} was the advocated API for transferring a read stream to
+a write stream. Since 3.7 the pipe API supersedes the pump API.
 
 Instances of Pump have the following methods:
 
