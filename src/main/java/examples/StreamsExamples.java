@@ -24,6 +24,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.ReadStream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -153,5 +154,14 @@ public class StreamsExamples {
           }
         });
       }).listen(8080);
+  }
+
+  public void pipe9(AsyncFile src, AsyncFile dst) {
+    src.pipe()
+      .endOnSuccess(false)
+      .to(dst, rs -> {
+        // Append some text and close the file
+        dst.end(Buffer.buffer("done"));
+    });
   }
 }
