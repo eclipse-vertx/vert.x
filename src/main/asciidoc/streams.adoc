@@ -108,6 +108,11 @@ on the pipe object:
 * {@link io.vertx.core.streams.Pipe#endOnSuccess(boolean)} controls the behavior when the read stream ends
 * {@link io.vertx.core.streams.Pipe#endOnComplete(boolean)} controls the behavior in all cases
 
+NOTE: before Vert.x 3.7 the {@link io.vertx.core.streams.Pump} was the advocated API for transferring a read stream to
+a write stream. The pump exposes a subset of the pipe API and only transfers the items between streams and does not handle
+the completion or failure of the transfer operation. Since 3.7 the pipe API supersedes the pump API, you can find the
+pump documentation in the documentation of previous previous.
+
 Let's now look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 === ReadStream
