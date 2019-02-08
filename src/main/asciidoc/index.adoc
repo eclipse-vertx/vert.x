@@ -1170,48 +1170,50 @@ You can also specify cluster managers programmatically if embedding Vert.x using
 
 == Logging
 
-Vert.x logs using it's in-built logging API. The default implementation uses the JDK (JUL) logging so no extra
-logging dependencies are needed.
+Vert.x logs using its internal logging API and supports various logging backends.
+
+The logging backend is selected as follows:
+
+. the backend denoted by the `vertx.logger-delegate-factory-class-name` system property if present or,
+. JDK logging when a `vertx-default-jul-logging.properties` file is in the classpath or,
+. a backend present in the classpath, in the following order of preference:
+.. SLF4J
+.. Log4J
+.. Log4J2
+
+Otherwise Vert.x defaults to JDK logging.
+
+=== Configuring with the system property
+
+Set the `vertx.logger-delegate-factory-class-name` system property to:
+
+* `io.vertx.core.logging.SLF4JLogDelegateFactory` for SLF4J or,
+* `io.vertx.core.logging.Log4jLogDelegateFactory` for Log4J or,
+* `io.vertx.core.logging.Log4j2LogDelegateFactory` for Log4J2 or,
+* `io.vertx.core.logging.JULLogDelegateFactory` for JDK logging
 
 === Configuring JUL logging
 
-A JUL logging configuration file can be specified in the normal JUL way by providing a system property called:
-`java.util.logging.config.file` with the value being your configuration file. For more information on this and
-the structure of a JUL config file please consult the JUL logging documentation.
+A JUL logging configuration file can be specified in the normal JUL way, by providing a system property named `java.util.logging.config.file` with the value being your configuration file.
+For more information on this and the structure of a JUL config file please consult the JDK logging documentation.
 
-Vert.x also provides a slightly more convenient way to specify a configuration file without having to set a system
-property. Just provide a JUL config file with the name `vertx-default-jul-logging.properties` on your classpath (e.g.
-inside your fatjar) and Vert.x will use that to configure JUL.
-
-=== Using another logging framework
-
-If you don't want Vert.x to use JUL for it's own logging you can configure it to use another logging framework, e.g.
-Log4J or SLF4J.
-
-To do this you should set a system property called `vertx.logger-delegate-factory-class-name` with the name of a Java
-class which implements the interface {@link io.vertx.core.spi.logging.LogDelegateFactory}. We provide pre-built
-implementations for Log4J (version 1), Log4J 2 and SLF4J with the class names
-`io.vertx.core.logging.Log4jLogDelegateFactory`, `io.vertx.core.logging.Log4j2LogDelegateFactory` and
-`io.vertx.core.logging.SLF4JLogDelegateFactory` respectively. If you want to use these implementations you should
-also make sure the relevant Log4J or SLF4J jars are on your classpath.
-
-Notice that, the provided delegate for Log4J 1 does not support parameterized message. The delegate for Log4J 2
-uses the `{}` syntax like the SLF4J delegate. JUL delegate uses the `{x}` syntax.
+Vert.x also provides a slightly more convenient way to specify a configuration file without having to set a system property.
+Just provide a JUL config file with the name `vertx-default-jul-logging.properties` on your classpath (e.g. inside your fatjar) and Vert.x will use that to configure JUL.
 
 [[netty-logging]]
 === Netty logging
 
-When configuring logging, you should care about configuring Netty logging as well.
+Netty does not rely on external logging configuration (e.g system properties).
+Instead, it implements a logging configuration based on the logging libraries visible from the Netty classes:
 
-Netty does not rely on external logging configuration (e.g system properties) and instead implements a logging
-configuration based on the logging libraries visible from the Netty classes:
+* use `SLF4J` library if it is visible
+* otherwise use `Log4j` if it is visible
+* otherwise use `Log4j2` if it is visible
+* otherwise fallback to `java.util.logging`
 
-- use `SLF4J` library if it is visible
-- otherwise use `Log4j` if it is visible
-- otherwise fallback `java.util.logging`
+NOTE: The eagle eyes among you might have noticed that Vert.x follows the same order of preference.
 
-The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly
-on `io.netty.util.internal.logging.InternalLoggerFactory`:
+The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly on `io.netty.util.internal.logging.InternalLoggerFactory`:
 
 [source,java]
 ----
