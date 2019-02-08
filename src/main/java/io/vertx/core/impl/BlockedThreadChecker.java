@@ -12,8 +12,8 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.VertxException;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.Map;
 import java.util.Timer;

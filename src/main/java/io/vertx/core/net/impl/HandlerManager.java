@@ -13,8 +13,8 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;

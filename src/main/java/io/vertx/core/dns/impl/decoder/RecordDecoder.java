@@ -19,8 +19,8 @@ import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.dns.impl.MxRecordImpl;
 import io.vertx.core.dns.impl.SrvRecordImpl;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

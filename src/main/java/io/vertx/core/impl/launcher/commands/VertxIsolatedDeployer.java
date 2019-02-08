@@ -12,8 +12,8 @@
 package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.*;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 /**
  * A class isolating the deployment of verticle.
