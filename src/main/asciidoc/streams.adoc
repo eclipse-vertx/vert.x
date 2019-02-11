@@ -172,7 +172,7 @@ the completion or failure of the transfer operation.
 {@link examples.StreamsExamples#pump(io.vertx.core.Vertx)}
 ----
 
-Before Vert.x 3.7 the {@link io.vertx.core.streams.Pump} was the advocated API for transferring a read stream to
+IMPORTANT: Before Vert.x 3.7 the {@link io.vertx.core.streams.Pump} was the advocated API for transferring a read stream to
 a write stream. Since 3.7 the pipe API supersedes the pump API.
 
 Instances of Pump have the following methods:
