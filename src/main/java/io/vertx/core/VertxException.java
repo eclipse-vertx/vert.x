@@ -59,4 +59,14 @@ public class VertxException extends RuntimeException {
   public VertxException(String message, boolean noStackTrace) {
     super(message, null, !noStackTrace, !noStackTrace);
   }
+
+  /**
+   * Create an instance given a message
+   *
+   * @param cause  the cause
+   * @param noStackTrace  disable stack trace capture
+   */
+  public VertxException(Throwable cause, boolean noStackTrace) {
+    super(null, cause, !noStackTrace, !noStackTrace);
+  }
 }
