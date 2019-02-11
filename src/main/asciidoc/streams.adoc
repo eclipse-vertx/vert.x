@@ -29,7 +29,7 @@ to the `NetSocket`:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pump1(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe1(io.vertx.core.Vertx)}
 ----
 
 There is a problem with the example above: if data is read from the socket faster than it can be
@@ -42,7 +42,7 @@ writing to it:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pump2(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe2(io.vertx.core.Vertx)}
 ----
 
 This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we
@@ -50,7 +50,7 @@ really want to do is pause the `NetSocket` when the write queue is full:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pump3(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe3(io.vertx.core.Vertx)}
 ----
 
 We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to unpause
@@ -58,23 +58,62 @@ it when the write queue has processed its backlog:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pump4(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe4(io.vertx.core.Vertx)}
 ----
 
 And there we have it. The {@link io.vertx.core.streams.WriteStream#drainHandler} event handler will
 get called when the write queue is ready to accept more data, this resumes the `NetSocket` that
 allows more data to be read.
 
-Wanting to do this is quite common while writing Vert.x applications, so we provide a helper class
-called {@link io.vertx.core.streams.Pump} that does all of this hard work for you.
-You just feed it the `ReadStream` plus the `WriteStream` then start it:
+Wanting to do this is quite common while writing Vert.x applications, so we added the
+{@link io.vertx.core.streams.ReadStream#pipeTo} method that does all of this hard work for you.
+You just feed it the `WriteStream` and use it:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pump5(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe5(io.vertx.core.Vertx)}
 ----
 
-This does exactly the same thing as the more verbose example.
+This does exactly the same thing as the more verbose example, plus it handles stream failures and termination: the
+destination `WriteStream` is ended when the pipe completes with success or a failure.
+
+You can be notified when the operation completes:
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pipe6(io.vertx.core.net.NetServer)}
+----
+
+When you deal with an asynchronous destination, you can create a {@link io.vertx.core.streams.Pipe} instance that
+pauses the source and resumes it when the source is piped to the destination:
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pipe7(io.vertx.core.net.NetServer, io.vertx.core.file.FileSystem)}
+----
+
+When you need to abort the transfer, you need to close it:
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pipe8(io.vertx.core.Vertx, io.vertx.core.file.FileSystem)}
+----
+
+When the pipe is closed, the streams handlers are unset and the `ReadStream` resumed.
+
+As seen above, by default the destination is always ended when the stream completes, you can control this behavior
+on the pipe object:
+
+* {@link io.vertx.core.streams.Pipe#endOnFailure(boolean)} controls the behavior when a failure happens
+* {@link io.vertx.core.streams.Pipe#endOnSuccess(boolean)} controls the behavior when the read stream ends
+* {@link io.vertx.core.streams.Pipe#endOnComplete(boolean)} controls the behavior in all cases
+
+Here is a short example:
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pipe9(io.vertx.core.file.AsyncFile, io.vertx.core.file.AsyncFile)}
+----
 
 Let's now look at the methods on `ReadStream` and `WriteStream` in more detail:
 
@@ -124,6 +163,17 @@ Will be called if an exception occurs on the `WriteStream`.
 The handler will be called if the `WriteStream` is considered no longer full.
 
 === Pump
+
+The pump exposes a subset of the pipe API and only transfers the items between streams, it does not handle
+the completion or failure of the transfer operation.
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#pump(io.vertx.core.Vertx)}
+----
+
+IMPORTANT: Before Vert.x 3.7 the {@link io.vertx.core.streams.Pump} was the advocated API for transferring a read stream to
+a write stream. Since 3.7 the pipe API supersedes the pump API.
 
 Instances of Pump have the following methods:
 

@@ -14,17 +14,24 @@ package examples;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.ReadStream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class StreamsExamples {
 
-  public void pump1(Vertx vertx) {
+  public void pipe1(Vertx vertx) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -36,7 +43,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pump2(Vertx vertx) {
+  public void pipe2(Vertx vertx) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -50,7 +57,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pump3(Vertx vertx) {
+  public void pipe3(Vertx vertx) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -64,7 +71,7 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pump4(Vertx vertx) {
+  public void pipe4(Vertx vertx) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
@@ -81,9 +88,86 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pump5(Vertx vertx) {
+  public void pipe5(Vertx vertx) {
     NetServer server = vertx.createNetServer(
-        new NetServerOptions().setPort(1234).setHost("localhost")
+      new NetServerOptions().setPort(1234).setHost("localhost")
+    );
+    server.connectHandler(sock -> {
+      sock.pipeTo(sock);
+    }).listen();
+  }
+
+  public void pipe6(NetServer server) {
+    server.connectHandler(sock -> {
+
+      // Pipe the socket providing an handler to be notified of the result
+      sock.pipeTo(sock, ar -> {
+        if (ar.succeeded()) {
+          System.out.println("Pipe succeeded");
+        } else {
+          System.out.println("Pipe failed");
+        }
+      });
+    }).listen();
+  }
+
+  public void pipe7(NetServer server, FileSystem fs) {
+    server.connectHandler(sock -> {
+
+      // Create a pipe to use asynchronously
+      Pipe<Buffer> pipe = sock.pipe();
+
+      // Open a destination file
+      fs.open("/path/to/file", new OpenOptions(), ar -> {
+        if (ar.succeeded()) {
+          AsyncFile file = ar.result();
+
+          // Pipe the socket to the file and close the file at the end
+          pipe.to(file);
+        } else {
+          sock.close();
+        }
+      });
+    }).listen();
+  }
+
+  public void pipe8(Vertx vertx, FileSystem fs) {
+    vertx.createHttpServer()
+      .requestHandler(request -> {
+
+        // Create a pipe that to use asynchronously
+        Pipe<Buffer> pipe = request.pipe();
+
+        // Open a destination file
+        fs.open("/path/to/file", new OpenOptions(), ar -> {
+          if (ar.succeeded()) {
+            AsyncFile file = ar.result();
+
+            // Pipe the socket to the file and close the file at the end
+            pipe.to(file);
+          } else {
+            // Close the pipe and resume the request, the body buffers will be discarded
+            pipe.close();
+
+            // Send an error response
+            request.response().setStatusCode(500).end();
+          }
+        });
+      }).listen(8080);
+  }
+
+  public void pipe9(AsyncFile src, AsyncFile dst) {
+    src.pipe()
+      .endOnSuccess(false)
+      .to(dst, rs -> {
+        // Append some text and close the file
+        dst.end(Buffer.buffer("done"));
+    });
+  }
+
+  public void pump(Vertx vertx) {
+    NetServer server = vertx.createNetServer(
+      new NetServerOptions().setPort(1234).setHost("localhost")
     );
     server.connectHandler(sock -> {
       Pump.pump(sock, sock).start();
