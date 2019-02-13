@@ -61,6 +61,15 @@ public interface SharedData {
   <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
   /**
+   * Get the {@link AsyncMap} with the specified name. When clustered, the map is <b>NOT</b> accessible to all nodes in the cluster only the
+   * instance which created the map can put and retrieve data from this map.
+   *
+   * @param name the name of the map
+   * @param resultHandler the map will be returned asynchronously in this handler
+   */
+  <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
+
+  /**
    * Get an asynchronous lock with the specified name. The lock will be passed to the handler when it is available.
    * <p>
    *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
@@ -87,12 +96,46 @@ public interface SharedData {
   void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
 
   /**
+   * Get an asynchronous local lock with the specified name. The lock will be passed to the handler when it is available.
+   * <p>
+   *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
+   *   even from a single thread, can happen in non-sequential order.
+   * </p>
+   *
+   * @param name  the name of the lock
+   * @param resultHandler  the handler
+   */
+  void getLocalLock(String name, Handler<AsyncResult<Lock>> resultHandler);
+
+  /**
+   * Like {@link #getLocalLock(String, Handler)} but specifying a timeout. If the lock is not obtained within the timeout
+   * a failure will be sent to the handler.
+   * <p>
+   *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
+   *   even from a single thread, can happen in non-sequential order.
+   * </p>
+   *
+   * @param name  the name of the lock
+   * @param timeout  the timeout in ms
+   * @param resultHandler  the handler
+   */
+  void getLocalLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
+
+  /**
    * Get an asynchronous counter. The counter will be passed to the handler.
    *
    * @param name  the name of the counter.
    * @param resultHandler  the handler
    */
   void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
+
+  /**
+   * Get an asynchronous local counter. The counter will be passed to the handler.
+   *
+   * @param name  the name of the counter.
+   * @param resultHandler  the handler
+   */
+  void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
 
   /**
    * Return a {@code LocalMap} with the specific {@code name}.
