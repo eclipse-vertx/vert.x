@@ -49,7 +49,7 @@ public class SharedDataImpl implements SharedData {
   public SharedDataImpl(VertxInternal vertx, ClusterManager clusterManager) {
     this.vertx = vertx;
     this.clusterManager = clusterManager;
-    localAsyncLocks = clusterManager == null ? new LocalAsyncLocks() : null;
+    localAsyncLocks = new LocalAsyncLocks();
   }
 
   @Override
@@ -100,10 +100,25 @@ public class SharedDataImpl implements SharedData {
     Objects.requireNonNull(resultHandler, "resultHandler");
     Arguments.require(timeout >= 0, "timeout must be >= 0");
     if (clusterManager == null) {
-      getLocalLock(name, timeout, resultHandler);
+      getLocalLockWithTimeout(name, timeout, resultHandler);
     } else {
       clusterManager.getLockWithTimeout(name, timeout, resultHandler);
     }
+  }
+
+  @Override
+  public void getLocalLock(String name, Handler<AsyncResult<Lock>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    getLocalLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT, resultHandler);
+  }
+
+  @Override
+  public void getLocalLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    Arguments.require(timeout >= 0, "timeout must be >= 0");
+    localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout, resultHandler);
   }
 
   @Override
@@ -122,21 +137,20 @@ public class SharedDataImpl implements SharedData {
    * are guaranteed to return the same {@code Map} instance. <p>
    */
   @SuppressWarnings("unchecked")
+  @Override
   public <K, V> LocalMap<K, V> getLocalMap(String name) {
     return (LocalMap<K, V>) localMaps.computeIfAbsent(name, n -> new LocalMapImpl<>(n, localMaps));
   }
 
   @SuppressWarnings("unchecked")
-  private <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+  @Override
+  public <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
     LocalAsyncMapImpl<K, V> asyncMap = (LocalAsyncMapImpl<K, V>) localAsyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl<>(vertx));
     resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<>(asyncMap)));
   }
 
-  private void getLocalLock(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-    localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout, resultHandler);
-  }
-
-  private void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
+  @Override
+  public void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
     Counter counter = localCounters.computeIfAbsent(name, n -> new AsynchronousCounter(vertx));
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter)));

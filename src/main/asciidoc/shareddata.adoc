@@ -35,11 +35,14 @@ Here's an example of using a shared local map:
 
 === Asynchronous shared maps
 
-Asynchronous shared maps allow data to be put in the map and retrieved locally when Vert.x is not clustered.
-When clustered, data can be put from any node and retrieved from the same node or any other node.
+{@link io.vertx.core.shareddata.AsyncMap Asynchronous shared maps} allow data to be put in the map and retrieved locally
+when Vert.x is not clustered. When clustered, data can be put from any node and retrieved from the same node or any other node.
 
 IMPORTANT: In clustered mode, asynchronous shared maps rely on distributed data structures provided by the cluster manager.
 Beware that the latency relative to asynchronous shared map operations can be much higher in clustered than in local mode.
+
+In case that Vert.x is clustered, but a local asynchronous map is needed, you can call
+{@link io.vertx.core.shareddata.SharedData#getLocalAsyncMap(java.lang.String,io.vertx.core.Handler)}.
 
 This makes them really useful for things like storing session state in a farm of servers hosting a Vert.x web
 application.
@@ -84,8 +87,9 @@ See the {@link io.vertx.core.shareddata.AsyncMap API docs} for more information.
 
 === Asynchronous locks
 
-{@link io.vertx.core.shareddata.Lock Asynchronous locks} allow you to obtain exclusive locks locally or across the cluster -
-this is useful when you want to do something or access a resource on only one node of a cluster at any one time.
+{@link io.vertx.core.shareddata.Lock Asynchronous locks} allow data you to obtain exclusive locks locally when Vert.x is not clustered.
+When clustered, exclusive locks can be obtained from any node and checked or released from the same node or any other node.
+This is useful when you want to do something or access a resource on only one node of a cluster at any one time.
 
 Asynchronous locks have an asynchronous API unlike most lock APIs which block the calling thread until the lock
 is obtained.
@@ -94,6 +98,12 @@ To obtain a lock use {@link io.vertx.core.shareddata.SharedData#getLock(java.lan
 
 This won't block, but when the lock is available, the handler will be called with an instance of {@link io.vertx.core.shareddata.Lock},
 signifying that you now own the lock.
+
+IMPORTANT: In clustered mode, asynchronous locks maps rely on distributed data structures provided by the cluster manager.
+Beware that the latency relative to asynchronous lock operations can be much higher in clustered than in local mode.
+
+In case that Vert.x is clustered, but only a local lock should be obtained you can call
+{@link io.vertx.core.shareddata.SharedData#getLocalLock(java.lang.String,io.vertx.core.Handler)}.
 
 While you own the lock no other caller, anywhere on the cluster will be able to obtain the lock.
 
@@ -115,18 +125,23 @@ with a failure:
 
 === Asynchronous counters
 
+{@link io.vertx.core.shareddata.Counter Asynchronous counters} allow data you to obtain an instance of an atomic counter
+locally when Vert.x is not clustered. When clustered, an instance of atomic counters can be obtained from any node and
+you can retrieve the current count, atomically increment it, decrement it and add a value to it from the same node or any other node.
+
 It's often useful to maintain an atomic counter locally or across the different nodes of your application.
 
-You can do this with {@link io.vertx.core.shareddata.Counter}.
-
-You obtain an instance with {@link io.vertx.core.shareddata.SharedData#getCounter(java.lang.String,io.vertx.core.Handler)}:
+To obtain a counter use {@link io.vertx.core.shareddata.SharedData#getCounter(java.lang.String,io.vertx.core.Handler)}.
 
 [source,$lang]
 ----
 {@link examples.SharedDataExamples#example7}
 ----
 
-Once you have an instance you can retrieve the current count, atomically increment it, decrement and add a value to
-it using the various methods.
+IMPORTANT: In clustered mode, asynchronous counters rely on distributed data structures provided by the cluster manager.
+Beware that the latency relative to asynchronous counter operations can be much higher in clustered than in local mode.
+
+In case that Vert.x is clustered, but only a local counter should be obtained you can call
+{@link io.vertx.core.shareddata.SharedData#getLocalCounter(java.lang.String,io.vertx.core.Handler)}.
 
 See the {@link io.vertx.core.shareddata.Counter API docs} for more information.
