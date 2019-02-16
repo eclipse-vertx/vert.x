@@ -29,7 +29,7 @@ public interface TrustOptions {
   /**
    * @return a copy of these options
    */
-  TrustOptions clone();
+  TrustOptions copy();
 
   /**
    * Create and return the trust manager factory for these options.

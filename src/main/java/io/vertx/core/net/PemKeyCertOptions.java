@@ -88,7 +88,7 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true, publicConverter = false)
-public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
+public class PemKeyCertOptions implements KeyCertOptions {
 
   private List<String> keyPaths;
   private List<Buffer> keyValues;
@@ -415,7 +415,7 @@ public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
   }
 
   @Override
-  public PemKeyCertOptions clone() {
+  public PemKeyCertOptions copy() {
     return new PemKeyCertOptions(this);
   }
 }

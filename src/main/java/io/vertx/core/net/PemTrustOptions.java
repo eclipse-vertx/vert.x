@@ -146,7 +146,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   }
 
   @Override
-  public PemTrustOptions clone() {
+  public PemTrustOptions copy() {
     return new PemTrustOptions(this);
   }
 

@@ -29,7 +29,7 @@ public interface KeyCertOptions {
   /**
    * @return a copy of these options
    */
-  KeyCertOptions clone();
+  KeyCertOptions copy();
 
   /**
    * Create and return the key manager factory for these options.

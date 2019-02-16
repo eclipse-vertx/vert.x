@@ -784,7 +784,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
 
       @Override
-      public TrustOptions clone() {
+      public TrustOptions copy() {
         return this;
       }
     }).serverSni()
@@ -826,7 +826,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
 
       @Override
-      public TrustOptions clone() {
+      public TrustOptions copy() {
         return this;
       }
     }).serverSni()
@@ -861,7 +861,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         };
       }
       @Override
-      public TrustOptions clone() {
+      public TrustOptions copy() {
         return this;
       }
     }, Cert.SERVER_JKS, Trust.NONE).pass();

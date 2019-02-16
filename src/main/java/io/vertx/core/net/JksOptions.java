@@ -45,7 +45,7 @@ import javax.net.ssl.KeyManagerFactory;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
-public class JksOptions implements KeyCertOptions, TrustOptions, Cloneable {
+public class JksOptions implements KeyCertOptions, TrustOptions {
 
   private String password;
   private String path;
@@ -184,7 +184,7 @@ public class JksOptions implements KeyCertOptions, TrustOptions, Cloneable {
   }
 
   @Override
-  public JksOptions clone() {
+  public JksOptions copy() {
     return new JksOptions(this);
   }
 }

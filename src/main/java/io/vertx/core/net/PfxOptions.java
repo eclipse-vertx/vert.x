@@ -40,7 +40,7 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true, publicConverter = false)
-public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
+public class PfxOptions implements KeyCertOptions, TrustOptions {
 
   private String password;
   private String path;
@@ -179,7 +179,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   }
 
   @Override
-  public PfxOptions clone() {
+  public PfxOptions copy() {
     return new PfxOptions(this);
   }
 }
