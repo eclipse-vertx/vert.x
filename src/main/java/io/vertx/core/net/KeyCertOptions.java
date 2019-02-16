@@ -28,8 +28,18 @@ public interface KeyCertOptions {
 
   /**
    * @return a copy of these options
+   * @deprecated use {@link #copy()} instead
    */
+  @Deprecated
   KeyCertOptions clone();
+
+  /**
+   * @return a copy of these options
+   */
+  @SuppressWarnings("deprecation")
+  default KeyCertOptions copy() {
+    return clone();
+  }
 
   /**
    * Create and return the key manager factory for these options.

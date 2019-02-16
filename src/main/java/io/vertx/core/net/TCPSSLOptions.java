@@ -137,8 +137,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.idleTimeout = other.getIdleTimeout();
     this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     this.ssl = other.isSsl();
-    this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
-    this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
+    this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().copy() : null;
+    this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().copy() : null;
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());

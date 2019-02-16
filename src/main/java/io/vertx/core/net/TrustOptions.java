@@ -29,6 +29,16 @@ public interface TrustOptions {
   /**
    * @return a copy of these options
    */
+  @SuppressWarnings("deprecation")
+  default TrustOptions copy() {
+    return clone();
+  }
+
+  /**
+   * @return a copy of these options
+   * @deprecated use {@link #copy()} instead
+   */
+  @Deprecated
   TrustOptions clone();
 
   /**

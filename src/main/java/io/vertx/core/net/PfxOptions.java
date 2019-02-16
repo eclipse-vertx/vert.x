@@ -179,6 +179,11 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
   }
 
   @Override
+  public PfxOptions copy() {
+    return clone();
+  }
+
+  @Override
   public PfxOptions clone() {
     return new PfxOptions(this);
   }
