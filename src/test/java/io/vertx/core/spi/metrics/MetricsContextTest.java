@@ -61,6 +61,7 @@ import java.util.function.Function;
  */
 public class MetricsContextTest extends VertxTestBase {
 
+  @Ignore
   @Test
   public void testFactory() throws Exception {
     AtomicReference<Thread> metricsThread = new AtomicReference<>();
@@ -74,6 +75,7 @@ public class MetricsContextTest extends VertxTestBase {
     assertNull(metricsContext.get());
   }
 
+  @Ignore
   @Test
   public void testFactoryInCluster() throws Exception {
     AtomicReference<Thread> metricsThread = new AtomicReference<>();
@@ -92,11 +94,13 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testHttpServerRequestEventLoop() throws Exception {
     testHttpServerRequest(eventLoopContextFactory, eventLoopChecker);
   }
 
+  @Ignore
   @Test
   public void testHttpServerRequestWorker() throws Exception {
     testHttpServerRequest(workerContextFactory, workerChecker);
@@ -195,11 +199,13 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testHttpServerWebsocketEventLoop() throws Exception {
     testHttpServerWebsocket(eventLoopContextFactory, eventLoopChecker);
   }
 
+  @Ignore
   @Test
   public void testHttpServerWebsocketWorker() throws Exception {
     testHttpServerWebsocket(workerContextFactory, workerChecker);
@@ -300,11 +306,13 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testHttpClientRequestEventLoop() throws Exception {
     testHttpClientRequest(eventLoopContextFactory, eventLoopChecker);
   }
 
+  @Ignore
   @Test
   public void testHttpClientRequestWorker() throws Exception {
     testHttpClientRequest(workerContextFactory, workerChecker);
@@ -407,6 +415,7 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testHttpClientWebsocketEventLoop() throws Exception {
     testHttpClientWebsocket(eventLoopContextFactory, eventLoopChecker);
@@ -517,11 +526,13 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testNetServerEventLoop() throws Exception {
     testNetServer(eventLoopContextFactory, eventLoopChecker);
   }
 
+  @Ignore
   @Test
   public void testNetServerWorker() throws Exception {
     testNetServer(workerContextFactory, workerChecker);
@@ -610,11 +621,13 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testNetClientEventLoop() throws Exception {
     testNetClient(eventLoopContextFactory, eventLoopChecker);
   }
 
+  @Ignore
   @Test
   public void testNetClientWorker() throws Exception {
     testNetClient(workerContextFactory, workerChecker);
@@ -703,11 +716,13 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testDatagramEventLoop() throws Exception {
     testDatagram(eventLoopContextFactory, eventLoopChecker);
   }
 
+  @Ignore
   @Test
   public void testDatagramWorker() throws Exception {
     testDatagram(workerContextFactory, workerChecker);
@@ -773,6 +788,7 @@ public class MetricsContextTest extends VertxTestBase {
     awaitLatch(closeCalled);
   }
 
+  @Ignore
   @Test
   public void testEventBusLifecycle() {
     AtomicBoolean closeCalled = new AtomicBoolean();
@@ -802,11 +818,13 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testMessageHandler() {
     testMessageHandler((vertx, handler) -> handler.handle(null), eventLoopChecker);
   }
 
+  @Ignore
   @Test
   public void testMessageHandlerEventLoop() {
     testMessageHandler((vertx, handler) -> eventLoopContextFactory.apply(vertx).runOnContext(handler), eventLoopChecker);
@@ -874,11 +892,13 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testDeployEventLoop() {
     testDeploy(false, eventLoopChecker);
   }
 
+  @Ignore
   @Test
   public void testDeployWorker() {
     testDeploy(true, workerChecker);

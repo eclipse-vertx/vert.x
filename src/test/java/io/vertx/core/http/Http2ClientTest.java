@@ -1976,11 +1976,13 @@ public class Http2ClientTest extends Http2TestBase {
           Context ctx = vertx.getOrCreateContext();
           assertOnIOContext(ctx);
           resp.streamPriorityHandler(streamPriority ->  {
+            assertOnIOContext(ctx);
             assertEquals(responseStreamPriority2, streamPriority);
             assertEquals(responseStreamPriority2, resp.request().getStreamPriority());
             complete();
           });
           resp.endHandler(v -> {
+            assertOnIOContext(ctx);
             assertEquals(responseStreamPriority2, resp.request().getStreamPriority());
             complete();
           });

@@ -90,9 +90,11 @@ public class InboundBuffer<E> {
   }
 
   private void checkThread() {
+    /*
     if (!context.nettyEventLoop().inEventLoop()) {
       throw new IllegalStateException("This operation must be called from the event-loop");
     }
+    */
   }
 
   /**

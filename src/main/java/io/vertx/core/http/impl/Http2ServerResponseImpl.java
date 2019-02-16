@@ -109,7 +109,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       handler = exceptionHandler;
     }
     if (handler != null) {
-      handler.handle(cause);
+      conn.getContext().dispatch(cause, handler);
     }
   }
 
@@ -417,7 +417,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private boolean checkSendHeaders(boolean end) {
     if (!headWritten) {
       if (headersEndHandler != null) {
-        headersEndHandler.handle(null);
+        conn.getContext().dispatch(headersEndHandler);
       }
       sanitizeHeaders();
       if (Metrics.METRICS_ENABLED && metric != null) {
@@ -465,10 +465,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     if (end) {
       if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
+        conn.getContext().dispatch(bodyEndHandler);
       }
       if (endHandler != null) {
-        endHandler.handle(null);
+        conn.getContext().dispatch(null, endHandler);
       }
     }
   }
@@ -492,7 +492,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   void writabilityChanged() {
     if (!ended && !writeQueueFull() && drainHandler != null) {
-      drainHandler.handle(null);
+      conn.getContext().dispatch(drainHandler);
     }
   }
 

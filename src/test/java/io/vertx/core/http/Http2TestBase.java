@@ -79,10 +79,12 @@ public class Http2TestBase extends HttpTestBase {
     assertNotNull(current);
     assertEquals(context, current);
     for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
-      if (elt.getMethodName().equals("executeFromIO")) {
+      String className = elt.getClassName();
+      String methodName = elt.getMethodName();
+      if (className.equals("io.vertx.core.impl.ContextImpl") && methodName.equals("dispatch")) {
         return;
       }
     }
-    fail("Not from IO");
+    fail("Not dispatching");
   }
 }

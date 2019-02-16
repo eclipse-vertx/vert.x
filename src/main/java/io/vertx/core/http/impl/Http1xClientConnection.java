@@ -246,7 +246,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     }
 
     @Override
-    public Context getContext() {
+    public ContextInternal getContext() {
       return conn.context;
     }
 

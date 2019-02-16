@@ -291,7 +291,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       switch(frame.type()) {
         case PONG:
           if (pongHandler != null) {
-            pongHandler.handle(frame.binaryData());
+            conn.getContext().dispatch(frame.binaryData(), pongHandler);
           }
           break;
         case TEXT:
@@ -299,7 +299,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         case BINARY:
         case CONTINUATION:
           if (frameHandler != null) {
-            frameHandler.handle(frame);
+            conn.getContext().dispatch(frame, frameHandler);
           }
           break;
       }
@@ -451,10 +451,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       textHandlerRegistration = null;
     }
     if (closeHandler != null) {
-      closeHandler.handle(null);
+      conn.getContext().dispatch(closeHandler);
     }
     if (endHandler != null) {
-      endHandler.handle(null);
+      conn.getContext().dispatch(endHandler);
     }
   }
 
@@ -493,7 +493,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       if (handler != null) {
         checkClosed();
       }
-      pending.handler(handler);
+      if (handler == null) {
+        pending.handler(null);
+      } else {
+        pending.handler(buff -> conn.getContext().dispatch(buff, handler));
+      }
       return (S) this;
     }
   }

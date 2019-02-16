@@ -222,13 +222,6 @@ public abstract class ConnectionBase {
     config.setWriteBufferWaterMark(new WriteBufferWaterMark(size / 2, size));
   }
 
-  protected final void checkContext() {
-    // Sanity check
-    if (context != vertx.getContext()) {
-      throw new IllegalStateException("Wrong context!");
-    }
-  }
-
   /**
    * @return the Netty channel - for internal usage only
    */
@@ -260,7 +253,7 @@ public abstract class ConnectionBase {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
     }
     if (exceptionHandler != null) {
-      exceptionHandler.handle(t);
+      context.dispatch(t, exceptionHandler);
     } else {
       if (log.isDebugEnabled()) {
         log.error(t.getMessage(), t);

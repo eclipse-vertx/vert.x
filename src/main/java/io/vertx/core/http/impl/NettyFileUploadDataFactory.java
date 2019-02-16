@@ -19,6 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.impl.ContextInternal;
 
 import java.nio.charset.Charset;
 import java.util.function.Supplier;
@@ -47,7 +48,7 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
         contentTransferEncoding, charset);
     Handler<HttpServerFileUpload> uploadHandler = lazyUploadHandler.get();
     if (uploadHandler != null) {
-      uploadHandler.handle(upload);
+      ((ContextInternal)context).dispatch(upload, uploadHandler);
     }
     return nettyUpload;
   }

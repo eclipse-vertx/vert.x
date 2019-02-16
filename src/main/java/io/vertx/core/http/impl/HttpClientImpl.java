@@ -951,11 +951,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     websocketCM.getConnection(ctx, host, ssl, port, host, ar -> {
       if (ar.succeeded()) {
         HttpClientConnection conn = ar.result();
-        conn.getContext().executeFromIO(v -> {
+        conn.getContext().dispatch(v -> {
           handler.handle((Http1xClientConnection) conn);
         });
       } else {
-        ctx.executeFromIO(v -> {
+        ctx.dispatch(v -> {
           connectionExceptionHandler.handle(ar.cause());
         });
       }
