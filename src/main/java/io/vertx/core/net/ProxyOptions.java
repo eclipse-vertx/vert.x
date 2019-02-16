@@ -202,7 +202,7 @@ public class ProxyOptions {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof ClientOptionsBase)) return false;
+    if (!(o instanceof ProxyOptions)) return false;
     if (!super.equals(o)) return false;
 
     ProxyOptions that = (ProxyOptions) o;
