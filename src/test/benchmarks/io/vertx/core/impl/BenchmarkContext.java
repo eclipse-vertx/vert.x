@@ -36,7 +36,12 @@ public class BenchmarkContext extends ContextImpl {
 
   @Override
   protected <T> void execute(T value, Handler<T> task) {
-    executeTask(null, task);
+    dispatch(value, task);
+  }
+
+  @Override
+  public <T> void schedule(T value, Handler<T> task) {
+    task.handle(value);
   }
 
   @Override

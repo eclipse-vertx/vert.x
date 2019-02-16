@@ -29,6 +29,46 @@ import java.util.concurrent.ConcurrentMap;
  */
 public interface ContextInternal extends Context {
 
+  /**
+   * Begin the dispatch of a context task.
+   * <p>
+   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, Handler)}
+   * shall be used.
+   *
+   * @param ctx the context on which the task is dispatched on
+   * @return the current vertx thread
+   * @throws IllegalStateException when the current thread is not a vertx thread
+   */
+  static VertxThread beginDispatch(ContextInternal ctx) {
+    Thread th = Thread.currentThread();
+    if (!(th instanceof VertxThread)) {
+      throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
+    }
+    VertxThread current = (VertxThread) th;
+    if (!ContextImpl.DISABLE_TIMINGS) {
+      current.executeStart();
+    }
+    current.setContext(ctx);
+    return current;
+  }
+
+  /**
+   * End the dispatch of a context task.
+   * <p>
+   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, Handler)}
+   * shall be used.
+   *
+   * @param current the current vertx thread
+   */
+  static void endDispatch(VertxThread current) {
+    // We don't unset the context after execution - this is done later when the context is closed via
+    // VertxThreadFactory
+    current.setContext(null);
+    if (!ContextImpl.DISABLE_TIMINGS) {
+      current.executeEnd();
+    }
+  }
+
   static void setContext(ContextInternal context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
@@ -95,6 +135,39 @@ public interface ContextInternal extends Context {
    * @param task the task to execute with the {@code value} argument
    */
   <T> void executeFromIO(T value, Handler<T> task);
+
+  /**
+   * @see #schedule(Object, Handler)
+   */
+  void schedule(Handler<Void> task);
+
+  /**
+   * Schedule a task to be executed on this context, the task will be executed according to the
+   * context concurrency model, on an event-loop context, the task is executed directly, on a worker
+   * context the task is executed on the worker thread pool.
+   *
+   * @param value the task value
+   * @param task the task
+   */
+  <T> void schedule(T value, Handler<T> task);
+
+  /**
+   * @see #dispatch(Object, Handler)
+   */
+  void dispatch(Handler<Void> task);
+
+  /**
+   * Dispatch a task on this context. The task is executed directly by the caller thread which must be a
+   * {@link VertxThread}.
+   * <p>
+   * The task execution is monitored by the blocked thread checker.
+   * <p>
+   * This context is thread-local associated during the task execution.
+   *
+   * @param arg the task argument
+   * @param task the task to execute
+   */
+  <T> void dispatch(T arg, Handler<T> task);
 
   /**
    * Report an exception to this context synchronously.
