@@ -41,17 +41,35 @@ class WorkerContext extends ContextImpl {
   <T> void execute(T value, Handler<T> task) {
     PoolMetrics metrics = workerPool.metrics();
     Object metric = metrics != null ? metrics.submitted() : null;
-    orderedTasks.execute(() -> exec(metrics, metric, value, task), workerPool.executor());
+    orderedTasks.execute(() -> {
+      if (metrics != null) {
+        metrics.begin(metric);
+      }
+      try {
+        dispatch(value, task);
+      } finally {
+        if (metrics != null) {
+          metrics.end(metric, true);
+        }
+      }
+    }, workerPool.executor());
   }
 
-  private <T> void exec(PoolMetrics metrics, Object metric, T value, Handler<T> task) {
-    if (metrics != null) {
-      metrics.begin(metric);
-    }
-    executeTask(value, task);
-    if (metrics != null) {
-      metrics.end(metric, true);
-    }
+  @Override
+  public <T> void schedule(T value, Handler<T> task) {
+    PoolMetrics metrics = workerPool.metrics();
+    Object metric = metrics != null ? metrics.submitted() : null;
+    orderedTasks.execute(() -> {
+      if (metrics != null) {
+        metrics.begin(metric);
+      }
+      try {
+        task.handle(value);
+      } finally {
+        if (metrics != null) {
+          metrics.end(metric, true);
+        }
+      }
+    }, workerPool.executor());
   }
-
 }
