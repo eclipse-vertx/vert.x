@@ -35,12 +35,17 @@ public class EventLoopContext extends ContextImpl {
   }
 
   void executeAsync(Handler<Void> task) {
-    nettyEventLoop().execute(() -> executeTask(null, task));
+    nettyEventLoop().execute(() -> dispatch(null, task));
+  }
+
+  @Override
+  public <T> void schedule(T value, Handler<T> task) {
+    task.handle(value);
   }
 
   @Override
   <T> void execute(T value, Handler<T> task) {
-    executeTask(value, task);
+    dispatch(value, task);
   }
 
   @Override

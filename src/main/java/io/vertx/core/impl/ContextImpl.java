@@ -50,7 +50,7 @@ abstract class ContextImpl implements ContextInternal {
   private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
   private static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
-  private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
+  static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
   protected final VertxInternal owner;
   protected final String deploymentID;
@@ -153,6 +153,28 @@ abstract class ContextImpl implements ContextInternal {
   @Override
   public final void executeFromIO(Handler<Void> task) {
     executeFromIO(null, task);
+  }
+
+  @Override
+  public final void schedule(Handler<Void> task) {
+    schedule(null, task);
+  }
+
+  @Override
+  public final void dispatch(Handler<Void> task) {
+    dispatch(null, task);
+  }
+
+  @Override
+  public final <T> void dispatch(T arg, Handler<T> task) {
+    VertxThread currentThread = ContextInternal.beginDispatch(this);
+    try {
+      task.handle(arg);
+    } catch (Throwable t) {
+      reportException(t);
+    } finally {
+      ContextInternal.endDispatch(currentThread);
+    }
   }
 
   @Override
@@ -284,29 +306,6 @@ abstract class ContextImpl implements ContextInternal {
       contextData = new ConcurrentHashMap<>();
     }
     return contextData;
-  }
-
-  <T> void executeTask(T arg, Handler<T> hTask) {
-    Thread th = Thread.currentThread();
-    if (!(th instanceof VertxThread)) {
-      throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
-    }
-    VertxThread current = (VertxThread) th;
-    if (!DISABLE_TIMINGS) {
-      current.executeStart();
-    }
-    try {
-      current.setContext(this);
-      hTask.handle(arg);
-    } catch (Throwable t) {
-      reportException(t);
-    } finally {
-      // We don't unset the context after execution - this is done later when the context is closed via
-      // VertxThreadFactory
-      if (!DISABLE_TIMINGS) {
-        current.executeEnd();
-      }
-    }
   }
 
   public void reportException(Throwable t) {
