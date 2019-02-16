@@ -115,7 +115,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       handler = ended ? null : exceptionHandler;
     }
     if (handler != null) {
-      handler.handle(cause);
+      context.dispatch(cause, handler);
     }
     response.handleException(cause);
   }
@@ -127,7 +127,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       handler = streamEnded ? null : exceptionHandler;
     }
     if (handler != null) {
-      handler.handle(new ClosedChannelException());
+      context.dispatch(new ClosedChannelException(), handler);
     }
     response.handleClose();
   }
@@ -135,7 +135,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   void handleCustomFrame(int type, int flags, Buffer buff) {
     if (customFrameHandler != null) {
-      customFrameHandler.handle(new HttpFrameImpl(type, flags, buff));
+      context.dispatch(new HttpFrameImpl(type, flags, buff), customFrameHandler);
     }
   }
 
@@ -149,7 +149,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       }
     }
     if (dataHandler != null) {
-      dataHandler.handle(data);
+      context.dispatch(data, dataHandler);
     }
   }
 
@@ -181,7 +181,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       }
     }
     if (endHandler != null) {
-      endHandler.handle(null);
+      context.dispatch(endHandler);
     }
   }
 
@@ -193,7 +193,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       ended = true;
     }
     if (handler != null) {
-      handler.handle(new StreamResetException(errorCode));
+      context.dispatch(new StreamResetException(errorCode), exceptionHandler);
     }
     response.handleReset(errorCode);
   }
@@ -540,7 +540,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       }
     }
     if (handler != null && priorityChanged) {
-      handler.handle(streamPriority);
+      context.dispatch(streamPriority, handler);
     }
   }
 

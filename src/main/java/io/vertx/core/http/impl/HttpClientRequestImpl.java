@@ -94,8 +94,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         handler = log::error;
       }
     }
-    handler.handle(t);
-    respFut.tryFail(t);
+    ContextInternal ctx;
+    if (stream != null) {
+      ctx = (ContextInternal) stream.getContext();
+    } else {
+      // Timeout callback
+      // use this until we get a context per request
+      ctx = (ContextInternal) Vertx.currentContext();
+    }
+    ctx.dispatch(t, handler);
+    ctx.dispatch(t, respFut::tryFail);
   }
 
   @Override
@@ -375,11 +383,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         return;
       }
     }
-    try {
-      handler.handle(null);
-    } catch (Throwable t) {
-      handleException(t);
-    }
+    ((ContextInternal)stream.getContext()).dispatch(null, handler);
   }
 
   private void handleNextRequest(HttpClientRequestImpl next, long timeoutMs) {
@@ -443,10 +447,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
       if (statusCode == 100) {
         if (continueHandler != null) {
-          continueHandler.handle(null);
+          ((ContextInternal)stream.getContext()).dispatch(continueHandler);
         }
       } else {
-        respFut.complete(resp);
+        ((ContextInternal)stream.getContext()).dispatch(Future.succeededFuture(resp), respFut);
       }
     }
   }
@@ -502,18 +506,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           HttpClientStream stream = ar1.result();
           ContextInternal ctx = (ContextInternal) stream.getContext();
           if (stream.id() == 1 && initializer != null) {
-            ctx.executeFromIO(v -> {
-              initializer.handle(stream.connection());
-            });
+            ctx.dispatch(stream.connection(), initializer);
           }
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
           if (exceptionOccurred != null || reset != null) {
             stream.reset(0);
           } else {
-            ctx.executeFromIO(v -> {
-              connected(headersHandler, stream);
-            });
+            connected(headersHandler, stream);
           }
         } else {
           connectCtx.executeFromIO(v -> {
@@ -562,7 +562,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       this.stream = stream;
     }
     if (headersHandler != null) {
-      headersHandler.handle(stream.version());
+      ContextInternal context = (ContextInternal) stream.getContext();
+      context.dispatch(stream.version(), headersHandler);
     }
   }
 

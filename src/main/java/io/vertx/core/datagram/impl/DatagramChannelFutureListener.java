@@ -34,17 +34,7 @@ final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
 
   @Override
   public void operationComplete(final ChannelFuture future) throws Exception {
-
-    context.executeFromIO(v ->
-        notifyHandler(future));
-
-  }
-
-  private void notifyHandler(ChannelFuture future) {
-    if (future.isSuccess()) {
-      handler.handle(Future.succeededFuture(result));
-    } else {
-      handler.handle(Future.failedFuture(future.cause()));
-    }
+    Future<T> res = future.isSuccess() ? Future.succeededFuture(result) : Future.failedFuture(future.cause());
+    context.executeFromIO(res, handler);
   }
 }

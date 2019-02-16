@@ -180,7 +180,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Context getContext() {
+    public ContextInternal getContext() {
       return stream.getContext();
     }
 

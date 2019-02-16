@@ -340,10 +340,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
+        conn.getContext().dispatch(bodyEndHandler);
       }
       if (endHandler != null) {
-        endHandler.handle(null);
+        conn.getContext().dispatch(endHandler);
       }
     }
   }
@@ -505,7 +505,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          ctx.executeFromIO(v -> {
+          conn.getContext().executeFromIO(v -> {
             handler.handle(null);
           });
         }
@@ -525,7 +525,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   void handleDrained() {
     synchronized (conn) {
       if (drainHandler != null) {
-        drainHandler.handle(null);
+        ContextInternal ctx = conn.getContext();
+        ctx.dispatch(null, drainHandler);
       }
     }
   }
@@ -539,7 +540,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         handler = exceptionHandler;
       }
       if (handler != null) {
-        handler.handle(t);
+        conn.getContext().dispatch(t, handler);
       }
     }
   }
@@ -558,13 +559,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION);
+      conn.getContext().dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
-      endHandler.handle(null);
+      conn.getContext().dispatch(endHandler);
     }
     if (closedHandler != null) {
-      closedHandler.handle(null);
+      conn.getContext().dispatch(closedHandler);
     }
   }
 
@@ -596,7 +597,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
     }
     if (headersEndHandler != null) {
-      headersEndHandler.handle(null);
+      conn.getContext().dispatch(headersEndHandler);
     }
     if (Metrics.METRICS_ENABLED) {
       reportResponseBegin();
