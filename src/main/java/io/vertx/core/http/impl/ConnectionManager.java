@@ -147,12 +147,12 @@ class ConnectionManager {
             metrics.dequeueRequest(endpoint.metric, metric);
           }
 
-          handler.handle(Future.succeededFuture(conn));
+          ctx.schedule(Future.succeededFuture(conn), handler);
         } else {
           if (metrics != null) {
             metrics.dequeueRequest(endpoint.metric, metric);
           }
-          handler.handle(Future.failedFuture(ar.cause()));
+          ctx.schedule(Future.failedFuture(ar.cause()), handler);
         }
       })) {
         break;

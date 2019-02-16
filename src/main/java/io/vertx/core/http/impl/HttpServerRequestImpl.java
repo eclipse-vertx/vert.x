@@ -24,7 +24,9 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxThread;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -39,6 +41,8 @@ import java.net.URISyntaxException;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
+import static io.vertx.core.impl.ContextInternal.beginDispatch;
+import static io.vertx.core.impl.ContextInternal.endDispatch;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
@@ -143,7 +147,15 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-    conn.requestHandler.handle(this);
+    ContextInternal ctx = conn.getContext();
+    VertxThread current = beginDispatch(ctx);
+    try {
+      conn.requestHandler.handle(this);
+    } catch(Throwable t) {
+      ctx.reportException(t);
+    } finally {
+      endDispatch(current);
+    }
   }
 
   void appendRequest(HttpServerRequestImpl next) {
@@ -510,7 +522,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         }
       }
       if (dataHandler != null) {
-        dataHandler.handle(data);
+        conn.getContext().dispatch(data, dataHandler);
       }
     }
   }
@@ -530,7 +542,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (endHandler != null) {
-      endHandler.handle(null);
+      conn.getContext().dispatch(null, endHandler);
     }
   }
 
@@ -583,7 +595,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       ((NettyFileUpload)upload).handleException(t);
     }
     if (handler != null) {
-      handler.handle(t);
+      conn.getContext().dispatch(t, handler);
     }
   }
 

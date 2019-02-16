@@ -12,8 +12,6 @@
 package io.vertx.core.http;
 
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.Context;
-import io.vertx.core.Vertx;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 

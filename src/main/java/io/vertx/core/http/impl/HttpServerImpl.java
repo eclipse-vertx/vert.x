@@ -376,7 +376,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
       if (holder.handler.connectionHandler != null) {
         holder.context.executeFromIO(v -> {
-          holder.handler.connectionHandler.handle(conn);
+          holder.context.dispatch(conn, holder.handler.connectionHandler);
         });
       }
     });

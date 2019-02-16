@@ -12,6 +12,7 @@ package io.vertx.core.datagram;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -94,14 +95,16 @@ public class DatagramTest extends VertxTestBase {
   }
 
   @Test
-  public void testSendReceive() {
-    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
-    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
-    peer2.exceptionHandler(t -> fail(t.getMessage()));
-    peer2.listen(1234, "127.0.0.1", ar -> {
-      assertTrue(ar.succeeded());
-      Buffer buffer = TestUtils.randomBuffer(128);
+  public void testSendReceive() throws Exception {
+    waitFor(2);
+    Buffer expected = TestUtils.randomBuffer(128);
+    CountDownLatch latch = new CountDownLatch(1);
+    Context serverContext = vertx.getOrCreateContext();
+    serverContext.runOnContext(v -> {
+      peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
+      peer2.exceptionHandler(t -> fail(t.getMessage()));
       peer2.handler(packet -> {
+        assertSame(serverContext, Vertx.currentContext());
         assertFalse(Thread.holdsLock(peer2));
         Buffer data = packet.data();
         ByteBuf buff = data.getByteBuf();
@@ -109,13 +112,20 @@ public class DatagramTest extends VertxTestBase {
           buff = buff.unwrap();
         }
         assertTrue("Was expecting an unpooled buffer instead of " + buff.getClass().getSimpleName(), buff.getClass().getSimpleName().contains("Unpooled"));
-        assertEquals(buffer, data);
-        testComplete();
+        assertEquals(expected, data);
+        complete();
       });
-      peer1.send(buffer, 1234, "127.0.0.1", ar2 -> {
+      peer2.listen(1234, "127.0.0.1", onSuccess(so -> latch.countDown()));
+    });
+    awaitLatch(latch);
+    Context clientContext = vertx.getOrCreateContext();
+    clientContext.runOnContext(v -> {
+      peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
+      peer1.send(expected, 1234, "127.0.0.1", onSuccess(s -> {
+        assertSame(clientContext, Vertx.currentContext());
         assertFalse(Thread.holdsLock(peer1));
-        assertTrue(ar2.succeeded());
-      });
+        complete();
+      }));
     });
     await();
   }
