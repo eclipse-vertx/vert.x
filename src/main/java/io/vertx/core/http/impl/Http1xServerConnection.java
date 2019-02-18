@@ -354,7 +354,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     WebSocketServerHandshakerFactory factory =
       new WebSocketServerHandshakerFactory(wsURL,
         options.getWebsocketSubProtocols(),
-        options.perMessageWebsocketCompressionSupported() || options.perFrameWebsocketCompressionSupported(),
+        options.getPerMessageWebsocketCompressionSupported() || options.getPerFrameWebsocketCompressionSupported(),
         options.getMaxWebsocketFrameSize(), options.isAcceptUnmaskedFrames());
     WebSocketServerHandshaker shake = factory.newHandshaker(request);
     if (shake == null) {
