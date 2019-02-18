@@ -79,7 +79,7 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   @Override
-  public SSLEngineOptions clone() {
+  public SSLEngineOptions copy() {
     return new JdkSSLEngineOptions();
   }
 }
