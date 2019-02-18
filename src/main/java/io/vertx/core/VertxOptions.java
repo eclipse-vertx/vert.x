@@ -921,4 +921,15 @@ public class VertxOptions {
         ", warningExceptionTime=" + warningExceptionTime +
         '}';
   }
+
+  /**
+   * Convert this to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    VertxOptionsConverter.toJson(this, json);
+    return json;
+  }
 }
