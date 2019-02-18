@@ -103,4 +103,9 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
   public OpenSSLEngineOptions clone() {
     return new OpenSSLEngineOptions(this);
   }
+
+  @Override
+  public OpenSSLEngineOptions copy() {
+    return new OpenSSLEngineOptions(this);
+  }
 }

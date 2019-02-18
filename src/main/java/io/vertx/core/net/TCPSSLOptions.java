@@ -143,7 +143,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
-    this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.clone() : null;
+    this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
     this.tcpFastOpen = other.isTcpFastOpen();
     this.tcpCork = other.isTcpCork();
