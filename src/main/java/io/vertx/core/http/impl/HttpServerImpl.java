@@ -450,11 +450,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private void initializeWebsocketExtensions(ChannelPipeline pipeline) {
     ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (options.perFrameWebsocketCompressionSupported()) {
-      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(options.websocketCompressionLevel()));
+    if (options.getPerFrameWebsocketCompressionSupported()) {
+      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(options.getWebsocketCompressionLevel()));
     }
-    if (options.perMessageWebsocketCompressionSupported()) {
-      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(options.websocketCompressionLevel(),
+    if (options.getPerMessageWebsocketCompressionSupported()) {
+      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(options.getWebsocketCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
         options.getWebsocketAllowServerNoContext(), options.getWebsocketPreferredClientNoContext()));
     }

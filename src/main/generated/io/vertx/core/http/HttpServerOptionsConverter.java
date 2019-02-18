@@ -148,7 +148,10 @@ import java.time.format.DateTimeFormatter;
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
+    json.put("perFrameWebsocketCompressionSupported", obj.getPerFrameWebsocketCompressionSupported());
+    json.put("perMessageWebsocketCompressionSupported", obj.getPerMessageWebsocketCompressionSupported());
     json.put("websocketAllowServerNoContext", obj.getWebsocketAllowServerNoContext());
+    json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
     json.put("websocketPreferredClientNoContext", obj.getWebsocketPreferredClientNoContext());
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());

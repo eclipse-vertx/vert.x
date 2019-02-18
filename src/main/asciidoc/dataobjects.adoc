@@ -866,10 +866,13 @@ Set the trust options in jks format, aka Java truststore
 Set whether compression is enabled
 +++
 |[[tryUsePerFrameWebsocketCompression]]`@tryUsePerFrameWebsocketCompression`|`Boolean`|+++
-Set option to offer per frame WebSocket compression.
+Set whether the client will offer the Websocket per-frame deflate compression extension.
 +++
 |[[tryUsePerMessageWebsocketCompression]]`@tryUsePerMessageWebsocketCompression`|`Boolean`|+++
-Set option to offer per message WebSocket compression.
+Set whether the client will offer the Websocket per-message deflate compression extension.
++++
+|[[tryWebsocketDeflateFrameCompression]]`@tryWebsocketDeflateFrameCompression`|`Boolean`|+++
+
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
@@ -881,13 +884,15 @@ Set whether Netty pooled buffers are enabled
 Set whether hostname verification is enabled
 +++
 |[[websocketCompressionAllowClientNoContext]]`@websocketCompressionAllowClientNoContext`|`Boolean`|+++
-Set the WebSocket compression allow client no context option.
+Set whether the <code>client_no_context_takeover</code> parameter of the Websocket per-message
+ deflate compression extension will be offered to the server.
 +++
 |[[websocketCompressionLevel]]`@websocketCompressionLevel`|`Number (int)`|+++
-Set WebSocket compression level
+Set the Websocket deflate compression level
 +++
 |[[websocketCompressionRequestServerNoContext]]`@websocketCompressionRequestServerNoContext`|`Boolean`|+++
-Set the WebSocket compression server no context option
+Set whether the <code>server_no_context_takeover</code> parameter of the Websocket per-message
+ deflate compression extension will be offered to the server.
 +++
 |===
 
@@ -1020,10 +1025,10 @@ Set the key/cert store options in pem format.
 Set the trust options in pem format
 +++
 |[[perFrameWebsocketCompressionSupported]]`@perFrameWebsocketCompressionSupported`|`Boolean`|+++
-Enable or disable support for WebSocket Defalte Frame compression
+Enable or disable support for the WebSocket per-frame deflate compression extension.
 +++
 |[[perMessageWebsocketCompressionSupported]]`@perMessageWebsocketCompressionSupported`|`Boolean`|+++
-Enable or disable support for WebSocket Permessage Deflate compression
+Enable or disable support for WebSocket per-message defalte compression extension.
 +++
 |[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
 Set the key/cert options in pfx format.
@@ -1085,13 +1090,15 @@ Set the ALPN usage.
 Set whether Netty pooled buffers are enabled
 +++
 |[[websocketAllowServerNoContext]]`@websocketAllowServerNoContext`|`Boolean`|+++
-Set the WebSocket Allow Server No Context option
+Set whether the Websocket server will accept the <code>server_no_context_takeover</code> parameter of the per-message
+ deflate compression extension offered by the client.
 +++
 |[[websocketCompressionLevel]]`@websocketCompressionLevel`|`Number (int)`|+++
-Set the WebSocket compression level
+Set the WebSocket compression level.
 +++
 |[[websocketPreferredClientNoContext]]`@websocketPreferredClientNoContext`|`Boolean`|+++
-Set the WebSocket Preferred Client No Context setting
+Set whether the Websocket server will accept the <code>client_no_context_takeover</code> parameter of the per-message
+ deflate compression extension offered by the client.
 +++
 |[[websocketSubProtocols]]`@websocketSubProtocols`|`String`|+++
 Set the websocket subprotocols supported by the server.
