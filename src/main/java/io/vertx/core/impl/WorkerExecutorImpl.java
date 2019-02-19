@@ -56,7 +56,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
       throw new IllegalStateException("Worker executor closed");
     }
     ContextImpl context = (ContextImpl) ctx.owner().getOrCreateContext();
-    context.executeBlocking(blockingCodeHandler, asyncResultHandler, pool.executor(), ordered ? context.orderedTasks : null, pool.metrics());
+    context.executeBlocking(blockingCodeHandler, asyncResultHandler, pool, ordered ? context.orderedTasks : null);
   }
 
   @Override

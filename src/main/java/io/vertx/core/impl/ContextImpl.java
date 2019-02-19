@@ -231,12 +231,12 @@ abstract class ContextImpl implements ContextInternal {
 
   @Override
   public <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, resultHandler, internalBlockingPool.executor(), internalOrderedTasks, internalBlockingPool.metrics());
+    executeBlocking(action, resultHandler, internalBlockingPool, internalOrderedTasks);
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, resultHandler, workerPool.executor(), ordered ? orderedTasks : null, workerPool.metrics());
+    executeBlocking(blockingCodeHandler, resultHandler, workerPool, ordered ? orderedTasks : null);
   }
 
   @Override
@@ -246,12 +246,13 @@ abstract class ContextImpl implements ContextInternal {
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, resultHandler, workerPool.executor(), queue, workerPool.metrics());
+    executeBlocking(blockingCodeHandler, resultHandler, workerPool, queue);
   }
 
   <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
-      Executor exec, TaskQueue queue, PoolMetrics metrics) {
+      WorkerPool workerPool, TaskQueue queue) {
+    PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     try {
       Runnable command = () -> {
@@ -281,6 +282,7 @@ abstract class ContextImpl implements ContextInternal {
           res.setHandler(ar -> runOnContext(v -> resultHandler.handle(ar)));
         }
       };
+      Executor exec = workerPool.executor();
       if (queue != null) {
         queue.execute(command, exec);
       } else {
