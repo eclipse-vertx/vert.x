@@ -836,63 +836,10 @@ public class VertxOptions {
     return this;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    VertxOptions that = (VertxOptions) o;
-
-    if (eventLoopPoolSize != that.eventLoopPoolSize) return false;
-    if (workerPoolSize != that.workerPoolSize) return false;
-    if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
-    if (blockedThreadCheckInterval != that.blockedThreadCheckInterval) return false;
-    if (blockedThreadCheckIntervalUnit != that.blockedThreadCheckIntervalUnit) return false;
-    if (maxEventLoopExecuteTime != that.maxEventLoopExecuteTime) return false;
-    if (maxEventLoopExecuteTimeUnit != that.maxEventLoopExecuteTimeUnit) return false;
-    if (maxWorkerExecuteTime != that.maxWorkerExecuteTime) return false;
-    if (maxWorkerExecuteTimeUnit != that.maxWorkerExecuteTimeUnit) return false;
-    if (haEnabled != that.haEnabled) return false;
-    if (quorumSize != that.quorumSize) return false;
-    if (warningExceptionTime != that.warningExceptionTime) return false;
-    if (warningExceptionTimeUnit != that.warningExceptionTimeUnit) return false;
-    if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
-      return false;
-    if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
-    if (eventBusOptions != null ? !eventBusOptions.equals(that.eventBusOptions) : that.eventBusOptions != null)
-      return false;
-    if (addressResolverOptions != null ? !addressResolverOptions.equals(that.addressResolverOptions) : that.addressResolverOptions != null)
-      return false;
-    if (preferNativeTransport != that.preferNativeTransport) return false;
-    if (fileSystemOptions != null ? !fileSystemOptions.equals(that.fileSystemOptions) : that.fileSystemOptions != null) {
-      return false;
-    }
-    return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
-  }
-
-  @Override
-  public int hashCode() {
-    int result = eventLoopPoolSize;
-    result = 31 * result + workerPoolSize;
-    result = 31 * result + internalBlockingPoolSize;
-    result = 31 * result + (int) (blockedThreadCheckInterval ^ (blockedThreadCheckInterval >>> 32));
-    result = 31 * result + (int) (maxEventLoopExecuteTime ^ (maxEventLoopExecuteTime >>> 32));
-    result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
-    result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);
-    result = 31 * result + (haEnabled ? 1 : 0);
-    result = 31 * result + (preferNativeTransport ? 1 : 0);
-    result = 31 * result + quorumSize;
-    result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
-    result = 31 * result + (metricsOptions != null ? metricsOptions.hashCode() : 0);
-    result = 31 * result + (fileSystemOptions != null ? fileSystemOptions.hashCode() : 0);
-    result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
-    result = 31 * result + (addressResolverOptions != null ? addressResolverOptions.hashCode() : 0);
-    result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
-    result = 31 * result + (maxEventLoopExecuteTimeUnit != null ? maxEventLoopExecuteTimeUnit.hashCode() : 0);
-    result = 31 * result + (maxWorkerExecuteTimeUnit != null ? maxWorkerExecuteTimeUnit.hashCode() : 0);
-    result = 31 * result + (warningExceptionTimeUnit != null ? warningExceptionTimeUnit.hashCode() : 0);
-    result = 31 * result + (blockedThreadCheckIntervalUnit != null ? blockedThreadCheckIntervalUnit.hashCode() : 0);
-    return result;
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    VertxOptionsConverter.toJson(this, json);
+    return json;
   }
 
   @Override

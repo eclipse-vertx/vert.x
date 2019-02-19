@@ -116,24 +116,6 @@ public class FileSystemOptions {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    FileSystemOptions that = (FileSystemOptions) o;
-
-    if (classPathResolvingEnabled != that.isClassPathResolvingEnabled()) return false;
-    return fileCachingEnabled == that.isFileCachingEnabled();
-  }
-
-  @Override
-  public int hashCode() {
-    int result = (classPathResolvingEnabled ? 1 : 0);
-    result += (fileCachingEnabled ? 1 : 0);
-    return 31 * result;
-  }
-
-  @Override
   public String toString() {
     return "FileSystemOptions{" +
     "classPathResolvingEnabled=" + classPathResolvingEnabled +

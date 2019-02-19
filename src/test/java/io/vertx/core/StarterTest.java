@@ -275,7 +275,7 @@ public class StarterTest extends VertxTestBase {
     if (opts.getMetricsOptions().isEnabled()) {
       def.getMetricsOptions().setEnabled(true);
     }
-    assertEquals(def, opts);
+    assertEquals(def.toJson(), opts.toJson());
     cleanup(starter);
   }
 
@@ -295,7 +295,7 @@ public class StarterTest extends VertxTestBase {
     if (opts.getMetricsOptions().isEnabled()) {
       def.getMetricsOptions().setEnabled(true);
     }
-    assertEquals(def, opts);
+    assertEquals(def.toJson(), opts.toJson());
     cleanup(starter);
   }
 

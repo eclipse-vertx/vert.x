@@ -375,7 +375,7 @@ public class Http1xTest extends HttpTest {
     assertEquals("foo", options.getWebsocketSubProtocols());
 
     HttpServerOptions optionsCopy = new HttpServerOptions(options);
-    assertEquals(options, optionsCopy.setWebsocketSubProtocols(new String(options.getWebsocketSubProtocols())));
+    assertEquals(options.toJson(), optionsCopy.setWebsocketSubProtocols(new String(options.getWebsocketSubProtocols())).toJson());
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
@@ -520,55 +520,14 @@ public class Http1xTest extends HttpTest {
   }
 
   private void checkCopyHttpClientOptions(HttpClientOptions options, HttpClientOptions copy) {
-    assertEquals(options.getSendBufferSize(), copy.getSendBufferSize());
-    assertEquals(options.getReceiveBufferSize(), copy.getReceiveBufferSize());
-    assertEquals(options.isReuseAddress(), copy.isReuseAddress());
-    assertEquals(options.getTrafficClass(), copy.getTrafficClass());
-    assertEquals(options.isTcpNoDelay(), copy.isTcpNoDelay());
-    assertEquals(options.isTcpKeepAlive(), copy.isTcpKeepAlive());
-    assertEquals(options.getSoLinger(), copy.getSoLinger());
-    assertEquals(options.isUsePooledBuffers(), copy.isUsePooledBuffers());
-    assertEquals(options.getIdleTimeout(), copy.getIdleTimeout());
-    assertEquals(options.isSsl(), copy.isSsl());
+    assertEquals(options.toJson(), copy.toJson());
     assertNotSame(options.getKeyCertOptions(), copy.getKeyCertOptions());
-    assertEquals(options.getKeyCertOptions(), copy.getKeyCertOptions());
     assertNotSame(options.getTrustOptions(), copy.getTrustOptions());
     if (copy.getTrustOptions() instanceof PemTrustOptions) {
       assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
     } else {
-      assertEquals(options.getTrustOptions(), copy.getTrustOptions());
+      assertEquals(options.getTrustOptions().toJson(), copy.getTrustOptions().toJson());
     }
-    assertEquals(1, copy.getEnabledCipherSuites().size());
-    assertEquals(options.getEnabledCipherSuites(), copy.getEnabledCipherSuites());
-    assertEquals(options.getConnectTimeout(), copy.getConnectTimeout());
-    assertEquals(options.isTrustAll(), copy.isTrustAll());
-    assertEquals(1, copy.getCrlPaths().size());
-    assertEquals(options.getCrlPaths().get(0), copy.getCrlPaths().get(0));
-    assertEquals(1, copy.getCrlValues().size());
-    assertEquals(options.getCrlValues().get(0), copy.getCrlValues().get(0));
-    assertEquals(options.isVerifyHost(), copy.isVerifyHost());
-    assertEquals(options.getMaxPoolSize(), copy.getMaxPoolSize());
-    assertEquals(options.isKeepAlive(), copy.isKeepAlive());
-    assertEquals(options.isPipelining(), copy.isPipelining());
-    assertEquals(options.getPipeliningLimit(), copy.getPipeliningLimit());
-    assertEquals(options.getHttp2MaxPoolSize(), copy.getHttp2MaxPoolSize());
-    assertEquals(options.getHttp2MultiplexingLimit(), copy.getHttp2MultiplexingLimit());
-    assertEquals(options.getHttp2ConnectionWindowSize(), copy.getHttp2ConnectionWindowSize());
-    assertEquals(options.isTryUseCompression(), copy.isTryUseCompression());
-    assertEquals(options.getProtocolVersion(), copy.getProtocolVersion());
-    assertEquals(options.getMaxChunkSize(), copy.getMaxChunkSize());
-    assertEquals(options.getMaxInitialLineLength(), copy.getMaxInitialLineLength());
-    assertEquals(options.getMaxHeaderSize(), copy.getMaxHeaderSize());
-    assertEquals(options.getMaxWaitQueueSize(), copy.getMaxWaitQueueSize());
-    assertEquals(options.getInitialSettings(), copy.getInitialSettings());
-    assertEquals(options.isUseAlpn(), copy.isUseAlpn());
-    assertEquals(options.getSslEngineOptions(), copy.getSslEngineOptions());
-    assertEquals(options.getAlpnVersions(), copy.getAlpnVersions());
-    assertEquals(options.isHttp2ClearTextUpgrade(), copy.isHttp2ClearTextUpgrade());
-    assertEquals(options.getLocalAddress(), copy.getLocalAddress());
-    assertEquals(options.isSendUnmaskedFrames(), copy.isSendUnmaskedFrames());
-    assertEquals(options.getKeepAliveTimeout(), copy.getKeepAliveTimeout());
-    assertEquals(options.getHttp2KeepAliveTimeout(), copy.getHttp2KeepAliveTimeout());
   }
 
   @Test
@@ -865,46 +824,14 @@ public class Http1xTest extends HttpTest {
   }
 
   private void checkCopyHttpServerOptions(HttpServerOptions options, HttpServerOptions copy) {
-    assertEquals(options.getSendBufferSize(), copy.getSendBufferSize());
-    assertEquals(options.getReceiveBufferSize(), copy.getReceiveBufferSize());
-    assertEquals(options.isReuseAddress(), copy.isReuseAddress());
-    assertEquals(options.getTrafficClass(), copy.getTrafficClass());
-    assertEquals(options.isTcpNoDelay(), copy.isTcpNoDelay());
-    assertEquals(options.isTcpKeepAlive(), copy.isTcpKeepAlive());
-    assertEquals(options.getSoLinger(), copy.getSoLinger());
-    assertEquals(options.isUsePooledBuffers(), copy.isUsePooledBuffers());
-    assertEquals(options.getIdleTimeout(), copy.getIdleTimeout());
-    assertEquals(options.isSsl(), copy.isSsl());
+    assertEquals(options.toJson(), copy.toJson());
     assertNotSame(options.getKeyCertOptions(), copy.getKeyCertOptions());
-    assertEquals(options.getKeyCertOptions(), copy.getKeyCertOptions());
     assertNotSame(options.getTrustOptions(), copy.getTrustOptions());
     if (copy.getTrustOptions() instanceof PemTrustOptions) {
       assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
     } else {
-      assertEquals(options.getTrustOptions(), copy.getTrustOptions());
+      assertEquals(options.getTrustOptions().toJson(), copy.getTrustOptions().toJson());
     }
-    assertEquals(1, copy.getEnabledCipherSuites().size());
-    assertEquals(options.getEnabledCipherSuites(), copy.getEnabledCipherSuites());
-    assertEquals(1, copy.getCrlPaths().size());
-    assertEquals(options.getCrlPaths().get(0), copy.getCrlPaths().get(0));
-    assertEquals(1, copy.getCrlValues().size());
-    assertEquals(options.getCrlValues().get(0), copy.getCrlValues().get(0));
-    assertEquals(options.getPort(), copy.getPort());
-    assertEquals(options.getHost(), copy.getHost());
-    assertEquals(options.getAcceptBacklog(), copy.getAcceptBacklog());
-    assertEquals(options.isCompressionSupported(), copy.isCompressionSupported());
-    assertEquals(options.getMaxWebsocketFrameSize(), copy.getMaxWebsocketFrameSize());
-    assertEquals(options.getWebsocketSubProtocols(), copy.getWebsocketSubProtocols());
-    assertEquals(options.isHandle100ContinueAutomatically(), copy.isHandle100ContinueAutomatically());
-    assertEquals(options.getMaxChunkSize(), copy.getMaxChunkSize());
-    assertEquals(options.getInitialSettings(), copy.getInitialSettings());
-    assertEquals(options.isUseAlpn(), copy.isUseAlpn());
-    assertEquals(options.getHttp2ConnectionWindowSize(), copy.getHttp2ConnectionWindowSize());
-    assertEquals(options.getSslEngineOptions(), copy.getSslEngineOptions());
-    assertEquals(options.getAlpnVersions(), copy.getAlpnVersions());
-    assertEquals(options.isDecompressionSupported(), copy.isDecompressionSupported());
-    assertEquals(options.isAcceptUnmaskedFrames(), copy.isAcceptUnmaskedFrames());
-    assertEquals(options.getDecoderInitialBufferSize(), copy.getDecoderInitialBufferSize());
   }
 
   @Test

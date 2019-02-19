@@ -430,40 +430,6 @@ public class AddressResolverOptions {
     return this;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    AddressResolverOptions that = (AddressResolverOptions) o;
-    if (optResourceEnabled != that.optResourceEnabled) return false;
-    if (cacheMinTimeToLive != that.cacheMinTimeToLive) return false;
-    if (cacheMaxTimeToLive != that.cacheMaxTimeToLive) return false;
-    if (cacheNegativeTimeToLive != that.cacheNegativeTimeToLive) return false;
-    if (queryTimeout != that.queryTimeout) return false;
-    if (maxQueries != that.maxQueries) return false;
-    if (rdFlag != that.rdFlag) return false;
-    if (!Objects.equals(searchDomains, that.searchDomains)) return false;
-    if (ndots != that.ndots) return false;
-    if  (servers != null ? !servers.equals(that.servers) : that.servers != null) return false;
-    return rotateServers == that.rotateServers;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = optResourceEnabled ? 1 : 0;
-    result = 31 * result + (servers != null ? servers.hashCode() : 0);
-    result = 31 * result + cacheMinTimeToLive;
-    result = 31 * result + cacheMaxTimeToLive;
-    result = 31 * result + cacheNegativeTimeToLive;
-    result = 31 * result + Long.hashCode(queryTimeout);
-    result = 31 * result + maxQueries;
-    result = 31 * result + (searchDomains != null ? searchDomains.hashCode() : 0);
-    result = 31 * result + ndots;
-    result = 31 * result + Boolean.hashCode(rdFlag);
-    result = 31 * result + Boolean.hashCode(rotateServers);
-    return result;
-  }
-
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     AddressResolverOptionsConverter.toJson(this, json);

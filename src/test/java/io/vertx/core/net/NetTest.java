@@ -394,33 +394,7 @@ public class NetTest extends VertxTestBase {
     options.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm);
 
     NetClientOptions copy = new NetClientOptions(options);
-    assertEquals(sendBufferSize, copy.getSendBufferSize());
-    assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
-    assertEquals(reuseAddress, copy.isReuseAddress());
-    assertEquals(trafficClass, copy.getTrafficClass());
-    assertEquals(tcpNoDelay, copy.isTcpNoDelay());
-    assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
-    assertEquals(soLinger, copy.getSoLinger());
-    assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
-    assertEquals(idleTimeout, copy.getIdleTimeout());
-    assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
-    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
-    assertEquals(1, copy.getEnabledCipherSuites().size());
-    assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
-    assertEquals(connectTimeout, copy.getConnectTimeout());
-    assertEquals(trustAll, copy.isTrustAll());
-    assertEquals(1, copy.getCrlPaths().size());
-    assertEquals(crlPath, copy.getCrlPaths().get(0));
-    assertEquals(1, copy.getCrlValues().size());
-    assertEquals(crlValue, copy.getCrlValues().get(0));
-    assertEquals(reconnectAttempts, copy.getReconnectAttempts());
-    assertEquals(reconnectInterval, copy.getReconnectInterval());
-    assertEquals(useAlpn, copy.isUseAlpn());
-    assertEquals(sslEngine, copy.getSslEngineOptions());
-    assertEquals(hostnameVerificationAlgorithm, copy.getHostnameVerificationAlgorithm());
+    assertEquals(options.toJson(), copy.toJson());
   }
 
   @Test
@@ -612,32 +586,7 @@ public class NetTest extends VertxTestBase {
     options.setSni(sni);
 
     NetServerOptions copy = new NetServerOptions(options);
-    assertEquals(sendBufferSize, copy.getSendBufferSize());
-    assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
-    assertEquals(reuseAddress, copy.isReuseAddress());
-    assertEquals(trafficClass, copy.getTrafficClass());
-    assertEquals(tcpNoDelay, copy.isTcpNoDelay());
-    assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
-    assertEquals(soLinger, copy.getSoLinger());
-    assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
-    assertEquals(idleTimeout, copy.getIdleTimeout());
-    assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
-    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
-    assertEquals(1, copy.getEnabledCipherSuites().size());
-    assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
-    assertEquals(1, copy.getCrlPaths().size());
-    assertEquals(crlPath, copy.getCrlPaths().get(0));
-    assertEquals(1, copy.getCrlValues().size());
-    assertEquals(crlValue, copy.getCrlValues().get(0));
-    assertEquals(port, copy.getPort());
-    assertEquals(host, copy.getHost());
-    assertEquals(acceptBacklog, copy.getAcceptBacklog());
-    assertEquals(useAlpn, copy.isUseAlpn());
-    assertEquals(sslEngine, copy.getSslEngineOptions());
-    assertEquals(sni, copy.isSni());
+    assertEquals(options.toJson(), copy.toJson());
   }
 
   @Test

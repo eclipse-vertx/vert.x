@@ -244,33 +244,4 @@ public class DatagramSocketOptions extends NetworkOptions {
   public DatagramSocketOptions setLogActivity(boolean logEnabled) {
     return (DatagramSocketOptions) super.setLogActivity(logEnabled);
   }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof DatagramSocketOptions)) return false;
-    if (!super.equals(o)) return false;
-
-    DatagramSocketOptions that = (DatagramSocketOptions) o;
-
-    if (broadcast != that.broadcast) return false;
-    if (ipV6 != that.ipV6) return false;
-    if (loopbackModeDisabled != that.loopbackModeDisabled) return false;
-    if (multicastTimeToLive != that.multicastTimeToLive) return false;
-    if (multicastNetworkInterface != null ? !multicastNetworkInterface.equals(that.multicastNetworkInterface) : that.multicastNetworkInterface != null)
-      return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + (broadcast ? 1 : 0);
-    result = 31 * result + (loopbackModeDisabled ? 1 : 0);
-    result = 31 * result + multicastTimeToLive;
-    result = 31 * result + (multicastNetworkInterface != null ? multicastNetworkInterface.hashCode() : 0);
-    result = 31 * result + (ipV6 ? 1 : 0);
-    return result;
-  }
 }

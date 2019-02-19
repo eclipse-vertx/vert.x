@@ -13,6 +13,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.TrustManager;
@@ -59,4 +60,7 @@ public interface TrustOptions {
     KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, this);
     return helper != null ? helper::getTrustMgr : null;
   }
+
+  JsonObject toJson();
+
 }

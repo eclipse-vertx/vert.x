@@ -76,23 +76,6 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
     return sessionCacheEnabled;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof OpenSSLEngineOptions)) return false;
-
-    OpenSSLEngineOptions that = (OpenSSLEngineOptions) o;
-
-    if (sessionCacheEnabled != that.sessionCacheEnabled) return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    return sessionCacheEnabled ? 1 : 0;
-  }
-
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     OpenSSLEngineOptionsConverter.toJson(this, json);

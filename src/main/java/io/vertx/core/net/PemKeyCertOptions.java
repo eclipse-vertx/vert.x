@@ -378,43 +378,6 @@ public class PemKeyCertOptions implements KeyCertOptions {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof PemKeyCertOptions)) {
-      return false;
-    }
-
-    PemKeyCertOptions that = (PemKeyCertOptions) o;
-    if (!keyPaths.equals(that.keyPaths)) {
-      return false;
-    }
-    if (!keyValues.equals(that.keyValues)) {
-      return false;
-    }
-    if (!certPaths.equals(that.certPaths)) {
-      return false;
-    }
-    if (!certValues.equals(that.certValues)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = 1;
-    result += 31 * result + keyPaths.hashCode();
-    result += 31 * result + keyValues.hashCode();
-    result += 31 * result + certPaths.hashCode();
-    result += 31 * result + certValues.hashCode();
-
-    return result;
-  }
-
-  @Override
   public PemKeyCertOptions copy() {
     return new PemKeyCertOptions(this);
   }

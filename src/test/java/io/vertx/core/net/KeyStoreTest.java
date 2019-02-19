@@ -349,40 +349,6 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
-  public void testTrustOptionsEquality() {
-    String certPath1 = TestUtils.randomAlphaString(100);
-    String certPath2 = TestUtils.randomAlphaString(100);
-    Buffer certValue1 = Buffer.buffer(TestUtils.randomAlphaString(100));
-    Buffer certValue2 = Buffer.buffer(TestUtils.randomAlphaString(100));
-
-    PemTrustOptions options = new PemTrustOptions();
-    PemTrustOptions otherOptions = new PemTrustOptions();
-    assertEquals(options, otherOptions);
-    assertEquals(options.hashCode(), otherOptions.hashCode());
-
-    options.addCertPath(certPath1);
-    options.addCertPath(certPath2);
-    options.addCertValue(certValue1);
-    options.addCertValue(certValue2);
-    otherOptions.addCertPath(certPath1);
-    otherOptions.addCertPath(certPath2);
-    otherOptions.addCertValue(certValue1);
-    otherOptions.addCertValue(certValue2);
-    assertEquals(options, otherOptions);
-    assertEquals(options.hashCode(), otherOptions.hashCode());
-
-    otherOptions.addCertPath(TestUtils.randomAlphaString(100));
-    assertNotEquals(options, otherOptions);
-
-    PemTrustOptions reverseOrderOptions = new PemTrustOptions();
-    reverseOrderOptions.addCertPath(certPath2);
-    reverseOrderOptions.addCertPath(certPath1);
-    reverseOrderOptions.addCertValue(certValue2);
-    reverseOrderOptions.addCertValue(certValue1);
-    assertNotEquals(options, reverseOrderOptions);
-  }
-
-  @Test
   public void testJKSPath() throws Exception {
     testKeyStore(Cert.SERVER_JKS.get());
   }
@@ -459,14 +425,11 @@ public class KeyStoreTest extends VertxTestBase {
     PemKeyCertOptions pemKeyCertOptions = Cert.SERVER_PEM.get();
     PemKeyCertOptions pemKeyCertOptionsCopy = new PemKeyCertOptions(pemKeyCertOptions);
 
-    assertEquals(jksOptions, jksOptionsCopy);
-    assertEquals(jksOptions.hashCode(), jksOptionsCopy.hashCode());
+    assertEquals(jksOptions.toJson(), jksOptionsCopy.toJson());
 
-    assertEquals(pfxOptions, pfxOptionsCopy);
-    assertEquals(pfxOptions.hashCode(), pfxOptionsCopy.hashCode());
+    assertEquals(pfxOptions.toJson(), pfxOptionsCopy.toJson());
 
-    assertEquals(pemKeyCertOptions, pemKeyCertOptionsCopy);
-    assertEquals(pemKeyCertOptions.hashCode(), pemKeyCertOptionsCopy.hashCode());
+    assertEquals(pemKeyCertOptions.toJson(), pemKeyCertOptionsCopy.toJson());
   }
 
   private void testKeyStore(KeyCertOptions options) throws Exception {

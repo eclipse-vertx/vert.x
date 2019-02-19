@@ -407,34 +407,6 @@ public class NetServerOptions extends TCPSSLOptions {
     return this;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof NetServerOptions)) return false;
-    if (!super.equals(o)) return false;
-
-    NetServerOptions that = (NetServerOptions) o;
-
-    if (acceptBacklog != that.acceptBacklog) return false;
-    if (clientAuth != that.clientAuth) return false;
-    if (port != that.port) return false;
-    if (host != null ? !host.equals(that.host) : that.host != null) return false;
-    if (sni != that.sni) return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + port;
-    result = 31 * result + (host != null ? host.hashCode() : 0);
-    result = 31 * result + acceptBacklog;
-    result = 31 * result + clientAuth.hashCode();
-    result = 31 * result + (sni ? 1 : 0);
-    return result;
-  }
-
   private void init() {
     this.port = DEFAULT_PORT;
     this.host = DEFAULT_HOST;

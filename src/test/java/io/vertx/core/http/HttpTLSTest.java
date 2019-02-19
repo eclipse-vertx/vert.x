@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.TrustAllTrustManager;
 import io.vertx.test.core.TestUtils;
@@ -762,6 +763,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSNICustomTrustManagerFactoryMapper() throws Exception {
     testTLS(Cert.CLIENT_PEM, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, () -> new TrustOptions() {
       @Override
+      public JsonObject toJson() {
+        throw new UnsupportedOperationException();
+      }
+      @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
         return new TrustManagerFactory(new TrustManagerFactorySpi() {
           @Override
@@ -798,6 +803,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   public void testSNICustomTrustManagerFactoryMapper2() throws Exception {
     testTLS(Cert.CLIENT_PEM, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, () -> new TrustOptions() {
+      @Override
+      public JsonObject toJson() {
+        throw new UnsupportedOperationException();
+      }
+
       @Override
       public Function<String, TrustManager[]> trustManagerMapper(Vertx v) throws Exception {
         return (serverName) -> new TrustManager[]{TrustAllTrustManager.INSTANCE};
@@ -844,6 +854,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Test custom trust manager factory
   public void testCustomTrustManagerFactory() throws Exception {
     testTLS(Cert.NONE, () -> new TrustOptions() {
+      @Override
+      public JsonObject toJson() {
+        throw new UnsupportedOperationException();
+      }
+
       @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
         return new TrustManagerFactory(new TrustManagerFactorySpi() {

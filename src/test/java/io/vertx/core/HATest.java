@@ -403,7 +403,7 @@ public class HATest extends VertxTestBase {
     VertxInternal vi = (VertxInternal)vertices[pos];
     for (String deploymentID: vi.deploymentIDs()) {
       Deployment dep = vi.getDeployment(deploymentID);
-      if (verticleName.equals(dep.verticleIdentifier()) && options.equals(dep.deploymentOptions())) {
+      if (verticleName.equals(dep.verticleIdentifier()) && options.toJson().equals(dep.deploymentOptions().toJson())) {
         return;
       }
     }

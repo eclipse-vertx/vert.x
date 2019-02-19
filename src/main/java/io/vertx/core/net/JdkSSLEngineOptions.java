@@ -67,18 +67,6 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   @Override
-  public int hashCode() {
-    return 0;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof JdkSSLEngineOptions)) return false;
-    return true;
-  }
-
-  @Override
   public JdkSSLEngineOptions copy() {
     return new JdkSSLEngineOptions();
   }

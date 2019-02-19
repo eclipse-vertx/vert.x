@@ -358,38 +358,4 @@ public class DeploymentOptions {
     DeploymentOptionsConverter.toJson(this, json);
     return json;
   }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    DeploymentOptions that = (DeploymentOptions) o;
-
-    if (worker != that.worker) return false;
-    if (ha != that.ha) return false;
-    if (instances != that.instances) return false;
-    if (config != null ? !config.equals(that.config) : that.config != null) return false;
-    if (isolationGroup != null ? !isolationGroup.equals(that.isolationGroup) : that.isolationGroup != null)
-      return false;
-    if (extraClasspath != null ? !extraClasspath.equals(that.extraClasspath) : that.extraClasspath != null)
-      return false;
-    return !(isolatedClasses != null ? !isolatedClasses.equals(that.isolatedClasses) : that.isolatedClasses != null);
-
-  }
-
-  @Override
-  public int hashCode() {
-    int result = config != null ? config.hashCode() : 0;
-    result = 31 * result + (worker ? 1 : 0);
-    result = 31 * result + (isolationGroup != null ? isolationGroup.hashCode() : 0);
-    result = 31 * result + (ha ? 1 : 0);
-    result = 31 * result + (extraClasspath != null ? extraClasspath.hashCode() : 0);
-    result = 31 * result + instances;
-    result = 31 * result + (isolatedClasses != null ? isolatedClasses.hashCode() : 0);
-    result = 31 * result + (workerPoolName != null ? workerPoolName.hashCode() : 0);
-    result = 31 * result + workerPoolSize;
-    result = 31 * result + Long.hashCode(maxWorkerExecuteTime);
-    return result;
-  }
 }

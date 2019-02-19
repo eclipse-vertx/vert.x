@@ -221,30 +221,4 @@ public abstract class NetworkOptions {
     this.reusePort = reusePort;
     return this;
   }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof NetworkOptions)) return false;
-
-    NetworkOptions that = (NetworkOptions) o;
-
-    if (receiveBufferSize != that.receiveBufferSize) return false;
-    if (reuseAddress != that.reuseAddress) return false;
-    if (reusePort != that.reusePort) return false;
-    if (sendBufferSize != that.sendBufferSize) return false;
-    if (trafficClass != that.trafficClass) return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = sendBufferSize;
-    result = 31 * result + receiveBufferSize;
-    result = 31 * result + trafficClass;
-    result = 31 * result + (reuseAddress ? 1 : 0);
-    result = 31 * result + (reusePort ? 1 : 0);
-    return result;
-  }
 }
