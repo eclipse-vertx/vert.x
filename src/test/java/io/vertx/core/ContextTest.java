@@ -410,7 +410,7 @@ public class ContextTest extends VertxTestBase {
   public void testExecuteFromIOWorkerFromNonVertxThread() {
     assertEquals("true", System.getProperty("vertx.threadChecks"));
     ExecutorService a = Executors.newSingleThreadExecutor();
-    ContextInternal ctx = ((VertxInternal) vertx).createWorkerContext(null, new WorkerPool(a, null), null, Thread.currentThread().getContextClassLoader());
+    ContextInternal ctx = ((VertxInternal) vertx).createWorkerContext(null, new WorkerPool(a, null), Thread.currentThread().getContextClassLoader());
     AtomicBoolean called = new AtomicBoolean();
     try {
       ctx.executeFromIO(v -> {

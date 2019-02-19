@@ -15,6 +15,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
+import io.vertx.core.json.JsonObject;
 
 import java.util.Set;
 
@@ -30,6 +31,8 @@ public interface Deployment {
   void undeploy(Handler<AsyncResult<Void>> completionHandler);
 
   void doUndeploy(ContextInternal undeployingContext, Handler<AsyncResult<Void>> completionHandler);
+
+  JsonObject config();
 
   String deploymentID();
 

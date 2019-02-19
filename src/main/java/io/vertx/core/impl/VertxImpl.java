@@ -359,7 +359,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ContextInternal ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
-      ctx = createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader());
+      ctx = createEventLoopContext(null, null, Thread.currentThread().getContextClassLoader());
     }
     return ctx;
   }
@@ -393,16 +393,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
-    return new EventLoopContext(this, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deploymentID, config, tccl);
+  public EventLoopContext createEventLoopContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl) {
+    return new EventLoopContext(this, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, tccl);
   }
 
   @Override
-  public ContextInternal createWorkerContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
+  public ContextInternal createWorkerContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl) {
     if (workerPool == null) {
       workerPool = this.workerPool;
     }
-    return new WorkerContext(this, internalBlockingPool, workerPool, deploymentID, config, tccl);
+    return new WorkerContext(this, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override

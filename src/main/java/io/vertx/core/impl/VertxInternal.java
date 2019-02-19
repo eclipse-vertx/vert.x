@@ -65,12 +65,12 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl);
+  EventLoopContext createEventLoopContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl);
 
   /**
    * @return worker loop context
    */
-  ContextInternal createWorkerContext(String deploymentID, WorkerPool pool, JsonObject config, ClassLoader tccl);
+  ContextInternal createWorkerContext(Deployment deployment, WorkerPool pool, ClassLoader tccl);
 
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name);

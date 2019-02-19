@@ -53,10 +53,9 @@ abstract class ContextImpl implements ContextInternal {
   static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
   protected final VertxInternal owner;
-  protected final String deploymentID;
   protected final JsonObject config;
-  private Deployment deployment;
-  private CloseHooks closeHooks;
+  private final Deployment deployment;
+  private final CloseHooks closeHooks;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
   private ConcurrentMap<Object, Object> contextData;
@@ -66,18 +65,18 @@ abstract class ContextImpl implements ContextInternal {
   final WorkerPool workerPool;
   final TaskQueue orderedTasks;
 
-  protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
+  protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                         ClassLoader tccl) {
-    this(vertx, getEventLoop(vertx), internalBlockingPool, workerPool, deploymentID, config, tccl);
+    this(vertx, getEventLoop(vertx), internalBlockingPool, workerPool, deployment, tccl);
   }
 
-  protected ContextImpl(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
+  protected ContextImpl(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                         ClassLoader tccl) {
     if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
     }
-    this.deploymentID = deploymentID;
-    this.config = config;
+    this.deployment = deployment;
+    this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
     this.tccl = tccl;
     this.owner = vertx;
@@ -86,10 +85,6 @@ abstract class ContextImpl implements ContextInternal {
     this.orderedTasks = new TaskQueue();
     this.internalOrderedTasks = new TaskQueue();
     this.closeHooks = new CloseHooks(log);
-  }
-
-  public void setDeployment(Deployment deployment) {
-    this.deployment = deployment;
   }
 
   public Deployment getDeployment() {
@@ -206,7 +201,7 @@ abstract class ContextImpl implements ContextInternal {
 
   @Override
   public String deploymentID() {
-    return deploymentID;
+    return deployment != null ? deployment.deploymentID() : null;
   }
 
   @Override

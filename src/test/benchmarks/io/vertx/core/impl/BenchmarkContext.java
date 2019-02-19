@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -22,11 +21,11 @@ public class BenchmarkContext extends ContextImpl {
 
   public static BenchmarkContext create(Vertx vertx) {
     VertxImpl impl = (VertxImpl) vertx;
-    return new BenchmarkContext(impl, impl.internalBlockingPool, impl.workerPool, null, null, Thread.currentThread().getContextClassLoader());
+    return new BenchmarkContext(impl, impl.internalBlockingPool, impl.workerPool, null, Thread.currentThread().getContextClassLoader());
   }
 
-  public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config, ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
+  public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+    super(vertx, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override

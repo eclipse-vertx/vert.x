@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -24,14 +23,14 @@ public class EventLoopContext extends ContextImpl {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
-  EventLoopContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
+  EventLoopContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                           ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
+    super(vertx, internalBlockingPool, workerPool, deployment, tccl);
   }
 
-  public EventLoopContext(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
+  public EventLoopContext(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                           ClassLoader tccl) {
-    super(vertx, eventLoop, internalBlockingPool, workerPool, deploymentID, config, tccl);
+    super(vertx, eventLoop, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   void executeAsync(Handler<Void> task) {
