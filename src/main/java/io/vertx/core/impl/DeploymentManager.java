@@ -462,7 +462,6 @@ public class DeploymentManager {
                         ContextInternal callingContext,
                         Handler<AsyncResult<String>> completionHandler,
                         ClassLoader tccl, Verticle... verticles) {
-    JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
     String poolName = options.getWorkerPoolName();
 
     Deployment parent = parentContext.getDeployment();
@@ -474,12 +473,11 @@ public class DeploymentManager {
     for (Verticle verticle: verticles) {
       WorkerExecutorInternal workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
-      ContextImpl context = options.isWorker() ? (ContextImpl) vertx.createWorkerContext(deploymentID, pool, conf, tccl) :
-        vertx.createEventLoopContext(deploymentID, pool, conf, tccl);
+      ContextImpl context = options.isWorker() ? (ContextImpl) vertx.createWorkerContext(deployment, pool, tccl) :
+        vertx.createEventLoopContext(deployment, pool, tccl);
       if (workerExec != null) {
         context.addCloseHook(workerExec);
       }
-      context.setDeployment(deployment);
       deployment.addVerticle(new VerticleHolder(verticle, context));
       context.runOnContext(v -> {
         try {
@@ -533,6 +531,7 @@ public class DeploymentManager {
 
     private final Deployment parent;
     private final String deploymentID;
+    private final JsonObject conf;
     private final String verticleIdentifier;
     private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
     private final Set<Deployment> children = new ConcurrentHashSet<>();
@@ -543,6 +542,7 @@ public class DeploymentManager {
     private DeploymentImpl(Deployment parent, String deploymentID, String verticleIdentifier, DeploymentOptions options) {
       this.parent = parent;
       this.deploymentID = deploymentID;
+      this.conf = options.getConfig() != null ? options.getConfig().copy() : new JsonObject();
       this.verticleIdentifier = verticleIdentifier;
       this.options = options;
     }
@@ -664,6 +664,11 @@ public class DeploymentManager {
     @Override
     public DeploymentOptions deploymentOptions() {
       return options;
+    }
+
+    @Override
+    public JsonObject config() {
+      return conf;
     }
 
     @Override

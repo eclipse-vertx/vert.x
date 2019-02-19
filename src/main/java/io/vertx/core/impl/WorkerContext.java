@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 /**
@@ -20,9 +19,9 @@ import io.vertx.core.spi.metrics.PoolMetrics;
  */
 class WorkerContext extends ContextImpl {
 
-  WorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID,
-                       JsonObject config, ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
+  WorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+                       ClassLoader tccl) {
+    super(vertx, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override

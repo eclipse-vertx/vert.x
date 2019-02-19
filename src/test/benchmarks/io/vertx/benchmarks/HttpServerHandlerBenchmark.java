@@ -222,7 +222,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
 
 
-    ContextInternal context = new EventLoopContext(vertx, vertxChannel.eventLoop(), null, null, null, new JsonObject(), Thread.currentThread().getContextClassLoader());
+    ContextInternal context = new EventLoopContext(vertx, vertxChannel.eventLoop(), null, null, null, Thread.currentThread().getContextClassLoader());
     Handler<HttpServerRequest> app = request -> {
       HttpServerResponse response = request.response();
       MultiMap headers = response.headers();
