@@ -19,6 +19,7 @@ import io.vertx.core.impl.cpu.CpuCoreSensor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -155,7 +156,7 @@ public class VertxOptions {
   private boolean haEnabled = DEFAULT_HA_ENABLED;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
-  private MetricsOptions metricsOptions = new MetricsOptions();
+  private MetricsOptions metricsOptions;
   private FileSystemOptions fileSystemOptions = new FileSystemOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
   private EventBusOptions eventBusOptions = new EventBusOptions();
@@ -170,6 +171,7 @@ public class VertxOptions {
    * Default constructor
    */
   public VertxOptions() {
+    metricsOptions = MetricsProvider.DEFAULT_PROVIDER != null ? MetricsProvider.DEFAULT_PROVIDER.newOptions() : null;
   }
 
   /**
@@ -188,7 +190,7 @@ public class VertxOptions {
     this.haEnabled = other.isHAEnabled();
     this.quorumSize = other.getQuorumSize();
     this.haGroup = other.getHAGroup();
-    this.metricsOptions = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
+    this.metricsOptions = other.getMetricsOptions() != null ? other.metricsOptions.copy() : null;
     this.fileSystemOptions = other.getFileSystemOptions() != null ? new FileSystemOptions(other.getFileSystemOptions()) : null;
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
@@ -207,6 +209,14 @@ public class VertxOptions {
   public VertxOptions(JsonObject json) {
     this();
     VertxOptionsConverter.fromJson(json, this);
+    MetricsProvider provider = MetricsProvider.DEFAULT_PROVIDER;
+    if (provider != null) {
+      if (metricsOptions != null) {
+        metricsOptions = provider.newOptions(json.getJsonObject("metricsOptions"));
+      } else {
+        metricsOptions = provider.newOptions();
+      }
+    }
   }
 
   /**

@@ -14,6 +14,7 @@ package io.vertx.core.metrics;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 /**
  * Vert.x metrics base configuration, this class can be extended by provider implementations to configure
@@ -109,6 +110,19 @@ public class MetricsOptions {
   public MetricsOptions setFactory(VertxMetricsFactory factory) {
     this.factory = factory;
     return this;
+  }
+
+  public MetricsOptions copy() {
+    return new MetricsOptions(this);
+  }
+
+  /**
+   * Create a new {@link VertxMetrics} object or return {@code null} when no one can be created.
+   *
+   * @return the metrics implementation
+   */
+  public VertxMetrics buildMetrics() {
+    return null;
   }
 
   public JsonObject toJson() {
