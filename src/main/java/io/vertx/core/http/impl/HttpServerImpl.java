@@ -44,7 +44,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.MetricsObject;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
+public class HttpServerImpl implements HttpServer, Closeable, MetricsObject {
 
   static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
 

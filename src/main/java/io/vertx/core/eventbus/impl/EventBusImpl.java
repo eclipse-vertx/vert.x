@@ -24,7 +24,7 @@ import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.MetricsObject;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.Iterator;
@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>                                                                                        T
  */
-public class EventBusImpl implements EventBus, MetricsProvider {
+public class EventBusImpl implements EventBus, MetricsObject {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 

@@ -56,7 +56,7 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.MetricsObject;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
@@ -74,7 +74,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VertxImpl implements VertxInternal, MetricsProvider {
+public class VertxImpl implements VertxInternal, MetricsObject {
 
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
 

@@ -28,7 +28,7 @@ import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.MetricsObject;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.MalformedURLException;
@@ -48,7 +48,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientImpl implements HttpClient, MetricsProvider {
+public class HttpClientImpl implements HttpClient, MetricsObject {
 
   private final Function<HttpClientResponse, Future<HttpClientRequest>> DEFAULT_HANDLER = resp -> {
     try {

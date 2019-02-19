@@ -46,7 +46,7 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
+public class DatagramSocketImpl implements DatagramSocket, MetricsObject {
 
   public static DatagramSocketImpl create(VertxInternal vertx, DatagramSocketOptions options) {
     DatagramSocketImpl socket = new DatagramSocketImpl(vertx, options);

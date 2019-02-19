@@ -32,7 +32,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.MetricsObject;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -51,7 +50,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
+public class NetServerImpl implements Closeable, MetricsObject, NetServer {
 
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
 
