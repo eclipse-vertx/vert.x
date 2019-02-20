@@ -385,12 +385,6 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
-  public EventBusOptions setUsePooledBuffers(boolean usePooledBuffers) {
-    super.setUsePooledBuffers(usePooledBuffers);
-    return this;
-  }
-
-  @Override
   public EventBusOptions setReceiveBufferSize(int receiveBufferSize) {
     super.setReceiveBufferSize(receiveBufferSize);
     return this;

@@ -133,12 +133,6 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setUsePooledBuffers(boolean usePooledBuffers) {
-    super.setUsePooledBuffers(usePooledBuffers);
-    return this;
-  }
-
-  @Override
   public NetClientOptions setIdleTimeout(int idleTimeout) {
     super.setIdleTimeout(idleTimeout);
     return this;

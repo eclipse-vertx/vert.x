@@ -218,11 +218,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
-  public ClientOptionsBase setUsePooledBuffers(boolean usePooledBuffers) {
-    return (ClientOptionsBase) super.setUsePooledBuffers(usePooledBuffers);
-  }
-
-  @Override
   public ClientOptionsBase setIdleTimeout(int idleTimeout) {
     return (ClientOptionsBase) super.setIdleTimeout(idleTimeout);
   }

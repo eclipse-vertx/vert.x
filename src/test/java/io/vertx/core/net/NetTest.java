@@ -169,10 +169,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
-    assertFalse(options.isUsePooledBuffers());
-    assertEquals(options, options.setUsePooledBuffers(true));
-    assertTrue(options.isUsePooledBuffers());
-
     rand = TestUtils.randomPositiveInt();
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(rand));
@@ -276,10 +272,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
-    assertFalse(options.isUsePooledBuffers());
-    assertEquals(options, options.setUsePooledBuffers(true));
-    assertTrue(options.isUsePooledBuffers());
-
     rand = TestUtils.randomPositiveInt();
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(rand));
@@ -349,7 +341,6 @@ public class NetTest extends VertxTestBase {
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
-    boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
@@ -378,7 +369,6 @@ public class NetTest extends VertxTestBase {
     options.setTcpNoDelay(tcpNoDelay);
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
-    options.setUsePooledBuffers(usePooledBuffers);
     options.setIdleTimeout(idleTimeout);
     options.setKeyStoreOptions(keyStoreOptions);
     options.setTrustStoreOptions(trustStoreOptions);
@@ -410,7 +400,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
     assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
     assertEquals(def.getSoLinger(), json.getSoLinger());
-    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
@@ -427,7 +416,6 @@ public class NetTest extends VertxTestBase {
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
-    boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JksOptions keyStoreOptions = new JksOptions();
@@ -459,7 +447,6 @@ public class NetTest extends VertxTestBase {
         .put("tcpNoDelay", tcpNoDelay)
         .put("tcpKeepAlive", tcpKeepAlive)
         .put("soLinger", soLinger)
-        .put("usePooledBuffers", usePooledBuffers)
         .put("idleTimeout", idleTimeout)
         .put("ssl", ssl)
         .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
@@ -483,7 +470,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
-    assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());
@@ -570,7 +556,6 @@ public class NetTest extends VertxTestBase {
     options.setTcpNoDelay(tcpNoDelay);
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
-    options.setUsePooledBuffers(usePooledBuffers);
     options.setIdleTimeout(idleTimeout);
     options.setSsl(ssl);
     options.setKeyStoreOptions(keyStoreOptions);
@@ -609,7 +594,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
     assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
     assertEquals(def.getSoLinger(), json.getSoLinger());
-    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
@@ -680,7 +664,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
-    assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());

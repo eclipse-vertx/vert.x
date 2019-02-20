@@ -283,12 +283,6 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setUsePooledBuffers(boolean usePooledBuffers) {
-    super.setUsePooledBuffers(usePooledBuffers);
-    return this;
-  }
-
-  @Override
   public HttpServerOptions setIdleTimeout(int idleTimeout) {
     super.setIdleTimeout(idleTimeout);
     return this;

@@ -43,11 +43,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final int DEFAULT_SO_LINGER = -1;
 
   /**
-   * The default value of Netty use pooled buffers = false
-   */
-  public static final boolean DEFAULT_USE_POOLED_BUFFERS = false;
-
-  /**
    * SSL enable by default = false
    */
   public static final boolean DEFAULT_SSL = false;
@@ -99,7 +94,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
-  private boolean usePooledBuffers;
   private int idleTimeout;
   private TimeUnit idleTimeoutUnit;
   private boolean ssl;
@@ -133,7 +127,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.tcpNoDelay = other.isTcpNoDelay();
     this.tcpKeepAlive = other.isTcpKeepAlive();
     this.soLinger = other.getSoLinger();
-    this.usePooledBuffers = other.isUsePooledBuffers();
     this.idleTimeout = other.getIdleTimeout();
     this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     this.ssl = other.isSsl();
@@ -176,7 +169,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     tcpNoDelay = DEFAULT_TCP_NO_DELAY;
     tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
     soLinger = DEFAULT_SO_LINGER;
-    usePooledBuffers = DEFAULT_USE_POOLED_BUFFERS;
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
     idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     ssl = DEFAULT_SSL;
@@ -246,28 +238,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
       throw new IllegalArgumentException("soLinger must be >= 0");
     }
     this.soLinger = soLinger;
-    return this;
-  }
-
-  /**
-   * @return are Netty pooled buffers enabled?
-   * @deprecated this has no effect, just don't use it
-   */
-  @Deprecated
-  public boolean isUsePooledBuffers() {
-    return usePooledBuffers;
-  }
-
-  /**
-   * Set whether Netty pooled buffers are enabled
-   *
-   * @param usePooledBuffers true if pooled buffers enabled
-   * @return a reference to this, so the API can be used fluently
-   * @deprecated this has no effect, just don't use it
-   */
-  @Deprecated
-  public TCPSSLOptions setUsePooledBuffers(boolean usePooledBuffers) {
-    this.usePooledBuffers = usePooledBuffers;
     return this;
   }
 

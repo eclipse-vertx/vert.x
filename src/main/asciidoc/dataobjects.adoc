@@ -223,9 +223,6 @@ Set the trust options in jks format, aka Java truststore
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
-Set whether Netty pooled buffers are enabled
-+++
 |===
 
 [[CopyOptions]]
@@ -562,9 +559,6 @@ Set the trust options in jks format, aka Java truststore
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
-Set whether Netty pooled buffers are enabled
-+++
 |===
 
 [[FileSystemOptions]]
@@ -880,9 +874,6 @@ Set whether the client will offer the WebSocket per-message deflate compression 
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
-Set whether Netty pooled buffers are enabled
-+++
 |[[verifyHost]]`@verifyHost`|`Boolean`|+++
 Set whether hostname verification is enabled
 +++
@@ -1088,9 +1079,6 @@ Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
-+++
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
-Set whether Netty pooled buffers are enabled
 +++
 |[[websocketAllowServerNoContext]]`@websocketAllowServerNoContext`|`Boolean`|+++
 Set whether the WebSocket server will accept the <code>server_no_context_takeover</code> parameter of the per-message
@@ -1305,9 +1293,6 @@ Set the trust options in jks format, aka Java truststore
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
-Set whether Netty pooled buffers are enabled
-+++
 |===
 
 [[NetServerOptions]]
@@ -1424,9 +1409,6 @@ Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
-+++
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
-Set whether Netty pooled buffers are enabled
 +++
 |===
 
@@ -1952,9 +1934,6 @@ Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
-+++
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
-Set whether Netty pooled buffers are enabled
 +++
 |===
 

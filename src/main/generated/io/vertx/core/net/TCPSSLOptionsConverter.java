@@ -138,11 +138,6 @@ import java.time.format.DateTimeFormatter;
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
-        case "usePooledBuffers":
-          if (member.getValue() instanceof Boolean) {
-            obj.setUsePooledBuffers((Boolean)member.getValue());
-          }
-          break;
       }
     }
   }
@@ -208,6 +203,5 @@ import java.time.format.DateTimeFormatter;
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
     json.put("useAlpn", obj.isUseAlpn());
-    json.put("usePooledBuffers", obj.isUsePooledBuffers());
   }
 }

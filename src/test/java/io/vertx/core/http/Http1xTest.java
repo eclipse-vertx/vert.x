@@ -116,10 +116,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
-    assertFalse(options.isUsePooledBuffers());
-    assertEquals(options, options.setUsePooledBuffers(true));
-    assertTrue(options.isUsePooledBuffers());
-
     assertEquals(0, options.getIdleTimeout());
     assertEquals(TimeUnit.SECONDS, options.getIdleTimeoutUnit());
     assertEquals(options, options.setIdleTimeout(10));
@@ -322,10 +318,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
-    assertFalse(options.isUsePooledBuffers());
-    assertEquals(options, options.setUsePooledBuffers(true));
-    assertTrue(options.isUsePooledBuffers());
-
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(10));
     assertEquals(10, options.getIdleTimeout());
@@ -435,7 +427,6 @@ public class Http1xTest extends HttpTest {
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
-    boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     KeyCertOptions keyCertOptions = randomKeyCertOptions();
@@ -480,7 +471,6 @@ public class Http1xTest extends HttpTest {
     options.setTcpNoDelay(tcpNoDelay);
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
-    options.setUsePooledBuffers(usePooledBuffers);
     options.setIdleTimeout(idleTimeout);
     options.setKeyCertOptions(keyCertOptions);
     options.setTrustOptions(trustOptions);
@@ -550,7 +540,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
     assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
     assertEquals(def.getSoLinger(), json.getSoLinger());
-    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.getProtocolVersion(), json.getProtocolVersion());
     assertEquals(def.getMaxWaitQueueSize(), json.getMaxWaitQueueSize());
@@ -578,7 +567,6 @@ public class Http1xTest extends HttpTest {
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
-    boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JksOptions keyStoreOptions = new JksOptions();
@@ -628,7 +616,6 @@ public class Http1xTest extends HttpTest {
       .put("tcpNoDelay", tcpNoDelay)
       .put("tcpKeepAlive", tcpKeepAlive)
       .put("soLinger", soLinger)
-      .put("usePooledBuffers", usePooledBuffers)
       .put("idleTimeout", idleTimeout)
       .put("ssl", ssl)
       .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
@@ -676,7 +663,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
-    assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());
@@ -759,7 +745,6 @@ public class Http1xTest extends HttpTest {
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
-    boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     KeyCertOptions keyCertOptions = randomKeyCertOptions();
@@ -792,7 +777,6 @@ public class Http1xTest extends HttpTest {
     options.setTcpNoDelay(tcpNoDelay);
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
-    options.setUsePooledBuffers(usePooledBuffers);
     options.setIdleTimeout(idleTimeout);
     options.setSsl(ssl);
     options.setKeyCertOptions(keyCertOptions);
@@ -851,7 +835,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
     assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
     assertEquals(def.getSoLinger(), json.getSoLinger());
-    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isHandle100ContinueAutomatically(), json.isHandle100ContinueAutomatically());
     assertEquals(def.getMaxChunkSize(), json.getMaxChunkSize());
@@ -877,7 +860,6 @@ public class Http1xTest extends HttpTest {
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
-    boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JksOptions keyStoreOptions = new JksOptions();
@@ -921,7 +903,6 @@ public class Http1xTest extends HttpTest {
       .put("tcpNoDelay", tcpNoDelay)
       .put("tcpKeepAlive", tcpKeepAlive)
       .put("soLinger", soLinger)
-      .put("usePooledBuffers", usePooledBuffers)
       .put("idleTimeout", idleTimeout)
       .put("ssl", ssl)
       .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
@@ -963,7 +944,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
-    assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());
