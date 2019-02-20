@@ -13,7 +13,7 @@ package io.vertx.test.fakemetrics;
 
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsObject;
+import io.vertx.core.spi.metrics.MetricsProvider;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -21,7 +21,7 @@ import io.vertx.core.spi.metrics.MetricsObject;
 public class FakeMetricsBase implements Metrics {
 
   public static <M extends FakeMetricsBase> M getMetrics(Measured measured) {
-    return (M) ((MetricsObject) measured).getMetrics();
+    return (M) ((MetricsProvider) measured).getMetrics();
   }
 
   public FakeMetricsBase() {

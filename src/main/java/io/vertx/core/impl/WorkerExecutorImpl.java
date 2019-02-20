@@ -13,13 +13,13 @@ package io.vertx.core.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsObject;
+import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WorkerExecutorImpl implements MetricsObject, WorkerExecutorInternal {
+class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
   private final Context ctx;
   private final VertxImpl.SharedWorkerPool pool;
