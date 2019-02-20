@@ -238,8 +238,7 @@ public class Starter {
         return null;
       }
       if (result.get().failed()) {
-        log.error("Failed to form cluster");
-        result.get().cause().printStackTrace();
+        log.error("Failed to form cluster", result.get().cause());
         return null;
       }
       vertx = result.get().result();

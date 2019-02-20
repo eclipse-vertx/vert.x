@@ -223,7 +223,7 @@ public class RecordDecoder {
         try {
             result = (T) decoder.apply(record);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException(e.getMessage(), e.getCause());
         }
         return result;
     }
