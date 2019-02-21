@@ -132,7 +132,7 @@ public class AsyncFileImpl implements AsyncFile {
     Arguments.require(length >= 0, "length must be >= 0");
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
-    doRead(buffer, offset, bb, position, getReadSize(), handler);
+    doRead(buffer, offset, bb, position, handler);
     return this;
   }
 
@@ -341,8 +341,9 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doRead(ByteBuffer bb) {
     Buffer buff = Buffer.buffer(readBufferSize);
-    int readSize = getReadSize();
-    doRead(buff, 0, bb, readPos, readSize, ar -> {
+    int readSize = (int) Math.min((long)readBufferSize, readLength);
+    bb.limit(readSize);
+    doRead(buff, 0, bb, readPos, ar -> {
       if (ar.succeeded()) {
         Buffer buffer = ar.result();
         if (buffer.length() == 0) {
@@ -361,10 +362,6 @@ public class AsyncFileImpl implements AsyncFile {
     });
   }
 
-  private int getReadSize() {
-      return (int) Math.min((long)readBufferSize, readLength);
-  }
-  
   private synchronized void handleEnd() {
     queue.handler(null);
     if (endHandler != null) {
@@ -431,16 +428,12 @@ public class AsyncFileImpl implements AsyncFile {
     });
   }
 
-  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, int readSize, 
-      Handler<AsyncResult<Buffer>> handler) {
-    if (readSize < buff.capacity()) {
-      buff.limit(readSize);
-    }
+  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, Handler<AsyncResult<Buffer>> handler) {
+
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       long pos = position;
-      int size = readSize;
-      
+
       private void done() {
         context.runOnContext((v) -> {
           buff.flip();
@@ -457,13 +450,8 @@ public class AsyncFileImpl implements AsyncFile {
         } else if (buff.hasRemaining()) {
           // partial read
           pos += bytesRead;
-          size -= bytesRead;
-          if (size == 0) {
-            done();
-          } else {
-            // resubmit
-            doRead(writeBuff, offset, buff, pos, size, handler);
-          }
+          // resubmit
+          doRead(writeBuff, offset, buff, pos, handler);
         } else {
           // It's been fully written
           done();
