@@ -350,6 +350,7 @@ public class NetServerOptions extends TCPSSLOptions {
   /**
    *
    * @return true if client auth is required
+   * @deprecated use {@link #getClientAuth() getClientAuth()  == ClientAuth.REQUIRED} instead
    */
   @Deprecated
   public boolean isClientAuthRequired() {
@@ -361,6 +362,7 @@ public class NetServerOptions extends TCPSSLOptions {
    *
    * @param clientAuthRequired  true if client auth is required
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #setClientAuth(ClientAuth) setClientAuth(ClientAuth.REQUIRED)} or {@link #setClientAuth(ClientAuth) setClientAuth(ClientAuth.NONE)} instead
    */
   @Deprecated
   public NetServerOptions setClientAuthRequired(boolean clientAuthRequired) {
