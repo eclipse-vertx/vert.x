@@ -74,11 +74,6 @@ import java.time.format.DateTimeFormatter;
             obj.setEventLoopPoolSize(((Number)member.getValue()).intValue());
           }
           break;
-        case "fileResolverCachingEnabled":
-          if (member.getValue() instanceof Boolean) {
-            obj.setFileResolverCachingEnabled((Boolean)member.getValue());
-          }
-          break;
         case "fileSystemOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setFileSystemOptions(new io.vertx.core.file.FileSystemOptions((JsonObject)member.getValue()));
@@ -180,7 +175,6 @@ import java.time.format.DateTimeFormatter;
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }
     json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
-    json.put("fileResolverCachingEnabled", obj.isFileResolverCachingEnabled());
     if (obj.getFileSystemOptions() != null) {
       json.put("fileSystemOptions", obj.getFileSystemOptions().toJson());
     }

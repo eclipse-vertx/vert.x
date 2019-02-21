@@ -24,17 +24,6 @@ public interface Metrics {
   boolean METRICS_ENABLED = !Boolean.getBoolean(DISABLE_METRICS_PROPERTY_NAME);
 
   /**
-   * Whether the metrics are enabled.
-   *
-   * @return true if the metrics are enabled.
-   * @deprecated the SPI metrics should instead return a {@code null} object to signal that metrics is not provided
-   */
-  @Deprecated
-  default boolean isEnabled() {
-    return true;
-  }
-
-  /**
    * Used to close out the metrics, for example when an http server/client has been closed.<p/>
    *
    * No specific thread and context can be expected when this method is called.

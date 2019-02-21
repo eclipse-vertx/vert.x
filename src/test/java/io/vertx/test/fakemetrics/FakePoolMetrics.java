@@ -77,11 +77,6 @@ public class FakePoolMetrics implements PoolMetrics<Void> {
   }
 
   @Override
-  public boolean isEnabled() {
-    return true;
-  }
-
-  @Override
   public void close() {
     closed.set(true);
     METRICS.remove(name);

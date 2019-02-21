@@ -131,7 +131,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   @Override
   public boolean isMetricsEnabled() {
-    return metrics != null && metrics.isEnabled();
+    return metrics != null;
   }
 
   @Override

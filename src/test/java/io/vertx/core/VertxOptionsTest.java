@@ -247,7 +247,6 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     options.setHAEnabled(haEnabled);
-    options.setFileResolverCachingEnabled(fileResolverCachingEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
     options.setMetricsOptions(
@@ -273,7 +272,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
     assertEquals(haEnabled, options.isHAEnabled());
-    assertEquals(fileResolverCachingEnabled, options.isFileResolverCachingEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
     MetricsOptions metricsOptions = options.getMetricsOptions();
@@ -306,7 +304,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getQuorumSize(), json.getQuorumSize());
     assertEquals(def.getHAGroup(), json.getHAGroup());
     assertEquals(def.getWarningExceptionTime(), json.getWarningExceptionTime());
-    assertEquals(def.isFileResolverCachingEnabled(), json.isFileResolverCachingEnabled());
     assertEquals(def.getMaxEventLoopExecuteTimeUnit(), json.getMaxEventLoopExecuteTimeUnit());
     assertEquals(def.getMaxWorkerExecuteTimeUnit(), json.getMaxWorkerExecuteTimeUnit());
     assertEquals(def.getWarningExceptionTimeUnit(), json.getWarningExceptionTimeUnit());
@@ -411,7 +408,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
     assertEquals(haEnabled, options.isHAEnabled());
-    assertEquals(fileResolverCachingEnabled, options.isFileResolverCachingEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
     FileSystemOptions fileSystemOptions = options.getFileSystemOptions();
@@ -424,12 +420,5 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
     assertEquals(warningExceptionTimeUnit, options.getWarningExceptionTimeUnit());
     assertEquals(blockedThreadCheckIntervalUnit, options.getBlockedThreadCheckIntervalUnit());
-  }
-
-  @Test
-  public void testNullFileSystemOptions() {
-    VertxOptions options = new VertxOptions().setFileSystemOptions(null);
-    options.isFileResolverCachingEnabled();
-    options.setFileResolverCachingEnabled(true);
   }
 }

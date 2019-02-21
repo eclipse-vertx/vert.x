@@ -150,10 +150,6 @@ public class MetricsContextTest extends VertxTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
-          public boolean isEnabled() {
-            return true;
-          }
-          @Override
           public void close() {
             closeCalled.set(true);
           }
@@ -251,10 +247,6 @@ public class MetricsContextTest extends VertxTestBase {
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
-          }
-          @Override
-          public boolean isEnabled() {
-            return true;
           }
           @Override
           public void close() {
@@ -358,10 +350,6 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public void close() {
             closeCalled.set(true);
-          }
-          @Override
-          public boolean isEnabled() {
-            return true;
           }
         };
       }
@@ -469,10 +457,6 @@ public class MetricsContextTest extends VertxTestBase {
           public void close() {
             closeCalled.set(true);
           }
-          @Override
-          public boolean isEnabled() {
-            return true;
-          }
         };
       }
     };
@@ -561,10 +545,6 @@ public class MetricsContextTest extends VertxTestBase {
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
-          }
-          @Override
-          public boolean isEnabled() {
-            return true;
           }
           @Override
           public void close() {
@@ -656,10 +636,6 @@ public class MetricsContextTest extends VertxTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
-          public boolean isEnabled() {
-            return true;
-          }
-          @Override
           public void close() {
             closeCalled.set(true);
           }
@@ -745,10 +721,6 @@ public class MetricsContextTest extends VertxTestBase {
           public void close() {
             closeCalled.countDown();
           }
-          @Override
-          public boolean isEnabled() {
-            return true;
-          }
         };
       }
     };
@@ -782,10 +754,6 @@ public class MetricsContextTest extends VertxTestBase {
       @Override
       public EventBusMetrics createEventBusMetrics() {
         return new DummyEventBusMetrics() {
-          @Override
-          public boolean isEnabled() {
-            return true;
-          }
           @Override
           public void close() {
             closeCalled.set(true);
@@ -825,10 +793,6 @@ public class MetricsContextTest extends VertxTestBase {
       @Override
       public EventBusMetrics createEventBusMetrics() {
         return new DummyEventBusMetrics() {
-          @Override
-          public boolean isEnabled() {
-            return true;
-          }
           @Override
           public Void handlerRegistered(String address, String repliedAddress) {
             registeredCalled.set(true);

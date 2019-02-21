@@ -176,9 +176,4 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   public void exceptionOccurred(SocketMetric socketMetric, SocketAddress remoteAddress, Throwable t) {
   }
 
-  @Override
-  public boolean isEnabled() {
-    return true;
-  }
-
 }

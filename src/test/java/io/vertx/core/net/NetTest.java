@@ -579,13 +579,11 @@ public class NetTest extends VertxTestBase {
   public void testDefaultServerOptionsJson() {
     NetServerOptions def = new NetServerOptions();
     NetServerOptions json = new NetServerOptions(new JsonObject());
-    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
     assertEquals(def.getPort(), json.getPort());
     assertEquals(def.getHost(), json.getHost());
-    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());

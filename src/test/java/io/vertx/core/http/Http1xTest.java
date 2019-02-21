@@ -826,7 +826,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
     assertEquals(def.getWebsocketSubProtocols(), json.getWebsocketSubProtocols());
     assertEquals(def.isCompressionSupported(), json.isCompressionSupported());
-    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());

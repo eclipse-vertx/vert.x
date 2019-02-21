@@ -716,37 +716,6 @@ public class VertxOptions {
   }
 
   /**
-   *
-   * Deprecated. Use FileSystemOptions instead.
-   *
-   * @return whether the file resolver uses caching
-   */
-  @Deprecated
-  public boolean isFileResolverCachingEnabled() {
-    if (fileSystemOptions == null) {
-      return DEFAULT_FILE_CACHING_ENABLED;
-    }
-    return fileSystemOptions.isFileCachingEnabled();
-  }
-
-  /**
-   * Set whether the Vert.x file resolver uses caching for classpath resources.
-   *
-   * Deprecated. Use FileSystemOptions instead.
-   *
-   * @param fileResolverCachingEnabled true when the file resolver caches resources
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Deprecated
-  public VertxOptions setFileResolverCachingEnabled(boolean fileResolverCachingEnabled) {
-    if (fileSystemOptions == null) {
-      fileSystemOptions = new FileSystemOptions();
-    }
-    this.fileSystemOptions.setFileCachingEnabled(fileResolverCachingEnabled);
-    return this;
-  }
-
-  /**
    * @return wether to prefer the native transport to the JDK transport
    */
   public boolean getPreferNativeTransport() {

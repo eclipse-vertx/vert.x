@@ -66,11 +66,6 @@ public class FakeDatagramSocketMetrics extends FakeMetricsBase implements Datagr
   }
 
   @Override
-  public boolean isEnabled() {
-    return true;
-  }
-
-  @Override
   public void close() {
   }
 }

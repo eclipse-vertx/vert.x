@@ -410,13 +410,6 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  @Deprecated
-  public HttpServerOptions setClientAuthRequired(boolean clientAuthRequired) {
-    super.setClientAuthRequired(clientAuthRequired);
-    return this;
-  }
-
-  @Override
   public HttpServerOptions setClientAuth(ClientAuth clientAuth) {
     super.setClientAuth(clientAuth);
     return this;

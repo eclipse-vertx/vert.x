@@ -102,7 +102,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveFileFromClasspathDisableCaching() throws Exception {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileResolverCachingEnabled(false));
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileSystemOptions(new FileSystemOptions().setFileCachingEnabled(true)));
     try {
       for (int i = 0; i < 2; i++) {
         File file = vertx.resolveFile("afile.html");
@@ -291,7 +291,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   }
 
   private void testCaching(boolean enabled) throws Exception {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileResolverCachingEnabled(enabled));
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileSystemOptions(new FileSystemOptions().setFileCachingEnabled(enabled)));
     File tmp = File.createTempFile("vertx", ".bin");
     tmp.deleteOnExit();
     URL url = tmp.toURI().toURL();

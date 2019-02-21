@@ -24,11 +24,6 @@ import java.time.format.DateTimeFormatter;
             obj.setClientAuth(io.vertx.core.http.ClientAuth.valueOf((String)member.getValue()));
           }
           break;
-        case "clientAuthRequired":
-          if (member.getValue() instanceof Boolean) {
-            obj.setClientAuthRequired((Boolean)member.getValue());
-          }
-          break;
         case "host":
           if (member.getValue() instanceof String) {
             obj.setHost((String)member.getValue());
@@ -57,7 +52,6 @@ import java.time.format.DateTimeFormatter;
     if (obj.getClientAuth() != null) {
       json.put("clientAuth", obj.getClientAuth().name());
     }
-    json.put("clientAuthRequired", obj.isClientAuthRequired());
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }

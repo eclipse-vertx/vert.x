@@ -341,27 +341,6 @@ public class NetServerOptions extends TCPSSLOptions {
     return this;
   }
 
-  /**
-   *
-   * @return true if client auth is required
-   */
-  @Deprecated
-  public boolean isClientAuthRequired() {
-    return clientAuth == ClientAuth.REQUIRED;
-  }
-
-  /**
-   * Set whether client auth is required
-   *
-   * @param clientAuthRequired  true if client auth is required
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Deprecated
-  public NetServerOptions setClientAuthRequired(boolean clientAuthRequired) {
-    this.clientAuth = clientAuthRequired ? ClientAuth.REQUIRED : ClientAuth.NONE;
-    return this;
-  }
-
   public ClientAuth getClientAuth() {
     return clientAuth;
   }

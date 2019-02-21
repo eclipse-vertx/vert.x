@@ -28,11 +28,6 @@ public class FakeMetricsBase implements Metrics {
   }
 
   @Override
-  public boolean isEnabled() {
-    return false;
-  }
-
-  @Override
   public void close() {
   }
 }
