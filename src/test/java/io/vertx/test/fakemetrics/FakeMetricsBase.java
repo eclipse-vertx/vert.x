@@ -26,8 +26,4 @@ public class FakeMetricsBase implements Metrics {
 
   public FakeMetricsBase() {
   }
-
-  @Override
-  public void close() {
-  }
 }

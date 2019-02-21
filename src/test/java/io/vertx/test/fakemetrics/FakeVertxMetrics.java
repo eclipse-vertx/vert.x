@@ -37,12 +37,6 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return true;
   }
 
-  public void verticleDeployed(Verticle verticle) {
-  }
-
-  public void verticleUndeployed(Verticle verticle) {
-  }
-
   public EventBusMetrics createEventBusMetrics() {
     return new FakeEventBusMetrics();
   }
@@ -57,57 +51,11 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
   public TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
     return new TCPMetrics<Object>() {
-
-      public Object connected(SocketAddress remoteAddress, String remoteName) {
-        return null;
-      }
-
-      public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
-      }
-
-      public void bytesRead(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-      }
-
-      public void bytesWritten(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-      }
-
-      public void exceptionOccurred(Object socketMetric, SocketAddress remoteAddress, Throwable t) {
-      }
-
-      public boolean isEnabled() {
-        return false;
-      }
-
-      public void close() {
-      }
-    };
+   };
   }
 
   public TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
     return new TCPMetrics<Object>() {
-
-      public Object connected(SocketAddress remoteAddress, String remoteName) {
-        return null;
-      }
-
-      public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
-      }
-
-      public void bytesRead(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-      }
-
-      public void bytesWritten(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-      }
-
-      public void exceptionOccurred(Object socketMetric, SocketAddress remoteAddress, Throwable t) {
-      }
-
-      public boolean isEnabled() {
-        return false;
-      }
-
-      public void close() {
-      }
     };
   }
 
@@ -118,10 +66,6 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   @Override
   public PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
     return new FakePoolMetrics(poolName, maxPoolSize);
-  }
-
-  public boolean isEnabled() {
-    return true;
   }
 
   @Override

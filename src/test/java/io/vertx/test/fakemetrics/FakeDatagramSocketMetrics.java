@@ -59,13 +59,4 @@ public class FakeDatagramSocketMetrics extends FakeMetricsBase implements Datagr
   public void bytesWritten(Void socketMetric, SocketAddress remoteAddress,long numberOfBytes) {
     writes.add(new PacketMetric(remoteAddress, numberOfBytes));
   }
-
-  @Override
-  public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
-
-  }
-
-  @Override
-  public void close() {
-  }
 }
