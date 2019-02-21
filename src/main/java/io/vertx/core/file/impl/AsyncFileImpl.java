@@ -343,20 +343,20 @@ public class AsyncFileImpl implements AsyncFile {
     Buffer buff = Buffer.buffer(readBufferSize);
     int readSize = getReadSize();
     doRead(buff, 0, bb, readPos, readSize, ar -> {
-      if (!ar.succeeded()) {
+      if (ar.succeeded()) {
+        Buffer buffer = ar.result();
+        if (buffer.length() == 0) {
+          // Empty buffer represents end of file
+          handleEnd();
+        } else {
+          readPos += buffer.length();
+          readLength -= buffer.length();
+          if (queue.write(buffer)) {
+            doRead(bb);
+          }
+        }
+      } else {
         handleException(ar.cause());
-        return;
-      }
-      Buffer buffer = ar.result();
-      if (buffer.length() == 0) {
-        // Empty buffer represents end of file
-        handleEnd();
-        return;
-      }
-      readPos += buffer.length();
-      readLength -= buffer.length();
-      if (queue.write(buffer)) {
-        doRead(bb);
       }
     });
   }
@@ -454,22 +454,19 @@ public class AsyncFileImpl implements AsyncFile {
         if (bytesRead == -1) {
           //End of file
           done();
-          return;
-        } 
-        
-        if (!buff.hasRemaining()) {
-          done();
-          return;
-        }
-
-        // partial read
-        pos += bytesRead;
-        size -= bytesRead;
-        if (size == 0) {
-          done();
+        } else if (buff.hasRemaining()) {
+          // partial read
+          pos += bytesRead;
+          size -= bytesRead;
+          if (size == 0) {
+            done();
+          } else {
+            // resubmit
+            doRead(writeBuff, offset, buff, pos, size, handler);
+          }
         } else {
-          // resubmit
-          doRead(writeBuff, offset, buff, pos, size, handler);
+          // It's been fully written
+          done();
         }
       }
 
